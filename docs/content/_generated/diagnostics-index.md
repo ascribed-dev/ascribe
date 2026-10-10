@@ -175,3 +175,6 @@
 | [ASC172](../reference/diagnostics.md#ASC172) | `availability-left-behind` | Advice | File | review |
 | [ASC173](../reference/diagnostics.md#ASC173) | `permalink-duplicate` | Error | Page | write |
 | [ASC174](../reference/diagnostics.md#ASC174) | `model-consumer-permalink-path` | Error | File | write |
+| [ASC175](../reference/diagnostics.md#ASC175) | `permalinks-list-invalid` | Error | File | write |
+| [ASC176](../reference/diagnostics.md#ASC176) | `permalinks-list-behind` | Warning | File | fix |
+| [ASC177](../reference/diagnostics.md#ASC177) | `permalink-removed` | Warning | File | write |

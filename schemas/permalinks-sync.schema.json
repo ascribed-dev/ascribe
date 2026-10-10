@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "MovedEntry": {
+      "description": "A permalink whose place changed.",
+      "properties": {
+        "from": {
+          "description": "Where the list had it.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "to": {
+          "description": "Where it's declared now.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "from",
+        "to"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe permalinks sync` does to the list.",
+  "properties": {
+    "added": {
+      "description": "The names added, by name.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "changed": {
+      "description": "Whether the list's file changes: it's new, or its text differs.",
+      "type": "boolean"
+    },
+    "created": {
+      "description": "Whether the project had no list, so this makes one.",
+      "type": "boolean"
+    },
+    "moved": {
+      "description": "The names whose place changed, by name.",
+      "items": {
+        "$ref": "#/$defs/MovedEntry"
+      },
+      "type": "array"
+    },
+    "removed": {
+      "description": "The names the list keeps that the content no longer declares, by\nname. `ascribe check` warns about each.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "changed",
+    "created",
+    "added",
+    "moved",
+    "removed"
+  ],
+  "title": "PermalinksSyncReport",
+  "type": "object"
+}

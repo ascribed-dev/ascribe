@@ -866,6 +866,24 @@ A source with `git` is a repository other than the project's. Checking and build
 - Processors check the lock and the copies whenever they check the project, from the files alone: each entry names a source the content model declares with `git`, and the same `git`; each file the lock lists is in the source's folder with that hash; each file in the source's folder is listed; and each copy is used by a snippet. A snippet whose file has no copy is an error that says how to copy it, or, when the lock lists the file as `missing`, that it isn't in the repository at the pinned commit.
 - **No history, no network.** Copying, and moving a pin to another commit, are a processor's commands of their own, and the only operations that reach another repository. Checking and building read the copies, so the same commit of the project checks and builds the same way on any machine.
 
+### 7.5 The permalinks list
+
+A project MAY commit a list of its permalinks (§2.1, §4.1), `ascribe.permalinks`, beside `ascribe.toml`, so that a permalink that goes away is noticed, and so that something outside the documentation can check the names it links to against the list alone. Without the file, nothing below applies.
+
+```toml
+version = 1
+
+[permalinks]
+ASC036 = "_generated/diagnostics-source-files.md#ASC036"
+cli-check = "reference/cli.md#cli-check"
+cli-reference = "reference/cli.md"
+```
+
+- `version` is `1`. `[permalinks]` has one entry for each name, keyed by the name, whose value is where the name is **declared**: the content path of the file it's written in, and, for a heading, `#` and its id. A heading in a fragment is declared in the fragment. A place is where the name is written in the source, not a published address, which differs by build.
+- The list is the project's, not one build's: a permalink is declared by a page's `permalink` frontmatter, or by an `@id {permalink=true}`, in any source file, whether or not a build publishes it. A name declared in several places (on pages no build publishes together) has one entry, at any of them.
+- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, and each entry is still declared. A name with no entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't remove it. An entry that no declaration has any more is a **removed** permalink: something outside the documentation may still link to it, which no check can see.
+- A processor writes the list on request, adding each declared name and moving each entry to where its name is declared now. It MUST NOT drop an entry whose name is no longer declared, so writing the list never hides a removal.
+
 ---
 
 ## 8. Validation
@@ -939,6 +957,9 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Source copies | A file `ascribe.lock` lists is missing from the source's folder, or its hash differs | Error |
 | Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list | Error |
 | Source copies | A copy that no snippet uses | Warning |
+| Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it | Error |
+| Permalinks list | A permalink the content declares that `ascribe.permalinks` doesn't list, or lists in another place | Warning |
+| Permalinks list | A permalink `ascribe.permalinks` lists that the content no longer declares | Warning |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

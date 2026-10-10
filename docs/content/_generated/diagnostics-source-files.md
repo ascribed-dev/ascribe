@@ -931,3 +931,38 @@ Advice · page level · next step: fix · [SPEC §4.9]({repo}/blob/main/SPEC.md#
 **Message:** nothing here needs acknowledging any more: `{check}` reports no problem here in any build
 
 **Fix:** Remove the acknowledgement: what it excused has gone. `ascribe check` reports this only when it checks every build, since a problem may appear in one build alone.
+
+### Permalinks list
+
+#### ASC175 `permalinks-list-invalid`
+@id {permalink=true}: ASC175
+
+Error · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
+
+**When:** `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it.
+
+**Message:** ascribe.permalinks can't be read: \{detail}
+
+**Fix:** ascribe.permalinks is written by `ascribe permalinks sync`. Undo the change made to it by hand, or, for a list from a newer version of Ascribe, update Ascribe. Don't delete the file to quiet this: it's how a removed permalink is noticed, and a new one written by `sync` doesn't know the names the content no longer has.
+
+#### ASC176 `permalinks-list-behind`
+@id {permalink=true}: ASC176
+
+Warning · file level · next step: fix · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
+
+**When:** A permalink the content declares that `ascribe.permalinks` doesn't list, or lists in another place.
+
+**Message:** the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync`
+
+**Fix:** Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks and records where each is declared now, and commit the file with the change. In the editor, the quick fix does the same.
+
+#### ASC177 `permalink-removed`
+@id {permalink=true}: ASC177
+
+Warning · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md#75-the-permalinks-list)
+
+**When:** A permalink `ascribe.permalinks` lists that the content no longer declares.
+
+**Message:** `{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check
+
+**Fix:** Something outside the docs may link to the permalink, so put it back: `@id {permalink=true}: <name>` under the heading that now covers what it named, or `permalink: <name>` in a page's frontmatter. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone.

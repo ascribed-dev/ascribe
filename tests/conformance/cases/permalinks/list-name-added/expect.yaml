@@ -1,0 +1,8 @@
+description: >-
+  A permalink the content declares that the list doesn't have means the
+  list is behind, reported where the permalink is declared.
+spec: ["7.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: permalinks-list-behind, file: keys.md, line: 6}

@@ -12,6 +12,7 @@ pub mod lsp;
 pub mod mcp;
 pub mod model;
 pub mod outline;
+pub mod permalinks;
 pub mod refs;
 pub mod render;
 pub mod report;

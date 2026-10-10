@@ -369,11 +369,7 @@ impl Ctx<'_> {
     /// (SPEC §2.1): letters, digits, hyphens, underscores, and periods
     /// (SPEC §4.1).
     fn check_name(&mut self, id: &str, span: Span, variant: Option<&'static str>) {
-        let valid = !id.is_empty()
-            && id
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
-        if !valid {
+        if !ascribe_core::is_id(id) {
             let mut issue = Issue::new(diagnostics::ID_INVALID, self.location(span))
                 .with_arg("id", id.to_owned());
             if let Some(variant) = variant {

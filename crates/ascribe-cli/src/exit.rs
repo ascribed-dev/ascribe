@@ -54,6 +54,7 @@ mod tests {
     use crate::agents::sync::SyncError;
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
+    use crate::commands::permalinks::PermalinksError;
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
     use crate::context::Failure;
@@ -177,6 +178,22 @@ mod tests {
         (
             "settings_unreadable",
             "an agent's settings file can't be merged into",
+        ),
+        (
+            "permalinks_list_invalid",
+            "a permalinks list can't be read as one",
+        ),
+        (
+            "permalinks_list_not_found",
+            "verify's permalinks list isn't there",
+        ),
+        (
+            "permalinks_file_unreadable",
+            "a permalinks list or names file can't be read",
+        ),
+        (
+            "permalinks_list_unwritable",
+            "ascribe.permalinks can't be written",
         ),
     ];
 
@@ -305,7 +322,8 @@ mod tests {
                 | QueryError::BuildRequired { .. }
                 | QueryError::UnknownBuild(_)
                 | QueryError::BadTarget { .. }
-                | QueryError::Render(_) => {}
+                | QueryError::Render(_)
+                | QueryError::PermalinksListInvalid { .. } => {}
             }
         }
         fn agents(e: &SyncError) {
@@ -319,9 +337,16 @@ mod tests {
                 | SyncError::Write { .. } => {}
             }
         }
+        fn permalinks(e: &PermalinksError) {
+            match e {
+                PermalinksError::ListNotFound(_)
+                | PermalinksError::Unreadable { .. }
+                | PermalinksError::Unwritable { .. } => {}
+            }
+        }
         let _ = (
             locate, load, scope, check, report, eject, format, emit, store, diff, sources, serve,
-            query, agents,
+            query, agents, permalinks,
         );
 
         let store_errors = || {
@@ -478,6 +503,19 @@ mod tests {
                 reason: text(),
             }),
             Box::new(QueryError::Render(EmitError::Invalid { message: text() })),
+            Box::new(QueryError::PermalinksListInvalid {
+                file: text(),
+                detail: text(),
+            }),
+            Box::new(PermalinksError::ListNotFound(path())),
+            Box::new(PermalinksError::Unreadable {
+                path: path(),
+                message: text(),
+            }),
+            Box::new(PermalinksError::Unwritable {
+                path: path(),
+                message: text(),
+            }),
             Box::new(SyncError::Damaged {
                 path: text(),
                 name: text(),

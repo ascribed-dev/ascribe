@@ -86,6 +86,15 @@ pub fn docs_permalink(name: &str) -> String {
     format!(concat!(docs_permalinks!(), "{}/"), name)
 }
 
+/// Whether `text` can be an id (SPEC §4.1) or a permalink's name (§2.1):
+/// letters, digits, hyphens, underscores, and periods, and at least one.
+pub fn is_id(text: &str) -> bool {
+    !text.is_empty()
+        && text
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+}
+
 pub use attribute_block::{Attribute, AttributeBlock, AttributeValue, Token};
 pub use attributes::{ParsedAttributes, parse_attribute_block};
 pub use boundary::SourceBoundary;

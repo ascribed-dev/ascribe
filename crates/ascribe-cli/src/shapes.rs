@@ -75,6 +75,27 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::sources::UpdateJson<'static>>(),
     },
     Shape {
+        file: "permalinks-sync",
+        title: "PermalinksSyncReport",
+        written_by: "`ascribe permalinks sync --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::SyncAnswer>(),
+    },
+    Shape {
+        file: "permalinks-list",
+        title: "PermalinksListReport",
+        written_by: "`ascribe permalinks list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::PermalinksAnswer>(),
+    },
+    Shape {
+        file: "permalinks-verify",
+        title: "PermalinksVerifyReport",
+        written_by: "`ascribe permalinks verify --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::VerifyAnswer>(),
+    },
+    Shape {
         file: "fmt",
         title: "FmtReport",
         written_by: "`ascribe fmt --format json`",

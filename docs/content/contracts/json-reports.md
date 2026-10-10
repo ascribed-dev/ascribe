@@ -41,6 +41,21 @@ Every document follows these rules:
 
 @include: ../_generated/json-sources-update.md
 
+## `ascribe permalinks sync`
+@available: next
+
+@include: ../_generated/json-permalinks-sync.md
+
+## `ascribe permalinks list`
+@available: next
+
+@include: ../_generated/json-permalinks-list.md
+
+## `ascribe permalinks verify`
+@available: next
+
+@include: ../_generated/json-permalinks-verify.md
+
 ## `ascribe fmt`
 @available: next
 

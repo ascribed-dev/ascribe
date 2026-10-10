@@ -3098,3 +3098,40 @@ spec = "9.5"
 group = "consumer"
 message = "permalink-path must start with \"/\", such as \"/go/\""
 fix = "Start `permalink-path` with `/`: `\"/go/\"`. It's a path from the site's root, not from `base-path`."
+
+[[diagnostic]]
+code = "ASC175"
+slug = "permalinks-list-invalid"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.5"
+row = "Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it"
+message = "ascribe.permalinks can't be read: {detail}"
+fix = "ascribe.permalinks is written by `ascribe permalinks sync`. Undo the change made to it by hand, or, for a list from a newer version of Ascribe, update Ascribe. Don't delete the file to quiet this: it's how a removed permalink is noticed, and a new one written by `sync` doesn't know the names the content no longer has."
+
+[[diagnostic]]
+code = "ASC176"
+slug = "permalinks-list-behind"
+severity = "warning"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.5"
+row = "Permalinks list | A permalink the content declares that `ascribe.permalinks` doesn't list, or lists in another place"
+message = "the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync`"
+messages.moved = "ascribe.permalinks has the permalink `{name}` in `{was}`; run `ascribe permalinks sync` to record that it's here now"
+fix = "Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks and records where each is declared now, and commit the file with the change. In the editor, the quick fix does the same."
+
+[[diagnostic]]
+code = "ASC177"
+slug = "permalink-removed"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.5"
+row = "Permalinks list | A permalink `ascribe.permalinks` lists that the content no longer declares"
+message = "`{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+fix = "Something outside the docs may link to the permalink, so put it back: `@id {permalink=true}: <name>` under the heading that now covers what it named, or `permalink: <name>` in a page's frontmatter. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone."

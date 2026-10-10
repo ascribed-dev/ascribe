@@ -1,0 +1,6 @@
+version = 1
+
+[permalinks]
+keys = "keys.md"
+rotate-keys = "keys.md#rotate-keys"
+setup = "_setup.md#setup"

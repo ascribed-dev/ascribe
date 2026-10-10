@@ -1,0 +1,4 @@
+version = 2
+
+[permalinks]
+gone = "keys.md#gone"
