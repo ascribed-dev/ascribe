@@ -278,9 +278,10 @@ fn links_are_reported_at_their_place_and_fail_with_exit_code() {
     assert_eq!(report["findings"]["by_next"][0]["next"], "review");
 }
 
-/// What afdocs writes when content negotiation fails and the rest passes.
+/// What afdocs writes when content negotiation fails, the caching warns,
+/// and the rest passes.
 #[cfg(unix)]
-const AFDOCS: &str = r#"printf '%s' '{"url":"https://docs.example.com","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"pass","message":"found"},{"id":"content-negotiation","category":"markdown-availability","status":"fail","message":"Markdown is never served for Accept: text/markdown"}],"summary":{"total":2,"pass":1,"fail":1}}'
+const AFDOCS: &str = r#"printf '%s' '{"url":"https://docs.example.com","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"pass","message":"found"},{"id":"content-negotiation","category":"markdown-availability","status":"fail","message":"Markdown is never served for Accept: text/markdown"},{"id":"cache-header-hygiene","category":"observability","status":"warn","message":"llms.txt has no Cache-Control"}],"summary":{"total":3,"pass":1,"fail":1,"warn":1}}'
 exit 1"#;
 
 #[cfg(unix)]
@@ -308,5 +309,14 @@ fn the_site_s_checks_say_who_changes_what() {
     let entry = &agents["diagnostics"]["items"][0];
     assert_eq!(entry["slug"], "delivery-hosting");
     assert_eq!(entry["next"], "outside");
-    assert!(agents["diagnostics"]["items"].as_array().unwrap().len() == 1);
+    let warning = &agents["diagnostics"]["items"][1];
+    assert_eq!(warning["slug"], "delivery-hosting");
+    assert!(
+        warning["message"]
+            .as_str()
+            .unwrap()
+            .starts_with("the site passes the delivery spec's `cache-header-hygiene` check with a warning: llms.txt has no Cache-Control. Set `Cache-Control`"),
+        "{warning}"
+    );
+    assert!(agents["diagnostics"]["items"].as_array().unwrap().len() == 2);
 }

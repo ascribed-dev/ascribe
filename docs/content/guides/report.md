@@ -50,7 +50,7 @@ For each build, the pages it doesn't publish and the content it takes out of the
 
 `ascribe report links` hands every `http` and `https` address in the sources, once each, to [lychee](https://lychee.cli.rs), and reports each link at its place in the source:
 
-- **Moved** (`link-external-moved`): the address redirects permanently to another one. The fix writes the new address; check first that it's the page you meant, since some sites send every old address to their home page.
+- **Moved** (`link-external-moved`): the address redirects permanently to another one. The fix writes the new address; check first that it's the page you meant, since some sites send every old address to their home page. A site's root that sends you on to one of its own pages, such as its latest version's introduction, hasn't moved, and isn't reported.
 - **Broken** (`link-external-broken`): the address answers with an error, doesn't answer in time, or can't be reached. Open it: when the page is gone, link to where its content went, or remove the link.
 
 Some sites turn link checkers away and work in a browser, and some are down for a day. Acknowledge a link like that above its block, with the reason, and the report stops listing it; when the link starts working, the report says the acknowledgement is unused:
@@ -73,11 +73,11 @@ Install lychee from [its releases](https://github.com/lycheeverse/lychee/release
 
 `ascribe report agents --site <URL>` runs the [delivery spec](https://agentdocsspec.com/spec/web/)'s checker, `afdocs`, on a built site, the published one or a preview of it, and lists each check as passing, warning, failing, or skipped. Install it with `npm install -g afdocs@0.22.2`.
 
-A failing check is reported by who changes what it checks, and none of it asks you to edit a page:
+A check that fails or warns is reported by who changes what it checks, and none of it asks you to edit a page:
 
 - **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The finding names the setting; [what your host does](astro.md#what-your-host-does) says how on the hosts the Astro guide covers. A check the checker added after the version Ascribe knows is counted here until Ascribe lists it.
 - **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with `[consumer] agents = true`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the finding says where to report it.
-- **The pages**, such as a page too long for an agent to read in one fetch: `ascribe check` reports these on the page itself, so the report names the check and doesn't repeat it.
+- **The pages**, such as a page too long for an agent to read in one fetch, as Markdown or as HTML: `ascribe check` reports these on the page itself, so the report names the check and doesn't repeat it.
 
 ## Handing a section to an agent
 

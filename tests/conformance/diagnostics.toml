@@ -3022,7 +3022,7 @@ configurable = true
 area = "links"
 stage = "report"
 spec = "5.2"
-when = "`ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers"
+when = "`ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers. A site's root that redirects to another of its own pages, a landing page, hasn't moved"
 message = "`{url}` moved permanently to `{to}`; link to the new address"
 fix = "Link to the address it redirects to; the fix writes it. Check first that it's the page you meant: some sites send every old address to their home page, and then the link needs a new target, not this one. Only `ascribe report links` checks external links."
 
@@ -3037,8 +3037,9 @@ configurable = true
 area = "site"
 stage = "report"
 spec = "9.5"
-when = "`ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
+when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
 message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
+messages.warning = "the site passes the delivery spec's `{check}` check with a warning: {result}. {setting}"
 fix = "Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../guides/astro.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
 
 [[diagnostic]]
@@ -3052,6 +3053,7 @@ configurable = true
 area = "site"
 stage = "report"
 spec = "9.5"
-when = "`ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
+when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
 message = "the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues}"
+messages.warning = "the site passes the delivery spec's `{check}` check with a warning, which what Ascribe writes should pass without one: {result}. Report it at {issues}"
 fix = "First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing."
