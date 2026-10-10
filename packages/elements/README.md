@@ -3,7 +3,7 @@
 The custom elements [Ascribe](https://github.com/ascribed-dev/ascribe)'s site output uses. They implement
 [CONTRACT.md](CONTRACT.md) exactly: `<ascribe-note>`, `<ascribe-steps>`,
 `<ascribe-tabs>` with `<ascribe-tab>`, `<ascribe-availability>` with
-`<ascribe-availability-target>`, and `<ascribe-group>`.
+`<ascribe-availability-target>`, `<ascribe-group>`, and `<ascribe-for-agents>`.
 
 - Elements render into the light DOM and are styled by CSS.
 - Only `<ascribe-tabs>` uses JavaScript. Without the script, every tab shows
@@ -75,6 +75,13 @@ each scheme when you set one:
 A glossary link carries `data-ascribe-term` with the term's id, and its title
 is the definition. The library underlines it with dots; restyle it by
 selecting on the attribute, such as `a[data-ascribe-term]`.
+
+### The pointer for agents
+
+With `[consumer] agents = true`, each page opens with `<ascribe-for-agents>`,
+which tells an AI agent where `llms.txt` and the page's Markdown are. The
+library hides it from sight, not from the page's text; to show it, restyle
+`ascribe-for-agents`.
 
 ### A project's own note types and lifecycle states
 

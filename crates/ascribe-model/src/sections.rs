@@ -667,6 +667,7 @@ impl Loader<'_> {
             trailing_slash: TrailingSlash::Always,
             slugger: "github".into(),
             html: true,
+            agents: false,
         };
         let Some(v) = v else { return c };
         let Some(t) = self.as_table("consumer", v) else {
@@ -682,6 +683,7 @@ impl Loader<'_> {
                 "trailing-slash",
                 "slugger",
                 "html",
+                "agents",
             ],
         );
         if let Some(p) = t.get("profile")
@@ -734,6 +736,17 @@ impl Loader<'_> {
                         .with_arg("value", "false")
                         .with_arg("values", "true"),
                 );
+            }
+        }
+        if let Some(a) = t.get("agents")
+            && let Some(value) = self.boolean("consumer.agents", a)
+        {
+            // Every link agents read is absolute, so it needs the origin; a
+            // `site` that isn't one is reported on its own.
+            if value && t.get("site").is_none() {
+                self.push(self.issue(diagnostics::MODEL_CONSUMER_AGENTS_SITE, sp(a)));
+            } else {
+                c.agents = value;
             }
         }
         c

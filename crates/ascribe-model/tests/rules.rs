@@ -498,6 +498,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[consumer]\nsite = \"https://docs.example.com/docs\" #!\n",
         ),
         case(
+            "model-consumer-agents-site",
+            None,
+            "spec = \"0.1\"\n[consumer]\nagents = true #!\n",
+        ),
+        case(
             "model-consumer-base-path",
             None,
             "spec = \"0.1\"\n[consumer]\nbase-path = \"docs\" #!\n",

@@ -1,0 +1,8 @@
+description: >-
+  With the outputs for agents on, a description longer than a line of
+  llms.txt should be is advice, at the value; a short one isn't.
+spec: ["8.2", "9.4"]
+tags: [check]
+
+diagnostics:
+  - {slug: description-too-long, file: install.md, line: 3}

@@ -17,9 +17,17 @@ export interface ProjectInfo {
   /** Generated output, never treated as a source change. */
   outputRoot: string;
   /** `[consumer]`, with the profile's defaults. */
-  consumer: { site: string | undefined; basePath: string; trailingSlash: "always" | "never" };
+  consumer: {
+    site: string | undefined;
+    basePath: string;
+    trailingSlash: "always" | "never";
+    /** Whether builds publish what agents read: `llms.txt` and each page's Markdown, in the plain output. */
+    agents: boolean;
+  };
   /** The site output's root for a build: `<output-dir>/<build>/site`. */
   siteRoot(build: string): string;
+  /** The plain output's root for a build: `<output-dir>/<build>/plain`. */
+  plainRoot(build: string): string;
 }
 
 /** Reads `ascribe.toml` in `dir`. Throws a readable error if it can't be read. */
@@ -51,8 +59,10 @@ export function readProject(dir: string): ProjectInfo {
         typeof consumer["base-path"] === "string" ? consumer["base-path"] : "/",
       ),
       trailingSlash,
+      agents: consumer["agents"] === true,
     },
     siteRoot: (build) => path.resolve(dir, outputDir, build, "site"),
+    plainRoot: (build) => path.resolve(dir, outputDir, build, "plain"),
   };
 }
 

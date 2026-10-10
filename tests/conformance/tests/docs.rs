@@ -264,6 +264,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
 const AREAS: &[(&str, &str)] = &[
     ("pages", "Pages"),
     ("project", "Across the project"),
+    ("outputs", "Outputs"),
     ("prose", "Prose, through Vale"),
 ];
 

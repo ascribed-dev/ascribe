@@ -19,7 +19,8 @@ It's the largest of our crates, and the one the others reach the file system thr
 | `src/build/` | `BuildResolver`, `ResolvedPage`, `ResolvedBuild`, `DefaultRouter` | Resolving a page for one build, in SPEC §9.2's order: availability, build modes, phrases, page ids, links and assets, glossary. Each pass is its own module; `src/build/mod.rs` lists them. |
 | `src/incremental/` | `IncrementalProject`, `Change`, `Affected`, `Snapshot`, `Version` | Keeping a project current as files change, redoing only what each change affects. The language server runs on it. `src/incremental/mod.rs` says what each change invalidates and how file ids are kept. |
 | `src/slug/` | `GithubSlugger`, `slugger_by_name` | Heading slugs: a port of `github-slugger`, with a table and fixtures generated from the npm package by `src/slug/generate.mjs`. |
-| `src/astro.rs` | `AstroRouter` | The `astro` profile's routes: the URL Astro gives each page. |
+| `src/astro.rs` | `AstroRouter` | The `astro` profile's routes: the URL Astro gives each page, and the path and URL of its Markdown version (`markdown_path`, `markdown_url`). |
+| `src/llms.rs` | `llms_files`, `LlmsFile`, `description`, `DELIVERY_SPEC` | `llms.txt` for `[consumer] agents = true`: the index of a build's pages, split by folder past 50,000 characters, which the plain emitter writes and `ascribe check` measures, so what's reported is what's published. |
 
 ```rust,ignore
 let layout = Layout::from_model(&model);

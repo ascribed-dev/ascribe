@@ -81,7 +81,7 @@ pub fn render(
         });
     };
     let cx = EmitContext::new(project, project_root, build);
-    let emitted = emit_page(&PlainEmitter, &cx, &page)?;
+    let emitted = emit_page(&PlainEmitter::new(project.model()), &cx, &page)?;
     if frontmatter && let Some(value) = page.frontmatter.as_ref().filter(|v| !v.is_null()) {
         // A value parsed from YAML always writes back as YAML; were it not
         // to, the page is still worth showing without its frontmatter.

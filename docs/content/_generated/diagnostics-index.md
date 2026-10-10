@@ -162,6 +162,9 @@
 | [ASC159](../reference/diagnostics.md#asc159-image-unused) | `image-unused` | Advice | File | review |
 | [ASC160](../reference/diagnostics.md#asc160-image-large) | `image-large` | Advice | File | review |
 | [ASC161](../reference/diagnostics.md#asc161-title-duplicate) | `title-duplicate` | Advice | Page | write |
-| [ASC162](../reference/diagnostics.md#asc162-prose) | `prose` | Advice | File | write |
-| [ASC163](../reference/diagnostics.md#asc163-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
-| [ASC164](../reference/diagnostics.md#asc164-model-checks-vale) | `model-checks-vale` | Error | File | write |
+| [ASC162](../reference/diagnostics.md#asc162-model-consumer-agents-site) | `model-consumer-agents-site` | Error | File | write |
+| [ASC163](../reference/diagnostics.md#asc163-description-too-long) | `description-too-long` | Advice | File | write |
+| [ASC164](../reference/diagnostics.md#asc164-llms-section-large) | `llms-section-large` | Advice | Page | write |
+| [ASC165](../reference/diagnostics.md#asc165-prose) | `prose` | Advice | File | write |
+| [ASC166](../reference/diagnostics.md#asc166-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
+| [ASC167](../reference/diagnostics.md#asc167-model-checks-vale) | `model-checks-vale` | Error | File | write |

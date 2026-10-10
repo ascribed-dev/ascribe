@@ -9,7 +9,7 @@
 //! |---|---|
 //! | `@note` | A blockquote beginning `**Tip: Title**` (the type's display label) |
 //! | `@steps` | The ordered list |
-//! | A `@variant` group | One section per surviving arm, led by its bold label (a group reduced to one arm is that arm's content, already, in the tree) |
+//! | A `@variant` group | One section per surviving arm, led by its bold label, each of its headings ending with the label in parentheses (a group reduced to one arm is that arm's content, already, in the tree) |
 //! | `@details` | The title in bold, then the content |
 //! | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` |
 //! | A project widget | Its `plain-fallback`, and its wrapped content unless `plain-content = "drop"` |
@@ -18,22 +18,77 @@
 //!
 //! Pages start with their title as a level-1 heading. Raw HTML in the
 //! source keeps its text and loses its tags, since the output has no HTML.
+//!
+//! # For agents
+//!
+//! With `[consumer] agents = true` the output is what a site publishes for
+//! agents, laid out by URL so that it's copied as it is to the site's base
+//! path: each page at its Markdown version's path
+//! ([`ascribe_resolve::AstroRouter::markdown_path`]), opening with a
+//! blockquote that points at the index; `llms.txt`, and a file per section
+//! when it's split ([`ascribe_resolve::llms`]); and every asset under
+//! `_ascribe/files/`, referred to by its absolute URL.
 
 pub(crate) mod inline;
 
-use ascribe_core::RelPath;
+use std::cell::RefCell;
+
+use ascribe_core::{AssetUse, RelPath};
 use ascribe_model::{ContentModel, PlainContent, Segment};
-use ascribe_resolve::{ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage};
+use ascribe_resolve::{
+    AstroRouter, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedLink, ResolvedPage, llms,
+};
 use ascribe_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
-use crate::emitter::{EmitContext, Emitter, PageContext};
+use crate::assets::{Placement, mirrored_path};
+use crate::emitter::{EmitContext, Emitter, PageContext, mirrored_placement};
 use crate::error::EmitError;
 use crate::labels::{availability_display, availability_display_of_text, dimensional_label};
+use crate::site::{FILES_DIR, route_collisions};
+use crate::store::{Contents, EmittedFile, FileKind};
 use inline::{Style, escape};
 
 /// The plain-markdown emitter.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct PlainEmitter;
+#[derive(Clone, Debug, Default)]
+pub struct PlainEmitter {
+    /// The router of the outputs for agents, when the content model asks for
+    /// them (`[consumer] agents = true`).
+    agents: Option<Agents>,
+}
+
+/// What the outputs for agents need: where each page is published, and the
+/// site's origin for the absolute URLs.
+#[derive(Clone, Debug)]
+struct Agents {
+    router: AstroRouter,
+    origin: String,
+}
+
+impl Agents {
+    /// A URL path under the base path as an absolute URL.
+    fn absolute(&self, url: &str) -> String {
+        format!("{}{url}", self.origin.trim_end_matches('/'))
+    }
+}
+
+impl PlainEmitter {
+    /// The emitter for a content model: laid out for agents when the model
+    /// asks for that (`[consumer] agents = true`), as the module
+    /// documentation says, and otherwise mirroring the sources.
+    pub fn new(model: &ContentModel) -> PlainEmitter {
+        let consumer = &model.consumer;
+        PlainEmitter {
+            agents: consumer
+                .site
+                .as_ref()
+                .filter(|_| consumer.agents)
+                .map(|origin| Agents {
+                    router: AstroRouter::from_consumer(consumer),
+                    origin: origin.clone(),
+                }),
+        }
+    }
+}
 
 impl Emitter for PlainEmitter {
     fn name(&self) -> &'static str {
@@ -41,11 +96,75 @@ impl Emitter for PlainEmitter {
     }
 
     fn page_path(&self, page: &RelPath) -> RelPath {
-        page.clone()
+        match &self.agents {
+            Some(agents) => {
+                RelPath::parse(&agents.router.markdown_path(page)).unwrap_or_else(|_| page.clone())
+            }
+            None => page.clone(),
+        }
+    }
+
+    fn prepare(&self, _cx: &EmitContext<'_>, build: &ResolvedBuild) -> Result<(), EmitError> {
+        match &self.agents {
+            // Laid out by URL, two pages with one route would be one file.
+            Some(agents) => route_collisions(&agents.router, build, "the plain output for agents"),
+            None => Ok(()),
+        }
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
-        Ok(render_page(cx, page))
+        let text = render_page(cx, page);
+        Ok(match &self.agents {
+            Some(agents) => {
+                let index = agents.absolute(&agents.router.url_of("llms.txt"));
+                format!(
+                    "> For the complete documentation index, see [llms.txt]({index}).\n\n{text}"
+                )
+            }
+            None => text,
+        })
+    }
+
+    fn place_asset(&self, page_output: &RelPath, asset: &RelPath, _usage: AssetUse) -> Placement {
+        let Some(agents) = &self.agents else {
+            return mirrored_placement(page_output, asset);
+        };
+        // Published at its URL, so a page refers to it from wherever an
+        // agent reads it.
+        let mirrored = mirrored_path(asset);
+        let copy_to =
+            RelPath::parse(&format!("{FILES_DIR}/{mirrored}")).unwrap_or_else(|_| mirrored.clone());
+        let url = agents.router.url_of(copy_to.as_str());
+        Placement {
+            reference: agents.absolute(&url),
+            copy_to,
+            url: Some(url),
+        }
+    }
+
+    fn generated(
+        &self,
+        cx: &EmitContext<'_>,
+        build: &ResolvedBuild,
+    ) -> Result<Vec<EmittedFile>, EmitError> {
+        if self.agents.is_none() {
+            return Ok(Vec::new());
+        }
+        llms::llms_files(cx.model, &build.pages)
+            .into_iter()
+            .map(|file| {
+                let path = RelPath::parse(&file.path).map_err(|e| EmitError::Invalid {
+                    message: format!("bad llms.txt path {}: {e}", file.path),
+                })?;
+                Ok(EmittedFile {
+                    path,
+                    kind: FileKind::Generated,
+                    source: None,
+                    url: None,
+                    contents: Contents::Text(file.text),
+                })
+            })
+            .collect()
     }
 
     fn warnings(&self, cx: &EmitContext<'_>) -> Vec<String> {
@@ -68,6 +187,7 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
     let r = Renderer {
         page: cx,
         model: cx.emit.model,
+        arms: RefCell::new(Vec::new()),
     };
     let mut chunks = Vec::new();
     if let Some(segments) = page.formatted_title() {
@@ -131,6 +251,9 @@ pub(crate) enum Prev {
 pub(crate) struct Renderer<'a> {
     pub(crate) page: &'a PageContext<'a>,
     model: &'a ContentModel,
+    /// The labels of the arms the block being written is in, outermost
+    /// first, which its headings carry.
+    arms: RefCell<Vec<String>>,
 }
 
 impl Renderer<'_> {
@@ -218,10 +341,15 @@ impl Renderer<'_> {
                     }
                 }
                 for arm in arms {
-                    if let Some(label) = self.arm_label(block, &arm.opener) {
+                    let label = self.arm_label(block, &arm.opener);
+                    if let Some(label) = &label {
                         out.push(format!("**{label}**"));
+                        self.arms.borrow_mut().push(label.clone());
                     }
                     out.extend(self.blocks(&arm.children));
+                    if label.is_some() {
+                        self.arms.borrow_mut().pop();
+                    }
                 }
                 out
             }
@@ -239,7 +367,13 @@ impl Renderer<'_> {
                         one_line: true,
                     },
                 );
-                let text = escape_closing_hash(text);
+                // A heading in an arm says which: "Install the CLI (pnpm)".
+                let arms = self.arms.borrow();
+                let text = if arms.is_empty() || text.is_empty() {
+                    escape_closing_hash(text)
+                } else {
+                    format!("{} ({})", escape_closing_hash(text), arms.join(", "))
+                };
                 let marks = "#".repeat(usize::from(h.level.clamp(1, 6)));
                 vec![if text.is_empty() {
                     marks

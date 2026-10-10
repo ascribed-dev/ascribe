@@ -58,7 +58,7 @@ export function runBuild(options: {
   /** Write source anchors (`--anchors`). */
   anchors?: boolean;
   /** The outputs to write. Default: `["site"]`. */
-  outputs?: readonly ("site" | "json")[];
+  outputs?: readonly ("site" | "plain" | "json")[];
 }): Promise<BuildResult> {
   const args = [
     "build",

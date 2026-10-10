@@ -146,6 +146,9 @@ profile = "astro"
 site = "https://ascribed-dev.com"
 base-path = "/"
 trailing-slash = "always"
+# llms.txt and each page's Markdown, for AI agents: `@ascribed/astro` publishes
+# them with the site.
+agents = true
 
 [builds.site]
 variants = "switch"

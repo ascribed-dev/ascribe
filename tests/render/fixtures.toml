@@ -66,6 +66,11 @@ covers = ["raw-html"]
 description = "Custom elements and <details> wrapping markdown pass through, and markers inside them apply."
 
 [[fixture]]
+name = "for-agents"
+covers = ["for-agents"]
+description = "The pointer for agents at the top of a page, with `[consumer] agents = true`, is an element wrapping a paragraph whose links stay as written."
+
+[[fixture]]
 name = "image-ends-heading"
 covers = ["image-ends-heading", "image-inline", "heading"]
 description = "A marker directly after an image applies to the image, even when the image ends the heading; the emitter's heading marker follows a space."

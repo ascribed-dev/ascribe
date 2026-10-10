@@ -517,15 +517,24 @@ pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
 /// `ASC161`, advice, page level: a content check (area `project`).
 pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
 
-/// `ASC162`, advice, file level: a content check (area `prose`): an alert
+/// `ASC162`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CONSUMER_AGENTS_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-agents-site");
+
+/// `ASC163`, advice, file level: a content check (area `outputs`).
+pub const DESCRIPTION_TOO_LONG: DiagnosticSlug = DiagnosticSlug("description-too-long");
+
+/// `ASC164`, advice, page level: a content check (area `outputs`).
+pub const LLMS_SECTION_LARGE: DiagnosticSlug = DiagnosticSlug("llms-section-large");
+
+/// `ASC165`, advice, file level: a content check (area `prose`): an alert
 /// from Vale about the prose.
 pub const PROSE: DiagnosticSlug = DiagnosticSlug("prose");
 
-/// `ASC163`, advice, file level: a content check (area `prose`): Vale
+/// `ASC166`, advice, file level: a content check (area `prose`): Vale
 /// couldn't be run, so the prose wasn't checked.
 pub const PROSE_NOT_CHECKED: DiagnosticSlug = DiagnosticSlug("prose-not-checked");
 
-/// `ASC164`, error, file level: a rule for loading `ascribe.toml`.
+/// `ASC167`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CHECKS_VALE: DiagnosticSlug = DiagnosticSlug("model-checks-vale");
 
 /// Every slug, in registry order.
@@ -691,6 +700,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     IMAGE_UNUSED,
     IMAGE_LARGE,
     TITLE_DUPLICATE,
+    MODEL_CONSUMER_AGENTS_SITE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
     PROSE,
     PROSE_NOT_CHECKED,
     MODEL_CHECKS_VALE,
@@ -713,6 +725,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     IMAGE_UNUSED,
     IMAGE_LARGE,
     TITLE_DUPLICATE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
     PROSE,
     PROSE_NOT_CHECKED,
 ];

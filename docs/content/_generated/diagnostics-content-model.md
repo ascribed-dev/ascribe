@@ -536,6 +536,14 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to the build the editor should check, or name one of the builds `site`.
 
+#### ASC162 `model-consumer-agents-site`
+
+Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+
+**Message:** agents = true needs `site`: every link in llms.txt and the Markdown pages is an absolute URL
+
+**Fix:** Set `site` in `[consumer]` to the published site's origin, such as `"https://docs.example.com"`, or remove `agents`.
+
 ### `[checks]`
 
 #### ASC142 `model-check-not-configurable`
@@ -562,7 +570,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 **Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes.
 
-#### ASC164 `model-checks-vale`
+#### ASC167 `model-checks-vale`
 
 Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
 

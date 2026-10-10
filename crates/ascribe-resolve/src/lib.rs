@@ -82,6 +82,7 @@ pub mod incremental;
 mod index;
 mod layout;
 mod links;
+pub mod llms;
 mod project;
 pub mod references;
 pub mod slug;

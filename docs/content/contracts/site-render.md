@@ -168,6 +168,7 @@ Every block a reviewer could point at: headings, paragraphs, code blocks, lists 
 
 - An element that wraps the block after it (a line-form `@note`, `@steps`, `@details`, or widget) spans the directive and that block. A line-form directive whose text is its content (`@note: Text.`) gives that text's paragraph its own line too.
 - A paragraph in a tight list has no element (CommonMark renders its text straight into the `<li>`), so it has no anchor: its item's anchor says where it is.
+- The pointer for agents at the top of a page (`ascribe-for-agents`, element contract §8) has no anchor, nor does its paragraph: no source wrote it.
 - A raw HTML block that doesn't start with an open tag (one that starts with a comment, a closing tag, or text) has no anchor.
 
 ### 7.3 How an anchor gets through the markdown pipeline

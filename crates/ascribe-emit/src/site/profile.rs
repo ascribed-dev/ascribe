@@ -80,6 +80,7 @@ mod tests {
             trailing_slash: ascribe_model::TrailingSlash::Always,
             slugger: "github".to_owned(),
             html: true,
+            agents: false,
         });
         assert_eq!(profile.name(), "astro");
         assert!(profile.html_passthrough());
