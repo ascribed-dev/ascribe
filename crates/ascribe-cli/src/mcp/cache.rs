@@ -5,9 +5,9 @@
 //! (paths, sizes, and modification times) and compares the listing with the
 //! one it loaded from; any difference, a new or a deleted file included,
 //! loads the project again. The project's files are what loading reads:
-//! `ascribe.toml`, `ascribe.lock`, and the content root, and whether each
-//! local source's folder is there. The code files snippets read are checked
-//! as they're read. Nothing else in the project's folder is listed, so a
+//! `ascribe.toml`, `ascribe.lock`, `ascribe.permalinks`, and the content
+//! root, and whether each local source's folder is there. The code files
+//! snippets read are checked as they're read. Nothing else in the project's folder is listed, so a
 //! build's output beside `ascribe.toml` costs nothing. Listing is cheap
 //! beside loading: no file is read.
 
@@ -19,7 +19,7 @@ use std::time::SystemTime;
 
 use ascribe_check::{LoadError, MODEL_FILE, Project};
 use ascribe_core::path::normalize;
-use ascribe_model::LOCK_FILE;
+use ascribe_model::{LOCK_FILE, PERMALINKS_FILE};
 
 use crate::answer::{Loaded, Projects};
 
@@ -89,8 +89,8 @@ impl Entry {
     }
 }
 
-/// The project's files, in path order: `ascribe.toml`, `ascribe.lock`
-/// (there or not), every file under the content root, and each local
+/// The project's files, in path order: `ascribe.toml`, `ascribe.lock` and
+/// `ascribe.permalinks` (there or not), every file under the content root, and each local
 /// source's folder (there or not). In the content root, folders whose names
 /// start with `.`, `node_modules`, and the output directory are left out,
 /// and a symbolic link to a folder isn't followed.
@@ -104,8 +104,8 @@ fn list(root: &Path, project: &Project) -> Vec<Stamp> {
     files
 }
 
-/// `ascribe.toml`, `ascribe.lock` (there or not), and every file under the
-/// content root, as [`list`] lists them, unsorted.
+/// `ascribe.toml`, `ascribe.lock` and `ascribe.permalinks` (there or not),
+/// and every file under the content root, as [`list`] lists them, unsorted.
 pub(crate) fn content_listing(
     root: &Path,
     content_root: &ascribe_core::RelPath,
@@ -114,7 +114,11 @@ pub(crate) fn content_listing(
     let output = normalize(&root.join(output_dir.as_str()));
     let content = normalize(&root.join(content_root.as_str()));
     let skip = |dir: &Path| dir != content && dir == output;
-    let mut files = vec![stamp(&root.join(MODEL_FILE)), stamp(&root.join(LOCK_FILE))];
+    let mut files = vec![
+        stamp(&root.join(MODEL_FILE)),
+        stamp(&root.join(LOCK_FILE)),
+        stamp(&root.join(PERMALINKS_FILE)),
+    ];
     walk(&content, &skip, &mut files);
     files
 }

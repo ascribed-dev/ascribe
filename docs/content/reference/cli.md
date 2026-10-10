@@ -528,7 +528,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ### `ascribe permalinks verify`
 @id {permalink=true}: cli-permalinks-verify
 
-Checks that each name is a permalink in a list, and names each one that isn't. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Linking to the docs from a product](../guides/astro.md#checking-a-products-links) shows the step for CI.
+Checks that each name is a permalink in a list, and names each one that isn't. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Checking a product's links](../guides/astro.md#checking-a-products-links) shows the step for CI.
 
 ```sh
 ascribe permalinks verify cli-check ASC036
