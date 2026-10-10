@@ -100,7 +100,7 @@ It only knows the placeholders of the template as it is now. A project that rewr
 
 A template's instructions to its author ("this section is optional; delete it if…") shouldn't be escaped text: they're paragraphs, and they shouldn't reach a reader even when forgotten.
 
-That's the need the [brainstorm](../brainstorm.md)'s notes found: text in a page that no output carries. It's one construct, and a template's instructions are its first use. This proposal depends on it and doesn't design it. A leftover instruction is reported the same way as a leftover placeholder.
+That's the need the [brainstorm](../brainstorm.md)'s notes found: text in a page that no output carries. It's one construct, and a template's instructions are its first use. This proposal depends on it and doesn't design it; the [notes proposal](notes.md) does, as `@comment`. A leftover instruction is reported the same way as a leftover placeholder.
 
 ## What ships
 
