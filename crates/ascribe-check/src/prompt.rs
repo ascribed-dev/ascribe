@@ -8,7 +8,9 @@
 //!   allows, when it's about one), and its fixes;
 //! - [`file`]: a file's problems, one line each, at most [`MAX_LISTED`];
 //! - [`project`]: how many problems each file has, at most [`MAX_LISTED`]
-//!   files.
+//!   files;
+//! - [`batch`]: the findings of one of `ascribe report`'s sections, at most
+//!   [`MAX_LISTED`], each with the evidence its registry entry names.
 //!
 //! They follow the agent prompt format (`project-docs/agents/README.md`):
 //! the task, where, what Ascribe knows, how to finish; plain text with
@@ -138,6 +140,19 @@ impl Context {
         lines.push(format!(
             "When you're done, run `{}` and fix what it reports.",
             check_command(targets, &[])
+        ));
+        lines
+    }
+
+    /// The lines that end a prompt whose work `command` verifies, from the
+    /// repository's root.
+    fn finish_with(&self, command: &str) -> Vec<String> {
+        let mut lines = Vec::new();
+        if let Some(agents) = &self.agents {
+            lines.push(format!("Follow the project's rules in `{agents}`."));
+        }
+        lines.push(format!(
+            "When you're done, run `{command}` and fix what it reports."
         ));
         lines
     }
@@ -431,6 +446,78 @@ pub fn compose(
 ) -> String {
     context.project_lines(&mut place);
     assemble(task, &place, known, cut, &context.finish(targets))
+}
+
+/// The prompt about a batch of findings that aren't `ascribe check`'s,
+/// such as the broken links `ascribe report links` finds: `task`; then
+/// `place`, followed by the `Project:` and `Build:` lines; then each
+/// finding, at most [`MAX_LISTED`], with the evidence it carries, and how to
+/// fix each kind; then the lines that end every prompt, with `verify`, the
+/// command that checks the work. A finding about no place in the source
+/// (the published site's) is listed without one. `None` when there are no
+/// findings.
+pub fn batch(
+    project: &Project,
+    context: &Context,
+    task: &str,
+    mut place: Vec<String>,
+    findings: &[&Diagnostic],
+    verify: &str,
+) -> Option<String> {
+    if findings.is_empty() {
+        return None;
+    }
+    context.project_lines(&mut place);
+    let mut known = Vec::new();
+    let mut kinds: Vec<ascribe_core::DiagnosticSlug> = Vec::new();
+    for d in findings.iter().take(MAX_LISTED) {
+        let at = if d.location.file == FileId::new(0) && d.location.span.is_empty() {
+            String::new()
+        } else {
+            let file = context.in_repository(&path_of(project, d.location.file));
+            let line = lines_of(project, d.location).map_or(1, |l| l.first);
+            format!("{file}:{line}: ")
+        };
+        let mut item = format!("- {at}[{}] {}", d.code, d.message);
+        for evidence in &d.evidence {
+            item.push_str(&format!(
+                "\n  {}: {}",
+                evidence.label,
+                evidence.text.replace('\n', "\n  ")
+            ));
+        }
+        known.push(item);
+        if !kinds.contains(&d.slug) {
+            kinds.push(d.slug);
+        }
+    }
+    if findings.len() > MAX_LISTED {
+        known.push(format!(
+            "and {} more: `{verify}` lists them.",
+            findings.len() - MAX_LISTED
+        ));
+    }
+    for slug in kinds {
+        let Some(entry) = Registry::global().get(slug) else {
+            continue;
+        };
+        if let Some(fix) = &entry.fix {
+            known.push(format!("How to fix `{slug}`: {fix}"));
+        }
+        if let Some(place) = entry.place {
+            known.push(format!(
+                "A `{slug}` finding may be intended. Only when the user says it is, acknowledge it {} with the reason they give, instead of fixing it.",
+                place.written()
+            ));
+        }
+    }
+    Some(assemble(
+        task,
+        &place,
+        &known,
+        &format!("(cut: run `{verify}` for the rest)"),
+        &context.finish_with(verify),
+    ))
 }
 
 /// "the problem" or "the N problems".

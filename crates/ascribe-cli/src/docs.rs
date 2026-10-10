@@ -300,6 +300,12 @@ fn options(command: &str, args: &[&Arg]) -> String {
             out.push_str("@available: next\n  ");
         }
         let written = match arg.get_long() {
+            // A value that may be left out is given with `=`.
+            Some(long)
+                if takes_value(arg) && arg.get_num_args().is_some_and(|n| n.min_values() == 0) =>
+            {
+                format!("--{long}[=<{}>]", value_name(arg))
+            }
             Some(long) if takes_value(arg) => format!("--{long} <{}>", value_name(arg)),
             Some(long) => format!("--{long}"),
             None => usage(arg),

@@ -36,5 +36,7 @@ mod mcp;
 mod network;
 #[path = "all/output.rs"]
 mod output;
+#[path = "all/report.rs"]
+mod report;
 #[path = "all/sources.rs"]
 mod sources;

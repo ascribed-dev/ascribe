@@ -168,3 +168,7 @@
 | [ASC165](../reference/diagnostics.md#asc165-prose) | `prose` | Advice | File | write |
 | [ASC166](../reference/diagnostics.md#asc166-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
 | [ASC167](../reference/diagnostics.md#asc167-model-checks-vale) | `model-checks-vale` | Error | File | write |
+| [ASC168](../reference/diagnostics.md#asc168-link-external-broken) | `link-external-broken` | Advice | File | review |
+| [ASC169](../reference/diagnostics.md#asc169-link-external-moved) | `link-external-moved` | Advice | File | choose |
+| [ASC170](../reference/diagnostics.md#asc170-delivery-hosting) | `delivery-hosting` | Advice | File | outside |
+| [ASC171](../reference/diagnostics.md#asc171-delivery-output) | `delivery-output` | Advice | File | outside |

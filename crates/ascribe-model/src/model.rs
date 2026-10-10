@@ -72,8 +72,51 @@ pub struct ContentModel {
 pub struct Checks {
     /// Each check named, in declaration order.
     pub settings: Vec<CheckSetting>,
+    /// `[checks.links]`: how `ascribe report links` checks external links.
+    pub links: LinkSettings,
     /// `[checks.vale]`: checking the prose with Vale, when it's there.
     pub vale: Option<ValeSettings>,
+}
+
+/// `[checks.links]`: how `ascribe report links` checks the project's
+/// external links.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LinkSettings {
+    /// The command that runs the link checker (`command`, `lychee` by
+    /// default).
+    pub command: String,
+    /// The hosts whose links aren't checked (`ignore`): each a host name,
+    /// such as `example.com`, or `*.` and a host name, which covers every
+    /// host under it, such as `*.example.com`.
+    pub ignore: Vec<String>,
+}
+
+impl LinkSettings {
+    /// The command `[checks.links] command` defaults to.
+    pub const COMMAND: &'static str = "lychee";
+
+    /// Whether `ignore` leaves out links to `host`, ignoring case.
+    pub fn ignores(&self, host: &str) -> bool {
+        let host = host.trim_end_matches('.').to_ascii_lowercase();
+        self.ignore.iter().any(|pattern| {
+            let pattern = pattern.to_ascii_lowercase();
+            match pattern.strip_prefix("*.") {
+                Some(parent) => host
+                    .strip_suffix(parent)
+                    .is_some_and(|rest| rest.ends_with('.')),
+                None => host == pattern,
+            }
+        })
+    }
+}
+
+impl Default for LinkSettings {
+    fn default() -> LinkSettings {
+        LinkSettings {
+            command: LinkSettings::COMMAND.to_owned(),
+            ignore: Vec::new(),
+        }
+    }
 }
 
 /// `[checks.vale]`: how the prose is checked with Vale.

@@ -266,6 +266,8 @@ const AREAS: &[(&str, &str)] = &[
     ("project", "Across the project"),
     ("outputs", "Outputs"),
     ("prose", "Prose, through Vale"),
+    ("links", "External links"),
+    ("site", "The published site"),
 ];
 
 /// What each fragment starts with: what generates it, and how.

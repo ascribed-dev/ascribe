@@ -342,6 +342,58 @@ Each example:
 | `added` | number | Lines only in the code now |
 | `removed` | number | Lines only in the code at the base |
 
+## `ascribe report`
+@available: next
+
+Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. Every finding in it carries its kind of next step, as in the editor. It's for a scheduled job, or for a look at the whole project; [Reading the report](../guides/report.md) says how to act on each section.
+
+@include: ../_generated/cli-report-options.md
+
+| Section | What it reports | Needs |
+|---|---|---|
+| `problems` | What `ascribe check` finds, counted by check, by file, and by kind of next step; and every problem acknowledged as intended, with its reason | Nothing |
+| `inventory` | The pages by content type and by owner; the overdue reviews, the pages nothing links to, and the entries nothing uses | Nothing |
+| `builds` | For each build, the pages and the content it leaves out that another build keeps, and why | Nothing |
+| `links` | The external links that fail, time out, or moved permanently, each at its place in the source | [lychee](https://lychee.cli.rs), installed, and the network |
+| `agents` | The [delivery spec](https://agentdocsspec.com/spec/web/)'s checks on a built site | `afdocs`, installed (`npm install -g afdocs@0.22.2`); the network; `--site` |
+
+With no section named, it runs the first three. Each section is independent: one that can't run, because its program isn't installed or `--site` is missing, says why and what would let it, and the others still run. `ascribe report` makes no request itself: `links` and `agents` run the programs the project installs, which do.
+
+**`links`** lists every `http` and `https` link of the project's sources, hands the addresses to lychee once each, and reports each link it says is broken (`link-external-broken`, to review) or moved permanently with a `301` or `308` (`link-external-moved`, with a fix that writes the new address) at the link. `[checks.links]` in `ascribe.toml` names the command, and the hosts to leave out; a link that's fine as it is, on a site that turns checkers away, is [acknowledged](directives.md#intended) with `@intended` above its block.
+
+**`agents`** runs the delivery spec's checker on `--site` and reports each check that fails or warns by who changes what it checks: the hosting (`delivery-hosting`, with the setting to change), or what Ascribe writes for agents (`delivery-output`, a bug to report). A check about the pages, such as their size, is `ascribe check`'s to report, so it's named and not repeated. Nothing here asks you to edit a page.
+
+### The summary and the prompt
+
+`--format summary` writes the same sections as Markdown, for a CI job's summary or an issue's body. `--format prompt` writes one prompt for an agent about the findings of one section, `problems`, `links`, or `agents`, with what each kind carries (the sentence around a link, the setting to change) and the command that checks the work; nothing when the section finds nothing. Each list holds at most `--limit` items; what's left out is counted, with the command that lists it.
+
+### Exit codes
+@id: report-exit-codes
+
+| Code | Meaning |
+|---|---|
+| `0` | It ran, whatever it found |
+| `1` | With `--exit-code`: a section found something at the level given, or above (`advice` when none is: any finding) |
+| `2` | With `--exit-code`: a section asked for couldn't run. Without it, too: a usage error, an unknown build, or a project that doesn't load. The reason goes to standard error. |
+
+### Report JSON
+
+`--format json` writes one JSON document to standard output, with the [JSON output](#json-output)'s rules: `schema_version` changes only when a field is removed or changes meaning, so **ignore fields you don't know**. Its schema is in the [JSON report contract](../contracts/json-reports.md#ascribe-report).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `schema_version` | number | `1` |
+| `ascribe_version` | string | The version of `ascribe` that wrote the report |
+| `error` | string or null | Why the report couldn't be made (exit code `2`); no section is there then |
+| `sections` | array of strings | The sections asked for, in the report's order |
+| `builds_checked` | array of strings | The builds `problems` checked and `builds` reports on |
+| `not_run` | array of strings | The sections asked for that couldn't run; each says why in its own `not_run` |
+| `findings` | object | How many `errors`, `warnings`, and `advice` the sections found, and how many of each kind of next step (`by_next`) |
+| `next_command` | string or null | The command that lists everything a list leaves out |
+| `problems`, `inventory`, `builds`, `links`, `agents` | | Each section asked for |
+
+A finding is a diagnostic as `ascribe check` writes it in [its JSON](#json-output), with `next`, `help`, and `docs`. Each list is an object: `items`, at most `--limit` of them, `shown`, `total`, and `truncated`. A section that runs a program has `not_run`, `null` when it ran, or its `reason` and `how` to get it to run.
+
 ## `ascribe fmt`
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](directives.md#canonical-form).

@@ -144,6 +144,11 @@ pub enum Command {
     /// Show a page as a reader of one build sees it, as plain Markdown.
     #[command(after_help = docs_page!("reference/cli/#ascribe-render"))]
     Render(commands::render::Args),
+    /// Report what state the project is in: problems, inventory, what each
+    /// build leaves out, external links, and the published site's delivery
+    /// to agents.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-report"))]
+    Report(commands::report::Args),
     /// Copy code from sources in other repositories, and move their pins.
     #[command(after_help = docs_page!("reference/cli/#ascribe-sources"))]
     Sources(commands::sources::Args),
@@ -170,6 +175,7 @@ impl Command {
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Render(args) => commands::render::run(global, args),
+            Command::Report(args) => commands::report::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),
             Command::Vale(args) => commands::vale::run(global, args),
         }

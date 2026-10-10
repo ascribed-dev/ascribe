@@ -1,8 +1,10 @@
 //! Display text that both outputs share: availability lines, the label of a
-//! group's arm, and inline content as plain text.
+//! group's arm, and inline content as plain text; and why a build leaves
+//! content out, which the editor's build lens and `ascribe report` show.
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, parse_availability};
-use ascribe_model::ContentModel;
+use ascribe_model::{AvailabilityMode, Build, ContentModel, VariantMode};
+use ascribe_resolve::{Removal, Removed};
 use ascribe_syntax::{DirectiveLine, Inline, InlineKind};
 
 /// An availability spec as a person reads it, with the content model's
@@ -22,6 +24,48 @@ pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> St
         .map(|entry| availability_target_text(model, entry))
         .collect::<Vec<_>>()
         .join("; ")
+}
+
+/// Why `build` leaves `removed` out, for the author, with the content
+/// model's display labels: `Shows only edition=self-hosted`, or `Scheduled
+/// rollouts: available on Lantern Cloud (preview), not Self-hosted 2.5`.
+pub fn removal_detail(model: &ContentModel, build: &Build, removed: &Removed) -> String {
+    match &removed.cause {
+        Removal::Variant { dimensions } => {
+            let VariantMode::Select(selection) = &build.variants else {
+                return String::new();
+            };
+            let shown: Vec<String> = selection
+                .iter()
+                .filter(|(dimension, _)| dimensions.contains(dimension))
+                .map(|(dimension, values)| format!("{dimension}={}", values.join("|")))
+                .collect();
+            format!("Shows only {}", shown.join(", "))
+        }
+        Removal::Availability(spec) => {
+            // The build's target as a person reads it: `Self-hosted 2.5`.
+            let built = match &build.availability {
+                AvailabilityMode::Filter { target, version } => {
+                    let label = model.value_label(target).unwrap_or(target);
+                    match version {
+                        Some(version) => format!("{label} {}", version.text),
+                        None => label.to_owned(),
+                    }
+                }
+                AvailabilityMode::Badge => String::new(),
+            };
+            let shown = availability_display(model, &spec.spec);
+            let feature = spec
+                .feature
+                .as_deref()
+                .and_then(|key| model.feature(key))
+                .map(|f| f.name.clone());
+            match feature {
+                Some(name) => format!("{name}: available on {shown}, not {built}"),
+                None => format!("Available on {shown}, not {built}"),
+            }
+        }
+    }
 }
 
 /// One target of an availability spec as a person reads it: its label, and in

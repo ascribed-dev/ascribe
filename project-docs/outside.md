@@ -25,6 +25,8 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Dependabot | Weekly updates for cargo, npm, and Actions (`.github/dependabot.yml`) | Anyone, by pull request |
 | Third-party actions | 8 in this repository's workflows (`actions/cache`, `checkout`, `download-artifact`, `setup-node`, `upload-artifact`; `Swatinem/rust-cache`, `pnpm/action-setup`, `azure/login`), plus `actions/create-github-app-token` in `examples/docs-repository`. Each pinned to a commit | Anyone, by pull request; Dependabot moves them |
 | Vale's Linux release, from `vale-cli/vale` on GitHub | `rust.yml`'s `check` job downloads it, at the version and checksum written there, for the tests that run a real Vale (`crates/ascribe-check/tests/all/vale.rs`). Ascribe itself never downloads Vale | Anyone, by pull request: a new version needs its checksum from the release's `checksums.txt` |
+| lychee's Linux release, from `lycheeverse/lychee` on GitHub | `report.yml` downloads it, at the version and checksum written there, for the weekly `ascribe report links` on the docs. Ascribe itself never downloads it | Anyone, by pull request: a new version needs its checksum, worked out from the release's archive |
+| Issues titled "Docs report: links and the published site" | `report.yml` opens one when the weekly report finds something, and updates it while it's open, with the job's own token | Anyone: close it once it's dealt with |
 
 ## npm
 
@@ -35,6 +37,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Trusted publishers on each package: `release.yml` with environment `release`, and `canary.yml` with environment `canary` | Publishing without a token | Maintainer, on each package's npm page |
 | Tag `latest` | `npm install`. 0.1.1, except **`@ascribed/review`'s, which is `0.1.2-next.2`**, a canary, until the next release moves it | `release.yml` |
 | Tags `next` and `next-pending` | The nightly canary (0.1.2-next.6 when the inventory ran) | `canary.yml` |
+| `afdocs`, the delivery spec's checker, at 0.22.2 | `examples/astro-site`'s end-to-end job, and `report.yml`'s weekly `ascribe report agents` on <https://ascribed-dev.com>. The version is written in both, and in `ascribe_check::site::VERSION`, which says it in the report's install hint | Anyone, by pull request, after reading the new version's checks: a check it adds is listed in `ascribe_check::site::CHECKS` |
 
 ## Microsoft
 

@@ -26,6 +26,11 @@ Every document follows these rules:
 
 @include: ../_generated/json-drift.md
 
+## `ascribe report`
+@available: next
+
+@include: ../_generated/json-report.md
+
 ## `ascribe sources status`
 @available: next
 

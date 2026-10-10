@@ -144,6 +144,7 @@ dependencies = [
  "ascribe-core",
  "ascribe-fmt",
  "ascribe-model",
+ "ascribe-query",
  "ascribe-resolve",
  "ascribe-syntax",
  "insta",

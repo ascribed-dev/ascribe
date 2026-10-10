@@ -135,6 +135,11 @@ pub struct Entry {
     /// has an area.
     #[serde(default)]
     pub area: Option<String>,
+    /// The one stage a content check runs at, when it doesn't run while
+    /// writing and in `ascribe check`: `report`, for a check only
+    /// `ascribe report` runs, since it needs the network or a built site.
+    #[serde(default)]
+    pub stage: Option<String>,
     /// Why the diagnostic was retired, if it was.
     #[serde(default)]
     pub retired: Option<String>,

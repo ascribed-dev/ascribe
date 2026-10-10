@@ -38,12 +38,15 @@ mod diagnostic;
 mod evidence;
 pub mod intended;
 mod levels;
+pub mod links;
 pub mod page;
 mod project;
 pub mod prompt;
 pub mod prose;
 pub mod registry;
 mod scope;
+pub mod site;
+pub mod tool;
 mod yaml;
 
 pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};

@@ -19,6 +19,7 @@ ascribe model          [PATH] [--section types|dimensions|phrases|features|gloss
 ascribe outline        PAGE [--build <NAME>] [--format text|json]
 ascribe refs           TARGET [--limit <N>] [--project <PATH>] [--format text|json]
 ascribe render         PAGE [--build <NAME>] [--frontmatter] [--format text|json]
+ascribe report         [SECTION]... [--format text|summary|json|prompt] [--build <NAME>]... [--site <URL>] [--limit <N>] [--exit-code advice|warning|error]
 ascribe sources fetch  [NAME]...
 ascribe sources update [NAME]... [--to <REV>] [--format text|json|summary]
 ascribe sources status [--format text|json]

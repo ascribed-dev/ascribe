@@ -11,6 +11,7 @@ mod inline;
 mod model;
 mod page_check;
 mod prose;
+mod report;
 pub mod resolve;
 mod structure;
 mod syntax;
@@ -29,4 +30,5 @@ pub fn register(registry: &mut Registry) {
     registry.register(resolve::ResolveAdapter);
     registry.register(page_check::PageCheckAdapter);
     registry.register(prose::ProseAdapter);
+    registry.register(report::ReportAdapter);
 }

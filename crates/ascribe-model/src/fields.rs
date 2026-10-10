@@ -385,11 +385,11 @@ impl Loader<'_> {
                         .with_arg("field", name)
                         .with_arg("place", place),
                 );
-            } else if ty != r.field_type() {
+            } else if !r.accepts(&ty) {
                 self.push(
                     self.issue(diagnostics::MODEL_FIELD_ROLE, span)
                         .with_arg("role", r.name())
-                        .with_arg("expected", r.field_type().describe())
+                        .with_arg("expected", r.expected())
                         .with_arg("field", name)
                         .with_arg("type", base_text(&c.base)),
                 );

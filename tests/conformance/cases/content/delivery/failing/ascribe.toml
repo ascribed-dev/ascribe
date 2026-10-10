@@ -1,0 +1,4 @@
+spec = "0.1"
+
+[consumer]
+site = "https://failing.test"

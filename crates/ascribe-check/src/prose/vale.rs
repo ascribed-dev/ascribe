@@ -6,13 +6,14 @@
 //! It isn't linked, and nothing is downloaded.
 
 use std::collections::BTreeMap;
-use std::io::{self, Read};
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::io;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use serde::Deserialize;
+
+use crate::tool;
 
 /// What to run Vale on, and how.
 #[derive(Clone, Debug)]
@@ -62,45 +63,9 @@ pub struct Action {
     pub name: String,
 }
 
-/// Vale couldn't say anything about the prose.
-#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum ValeError {
-    /// The command can't be run: it isn't installed, or isn't where
-    /// `command` says.
-    #[error("`{command}` couldn't be run: {reason}")]
-    NotRun {
-        /// The command tried.
-        command: String,
-        /// Why.
-        reason: String,
-    },
-    /// It ran and failed, or said something that isn't its JSON.
-    #[error("`{command}` failed: {reason}")]
-    Failed {
-        /// The command tried.
-        command: String,
-        /// What it said.
-        reason: String,
-    },
-    /// It didn't finish in time, and was stopped.
-    #[error("`{command}` didn't finish within {seconds} seconds")]
-    TimedOut {
-        /// The command tried.
-        command: String,
-        /// The time it had.
-        seconds: u64,
-    },
-}
-
-impl ascribe_core::Coded for ValeError {
-    fn code(&self) -> &'static str {
-        match self {
-            ValeError::NotRun { .. } => "vale_not_run",
-            ValeError::Failed { .. } => "vale_failed",
-            ValeError::TimedOut { .. } => "vale_timed_out",
-        }
-    }
-}
+/// Vale couldn't say anything about the prose: it couldn't be run, failed,
+/// or ran out of time.
+pub type ValeError = crate::tool::ToolError;
 
 /// What runs Vale: the program itself, or a stand-in in tests.
 pub trait Linter: Send + Sync {
@@ -130,18 +95,9 @@ impl Linter for Program {
             }
             std::fs::write(&file, contents).map_err(|e| failed(request, &e))?;
         }
-        let mut command = Command::new(program(&request.command, &request.root));
-        command
-            .arg("--no-global")
-            .arg("--output=JSON")
-            .current_dir(&text)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        let mut args = vec!["--no-global".to_owned(), "--output=JSON".to_owned()];
         match request.configs.as_slice() {
-            [one] => {
-                command.arg(format!("--config={}", one.display()));
-            }
+            [one] => args.push(format!("--config={}", one.display())),
             configs => {
                 // Vale reads every file `--sources` lists, in order, but
                 // won't start unless it also finds a `.vale.ini` above the
@@ -149,99 +105,20 @@ impl Linter for Program {
                 std::fs::write(folder.path.join(".vale.ini"), "")
                     .map_err(|e| failed(request, &e))?;
                 let list: Vec<String> = configs.iter().map(|c| c.display().to_string()).collect();
-                command.arg(format!("--sources={}", list.join(",")));
+                args.push(format!("--sources={}", list.join(",")));
             }
         }
-        command.arg(".");
-        let (stdout, stderr) = run(command, request)?;
-        read(request, &stdout, &stderr)
+        args.push(".".to_owned());
+        let output = tool::run(
+            &request.command,
+            &tool::program(&request.command, &request.root),
+            &args,
+            &text,
+            b"",
+            request.timeout,
+        )?;
+        read(request, &output.stdout, &output.stderr)
     }
-}
-
-/// The program to run: a command with a path separator is relative to the
-/// project root, and a bare name is found as the shell would find it.
-fn program(command: &str, root: &Path) -> PathBuf {
-    let path = Path::new(command);
-    if command.contains(['/', '\\']) && path.is_relative() {
-        root.join(path)
-    } else {
-        path.to_path_buf()
-    }
-}
-
-/// The most of Vale's standard output that's read: its JSON, far more
-/// than the alerts of any project's prose.
-const MAX_OUTPUT: u64 = 64 << 20;
-
-/// The most of Vale's standard error that's kept, for the reason it gives.
-const MAX_ERROR: u64 = 64 << 10;
-
-/// Runs `command` until it ends or the request's time runs out, and returns
-/// what it wrote to its standard output and error.
-fn run(mut command: Command, request: &Request) -> Result<(Vec<u8>, Vec<u8>), ValeError> {
-    let mut child = command.spawn().map_err(|e| ValeError::NotRun {
-        command: request.command.clone(),
-        reason: if e.kind() == io::ErrorKind::NotFound {
-            "it isn't installed, or isn't on the PATH".to_owned()
-        } else {
-            e.to_string()
-        },
-    })?;
-    // Each pipe is read to its end, so Vale never blocks on a full one, but
-    // only the first `limit` bytes are kept.
-    let drain = |pipe: Option<Box<dyn Read + Send>>, limit: u64| {
-        std::thread::spawn(move || {
-            let mut out = Vec::new();
-            let mut whole = true;
-            if let Some(mut pipe) = pipe {
-                let _ = pipe.by_ref().take(limit).read_to_end(&mut out);
-                whole = matches!(io::copy(&mut pipe, &mut io::sink()), Ok(0));
-            }
-            (out, whole)
-        })
-    };
-    let stdout = drain(
-        child
-            .stdout
-            .take()
-            .map(|p| Box::new(p) as Box<dyn Read + Send>),
-        MAX_OUTPUT,
-    );
-    let stderr = drain(
-        child
-            .stderr
-            .take()
-            .map(|p| Box::new(p) as Box<dyn Read + Send>),
-        MAX_ERROR,
-    );
-    let deadline = Instant::now() + request.timeout;
-    loop {
-        match child.try_wait() {
-            Ok(Some(_)) => break,
-            Ok(None) if Instant::now() >= deadline => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(ValeError::TimedOut {
-                    command: request.command.clone(),
-                    seconds: request.timeout.as_secs(),
-                });
-            }
-            Ok(None) => std::thread::sleep(Duration::from_millis(5)),
-            Err(e) => return Err(failed(request, &e)),
-        }
-    }
-    let (stdout, whole) = stdout.join().unwrap_or_default();
-    let (stderr, _) = stderr.join().unwrap_or_default();
-    if !whole {
-        return Err(ValeError::Failed {
-            command: request.command.clone(),
-            reason: format!(
-                "it wrote more than {} MiB, more than any check of prose needs",
-                MAX_OUTPUT >> 20
-            ),
-        });
-    }
-    Ok((stdout, stderr))
 }
 
 /// What Vale said: its alerts by file, or why it couldn't lint. Vale exits
@@ -292,10 +169,7 @@ fn one_line(text: &str) -> String {
 }
 
 fn failed(request: &Request, e: &io::Error) -> ValeError {
-    ValeError::Failed {
-        command: request.command.clone(),
-        reason: e.to_string(),
-    }
+    ValeError::failed(&request.command, e)
 }
 
 /// A folder of its own in the system's temporary folder, removed when it's
@@ -384,13 +258,6 @@ mod tests {
         assert!(error.to_string().contains("isn't installed"), "{error}");
     }
 
-    #[test]
-    fn a_relative_command_is_from_the_project_root() {
-        let root = Path::new("project");
-        assert_eq!(program("bin/vale", root), root.join("bin/vale"));
-        assert_eq!(program("vale", root), PathBuf::from("vale"));
-    }
-
     #[cfg(unix)]
     #[test]
     fn a_slow_program_is_stopped() {
@@ -401,7 +268,7 @@ mod tests {
         std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
         let mut slow = request(&script.display().to_string());
         slow.timeout = Duration::from_millis(200);
-        let started = Instant::now();
+        let started = std::time::Instant::now();
         let error = Program.lint(&slow).unwrap_err();
         assert!(matches!(error, ValeError::TimedOut { .. }), "{error:?}");
         assert!(started.elapsed() < Duration::from_secs(5));
@@ -412,7 +279,7 @@ mod tests {
     fn a_program_that_writes_without_end_is_a_failure() {
         let dir = tempfile::tempdir().unwrap();
         let script = dir.path().join("loud-vale");
-        let bytes = MAX_OUTPUT + 1;
+        let bytes = (64 << 20) + 1;
         std::fs::write(&script, format!("#!/bin/sh\nhead -c {bytes} /dev/zero\n")).unwrap();
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();

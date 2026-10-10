@@ -2690,10 +2690,10 @@ evidence = []
 spec = "7.2"
 group = "content-types"
 message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
-messages.value = "role must be \"description\" or \"review-date\", not \"{value}\""
+messages.value = "role must be \"description\", \"review-date\", or \"owner\", not \"{value}\""
 messages.nested = "role only works on a content type's top-level fields, and `{field}` is in {place}"
 messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
-fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, and `role = \"review-date\"` to one date field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
+fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"review-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
 
 [[diagnostic]]
 code = "ASC149"
@@ -2992,3 +2992,66 @@ messages.neither = "`[checks.vale]` needs `preset`, one of Ascribe's presets, or
 messages.off = "`[checks.vale] off` turns off a preset's rules, so it goes with `preset`; with `config`, turn a rule off in the project's `.vale.ini`"
 messages.off-rule = "the `{preset}` preset has no rule `{rule}`; its rules are {rules}"
 fix = "Give `[checks.vale]` one of `preset = \"quiet\"` or `config = \"<path to .vale.ini>\"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset."
+
+[[diagnostic]]
+code = "ASC168"
+slug = "link-external-broken"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = ["link-status", "link-sentence"]
+configurable = true
+place = "block"
+area = "links"
+stage = "report"
+spec = "5.2"
+when = "`ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. A host `[checks.links] ignore` names isn't checked"
+message = "`{url}` answered {status}, so the link is broken for readers"
+messages.timeout = "`{url}` didn't answer in time, so the link may be broken for readers"
+messages.error = "`{url}` couldn't be reached: {reason}"
+fix = "Open the address. When the page is gone, link to where its content went, or remove the link. A site that turns link checkers away, or one that's down for a while, may be fine as it is: acknowledge the link with `@intended {check=link-external-broken}: <why>` directly above its block, or leave the whole host out with `[checks.links] ignore`. Only `ascribe report links` checks external links; `ascribe check` never reaches the network."
+
+[[diagnostic]]
+code = "ASC169"
+slug = "link-external-moved"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = []
+configurable = true
+area = "links"
+stage = "report"
+spec = "5.2"
+when = "`ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers"
+message = "`{url}` moved permanently to `{to}`; link to the new address"
+fix = "Link to the address it redirects to; the fix writes it. Check first that it's the page you meant: some sites send every old address to their home page, and then the link needs a new target, not this one. Only `ascribe report links` checks external links."
+
+[[diagnostic]]
+code = "ASC170"
+slug = "delivery-hosting"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "site"
+stage = "report"
+spec = "9.5"
+when = "`ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
+message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
+fix = "Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../guides/astro.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
+
+[[diagnostic]]
+code = "ASC171"
+slug = "delivery-output"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "site"
+stage = "report"
+spec = "9.5"
+when = "`ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
+message = "the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues}"
+fix = "First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing."

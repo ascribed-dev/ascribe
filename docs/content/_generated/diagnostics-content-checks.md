@@ -159,3 +159,47 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 **Message:** the prose wasn't checked: `{command}` couldn't be run (\{reason}). Install Vale, or set `[checks.vale] command` to where it is
 
 **Fix:** Install [Vale](https://vale.sh) 3 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = "off"` in `[checks]`.
+
+### External links
+
+#### ASC168 `link-external-broken`
+
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. A host `[checks.links] ignore` names isn't checked.
+
+**Message:** `{url}` answered \{status}, so the link is broken for readers
+
+**Fix:** Open the address. When the page is gone, link to where its content went, or remove the link. A site that turns link checkers away, or one that's down for a while, may be fine as it is: acknowledge the link with `@intended {check=link-external-broken}: <why>` directly above its block, or leave the whole host out with `[checks.links] ignore`. Only `ascribe report links` checks external links; `ascribe check` never reaches the network.
+
+#### ASC169 `link-external-moved`
+
+Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+
+**When:** `ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers.
+
+**Message:** `{url}` moved permanently to `{to}`; link to the new address
+
+**Fix:** Link to the address it redirects to; the fix writes it. Check first that it's the page you meant: some sites send every old address to their home page, and then the link needs a new target, not this one. Only `ascribe report links` checks external links.
+
+### The published site
+
+#### ASC170 `delivery-hosting`
+
+Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+
+**When:** `ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
+
+**Message:** the site fails the delivery spec's `{check}` check: \{result}. \{setting}
+
+**Fix:** Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../reference/../guides/astro.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
+
+#### ASC171 `delivery-output`
+
+Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+
+**When:** `ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
+
+**Message:** the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: \{result}. Report it at \{issues}
+
+**Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing.

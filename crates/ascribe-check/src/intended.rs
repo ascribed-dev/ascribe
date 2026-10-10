@@ -123,12 +123,43 @@ impl Acknowledgements {
     /// Takes the problems an acknowledgement covers out of `diagnostics`.
     /// With `unused`, which a caller asks for only when it checked every
     /// build, each acknowledgement that covered nothing is reported as
-    /// `intended-unused`, unless `[checks]` turns its check off.
+    /// `intended-unused`, unless `[checks]` turns its check off, or its
+    /// check is one only `ascribe report` runs ([`Entry::report_only`]),
+    /// which [`Acknowledgements::apply_ran`] reports instead.
+    ///
+    /// [`Entry::report_only`]: crate::Entry::report_only
     pub fn apply(
         &self,
         model: &ContentModel,
         diagnostics: Vec<Diagnostic>,
         unused: bool,
+    ) -> Applied {
+        let registry = crate::Registry::global();
+        self.apply_with(model, diagnostics, &|check| {
+            unused && !registry.get(check).is_some_and(|e| e.report_only)
+        })
+    }
+
+    /// [`Acknowledgements::apply`] for what `ascribe report` found by running
+    /// the checks `ran` over the whole project: an acknowledgement of one of
+    /// them that covered nothing is reported as `intended-unused`.
+    pub fn apply_ran(
+        &self,
+        model: &ContentModel,
+        diagnostics: Vec<Diagnostic>,
+        ran: &[DiagnosticSlug],
+    ) -> Applied {
+        self.apply_with(model, diagnostics, &|check| ran.contains(&check))
+    }
+
+    /// Takes the problems an acknowledgement covers out of `diagnostics`,
+    /// and reports each acknowledgement that covered nothing whose check
+    /// `unused` names.
+    fn apply_with(
+        &self,
+        model: &ContentModel,
+        diagnostics: Vec<Diagnostic>,
+        unused: &dyn Fn(DiagnosticSlug) -> bool,
     ) -> Applied {
         if self.list.is_empty() {
             return Applied {
@@ -153,13 +184,11 @@ impl Acknowledgements {
                 None => out.diagnostics.push(d),
             }
         }
-        if unused {
-            for (a, used) in self.list.iter().zip(used) {
-                if used || model.checks.level(a.check) == Some(CheckLevel::Off) {
-                    continue;
-                }
-                out.diagnostics.push(a.unused());
+        for (a, used) in self.list.iter().zip(used) {
+            if used || !unused(a.check) || model.checks.level(a.check) == Some(CheckLevel::Off) {
+                continue;
             }
+            out.diagnostics.push(a.unused());
         }
         out
     }

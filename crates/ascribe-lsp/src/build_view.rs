@@ -13,8 +13,8 @@
 //! [`Project::dropped`]: ascribe_resolve::Project::dropped
 
 use ascribe_core::{LineIndex, Span};
-use ascribe_emit::labels::availability_display;
-use ascribe_model::{AvailabilityMode, Build, ContentModel, VariantMode};
+use ascribe_emit::labels::removal_detail;
+use ascribe_model::{Build, ContentModel};
 use ascribe_resolve::{FileKind, Removal, Removed};
 use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
@@ -182,44 +182,9 @@ pub(crate) fn build_view(ctx: &Ctx, build: Option<&str>) -> BuildViewResult {
 
 /// Why a removal happened, for the author.
 fn explain(model: &ContentModel, build: &Build, removed: &Removed) -> (ExclusionReason, String) {
-    match &removed.cause {
-        Removal::Variant { dimensions } => {
-            let VariantMode::Select(selection) = &build.variants else {
-                return (ExclusionReason::Variant, String::new());
-            };
-            let shown: Vec<String> = selection
-                .iter()
-                .filter(|(dimension, _)| dimensions.contains(dimension))
-                .map(|(dimension, values)| format!("{dimension}={}", values.join("|")))
-                .collect();
-            (
-                ExclusionReason::Variant,
-                format!("Shows only {}", shown.join(", ")),
-            )
-        }
-        Removal::Availability(spec) => {
-            // The build's target as a person reads it: `Self-hosted 2.5`.
-            let built = match &build.availability {
-                AvailabilityMode::Filter { target, version } => {
-                    let label = model.value_label(target).unwrap_or(target);
-                    match version {
-                        Some(version) => format!("{label} {}", version.text),
-                        None => label.to_owned(),
-                    }
-                }
-                AvailabilityMode::Badge => String::new(),
-            };
-            let shown = availability_display(model, &spec.spec);
-            let feature = spec
-                .feature
-                .as_deref()
-                .and_then(|key| model.feature(key))
-                .map(|f| f.name.clone());
-            let detail = match feature {
-                Some(name) => format!("{name}: available on {shown}, not {built}"),
-                None => format!("Available on {shown}, not {built}"),
-            };
-            (ExclusionReason::Availability, detail)
-        }
-    }
+    let reason = match &removed.cause {
+        Removal::Variant { .. } => ExclusionReason::Variant,
+        Removal::Availability(_) => ExclusionReason::Availability,
+    };
+    (reason, removal_detail(model, build, removed))
 }

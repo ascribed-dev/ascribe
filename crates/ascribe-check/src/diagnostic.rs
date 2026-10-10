@@ -225,4 +225,9 @@ pub const EVIDENCE: &[(&str, &str, &str)] = &[
     ("rule", "rule", "Vale rule"),
     // The address of that rule's own documentation.
     ("rule-link", "link", "The rule explained"),
+    // What the link checker said about an external link that didn't answer
+    // in time, which the message doesn't.
+    ("link-status", "said", "The link checker said"),
+    // The sentence an external link is in.
+    ("link-sentence", "sentence", "The sentence around it"),
 ];
