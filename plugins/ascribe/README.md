@@ -20,7 +20,7 @@ npm install -g @ascribed/cli
 
 or put the binary from a [release](https://github.com/ascribed-dev/ascribe/releases) on your path, which starts quicker.
 
-Then, in Claude Code, from a copy of the repository:
+Then, in Claude Code in a terminal, from a copy of the repository (its VS Code extension doesn't offer `/plugin`):
 
 ```shell
 /plugin marketplace add ./plugins/ascribe
