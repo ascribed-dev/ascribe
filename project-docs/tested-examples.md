@@ -1,6 +1,6 @@
 # Proposal: tested examples
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Code examples tied to tested code](../reports/Code%20examples%20tied%20to%20tested%20code.md).
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Code examples tied to tested code](reports/Code%20examples%20tied%20to%20tested%20code.md).
 
 ## The goal
 

@@ -1,6 +1,6 @@
 # Proposal: documentation versions
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Documentation versioning approaches](../reports/Documentation%20versioning%20approaches.md).
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Documentation versioning approaches](reports/Documentation%20versioning%20approaches.md).
 
 ## The goal
 

@@ -13,7 +13,7 @@ A project that uses [Vale](https://vale.sh) gets its alerts as Ascribe diagnosti
 - Vale's documentation, checked against the current version: `--output=JSON`, reading from standard input with `--ext`, `.vale.ini`, vocabularies (`accept.txt`, `reject.txt`), and the alert fields (`Check`, `Message`, `Severity`, `Span`, `Line`, `Action`).
 - `crates/ascribe-syntax` and `crates/ascribe-resolve`: which text is prose, and where phrases, includes, and snippets come from.
 - `crates/ascribe-cli/src/commands/sources.rs`: the one place the binary runs another program (`git`) today, and how it reports that program missing or failing.
-- `reports/Ascribe fit for docs pain points.md`, "Three cost classes": Vale across a whole project is in the slow class.
+- `project-docs/reports/Ascribe fit for docs pain points.md`, "Three cost classes": Vale across a whole project is in the slow class.
 - Vale's style packages (Microsoft, Google, write-good, proselint, and others on its package hub): the rules a preset would choose from. Read each one's license before copying a rule; `scripts/release/notices.ts` is where third-party notices are gathered.
 - `tests/corpora/README.md`: the three real documentation sets, fetched at pinned commits and converted to Ascribe, for measuring how noisy a rule is. Nothing from them is committed.
 
