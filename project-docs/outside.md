@@ -18,6 +18,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Repository secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` | `site.yml`: a pull request's docs preview | Maintainer |
 | Repository secret `SITE_BUILD_HOOK` | `canary.yml`'s `site` job: rebuilds the docs site after a canary | Maintainer |
 | Repository secret `PROJECT_BOARD_TOKEN`: a fine-grained token of the maintainer's, owned by `ascribed-dev`, with Organization → Projects: read and write | `board.yml`: reads [the project board](https://github.com/orgs/ascribed-dev/projects/1) into `board.json` on the branch `board`, and moves an issue on it, for agents that can't reach the board | Maintainer; it stops working when the token expires |
+| Repository setting Actions → General → "Allow GitHub Actions to create and approve pull requests" | `approve.yml`: approves a pull request as `github-actions[bot]` for a reviewing agent, since agents post as the pull request's author | Maintainer |
 | Environment `release` (required reviewer; `v*` tags only) | `release.yml`'s `npm`, `marketplace`, and `github` jobs | Maintainer |
 | Variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, on `release` | `release.yml`'s `azure/login`: the Marketplace managed identity below. Not secrets | Maintainer |
 | Environment `canary` (no reviewers; `main` only) | `canary.yml`'s `npm` job | Maintainer |
