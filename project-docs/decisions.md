@@ -78,8 +78,9 @@ The finished plans, docs and review, were removed from `project-docs/` on 5 Octo
 
 ## Process
 
-29. **The maintainer merges pull requests, as merge commits.** _Why:_ every pull request's commits stay as written. _From:_ the maintainer.
+29. ~~**The maintainer merges pull requests, as merge commits.**~~ Replaced by decision 74. _Why:_ every pull request's commits stay as written. _From:_ the maintainer.
 30. **Ascribe hasn't launched, so its contracts can still change when the maintainer says so.** Until then, a change to a contract is the maintainer's call, made in the pull request that changes it, and is recorded here. _From:_ the maintainer, 6 October 2026.
+74. **Work runs from [the project board](https://github.com/orgs/ascribed-dev/projects/1), and an agent's pull request is merged by the agent that reviewed it, as a merge commit, after the Approve workflow approves the commit it reviewed.** Each column has one owner, and only that owner moves a card out of it: triage moves Backlog to Ready, the coordinator Ready to In progress, the implementor In progress to In review, and the reviewer merges, which closes the issue and moves the card to Done. Agents reach the board through the `board.yml` workflow and approve through `approve.yml`, because a Claude cloud session can't reach GitHub's GraphQL API, and an agent can't approve a pull request it authored. The skills in `.claude/skills/` say how each role works. _Why:_ the maintainer sets the work by moving cards and isn't the step every pull request waits on; an approval for one reviewed commit keeps unreviewed commits out of `main`. _From:_ the maintainer, in the project thread that added the workflows (pull request #240), 10 October 2026.
 
 ## The optimization plan
 

@@ -7,7 +7,7 @@ name: Board
 # reachable through those; a workflow can, with a token that has the board.
 #
 # Run it from Actions → Board → Run workflow, or with
-# `gh workflow run board.yml -f issue=123 -f status="In progress"`. With no
+# `gh workflow run board.yml --ref main -f issue=123 -f status="In progress"`. With no
 # issue it only reads. Either way it writes the board, its fields, and its
 # items to `board.json` on the branch `board`, one commit per change, which an
 # agent reads through the repository's contents API; the branch's history is
