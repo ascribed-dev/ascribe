@@ -20,14 +20,17 @@ output-dir = "out"
 site = "https://docs.example.com"
 base-path = "/docs"
 trailing-slash = "never"
+agents = true
 `);
     const info = readProject(dir);
     expect(info.consumer).toEqual({
       site: "https://docs.example.com",
       basePath: "/docs/",
       trailingSlash: "never",
+      agents: true,
     });
     expect(info.siteRoot("site")).toBe(path.join(dir, "out", "site", "site"));
+    expect(info.plainRoot("site")).toBe(path.join(dir, "out", "site", "plain"));
   });
 
   it("needs no [builds] table: the implicit `site` build has the same output layout", () => {
@@ -38,7 +41,12 @@ trailing-slash = "never"
   it("uses the profile's defaults", () => {
     const info = readProject(project('spec = "0.1"\n'));
     expect(info.contentRoot).toBe(path.join(info.dir, "docs"));
-    expect(info.consumer).toEqual({ site: undefined, basePath: "/", trailingSlash: "always" });
+    expect(info.consumer).toEqual({
+      site: undefined,
+      basePath: "/",
+      trailingSlash: "always",
+      agents: false,
+    });
     expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });
 

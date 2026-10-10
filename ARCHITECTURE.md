@@ -163,6 +163,7 @@ They're meant to agree, and these tests hold them to it:
 |---|---|---|
 | Site: Markdown with web components | `ascribe_emit::SiteEmitter` | [Site render](docs/content/contracts/site-render.md), and [the elements' contract](packages/elements/CONTRACT.md) |
 | Plain Markdown | `ascribe_emit::PlainEmitter` | SPEC §9.4, and [crates/ascribe-emit/README.md](crates/ascribe-emit/README.md) |
+| `llms.txt`, with `[consumer] agents = true` | `ascribe_resolve::llms`, written by `PlainEmitter` | SPEC §9.4, and the [content model contract](docs/content/contracts/content-model.md) §16; `examples/astro-site/test/e2e/agent-docs.test.ts` runs the delivery spec's checker on the built example |
 | JSON, one document per page | `ascribe_emit::JsonEmitter` | [crates/ascribe-emit/README.md](crates/ascribe-emit/README.md) |
 | Where each output's files go, and what Ascribe may replace | `ascribe_emit::OutputDir` | [Output layout](docs/content/contracts/output-layout.md) |
 | Images and linked files | `crates/ascribe-emit/src/assets.rs` | [Assets](docs/content/contracts/assets.md) |

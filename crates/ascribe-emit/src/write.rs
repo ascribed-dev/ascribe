@@ -86,7 +86,7 @@ pub fn write_outputs(
     let output = OutputDir::lock(&root.join(&model.project.output_dir))?;
     let router = AstroRouter::from_consumer(&model.consumer);
 
-    let plain = PlainEmitter;
+    let plain = PlainEmitter::new(model);
     let json = JsonEmitter;
     let site = SiteEmitter::new(model).with_anchors(options.anchors);
     let mut emitters: Vec<&dyn Emitter> = Vec::new();

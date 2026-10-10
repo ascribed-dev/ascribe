@@ -36,9 +36,9 @@ mod profile;
 pub(crate) use anchor::starts_anchor;
 pub use profile::{ASTRO_VERSION, AstroProfile};
 
-use ascribe_core::{AssetPlacement, AssetUse, ConsumerProfile, RelPath};
+use ascribe_core::{AssetPlacement, AssetUse, ConsumerProfile, RelPath, names};
 use ascribe_model::ContentModel;
-use ascribe_resolve::{ResolvedBuild, ResolvedPage};
+use ascribe_resolve::{AstroRouter, ResolvedBuild, ResolvedPage};
 
 use crate::assets::{Placement, mirrored_path, relative_reference};
 use crate::emitter::{EmitContext, Emitter, PageContext};
@@ -98,28 +98,7 @@ impl Emitter for SiteEmitter {
     }
 
     fn prepare(&self, _cx: &EmitContext<'_>, build: &ResolvedBuild) -> Result<(), EmitError> {
-        // Two pages with one route can't both be
-        // published.
-        let collisions = self
-            .profile
-            .astro_router()
-            .collisions(build.pages.iter().map(|p| &p.path));
-        if collisions.is_empty() {
-            return Ok(());
-        }
-        let lines: Vec<String> = collisions
-            .iter()
-            .map(|(route, pages)| {
-                let names: Vec<String> = pages.iter().map(|p| p.to_string()).collect();
-                format!("{route} is the route of {}", names.join(" and "))
-            })
-            .collect();
-        Err(EmitError::Invalid {
-            message: format!(
-                "the site output can't publish two pages at one route: {}. Rename one of the files",
-                lines.join("; ")
-            ),
-        })
+        route_collisions(self.profile.astro_router(), build, "the site output")
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
@@ -129,7 +108,12 @@ impl Emitter for SiteEmitter {
             anchors: self.anchors,
         };
         let mut out = frontmatter::render(cx, page)?;
-        let body = renderer.blocks(&page.blocks).join("\n\n");
+        let mut chunks = Vec::new();
+        if let Some(pointer) = agents_pointer(cx, page) {
+            chunks.push(pointer);
+        }
+        chunks.extend(renderer.blocks(&page.blocks));
+        let body = chunks.join("\n\n");
         out.push_str(&body);
         if !body.is_empty() {
             out.push('\n');
@@ -176,6 +160,53 @@ impl Emitter for SiteEmitter {
             contents: Contents::Text(crate::zod::generate(cx.model)),
         }])
     }
+}
+
+/// The pointer to `llms.txt` at the top of a page, with `[consumer] agents
+/// = true` (element contract §8): an `<ascribe-for-agents>` element, which the
+/// element library hides from sight but not from an agent reading the page,
+/// linking to the index and to the page's Markdown version.
+fn agents_pointer(cx: &PageContext<'_>, page: &ResolvedPage) -> Option<String> {
+    let consumer = &cx.emit.model.consumer;
+    if !consumer.agents {
+        return None;
+    }
+    // Root-relative, as every link in the site output is: a page in HTML
+    // carries its URL, so a reader resolves them (the delivery spec asks
+    // for absolute URLs in Markdown only).
+    let router = AstroRouter::from_consumer(consumer);
+    let index = router.url_of("llms.txt");
+    let markdown = router.markdown_url(&page.path);
+    Some(format!(
+        "<{tag}>\n\nFor AI agents: the documentation index is at [llms.txt]({index}), and this page is available as [Markdown]({markdown}).\n\n</{tag}>",
+        tag = names::ELEMENT_FOR_AGENTS
+    ))
+}
+
+/// Refuses a build with two pages at one route, which `output` (an output's
+/// name in a sentence) can't publish both of.
+pub(crate) fn route_collisions(
+    router: &AstroRouter,
+    build: &ResolvedBuild,
+    output: &str,
+) -> Result<(), EmitError> {
+    let collisions = router.collisions(build.pages.iter().map(|p| &p.path));
+    if collisions.is_empty() {
+        return Ok(());
+    }
+    let lines: Vec<String> = collisions
+        .iter()
+        .map(|(route, pages)| {
+            let names: Vec<String> = pages.iter().map(|p| p.to_string()).collect();
+            format!("{route} is the route of {}", names.join(" and "))
+        })
+        .collect();
+    Err(EmitError::Invalid {
+        message: format!(
+            "{output} can't publish two pages at one route: {}. Rename one of the files",
+            lines.join("; ")
+        ),
+    })
 }
 
 /// Percent-encodes a URL path segment: everything but unreserved characters.

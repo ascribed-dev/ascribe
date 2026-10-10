@@ -136,7 +136,7 @@ fn phases(name: &str, dir: &Path) {
     let resolve = start.elapsed();
     let start = Instant::now();
     let cx = EmitContext::new(&resolved, project.root(), build);
-    let plain: &dyn Emitter = &PlainEmitter;
+    let plain: &dyn Emitter = &PlainEmitter::new(&model);
     let emission = emit(plain, &cx, &tree).expect("emits");
     let emitted = start.elapsed();
     println!(

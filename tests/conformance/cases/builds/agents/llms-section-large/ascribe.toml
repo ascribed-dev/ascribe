@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# The outputs for agents, whose llms.txt has a line per page.
+[consumer]
+site = "https://docs.example.com"
+agents = true
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"

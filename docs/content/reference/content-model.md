@@ -525,6 +525,7 @@ slugger = "github"
 | `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
 | `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids ([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses. |
 | `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
+| `agents` {available=next} | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below. |
 
 **Heading ids, image attributes, and assets** ([SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)) are part of the profile, not keys. The `astro` profile has exactly one way to do each:
 
@@ -534,6 +535,14 @@ slugger = "github"
 A later profile that offers a choice will add a key for it.
 
 **How file paths become routes** (the `astro` profile): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. The root `index.md` (Astro's entry id `index`) is at `base-path`, which under `trailing-slash = "never"` loses its final `/` unless it's `/`. Two pages with one entry id (`My File.md` and `my-file.md`, or `index.md` and `index/index.md`) can't both be published, and `ascribe build --emit site` fails, naming them. The same router answers the reverse question, which page a route-like link names, for the `link-route` warning and its fix. Source files never contain routes ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)).
+
+**The outputs for agents** (`agents = true`) change what the plain-markdown output is, and add to the site output:
+
+- **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site: each page at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`), each opening with a line pointing at `llms.txt`; the files they link to under `_ascribe/files/`, linked by absolute URL; and `llms.txt`.
+- **`llms.txt`** lists every page the build publishes as `- [Title](url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Pages in a folder are a section named after the folder (the title of its `index.md`, when it has one); pages outside every folder come first, under "Pages". An index over 50,000 characters is split into one `llms.txt` per folder, which the root file links to. A page's description is the field its type marks [`role = "description"`](#54-field-roles), as plain text; a type without one lists its pages without descriptions.
+- **Each page of the site output** opens with a pointer to `llms.txt` and the page's Markdown, which the element library hides from sight ([element contract §8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents)).
+
+`@ascribed/astro` publishes the plain output with the site, and serves it in `astro dev`. With another generator, copy `<output-dir>/<build>/plain/` to the site's `base-path`. `ascribe check` then reports two advice checks: a description too long for its line in `llms.txt` (`description-too-long`), and an `llms.txt` still over the limit when it's split (`llms-section-large`).
 
 The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings from `astro.config`. The Astro integration checks that they agree, and fails the build, naming each difference, when they don't. It compares `base-path` as a path with a leading and a trailing `/`, treats Astro's `trailingSlash: "ignore"` as agreeing with either value, and compares `site` by origin when both sides set it.
 

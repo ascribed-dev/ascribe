@@ -68,11 +68,14 @@ Pages are written at their own source paths too (the output-layout contract), so
 | Plain markdown | Mirrored path, relative reference | Mirrored path, relative reference |
 | JSON | Mirrored path, relative reference | Mirrored path, relative reference |
 | Site, `astro` profile | Mirrored path, relative reference | `_ascribe/files/` + mirrored path, root-relative URL |
+| Plain markdown, `agents = true` {available=next} | `_ascribe/files/` + mirrored path, absolute URL | `_ascribe/files/` + mirrored path, absolute URL |
 
 The consumer profile decides placement in the site output (SPEC §9.5), through `ConsumerProfile::asset_placement` (`Mirror` or `Published`):
 
 - **Images: mirrored, so Astro processes them.** Astro optimizes an image in a content-collection entry when the entry's markdown refers to it by a relative path; it resolves the path from the entry's file. The site output is the collection, so the mirrored copy is found relative to the page, and Astro's image processing applies as it would to the author's own files. The image must stay a markdown image, not raw HTML (the site-render contract keeps it one).
 - **Link targets: published, because Astro doesn't copy them.** Astro leaves a markdown link to a local file alone, and a relative `href` resolves against the page's URL, not its file, so it would break. These copies go under `_ascribe/files/`, which the Astro integration serves at `<base-path>_ascribe/files/`, and links use that URL.
+
+With `[consumer] agents = true` (content-model.md §16), the plain output is published beside the site for agents to read, page by page from wherever they fetch it, so every asset goes under `_ascribe/files/` and is referred to by its absolute URL: `site`, then the URL as above.
 
 The Astro integration's tests verify both behaviors against the Astro version it targets.
 

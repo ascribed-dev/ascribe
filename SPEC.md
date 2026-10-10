@@ -1060,6 +1060,9 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
 - A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.
 - Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.
+- A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
+
+**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes, by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid.
 
 **JSON output.** The resolved tree, for custom consumers.
 
@@ -1067,7 +1070,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 |---|---|---|
 | `@note {type=tip}` with title | `<ascribe-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
 | `@steps` | `<ascribe-steps>` wrapping the list | The ordered list |
-| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
+| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | Each arm as a section with a bold label, its headings ending with the label |
 | `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<ascribe-tabs>` group | One arm becomes plain content; several stay labeled sections |
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
 | `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
@@ -1095,6 +1098,7 @@ The consumer profile, declared in the content model, describes how the site outp
 - **Heading ids:** how to emit an explicit id so the consumer keeps its own heading and table-of-contents processing.
 - **HTML passthrough:** whether the consumer renders raw HTML in markdown.
 - **Images and assets:** how to emit image attributes, where copied assets go, and how references to them are written, so the consumer's image processing still applies.
+- **Outputs for agents:** whether builds publish `llms.txt` and each page's Markdown (§9.4), and the site's origin their links need.
 
 ### 9.6 Astro
 
@@ -1115,6 +1119,7 @@ The element library implements the custom elements used by the site output.
 - Elements are styled with CSS and themed through CSS custom properties.
 - Only elements that require interaction use JavaScript. Of the built-ins, that's `<ascribe-tabs>`.
 - Without JavaScript, `<ascribe-tabs>` displays every arm with its label.
+- The pointer for agents (§9.4) is hidden from sight, not from the page's text.
 
 ---
 

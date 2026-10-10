@@ -7,6 +7,8 @@
 
 mod support;
 
+#[path = "all/agents.rs"]
+mod agents;
 #[path = "all/assets.rs"]
 mod assets;
 #[path = "all/formatted.rs"]

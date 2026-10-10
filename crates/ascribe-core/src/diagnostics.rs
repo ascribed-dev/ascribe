@@ -481,10 +481,10 @@ pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
 /// `ASC149`, advice, page level: a content check (area `pages`).
 pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
 
-/// `ASC150`, advice, file level: a content check (area `pages`).
+/// `ASC155`, advice, file level: a content check (area `pages`).
 pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
 
-/// `ASC151`, advice, page level: a content check (area `pages`).
+/// `ASC156`, advice, page level: a content check (area `pages`).
 pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
 
 /// `ASC152`, advice, file level: a content check (area `pages`).
@@ -492,6 +492,15 @@ pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-
 
 /// `ASC153`, advice, file level: a content check (area `pages`).
 pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+
+/// `ASC154`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CONSUMER_AGENTS_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-agents-site");
+
+/// `ASC155`, advice, file level: a content check (outputs), "A page's description is longer than its line in `llms.txt` should be".
+pub const DESCRIPTION_TOO_LONG: DiagnosticSlug = DiagnosticSlug("description-too-long");
+
+/// `ASC156`, advice, page level: a content check (outputs), "An `llms.txt` file is over its size limit even when the index is split by folder".
+pub const LLMS_SECTION_LARGE: DiagnosticSlug = DiagnosticSlug("llms-section-large");
 
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
@@ -648,6 +657,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
     REVIEW_OVERDUE,
+    MODEL_CONSUMER_AGENTS_SITE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -659,6 +671,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
     REVIEW_OVERDUE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

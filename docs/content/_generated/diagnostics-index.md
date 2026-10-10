@@ -154,3 +154,6 @@
 | [ASC151](../reference/diagnostics.md#asc151-heading-level-skipped) | `heading-level-skipped` | Advice | Page | fix |
 | [ASC152](../reference/diagnostics.md#asc152-code-language-missing) | `code-language-missing` | Advice | File | choose |
 | [ASC153](../reference/diagnostics.md#asc153-review-overdue) | `review-overdue` | Advice | File | review |
+| [ASC154](../reference/diagnostics.md#asc154-model-consumer-agents-site) | `model-consumer-agents-site` | Error | File | write |
+| [ASC155](../reference/diagnostics.md#asc155-description-too-long) | `description-too-long` | Advice | File | write |
+| [ASC156](../reference/diagnostics.md#asc156-llms-section-large) | `llms-section-large` | Advice | Page | write |

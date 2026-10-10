@@ -28,7 +28,7 @@ fn name(emitter: &str, build: &str, path: &str) -> String {
 #[test]
 fn plain_snapshots() {
     for build in BUILDS {
-        for (path, text) in output(build, &PlainEmitter) {
+        for (path, text) in output(build, &PlainEmitter::default()) {
             if path.ends_with(".md") {
                 insta::assert_snapshot!(name("plain", build, &path), text);
             }
@@ -50,7 +50,7 @@ fn json_snapshots() {
 #[test]
 fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
     for build in BUILDS {
-        for emitter in [&PlainEmitter as &dyn Emitter, &JsonEmitter] {
+        for emitter in [&PlainEmitter::default() as &dyn Emitter, &JsonEmitter] {
             let files: Vec<String> = output(build, emitter).into_keys().collect();
             let page = |stem: &str| {
                 if emitter.name() == "json" {
@@ -77,7 +77,7 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
 
 #[test]
 fn the_cloud_build_keeps_the_package_manager_group_and_shows_availability() {
-    let plain = output("cloud", &PlainEmitter);
+    let plain = output("cloud", &PlainEmitter::default());
     let page = &plain["install-agent.md"];
     // The `pm` group stays a full set of labeled sections...
     // (They're inside a list item, so indented by three spaces.)
@@ -104,7 +104,7 @@ fn the_cloud_build_keeps_the_package_manager_group_and_shows_availability() {
 
 #[test]
 fn the_self_managed_3_3_build_drops_what_isnt_available_yet() {
-    let plain = output("self-managed-3.3", &PlainEmitter);
+    let plain = output("self-managed-3.3", &PlainEmitter::default());
     let page = &plain["install-agent.md"];
     assert!(!page.contains("Streaming sync"), "{page}");
     assert!(page.contains("Point the agent at your server"), "{page}");
@@ -118,7 +118,7 @@ fn the_self_managed_3_3_build_drops_what_isnt_available_yet() {
 #[test]
 fn plain_output_is_commonmark_with_no_html() {
     for build in BUILDS {
-        for (path, text) in output(build, &PlainEmitter) {
+        for (path, text) in output(build, &PlainEmitter::default()) {
             if !path.ends_with(".md") {
                 continue;
             }

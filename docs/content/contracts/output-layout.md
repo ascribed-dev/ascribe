@@ -32,6 +32,14 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
+**With `[consumer] agents = true`** {available=next} (content-model.md §16), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
+
+| Emitter | Page `Guides/My Setup.md` is written to |
+|---|---|
+| `plain` | `guides/my-setup.md`: the page's Astro entry id with `.md` (the root `index.md` stays `index.md`) |
+
+Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §16); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
+
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
 **`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`).
@@ -77,7 +85,7 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 | `files[].path` | The file's path relative to the emitter root, `/`-separated. |
 | `files[].kind` | `"page"`, `"asset"`, or `"generated"` (anything else Ascribe writes, such as a schema). |
 | `files[].source` | For a page or asset, its source path relative to the content root, starting with `..` for a file outside it. Absent for generated files. |
-| `files[].url` | For a site-output asset under `_ascribe/files/`, the URL pages use for it, which the consumer must serve it at (asset contract §3.2). Absent otherwise. |
+| `files[].url` | For an asset under `_ascribe/files/` (the site output's, or the plain output's with `agents = true`), the root-relative URL pages use for it, which the consumer must serve it at (asset contract §3.2). Absent otherwise. |
 
 The manifest lists files only. Directories are implied by their paths.
 

@@ -41,3 +41,21 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Message:** this page was due for review on \{date}; check it still holds, then move `{field}` to the next review
 
 **Fix:** Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project.
+
+### Outputs
+
+#### ASC155 `description-too-long`
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**Message:** this description is \{length} characters, and its line in llms.txt reads best under \{limit}; shorten it to one sentence
+
+**Fix:** Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short.
+
+#### ASC156 `llms-section-large`
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**Message:** \{file} is \{size} characters in build `{build}`, over the \{limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions
+
+**Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions.

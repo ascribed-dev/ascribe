@@ -71,6 +71,24 @@ fn a_group_is_one_section_per_arm_led_by_its_label() {
 }
 
 #[test]
+fn a_heading_inside_an_arm_ends_with_the_arms_label() {
+    // Each section's headings stay distinct, so a reader of the Markdown
+    // (an agent, a search index) can tell which arm it's in.
+    let source =
+        "@variant {pm=npm}:\n## Install\nnpm i\n@variant {pm=yarn}:\n## Install\nyarn add\n@end\n";
+    assert_eq!(
+        body(source),
+        "**npm**\n\n## Install (npm)\n\nnpm i\n\n**Yarn**\n\n## Install (Yarn)\n\nyarn add\n"
+    );
+    // A group reduced to one arm is that arm's content, headings unchanged.
+    let project = memory_project(FULL_MODEL, &[("index.md", &page(source))]);
+    assert_eq!(
+        plain(&project, "self-managed-3.5", "index.md"),
+        "# Test\n\n## Install\n\nnpm i\n"
+    );
+}
+
+#[test]
 fn a_selection_that_leaves_one_arm_leaves_just_its_content() {
     let source = "@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\nServer.\n@end\n";
     let project = memory_project(FULL_MODEL, &[("index.md", &page(source))]);

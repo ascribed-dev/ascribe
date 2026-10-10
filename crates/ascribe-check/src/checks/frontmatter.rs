@@ -8,7 +8,8 @@
 //! missing field, is reported at the file's first line (SPEC §8.1).
 
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
-use ascribe_model::{FrontmatterSchema, TypeMatch, validate_frontmatter};
+use ascribe_model::{FieldRole, FrontmatterSchema, TypeMatch, validate_frontmatter};
+use ascribe_resolve::llms;
 use ascribe_syntax::Frontmatter;
 use serde_yaml_ng::Value;
 
@@ -85,8 +86,45 @@ impl Ctx<'_> {
         if !fragment {
             self.check_reserved_keys(&value, &index, first_line);
             self.check_roles(schema, &value, &index, first_line);
+            self.check_description_length(schema, &value, &index);
         }
         self.check_intended_key(&value, &index, first_line);
+    }
+
+    /// A description longer than its line in `llms.txt` should be, when the
+    /// project publishes one (`[consumer] agents = true`).
+    fn check_description_length(
+        &mut self,
+        schema: &FrontmatterSchema,
+        value: &Value,
+        index: &YamlIndex,
+    ) {
+        if !self.model.consumer.agents {
+            return;
+        }
+        let Some(field) = schema.field_with_role(FieldRole::Description) else {
+            return;
+        };
+        let Some(raw) = value.get(field.name.as_str()).and_then(Value::as_str) else {
+            return;
+        };
+        let Some(text) = llms::description_text(self.model, raw) else {
+            return;
+        };
+        let length = text.chars().count();
+        if length <= llms::DESCRIPTION_LIMIT {
+            return;
+        }
+        let Some(node) = index.get(&field.name) else {
+            return;
+        };
+        let issue = Issue::new(
+            diagnostics::DESCRIPTION_TOO_LONG,
+            Location::new(self.id, node.value),
+        )
+        .with_arg("length", length.to_string())
+        .with_arg("limit", llms::DESCRIPTION_LIMIT.to_string());
+        self.report(issue);
     }
 
     /// The first line of the file, without its line ending. Never empty
