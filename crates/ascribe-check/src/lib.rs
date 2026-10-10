@@ -43,8 +43,8 @@ mod scope;
 mod yaml;
 
 pub use builds::{
-    Diagnosed, UnknownBuild, diagnose, diagnose_editor_build, diagnose_editor_build_in,
-    select_builds,
+    Diagnosed, UnknownBuild, count_errors, diagnose, diagnose_editor_build,
+    diagnose_editor_build_in, select_builds,
 };
 pub use checks::check_file;
 use checks::check_sources;

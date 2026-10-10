@@ -53,7 +53,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Span, diagnostics};
-use ascribe_model::{AvailabilityMode, Build, VariantMode};
+use ascribe_model::{AvailabilityMode, Build, CheckLevel, VariantMode};
 use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage};
 
 use crate::{Diagnostic, Project, check_files};
@@ -108,6 +108,7 @@ pub struct PageChecker<'p> {
     project: &'p Project,
     indexed: Indexed<'p>,
     links: LinkProblems,
+    errors_only: bool,
 }
 
 /// A project's source index as a [`PageChecker`] reads it, made once and
@@ -130,6 +131,7 @@ impl<'p> PageChecker<'p> {
             project,
             indexed: index.0.borrowed(),
             links: RefCell::new(HashMap::new()),
+            errors_only: false,
         }
     }
 
@@ -139,6 +141,7 @@ impl<'p> PageChecker<'p> {
             project,
             indexed: Indexed::new(project),
             links: RefCell::new(HashMap::new()),
+            errors_only: false,
         }
     }
 
@@ -156,7 +159,18 @@ impl<'p> PageChecker<'p> {
             project,
             indexed: Indexed::shared(index),
             links: RefCell::new(HashMap::new()),
+            errors_only: false,
         }
+    }
+
+    /// The same checker, leaving out the checks that cost the most and can't
+    /// report an error: `page-size`, which renders every page, unless
+    /// `[checks]` raises it to an error. For a caller that only counts
+    /// errors; its errors are the same.
+    #[must_use]
+    pub fn errors_only(mut self) -> PageChecker<'p> {
+        self.errors_only = true;
+        self
     }
 
     /// The page-level diagnostics of `build` for these resolved pages alone:
@@ -258,7 +272,10 @@ impl<'p> PageChecker<'p> {
     fn page(&self, build: &Build, page: &ResolvedPage) -> Vec<Found> {
         let index = &self.indexed.index;
         let mut found = check_page(index, page, &self.links);
-        if let Some(limit) = size::limit(index)
+        let counted = !self.errors_only
+            || index.model().checks.level(diagnostics::PAGE_SIZE) == Some(CheckLevel::Error);
+        if counted
+            && let Some(limit) = size::limit(index)
             && let Some(f) = size::page_size(index, self.project.root(), build, page, limit)
         {
             found.push(f);
