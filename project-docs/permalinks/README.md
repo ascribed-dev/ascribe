@@ -36,11 +36,17 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 8. **Ascribe hosts nothing and the binary stays as it is:** no HTTP, no server.
 9. **No work is done for released versions.** Ascribe is before 1.0 and has no users, so the addresses in 0.2.0's binary aren't kept working.
 
-Three more are made in phase 1, because each fixes a shape that ships in phase 2 and can't change afterwards.
+The rest were made in [phase 1](phase-1-decisions.md), because each fixes a shape that ships in phase 2 and can't change afterwards.
+
+10. **One flat set of names.** A docs set that covers several products uses a convention (`agent-settings`, `cli-settings`), not a namespace in the language or the model. A name uses the characters `@id` allows today (letters, digits, `-`, `_`, `.`), with nothing added, so a `/` never appears in one and an address has one segment after the path. A flat set can grow a namespace later, by treating a prefix as one; a namespace can't be taken back.
+11. **A name is unique within what one build publishes.** Two pages may carry one permalink if no build publishes both. The looser rule can be tightened later by a check; the stricter one couldn't be loosened without breaking projects. It leaves open whether the [versions proposal](../versions.md) uses one permalink on two pages in place of `replaces`.
+12. **A name is declared only on a page or a heading that exists.** Nothing is reserved in `ascribe.toml`, so every permalink leads somewhere real, and a product's team proposes a name by a pull request against the docs. If reserving is ever wanted, it's an alias (phase 5) with no target yet.
+13. **The names that ship.** The attribute on `@id` and the frontmatter key are both `permalink`. The addresses' path is `[consumer] permalink-path`, a path from the site's root, which is `go/` under the base path when unset. The build's list is `_ascribe/permalinks.json` in the site output.
+14. **An address ends the way the site's routes do,** by `[consumer] trailing-slash`. Ascribe's docs set it to `"always"`, so the help link is `https://ascribed-dev.com/go/cli-check/`. `astro dev` answers 404 for an address without the slash when Astro's `trailingSlash` is `"always"`, and a static host may redirect it, so the binary writes the form the site serves.
 
 ## The thread
 
-**The use case:** `ascribe check --help` ends with a link to `/go/cli-check`, and following it on the docs site opens the section about `ascribe check`.
+**The use case:** `ascribe check --help` ends with a link to `/go/cli-check/`, and following it on the docs site opens the section about `ascribe check`.
 
 **The layers it crosses:**
 

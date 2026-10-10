@@ -8,7 +8,7 @@ A heading marked as a permalink has an address on the site, and Ascribe's own bi
 
 ```sh
 $ ascribe check --help | tail -1
-Documentation: https://ascribed-dev.com/go/cli-check
+Documentation: https://ascribed-dev.com/go/cli-check/
 ```
 
 Following that address opens the section about `ascribe check`, wherever the page is.
@@ -18,7 +18,7 @@ One heading, one build, one command's help. Everything it takes is built to the 
 ## Context
 
 - [The thread](README.md#the-thread): the layers, and the seam this phase exists to test.
-- Phase 1's decisions: what a name may look like, that it's unique within what a build publishes, and the three names (`permalink`, `[consumer] permalink-path`, `_ascribe/permalinks.json`).
+- Phase 1's decisions ([README](README.md#decisions), 10 to 14): what a name may look like, that it's unique within what a build publishes, that it's declared only where it leads, the three names (`permalink`, `[consumer] permalink-path`, `_ascribe/permalinks.json`), and that an address ends the way `trailing-slash` says.
 - `crates/ascribe-core/src/schema.rs`: `Builtin::Id`'s schema, which declares no attributes, and `Builtin::Include`'s beside it, which declares a boolean one.
 - `SPEC.md` §4.1 (`@id`) and §5.5 (a heading's source id and page id). A heading in a fragment is published on every page that includes it.
 - `crates/ascribe-resolve`: the source index's headings, and how a build resolves a page's ids and routes. `crates/ascribe-check/src/page/collect.rs`: `id-duplicate`, the nearest existing check.
@@ -104,7 +104,7 @@ Pages; the binary's other links; the committed list; retiring; aliases; anything
 
 ## Acceptance criteria
 
-- `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check`.
+- `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
 - In `examples/astro-site`, built and served, a marked heading's address opens its page at the heading. The end-to-end test does exactly this.
 - A project with no permalinks builds the same site output as before, plus the list with an empty table. The outputs comparison shows that file and nothing else.
 - The night after this merges, the address in the first criterion works on the live site. Until then it doesn't: the site gets the integration from the canary. That's accepted (README decision 9), and the pull request says when it was checked.
