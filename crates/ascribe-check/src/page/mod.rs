@@ -13,6 +13,7 @@
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |
 //! | `page-size` | the page's plain Markdown, per build |
+//! | `permalink-duplicate` | every page the build publishes |
 //!
 //! The entry points are [`check_project`], for one build, and
 //! [`check_all_builds`], for every build of the project. `ascribe check`,
@@ -46,6 +47,7 @@
 
 mod bridge;
 mod collect;
+mod permalinks;
 mod size;
 
 use std::cell::RefCell;
@@ -271,6 +273,7 @@ impl<'p> PageChecker<'p> {
             found.extend(self.page(build, page));
         }
         let pages: Vec<&ResolvedPage> = resolved.pages.iter().collect();
+        permalinks::duplicates(&self.indexed.index, &pages, &mut found);
         found.extend(crate::across::for_build(
             &self.indexed.index,
             &self.project.model().checks,
@@ -307,19 +310,21 @@ impl<'p> PageChecker<'p> {
         found
     }
 
-    /// The content checks across the project that the editor reports, for
-    /// `build`: `page-orphan` and `title-duplicate` from `pages`, which must
+    /// The checks across the project that the editor reports, for `build`:
+    /// `permalink-duplicate`, `page-orphan`, and `title-duplicate` from `pages`, which must
     /// be every page the build publishes, in path order, and the checks
     /// that hold for every build apart from the image checks
     /// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)). The language server runs
     /// them on save; levels aren't applied.
     pub fn check_across(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
-        let found = crate::across::for_build(
+        let mut found = Vec::new();
+        permalinks::duplicates(&self.indexed.index, pages, &mut found);
+        found.extend(crate::across::for_build(
             &self.indexed.index,
             &self.project.model().checks,
             pages,
             false,
-        );
+        ));
         let mut out = self.finish(vec![(Some(build.name.as_str()), found)]);
         out.extend(self.for_every_build(false).into_values().flatten());
         out

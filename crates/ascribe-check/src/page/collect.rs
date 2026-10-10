@@ -99,7 +99,7 @@ fn recorded(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
 /// Moves an issue found in included content to the include site, and keeps
 /// its own location as related information (SPEC §8.1). An issue in the
 /// page's own file stays where it is.
-fn at_include_site(index: &Project, mut issue: Issue, via: &[IncludeSite]) -> Issue {
+pub(super) fn at_include_site(index: &Project, mut issue: Issue, via: &[IncludeSite]) -> Issue {
     let Some(site) = via.first() else {
         return issue;
     };
@@ -119,7 +119,7 @@ fn at_include_site(index: &Project, mut issue: Issue, via: &[IncludeSite]) -> Is
 }
 
 /// The file an include directive names.
-fn include_target(index: &Project, site: &IncludeSite) -> Option<String> {
+pub(super) fn include_target(index: &Project, site: &IncludeSite) -> Option<String> {
     let file = index.file_by_id(site.file)?;
     let include = file.includes.iter().find(|i| i.span == site.span)?;
     Some(

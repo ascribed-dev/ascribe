@@ -348,6 +348,14 @@ Gives a heading an explicit, stable id.
 - The id replaces the heading's slug, as both its source id and its page id (§5.5). An id that isn't valid still replaces the slug, so a link that uses it works once the id is fixed, and a heading with several `@id` lines takes the first; each mistake is reported once.
 - The id MUST be unique within its page.
 - The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
+- **Attribute:** `permalink`, a boolean, `false` when absent. `{permalink=true}` makes the id a **permalink** too: a name for the section that something outside the documentation can link to, which a build publishes at an address of its own that leads to the heading wherever its page is (§9.5).
+
+  ```
+  ## `ascribe check`
+  @id {permalink=true}: cli-check
+  ```
+
+  A build MUST publish a permalink on one page only. A heading in a fragment is published on every page that includes it, so its permalink is published on each. Two pages that no build publishes together may share a permalink.
 
 ### 4.2 `@include`
 
@@ -894,6 +902,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Title | Title given to a directive that doesn't accept one | Warning |
 | Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
+| `@id` | Permalink published by one build on more than one page (page level) | Error |
 | `@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods | Error |
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |
@@ -1099,6 +1108,7 @@ The consumer profile, declared in the content model, describes how the site outp
 - **HTML passthrough:** whether the consumer renders raw HTML in markdown.
 - **Images and assets:** how to emit image attributes, where copied assets go, and how references to them are written, so the consumer's image processing still applies.
 - **Outputs for agents:** whether builds publish `llms.txt` and each page's Markdown (§9.4), and the site's origin their links need.
+- **Permalinks:** where each permalink's address is published (§4.1). A compiler lists each build's permalinks with the page and anchor each leads to, and the consumer publishes at each address a page that sends the reader there.
 
 ### 9.6 Astro
 

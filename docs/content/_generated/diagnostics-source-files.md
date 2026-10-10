@@ -252,6 +252,16 @@ Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Use only letters, digits, hyphens, underscores, and periods in the id.
 
+#### ASC173 `permalink-duplicate`
+
+Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
+
+**When:** Permalink published by one build on more than one page.
+
+**Message:** the permalink `{name}` is also on `{page}`; a build can publish each permalink on one page only
+
+**Fix:** Give one of the headings a different `@id`, or remove `{permalink=true}` from it. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages.
+
 ### `@include`
 
 #### ASC021 `include-target-missing`
