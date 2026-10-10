@@ -969,12 +969,18 @@ impl Core {
     /// [`Core::nav_target`] gives it, or the project's for `ascribe.toml`.
     pub(crate) fn code_action_target(&self, uri: &Uri) -> Option<Ctx> {
         self.nav_target(uri).or_else(|| {
-            let is_model = Core::doc_path(uri).is_some_and(|p| self.config.as_ref() == Some(&p));
+            let path = Core::doc_path(uri)?;
+            let is_model = self.config.as_ref() == Some(&path);
             if is_model {
-                self.project_target(uri)
-            } else {
-                None
+                return self.project_target(uri);
             }
+            // `ascribe.permalinks`, beside it: its fixes edit `ascribe.toml`.
+            let loaded = self.loaded.as_ref()?;
+            if path == loaded.root.join(ascribe_model::PERMALINKS_FILE) {
+                let content = RelPath::parse(Ctx::PROJECT).ok()?;
+                return self.ctx(loaded, loaded.inc.snapshot(), content, &path);
+            }
+            None
         })
     }
 

@@ -56,7 +56,12 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
   "dimensions": { "pm": ["npm", "pnpm", "yarn"] },
   "permalinks": {
     "cli-check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md" },
-    "cli-reference": { "route": "/reference/cli/", "source": "reference/cli.md" }
+    "cli-reference": { "route": "/reference/cli/", "source": "reference/cli.md" },
+    "check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md", "alias": "cli-check" },
+    "old-check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md", "retired": "Merged into the CLI reference" }
+  },
+  "removed": {
+    "legacy-sync": { "reason": "The sync agent was removed in 4.0" }
   }
 }
 ```
@@ -70,6 +75,9 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 | `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |
 | `permalinks.*.fragment` | The heading's anchor on that page, without `#`. Absent for a page's own permalink, which leads to the top of the page. |
 | `permalinks.*.source` | The page's source path, relative to the content root. |
+| `permalinks.*.alias` | For an alias in `ascribe.toml`'s `[permalinks.aliases]` (SPEC §7.6), the name it leads to, as written there. It's listed with the page and anchor of the permalink its aliases end at, when the build publishes that permalink, and not listed otherwise. |
+| `permalinks.*.retired` | For a retired permalink in `[permalinks.retired]` whose `to` leads to a page the build publishes, why it was retired; `route`, `fragment`, and `source` are the `to`'s. |
+| `removed` | The retired permalinks with nowhere to lead in this build, keyed by name and sorted: those without `to`, and those whose `to`'s page the build doesn't publish. Each has `reason`, why it was retired. Their addresses show that what was there was removed, and why. Absent when there are none. |
 
 An address forwards to `route`, then `#` and `fragment` when there is one. A later version may add keys to the file or to an entry; it doesn't change these.
 

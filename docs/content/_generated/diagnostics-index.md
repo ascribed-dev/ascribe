@@ -178,3 +178,7 @@
 | [ASC175](../reference/diagnostics.md#ASC175) | `permalinks-list-invalid` | Error | File | write |
 | [ASC176](../reference/diagnostics.md#ASC176) | `permalinks-list-behind` | Warning | File | fix |
 | [ASC177](../reference/diagnostics.md#ASC177) | `permalink-removed` | Warning | File | write |
+| [ASC178](../reference/diagnostics.md#ASC178) | `model-permalinks` | Error | File | write |
+| [ASC179](../reference/diagnostics.md#ASC179) | `permalink-alias-target-missing` | Error | File | write |
+| [ASC180](../reference/diagnostics.md#ASC180) | `permalink-name-conflict` | Error | File | write |
+| [ASC181](../reference/diagnostics.md#ASC181) | `permalink-retired-target-missing` | Error | File | write |

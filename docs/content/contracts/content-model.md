@@ -5,7 +5,7 @@ description: The normative contract for the content model file, with the rules a
 
 This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../reference/content-model.md).
 
-SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](#23-decisions).
+SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](#24-decisions).
 
 Example files, each valid under this reference:
 
@@ -35,9 +35,10 @@ Example files, each valid under this reference:
 18. [`[editor]`](#18-editor)
 19. [`[sources.<name>]`](#19-sourcesname)
 20. [`[checks]`](#20-checks)
-21. [Defaults: what an absent section means](#21-defaults-what-an-absent-section-means)
-22. [Validation rules](#22-validation-rules)
-23. [Decisions](#23-decisions)
+21. [`[permalinks]`](#21-permalinks)
+22. [Defaults: what an absent section means](#22-defaults-what-an-absent-section-means)
+23. [Validation rules](#23-validation-rules)
+24. [Decisions](#24-decisions)
 
 ---
 
@@ -128,10 +129,11 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Image attributes (§5.3) | `[images.attributes]` | [§14](#14-images) |
 | Consumer profile (§9.5) | `[consumer]` | [§16](#16-consumer) |
 | Builds (§9.3) | `[builds.<name>]` | [§17](#17-buildsname) |
-| Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§22](#22-validation-rules) |
+| Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§23](#23-validation-rules) |
 | The editor's default build | `[editor]` | [§18](#18-editor) |
 | Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§19](#19-sourcesname) |
 | Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§20.1](#201-intended) |
+| Retired permalinks and aliases (§7.6) | `[permalinks]` | [§21](#21-permalinks) |
 
 ---
 
@@ -145,7 +147,7 @@ spec = "0.1"
 |---|---|---|---|
 | `spec` | string | **required** | The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. |
 
-The only other top-level keys are the tables in §4–§20. Anything else is an unknown key.
+The only other top-level keys are the tables in §4–§21. Anything else is an unknown key.
 
 ---
 
@@ -160,7 +162,7 @@ Where the source lives and where builds write.
 | `content-root` | string (path) | `"docs"` | The content root (SPEC §2.2): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It MUST exist and be a directory. |
 | `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see the [output-layout contract](output-layout.md)). It need not exist. |
 
-**Rules** (§22): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
+**Rules** (§23): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
 The defaults: `".ascribe/build"` keeps generated output out of the way of both the source and a consumer's own `dist/`.
 
@@ -330,7 +332,7 @@ A page type's top-level field MAY have a `role`, which says what the field is fo
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
 
-**Rules** (§22.3): the role is one of the three, on a field of its type, in a content type's own fields, and at most one field of a type has each role (`model-field-role`). A second field with a role keeps its type, and loses the role.
+**Rules** (§23.3): the role is one of the three, on a field of its type, in a content type's own fields, and at most one field of a type has each role (`model-field-role`). A second field with a role keeps its type, and loses the role.
 
 ---
 
@@ -349,7 +351,7 @@ A **dimension** is an axis content varies along (SPEC §4.3), and whose values a
 | `label` | string | the dimension's name | The display label for the dimension itself, used where a dimension name appears as an availability target or names a tab group. |
 | `versionless` | array of strings | `[]` | Values that are versionless (SPEC §4.4): availability for them takes a single state and no versions. Every entry MUST be a declared value. Values not listed are versioned. |
 
-**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. Dimension names and values also take part in the one-role rule (§22).
+**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. Dimension names and values also take part in the one-role rule (§23).
 
 ---
 
@@ -523,7 +525,7 @@ Project widgets (SPEC §6): directives a documentation set defines. Each declara
 | `"block"` | Following block. If the primary is a text primary and it's given, the primary is the content and nothing else is bound | `@steps`; with `primary = "text?"`, `@note` |
 | `"heading-or-block"` | At the top of a section, the section; anywhere else, the following block | `@available` |
 
-**Rules** (§22):
+**Rules** (§23):
 
 - A widget with container form MUST NOT have a required primary, since a container opener's primary is empty (SPEC §3.5). A container-only widget's primary MUST be `"none"` (`model-widget-container-primary`).
 - A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`).
@@ -680,7 +682,7 @@ missing = ["examples/quickstart.ts"]
 
 `check` reads the lock and the copies with the source files, and reports what doesn't match: a lock it can't read (`lock-invalid`); a pin of a source `ascribe.toml` doesn't declare with `git`, or declares with another `git` (`lock-source-unknown`); a copy that's missing or doesn't have its hash (`source-copy-changed`); a file in `sources/<name>/` the lock doesn't list (`source-copy-unlocked`); and a copy no snippet uses (`source-copy-unused`, a warning). A snippet that names a file with no copy is `snippet-file-missing`: its message says to run `ascribe sources fetch`, or, for a file the lock lists in `missing`, that the file isn't in the repository at the pinned commit, which `fetch` can't change. These are source-file diagnostics; see [the diagnostics reference](../reference/diagnostics.md).
 
-**Rules** (§22.8): `path` is relative (`model-path-absolute`), and names an existing directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). A source has exactly one of `path` and `git`, `branch` only with `git`, a URL and a branch name `git` accepts, and copies outside the content root (`model-source-remote`).
+**Rules** (§23.8): `path` is relative (`model-path-absolute`), and names an existing directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). A source has exactly one of `path` and `git`, `branch` only with `git`, a URL and a branch name `git` accepts, and copies outside the content root (`model-source-remote`).
 
 ---
 
@@ -713,7 +715,7 @@ The names `vale` and `links` are reserved: they're tables of settings for the to
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
-**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, `page-size`'s `limit` a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
+**Rules** (§23.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, `page-size`'s `limit` a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### 20.1 `[[intended]]`
 @available: next
@@ -738,7 +740,7 @@ reason = "Kept for the 2.x pages restored in the next release."
 
 Exactly one of `phrase`, `feature`, `term`, and `image`. The acknowledgement covers the check's problems that name that entry, in every build. One that covers nothing when every build is checked is advice (`intended-unused`), reported at its `[[intended]]` header with a fix that removes the table.
 
-**Rules** (§22.9): the check exists, with a did-you-mean suggestion for one that doesn't, is a review check, and is reported at an entry (`model-intended-check`); the table names exactly one declared entry (`model-intended-entry`); `check` and `reason` are present (`model-missing-key`) and `reason` isn't empty (`model-empty-text`); and the table has no other key (`model-unknown-key`).
+**Rules** (§23.9): the check exists, with a did-you-mean suggestion for one that doesn't, is a review check, and is reported at an entry (`model-intended-check`); the table names exactly one declared entry (`model-intended-entry`); `check` and `reason` are present (`model-missing-key`) and `reason` isn't empty (`model-empty-text`); and the table has no other key (`model-unknown-key`).
 
 ### 20.2 `[checks.vale]`
 @available: next
@@ -767,7 +769,7 @@ What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a pr
 
 Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
 
-**Rules** (§22.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
+**Rules** (§23.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
 
 ### 20.3 `[checks.links]`
 @available: next
@@ -787,11 +789,36 @@ ignore = ["localhost", "*.internal.example.com"]
 
 The links checked are every link whose destination is an `http` or `https` URL, in every source file, each address once. A link whose address answers with an error, doesn't answer in time, or can't be reached is a `link-external-broken` advice (`ASC168`, `next = "review"`, `place = "block"`); one whose redirects begin with a `301` or `308` is a `link-external-moved` advice (`ASC169`, `next = "choose"`), with an unsafe fix that writes the address the permanent redirects end at. Both are at the link, and configurable in `[checks]`. An `@intended {check=link-external-broken}` that covers no broken link is `intended-unused` only when `ascribe report links` ran; `ascribe check` doesn't report it.
 
-**Rules** (§22.9): each `ignore` entry is a host name, or `*.` and one (`model-wrong-type`); `command` is a string (`model-wrong-type`); no other key (`model-unknown-key`).
+**Rules** (§23.9): each `ignore` entry is a host name, or `*.` and one (`model-wrong-type`); `command` is a string (`model-wrong-type`); no other key (`model-unknown-key`).
 
 ---
 
-## 21. Defaults: what an absent section means
+## 21. `[permalinks]`
+@available: next
+
+Names for something outside the docs to link to that no heading or page declares (SPEC §7.6): a permalink ended on purpose, and a second name for one.
+
+```toml
+[permalinks.retired]
+rotate-keys = { to = "guides/security.md#keys", reason = "Merged into the security guide" }
+legacy-sync = { reason = "The sync agent was removed in 4.0" }
+
+[permalinks.aliases]
+agent-settings = "settings"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `retired.<name>` | table | | A retired permalink. `reason` (string, required, not empty) is why, which a reader whose link leads there sees. `to` (string) is where its address leads now: a page's path from the content root, and optionally `#` and the id of a heading on it. |
+| `aliases.<name>` | string | | An alias: the name it leads to, a permalink a heading or page declares, or another alias that leads to one. |
+
+No other key is allowed in `[permalinks]` or in a retired permalink's table. A name has the characters of an `@id`. `ascribe permalinks retire`, and the editor's quick fix on `permalink-removed`, write `[permalinks.retired]` in place; the quick fix's reason is the placeholder `why this permalink was retired`, which is an error until it's replaced.
+
+**Rules** (§23.10): each name is valid (`model-invalid-name`); a retired permalink has a `reason` (`model-missing-key`), not empty (`model-empty-text`) and not the placeholder (`model-permalinks`), and no other key (`model-unknown-key`); no name is both retired and an alias, and no alias leads back to itself (`model-permalinks`). What needs the content is checked with the project, not by the loader: SPEC §8.2's `permalink-name-conflict`, `permalink-alias-target-missing`, and `permalink-retired-target-missing`.
+
+---
+
+## 22. Defaults: what an absent section means
 
 A file containing only `spec = "0.1"` is valid. It means:
 
@@ -814,10 +841,11 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[editor]` | `build` as in §18. |
 | `[sources]` | No sources. Nothing outside the project's folder can be read. |
 | `[checks]` | Every check at its own level. |
+| `[permalinks]` | No retired permalinks and no aliases. |
 
 ---
 
-## 22. Validation rules
+## 23. Validation rules
 
 A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
@@ -826,7 +854,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 - Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules.
 - **Filesystem rules** (`model-content-root-missing`, `model-glossary-link`, `model-source-path-missing`, `model-source-outside-repository`) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
 
-### 22.1 File and structure
+### 23.1 File and structure
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -839,7 +867,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-invalid-name` | Every name follows its grammar (§1.2). | `` `{name}` isn't a valid {role} name: {rule} ``, for example `` `Deployment` isn't a valid dimension name: use a lowercase letter, then lowercase letters, digits, or hyphens `` |
 | `model-empty-text` | Every `label`, `name`, `term`, `definition`, and `description` is non-empty. | `` `{key}` can't be empty `` |
 
-### 22.2 Project
+### 23.2 Project
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -847,7 +875,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-content-root-missing` | The content root exists and is a directory. | `` content root `{path}` doesn't exist ``<br>`` content root `{path}` isn't a directory `` |
 | `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (derived from the spec). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
 
-### 22.3 Content types, fragments, and fields
+### 23.3 Content types, fragments, and fields
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -866,7 +894,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-field-role` | `role` is `"description"`, on a `string` field, `"review-date"`, on a `date` field, or `"owner"`, on a `string` or `enum` field; only on a content type's top-level fields; and a type has at most one field with each role (§6.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description", "review-date", or "owner", not "{value}" ``<br>`` role only works on a content type's top-level fields, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `ascribe_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
-### 22.4 Dimensions, names, lifecycle, notes, and features
+### 23.4 Dimensions, names, lifecycle, notes, and features
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -886,7 +914,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-availability-history-order` | A history in a feature's spec is in chronological order under the version scheme. | `` feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier} `` |
 | `model-feature-nested` | A feature's `available` isn't itself a feature key. | `` feature `{key}`: available must be an availability spec, not another feature (`{other}`) `` |
 
-### 22.5 Versions, phrases, glossary, and images
+### 23.5 Versions, phrases, glossary, and images
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -894,9 +922,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-glossary-duplicate-term` | No two terms or aliases are the same text, ignoring case when either is case-insensitive. | `` "{text}" is declared by both glossary terms `{a}` and `{b}` `` |
 | `model-glossary-link` | A term's `link` file exists under the content root and isn't a fragment. | `` glossary term `{id}` links to {path}, which doesn't exist ``<br>`` glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which MUST be a version, by `model-wrong-type`. Image attribute types are covered by the rules in §22.3.
+`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which MUST be a version, by `model-wrong-type`. Image attribute types are covered by the rules in §23.3.
 
-### 22.6 Widgets
+### 23.6 Widgets
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -907,9 +935,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-widget-groupable-form` | A groupable widget is container-only. | `` widget `{name}` is groupable, so it must be container-only: forms = ["container"] `` |
 | `model-widget-plain-content` | `plain-content` is set only on widgets that wrap content: container form, or binding `block` or `heading-or-block`. | `` widget `{name}` doesn't wrap content, so plain-content has no effect; remove it `` |
 
-`primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §22.3.
+`primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §23.3.
 
-### 22.7 Consumer, builds, and editor
+### 23.7 Consumer, builds, and editor
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -928,7 +956,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-editor-build-unknown` | `editor.build` names a declared build. | `` editor.build is `{build}`, which isn't a declared build; builds: {builds} `` |
 | `model-editor-build-required` | When there are several builds and none is named `site`, `editor.build` is set. | `` there are several builds and none is named site; set [editor] build to the one the editor should check `` |
 
-### 22.8 Sources
+### 23.8 Sources
 @available: ascribe 0.2.0
 
 | Slug | Rule | Message |
@@ -937,7 +965,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-source-outside-repository` | A source's folder is inside the git repository the project is in, when it's in one. | `` the folder of source `{source}`, `{path}`, is outside the git repository the project is in `` |
 | `model-source-remote` | A source has `path` or `git`, not both; `branch` only with `git`; a URL `git` can be given; a branch name `git` accepts; and, with `git`, copies outside the content root. | `` source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both ``<br>`` source `{source}` needs `path`, a folder in this repository, or `git`, another repository's URL ``<br>`` source `{source}` has `branch` but no `git`: a branch is only for a source in another repository ``<br>`` `{url}` isn't a URL Ascribe can give `git`: use `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path` ``<br>`` `{branch}` isn't a branch name `git` accepts ``<br>`` the copies of source `{source}` go in `sources/{source}/`, which is inside the content root `{content}`, where they'd be read as pages; give the content root a folder of its own `` |
 
-### 22.9 Checks
+### 23.9 Checks
 @available: next
 
 | Slug | Rule | Message |
@@ -947,9 +975,16 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-intended-entry` | `[[intended]]` names exactly one declared phrase, feature, glossary term, or image. | `` an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image` `` |
 | `model-checks-vale` | `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules. | `` `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini` `` |
 
+### 23.10 Permalinks
+@available: next
+
+| Slug | Rule | Message |
+|---|---|---|
+| `model-permalinks` | A name in `[permalinks]` is retired or an alias, not both; an alias leads, through aliases, to a name that isn't one; a retired permalink's reason isn't the quick fix's placeholder. | `` `{name}` is both retired and an alias; a name is one thing `` |
+
 ---
 
-## 23. Decisions
+## 24. Decisions
 
 Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, except item 12, which was settled when the site-render and asset contracts were written. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Each item keeps the alternatives that were considered.
 

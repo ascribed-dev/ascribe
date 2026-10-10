@@ -1,0 +1,9 @@
+description: >-
+  A permalink retired in `ascribe.toml` that the list still has as a
+  permalink makes the list behind, reported at the retired entry, and isn't
+  removed.
+spec: ["7.5", "7.6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: permalinks-list-behind, file: ascribe.toml, line: 7}

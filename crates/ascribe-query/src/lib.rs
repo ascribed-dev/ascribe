@@ -36,7 +36,7 @@ pub use explain::{DiagnosticList, ExampleText, Explanation, ListedDiagnostic, ex
 pub use link::{LinkAnswer, LinkKind, LinkSuggestion, link};
 pub use model::{ModelReport, Section, model, summary};
 pub use outline::{Outline, OutlineHeading, outline};
-pub use permalinks::{PermalinksAnswer, SyncAnswer, VerifyAnswer};
+pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 pub use refs::{Asked, Place, Refs, TargetKind, refs};
 pub use render::{Rendered, render};
 pub use report::{Report, report};

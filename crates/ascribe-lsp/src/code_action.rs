@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
-use ascribe_model::{PERMALINKS_FILE, PermalinkList};
+use ascribe_model::{Current, PERMALINKS_FILE, PermalinkList, RETIRED_PLACEHOLDER};
 use ascribe_resolve::{DeclaredPermalink, FileSystem};
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, Diagnostic, TextEdit,
@@ -250,10 +250,8 @@ fn sync_permalinks(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrComm
     let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
     let list = PermalinkList::parse(&text, FileId::new(0)).ok()?;
     let declared = ctx.snapshot.project().declared_permalinks();
-    let synced = list
-        .synced(&DeclaredPermalink::places(&declared))
-        .list
-        .to_toml();
+    let current = Current::new(DeclaredPermalink::places(&declared), &ctx.model.permalinks);
+    let synced = list.synced(&current).list.to_toml();
     if synced == text {
         return None;
     }
@@ -279,8 +277,75 @@ fn sync_permalinks(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrComm
     }))
 }
 
-/// The actions on `ascribe.toml`'s diagnostics: marking a problem about a
-/// content model entry or an image as intended, in `[[intended]]`.
+/// The title of the quick fix on `permalink-removed`.
+pub(crate) const RETIRE_TITLE: &str = "Retire this permalink, and write why";
+
+/// The quick fix on `permalink-removed`, in `ascribe.permalinks`: an entry
+/// in `ascribe.toml`'s `[permalinks.retired]` for the name, with a
+/// placeholder reason, which it then selects for the author to replace. The
+/// placeholder is reported until it is, so the fix alone quiets nothing,
+/// and it's never the preferred fix.
+fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCommand> {
+    let path = RelPath::parse(PERMALINKS_FILE).ok()?;
+    let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
+    let list = PermalinkList::parse(&text, FileId::new(0)).ok()?;
+    let at = ctx
+        .encoding
+        .offset_lenient(&LineIndex::new(&text), &text, diagnostic.range.start);
+    let name = list
+        .permalinks
+        .keys()
+        .chain(list.aliases.keys())
+        .chain(list.retired.keys())
+        .find(|name| list.span_of(name).is_some_and(|span| span.start() == at))?;
+    let retired = crate::retire::retire(
+        &ctx.model_text,
+        &[crate::retire::Retirement {
+            name,
+            reason: RETIRED_PLACEHOLDER,
+            to: None,
+        }],
+    )
+    .ok()?;
+    let edit = retired.edits.first()?;
+    let start = edit.span.start() + edit.new_text.find(RETIRED_PLACEHOLDER)?;
+    let selection = ctx.encoding.range(
+        &LineIndex::new(&retired.text),
+        Span::new(start, start + RETIRED_PLACEHOLDER.len()),
+    );
+    let config = crate::uri::path_to_uri(&ctx.config)?;
+    let change = TextEdit {
+        range: ctx
+            .encoding
+            .range(&LineIndex::new(&ctx.model_text), edit.span),
+        new_text: edit.new_text.clone(),
+    };
+    Some(CodeActionOrCommand::CodeAction(CodeAction {
+        title: RETIRE_TITLE.to_owned(),
+        kind: Some(CodeActionKind::QUICKFIX),
+        diagnostics: Some(vec![diagnostic]),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from([(config.clone(), vec![change])])),
+            ..WorkspaceEdit::default()
+        }),
+        command: Some(lsp_types::Command {
+            title: RETIRE_TITLE.to_owned(),
+            command: crate::links::OPEN_FILE.to_owned(),
+            arguments: Some(vec![
+                serde_json::Value::String(config.as_str().to_owned()),
+                serde_json::to_value(selection).ok()?,
+            ]),
+        }),
+        is_preferred: Some(false),
+        disabled: None,
+        data: None,
+    }))
+}
+
+/// The actions on `ascribe.toml`'s and `ascribe.permalinks`'s diagnostics:
+/// marking a problem about a content model entry or an image as intended,
+/// in `[[intended]]`, retiring a removed permalink, and bringing the list
+/// up to date with an alias or a retired permalink.
 fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
     let model_index = LineIndex::new(&ctx.model_text);
     let mut actions = Vec::new();
@@ -290,6 +355,17 @@ fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand
             data.and_then(|d| d.get(key))
                 .and_then(serde_json::Value::as_str)
         };
+        match field("slug") {
+            Some("permalink-removed") => {
+                actions.extend(retire_permalink(ctx, diagnostic.clone()));
+                continue;
+            }
+            Some("permalinks-list-behind") => {
+                actions.extend(sync_permalinks(ctx, diagnostic.clone()));
+                continue;
+            }
+            _ => {}
+        }
         let (Some(slug), Some(subject)) = (field("slug"), field("subject")) else {
             continue;
         };

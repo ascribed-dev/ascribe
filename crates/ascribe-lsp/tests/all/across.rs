@@ -315,3 +315,152 @@ fn a_list_of_permalinks_thats_behind_is_brought_up_to_date_by_a_quick_fix() {
     client.settle();
     assert!(client.codes(&keys).is_empty(), "{:?}", client.codes(&keys));
 }
+
+/// `text` with an LSP edit applied, for ASCII text.
+fn apply(text: &str, edit: &Value) -> String {
+    let offset = |at: &Value| {
+        let line = at["line"].as_u64().expect("line") as usize;
+        let character = at["character"].as_u64().expect("character") as usize;
+        let start: usize = text.split_inclusive('\n').take(line).map(str::len).sum();
+        start + character
+    };
+    let (start, end) = (
+        offset(&edit["range"]["start"]),
+        offset(&edit["range"]["end"]),
+    );
+    format!(
+        "{}{}{}",
+        &text[..start],
+        edit["newText"].as_str().expect("text"),
+        &text[end..]
+    )
+}
+
+#[test]
+fn a_removed_permalink_is_reported_on_the_list_and_retired_by_a_quick_fix() {
+    let header = "# Written by Ascribe. Don't edit it: run `ascribe permalinks sync`.\n";
+    let f = Fixture::new(
+        crate::support::MODEL,
+        &[
+            ("docs/keys.md", "---\ntitle: Keys\n---\n\nText.\n"),
+            (
+                "ascribe.permalinks",
+                &format!(
+                    "{header}version = 1\n\n[permalinks]\nrotate-keys = \"keys.md#rotate-keys\"\n"
+                ),
+            ),
+        ],
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let list = f.path("ascribe.permalinks");
+    let diagnostic = client
+        .diagnostics(&list)
+        .into_iter()
+        .find(|d| slug(d) == "permalink-removed")
+        .expect("permalink-removed, on the list");
+    assert_eq!(diagnostic.range.start.line, 4);
+    let actions = client
+        .request(
+            "textDocument/codeAction",
+            json!({
+                "textDocument": { "uri": uri(&list).as_str() },
+                "range": diagnostic.range,
+                "context": { "diagnostics": [diagnostic] }
+            }),
+        )
+        .response_result
+        .expect("actions");
+    let retire = actions
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|a| a["title"] == "Retire this permalink, and write why")
+        .expect("the quick fix");
+    // It needs a person's sentence, so it isn't applied unasked.
+    assert_eq!(retire["isPreferred"], false);
+    let model = uri(&f.path("ascribe.toml"));
+    let edits = retire["edit"]["changes"][model.as_str()]
+        .as_array()
+        .expect("an edit to ascribe.toml");
+    assert_eq!(edits.len(), 1);
+    let text = apply(crate::support::MODEL, &edits[0]);
+    assert!(
+        text.ends_with(
+            "\n[permalinks.retired]\nrotate-keys = { reason = \"why this permalink was retired\" }\n"
+        ),
+        "{text}"
+    );
+    // And it opens ascribe.toml with the placeholder selected.
+    let command = &retire["command"];
+    assert_eq!(command["command"], "ascribe.openFile");
+    assert_eq!(command["arguments"][0], model.as_str());
+    let selection = &command["arguments"][1];
+    let line = text.lines().count() - 1;
+    let column = text
+        .lines()
+        .last()
+        .expect("a line")
+        .find("why")
+        .expect("the placeholder");
+    assert_eq!(
+        selection["start"],
+        json!({ "line": line, "character": column })
+    );
+    assert_eq!(
+        selection["end"],
+        json!({ "line": line, "character": column + "why this permalink was retired".len() })
+    );
+
+    // Taken, the placeholder is an error until it's replaced, and the
+    // model with the reason written quiets the removal.
+    let model_path = f.path("ascribe.toml");
+    f.write("ascribe.toml", &text);
+    client.watched(&[(&model_path, lsp_types::FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(
+        client
+            .diagnostics(&model_path)
+            .iter()
+            .any(|d| slug(d) == "model-permalinks"),
+        "{:?}",
+        client.codes(&model_path)
+    );
+    f.write(
+        "ascribe.toml",
+        &text.replace("why this permalink was retired", "Merged into Keys"),
+    );
+    client.watched(&[(&model_path, lsp_types::FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.codes(&list).is_empty(), "{:?}", client.codes(&list));
+    // The list is behind on the retired name now, and the same quick fix as
+    // for a declared name records it.
+    let behind = client
+        .diagnostics(&model_path)
+        .into_iter()
+        .find(|d| slug(d) == "permalinks-list-behind")
+        .expect("permalinks-list-behind, on the entry");
+    let actions = client
+        .request(
+            "textDocument/codeAction",
+            json!({
+                "textDocument": { "uri": model.as_str() },
+                "range": behind.range,
+                "context": { "diagnostics": [behind] }
+            }),
+        )
+        .response_result
+        .expect("actions");
+    let sync = actions
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|a| a["title"] == "Bring ascribe.permalinks up to date")
+        .expect("the quick fix");
+    assert_eq!(
+        sync["edit"]["changes"][uri(&list).as_str()][0]["newText"],
+        format!(
+            "{header}version = 1\n\n[permalinks]\n\n[retired]\nrotate-keys = \"Merged into Keys\"\n"
+        )
+    );
+}

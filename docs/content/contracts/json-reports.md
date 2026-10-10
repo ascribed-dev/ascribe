@@ -56,6 +56,11 @@ Every document follows these rules:
 
 @include: ../_generated/json-permalinks-verify.md
 
+## `ascribe permalinks retire`
+@available: next
+
+@include: ../_generated/json-permalinks-retire.md
+
 ## `ascribe fmt`
 @available: next
 

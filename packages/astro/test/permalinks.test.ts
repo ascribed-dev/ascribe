@@ -63,6 +63,33 @@ describe("forwardingPaths", () => {
     ]);
   });
 
+  it("leads an alias and a retired permalink like any other, and says why one was removed", () => {
+    const root = siteRoot({
+      version: 1,
+      path: "/go/",
+      permalinks: {
+        settings: { route: "/settings/", source: "settings.md" },
+        "agent-settings": { route: "/settings/", source: "settings.md", alias: "settings" },
+        "rotate-keys": {
+          route: "/security/",
+          fragment: "keys",
+          source: "security.md",
+          retired: "Merged into the security guide",
+        },
+      },
+      removed: { "legacy-sync": { reason: "The sync agent was removed in <b>4.0</b>" } },
+    });
+    expect(forwardingPaths(root)).toEqual([
+      { params: { id: "settings" }, props: { to: "/settings/", dimensions: {} } },
+      { params: { id: "agent-settings" }, props: { to: "/settings/", dimensions: {} } },
+      { params: { id: "rotate-keys" }, props: { to: "/security/#keys", dimensions: {} } },
+      {
+        params: { id: "legacy-sync" },
+        props: { reason: "The sync agent was removed in <b>4.0</b>" },
+      },
+    ]);
+  });
+
   it("is no pages without a list, or with an empty one", () => {
     expect(forwardingPaths(siteRoot(undefined))).toEqual([]);
     expect(forwardingPaths(siteRoot({ version: 1, path: "/go/", permalinks: {} }))).toEqual([]);

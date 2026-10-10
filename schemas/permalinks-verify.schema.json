@@ -1,4 +1,24 @@
 {
+  "$defs": {
+    "RetiredName": {
+      "description": "A name the list has as retired.",
+      "properties": {
+        "name": {
+          "description": "The name.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why it was retired, as the docs' authors wrote it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "reason"
+      ],
+      "type": "object"
+    }
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe permalinks verify` answers.",
   "properties": {
@@ -7,7 +27,7 @@
       "type": "string"
     },
     "found": {
-      "description": "The names the list has, in the order given, each once.",
+      "description": "The names the list has, as permalinks or aliases, in the order\ngiven, each once.",
       "items": {
         "type": "string"
       },
@@ -18,9 +38,16 @@
       "type": "string"
     },
     "missing": {
-      "description": "The names it doesn't, in the order given, each once.",
+      "description": "The names it doesn't have at all, in the order given, each once.",
       "items": {
         "type": "string"
+      },
+      "type": "array"
+    },
+    "retired": {
+      "description": "The names the list has as retired, in the order given, each once.",
+      "items": {
+        "$ref": "#/$defs/RetiredName"
       },
       "type": "array"
     },
@@ -36,6 +63,7 @@
     "ascribe_version",
     "list",
     "found",
+    "retired",
     "missing"
   ],
   "title": "PermalinksVerifyReport",

@@ -44,6 +44,45 @@ impl ResolvedBuild {
     pub fn permalinks(&self) -> Vec<Permalink> {
         permalinks(self.pages.iter())
     }
+
+    /// Where a retired permalink's `to` leads in this build (SPEC §7.6),
+    /// written as a link from the content root: a page, and `#` and the id
+    /// of a heading on it. `None` when the build doesn't publish the page,
+    /// or the page has no such heading.
+    pub fn retired_destination(&self, to: &str) -> Option<Destination> {
+        let (path, id) = match to.split_once('#') {
+            Some((path, id)) => (path, Some(id)),
+            None => (to, None),
+        };
+        let page = self.page(&RelPath::parse(path.trim_start_matches('/')).ok()?)?;
+        let anchor = match id {
+            None => None,
+            Some(id) => Some(
+                page.headings()
+                    .into_iter()
+                    .find(|(_, h)| h.source_id == id || h.page_id == id)?
+                    .1
+                    .page_id
+                    .clone(),
+            ),
+        };
+        Some(Destination {
+            page: page.path.clone(),
+            route: page.route.clone(),
+            anchor,
+        })
+    }
+}
+
+/// Where an address leads in a build: a page, and a heading's anchor on it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Destination {
+    /// The page's content path.
+    pub page: RelPath,
+    /// The page's route.
+    pub route: String,
+    /// The heading's anchor on the page; `None` for the top of the page.
+    pub anchor: Option<String>,
 }
 
 /// Every permalink on these pages, in their order and then in document

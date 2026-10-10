@@ -217,6 +217,36 @@ describe("the built site", () => {
     await page.close();
   });
 
+  it("forwards an alias, and a retired permalink with somewhere to lead", async () => {
+    const page = await context.newPage();
+    // `config = "weave-config"` in `[permalinks.aliases]`.
+    await page.goto(`${origin}${BASE}/go/config`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    // `old-options`, retired with `to = "Reference/Options.md"`.
+    await page.goto(`${origin}${BASE}/go/old-options`);
+    await page.waitForURL(`${origin}${BASE}/reference/options`);
+    await page.close();
+  });
+
+  it("says why a retired permalink with nowhere to lead was removed", async () => {
+    const page = await context.newPage();
+    const response = await page.goto(`${origin}${BASE}/go/legacy-sync`);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("main > h1").textContent()).resolves.toBe("Removed from these docs");
+    // The reason as the authors wrote it, as text.
+    await expect(page.locator("main [data-reason]").textContent()).resolves.toBe(
+      "Sync was removed in Loom 3.0, & nothing replaced it.",
+    );
+    await expect(
+      page.getByRole("link", { name: "Go to the docs' home page" }).getAttribute("href"),
+    ).resolves.toBe(BASE);
+    expect(page.url()).toBe(`${origin}${BASE}/go/legacy-sync`);
+    const html = await (await fetch(`${origin}${BASE}/go/legacy-sync`)).text();
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).not.toContain("http-equiv");
+    await page.close();
+  });
+
   it("forwards with scripts off", async () => {
     const offline = await browser.newContext({ javaScriptEnabled: false });
     const page = await offline.newPage();

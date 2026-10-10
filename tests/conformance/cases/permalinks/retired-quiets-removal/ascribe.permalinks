@@ -1,0 +1,6 @@
+version = 1
+
+[permalinks]
+
+[retired]
+rotate-keys = "Merged into the security guide"

@@ -64,6 +64,8 @@ pub struct ContentModel {
     /// `[[intended]]`: the acknowledged problems about an entry or an image
     /// (SPEC §4.9), in declaration order.
     pub intended: Vec<Intended>,
+    /// `[permalinks]`: the retired permalinks and the aliases.
+    pub permalinks: ModelPermalinks,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
@@ -199,6 +201,83 @@ pub struct Intended {
     pub span: Span,
     /// The `check` value.
     pub check_span: Span,
+}
+
+/// `[permalinks]`: the names `ascribe.toml` gives somewhere to lead that
+/// no heading or page declares (SPEC §7.6). Each name is in one of them.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ModelPermalinks {
+    /// `[permalinks.retired]`, in declaration order.
+    pub retired: Vec<RetiredPermalink>,
+    /// `[permalinks.aliases]`, in declaration order.
+    pub aliases: Vec<PermalinkAlias>,
+}
+
+/// A permalink retired on purpose, in `[permalinks.retired]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RetiredPermalink {
+    /// The name.
+    pub name: String,
+    /// Why it was retired, as the author wrote it.
+    pub reason: String,
+    /// Where its address leads now, written as a link from the content
+    /// root is: a page's content path, and `#` and a heading's id.
+    pub to: Option<String>,
+    /// The name's key, in `ascribe.toml`.
+    pub span: Span,
+    /// The `to` value.
+    pub to_span: Option<Span>,
+}
+
+/// A second name for a permalink, in `[permalinks.aliases]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PermalinkAlias {
+    /// The alias.
+    pub name: String,
+    /// The name it leads to: a permalink, or another alias.
+    pub target: String,
+    /// The alias's key, in `ascribe.toml`.
+    pub span: Span,
+    /// The target's value.
+    pub target_span: Span,
+}
+
+impl ModelPermalinks {
+    /// Whether `ascribe.toml` retires or aliases nothing.
+    pub fn is_empty(&self) -> bool {
+        self.retired.is_empty() && self.aliases.is_empty()
+    }
+
+    /// The retired permalink `name`.
+    pub fn retired(&self, name: &str) -> Option<&RetiredPermalink> {
+        self.retired.iter().find(|r| r.name == name)
+    }
+
+    /// The alias `name`.
+    pub fn alias(&self, name: &str) -> Option<&PermalinkAlias> {
+        self.aliases.iter().find(|a| a.name == name)
+    }
+
+    /// The name the alias `name` ends at, following aliases of aliases: a
+    /// name that isn't an alias. `None` when `name` isn't an alias, or its
+    /// aliases make a loop.
+    pub fn alias_end<'a>(&'a self, name: &'a str) -> Option<&'a str> {
+        let mut at = self.alias(name)?;
+        let mut seen = vec![name];
+        loop {
+            let next = at.target.as_str();
+            if seen.contains(&next) {
+                return None;
+            }
+            match self.alias(next) {
+                Some(further) => {
+                    seen.push(next);
+                    at = further;
+                }
+                None => return Some(next),
+            }
+        }
+    }
 }
 
 /// One check named in `[checks]`.

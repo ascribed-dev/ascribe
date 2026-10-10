@@ -561,11 +561,25 @@ pub const MODEL_CONSUMER_PERMALINK_PATH: DiagnosticSlug =
 /// `ASC175`, error, file level: SPEC §8.2, "Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it".
 pub const PERMALINKS_LIST_INVALID: DiagnosticSlug = DiagnosticSlug("permalinks-list-invalid");
 
-/// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares that `ascribe.permalinks` doesn't list, or lists in another place".
+/// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is".
 pub const PERMALINKS_LIST_BEHIND: DiagnosticSlug = DiagnosticSlug("permalinks-list-behind");
 
-/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A permalink `ascribe.permalinks` lists that the content no longer declares".
+/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired".
 pub const PERMALINK_REMOVED: DiagnosticSlug = DiagnosticSlug("permalink-removed");
+
+/// `ASC178`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_PERMALINKS: DiagnosticSlug = DiagnosticSlug("model-permalinks");
+
+/// `ASC179`, error, file level: SPEC §8.2, "Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares".
+pub const PERMALINK_ALIAS_TARGET_MISSING: DiagnosticSlug =
+    DiagnosticSlug("permalink-alias-target-missing");
+
+/// `ASC180`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too".
+pub const PERMALINK_NAME_CONFLICT: DiagnosticSlug = DiagnosticSlug("permalink-name-conflict");
+
+/// `ASC181`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it".
+pub const PERMALINK_RETIRED_TARGET_MISSING: DiagnosticSlug =
+    DiagnosticSlug("permalink-retired-target-missing");
 
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
@@ -746,6 +760,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     PERMALINKS_LIST_INVALID,
     PERMALINKS_LIST_BEHIND,
     PERMALINK_REMOVED,
+    MODEL_PERMALINKS,
+    PERMALINK_ALIAS_TARGET_MISSING,
+    PERMALINK_NAME_CONFLICT,
+    PERMALINK_RETIRED_TARGET_MISSING,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

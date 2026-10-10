@@ -5,7 +5,7 @@ description: "The content model: content types, dimensions, availability, phrase
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
-A file containing only `spec = "0.1"` is valid; every section has a default ([§20](#20-defaults-what-an-absent-section-means)). Example files:
+A file containing only `spec = "0.1"` is valid; every section has a default ([§21](#21-defaults-what-an-absent-section-means)). Example files:
 
 - [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
@@ -34,8 +34,9 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 17. [`[editor]`](#17-editor)
 18. [`[sources.<name>]`](#18-sourcesname)
 19. [`[checks]`](#19-checks)
-20. [Defaults: what an absent section means](#20-defaults-what-an-absent-section-means)
-21. [Validation](#21-validation)
+20. [`[permalinks]`](#20-permalinks)
+21. [Defaults: what an absent section means](#21-defaults-what-an-absent-section-means)
+22. [Validation](#22-validation)
 
 ---
 
@@ -749,7 +750,37 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 
 ---
 
-## 20. Defaults: what an absent section means
+## 20. `[permalinks]`
+@available: next
+
+Names for something outside the docs to link to that no heading or page declares: a [permalink](directives.md#permalinks) ended on purpose, and a second name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../guides/astro.md#moving-aliasing-and-retiring) says when to use each.
+
+```toml
+[permalinks.retired]
+rotate-keys = { to = "guides/security.md", reason = "Merged into the security guide" }
+legacy-sync = { reason = "The sync agent was removed in 4.0" }
+
+[permalinks.aliases]
+agent-settings = "settings"
+cli-settings = "settings"
+```
+
+`[permalinks.retired]` has an entry for each retired permalink, keyed by its name:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `reason` | string | required | Why it was retired. A reader whose link leads there sees it, as text. Not empty. |
+| `to` | string | | Where its address leads now: a page, by its path from the content root, and `#` and a heading's id, as `guides/security.md#rotate-keys`. Without it, or in a build that doesn't publish the page, the address shows that what was there was removed, the reason, and a link to the docs' home. |
+
+`[permalinks.aliases]` has an entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. An alias's address leads where its permalink's does, in every build that publishes it, so repointing the alias changes where it leads and nothing else.
+
+[`ascribe permalinks retire`](cli.md#cli-permalinks-retire) writes `[permalinks.retired]` for you, and the editor's quick fix on a removed permalink writes an entry with a placeholder reason for you to replace. To bring a retired permalink back, delete its entry and declare the name again.
+
+**Rules.** A name has the characters of an `@id` (`model-invalid-name`). A retired permalink has a `reason`, not empty and not the quick fix's placeholder, and no keys but `reason` and `to` (`model-missing-key`, `model-empty-text`, `model-permalinks`, `model-unknown-key`). A name is one thing: retired, an alias, or declared by the content, never two (`model-permalinks`, `permalink-name-conflict`). An alias leads, through aliases, to a permalink the content declares, never back to itself or to a retired permalink (`model-permalinks`, `permalink-alias-target-missing`). A `to` leads to a page, not a fragment, and to a heading on it when it names one (`permalink-retired-target-missing`).
+
+---
+
+## 21. Defaults: what an absent section means
 
 A file containing only `spec = "0.1"` is valid. It means:
 
@@ -772,9 +803,10 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[editor]` | `build` as in §17. |
 | `[sources]` | No sources. A page can't read anything outside the project's folder. |
 | `[checks]` | Every check at its own level. |
+| `[permalinks]` | No retired permalinks and no aliases. |
 
 ---
 
-## 21. Validation
+## 22. Validation
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](diagnostics.md#the-content-model), with its code and how to fix it.

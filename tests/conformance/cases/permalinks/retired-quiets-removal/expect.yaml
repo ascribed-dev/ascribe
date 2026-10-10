@@ -1,0 +1,8 @@
+description: >-
+  A permalink removed from the content and retired in `ascribe.toml`, which
+  the list records as retired with the same reason, isn't removed: retiring
+  is how a removal is recorded.
+spec: ["7.5", "7.6"]
+tags: [check]
+
+diagnostics: []

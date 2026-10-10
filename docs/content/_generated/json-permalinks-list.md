@@ -4,6 +4,29 @@
 ```json
 {
   "$defs": {
+    "AliasEntry": {
+      "description": "An alias `ascribe.toml` declares.",
+      "properties": {
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ListState",
+          "description": "Whether the list has it, leading there: `listed`, or `not_listed`."
+        },
+        "target": {
+          "description": "The name it leads to.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "target",
+        "state"
+      ],
+      "type": "object"
+    },
     "DeclaredEntry": {
       "description": "A permalink the content declares.",
       "properties": {
@@ -67,21 +90,77 @@
         }
       ]
     },
+    "ListedAs": {
+      "description": "Which of the list's tables has a name.",
+      "oneOf": [
+        {
+          "const": "permalink",
+          "description": "`[permalinks]`: a permalink the content declared.",
+          "type": "string"
+        },
+        {
+          "const": "alias",
+          "description": "`[aliases]`: an alias.",
+          "type": "string"
+        },
+        {
+          "const": "retired",
+          "description": "`[retired]`: a retired permalink.",
+          "type": "string"
+        }
+      ]
+    },
     "RemovedEntry": {
-      "description": "A name the list has that nothing declares.",
+      "description": "A name the list has that the project doesn't.",
       "properties": {
         "name": {
           "description": "Its name.",
           "type": "string"
         },
         "place": {
-          "description": "Where the list says it was.",
+          "description": "Where the list says a permalink was declared; for an alias, the name\nit led to; for a retired permalink, its reason.",
           "type": "string"
+        },
+        "was": {
+          "$ref": "#/$defs/ListedAs",
+          "description": "What the list has it as."
         }
       },
       "required": [
         "name",
+        "was",
         "place"
+      ],
+      "type": "object"
+    },
+    "RetiredEntry": {
+      "description": "A permalink `ascribe.toml` retires.",
+      "properties": {
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why it was retired.",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ListState",
+          "description": "Whether the list has it as retired, with this reason: `listed`, or\n`not_listed`."
+        },
+        "to": {
+          "description": "Where its address leads now, as written: a page, and `#` and a\nheading's id.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "reason",
+        "to",
+        "state"
       ],
       "type": "object"
     }
@@ -89,6 +168,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe permalinks list` answers.",
   "properties": {
+    "aliases": {
+      "description": "The aliases `ascribe.toml` declares, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/AliasEntry"
+      },
+      "type": "array"
+    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
@@ -105,9 +191,16 @@
       "type": "array"
     },
     "removed": {
-      "description": "The names the list has that the content no longer declares, by name.",
+      "description": "The names the list has that the project no longer has, by name.",
       "items": {
         "$ref": "#/$defs/RemovedEntry"
+      },
+      "type": "array"
+    },
+    "retired": {
+      "description": "The permalinks `ascribe.toml` retires, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/RetiredEntry"
       },
       "type": "array"
     },
@@ -123,6 +216,8 @@
     "ascribe_version",
     "has_list",
     "permalinks",
+    "aliases",
+    "retired",
     "removed"
   ],
   "title": "PermalinksListReport",

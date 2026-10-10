@@ -96,6 +96,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::VerifyAnswer>(),
     },
     Shape {
+        file: "permalinks-retire",
+        title: "PermalinksRetireReport",
+        written_by: "`ascribe permalinks retire --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::RetireAnswer>(),
+    },
+    Shape {
         file: "fmt",
         title: "FmtReport",
         written_by: "`ascribe fmt --format json`",
