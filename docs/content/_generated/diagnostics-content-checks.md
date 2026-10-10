@@ -40,4 +40,4 @@ Advice · file level · next step: review · configurable in `[checks]` · [SPEC
 
 **Message:** this page was due for review on \{date}; check it still holds, then move `{field}` to the next review
 
-**Fix:** Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date, so it can start reporting without a change to the project.
+**Fix:** Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project.

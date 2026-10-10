@@ -14,8 +14,8 @@ default = true
 # Short forms, then table forms.
 [types.guide.frontmatter]
 title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
-# A role says what a field is to the page: the checks and the outputs read
-# the description and the review date from the fields that have them.
+# A role says what a field is to the page: the content checks read the
+# description and the review date from the fields that have them.
 description = { type = "string?", role = "description" }
 review-by = { type = "date?", role = "review-date" }
 order = "number?"

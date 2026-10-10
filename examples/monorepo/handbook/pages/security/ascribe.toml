@@ -24,6 +24,9 @@ title = "string"
 owner = "string"
 review = "enum(quarterly, yearly)"
 effective = "date"
+# The next review is due by this date; `review-overdue` reports a policy
+# whose date has passed.
+review-by = { type = "date?", role = "review-date" }
 
 [notes.policy]
 label = "Policy"
