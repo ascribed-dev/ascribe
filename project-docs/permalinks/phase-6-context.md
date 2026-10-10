@@ -9,11 +9,11 @@ Part of [Permalinks](README.md). Requires phase 2; better after phase 5, so the 
 
 ## Context
 
-- The [proposal](../permalinks.md), "What a link can carry", and Firefox's help links, which carry the version, the system, and the language, and let the site decide which to act on.
+- The [proposal](../proposals/permalinks.md), "What a link can carry", and Firefox's help links, which carry the version, the system, and the language, and let the site decide which to act on.
 - `packages/elements/src/tabs.ts`: a reader's choice for a dimension is kept in `localStorage`, by dimension, and holds across pages. `packages/elements/CONTRACT.md`: what the tabs promise.
 - Phase 2's forwarding page, which has no script, and the list, which a site can read.
 - `site/src/pages/404.astro`: the docs site's own not-found page.
-- [Versions](../versions.md) isn't built. A version on a link waits for it.
+- [Versions](../proposals/versions.md) isn't built. A version on a link waits for it.
 
 ## Design
 

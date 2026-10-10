@@ -26,7 +26,7 @@ Ascribe's own docs, and the drift checks built on them (generated reference, cov
 
 ## 1. Code snippets from tested code (Bluehawk, built in)
 
-Partly built: `@snippet`, sources, and `ascribe drift` exist ([Drift](../docs/content/guides/drift.md)). Knowing whether the code was tested, and with what, isn't, and is what the [tested examples proposal](tested-examples.md) is for.
+Partly built: `@snippet`, sources, and `ascribe drift` exist ([Drift](../docs/content/guides/drift.md)). Knowing whether the code was tested, and with what, isn't, and is what the [tested examples proposal](proposals/tested-examples.md) is for.
 
 **Built.** `@snippet` takes a code example from a tagged region or a whole file, through a source named in `ascribe.toml` (`code:examples/quill/ascribe.toml#dimensions`) rather than a relative path, and `ascribe drift` lists the pages whose examples changed; see the [drift guide](../docs/content/guides/drift.md). Bluehawk's `snippet` and `remove` tags work as they are; `replace`, `uncomment`, `state`, and `emphasize` are reserved, and the editor features below (go to definition, "Used by", a preview that follows the code) aren't built. Ascribe's own docs take their examples this way. What follows is the idea as it was written.
 
@@ -182,7 +182,7 @@ External link checking (opt-in, for CI); a PDF or print output; image checks (un
 
 ## 17. Embedded help
 
-Added 2026-10-09. Not planned. It builds on [permalinks](permalinks.md), which come first.
+Added 2026-10-09. Not planned. It builds on [permalinks](proposals/permalinks.md), which come first.
 
 ### The idea
 
@@ -431,7 +431,7 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 
 1. **Docs agents can read** (section 7): first a baseline `afdocs` run on `examples/astro-site`, then `llms.txt`, `.md` pages, the per-page pointer, and the page-size check, with `afdocs` in CI to hold the result. Mostly new outputs from what the builds already compute, and it serves every reader of an Ascribe site, not only its authors.
 2. **Vale** (section 5): prose linting with the rules teams already have, without directive noise.
-3. **Code snippets** (section 1): the most valuable product feature for docs-as-code teams. What's left is in the [tested examples proposal](tested-examples.md).
+3. **Code snippets** (section 1): the most valuable product feature for docs-as-code teams. What's left is in the [tested examples proposal](proposals/tested-examples.md).
 4. **Structural editing in the preview** (section 2, layers 1 and 2).
 5. **OpenAPI links and embeds** (section 3).
 
@@ -440,7 +440,7 @@ The Web Documentation Delivery Spec is a draft and changes quickly. Check it aga
 # Open questions
 
 - **Who are the main users?** Writers on a docs team favor the preview editing, Vale, and CMS features; engineers documenting their own code favor snippets, OpenAPI, review, and agent support. The research found engineers feel drift most and do the reviewing.
-- **Bluehawk compatibility:** read existing Bluehawk-tagged code as is, or design new tags? `@snippet` reads Bluehawk's `snippet` and `remove` tags today. The [tested examples proposal](tested-examples.md) is for projects starting clean, and would design the rest fresh.
+- **Bluehawk compatibility:** read existing Bluehawk-tagged code as is, or design new tags? `@snippet` reads Bluehawk's `snippet` and `remove` tags today. The [tested examples proposal](proposals/tested-examples.md) is for projects starting clean, and would design the rest fresh.
 - **Vale:** bundle it, or use the project's own install?
 - **Navigation:** deliberately left to the site generator, or a gap? `llms.txt` sections and OpenAPI pages both want an answer.
 - **Variants for agents:** labeled sections in one Markdown page, or a page per variant value?

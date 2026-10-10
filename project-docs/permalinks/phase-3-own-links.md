@@ -5,7 +5,7 @@ Part of [Permalinks](README.md). Requires phase 2. Rust, the generated docs, and
 ## Goal
 
 - **A page can have a permalink,** not only a heading.
-- **Every address the binary builds is an id.** After this, nothing in the binary knows where a docs page is, and the docs can move, which is what the [website](../website.md) waits for.
+- **Every address the binary builds is an id.** After this, nothing in the binary knows where a docs page is, and the docs can move, which is what the [website](../proposals/website.md) waits for.
 
 It widens the thread two ways: a second kind of thing to name, and from one of Ascribe's links to all of them. The second is also the first real load: about 150 permalinks, most of them on headings that reach their page through an include.
 

@@ -10,9 +10,9 @@ This phase can't be skipped or folded into phase 2. A thread may narrow what it 
 
 ## Context
 
-- The [proposal](../permalinks.md)'s open questions, which these are.
+- The [proposal](../proposals/permalinks.md)'s open questions, which these are.
 - `SPEC.md` §4.1: an `@id` is letters, digits, hyphens, underscores, and periods.
-- The [versions proposal](../versions.md), "A page that replaces another": what the second decision would replace.
+- The [versions proposal](../proposals/versions.md), "A page that replaces another": what the second decision would replace.
 - DITA's `resourceid`, which pairs an id with an application's name, and Mozilla's in-product links, where a name is registered before any page uses it. Both are described in the proposal's research.
 
 ## The decisions
@@ -65,7 +65,7 @@ Small choices the proposal made, each a name that ships in phase 2:
 1. Put each decision to the maintainer, with its table.
 2. Record the answers in this plan's README, under "Decisions", numbered on from 9, each with its reason.
 3. Update the proposal: move the three questions out of "Open questions", with what was decided.
-4. If the second decision isn't the recommended one, say so in the [versions proposal](../versions.md), which then keeps `replaces`.
+4. If the second decision isn't the recommended one, say so in the [versions proposal](../proposals/versions.md), which then keeps `replaces`.
 
 ## Out of scope
 

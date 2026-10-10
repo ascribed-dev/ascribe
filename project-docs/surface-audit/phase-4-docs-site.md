@@ -56,7 +56,7 @@ The maintainer's first journey (phase 3) is the test of the getting-started page
 
 ## Out of scope
 
-Restructuring the docs; the landing page and the rest of the [website proposal](../website.md); how the site looks.
+Restructuring the docs; the landing page and the rest of the [website proposal](../proposals/website.md); how the site looks.
 
 ## Acceptance criteria
 

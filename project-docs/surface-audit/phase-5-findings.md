@@ -9,8 +9,8 @@ What the audit was for: a report of where the surface doesn't hold together, wha
 ## Context
 
 - Everything the earlier phases wrote: the inventory, the journeys' notes and transcripts, the docs site's two lists, and phase 1's first findings and conventions.
-- The [proposal](../surface-audit.md): the seven questions, and the five kinds of finding.
-- The proposals about to add to the surface: [permalinks](../permalinks/README.md), [content checks](../content-checks/README.md), [tested examples](../tested-examples.md), and [versions](../versions.md). Each names commands, settings, and files that don't exist yet.
+- The [proposal](../proposals/surface-audit.md): the seven questions, and the five kinds of finding.
+- The proposals and plans about to add to the surface: [permalinks](../permalinks/README.md), [tested examples](../proposals/tested-examples.md), [versions](../proposals/versions.md), [page templates](../proposals/page-templates.md), and the [website](../proposals/website.md). Each names commands, settings, or files that don't exist yet. Content checks has landed, so its commands are in the inventory.
 - `project-docs/checklists.md`: where conventions go.
 
 ## Design
@@ -45,7 +45,7 @@ Then a short opening section: the five or six findings that matter most, and wha
 
 ### The proposals, against the findings
 
-For each of the four proposals: what it would add, laid against the conventions and the findings. Where a proposed name or shape would repeat a problem the audit found, say so, with what to change in the proposal. This is the part with a deadline, since those plans are next.
+For each of those proposals: what it would add, laid against the conventions and the findings. Two have left a name open for this: the command that writes the starter set of [page templates](../proposals/page-templates.md) into a project, and every command group the others propose. Where a proposed name or shape would repeat a problem the audit found, say so, with what to change in the proposal. This is the part with a deadline, since those plans are next.
 
 ### Conventions
 
@@ -60,7 +60,7 @@ One issue for each change worth making, with related renames grouped so they hap
 1. The capability table.
 2. The seven questions; the findings, in order.
 3. The opening section.
-4. The four proposals against the findings, with edits to each proposal where the audit changes it.
+4. The pending proposals against the findings, with edits to each where the audit changes it, and a name for each command one has left open.
 5. The conventions, in the checklists.
 6. The issues, after the maintainer has read the findings and said which to open.
 
@@ -85,5 +85,5 @@ pnpm test
 
 1. "Lay out what can be done where"
 2. "Report what the surface audit found"
-3. "Check the next four proposals against the findings"
+3. "Check the pending proposals against the findings"
 4. "Write the surface's conventions into the checklists"

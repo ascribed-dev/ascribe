@@ -1,6 +1,6 @@
 # Proposal: an audit of Ascribe's surface
 
-A proposal, not a plan. It says what the audit would look at, how, and what it would hand back, so the idea can be judged before the work starts. The plan for doing it is in [surface-audit/](surface-audit/README.md).
+A proposal, not a plan. It says what the audit would look at, how, and what it would hand back, so the idea can be judged before the work starts. The plan for doing it is in [surface-audit/](../surface-audit/README.md).
 
 ## The goal
 
