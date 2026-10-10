@@ -206,7 +206,6 @@ mod tests {
     #![allow(clippy::unwrap_used)]
 
     use super::*;
-    use std::time::Instant;
 
     fn request(command: &str) -> Request {
         Request {
@@ -269,7 +268,7 @@ mod tests {
         std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
         let mut slow = request(&script.display().to_string());
         slow.timeout = Duration::from_millis(200);
-        let started = Instant::now();
+        let started = std::time::Instant::now();
         let error = Program.lint(&slow).unwrap_err();
         assert!(matches!(error, ValeError::TimedOut { .. }), "{error:?}");
         assert!(started.elapsed() < Duration::from_secs(5));
