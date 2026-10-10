@@ -134,8 +134,9 @@ pub const CHECKS: &[(&str, Owner)] = &[
             "Put each page's content earlier in its HTML than the navigation, or in `<main>`: the site's page template",
         ),
     ),
-    // The pages too large in HTML are those too large in Markdown: the
-    // template adds the same to every page.
+    // It measures a page's HTML converted to Markdown, navigation and all.
+    // A page too large in it is most often too large in Markdown, which
+    // `page-size` reports; the guide says what's left is the template's.
     ("page-size-html", Owner::Pages(diagnostics::PAGE_SIZE)),
     (
         "page-size-transfer",

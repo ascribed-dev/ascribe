@@ -236,7 +236,7 @@ fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnos
 
 /// Whether `to` is where the site at `from` sends a visitor to its home
 /// page: `from` is a site's root, and `to` another page of the same site,
-/// `www.` aside. A site that does this, such as to its latest version's
+/// `www.` and the scheme aside. A site that does this, such as to its latest version's
 /// introduction, still answers at its root, and linking to the landing page
 /// would pin what the site may change.
 fn is_landing_page(from: &str, to: &str) -> bool {
@@ -595,6 +595,8 @@ mod tests {
             "https://example.com/",
             "https://www.example.com/en/"
         ));
+        // The scheme aside too: the root still answers, upgraded.
+        assert!(landing("http://example.com", "https://example.com/docs"));
         // To another site, to the root, or from a page: it moved.
         assert!(!landing("https://example.com/", "https://example.org/docs"));
         assert!(!landing("http://example.com", "https://example.com/"));
