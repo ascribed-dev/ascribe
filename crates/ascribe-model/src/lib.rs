@@ -30,6 +30,7 @@
 //! loading; they are in [`ContentModel::warnings`]. When loading fails, the
 //! returned issues include the warnings found before the failure.
 
+mod checks;
 mod fields;
 pub mod inline;
 mod loader;

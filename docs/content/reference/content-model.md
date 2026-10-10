@@ -5,7 +5,7 @@ description: "The content model: content types, dimensions, availability, phrase
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
-A file containing only `spec = "0.1"` is valid; every section has a default ([§19](#19-defaults-what-an-absent-section-means)). Example files:
+A file containing only `spec = "0.1"` is valid; every section has a default ([§20](#20-defaults-what-an-absent-section-means)). Example files:
 
 - [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
@@ -33,8 +33,9 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 16. [`[builds.<name>]`](#16-buildsname)
 17. [`[editor]`](#17-editor)
 18. [`[sources.<name>]`](#18-sourcesname)
-19. [Defaults: what an absent section means](#19-defaults-what-an-absent-section-means)
-20. [Validation](#20-validation)
+19. [`[checks]`](#19-checks)
+20. [Defaults: what an absent section means](#20-defaults-what-an-absent-section-means)
+21. [Validation](#21-validation)
 
 ---
 
@@ -112,7 +113,7 @@ spec = "0.1"
 |---|---|---|---|
 | `spec` | string | **required** | The version of the Ascribe specification this project targets (SPEC §11). It must be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. |
 
-The only other top-level keys are the tables in §3–§17. Anything else is an unknown key.
+The only other top-level keys are the tables in §3–§19. Anything else is an unknown key.
 
 ---
 
@@ -601,7 +602,32 @@ Both are written by [`ascribe sources fetch` and `ascribe sources update`](cli.m
 
 ---
 
-## 19. Defaults: what an absent section means
+## 19. `[checks]`
+@available: next
+
+How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. A diagnostic about whether the project is valid, such as a broken link, can't be set here: it's always reported at its own severity.
+
+```toml
+[checks]
+some-check = "warning"
+
+[checks.another-check]
+level = "off"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
+
+Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named, and none is yet, so `[checks]` can't have a key yet. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+
+Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
+
+**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`). A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`).
+
+---
+
+## 20. Defaults: what an absent section means
 
 A file containing only `spec = "0.1"` is valid. It means:
 
@@ -623,9 +649,10 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. |
 | `[editor]` | `build` as in §17. |
 | `[sources]` | No sources. A page can't read anything outside the project's folder. |
+| `[checks]` | Every check at its own level. |
 
 ---
 
-## 20. Validation
+## 21. Validation
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](diagnostics.md#the-content-model), with its code and how to fix it.

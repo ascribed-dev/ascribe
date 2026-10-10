@@ -18,7 +18,7 @@ This contract defines the one syntax the site output uses for all three, the **a
 
 The shared fixtures in [`tests/render/`]({repo}/tree/main/tests/render/) are what keep them equal: both must pass every fixture.
 
-Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md §21, item 12, which is why `ascribe.toml` has no keys for heading ids, image attributes, or glossary links.
+Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md §23, item 12, which is why `ascribe.toml` has no keys for heading ids, image attributes, or glossary links.
 
 ## 1. The attribute marker
 
@@ -42,7 +42,7 @@ CommonMark parses the two tags as two adjacent raw inline HTML nodes. (An implem
 
 Every alternative is changed by Astro's markdown processing before a plugin can see it. Each of Astro's markdown processors (Sätteri, its default in Astro 7.3, and `unified()`) applies GFM and typographic replacements before a user plugin sees the tree, so an attribute block written as text, such as `## Setup {#setup}` or `![a](b.png){caption="x"}`, reaches the plugin with its quotes curled and its `--` and `...` turned into dashes and ellipses, and an id like `__init__` can become strong emphasis. A raw HTML node is never touched by either: its text is exactly what Ascribe wrote. The marker also degrades quietly. A consumer without the plugin renders it as an empty element: invisible, and for a heading, an element carrying the right `id` inside the heading, so links still land.
 
-The other options considered, and why they lost, are in content-model.md §21, item 12.
+The other options considered, and why they lost, are in content-model.md §23, item 12.
 
 ## 2. Where a marker applies
 

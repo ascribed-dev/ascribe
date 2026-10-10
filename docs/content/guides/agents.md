@@ -34,7 +34,7 @@ ascribe check guides/install.md --format concise
 
 It writes one line per problem, `file:line: [code] message`, with what to change in the message, and at most 50 lines, then the command that shows the rest. With `--editor-build`, it checks only the editor's build, which is quick enough to run after every edit on a project of thousands of pages; a plain `ascribe check` before finishing checks every build. `--stdin --path <file>` checks text that isn't saved yet. On a project with hundreds of problems, `ascribe check --summary` counts them by code and by file, so an agent can work through one rule, or one file, at a time. See [Checking some files](../reference/cli.md#checking-some-files).
 
-`ascribe check` exits with `0` when there are no errors, `1` when there are, and `2` when it couldn't check at all. `--deny-warnings` makes warnings count too.
+`ascribe check` exits with `0` when there are no errors, `1` when there are, and `2` when it couldn't check at all. `--deny-warnings` makes warnings count too. Advice, below a warning, never counts. Each diagnostic in the JSON says what kind of next step it has (`next`): a `fix` Ascribe can apply, a `choose` among things it lists, or a `write` that needs judgment. See [What to do next](../reference/diagnostics.md#what-to-do-next).
 
 Other commands answer what an agent would otherwise guess at. Each changes nothing, each takes `--format json`, and each long list is cut with the command that gives the rest:
 
@@ -219,7 +219,7 @@ See [Agents in VS Code](editor.md#agents-in-vs-code).
 
 A hook is a command your agent runs at a point in its work. Ascribe's checks an agent's work without the agent having to remember: each file it writes, as it writes it, and the whole project before it finishes. One command serves Claude Code, Codex, and GitHub Copilot, which share a hook format, with the agent as its argument, `claude-code`, `codex`, or `copilot`:
 
-- **After an edit**, `ascribe agents hook <agent>` checks the files the agent wrote, as `ascribe check <file> --editor-build` does, and adds their errors to what the agent reads next, at most 10, with the build it checked. It says nothing when there are none, and leaves warnings out, which would interrupt every edit.
+- **After an edit**, `ascribe agents hook <agent>` checks the files the agent wrote, as `ascribe check <file> --editor-build` does, and adds their errors to what the agent reads next, at most 10, with the build it checked. It says nothing when there are none, and leaves warnings and advice out, which would interrupt every edit.
 - **Before the agent finishes**, `ascribe agents hook <agent> --event stop` checks every build of each project whose pages or `ascribe.toml` the working tree changes, anywhere in the repository. While there are errors, or a project can't be checked at all, it keeps the agent working, and tells it why. It asks once: when the agent is already continuing because of it, it lets the agent stop. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
 
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli.md#ascribe-agents-hook).

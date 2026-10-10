@@ -8,7 +8,7 @@
           "type": "string"
         },
         "severity": {
-          "description": "`error` or `warning`.",
+          "description": "`error`, `warning`, or `advice`.",
           "type": "string"
         },
         "slug": {

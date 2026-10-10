@@ -17,7 +17,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::{
-    Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity, SourceFile, check_file,
+    Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity, SourceFile, apply_levels,
+    check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
@@ -262,7 +263,10 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
         let Some(file) = project.source_at(path) else {
             continue;
         };
-        let diagnostics = by_file.remove(&file.id).unwrap_or_default();
+        let diagnostics = apply_levels(
+            &job.model.checks,
+            by_file.remove(&file.id).unwrap_or_default(),
+        );
         let index = LineIndex::new(&file.text);
         let related = |r: &ascribe_check::RelatedInfo| -> Option<Location> {
             // A related location is in a source, the content model, or a code
@@ -376,6 +380,7 @@ pub(crate) fn to_lsp(
         severity: Some(match d.severity {
             Severity::Error => DiagnosticSeverity::ERROR,
             Severity::Warning => DiagnosticSeverity::WARNING,
+            Severity::Advice => DiagnosticSeverity::INFORMATION,
         }),
         code: Some(NumberOrString::String(d.code.to_owned())),
         // The code links to its entry in the diagnostics reference.
@@ -392,6 +397,7 @@ pub(crate) fn to_lsp(
         // in that shape.
         data: Some(serde_json::json!({
             "slug": d.slug.as_str(),
+            "next": Registry::global().get(d.slug).and_then(|entry| entry.next).map(ascribe_check::Next::as_str),
             "builds": d.builds,
             "unpublished": d.unpublished,
             "help": Registry::global().get(d.slug).and_then(|entry| entry.fix.as_deref()).unwrap_or_default(),

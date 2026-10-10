@@ -211,3 +211,9 @@ availability = { filter = "self-managed 3.5" }
 [editor]
 build = "site"
 # :snippet-end:
+
+# How loudly each check about the content's quality speaks. No check is
+# configurable yet, so the table is empty; a key is a check's name, and its
+# value a level ("off", "advice", "warning", or "error") or a table with
+# `level` and the check's settings.
+[checks]

@@ -144,6 +144,7 @@ function diagnostic(over: Partial<ProtocolDiagnostic> = {}): ProtocolDiagnostic 
     message: "no page at `nowhere.md`",
     data: {
       slug: "link-target-missing",
+      next: "choose",
       builds: ["site"],
       unpublished: false,
       help: "Fix the link.",
@@ -225,6 +226,7 @@ describe("the problems report", () => {
           code: "ASC036",
           slug: "link-target-missing",
           severity: "error",
+          next: "choose",
           message: "no page at `nowhere.md`",
           file: "docs/a.md",
           range: {
@@ -270,11 +272,40 @@ describe("the problems report", () => {
       shown: 1,
       total: 1,
       next_command: null,
-      summary: { errors: 1, warnings: 0 },
+      summary: { errors: 1, warnings: 0, advice: 0 },
       document_version: 7,
       current: true,
       unsaved: ["docs/a.md"],
     });
+  });
+
+  it("lists advice after errors and warnings, and counts it apart", () => {
+    const at = (line: number) => ({
+      start: { line, character: 0 },
+      end: { line, character: 1 },
+    });
+    const report = problemsReport(
+      input({
+        publications: [
+          {
+            file: "/p/docs/a.md",
+            version: null,
+            at: 0,
+            diagnostics: [
+              diagnostic({ severity: 3, range: at(0) }),
+              diagnostic({ severity: 2, range: at(1) }),
+            ],
+          },
+          { file: "/p/docs/b.md", version: null, at: 0, diagnostics: [diagnostic()] },
+        ],
+      }),
+    );
+    expect(report.diagnostics.map((d) => [d.file, d.severity])).toEqual([
+      ["docs/a.md", "warning"],
+      ["docs/b.md", "error"],
+      ["docs/a.md", "advice"],
+    ]);
+    expect(report.summary).toEqual({ errors: 1, warnings: 1, advice: 1 });
   });
 
   it("lists files in order and caps the list, counting every one", () => {
@@ -297,7 +328,7 @@ describe("the problems report", () => {
     expect(report.truncated).toBe(true);
     expect(report.total).toBe(MAX_PROBLEMS + 6);
     expect(report.next_command).toBe("ascribe check --editor-build --format json docs/a.md");
-    expect(report.summary).toEqual({ errors: 29, warnings: 27 });
+    expect(report.summary).toEqual({ errors: 29, warnings: 27, advice: 0 });
   });
 
   it("is written in the schema version `ascribe check` writes, cut where it cuts", () => {

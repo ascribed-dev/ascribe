@@ -12,7 +12,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use ascribe_check::{Entry, Example, Level, Registry, Severity};
+use ascribe_check::{Entry, Example, Level, Registry};
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::edit_distance;
 use ascribe_resolve::{Layout, MemoryFs};
@@ -39,8 +39,11 @@ pub struct Explanation {
     pub code: String,
     /// The diagnostic's name, such as `link-target-missing`.
     pub slug: String,
-    /// `error` or `warning`.
+    /// `error`, `warning`, or `advice`.
     pub severity: &'static str,
+    /// The kind of next step: `fix`, `choose`, `write`, `outside`, or
+    /// `review`. `null` for a diagnostic that's no longer reported.
+    pub next: Option<&'static str>,
     /// `file` for a problem found in each file on its own; `page` for one
     /// found in each page as a build resolves it.
     pub level: &'static str,
@@ -116,7 +119,7 @@ pub struct ListedDiagnostic {
     pub code: String,
     /// The slug.
     pub slug: String,
-    /// `error` or `warning`.
+    /// `error`, `warning`, or `advice`.
     pub severity: &'static str,
 }
 
@@ -148,7 +151,8 @@ pub fn explain(code_or_slug: &str) -> Result<Explanation, QueryError> {
         ascribe_version: ASCRIBE_VERSION,
         code: entry.code.clone(),
         slug: entry.slug.clone(),
-        severity: severity(entry.severity),
+        severity: entry.severity.as_str(),
+        next: entry.next.map(ascribe_check::Next::as_str),
         level: match entry.level {
             Level::File => "file",
             Level::Page => "page",
@@ -171,16 +175,9 @@ pub fn list() -> DiagnosticList {
             .map(|e| ListedDiagnostic {
                 code: e.code.clone(),
                 slug: e.slug.clone(),
-                severity: severity(e.severity),
+                severity: e.severity.as_str(),
             })
             .collect(),
-    }
-}
-
-fn severity(severity: Severity) -> &'static str {
-    match severity {
-        Severity::Error => "error",
-        Severity::Warning => "warning",
     }
 }
 

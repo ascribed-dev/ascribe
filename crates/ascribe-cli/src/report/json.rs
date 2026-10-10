@@ -37,7 +37,8 @@ pub(crate) struct Report<'a> {
     /// every build, the ones named with `--build`, or the editor's with
     /// `--editor-build`. Empty when the project couldn't be checked.
     builds_checked: Vec<String>,
-    /// Every diagnostic, in file order, and in source order within a file.
+    /// Every diagnostic, in file order, and in source order within a file;
+    /// advice after the errors and warnings, in the same order.
     /// With paths, only those that count for them. With `--summary`, none:
     /// see `truncated`.
     diagnostics: Vec<Entry>,
@@ -51,7 +52,7 @@ pub(crate) struct Report<'a> {
     /// The command that lists the ones left out, when `truncated`; `null`
     /// otherwise.
     next_command: Option<String>,
-    /// How many errors and warnings.
+    /// How many errors, warnings, and advice.
     summary: Summary,
 }
 
@@ -63,6 +64,8 @@ struct Summary {
     errors: usize,
     /// How many warnings.
     warnings: usize,
+    /// How many advice.
+    advice: usize,
     /// With `--summary`: how many diagnostics have each code, most first.
     #[serde(skip_serializing_if = "Option::is_none")]
     by_code: Option<Vec<CodeCount>>,
@@ -79,7 +82,7 @@ struct CodeCount {
     code: &'static str,
     /// The diagnostic's name, such as `link-target-missing`.
     slug: String,
-    /// `error` or `warning`.
+    /// `error`, `warning`, or `advice`.
     severity: &'static str,
     /// How many.
     count: usize,
@@ -95,6 +98,8 @@ struct FileCount {
     errors: usize,
     /// How many warnings.
     warnings: usize,
+    /// How many advice.
+    advice: usize,
 }
 
 /// A diagnostic.
@@ -105,8 +110,15 @@ struct Entry {
     code: &'static str,
     /// The diagnostic's name, such as `link-target-missing`.
     slug: String,
-    /// `error` or `warning`.
+    /// `error`, `warning`, or `advice`. Advice never fails the command.
+    /// More severities may be added; a reader treats one it doesn't know as
+    /// it treats advice.
     severity: &'static str,
+    /// The kind of next step: `fix` when Ascribe can make the edit,
+    /// `choose` when the author picks among things Ascribe can list,
+    /// `write` when it needs writing or judgment, `outside` when nothing in
+    /// the source can fix it, and `review` when it may be fine as it is.
+    next: &'static str,
     /// What's wrong, and what to do about it.
     message: String,
     /// The file, relative to the project root (the directory of
@@ -235,6 +247,9 @@ fn entry(files: &FileTable, d: &Diagnostic, repeats: usize) -> Entry {
         code: d.code,
         slug: d.slug.to_string(),
         severity: d.severity.as_str(),
+        next: registered
+            .and_then(|e| e.next)
+            .map_or("write", ascribe_check::Next::as_str),
         message: d.message.clone(),
         file: files.path(d.location.file),
         range: range(files, d.location),
@@ -330,6 +345,7 @@ pub fn write(
                 file: f.file,
                 errors: f.counts.errors,
                 warnings: f.counts.warnings,
+                advice: f.counts.advice,
             })
             .collect();
         (Vec::new(), Some(codes), Some(by_file))
@@ -357,6 +373,7 @@ pub fn write(
         summary: Summary {
             errors: counts.errors,
             warnings: counts.warnings,
+            advice: counts.advice,
             by_code,
             by_file,
         },
