@@ -1084,6 +1084,9 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         // Whether an acknowledgement covers nothing takes every build, so
         // the editor never reports one; `ascribe check` carries its fix.
         .filter(|e| e.slug.as_str() != "intended-unused")
+        // Its fix writes `ascribe.permalinks`, not the page: `across.rs`
+        // applies it and sees the warning go.
+        .filter(|e| e.slug.as_str() != "permalinks-list-behind")
         .map(|e| e.slug.as_str())
         .collect();
     let sampled: Vec<&str> = samples.iter().map(|(slug, _, _)| *slug).collect();
