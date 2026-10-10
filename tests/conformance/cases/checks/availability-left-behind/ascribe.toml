@@ -1,0 +1,45 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[versions]
+current = "3.4"
+
+[features.shipped]
+name = "Shipped in 3.4"
+available = "self-managed 3.4"
+
+[features.history]
+name = "A finished history"
+available = "self-managed (preview 3.1, ga 3.2)"
+
+[features.next]
+name = "The next release"
+available = "self-managed preview 3.5"
+
+[features.everywhere]
+name = "Cloud has no versions"
+available = "cloud, self-managed 3.0"
+
+[features.kept]
+name = "Kept by name"
+available = "self-managed 3.3"
+
+[[intended]]
+check = "availability-left-behind"
+feature = "kept"
+reason = "The 3.3 pages still cite it."
+
+[checks]
+feature-unused = "off"

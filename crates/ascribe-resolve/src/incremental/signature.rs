@@ -156,6 +156,7 @@ impl Fingerprints {
             fragments,
             dimensions,
             version_scheme,
+            current_version,
             lifecycle,
             features,
             notes,
@@ -192,8 +193,8 @@ impl Fingerprints {
                 (&t.name, &t.files, t.default, fields)
             })
             .collect();
-        // Where a phrase, a feature, or a glossary term is declared is read
-        // only by the diagnostics of `ascribe.toml`.
+        // Where a phrase, a feature, a glossary term, or the current release
+        // is declared is read only by the diagnostics of `ascribe.toml`.
         let phrase_values: Vec<_> = phrases.iter().map(|p| (&p.key, &p.value)).collect();
         let feature_specs: Vec<_> = features
             .iter()
@@ -214,7 +215,9 @@ impl Fingerprints {
             .map(|p| p.span)
             .chain(features.iter().map(|f| f.span))
             .chain(glossary.terms.iter().map(|t| t.span))
+            .chain(current_version.iter().map(|v| v.span))
             .collect();
+        let current = current_version.as_ref().map(|v| &v.components);
         let index = hash_of(&format!(
             "{parse}{:?}",
             (
@@ -230,7 +233,7 @@ impl Fingerprints {
             (
                 (spec, project, types, fragments, dimensions),
                 (
-                    version_scheme,
+                    (version_scheme, current),
                     lifecycle,
                     feature_specs,
                     notes,

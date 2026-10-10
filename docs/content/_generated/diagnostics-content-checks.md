@@ -124,6 +124,16 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
 
+#### ASC172 `availability-left-behind`
+
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** `[versions] current` is set, and a feature's availability names a version for every target, none of them later than the current release.
+
+**Message:** feature `{key}` names releases up to \{version}, and the current release is \{current}, so what it marks has shipped
+
+**Fix:** When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the release after it, or at a state such as `unreleased`. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../reference/content-model.md#intended-acknowledgements). After each release, move [`[versions] current`](../reference/content-model.md#7-versions) to it.
+
 ### Outputs
 
 #### ASC163 `description-too-long`

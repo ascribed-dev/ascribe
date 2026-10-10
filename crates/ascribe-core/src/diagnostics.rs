@@ -548,6 +548,9 @@ pub const DELIVERY_HOSTING: DiagnosticSlug = DiagnosticSlug("delivery-hosting");
 /// `ASC171`, advice, file level: a content check (area `site`).
 pub const DELIVERY_OUTPUT: DiagnosticSlug = DiagnosticSlug("delivery-output");
 
+/// `ASC172`, advice, file level: a content check (area `project`).
+pub const AVAILABILITY_LEFT_BEHIND: DiagnosticSlug = DiagnosticSlug("availability-left-behind");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -721,6 +724,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_EXTERNAL_MOVED,
     DELIVERY_HOSTING,
     DELIVERY_OUTPUT,
+    AVAILABILITY_LEFT_BEHIND,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -748,6 +752,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     LINK_EXTERNAL_MOVED,
     DELIVERY_HOSTING,
     DELIVERY_OUTPUT,
+    AVAILABILITY_LEFT_BEHIND,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
@@ -763,4 +768,5 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (IMAGE_UNUSED, crate::Place::Entry),
     (IMAGE_LARGE, crate::Place::Entry),
     (LINK_EXTERNAL_BROKEN, crate::Place::Block),
+    (AVAILABILITY_LEFT_BEHIND, crate::Place::Entry),
 ];

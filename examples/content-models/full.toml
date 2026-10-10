@@ -62,6 +62,7 @@ labels = { yarn = "Yarn" }
 # :snippet-start: versions
 [versions]
 scheme = "numeric"
+current = "3.5"
 # :snippet-end:
 
 # A new state, and a built-in state relabeled.

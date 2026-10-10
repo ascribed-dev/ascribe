@@ -199,6 +199,23 @@ pub fn parse_availability(
     })
 }
 
+/// Parses a version alone (SPEC Appendix A rule `version`), such as
+/// `[versions] current`'s. `offset` is the byte offset of `text` in its file.
+/// The whole text must be the version, with no surrounding whitespace.
+pub fn parse_version(text: &str, offset: usize) -> Result<Version, AvailabilityError> {
+    let mut p = Parser {
+        src: text,
+        pos: 0,
+        offset,
+    };
+    let version = p.version()?;
+    if p.at_end() {
+        Ok(version)
+    } else {
+        Err(p.unexpected("expected the end of the version"))
+    }
+}
+
 struct Parser<'a> {
     src: &'a str,
     pos: usize,
@@ -412,6 +429,17 @@ impl Parser<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_version_alone() {
+        let v = parse_version("0.2.10", 5).expect("a version");
+        assert_eq!(v.components, [0, 2, 10]);
+        assert_eq!(v.span, Span::new(5, 11));
+        assert!(parse_version("0.2 ", 0).is_err());
+        assert!(parse_version("v1", 0).is_err());
+        assert!(parse_version("1.2beta", 0).is_err());
+        assert!(parse_version("", 0).is_err());
+    }
 
     fn ok(text: &str) -> AvailabilitySpec {
         parse_availability(text, 0).unwrap_or_else(|e| panic!("`{text}`: {e}"))

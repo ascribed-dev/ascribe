@@ -74,6 +74,16 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[versions]\nscheme = \"semver\" #!\n",
         ),
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[versions]\ncurrent = \"v3.4\" #!\n",
+        ),
+        case(
+            "model-wrong-type",
+            Some("quote"),
+            "spec = \"0.1\"\n[versions]\ncurrent = 3.4 #!\n",
+        ),
         case("model-spec-unsupported", None, "spec = \"9.9\" #!\n"),
         case(
             "model-invalid-name",

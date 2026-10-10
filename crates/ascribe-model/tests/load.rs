@@ -48,6 +48,7 @@ fn minimal_gets_every_default() {
     assert_eq!(m.consumer.base_path, "/");
     assert_eq!(m.consumer.trailing_slash, TrailingSlash::Always);
     assert!(m.consumer.html);
+    assert!(m.current_version.is_none());
     // Only the built-in directives.
     assert_eq!(
         m.directive_keywords(),
@@ -506,4 +507,13 @@ fn full_marks_its_description_and_review_date() {
             .level(ascribe_core::diagnostics::CODE_LANGUAGE_MISSING),
         Some(CheckLevel::Warning)
     );
+}
+
+#[test]
+fn versions_current_is_a_version_in_the_file() {
+    let toml = "spec = \"0.1\"\n[versions]\ncurrent = \"3.10\"\n";
+    let m = load_str(toml, FileId::new(0)).unwrap();
+    let current = m.current_version.unwrap();
+    assert_eq!(current.components, [3, 10]);
+    assert_eq!(&toml[current.span.range()], "3.10");
 }

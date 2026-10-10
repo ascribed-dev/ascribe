@@ -9,7 +9,9 @@
 //!   and the editor's inventory make (`ascribe_resolve::Project::use_counts`),
 //!   so a count is the same everywhere; `image-unused` and `image-large` read
 //!   the image files under the content root, through the project's
-//!   [`FileSystem`](ascribe_resolve::FileSystem).
+//!   [`FileSystem`](ascribe_resolve::FileSystem); and
+//!   `availability-left-behind` compares each feature's versions with
+//!   `[versions] current`.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, and `title-duplicate`, two pages the build publishes with one
@@ -19,9 +21,11 @@
 //! Each is advice, and a project can set its level or turn it off in
 //! `[checks]`; one turned off isn't run.
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
+use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{CheckLevel, Checks, GlossaryMatch};
@@ -49,6 +53,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::GLOSSARY_TERM_UNUSED,
     diagnostics::IMAGE_UNUSED,
     diagnostics::IMAGE_LARGE,
+    diagnostics::AVAILABILITY_LEFT_BEHIND,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -143,6 +148,25 @@ pub(crate) fn for_every_build(
         }
     }
 
+    if on(diagnostics::AVAILABILITY_LEFT_BEHIND)
+        && let Some(current) = &project.model().current_version
+    {
+        for f in &project.model().features {
+            if let Some(latest) = left_behind(&f.available, current) {
+                issues.push(
+                    Issue::new(
+                        diagnostics::AVAILABILITY_LEFT_BEHIND,
+                        Location::new(FileId::new(0), f.span),
+                    )
+                    .with_arg("key", f.key.clone())
+                    .with_arg("version", latest.text.clone())
+                    .with_arg("current", current.text.clone())
+                    .with_arg(ENTRY_ARG, entry_arg(EntryKind::Feature, &f.key)),
+                );
+            }
+        }
+    }
+
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
         self::images(project, index, &on, &mut issues);
     }
@@ -226,6 +250,31 @@ fn images(
             );
         }
     }
+}
+
+/// The latest version a feature's spec names, when every target in it names
+/// one and none is later than `current`: the feature is about releases that
+/// have shipped. A target with no version, such as a versionless one, keeps
+/// it current.
+fn left_behind<'s>(spec: &'s AvailabilitySpec, current: &Version) -> Option<&'s Version> {
+    let mut latest: Option<&Version> = None;
+    for entry in &spec.entries {
+        let version = match &entry.detail {
+            Detail::Version(v)
+            | Detail::State {
+                version: Some(v), ..
+            } => v,
+            Detail::History(steps) => &steps.last()?.version,
+            Detail::None | Detail::State { version: None, .. } => return None,
+        };
+        if version.compare(current) == Ordering::Greater {
+            return None;
+        }
+        if latest.is_none_or(|l| version.compare(l) == Ordering::Greater) {
+            latest = Some(version);
+        }
+    }
+    latest
 }
 
 /// Whether a path's extension is an image's.

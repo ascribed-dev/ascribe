@@ -33,6 +33,10 @@ pub struct ContentModel {
     pub dimensions: Vec<Dimension>,
     /// `[versions] scheme`.
     pub version_scheme: VersionScheme,
+    /// `[versions] current`: the latest release, which
+    /// `availability-left-behind` compares features' versions with. Its span
+    /// is in `ascribe.toml`.
+    pub current_version: Option<Version>,
     /// Lifecycle states: the built-ins (possibly adjusted), then declared ones.
     pub lifecycle: Vec<LifecycleState>,
     /// `[features.<key>]`.
