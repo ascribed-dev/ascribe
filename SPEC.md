@@ -650,7 +650,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
     reason = "Kept for the 2.x pages restored in the next release."
     ```
 
-- **The reason** is REQUIRED and not empty.
+- **The reason** is REQUIRED and not empty. A processor that writes an acknowledgement for the author with a placeholder reason MUST report one that still has it as an error, so that writing an acknowledgement never silences a problem without a reason.
 - **What it does.** A problem an acknowledgement covers isn't reported. Processors SHOULD count acknowledged problems, and list them with their reasons where they list problems.
 - **When nothing needs it.** An acknowledgement that covers no problem in any build is itself reported as advice (§8.2), so acknowledgements don't outlive what they excused. Processors report it only when they've checked every build.
 - **Never in an output.** An acknowledgement changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. `@intended` renders nothing, and the `intended` key isn't in a page's frontmatter in any output.
@@ -946,7 +946,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Lists | Directive line over-indented into an indented code block | Warning |
 | Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list) | Warning |
 | `@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else | Error |
-| `@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason | Error |
+| `@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder | Error |
 | `@intended` | An acknowledgement that matches no problem in any build | Advice |
 | Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension | Error |
 

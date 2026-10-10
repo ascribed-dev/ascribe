@@ -581,6 +581,31 @@ mod tests {
     }
 
     #[test]
+    fn one_used_in_one_build_and_not_the_other_is_used() {
+        // A page two builds treat differently: the block's problem is
+        // reported in `cloud` only, which `diagnose` gives as its builds.
+        let project = project(&[("page.md", PAGE)]);
+        let mut bound = problem(
+            &project,
+            diagnostics::BINDING_BLANK_LINE,
+            span_of(&project, "Bound"),
+        );
+        bound.builds = vec!["cloud".to_owned()];
+        let page = problem(
+            &project,
+            diagnostics::CONTAINER_NESTING_DEEP,
+            span_of(&project, "Other"),
+        );
+        let applied = read(&project).apply(project.model(), vec![bound, page], true);
+        assert!(
+            applied.diagnostics.is_empty(),
+            "neither is unused: {:?}",
+            applied.diagnostics
+        );
+        assert_eq!(applied.acknowledged[0].problem.builds, ["cloud"]);
+    }
+
+    #[test]
     fn one_of_several_frontmatter_entries_is_removed_alone() {
         let page = "---\ntitle: T\nintended:\n  - check: container-nesting-deep\n    \
             reason: One.\n  - check: container-nesting-deep\n    reason: Two.\n---\n\nText.\n";

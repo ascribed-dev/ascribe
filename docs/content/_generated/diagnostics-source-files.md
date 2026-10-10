@@ -818,7 +818,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
-**When:** An `intended` frontmatter entry that isn't a mapping with a `check` and a reason.
+**When:** An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder.
 
 **Message:** `intended` is a list of acknowledgements, each with a `check` and a `reason`
 
@@ -829,6 +829,8 @@ intended:
   - check: page-orphan
     reason: Linked from the site's sidebar.
 ```
+
+The editor's quick fix writes a placeholder reason for you to replace: until you do, the acknowledgement is reported.
 
 #### ASC145 `intended-unused`
 

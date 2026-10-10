@@ -552,4 +552,4 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 **Message:** an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`
 
-**Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares.
+**Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes.

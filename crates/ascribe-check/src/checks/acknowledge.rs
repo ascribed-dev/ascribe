@@ -5,9 +5,9 @@
 //! anything.
 
 use ascribe_core::diagnostics::ACKNOWLEDGEABLE;
-use ascribe_core::intended::{NameProblem, check_named};
+use ascribe_core::intended::{NameProblem, PLACEHOLDER_REASON, check_named, is_placeholder};
 use ascribe_core::{Issue, Location, Place, Span, diagnostics};
-use ascribe_syntax::DirectiveLine;
+use ascribe_syntax::{DirectiveLine, PrimaryValue};
 use serde_yaml_ng::Value;
 
 use super::Ctx;
@@ -35,6 +35,22 @@ impl Ctx<'_> {
             // A bare key: the parser reported it.
             None => {}
         }
+        if let Some(PrimaryValue::Line(reason)) = &d.primary
+            && is_placeholder(&reason.text)
+        {
+            self.report_placeholder(check_text(d), reason.span);
+        }
+    }
+
+    /// A reason that's still the quick fix's placeholder: reported as no
+    /// reason, until the author writes why.
+    fn report_placeholder(&mut self, check: Option<String>, at: Span) {
+        self.report(
+            Issue::new(diagnostics::INTENDED_ENTRY, self.location(at))
+                .with_variant("placeholder")
+                .with_arg("reason", PLACEHOLDER_REASON)
+                .with_arg("check", check.unwrap_or_else(|| "a check".to_owned())),
+        );
     }
 
     /// The `intended` frontmatter key: a list of entries, each with the
@@ -107,8 +123,17 @@ impl Ctx<'_> {
                     None
                 }
             };
-            let reason_ok =
-                matches!(entry.get("reason"), Some(Value::String(r)) if !r.trim().is_empty());
+            let reason = entry.get("reason");
+            if let Some(Value::String(r)) = reason
+                && is_placeholder(r)
+            {
+                let at = index
+                    .get(&format!("{path}.reason"))
+                    .map_or(item_span, |n| n.value);
+                self.report_placeholder(check, at);
+                continue;
+            }
+            let reason_ok = matches!(reason, Some(Value::String(r)) if !r.trim().is_empty());
             if !reason_ok {
                 let at = index
                     .get(&format!("{path}.reason"))
@@ -145,4 +170,14 @@ impl Ctx<'_> {
         };
         self.report(issue);
     }
+}
+
+/// The check an `@intended` line names, as written.
+fn check_text(d: &DirectiveLine) -> Option<String> {
+    d.attributes
+        .as_ref()
+        .and_then(|a| a.get("check"))
+        .and_then(|a| a.value.as_ref())
+        .and_then(|v| v.as_text())
+        .map(str::to_owned)
 }

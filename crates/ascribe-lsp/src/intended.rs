@@ -10,8 +10,9 @@ use ascribe_syntax::{ParsedDocument, frontmatter_lines};
 pub(crate) const TITLE: &str = "Mark as intended, and write why";
 
 /// The reason the acknowledgement is written with, for the author to
-/// replace: the fix can't know why.
-pub(crate) const REASON: &str = "why this is intended";
+/// replace: the fix can't know why, and the checks report it until it's
+/// replaced.
+const REASON: &str = ascribe_core::intended::PLACEHOLDER_REASON;
 
 /// Where an acknowledgement is written.
 #[derive(Debug, PartialEq, Eq)]

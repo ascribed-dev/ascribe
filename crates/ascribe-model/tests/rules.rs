@@ -586,6 +586,11 @@ fn cases() -> Vec<Case> {
         ),
         case(
             "model-intended-entry",
+            Some("placeholder"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"x\"\nreason = \"why this is intended\" #!\n",
+        ),
+        case(
+            "model-intended-entry",
             Some("unknown"),
             "spec = \"0.1\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"nope\" #!\nreason = \"r\"\n",
         ),

@@ -477,7 +477,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 
 An acknowledged problem isn't reported, but `ascribe check` and `ascribe build` count it in their summary (`1 acknowledged`), and list it, with its reason, in their [JSON report](cli.md). When an acknowledgement covers nothing in any build, because the problem was fixed or the check changed, `ascribe check` reports it as advice, `intended-unused`, with a fix that removes it. That's reported only when every build is checked: not with `--build` or `--editor-build`, and not in the editor.
 
-In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason.
+In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason. Its placeholder reason is reported as an error until you replace it, so the fix alone silences nothing.
 
 ## Project widgets
 

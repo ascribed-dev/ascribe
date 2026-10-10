@@ -1,7 +1,7 @@
 //! `[[intended]]`: the acknowledgements of problems about a content model
 //! entry or an image, which have no page to hold them (SPEC §4.9).
 
-use ascribe_core::intended::{NameProblem, check_named};
+use ascribe_core::intended::{NameProblem, PLACEHOLDER_REASON, check_named, is_placeholder};
 use ascribe_core::{EntryKind, Place, diagnostics};
 use toml::de::DeValue;
 
@@ -36,9 +36,17 @@ impl Loader<'_> {
                 let name = self.string("intended.check", c, false)?;
                 self.check_name(&name, sp(c))
             });
-            let reason = self
-                .require("intended", t, span, "reason")
-                .and_then(|r| self.string("intended.reason", r, true));
+            let reason = self.require("intended", t, span, "reason").and_then(|r| {
+                let reason = self.string("intended.reason", r, true)?;
+                if is_placeholder(&reason) {
+                    self.push(
+                        self.issue(diagnostics::MODEL_INTENDED_ENTRY, sp(r))
+                            .with_variant("placeholder")
+                            .with_arg("reason", PLACEHOLDER_REASON),
+                    );
+                }
+                Some(reason)
+            });
             let named: Vec<(EntryKind, &V<'_>)> = entries(t)
                 .filter_map(|(key, _, value)| Some((EntryKind::from_key(key)?, value)))
                 .collect();

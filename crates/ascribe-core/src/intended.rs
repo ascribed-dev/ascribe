@@ -9,6 +9,16 @@
 
 use crate::DiagnosticSlug;
 
+/// The reason the editor's quick fix writes for the author to replace. It
+/// isn't a reason: an acknowledgement that still has it is reported as one
+/// without a reason, so applying the fix alone silences nothing.
+pub const PLACEHOLDER_REASON: &str = "why this is intended";
+
+/// Whether `reason` is still [`PLACEHOLDER_REASON`].
+pub fn is_placeholder(reason: &str) -> bool {
+    reason.trim() == PLACEHOLDER_REASON
+}
+
 /// Where a check reports its problems, and so where an author acknowledges
 /// one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
