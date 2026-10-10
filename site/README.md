@@ -5,6 +5,7 @@ Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`
 ```
 astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
 netlify.toml                production's build on Netlify
+netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md
 public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
 src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
