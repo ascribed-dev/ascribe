@@ -59,6 +59,7 @@ Everything the audit writes is in this folder:
 
 | File | Holds |
 |---|---|
+| `inventory-slice.md` | Phase 1's two tables, replaced by the generated inventory in phase 2 |
 | `journeys/<name>.md` | A journey's script, then each walk's notes |
 | `journeys/transcripts/` | The agents' sessions, as recorded |
 | `findings.md` | The findings, numbered, in order of what they cost a user |
