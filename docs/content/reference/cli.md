@@ -501,6 +501,50 @@ Shows each source in another repository: its repository and branch, its pin, and
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and `sources`, each with `name`, `git`, `branch` (or null), `commit` (the pin, or null), and `files`, each with `path` and `state`: `current`, `changed`, `missing`, `unlocked`, `unused`, `not_copied`, or `not_at_pin`.
 
+## `ascribe permalinks`
+@id {permalink=true}: cli-permalinks
+@available: next
+
+Keeps the project's list of [permalinks](directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, and checks names against it. The list names each permalink the content declares and where, and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
+
+### `ascribe permalinks sync`
+@id {permalink=true}: cli-permalinks-sync
+
+Brings `ascribe.permalinks` up to date with the content, and makes it when there's none: it adds each permalink the list doesn't have, and records where each is declared now, so moving a heading to another page and running `sync` changes one line. It never drops a name the content no longer declares: that stays in the list, and `ascribe check` reports it until it's back, so running `sync` can't hide a removal. It lists what it added and moved, and warns about each name it kept.
+
+@include: ../_generated/cli-permalinks-sync-options.md
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `changed` (whether the file was written), `created`, `added` (names), `moved` (each with `name`, `from`, and `to`), and `removed` (the names kept that nothing declares). It exits with `0` when the list is up to date, whether or not it changed, and `2` when the project doesn't load or the list can't be read or written.
+
+### `ascribe permalinks list`
+@id {permalink=true}: cli-permalinks-list
+
+Shows every permalink the content declares, with the file and line it's declared on, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that nothing declares any more. It changes nothing. It exits with `0` whatever it finds, and `2` when the project doesn't load or the list can't be read.
+
+@include: ../_generated/cli-permalinks-list-options.md
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `has_list`, `permalinks`, each with `name`, `place` (as the list writes it), `file`, `line`, `state` (`listed`, `moved`, or `not_listed`), and `listed_at` (the list's place for a moved one, or null), and `removed`, each with `name` and `place`.
+
+### `ascribe permalinks verify`
+@id {permalink=true}: cli-permalinks-verify
+
+Checks that each name is a permalink in a list, and names each one that isn't. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Checking a product's links](../guides/astro.md#checking-a-products-links) shows the step for CI.
+
+```sh
+ascribe permalinks verify cli-check ASC036
+ascribe permalinks verify --list docs/ascribe.permalinks --from permalinks.txt
+```
+
+@include: ../_generated/cli-permalinks-verify-options.md
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `list` (the list's path, as given), `found`, and `missing`, each a list of names in the order given.
+
+| Code | Meaning |
+|---|---|
+| `0` | The list has every name |
+| `1` | It doesn't have one; each is named on standard error |
+| `2` | It couldn't check: no list where it looked, or a list or a `--from` file it can't read |
+
 ## `ascribe vale`
 @id {permalink=true}: cli-vale
 @available: next

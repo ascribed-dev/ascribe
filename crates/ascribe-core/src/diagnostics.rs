@@ -558,6 +558,15 @@ pub const PERMALINK_DUPLICATE: DiagnosticSlug = DiagnosticSlug("permalink-duplic
 pub const MODEL_CONSUMER_PERMALINK_PATH: DiagnosticSlug =
     DiagnosticSlug("model-consumer-permalink-path");
 
+/// `ASC175`, error, file level: SPEC §8.2, "Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it".
+pub const PERMALINKS_LIST_INVALID: DiagnosticSlug = DiagnosticSlug("permalinks-list-invalid");
+
+/// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares that `ascribe.permalinks` doesn't list, or lists in another place".
+pub const PERMALINKS_LIST_BEHIND: DiagnosticSlug = DiagnosticSlug("permalinks-list-behind");
+
+/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A permalink `ascribe.permalinks` lists that the content no longer declares".
+pub const PERMALINK_REMOVED: DiagnosticSlug = DiagnosticSlug("permalink-removed");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -734,6 +743,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     AVAILABILITY_LEFT_BEHIND,
     PERMALINK_DUPLICATE,
     MODEL_CONSUMER_PERMALINK_PATH,
+    PERMALINKS_LIST_INVALID,
+    PERMALINKS_LIST_BEHIND,
+    PERMALINK_REMOVED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

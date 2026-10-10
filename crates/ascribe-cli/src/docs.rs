@@ -44,13 +44,11 @@ fn repo() -> PathBuf {
 }
 
 /// The permalinks the docs' `site` build publishes, with `base-path` set to
-/// `base` when it's given.
-fn docs_permalinks(base: Option<&str>) -> Vec<ascribe_resolve::Permalink> {
+/// `base`.
+fn docs_permalinks(base: &str) -> Vec<ascribe_resolve::Permalink> {
     let root = repo().join("docs");
     let mut model = ascribe_model::load(root.join("ascribe.toml")).unwrap();
-    if let Some(base) = base {
-        base.clone_into(&mut model.consumer.base_path);
-    }
+    base.clone_into(&mut model.consumer.base_path);
     let layout = ascribe_resolve::Layout::from_model(&model);
     let fs = ascribe_resolve::DiskFs::new(&root, &layout);
     let project = ascribe_resolve::Project::load(std::sync::Arc::new(model), layout, &fs);
@@ -145,52 +143,109 @@ fn the_docs_site_is_where_the_binary_links() {
     );
 }
 
-/// Every address the binary builds is a permalink the docs publish, and it
-/// leads to the right page and heading: a new command or diagnostic needs
-/// one in the docs. A command's is `cli-` and its name, with a `-` for each
-/// space; a diagnostic's is its code.
+/// The docs' committed list of permalinks, `docs/ascribe.permalinks`.
+fn docs_list() -> String {
+    std::fs::read_to_string(repo().join("docs").join(ascribe_model::PERMALINKS_FILE)).unwrap()
+}
+
+/// Every address the binary builds is a permalink in the docs' committed
+/// list, checked by what `ascribe permalinks verify` runs, as a product's CI
+/// would; and it leads to the right page and heading: a new command or
+/// diagnostic needs one in the docs. A command's is `cli-` and its name,
+/// with a `-` for each space; a diagnostic's is its code.
 #[test]
 fn every_address_the_binary_builds_is_a_permalink_of_the_docs() {
-    let permalinks = docs_permalinks(None);
+    let text = docs_list();
+    let list = ascribe_model::PermalinkList::parse(&text, ascribe_core::FileId::new(0)).unwrap();
+    let addresses = addresses();
+    let names: Vec<String> = addresses
+        .iter()
+        .map(|(address, _, _)| {
+            address
+                .strip_prefix(crate::cli::DOCS_PERMALINKS)
+                .and_then(|rest| rest.strip_suffix('/'))
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{address}: not a permalink of the docs, ending in `/` (trailing-slash = \"always\")"
+                    )
+                })
+                .to_owned()
+        })
+        .collect();
+    let verified =
+        ascribe_query::permalinks::verify(&text, "docs/ascribe.permalinks", &names).unwrap();
+    assert!(
+        verified.missing.is_empty(),
+        "the docs' list has no permalink {:?}: mark the heading, then run `ascribe permalinks sync --config docs`",
+        verified.missing
+    );
     let mut checked = 0;
-    for (address, page, heading) in addresses() {
-        let name = address
-            .strip_prefix(crate::cli::DOCS_PERMALINKS)
-            .and_then(|rest| rest.strip_suffix('/'))
-            .unwrap_or_else(|| {
-                panic!(
-                    "{address}: not a permalink of the docs, ending in `/` (trailing-slash = \"always\")"
-                )
-            });
-        let found = permalinks
-            .iter()
-            .find(|p| p.name == name)
-            .unwrap_or_else(|| panic!("{address}: the docs publish no permalink `{name}`"));
-        assert_eq!(found.page.as_str(), page, "{address}");
+    for ((address, page, heading), name) in addresses.iter().zip(&names) {
+        let place = &list.permalinks[name].place;
+        let (file, id) = match place.split_once('#') {
+            Some((file, id)) => (file, Some(id)),
+            None => (place.as_str(), None),
+        };
+        let page_text = std::fs::read_to_string(repo().join("docs/content").join(page)).unwrap();
+        // A heading in a fragment the page includes, as the diagnostics
+        // reference's are.
+        let file_name = file.rsplit('/').next().unwrap_or(file);
+        assert!(
+            file == *page
+                || page_text
+                    .lines()
+                    .any(|l| l.starts_with("@include: ") && l.ends_with(&format!("/{file_name}"))),
+            "{address}: declared in {file}, which isn't {page} or a fragment it includes"
+        );
         let Some(heading) = heading else {
-            assert_eq!(
-                found.anchor, None,
-                "{address}: leads to a heading, not the page"
-            );
+            assert_eq!(id, None, "{address}: leads to a heading, not the page");
             checked += 1;
             continue;
         };
-        assert_eq!(found.anchor.as_deref(), Some(name), "{address}");
+        assert_eq!(id, Some(name.as_str()), "{address}");
         let expected = match heading.strip_prefix("`ascribe ") {
             Some(command) => format!("cli-{}", command.trim_end_matches('`').replace(' ', "-")),
             None => heading.split(' ').next().unwrap_or_default().to_owned(),
         };
-        assert_eq!(name, expected, "{address}: the permalink for {heading}");
+        assert_eq!(*name, expected, "{address}: the permalink for {heading}");
         // The heading the `@id` is under, in the file it's written in.
-        let file = written_in(found);
+        let written = std::fs::read_to_string(repo().join("docs/content").join(file)).unwrap();
         let marked = format!(" {heading}\n@id {{permalink=true}}: {name}\n");
         assert!(
-            file.contains(&marked),
-            "{address}: no heading {heading} marked `{name}` in the docs"
+            written.contains(&marked),
+            "{address}: no heading {heading} marked `{name}` in {file}"
         );
         checked += 1;
     }
     assert!(checked > 150, "only {checked} addresses");
+}
+
+/// The docs' committed list is what `ascribe permalinks sync` writes for
+/// them, so a permalink they add is in it, and so is every one they had.
+#[test]
+fn the_docs_list_of_permalinks_is_current() {
+    let project = ascribe_check::Project::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let synced = ascribe_query::permalinks::sync(
+        &project.index(),
+        project.permalinks(),
+        project.permalinks_text(),
+    )
+    .unwrap();
+    assert!(
+        !synced.changed,
+        "docs/ascribe.permalinks is behind the docs (added {:?}, moved {:?}): run `ascribe permalinks sync --config docs`",
+        synced.added,
+        synced
+            .moved
+            .iter()
+            .map(|m| m.name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        synced.removed.is_empty(),
+        "docs/ascribe.permalinks has permalinks the docs removed: {:?}",
+        synced.removed
+    );
 }
 
 /// Building the docs under another base path, as when they move to
@@ -198,7 +253,7 @@ fn every_address_the_binary_builds_is_a_permalink_of_the_docs() {
 /// published, at the same path.
 #[test]
 fn the_binary_s_addresses_dont_move_with_the_docs() {
-    let moved = docs_permalinks(Some("/docs/"));
+    let moved = docs_permalinks("/docs/");
     for (address, page, _) in addresses() {
         let name = address
             .strip_prefix(crate::cli::DOCS_PERMALINKS)
@@ -223,24 +278,6 @@ fn the_binary_s_addresses_dont_move_with_the_docs() {
         ),
         crate::cli::DOCS_PERMALINKS
     );
-}
-
-/// The text of the file a permalink is declared in: the page, or a fragment
-/// it includes.
-fn written_in(permalink: &ascribe_resolve::Permalink) -> String {
-    let content = repo().join("docs/content");
-    let page = content.join(permalink.page.as_str());
-    let text = std::fs::read_to_string(&page).unwrap();
-    if permalink.via.is_empty() {
-        return text;
-    }
-    // A heading from an include: the diagnostics reference's are in its
-    // generated fragments.
-    let mut all = text;
-    for entry in std::fs::read_dir(content.join("_generated")).unwrap() {
-        all.push_str(&std::fs::read_to_string(entry.unwrap().path()).unwrap());
-    }
-    all
 }
 
 #[test]

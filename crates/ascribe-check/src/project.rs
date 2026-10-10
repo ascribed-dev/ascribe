@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath};
-use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource};
+use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList};
 use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
@@ -17,6 +17,10 @@ pub use ascribe_model::MODEL_FILE;
 /// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
 /// source file's, and before the code files'.
 pub const LOCK_FILE_ID: FileId = FileId::new(0x7FFF_FFFF);
+
+/// The id of `ascribe.permalinks` (SPEC §7.5), for locations in it: just
+/// before the lock's.
+pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
 
 /// The id of the first image file under the content root, for locations
 /// in image files: the image checks list them in path order, and number them
@@ -57,7 +61,8 @@ pub struct FileEntry<'a> {
     /// The text.
     pub text: &'a str,
     /// The path relative to the content root, for a source file or an image
-    /// file under it; `None` for the content model and the lock.
+    /// file under it; `None` for the content model, the lock, and the
+    /// permalinks list.
     pub content_path: Option<&'a RelPath>,
 }
 
@@ -172,6 +177,10 @@ pub struct Project {
     lock_text: Option<String>,
     /// `ascribe.lock` read, or its problems, when there's one.
     lock: Option<Result<Lock, Vec<Issue>>>,
+    /// The text of `ascribe.permalinks`, when there is one.
+    permalinks_text: Option<String>,
+    /// `ascribe.permalinks` read, or its problems, when there's one.
+    permalinks: Option<Result<PermalinkList, Vec<Issue>>>,
     /// The image files under the content root, by path from the project
     /// root and from the content root, once the image checks have listed
     /// them.
@@ -403,6 +412,13 @@ impl Project {
         let lock = lock_text
             .as_deref()
             .map(|text| Lock::parse(text, LOCK_FILE_ID));
+        let permalinks_text = RelPath::parse(PERMALINKS_FILE)
+            .ok()
+            .and_then(|path| fs.read_file(&path).ok())
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+        let permalinks = permalinks_text
+            .as_deref()
+            .map(|text| PermalinkList::parse(text, PERMALINKS_FILE_ID));
         Project {
             root,
             layout,
@@ -415,6 +431,8 @@ impl Project {
             code: Arc::default(),
             lock_text,
             lock,
+            permalinks_text,
+            permalinks,
             images: OnceLock::new(),
             today: None,
         }
@@ -525,6 +543,16 @@ impl Project {
         self.lock.as_ref()
     }
 
+    /// The text of `ascribe.permalinks`, when the project has one.
+    pub fn permalinks_text(&self) -> Option<&str> {
+        self.permalinks_text.as_deref()
+    }
+
+    /// `ascribe.permalinks` read, or its problems, when the project has one.
+    pub fn permalinks(&self) -> Option<&Result<PermalinkList, Vec<Issue>>> {
+        self.permalinks.as_ref()
+    }
+
     /// The pin of the source `name` in another repository, when
     /// `ascribe.lock` can be read and pins it to the repository the content
     /// model names.
@@ -555,7 +583,7 @@ impl Project {
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
         if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
-            && id.index() < LOCK_FILE_ID.index()
+            && id.index() < PERMALINKS_FILE_ID.index()
         {
             let (path, content) = self.images.get()?.get(i as usize)?;
             return Some(FileEntry {
@@ -581,6 +609,14 @@ impl Project {
                 content_path: None,
             });
         }
+        if id == PERMALINKS_FILE_ID {
+            return self.permalinks_text.as_deref().map(|text| FileEntry {
+                id,
+                display_path: PERMALINKS_FILE.to_owned(),
+                text,
+                content_path: None,
+            });
+        }
         let source = self.sources.iter().find(|s| s.id == id)?;
         Some(FileEntry {
             id,
@@ -595,7 +631,7 @@ impl Project {
     }
 
     /// The path a report shows for a file id: [`FileEntry::display_path`] for
-    /// the content model, the lock, and a source file, and the code file's
+    /// the content model, the lock, the permalinks list, and a source file, and the code file's
     /// path for a code file a snippet read.
     pub fn display_path(&self, id: FileId) -> Option<String> {
         match self.file(id) {
@@ -680,7 +716,7 @@ impl SourceSet for Project {
 /// The id of the image at position `i` of [`Project::images`].
 pub(crate) fn image_id(i: usize) -> FileId {
     // A project has far fewer images than the ids from IMAGE_FILE_IDS to the
-    // lock's.
+    // permalinks list's.
     #[allow(clippy::cast_possible_truncation)]
     FileId::new(IMAGE_FILE_IDS + i as u32)
 }

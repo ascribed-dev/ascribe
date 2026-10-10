@@ -515,6 +515,14 @@ impl Core {
                 }
                 continue;
             }
+            if let Some(loaded) = self.loaded.as_mut()
+                && path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+            {
+                // The permalinks list isn't a source: the checks across the
+                // project compare it with the content.
+                loaded.across_dirty = true;
+                continue;
+            }
             if event.typ == FileChangeType::DELETED {
                 self.collect_deleted(&path, &mut changes, &mut mirror);
             } else {

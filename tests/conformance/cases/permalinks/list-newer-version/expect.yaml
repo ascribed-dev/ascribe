@@ -1,0 +1,8 @@
+description: >-
+  A list of a version this processor doesn't read is invalid, and the
+  permalinks aren't checked against it.
+spec: ["7.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: permalinks-list-invalid, file: ascribe.permalinks, line: 1}

@@ -48,6 +48,14 @@ pub enum QueryError {
     /// The page can't be rendered.
     #[error(transparent)]
     Render(#[from] ascribe_emit::EmitError),
+    /// A permalinks list can't be read.
+    #[error("{file} can't be read: {detail}")]
+    PermalinksListInvalid {
+        /// The list, as shown.
+        file: String,
+        /// Its first problem.
+        detail: String,
+    },
 }
 
 fn closest_text(closest: &[String]) -> String {
@@ -68,6 +76,7 @@ impl Coded for QueryError {
             QueryError::UnknownBuild(e) => e.code(),
             QueryError::BadTarget { .. } => "bad_target",
             QueryError::Render(e) => e.code(),
+            QueryError::PermalinksListInvalid { .. } => "permalinks_list_invalid",
         }
     }
 }

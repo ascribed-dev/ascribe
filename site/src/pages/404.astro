@@ -14,7 +14,9 @@ const base = import.meta.env.BASE_URL;
           href={base}>start page</a
         >.
       </p>
-      <MissingPermalink />
+      {/* The paragraph above already offers the start page and search, so the
+      component's own offer, its default children, is replaced with nothing. */}
+      <MissingPermalink><Fragment /></MissingPermalink>
     </article>
   </main>
 </Base>

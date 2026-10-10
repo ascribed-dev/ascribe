@@ -1,0 +1,4 @@
+version = 1
+
+[permalinks]
+rotate-keys = "keys.md#rotate-keys"

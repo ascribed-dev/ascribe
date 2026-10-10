@@ -116,7 +116,7 @@ Nothing outside the docs links to a page's path. The binary, the extension, and 
 | Another page | Its subject, with `-guide` for a guide: `diagnostics`, `directives`, `getting-started`, `agents-guide`, `editor-guide` | The page's frontmatter, `permalink: agents-guide` |
 | Another section | Its heading's id: `create-ascribetoml` | Its heading |
 
-In Rust, build an address with `ascribe_core::docs_permalink!("cli-check")`, never by adding a path to `docs_site!`. `every_address_the_binary_builds_is_a_permalink_of_the_docs` in `crates/ascribe-cli/src/docs.rs` checks each name the binary links to against what the docs publish, and `packages/vscode/test/unit/walkthrough.test.ts` checks the extension's manifest. A new command fails the first until its heading is marked. Don't rename or remove a permalink: something outside the docs links to it.
+In Rust, build an address with `ascribe_core::docs_permalink!("cli-check")`, never by adding a path to `docs_site!`. The docs commit their permalinks in `docs/ascribe.permalinks`. `every_address_the_binary_builds_is_a_permalink_of_the_docs` in `crates/ascribe-cli/src/docs.rs` checks each name the binary links to against that list, as `ascribe permalinks verify` would in a product's CI, and `packages/vscode/test/unit/walkthrough.test.ts` checks the extension's manifest. A new command fails the first until its heading is marked and the list is brought up to date: `ascribe permalinks sync --config docs`, or the editor's quick fix. Don't rename or remove a permalink: something outside the docs links to it, and `ascribe check` warns on one that's gone from the content.
 
 ## Generated docs
 

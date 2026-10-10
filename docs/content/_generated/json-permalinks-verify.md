@@ -1,0 +1,48 @@
+<!-- Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/permalinks-verify.schema.json. Change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. -->
+[`schemas/permalinks-verify.schema.json`]({repo}/blob/main/schemas/permalinks-verify.schema.json):
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe permalinks verify` answers.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "found": {
+      "description": "The names the list has, in the order given, each once.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "list": {
+      "description": "The list checked against, as given.",
+      "type": "string"
+    },
+    "missing": {
+      "description": "The names it doesn't, in the order given, each once.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "list",
+    "found",
+    "missing"
+  ],
+  "title": "PermalinksVerifyReport",
+  "type": "object"
+}
+```

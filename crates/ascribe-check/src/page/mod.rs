@@ -330,21 +330,28 @@ impl<'p> PageChecker<'p> {
         out
     }
 
-    /// The diagnostics of the content checks that hold for every build
-    /// (`fragment-unused`, the unused entries of the content model, and,
-    /// when `images` is set, the image checks), by file, over this
-    /// checker's index.
+    /// The diagnostics of the checks that hold for every build
+    /// (`fragment-unused`, the unused entries of the content model, the
+    /// permalinks list's, and, when `images` is set, the image checks), by
+    /// file, over this checker's index.
     pub(crate) fn for_every_build(
         &self,
         images: bool,
     ) -> std::collections::BTreeMap<FileId, Vec<Diagnostic>> {
-        crate::across::for_every_build(
+        let file = |id| self.indexed.file(id);
+        let mut out = crate::across::for_every_build(
             self.project,
             &self.indexed.index,
-            &|id| self.indexed.file(id),
+            &file,
             images,
             self.errors_only,
-        )
+        );
+        for (id, found) in crate::permalinks::check(self.project, &self.indexed.index, &file) {
+            let list = out.entry(id).or_default();
+            list.extend(found);
+            list.sort_by_key(|d| d.location.span);
+        }
+        out
     }
 
     /// The problems in content that no build publishes: those a build that

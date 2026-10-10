@@ -21,6 +21,8 @@
 //!   boundary and exact-case rules for local files.
 //! - **Sources in other repositories**: `ascribe.lock`
 //!   against the content model, and each source's copies against the lock.
+//! - **The permalinks list**: `ascribe.permalinks` against the permalinks
+//!   the content declares, when the project has one.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
 //! (`tests/conformance/diagnostics.toml`), through [`Registry`].
@@ -40,6 +42,7 @@ pub mod intended;
 mod levels;
 pub mod links;
 pub mod page;
+mod permalinks;
 mod project;
 pub mod prompt;
 pub mod prose;
@@ -66,7 +69,7 @@ pub use page::{
 };
 pub use project::{
     FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile,
-    Project, ReadFailure, SourceFile,
+    PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};
@@ -91,7 +94,9 @@ pub(crate) fn check_files_with(
     // to share, one is made only when one of them is on.
     let mut across = match checker {
         Some(checker) => checker.for_every_build(true),
-        None if across::any_file_level(&project.model().checks) => {
+        None if across::any_file_level(&project.model().checks)
+            || project.permalinks().is_some() =>
+        {
             PageChecker::new(project).for_every_build(true)
         }
         None => Default::default(),
@@ -104,9 +109,10 @@ pub(crate) fn check_files_with(
         out.extend(across.remove(&file.id).unwrap_or_default());
     }
     // The lock and the copies come next to the content model, then the
-    // unused entries of the content model; whether a copy is used is known
-    // once every file's snippets have been read.
+    // permalinks list, then the unused entries of the content model; whether
+    // a copy is used is known once every file's snippets have been read.
     let mut sources = check_sources(project);
+    sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
     sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
     // The image files' come last, in path order.

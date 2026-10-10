@@ -37,11 +37,15 @@ pub struct Position {
 }
 
 impl FileTable {
-    /// The files of a loaded project: the content model, the lock, every
-    /// source, and every code file the checks read for a snippet. Made after
-    /// the checks, so the code files are there.
+    /// The files of a loaded project: the content model, the lock, the
+    /// permalinks list, every source, and every code file the checks read
+    /// for a snippet. Made after the checks, so the code files are there.
     pub fn of_project(project: &Project) -> FileTable {
-        let mut ids = vec![FileId::new(0), ascribe_check::LOCK_FILE_ID];
+        let mut ids = vec![
+            FileId::new(0),
+            ascribe_check::LOCK_FILE_ID,
+            ascribe_check::PERMALINKS_FILE_ID,
+        ];
         ids.extend(project.sources().iter().map(|s| s.id));
         let mut entries: Vec<Entry> = ids
             .into_iter()

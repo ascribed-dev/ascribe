@@ -1,0 +1,8 @@
+description: >-
+  A list that has every permalink the content declares, each where it's
+  declared, reports nothing: a page's own, a heading's, and a heading in a
+  fragment, which is declared in the fragment, whichever pages include it.
+spec: ["7.5", "8.2"]
+tags: [check]
+
+diagnostics: []

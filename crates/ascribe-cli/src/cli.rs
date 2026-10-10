@@ -142,6 +142,10 @@ pub enum Command {
     /// Show a page's title, type, and headings, with their ids and lines.
     #[command(after_help = docs_link!("cli-outline"))]
     Outline(commands::outline::Args),
+    /// Keep the list of the project's permalinks, ascribe.permalinks, and
+    /// check names against it.
+    #[command(after_help = docs_link!("cli-permalinks"))]
+    Permalinks(commands::permalinks::Args),
     /// Show where a page, a heading, a fragment, a phrase, a feature, or
     /// another content model entry is used.
     #[command(after_help = docs_link!("cli-refs"))]
@@ -178,6 +182,7 @@ impl Command {
             Command::Mcp(args) => commands::mcp::run(global, args),
             Command::Model(args) => commands::model::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
+            Command::Permalinks(args) => commands::permalinks::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Render(args) => commands::render::run(global, args),
             Command::Report(args) => commands::report::run(global, args),

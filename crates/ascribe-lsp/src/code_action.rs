@@ -2,7 +2,9 @@
 
 use std::collections::HashMap;
 
-use ascribe_core::{LineIndex, Span};
+use ascribe_core::{FileId, LineIndex, RelPath, Span};
+use ascribe_model::{PERMALINKS_FILE, PermalinkList};
+use ascribe_resolve::{DeclaredPermalink, FileSystem};
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, Diagnostic, TextEdit,
     WorkspaceEdit,
@@ -189,6 +191,11 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
                     }
                 }
             }
+            "permalinks-list-behind" => {
+                if let Some(sync) = sync_permalinks(ctx, diagnostic.clone()) {
+                    actions.push(sync);
+                }
+            }
             _ => {}
         }
     }
@@ -232,6 +239,44 @@ fn action(
     edits: Vec<TextEdit>,
 ) -> CodeActionOrCommand {
     workspace_action(ctx, title, diagnostics, edits, None)
+}
+
+/// The quick fix on `permalinks-list-behind`: `ascribe.permalinks` as
+/// `ascribe permalinks sync` writes it for the project as the editor has
+/// it, as one edit of the whole file. None when the list can't be read, or
+/// is up to date already.
+fn sync_permalinks(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCommand> {
+    let path = RelPath::parse(PERMALINKS_FILE).ok()?;
+    let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
+    let list = PermalinkList::parse(&text, FileId::new(0)).ok()?;
+    let declared = ctx.snapshot.project().declared_permalinks();
+    let synced = list
+        .synced(&DeclaredPermalink::places(&declared))
+        .list
+        .to_toml();
+    if synced == text {
+        return None;
+    }
+    let uri = crate::uri::path_to_uri(&ctx.config.with_file_name(PERMALINKS_FILE))?;
+    let edit = TextEdit {
+        range: ctx
+            .encoding
+            .range(&LineIndex::new(&text), Span::new(0, text.len())),
+        new_text: synced,
+    };
+    Some(CodeActionOrCommand::CodeAction(CodeAction {
+        title: format!("Bring {PERMALINKS_FILE} up to date"),
+        kind: Some(CodeActionKind::QUICKFIX),
+        diagnostics: Some(vec![diagnostic]),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from([(uri, vec![edit])])),
+            ..WorkspaceEdit::default()
+        }),
+        command: None,
+        is_preferred: Some(true),
+        disabled: None,
+        data: None,
+    }))
 }
 
 /// The actions on `ascribe.toml`'s diagnostics: marking a problem about a

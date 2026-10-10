@@ -40,6 +40,7 @@ export const nav: NavGroup[] = [
       "contracts/output-layout.md",
       "contracts/assets.md",
       "contracts/json-reports.md",
+      "contracts/permalinks-list.md",
     ],
   },
 ];

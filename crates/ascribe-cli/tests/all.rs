@@ -36,6 +36,8 @@ mod mcp;
 mod network;
 #[path = "all/output.rs"]
 mod output;
+#[path = "all/permalinks.rs"]
+mod permalinks;
 #[path = "all/report.rs"]
 mod report;
 #[path = "all/sources.rs"]

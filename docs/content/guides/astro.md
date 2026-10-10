@@ -181,6 +181,28 @@ docsLink("weave-config", { pm: "pnpm" });
 - **The choice needs a script and the browser's storage.** With scripts off, the address forwards to the section with the tabs as they were; with storage blocked, the choice doesn't reach the next page.
 - **A version isn't a parameter yet.** `self-managed=3.4` is ignored like any unknown one.
 
+### Checking a product's links
+
+A product that links to the docs can check, in its own CI, that every name it links to is still a permalink there, without building or even having the docs. The docs commit their list of permalinks, `ascribe.permalinks`, which `ascribe permalinks sync` writes beside `ascribe.toml` ([The permalinks list](../contracts/permalinks-list.md)). Then `ascribe check` in the docs warns when a permalink is removed, and the product checks its names against a copy of the list:
+
+```yaml
+# .github/workflows/docs-links.yml, in the product's repository
+name: Docs links
+on: [pull_request]
+jobs:
+  docs-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The docs' list, from their repository; or keep a copy in this one.
+      - run: curl -fsSL -o docs.permalinks https://raw.githubusercontent.com/example/docs/main/ascribe.permalinks
+      - run: npx @ascribed/cli permalinks verify --list docs.permalinks --from docs-links.txt
+```
+
+`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](../reference/cli.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users.
+
+In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-removed`), which `sync` doesn't clear: restore the name, or, if nothing links to it any more, delete its line from the list by hand.
+
 ### A permalink that isn't here
 
 A product released before a section was renamed, or after one was added, may link to a name these docs don't have. The host answers with the site's 404 page, as for any missing address, so put `MissingPermalink` on it:

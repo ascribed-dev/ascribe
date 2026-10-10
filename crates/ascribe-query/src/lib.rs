@@ -10,6 +10,8 @@
 //! - [`render`]: a page as a reader of one build sees it, as plain Markdown;
 //! - [`refs`]: where a page, a heading, or a content model entry is used;
 //! - [`rules`]: a project's rules, for the instruction files an agent reads;
+//! - [`permalinks`]: the permalinks the content declares, against the
+//!   project's list, and names checked against a list;
 //! - [`report`]: what state a project is in, section by section.
 //!
 //! The `ascribe` commands of the same names call these and print what they
@@ -23,6 +25,7 @@ mod lines;
 pub mod link;
 pub mod model;
 pub mod outline;
+pub mod permalinks;
 pub mod refs;
 pub mod render;
 pub mod report;
@@ -33,6 +36,7 @@ pub use explain::{DiagnosticList, ExampleText, Explanation, ListedDiagnostic, ex
 pub use link::{LinkAnswer, LinkKind, LinkSuggestion, link};
 pub use model::{ModelReport, Section, model, summary};
 pub use outline::{Outline, OutlineHeading, outline};
+pub use permalinks::{PermalinksAnswer, SyncAnswer, VerifyAnswer};
 pub use refs::{Asked, Place, Refs, TargetKind, refs};
 pub use render::{Rendered, render};
 pub use report::{Report, report};

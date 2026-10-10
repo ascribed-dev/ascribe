@@ -13,6 +13,7 @@
 //! | [`inline`] | Code spans in a field that sets `inline = "code"` |
 //! | [`pattern`] | [`Pattern`]: the glob syntax of `files` and fragment patterns |
 //! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
+//! | [`permalinks`] | [`PermalinkList`]: `ascribe.permalinks`, the project's permalinks and where each is declared |
 //! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
 //!
 //! The availability-spec parser is in `ascribe_core::availability`; this
@@ -40,6 +41,7 @@ pub mod lock;
 pub mod model;
 mod names;
 pub mod pattern;
+pub mod permalinks;
 mod sections;
 mod toml_util;
 pub mod types;
@@ -53,6 +55,7 @@ pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_has
 pub use model::*;
 pub use names::{KEY_RULE, NAME_WORD_RULE, edit_distance, is_key, is_name_word, suggest};
 pub use pattern::{Pattern, PatternError};
+pub use permalinks::{ListedPermalink, PERMALINKS_FILE, PERMALINKS_VERSION, PermalinkList, Synced};
 pub use types::{
     Field, FieldRole, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter,
 };

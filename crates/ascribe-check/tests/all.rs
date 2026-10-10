@@ -21,6 +21,8 @@ mod page;
 mod page_index;
 #[path = "all/parity.rs"]
 mod parity;
+#[path = "all/permalinks_list.rs"]
+mod permalinks_list;
 #[path = "all/prompt.rs"]
 mod prompt;
 #[path = "all/snippets.rs"]
