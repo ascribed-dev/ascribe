@@ -655,7 +655,7 @@ missing = ["examples/quickstart.ts"]
 ## 20. `[checks]`
 @available: next
 
-How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. No check is configurable yet, so the table can't have a key yet; the two forms a key's value takes are:
+How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. The two forms a key's value takes are:
 
 ```toml
 [checks]
@@ -669,11 +669,40 @@ level = "off"
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../reference/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
 
-Only a check the diagnostics registry marks configurable can be named. The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name.
+Only a check the diagnostics registry marks configurable can be named. The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is below; `links` has no keys yet.
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
 **Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); and a value is a string or a table (`model-wrong-type`).
+
+### `[checks.vale]`
+@available: next
+
+How the prose is checked with Vale, a program the project installs. Ascribe runs it; it isn't linked or downloaded.
+
+```toml
+[checks.vale]
+preset = "quiet"              # or: config = ".vale.ini"
+off = ["Ascribe.Repeated"]    # rules of the preset to turn off
+command = "vale"
+in-check = false
+max-level = "error"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `preset` | string | | One of Ascribe's presets: `quiet`. A preset's name never changes once released; a rule added to it is a **Behavior change** in the changelog. |
+| `config` | string | | The project's own `.vale.ini`, a path from the project root. |
+| `off` | array of strings | `[]` | Rules of the preset to turn off, as `<Style>.<Rule>`. Only with `preset`. |
+| `command` | string | `"vale"` | The command run. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. |
+| `in-check` | boolean | `false` | Whether `ascribe check` checks the prose without `--vale`. |
+| `max-level` | string | `"error"` | `"advice"`, `"warning"`, or `"error"`: the most a Vale alert is reported as. Vale's `suggestion`, `warning`, and `error` map to advice, warning, and error, capped at this. |
+
+What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a preset's configuration and styles, and the vocabulary `Ascribe` of the project's own words (phrase values, glossary terms and aliases, dimension, value, and feature labels), one escaped regular expression to a line. Nothing outside it is written, except by `ascribe vale eject`.
+
+Each alert is a `prose` diagnostic (`ASC143`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC144`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
+
+**Rules** (§22.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
 
 ---
 
@@ -827,6 +856,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-check-not-configurable` | `[checks]` names only checks the diagnostics registry marks configurable. | `` `{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off `` |
+| `model-checks-vale` | `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules. | `` `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini` `` |
 
 ---
 

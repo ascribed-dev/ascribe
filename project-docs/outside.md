@@ -24,6 +24,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Environment `copilot` | Nothing in this repository's workflows. Probably made by GitHub when Copilot's coding agent was tried here (inferred, not checked) | Maintainer: **to say**, or delete |
 | Dependabot | Weekly updates for cargo, npm, and Actions (`.github/dependabot.yml`) | Anyone, by pull request |
 | Third-party actions | 8 in this repository's workflows (`actions/cache`, `checkout`, `download-artifact`, `setup-node`, `upload-artifact`; `Swatinem/rust-cache`, `pnpm/action-setup`, `azure/login`), plus `actions/create-github-app-token` in `examples/docs-repository`. Each pinned to a commit | Anyone, by pull request; Dependabot moves them |
+| Vale's Linux release, from `vale-cli/vale` on GitHub | `rust.yml`'s `check` job downloads it, at the version and checksum written there, for the tests that run a real Vale (`crates/ascribe-check/tests/all/vale.rs`). Ascribe itself never downloads Vale | Anyone, by pull request: a new version needs its checksum from the release's `checksums.txt` |
 
 ## npm
 

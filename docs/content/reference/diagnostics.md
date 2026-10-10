@@ -26,7 +26,7 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 ## Setting a check's level
 
-A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Its entry below says it's configurable. No diagnostic is configurable yet: every one listed here is about whether the project is valid, which a project can't lower or turn off.
+A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Its entry below says it's configurable. The checks of the content's quality are listed under [Content checks](#content-checks); they aren't part of the language's own list of diagnostics (SPEC §8.2). Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
 ## Index
 
@@ -35,6 +35,12 @@ A check about the content's quality, rather than whether the project is valid, c
 ## Source files
 
 @include: ../_generated/diagnostics-source-files.md
+
+## Content checks
+
+Checks of the content's quality, rather than whether the project is valid. Each is configurable in `[checks]`, and its severity is its level when `[checks]` doesn't set one.
+
+@include: ../_generated/diagnostics-content-checks.md
 
 ## The content model
 

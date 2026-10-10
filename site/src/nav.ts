@@ -19,6 +19,7 @@ export const nav: NavGroup[] = [
       "guides/review.md",
       "guides/drift.md",
       "guides/agents.md",
+      "guides/vale.md",
     ],
   },
   {

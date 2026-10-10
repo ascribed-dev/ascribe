@@ -619,11 +619,37 @@ level = "off"
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
 
-Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named, and none is yet, so `[checks]` can't have a key yet. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named: the [content checks](diagnostics.md#content-checks). `[checks.vale]` is the settings of Vale, below, and `[checks.links]` is reserved for the settings of a tool too.
 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
 
 **Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`). A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`).
+
+### `[checks.vale]`
+@available: next
+
+Checks the prose with [Vale](https://vale.sh), a program the project installs: Ascribe gives it each page's prose, with phrases replaced by their text and without frontmatter, directive lines, attributes, or code, and reports its alerts as `prose` diagnostics at their place in the source. The editor runs it on a page when it's opened and saved; `ascribe check` runs it with `--vale`, or always with `in-check = true`. [Prose, through Vale](../guides/vale.md) has the steps.
+
+```toml
+[checks.vale]
+preset = "quiet"
+off = ["Ascribe.Repeated"]
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `preset` | string | | Ascribe's own selection of Vale rules: `quiet`, rules that are almost never wrong. Nothing is downloaded: the preset is written under `.ascribe/vale/`. |
+| `config` | string | | Instead of a preset, the path of the project's own `.vale.ini`, from the project root. |
+| `off` | array of strings | `[]` | Rules of the preset to turn off, by the names alerts give them, such as `Ascribe.Repeated`. Only with `preset`. |
+| `command` | string | `"vale"` | The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. |
+| `in-check` | boolean | `false` | Whether `ascribe check`, and the agents' hook, check the prose without `--vale`. |
+| `max-level` | string | `"error"` | The most an alert can be: `"advice"`, `"warning"`, or `"error"`. Vale's `suggestion`, `warning`, and `error` are advice, a warning, and an error up to it; with `"advice"`, Vale's alerts never fail `--deny-warnings`. |
+
+Ascribe writes the project's own words (phrase values, glossary terms and their aliases, and the labels of dimensions, their values, and features) to a Vale vocabulary, `Ascribe`, under `.ascribe/vale/`, so Vale doesn't take them for misspellings. It's turned on for a preset and for the project's own configuration alike; nothing the project wrote is changed.
+
+The level of every Vale alert can be set at once with `prose` in `[checks]`, and the advice that Vale couldn't be run with `prose-not-checked`.
+
+**Rules.** `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules (`model-checks-vale`). `preset` is one of Ascribe's presets, and `max-level` one of the three levels (`model-invalid-value`).
 
 ---
 

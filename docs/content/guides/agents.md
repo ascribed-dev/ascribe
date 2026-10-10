@@ -222,6 +222,9 @@ A hook is a command your agent runs at a point in its work. Ascribe's checks an 
 - **After an edit**, `ascribe agents hook <agent>` checks the files the agent wrote, as `ascribe check <file> --editor-build` does, and adds their errors to what the agent reads next, at most 10, with the build it checked. It says nothing when there are none, and leaves warnings and advice out, which would interrupt every edit.
 - **Before the agent finishes**, `ascribe agents hook <agent> --event stop` checks every build of each project whose pages or `ascribe.toml` the working tree changes, anywhere in the repository. While there are errors, or a project can't be checked at all, it keeps the agent working, and tells it why. It asks once: when the agent is already continuing because of it, it lets the agent stop. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
 
+@available: next
+A project that checks its prose with [Vale](vale.md) has the hooks run it only with `in-check = true` in `[checks.vale]`, as `ascribe check` does: after an edit on the files the agent wrote, and before it finishes on the whole project, which can take longer than the hook waits. Only Vale's error-level alerts reach the agent, as with every other check; with `max-level = "advice"` or `"warning"`, none do.
+
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli.md#ascribe-agents-hook).
 
 `ascribe agents sync --with-hook` writes the entries that run them, with the targets you name or already have:
