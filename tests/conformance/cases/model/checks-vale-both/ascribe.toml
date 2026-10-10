@@ -1,0 +1,7 @@
+spec = "0.1"
+
+# Vale checks the prose with Ascribe's preset or the project's own
+# configuration, not both.
+[checks.vale]
+preset = "quiet"
+config = ".vale.ini"

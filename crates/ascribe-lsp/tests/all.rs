@@ -30,6 +30,8 @@ mod model_edits;
 mod navigation;
 #[path = "all/preview.rs"]
 mod preview;
+#[path = "all/prose.rs"]
+mod prose;
 #[path = "all/quick_fixes.rs"]
 mod quick_fixes;
 #[path = "all/references.rs"]

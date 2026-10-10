@@ -25,3 +25,5 @@ mod parity;
 mod prompt;
 #[path = "all/snippets.rs"]
 mod snippets;
+#[path = "all/vale.rs"]
+mod vale;

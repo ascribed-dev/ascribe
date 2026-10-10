@@ -40,6 +40,7 @@ mod tests {
     use std::io;
     use std::path::PathBuf;
 
+    use ascribe_check::prose::EjectError;
     use ascribe_check::{LoadError, LocateError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
@@ -80,6 +81,20 @@ mod tests {
         ("path_outside_project", "a path isn't in the project"),
         ("path_not_a_source", "--path names no possible source file"),
         ("stdin_unreadable", "standard input can't be read as text"),
+        (
+            "vale_not_set_up",
+            "--vale, and ascribe.toml has no [checks.vale]",
+        ),
+        ("vale_no_preset", "[checks.vale] names no preset to eject"),
+        ("vale_config_exists", ".vale.ini or .vale is there already"),
+        (
+            "vale_unwritable",
+            "a Vale file or ascribe.toml can't be written",
+        ),
+        (
+            "vale_model_unchanged",
+            "[checks.vale] can't be changed in ascribe.toml",
+        ),
         ("format_io", "fmt can't read or write a path"),
         ("not_utf8", "a file to format isn't UTF-8"),
         ("format_bad_edits", "the formatter's edits don't apply"),
@@ -256,7 +271,15 @@ mod tests {
         }
         fn check(e: &CheckError) {
             match e {
-                CheckError::Scope(_) | CheckError::Stdin(_) => {}
+                CheckError::Scope(_) | CheckError::Stdin(_) | CheckError::NoVale => {}
+            }
+        }
+        fn eject(e: &EjectError) {
+            match e {
+                EjectError::NoPreset { .. }
+                | EjectError::Exists { .. }
+                | EjectError::Write { .. }
+                | EjectError::Model(_) => {}
             }
         }
         fn serve(e: &ServeError) {
@@ -287,7 +310,8 @@ mod tests {
             }
         }
         let _ = (
-            locate, load, scope, check, format, emit, store, diff, sources, serve, query, agents,
+            locate, load, scope, check, eject, format, emit, store, diff, sources, serve, query,
+            agents,
         );
 
         let store_errors = || {
@@ -410,6 +434,14 @@ mod tests {
             // The CLI's own errors wrap these.
             Box::new(CheckError::Scope(ScopeError::Missing { path: path() })),
             Box::new(CheckError::Stdin(io_error())),
+            Box::new(CheckError::NoVale),
+            Box::new(EjectError::NoPreset { config: None }),
+            Box::new(EjectError::Exists { path: text() }),
+            Box::new(EjectError::Write {
+                path: text(),
+                reason: text(),
+            }),
+            Box::new(EjectError::Model(text())),
             Box::new(Failure::Config(LocateError::NotFound { dir: path() })),
             Box::new(Failure::Load(model_invalid())),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),

@@ -79,6 +79,8 @@ pub enum Exit {
 struct Shared {
     core: Mutex<Core>,
     wake: Condvar,
+    /// Wakes the thread that runs Vale (`prose.rs`).
+    prose_wake: Condvar,
     options: Options,
     idle: Arc<AtomicBool>,
     /// Whether the client can be asked to show a document
@@ -120,7 +122,8 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 TextDocumentSyncOptions {
                     open_close: Some(true),
                     change: Some(TextDocumentSyncKind::INCREMENTAL),
-                    // The content checks across the project run on save.
+                    // The content checks across the project run on save, and
+                    // Vale checks a document's prose.
                     save: Some(TextDocumentSyncSaveOptions::Supported(true)),
                     ..TextDocumentSyncOptions::default()
                 },
@@ -200,6 +203,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
     let shared = Arc::new(Shared {
         core: Mutex::new(core),
         wake: Condvar::new(),
+        prose_wake: Condvar::new(),
         options,
         idle,
         show_document,
@@ -208,17 +212,22 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         let shared = shared.clone();
         thread::spawn(move || worker(&shared))
     };
+    let prose_worker = {
+        let shared = shared.clone();
+        thread::spawn(move || prose_worker(&shared))
+    };
     {
         let mut core = shared.lock();
         guarded("start", || {
             core.start();
             core.register_watchers();
-            if core.has_work() {
+            if core.busy() {
                 shared.idle.store(false, Ordering::SeqCst);
             }
         });
     }
     shared.wake.notify_all();
+    shared.prose_wake.notify_all();
 
     let mut shutdown_requested = false;
     let exit = loop {
@@ -264,13 +273,17 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 }
                 handle_notification(&shared, notification);
                 shared.wake.notify_all();
+                shared.prose_wake.notify_all();
             }
             Message::Response(_) => {}
         }
     };
     shared.lock().shutdown = true;
     shared.wake.notify_all();
+    shared.prose_wake.notify_all();
     let _ = worker.join();
+    // A check running now ends within its time limit.
+    let _ = prose_worker.join();
     Ok(exit)
 }
 
@@ -348,7 +361,7 @@ fn handle_notification(shared: &Shared, notification: Notification) {
             // action (`$/cancelRequest`, `$/setTrace`, …).
             _ => {}
         }
-        if core.has_work() {
+        if core.busy() {
             shared.idle.store(false, Ordering::SeqCst);
         }
     });
@@ -894,10 +907,12 @@ fn worker(shared: &Shared) {
                     return;
                 }
                 if let Some(job) = core.plan() {
+                    core.computing = true;
                     shared.idle.store(false, Ordering::SeqCst);
                     break job;
                 }
-                shared.idle.store(true, Ordering::SeqCst);
+                core.computing = false;
+                shared.idle.store(!core.busy(), Ordering::SeqCst);
                 core = shared
                     .wake
                     .wait(core)
@@ -930,6 +945,49 @@ fn worker(shared: &Shared) {
         };
         let mut core = shared.lock();
         guarded("publishing diagnostics", || core.finish(&job, outcome));
+    }
+}
+
+/// The thread that runs Vale: takes one document at a time, checks it
+/// without the lock, and keeps what's still current (`prose.rs`).
+fn prose_worker(shared: &Shared) {
+    let program = ascribe_check::prose::Program;
+    let linter: &dyn ascribe_check::prose::Linter = match &shared.options.linter {
+        Some(linter) => &**linter,
+        None => &program,
+    };
+    loop {
+        let job = {
+            let mut core = shared.lock();
+            loop {
+                if core.shutdown {
+                    return;
+                }
+                if let Some(job) = core.take_prose() {
+                    shared.idle.store(false, Ordering::SeqCst);
+                    break job;
+                }
+                shared.idle.store(!core.busy(), Ordering::SeqCst);
+                core = shared
+                    .prose_wake
+                    .wait(core)
+                    .unwrap_or_else(PoisonError::into_inner);
+            }
+        };
+        let results = match catch_unwind(AssertUnwindSafe(|| job.run(linter))) {
+            Ok(results) => results,
+            Err(panic) => {
+                crate::log::line(format_args!(
+                    "panic checking the prose: {}",
+                    panic_message(&*panic)
+                ));
+                Vec::new()
+            }
+        };
+        let mut core = shared.lock();
+        guarded("publishing the prose's diagnostics", || {
+            core.finish_prose(&job, results);
+        });
     }
 }
 

@@ -1,0 +1,8 @@
+description: >-
+  When Vale can't be run, the prose isn't checked, and that's one
+  `prose-not-checked` advice on `[checks.vale]`.
+spec: ["2.1"]
+tags: [prose]
+
+diagnostics:
+  - {slug: prose-not-checked, file: ascribe.toml, line: 5, severity: advice}

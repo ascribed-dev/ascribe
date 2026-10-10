@@ -184,6 +184,10 @@ struct Entry {
     /// `write` when it needs writing or judgment, `outside` when nothing in
     /// the source can fix it, and `review` when it may be fine as it is.
     next: &'static str,
+    /// The rule of the program that found it, such as `Ascribe.Repeated`
+    /// from Vale, for a `prose` diagnostic. Absent for Ascribe's own.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rule: Option<String>,
     /// What's wrong, and what to do about it.
     message: String,
     /// The file, relative to the project root (the directory of
@@ -312,9 +316,8 @@ fn entry(files: &FileTable, d: &Diagnostic, repeats: usize) -> Entry {
         code: d.code,
         slug: d.slug.to_string(),
         severity: d.severity.as_str(),
-        next: registered
-            .and_then(|e| e.next)
-            .map_or("write", ascribe_check::Next::as_str),
+        next: d.next().map_or("write", ascribe_check::Next::as_str),
+        rule: d.rule.clone(),
         message: d.message.clone(),
         file: files.path(d.location.file),
         range: range(files, d.location),

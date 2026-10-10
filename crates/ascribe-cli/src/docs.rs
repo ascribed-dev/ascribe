@@ -32,6 +32,7 @@ const UNRELEASED: &[(&str, &str)] = &[
     ("check", "path"),
     ("check", "editor_build"),
     ("check", "summary"),
+    ("check", "vale"),
     ("diff", "page"),
     ("diff", "pages_only"),
     ("fmt", "format"),

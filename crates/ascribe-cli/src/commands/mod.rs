@@ -15,3 +15,4 @@ pub mod outline;
 pub mod refs;
 pub mod render;
 pub mod sources;
+pub mod vale;

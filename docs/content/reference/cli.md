@@ -50,6 +50,11 @@ A path that doesn't exist, isn't in an Ascribe project, or is in another project
 npx ascribe check --stdin --path docs/guides/new.md < draft.md
 ```
 
+### Checking the prose
+
+@available: next
+With `--vale`, or with `in-check = true` in [`[checks.vale]`](content-model.md#checksvale), `ascribe check` also runs [Vale](https://vale.sh) on the prose of the files it reports on, once for all of them, and reports each alert as a `prose` diagnostic at its place in the source: Vale's `suggestion`, `warning`, and `error` are advice, a warning, and an error, up to `[checks.vale] max-level`. Vale is given the prose alone, with phrases replaced by their text, and never frontmatter, directive lines, attributes, or code. A Vale that isn't installed, fails, or takes more than ten minutes is one `prose-not-checked` advice on `ascribe.toml`, and the rest of the check is the same. `--vale` without `[checks.vale]` is exit code `2`. See [Prose, through Vale](../guides/vale.md).
+
 ### A quick check after each edit
 
 @available: next
@@ -117,6 +122,7 @@ Each diagnostic:
 | `slug` | string | The diagnostic's name, such as `link-target-missing` |
 | `severity` | string | `"error"`, `"warning"`, or `"advice"`. More severities may be added: treat one you don't know as advice. |
 | `next` | string | The kind of next step: `"fix"` when Ascribe can make the edit, `"choose"` when you pick among things Ascribe can list, `"write"` when it needs writing or judgment, `"outside"` when nothing in the source can fix it, `"review"` when it may be fine as it is. See [What to do next](diagnostics.md#what-to-do-next). |
+| `rule` | string | Only on a `prose` diagnostic: the Vale rule that found it, such as `Ascribe.Repeated`. Absent otherwise. |
 | `message` | string | What's wrong, and what to do about it |
 | `file` | string | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
 | `range` | object | Where: `start` and `end` positions |
@@ -430,6 +436,22 @@ Shows each source in another repository: its repository and branch, its pin, and
 @include: ../_generated/cli-sources-status-options.md
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and `sources`, each with `name`, `git`, `branch` (or null), `commit` (the pin, or null), and `files`, each with `path` and `state`: `current`, `changed`, `missing`, `unlocked`, `unused`, `not_copied`, or `not_at_pin`.
+
+## `ascribe vale`
+@available: next
+
+Sets up [Vale](https://vale.sh), which checks the prose when `[checks.vale]` in `ascribe.toml` turns it on (see [Prose, through Vale](../guides/vale.md)). Vale itself is run by `ascribe check --vale` and the editor.
+
+### `ascribe vale eject`
+
+Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
+
+It takes no options. It lists each file it wrote, `ascribe.toml` last.
+
+| Code | Meaning |
+|---|---|
+| `0` | The preset is the project's own now |
+| `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, or a `.vale.ini` or `.vale` that's there already. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## `ascribe explain`
 @available: next

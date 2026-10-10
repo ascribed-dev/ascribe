@@ -526,6 +526,17 @@ pub const DESCRIPTION_TOO_LONG: DiagnosticSlug = DiagnosticSlug("description-too
 /// `ASC164`, advice, page level: a content check (area `outputs`).
 pub const LLMS_SECTION_LARGE: DiagnosticSlug = DiagnosticSlug("llms-section-large");
 
+/// `ASC165`, advice, file level: a content check (area `prose`): an alert
+/// from Vale about the prose.
+pub const PROSE: DiagnosticSlug = DiagnosticSlug("prose");
+
+/// `ASC166`, advice, file level: a content check (area `prose`): Vale
+/// couldn't be run, so the prose wasn't checked.
+pub const PROSE_NOT_CHECKED: DiagnosticSlug = DiagnosticSlug("prose-not-checked");
+
+/// `ASC167`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CHECKS_VALE: DiagnosticSlug = DiagnosticSlug("model-checks-vale");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -692,6 +703,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_CONSUMER_AGENTS_SITE,
     DESCRIPTION_TOO_LONG,
     LLMS_SECTION_LARGE,
+    PROSE,
+    PROSE_NOT_CHECKED,
+    MODEL_CHECKS_VALE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -713,6 +727,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     TITLE_DUPLICATE,
     DESCRIPTION_TOO_LONG,
     LLMS_SECTION_LARGE,
+    PROSE,
+    PROSE_NOT_CHECKED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

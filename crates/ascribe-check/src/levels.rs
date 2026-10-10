@@ -54,6 +54,7 @@ mod tests {
                     limit: None,
                 })
                 .collect(),
+            vale: None,
         }
     }
 

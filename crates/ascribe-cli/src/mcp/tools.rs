@@ -584,6 +584,8 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         deny_warnings: false,
+        vale: false,
+        vale_timeout: None,
     };
     let global = global();
     let mut stdin = Cursor::new(text.unwrap_or_default());

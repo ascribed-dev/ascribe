@@ -7,6 +7,7 @@ use std::process::ExitCode;
 use std::rc::Rc;
 
 use ascribe_check::prompt::{self, Builds};
+use ascribe_check::prose;
 use ascribe_check::{
     Acknowledged, Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, Severity,
     diagnose, diagnose_editor_build_in, locate_for,
@@ -82,6 +83,22 @@ pub struct Args {
     /// Make warnings fail the command too (exit code 1), for CI.
     #[arg(long)]
     pub deny_warnings: bool,
+
+    /// Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml`
+    /// sets it up.
+    ///
+    /// Vale runs once, on the files reported on. Its alerts are `prose`
+    /// diagnostics, at their place in the source. A Vale that can't be run
+    /// is one `prose-not-checked` advice, and the rest of the check is the
+    /// same. `[checks.vale] in-check = true` checks the prose without this
+    /// option. Without `[checks.vale]`, it's a usage error.
+    #[arg(long)]
+    pub vale: bool,
+
+    /// How long Vale may take, when it runs: the hooks give it less than
+    /// they wait. `None` is the time a check of the whole project has.
+    #[arg(skip)]
+    pub vale_timeout: Option<std::time::Duration>,
 }
 
 /// The output format.
@@ -110,6 +127,9 @@ pub enum CheckError {
     /// Standard input can't be read as text.
     #[error("can't read standard input: {0}")]
     Stdin(io::Error),
+    /// `--vale` was given to a project that doesn't set Vale up.
+    #[error("--vale checks the prose as `[checks.vale]` sets it up, and ascribe.toml has none")]
+    NoVale,
 }
 
 impl Coded for CheckError {
@@ -117,6 +137,7 @@ impl Coded for CheckError {
         match self {
             CheckError::Scope(e) => e.code(),
             CheckError::Stdin(_) => "stdin_unreadable",
+            CheckError::NoVale => "vale_not_set_up",
         }
     }
 }
@@ -247,10 +268,12 @@ pub fn run_check(
             })
             .map_err(Stopped::Build)?
     };
+    let (diagnostics, about_vale) = with_prose(project, scope.as_ref(), args, diagnostics)?;
     let mut reported = match &scope {
         Some(scope) => scope.report(project, diagnostics),
         None => Reported::all(diagnostics),
     };
+    reported.extend(Reported::all(about_vale));
     if let Some(scope) = &scope {
         acknowledged.retain(|a| scope.contains_file(project, a.problem.location.file));
     }
@@ -267,6 +290,42 @@ pub fn run_check(
         files,
         counts,
     })
+}
+
+/// `diagnostics` with Vale's, when `--vale` or `[checks.vale] in-check` asks
+/// for them: Vale runs once, on the files in the scope, or on every source
+/// file. What it says about the prose is with the rest; that it couldn't be
+/// run, which is about `ascribe.toml`, comes back apart, to be reported
+/// whatever the paths named.
+fn with_prose(
+    project: &Project,
+    scope: Option<&Scope>,
+    args: &Args,
+    mut diagnostics: Vec<Diagnostic>,
+) -> Result<(Vec<Diagnostic>, Vec<Diagnostic>), Stopped> {
+    let wanted = match &project.model().checks.vale {
+        None if args.vale => {
+            return Err(Stopped::Failure(Failure::Check(CheckError::NoVale)));
+        }
+        None => false,
+        Some(settings) => args.vale || settings.in_check,
+    };
+    if !wanted {
+        return Ok((diagnostics, Vec::new()));
+    }
+    let files: Option<Vec<ascribe_core::FileId>> =
+        scope.map(|s| s.sources(project).iter().map(|f| f.id).collect());
+    let found = prose::lint(
+        project,
+        files.as_deref(),
+        &prose::Program,
+        args.vale_timeout.unwrap_or(prose::PROJECT_TIMEOUT),
+    );
+    let (about_vale, found): (Vec<Diagnostic>, Vec<Diagnostic>) = found
+        .into_iter()
+        .partition(|d| d.location.file == ascribe_core::FileId::new(0));
+    diagnostics.extend(found);
+    Ok((diagnostics, about_vale))
 }
 
 /// Writes what a check found in `args.format`, as `ascribe check` does.

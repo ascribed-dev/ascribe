@@ -299,6 +299,8 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         summary: false,
         format: check::Format::Prompt,
         deny_warnings: false,
+        vale: false,
+        vale_timeout: None,
     };
     let global = global();
     let outcome = check::run_check(projects, &global, &args, &mut Cursor::new(""));

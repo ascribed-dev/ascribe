@@ -161,6 +161,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "rule": {
+          "description": "The rule of the program that found it, such as `Ascribe.Repeated`\nfrom Vale, for a `prose` diagnostic. Absent for Ascribe's own.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "severity": {
           "description": "`error`, `warning`, or `advice`. Advice never fails the command.\nMore severities may be added; a reader treats one it doesn't know as\nit treats advice.",
           "type": "string"

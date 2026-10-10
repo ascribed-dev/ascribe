@@ -92,7 +92,7 @@ impl Loaded {
     }
 
     /// What a path on disk is to this project.
-    fn classify(&self, abs: &Path) -> Option<Kind> {
+    pub(crate) fn classify(&self, abs: &Path) -> Option<Kind> {
         let project_rel = relative_path(&self.root, abs)?;
         if project_rel.as_str() == MODEL_FILE {
             return Some(Kind::Model);
@@ -116,7 +116,7 @@ impl Loaded {
     }
 }
 
-enum Kind {
+pub(crate) enum Kind {
     /// `ascribe.toml`.
     Model,
     /// A source file: its content path and its project path.
@@ -139,12 +139,19 @@ pub(crate) struct Core {
     pub model_problem: Option<ModelProblem>,
     pub shutdown: bool,
     pub can_watch: bool,
+    /// Whether the worker is computing a round.
+    pub computing: bool,
     /// What `ascribe/preview` keeps between requests (`preview.rs`).
     pub(crate) preview_routes: crate::preview::RouteCache,
     /// The review base, while review is on (`review.rs`).
     pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
+    /// What Vale found, and what's queued for it (`prose.rs`).
+    pub(crate) prose: crate::prose::State,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
+    /// The diagnostics last published for a file, without Vale's: what a
+    /// change to Vale's publishes again.
+    checked: HashMap<PathBuf, Vec<lsp_types::Diagnostic>>,
     /// Closed files changed on disk, published at their next diagnostics
     /// even when those didn't change, so a client waiting on the change
     /// learns the server has caught up.
@@ -166,10 +173,13 @@ impl Core {
             model_problem: None,
             shutdown: false,
             can_watch: false,
+            computing: false,
             preview_routes: Default::default(),
             review: None,
+            prose: crate::prose::State::default(),
             epoch: 0,
             published: HashMap::new(),
+            checked: HashMap::new(),
             forced: HashSet::new(),
             next_id: 0,
             clock: None,
@@ -266,7 +276,12 @@ impl Core {
             }
             Ok(model) => {
                 self.model_problem = None;
+                let vale = self
+                    .loaded
+                    .as_ref()
+                    .and_then(|l| l.model.checks.vale.clone());
                 self.adopt_model(Arc::new(model), text);
+                self.prose_settings_changed(vale.as_ref());
             }
         }
         self.publish_model_diagnostics();
@@ -389,6 +404,7 @@ impl Core {
             },
         );
         self.document_changed(&path, text);
+        self.queue_prose(&path);
     }
 
     pub(crate) fn did_change(
@@ -401,11 +417,15 @@ impl Core {
             return;
         };
         let encoding = self.encoding;
-        let Some(doc) = self.docs.get_mut(&path) else {
+        if !self.docs.contains_key(&path) {
             self.log(&format!(
                 "change for a document that isn't open: {}",
                 uri.as_str()
             ));
+            return;
+        }
+        self.prose_edited(&path, &changes);
+        let Some(doc) = self.docs.get_mut(&path) else {
             return;
         };
         doc.apply(version, changes, encoding);
@@ -420,6 +440,7 @@ impl Core {
         if self.docs.remove(&path).is_none() {
             return;
         }
+        self.prose_closed(&path);
         // Closing reverts to the disk.
         if self.config.as_ref() == Some(&path) {
             self.sync_model();
@@ -429,7 +450,7 @@ impl Core {
     }
 
     /// A document was saved: the content checks across the project run
-    /// again.
+    /// again, and Vale checks its prose.
     pub(crate) fn did_save(&mut self, uri: &Uri) {
         let Some(path) = Core::doc_path(uri) else {
             return;
@@ -439,6 +460,7 @@ impl Core {
         {
             loaded.across_dirty = true;
         }
+        self.queue_prose(&path);
     }
 
     /// An open document's text changed.
@@ -779,6 +801,12 @@ impl Core {
     /// they're for, changed since the last time, or when the file was changed
     /// on disk since.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
+        let prose = self.prose.found(path);
+        let mut all = Vec::with_capacity(diagnostics.len() + prose.len());
+        all.extend(diagnostics.iter().cloned());
+        all.extend(prose.iter().cloned());
+        self.checked.insert(path.to_path_buf(), diagnostics);
+        let diagnostics = all;
         let doc = self.docs.get(path);
         let version = doc.map(|d| d.version);
         let is_open = doc.is_some();
@@ -816,6 +844,8 @@ impl Core {
 
     /// Clears a file's diagnostics, when it had any.
     fn clear(&mut self, path: &Path) {
+        self.checked.remove(path);
+        self.prose_closed_quietly(path);
         let Some(last) = self.published.remove(path) else {
             return;
         };
@@ -860,6 +890,11 @@ fn start_message(config: Option<&Path>, folders: &[PathBuf]) -> String {
 }
 
 impl Core {
+    /// The diagnostics last published for a file without Vale's.
+    pub(crate) fn checked(&self, path: &Path) -> &[lsp_types::Diagnostic] {
+        self.checked.get(path).map_or(&[], Vec::as_slice)
+    }
+
     /// The diagnostics last published for a file: none when nothing was.
     pub(crate) fn published(&self, path: &Path) -> &[lsp_types::Diagnostic] {
         self.published
@@ -875,6 +910,12 @@ impl Core {
             .iter()
             .map(|(path, p)| (path, p.diagnostics.as_slice()))
             .filter(|(_, d)| !d.is_empty())
+    }
+
+    /// Whether anything is queued or running: a round of diagnostics, or a
+    /// check of the prose.
+    pub(crate) fn busy(&self) -> bool {
+        self.has_work() || self.computing || self.prose.has_work()
     }
 
     /// Whether files are waiting to have their diagnostics computed.

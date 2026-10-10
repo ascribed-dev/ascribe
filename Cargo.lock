@@ -89,10 +89,12 @@ dependencies = [
  "insta",
  "proptest",
  "serde",
+ "serde_json",
  "serde_yaml_ng",
  "tempfile",
  "thiserror",
  "toml",
+ "toml_edit",
  "yaml-rust2",
 ]
 
@@ -148,6 +150,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml_ng",
+ "tempfile",
  "thiserror",
  "toml",
 ]

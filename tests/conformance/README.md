@@ -66,6 +66,7 @@ Conventions the cases follow:
 - **A page needs a title.** The shared model's default type requires `title`, so a single-file case that expects diagnostics starts with a three-line frontmatter block. Diagnostic lines count it. A case that expects only an outline has none, and neither does a fragment.
 - **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so a case runs when its own adapter exists. A case carries several tags only when it needs several adapters.
 - **Page-level diagnostics need the `page-check` tag**, and top-level (file-level) diagnostics need `check`.
+- **Vale's alerts need the `prose` tag.** Its adapter runs a stand-in for Vale that flags a word written twice in a row outside code spans, so the cases show what reaches Vale and where an alert lands, not Vale's rules.
 
 ## Resolved outlines
 
@@ -140,6 +141,7 @@ Tags route a case to adapters and let a runner select cases. **Area tags** name 
 | `include` | Includes and the source index (§4.2) | 11 |
 | `resolve` | Resolution passes and build modes (§9.2, §9.3) | 12 |
 | `page-check` | Page-level diagnostics (§8.1, §8.2) | 14 |
+| `prose` | Vale's alerts on the prose, with a stand-in for Vale (`[checks.vale]`) | content checks, phase 5 |
 | `output` | Plain, site, and JSON output (§9.4) | 18, 20 |
 | `format` | Canonical form (§8.3) | 23 |
 

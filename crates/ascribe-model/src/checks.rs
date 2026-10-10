@@ -5,14 +5,17 @@
 //! the checks the diagnostics registry marks configurable can be named: a
 //! diagnostic about whether the project is valid can't be lowered or turned
 //! off.
+//!
+//! `[checks.vale]` isn't a check: it's how the prose is checked with Vale.
 
 use ascribe_core::{DiagnosticSlug, diagnostics};
 use toml::de::DeValue;
 
 use crate::loader::Loader;
-use crate::model::{CheckLevel, CheckSetting, Checks};
+use crate::model::{CheckLevel, CheckSetting, Checks, ValeSettings, ValeSource};
 use crate::names::suggest;
 use crate::toml_util::{V, entries, join, sp, to_yaml};
+use crate::vale::Preset;
 
 /// The settings each check takes besides `level`, by slug. `limit` is a whole
 /// number above 0, or for `image-large` a size ([`parse_size`]).
@@ -25,10 +28,15 @@ impl Loader<'_> {
     /// `[checks]`.
     pub(crate) fn checks(&mut self, v: Option<&V<'_>>) -> Checks {
         let mut settings = Vec::new();
+        let mut vale = None;
         let Some(t) = v.and_then(|v| self.as_table("checks", v)) else {
-            return Checks { settings };
+            return Checks { settings, vale };
         };
         for (key, span, value) in entries(t) {
+            if key == "vale" {
+                vale = self.vale(value, span);
+                continue;
+            }
             let Some(slug) = DiagnosticSlug::from_name(key) else {
                 let mut issue = self
                     .issue(diagnostics::MODEL_UNKNOWN_KEY, span)
@@ -83,7 +91,103 @@ impl Loader<'_> {
             }
             settings.push(setting);
         }
-        Checks { settings }
+        Checks { settings, vale }
+    }
+
+    /// `[checks.vale]`.
+    fn vale(&mut self, v: &V<'_>, key_span: ascribe_core::Span) -> Option<ValeSettings> {
+        const PATH: &str = "checks.vale";
+        let t = self.as_table(PATH, v)?;
+        self.check_keys(
+            PATH,
+            t,
+            &[
+                "preset",
+                "config",
+                "command",
+                "in-check",
+                "max-level",
+                "off",
+            ],
+        );
+        let preset = t.get("preset");
+        let config = t.get("config");
+        let source = match (preset, config) {
+            (Some(_), Some(c)) => {
+                self.push(self.issue(diagnostics::MODEL_CHECKS_VALE, sp(c)));
+                None
+            }
+            (None, None) => {
+                self.push(
+                    self.issue(diagnostics::MODEL_CHECKS_VALE, key_span)
+                        .with_variant("neither"),
+                );
+                None
+            }
+            (Some(p), None) => self
+                .choice(&join(PATH, "preset"), p, &Preset::names())
+                .map(ValeSource::Preset),
+            (None, Some(c)) => self
+                .string(&join(PATH, "config"), c, true)
+                .map(ValeSource::Config),
+        };
+        let command = match t.get("command") {
+            Some(c) => self.string(&join(PATH, "command"), c, true)?,
+            None => ValeSettings::COMMAND.to_owned(),
+        };
+        let in_check = match t.get("in-check") {
+            Some(b) => self.boolean(&join(PATH, "in-check"), b)?,
+            None => false,
+        };
+        let max_level = match t.get("max-level") {
+            Some(l) => {
+                let name = self.choice(&join(PATH, "max-level"), l, &CheckLevel::NAMES[1..])?;
+                CheckLevel::from_name(&name)?
+            }
+            None => CheckLevel::Error,
+        };
+        let off = match t.get("off") {
+            Some(list) => self.vale_off(list, source.as_ref())?,
+            None => Vec::new(),
+        };
+        Some(ValeSettings {
+            source: source?,
+            command,
+            in_check,
+            max_level,
+            off,
+            span: key_span,
+        })
+    }
+
+    /// `[checks.vale] off`: rules of the preset, which only a preset has.
+    fn vale_off(&mut self, list: &V<'_>, source: Option<&ValeSource>) -> Option<Vec<String>> {
+        let names = self.strings("checks.vale.off", list)?;
+        let preset = match source? {
+            ValeSource::Preset(name) => Preset::find(name)?,
+            ValeSource::Config(_) => {
+                self.push(
+                    self.issue(diagnostics::MODEL_CHECKS_VALE, sp(list))
+                        .with_variant("off"),
+                );
+                return None;
+            }
+        };
+        let rules = preset.rules();
+        let mut ok = true;
+        for (name, span) in &names {
+            if !rules.contains(name) {
+                self.push(
+                    self.issue(diagnostics::MODEL_CHECKS_VALE, *span)
+                        .with_variant("off-rule")
+                        .with_arg("preset", preset.name)
+                        .with_arg("rule", name)
+                        .with_arg("rules", rules.join(", ")),
+                );
+                ok = false;
+            }
+        }
+        ok.then(|| names.into_iter().map(|(name, _)| name).collect())
     }
 
     /// A size: a whole number of bytes, or a string with a unit, `B`, `KB`,
@@ -267,6 +371,72 @@ mod tests {
                     "binding-blank-lines".to_owned()
                 ),
             ]
+        );
+    }
+
+    fn vale(text: &str) -> Result<ValeSettings, Vec<(DiagnosticSlug, String)>> {
+        load(text).map(|c| c.vale.unwrap())
+    }
+
+    #[test]
+    fn vale_takes_a_preset_or_a_config() {
+        let preset = vale("[checks.vale]\npreset = \"quiet\"\n").unwrap();
+        assert_eq!(preset.source, ValeSource::Preset("quiet".to_owned()));
+        assert_eq!(preset.command, "vale");
+        assert!(!preset.in_check);
+        assert_eq!(preset.max_level, CheckLevel::Error);
+        let config = vale(
+            "[checks.vale]\nconfig = \".vale.ini\"\ncommand = \"bin/vale\"\n\
+             in-check = true\nmax-level = \"advice\"\n",
+        )
+        .unwrap();
+        assert_eq!(config.source, ValeSource::Config(".vale.ini".to_owned()));
+        assert_eq!(config.command, "bin/vale");
+        assert!(config.in_check);
+        assert_eq!(config.max_level, CheckLevel::Advice);
+        assert_eq!(load("").unwrap().vale, None);
+    }
+
+    #[test]
+    fn vale_needs_exactly_one_source() {
+        let both = vale("[checks.vale]\npreset = \"quiet\"\nconfig = \"x\"\n").unwrap_err();
+        assert_eq!(both, [(diagnostics::MODEL_CHECKS_VALE, "\"x\"".to_owned())]);
+        let neither = vale("[checks.vale]\ncommand = \"vale\"\n").unwrap_err();
+        assert_eq!(
+            neither,
+            [(diagnostics::MODEL_CHECKS_VALE, "vale".to_owned())]
+        );
+        let unknown = vale("[checks.vale]\npreset = \"loud\"\n").unwrap_err();
+        assert_eq!(
+            unknown,
+            [(diagnostics::MODEL_INVALID_VALUE, "\"loud\"".to_owned())]
+        );
+        let level = vale("[checks.vale]\npreset = \"quiet\"\nmax-level = \"off\"\n").unwrap_err();
+        assert_eq!(
+            level,
+            [(diagnostics::MODEL_INVALID_VALUE, "\"off\"".to_owned())]
+        );
+    }
+
+    #[test]
+    fn vale_off_names_rules_of_the_preset() {
+        let off =
+            vale("[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Repeated\"]\n").unwrap();
+        assert_eq!(off.off, ["Ascribe.Repeated"]);
+        let unknown =
+            vale("[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Nope\"]\n").unwrap_err();
+        assert_eq!(
+            unknown,
+            [(
+                diagnostics::MODEL_CHECKS_VALE,
+                "\"Ascribe.Nope\"".to_owned()
+            )]
+        );
+        let with_config =
+            vale("[checks.vale]\nconfig = \".vale.ini\"\noff = [\"A.B\"]\n").unwrap_err();
+        assert_eq!(
+            with_config,
+            [(diagnostics::MODEL_CHECKS_VALE, "[\"A.B\"]".to_owned())]
         );
     }
 

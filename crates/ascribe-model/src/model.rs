@@ -72,6 +72,43 @@ pub struct ContentModel {
 pub struct Checks {
     /// Each check named, in declaration order.
     pub settings: Vec<CheckSetting>,
+    /// `[checks.vale]`: checking the prose with Vale, when it's there.
+    pub vale: Option<ValeSettings>,
+}
+
+/// `[checks.vale]`: how the prose is checked with Vale.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ValeSettings {
+    /// The configuration Vale runs with.
+    pub source: ValeSource,
+    /// The command that runs Vale (`command`, `vale` by default).
+    pub command: String,
+    /// Whether `ascribe check` runs Vale without `--vale` (`in-check`).
+    pub in_check: bool,
+    /// The loudest an alert is reported at (`max-level`): an alert above it
+    /// is lowered to it. [`CheckLevel::Error`] by default, which lowers
+    /// nothing; never [`CheckLevel::Off`].
+    pub max_level: CheckLevel,
+    /// The preset's rules turned off (`off`), as Vale names them.
+    pub off: Vec<String>,
+    /// The span of the `vale` key in `ascribe.toml`, where a problem with
+    /// running Vale is reported.
+    pub span: Span,
+}
+
+/// Where Vale's configuration comes from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ValeSource {
+    /// One of Ascribe's presets, by name (`preset`).
+    Preset(String),
+    /// The project's own `.vale.ini`, relative to the project root
+    /// (`config`).
+    Config(String),
+}
+
+impl ValeSettings {
+    /// The command `[checks.vale] command` defaults to.
+    pub const COMMAND: &'static str = "vale";
 }
 
 impl Checks {

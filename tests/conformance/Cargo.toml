@@ -24,6 +24,7 @@ ascribe-fmt.workspace = true
 ascribe-model.workspace = true
 ascribe-resolve.workspace = true
 ascribe-syntax.workspace = true
+tempfile = "3"
 
 [[test]]
 name = "conformance"

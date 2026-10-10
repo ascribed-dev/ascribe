@@ -13,6 +13,7 @@
 //! | [`inline`] | Code spans in a field that sets `inline = "code"` |
 //! | [`pattern`] | [`Pattern`]: the glob syntax of `files` and fragment patterns |
 //! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
+//! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
 //!
 //! The availability-spec parser is in `ascribe_core::availability`; this
 //! crate checks specs against the model ([`ContentModel::check_availability`]).
@@ -42,6 +43,7 @@ pub mod pattern;
 mod sections;
 mod toml_util;
 pub mod types;
+pub mod vale;
 
 use std::path::Path;
 

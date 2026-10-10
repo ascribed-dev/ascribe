@@ -592,7 +592,8 @@ pub(crate) fn to_lsp(
         // in that shape.
         data: Some(serde_json::json!({
             "slug": d.slug.as_str(),
-            "next": Registry::global().get(d.slug).and_then(|entry| entry.next).map(ascribe_check::Next::as_str),
+            "next": d.next().map(ascribe_check::Next::as_str),
+            "rule": d.rule,
             "builds": d.builds,
             "unpublished": d.unpublished,
             "help": Registry::global().get(d.slug).and_then(|entry| entry.fix.as_deref()).unwrap_or_default(),

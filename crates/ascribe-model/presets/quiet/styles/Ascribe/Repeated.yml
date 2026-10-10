@@ -1,0 +1,14 @@
+# A word written twice in a row: "the the". Case counts, so "type TYPE",
+# a word and a placeholder for it, is left alone.
+extends: repetition
+message: "'%s' is repeated."
+level: suggestion
+alpha: true
+ignorecase: false
+action:
+  name: edit
+  params:
+    - truncate
+    - " "
+tokens:
+  - '[^\s]+'

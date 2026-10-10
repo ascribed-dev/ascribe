@@ -3,7 +3,7 @@
 use ascribe_core::{DiagnosticSlug, Fix, Issue, Location};
 use serde::Serialize;
 
-use crate::registry::{Entry, Registry};
+use crate::registry::{Entry, Next, Registry};
 
 /// How serious a diagnostic is. An error means the document isn't
 /// conforming and a build fails; a warning doesn't fail a build (SPEC §8.2).
@@ -86,6 +86,14 @@ pub struct Diagnostic {
     /// content model allows, a long page's sections, and so on.
     #[serde(skip)]
     pub evidence: Vec<Evidence>,
+    /// The kind of next step, when this diagnostic's isn't its registry
+    /// entry's: a `prose` alert that carries a replacement is `fix`.
+    #[serde(skip)]
+    pub next: Option<Next>,
+    /// For a finding of a tool Ascribe runs, such as Vale, the tool's rule
+    /// (`Microsoft.Contractions`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rule: Option<String>,
     /// The content model entry or image the problem is about, for a check
     /// that reports problems about one: its issue's `entry` argument
     /// (`phrase old-name`), which `[[intended]]` is matched against.
@@ -130,6 +138,8 @@ impl Diagnostic {
             builds: Vec::new(),
             unpublished: false,
             evidence: evidence(entry, issue),
+            next: None,
+            rule: None,
             subject: issue
                 .arg(ascribe_core::intended::ENTRY_ARG)
                 .map(str::to_owned),
@@ -165,6 +175,13 @@ impl Diagnostic {
             "builds"
         };
         Some(format!("only in {noun} {list}"))
+    }
+
+    /// The kind of next step: this diagnostic's own, or its registry
+    /// entry's.
+    pub fn next(&self) -> Option<Next> {
+        self.next
+            .or_else(|| Registry::global().get(self.slug).and_then(|e| e.next))
     }
 
     /// Whether this is an error.
@@ -204,4 +221,8 @@ pub const EVIDENCE: &[(&str, &str, &str)] = &[
     ("page-opening", "opening", "How the page begins"),
     // The first lines of a code block.
     ("code-lines", "lines", "The block begins"),
+    // The rule of a tool Ascribe runs, such as Vale, that found the problem.
+    ("rule", "rule", "Vale rule"),
+    // The address of that rule's own documentation.
+    ("rule-link", "link", "The rule explained"),
 ];

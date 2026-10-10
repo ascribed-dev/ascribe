@@ -39,6 +39,7 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
     assert_eq!(caps["positionEncoding"], "utf-16");
     assert_eq!(caps["textDocumentSync"]["change"], 2);
     assert_eq!(caps["textDocumentSync"]["openClose"], true);
+    assert_eq!(caps["textDocumentSync"]["save"], true);
     let legend = &caps["semanticTokensProvider"]["legend"];
     assert_eq!(legend["tokenTypes"][6], "ascribeTitle");
     assert_eq!(legend["tokenModifiers"][0], "unknown");

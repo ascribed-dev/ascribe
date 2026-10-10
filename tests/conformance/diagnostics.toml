@@ -2948,3 +2948,47 @@ area = "outputs"
 message = "{file} is {size} characters in build `{build}`, over the {limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions"
 messages.builds = "{file} is over the {limit} characters an agent reads in one fetch in builds {builds}; move some of its pages into folders of their own, or shorten their descriptions"
 fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions."
+
+[[diagnostic]]
+code = "ASC165"
+slug = "prose"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = ["rule", "rule-link"]
+spec = "2.1"
+area = "prose"
+configurable = true
+message = "{rule}: {message}"
+messages.phrase = "{rule}: {message} (in the text of phrase `{key}`)"
+fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](../guides/vale.md)."
+
+[[diagnostic]]
+code = "ASC166"
+slug = "prose-not-checked"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+spec = "2.1"
+area = "prose"
+configurable = true
+message = "the prose wasn't checked: `{command}` couldn't be run ({reason}). Install Vale, or set `[checks.vale] command` to where it is"
+messages.failed = "the prose wasn't checked: `{command}` failed: {reason}"
+messages.timeout = "the prose wasn't checked: `{command}` didn't finish within {seconds} seconds"
+fix = "Install [Vale](https://vale.sh) 3 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = \"off\"` in `[checks]`."
+
+[[diagnostic]]
+code = "ASC167"
+slug = "model-checks-vale"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "8.2"
+group = "checks"
+message = "`[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini`"
+messages.neither = "`[checks.vale]` needs `preset`, one of Ascribe's presets, or `config`, the path of the project's own `.vale.ini`"
+messages.off = "`[checks.vale] off` turns off a preset's rules, so it goes with `preset`; with `config`, turn a rule off in the project's `.vale.ini`"
+messages.off-rule = "the `{preset}` preset has no rule `{rule}`; its rules are {rules}"
+fix = "Give `[checks.vale]` one of `preset = \"quiet\"` or `config = \"<path to .vale.ini>\"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset."

@@ -28,6 +28,7 @@ mod model_file;
 mod nav;
 mod position;
 mod preview;
+mod prose;
 mod refactor;
 mod references;
 mod review;
@@ -113,6 +114,9 @@ pub struct Options {
     /// The day the checks run on, which `review-overdue` compares a page's
     /// review date with. Without one, no review is overdue.
     pub today: Option<Clock>,
+    /// What checks the prose on open and on save, for a project with
+    /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
+    pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
 }
 
 /// Runs the server over standard input and output until the client ends the

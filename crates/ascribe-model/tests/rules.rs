@@ -624,6 +624,26 @@ fn cases() -> Vec<Case> {
             Some("unknown"),
             "spec = \"0.1\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"nope\" #!\nreason = \"r\"\n",
         ),
+        case(
+            "model-checks-vale",
+            None,
+            "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\nconfig = \".vale.ini\" #!\n",
+        ),
+        case(
+            "model-checks-vale",
+            Some("neither"),
+            "spec = \"0.1\"\n[checks.vale] #!\ncommand = \"vale\"\n",
+        ),
+        case(
+            "model-checks-vale",
+            Some("off"),
+            "spec = \"0.1\"\n[checks.vale]\nconfig = \".vale.ini\"\noff = [\"A.B\"] #!\n",
+        ),
+        case(
+            "model-checks-vale",
+            Some("off-rule"),
+            "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Nope\"] #!\n",
+        ),
     ]
 }
 
