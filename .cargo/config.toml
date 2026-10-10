@@ -5,3 +5,6 @@
 # environment wins, so a soak is `PROPTEST_CASES=5000 cargo test ...`.
 [env]
 PROPTEST_CASES = "256"
+# Clippy reads clippy.toml from this folder instead of the repository's root.
+# The path is taken from the folder that holds `.cargo`.
+CLIPPY_CONF_DIR = { value = ".cargo", relative = true }
