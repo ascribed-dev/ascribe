@@ -44,7 +44,12 @@ jobs:
             echo "::error::#$PR's head is $head, not the reviewed $SHA. Review the new commits, then approve again."
             exit 1
           fi
-          gh api -X POST "repos/$GITHUB_REPOSITORY/pulls/$PR/reviews" \
+          # GitHub's reason for a refusal is in the response, not the status.
+          if ! gh api -X POST "repos/$GITHUB_REPOSITORY/pulls/$PR/reviews" \
             -f event=APPROVE -f commit_id="$SHA" \
             -f body="Approved for a reviewing agent, at $SHA. [The run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)." \
-            --jq '"Approved #\(.pull_request_url | split("/") | last) at \(.commit_id)."' >> "$GITHUB_STEP_SUMMARY"
+            > review.json; then
+            echo "::error::GitHub refused the approval: $(jq -c '{message, errors}' review.json)"
+            exit 1
+          fi
+          echo "Approved #$PR at $SHA." >> "$GITHUB_STEP_SUMMARY"
