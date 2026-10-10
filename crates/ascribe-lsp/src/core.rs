@@ -25,7 +25,7 @@ use lsp_types::{
     TextDocumentContentChangeEvent, Uri,
 };
 
-use crate::compute::to_lsp;
+use crate::compute::{Across, to_lsp};
 use crate::docs::Doc;
 use crate::fsx::{BufferFs, LayerFs};
 use crate::nav::Ctx;
@@ -74,6 +74,10 @@ pub(crate) struct Loaded {
     pub pending: Vec<Affected>,
     /// What each file included at the last round (see `compute::with_included`).
     pub direct_includes: BTreeMap<RelPath, BTreeSet<RelPath>>,
+    /// Whether the content checks across the project are to run again.
+    pub across_dirty: bool,
+    /// What they found when they last ran.
+    pub across: Arc<Across>,
 }
 
 impl Loaded {
@@ -269,6 +273,7 @@ impl Core {
             Ok(affected) => {
                 loaded.model = model;
                 loaded.model_text = text;
+                loaded.across_dirty = true;
                 self.absorb(&affected);
             }
             Err(ApplyError::LayoutChanged | ApplyError::NestedProjectChanged) => {
@@ -330,6 +335,8 @@ impl Core {
             cache: Arc::new(Mutex::new(ResolvedCache::new())),
             pending: Vec::new(),
             direct_includes: BTreeMap::new(),
+            across_dirty: true,
+            across: Arc::default(),
         };
         // What was published for files the new project doesn't have goes.
         let keep: BTreeSet<PathBuf> = snapshot
@@ -413,6 +420,19 @@ impl Core {
         self.refresh_from_disk(&path);
     }
 
+    /// A document was saved: the content checks across the project run
+    /// again.
+    pub(crate) fn did_save(&mut self, uri: &Uri) {
+        let Some(path) = Core::doc_path(uri) else {
+            return;
+        };
+        if let Some(loaded) = self.loaded.as_mut()
+            && matches!(loaded.classify(&path), Some(Kind::Source(..)))
+        {
+            loaded.across_dirty = true;
+        }
+    }
+
     /// An open document's text changed.
     fn document_changed(&mut self, path: &Path, text: String) {
         if self.config.as_deref() == Some(path) {
@@ -483,6 +503,7 @@ impl Core {
                 .collect();
             self.apply(changes, &mirror);
             if let Some(loaded) = self.loaded.as_mut() {
+                loaded.across_dirty = true;
                 for path in written {
                     self.forced.insert(loaded.source_path(&path));
                     // Checked again even when its text is what it was.
@@ -713,23 +734,28 @@ impl Core {
     // -- Publishing -------------------------------------------------------------
 
     /// Publishes the diagnostics of `ascribe.toml`: the model's own problems
-    /// when it doesn't load, otherwise its warnings.
-    fn publish_model_diagnostics(&mut self) {
+    /// when it doesn't load, otherwise its warnings and what the content
+    /// checks across the project found in it, at the levels `[checks]` sets.
+    pub(crate) fn publish_model_diagnostics(&mut self) {
         let Some(config) = self.config.clone() else {
             return;
         };
         let (text, diagnostics): (&str, Vec<Diagnostic>) = match (&self.model_problem, &self.loaded)
         {
             (Some(problem), _) => (&problem.text, problem.diagnostics.clone()),
-            (None, Some(loaded)) => (
-                &loaded.model_text,
-                loaded
+            (None, Some(loaded)) => {
+                let mut found: Vec<Diagnostic> = loaded
                     .model
                     .warnings
                     .iter()
                     .map(Diagnostic::from_issue)
-                    .collect(),
-            ),
+                    .collect();
+                found.extend_from_slice(loaded.across.of_model(&loaded.model_text));
+                (
+                    &loaded.model_text,
+                    ascribe_check::apply_levels(&loaded.model.checks, found),
+                )
+            }
             (None, None) => return,
         };
         let index = LineIndex::new(text);
@@ -845,7 +871,9 @@ impl Core {
 
     /// Whether files are waiting to have their diagnostics computed.
     pub(crate) fn has_work(&self) -> bool {
-        self.loaded.as_ref().is_some_and(|l| !l.dirty.is_empty())
+        self.loaded
+            .as_ref()
+            .is_some_and(|l| !l.dirty.is_empty() || l.across_dirty)
     }
 
     /// What a semantic tokens request needs for a document: the snapshot, the

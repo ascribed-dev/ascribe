@@ -6,7 +6,9 @@
 //! edits, and from the checks the server runs: the file-level ones and the
 //! page-level ones of the editor's build, through
 //! `ascribe_check::diagnose_editor_build`, which `ascribe check
-//! --editor-build` calls too. The prompt itself is built by
+//! --editor-build` calls too; a prompt about one problem that the checks of
+//! its file don't find, such as a `page-orphan`, comes from the whole
+//! project's. The prompt itself is built by
 //! `ascribe_check::prompt`, so for a saved file the command line and the
 //! editor give the same one.
 //!
@@ -127,7 +129,7 @@ pub(crate) fn agent_prompt(
     let file = project.source_at(&ctx.path)?;
     let shown = project.content_root().join(ctx.path.as_str()).ok()?;
     let diagnosed = diagnose_editor_build(&project, Some(std::slice::from_ref(&ctx.path)));
-    let reported = Scope::new([shown]).report(&project, diagnosed.diagnostics);
+    let reported = Scope::new([shown.clone()]).report(&project, diagnosed.diagnostics);
     let prompt = match params.kind {
         PromptKind::File => prompt::file(&project, &context, file.id, &reported, &shown_on)?,
         _ => {
@@ -143,6 +145,19 @@ pub(crate) fn agent_prompt(
             // The message names what's wrong, so two problems at one place
             // differ by it; when an edit has changed it since, the place
             // still finds the problem.
+            let found = reported
+                .iter()
+                .find(|r| same(r, true))
+                .or_else(|| reported.iter().find(|r| same(r, false)));
+            if let Some(found) = found {
+                return Some(AgentPromptResult {
+                    prompt: prompt::problem(&project, &context, found, &shown_on),
+                });
+            }
+            // The content checks across the project aren't run for one
+            // file; they need every page.
+            let whole = diagnose_editor_build(&project, None);
+            let reported = Scope::new([shown]).report(&project, whole.diagnostics);
             let found = reported
                 .iter()
                 .find(|r| same(r, true))

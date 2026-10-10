@@ -792,6 +792,7 @@ mod tests {
             .map(|&(slug, level)| ascribe_model::CheckSetting {
                 slug,
                 level: Some(level),
+                limit: None,
             })
             .collect();
         let sources = ascribe_check::Project::from_sources([(page, "# A\n".to_owned())]);
