@@ -46,6 +46,8 @@ pub(crate) struct Ctx {
     /// The project's files that aren't sources, as the file-level checks
     /// read them: images, and the files of the content model's sources.
     pub fs: Arc<LayerFs>,
+    /// The day the checks run on.
+    pub today: Option<ascribe_core::Date>,
 }
 
 impl Ctx {

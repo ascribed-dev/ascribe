@@ -3,8 +3,6 @@ title: Lantern SDK
 description: The Lantern SDK reads feature flags from your Lantern server.
 ---
 
-# Lantern SDK
-
 The Lantern SDK reads feature flags from your Lantern server.
 
 - [Quickstart](quickstart.md): a whole program, start to finish.

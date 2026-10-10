@@ -630,9 +630,12 @@ impl Kept {
     /// listing shows, and `files`, whose times may not have moved.
     fn check_files(&mut self, config: &Path, files: &[PathBuf]) -> Found {
         let listing = listing(config);
-        let (watched, before) = self
-            .watched
-            .get_or_insert_with(|| (Watched::load(config), listing.clone()));
+        let (watched, before) = self.watched.get_or_insert_with(|| {
+            (
+                Watched::load(config, Some(std::sync::Arc::new(crate::clock::today))),
+                listing.clone(),
+            )
+        });
         // Each file as it's named on disk: a harness may spell it in
         // another case, where the system doesn't tell them apart.
         let by_case: HashMap<String, &Path> = listing

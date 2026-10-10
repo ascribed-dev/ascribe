@@ -94,7 +94,11 @@ pub type PublishHook = Arc<dyn Fn(&PublishInfo) + Send + Sync>;
 /// A hook called with a request's method.
 pub type RequestHook = Arc<dyn Fn(&str) + Send + Sync>;
 
-/// Settings for [`serve`]; the default is what `ascribe lsp` uses.
+/// What gives the day the checks run on, asked at each round: the server
+/// doesn't read the clock itself.
+pub type Clock = Arc<dyn Fn() -> Option<ascribe_core::Date> + Send + Sync>;
+
+/// Settings for [`serve`]. `ascribe lsp` sets only [`Options::today`].
 #[derive(Clone, Default)]
 pub struct Options {
     /// Called on the worker thread after a round has computed and before it
@@ -107,6 +111,9 @@ pub struct Options {
     /// and to `false` as soon as a handler queues work: a test's way to wait
     /// until every result of the messages it sent has been published.
     pub idle: Option<Arc<AtomicBool>>,
+    /// The day the checks run on, which `review-overdue` compares a page's
+    /// review date with. Without one, no review is overdue.
+    pub today: Option<Clock>,
     /// What checks the prose on open and on save, for a project with
     /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
     pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
@@ -119,9 +126,9 @@ pub struct Options {
 /// # Errors
 ///
 /// The client broke the protocol, or the streams failed.
-pub fn run_stdio() -> Result<Exit, Box<dyn std::error::Error + Send + Sync>> {
+pub fn run_stdio(options: Options) -> Result<Exit, Box<dyn std::error::Error + Send + Sync>> {
     let (connection, io_threads) = Connection::stdio();
-    let exit = serve(connection, Options::default())?;
+    let exit = serve(connection, options)?;
     io_threads.join()?;
     Ok(exit)
 }

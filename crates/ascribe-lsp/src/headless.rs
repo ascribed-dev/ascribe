@@ -47,10 +47,12 @@ pub struct Watched {
 }
 
 impl Watched {
-    /// Loads the project of `config`, an `ascribe.toml`.
-    pub fn load(config: &Path) -> Watched {
+    /// Loads the project of `config`, an `ascribe.toml`, checked on the day
+    /// `today` gives.
+    pub fn load(config: &Path, today: Option<crate::Clock>) -> Watched {
         let (out, sent) = crossbeam_channel::unbounded();
         let mut core = Core::new(out);
+        core.clock = today;
         let config = normalize(config);
         core.folders = config.parent().map(Path::to_owned).into_iter().collect();
         core.config = Some(config);

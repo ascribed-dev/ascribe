@@ -12,6 +12,7 @@
 mod cli;
 mod agents;
 mod answer;
+mod clock;
 mod commands;
 mod context;
 #[cfg(test)]

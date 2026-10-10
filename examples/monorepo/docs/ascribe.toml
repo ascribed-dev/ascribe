@@ -12,14 +12,14 @@ default = true
 
 [types.guide.frontmatter]
 title = { type = "string", phrases = true }
-description = "string?"
+description = { type = "string?", role = "description" }
 
 [types.reference]
 files = ["reference/**"]
 
 [types.reference.frontmatter]
 title = "string"
-description = "string?"
+description = { type = "string?", role = "description" }
 since = "string"
 
 # `@variant {platform=macos}:` for install steps.

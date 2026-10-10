@@ -6,7 +6,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ascribe_core::{FileId, Issue, LineIndex, RelPath};
+use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath};
 use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource};
 use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
@@ -167,6 +167,8 @@ pub struct Project {
     lock_text: Option<String>,
     /// `ascribe.lock` read, or its problems, when there's one.
     lock: Option<Result<Lock, Vec<Issue>>>,
+    /// The day the checks run on, which `review-overdue` compares with.
+    today: Option<Date>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -404,6 +406,7 @@ impl Project {
             code: Arc::default(),
             lock_text,
             lock,
+            today: None,
         }
     }
 
@@ -591,6 +594,22 @@ impl Project {
             sources,
             Some(self.fs.0.clone()),
         )
+        .with_today(self.today)
+    }
+
+    /// This project, checked as on `today`: the day `review-overdue`
+    /// compares a page's review date with. A library doesn't read the clock,
+    /// so a project has no day until its caller gives it one, and without
+    /// one, no review is overdue.
+    #[must_use]
+    pub fn with_today(mut self, today: Option<Date>) -> Project {
+        self.today = today;
+        self
+    }
+
+    /// The day the checks run on, if the caller gave one.
+    pub fn today(&self) -> Option<Date> {
+        self.today
     }
 
     /// A line index for a file's text, for turning spans into lines and columns.

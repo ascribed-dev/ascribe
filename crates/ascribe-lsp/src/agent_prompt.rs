@@ -111,7 +111,8 @@ pub(crate) fn agent_prompt(
         &ctx.model_text,
         &ctx.fs,
         &[],
-    );
+    )
+    .with_today(ctx.today);
     let unsaved = unsaved_paths(&root, params);
     let build = ctx.model.editor_default_build().name.clone();
     let context = Context::of_project(&root, Builds::Editor(build)).with_unsaved(unsaved);

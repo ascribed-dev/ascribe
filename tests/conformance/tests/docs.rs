@@ -23,8 +23,13 @@ fn repo() -> PathBuf {
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs";
 
 /// The evidence an agent prompt can carry: what an entry's `evidence` may
-/// name.
-const EVIDENCE: &[&str] = &["allowed-values", "rule", "rule-link"];
+/// name, from the checks' own list.
+fn evidence_names() -> Vec<&'static str> {
+    ascribe_check::EVIDENCE
+        .iter()
+        .map(|(name, _, _)| *name)
+        .collect()
+}
 
 /// The tables of `[checks]` that aren't a check's: the tools' settings. No
 /// diagnostic can have their names.
@@ -93,7 +98,7 @@ fn every_diagnostic_has_its_next_step() {
             None => wrong.push(format!("{}: no `evidence` (it may be empty)", e.code)),
             Some(list) => {
                 for name in list {
-                    if !EVIDENCE.contains(&name.as_str()) {
+                    if !evidence_names().contains(&name.as_str()) {
                         wrong.push(format!("{}: unknown evidence `{name}`", e.code));
                     }
                 }
@@ -252,14 +257,18 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("checks", "`[checks]`"),
 ];
 
+/// The areas content checks are listed in, as they're titled in the
+/// diagnostics reference.
+const AREAS: &[(&str, &str)] = &[("pages", "Pages"), ("prose", "Prose, through Vale")];
+
 /// What each fragment starts with: what generates it, and how.
 const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by \
      tests/conformance/tests/docs.rs. Edit the registry, then run \
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics, the content model's, and the retired ones (empty
-/// when there are none). The index links to entries in the other fragments
+/// source-file diagnostics, the content model's, the content checks, and the
+/// retired ones (empty when there are none). The index links to entries in the other fragments
 /// through the page that includes them all (SPEC §4.2).
 fn render(
     registry: &DiagnosticsRegistry,
@@ -291,31 +300,6 @@ fn render(
         }
     }
 
-    // Checks of the content's quality, by area, in `AREAS`' order.
-    let mut content_checks = HEADER.to_owned();
-    for entry in &active {
-        if let Some(area) = &entry.area {
-            assert!(
-                AREAS.iter().any(|(name, _)| name == area),
-                "{}: the area `{area}` isn't in AREAS",
-                entry.code
-            );
-        }
-    }
-    for (area, title) in AREAS {
-        let entries: Vec<&&Entry> = active
-            .iter()
-            .filter(|e| e.area.as_deref() == Some(*area))
-            .collect();
-        if entries.is_empty() {
-            continue;
-        }
-        let _ = write!(content_checks, "\n### {title}\n");
-        for entry in entries {
-            write_entry(&mut content_checks, entry, None, anchors);
-        }
-    }
-
     let mut content_model = HEADER.to_owned();
     for (group, title) in RULE_GROUPS {
         let _ = write!(content_model, "\n### {title}\n");
@@ -326,6 +310,20 @@ fn render(
             write_entry(&mut content_model, entry, None, anchors);
         }
     }
+
+    let mut content_checks = HEADER.to_owned();
+    for (area, title) in AREAS {
+        let _ = write!(content_checks, "\n### {title}\n");
+        for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
+            write_entry(&mut content_checks, entry, None, anchors);
+        }
+    }
+    let unlisted: Vec<&str> = active
+        .iter()
+        .filter_map(|e| e.area.as_deref())
+        .filter(|a| !AREAS.iter().any(|(area, _)| area == a))
+        .collect();
+    assert!(unlisted.is_empty(), "areas not in AREAS: {unlisted:?}");
 
     let mut retired = HEADER.to_owned();
     let gone: Vec<&Entry> = registry
@@ -351,8 +349,8 @@ fn render(
     vec![
         ("diagnostics-index.md".to_owned(), all),
         ("diagnostics-source-files.md".to_owned(), source_files),
-        ("diagnostics-content-checks.md".to_owned(), content_checks),
         ("diagnostics-content-model.md".to_owned(), content_model),
+        ("diagnostics-content-checks.md".to_owned(), content_checks),
         ("diagnostics-retired.md".to_owned(), retired),
     ]
 }
@@ -377,10 +375,6 @@ fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
     }
     out
 }
-
-/// The areas checks of the content's quality are listed in, as the
-/// diagnostics reference titles them.
-const AREAS: &[(&str, &str)] = &[("prose", "Prose, through Vale")];
 
 fn is_model(entry: &Entry) -> bool {
     entry.slug.starts_with("model-")

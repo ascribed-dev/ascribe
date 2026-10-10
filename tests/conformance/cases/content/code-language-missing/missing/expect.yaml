@@ -1,0 +1,9 @@
+description: >-
+  A fenced code block whose info string doesn't start with a language is
+  reported at its opening fence; `phrases=true` isn't a language.
+spec: ["8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: code-language-missing, line: 5, column: 1, severity: advice}
+  - {slug: code-language-missing, line: 9, column: 1}

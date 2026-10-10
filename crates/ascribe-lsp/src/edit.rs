@@ -775,9 +775,9 @@ mod tests {
         assert_eq!(line_start(text, 6), 5);
     }
 
-    /// A project of one page, `a.md`, with `[checks]` set as given. No check
-    /// is configurable yet, so the levels are set on the loaded model, as
-    /// the loader would refuse them.
+    /// A project of one page, `a.md`, with `[checks]` set as given. The
+    /// levels are set on the loaded model, so a test can set the level of a
+    /// check the loader would refuse.
     fn project(
         levels: &[(ascribe_core::DiagnosticSlug, ascribe_model::CheckLevel)],
     ) -> ascribe_check::Project {
@@ -792,6 +792,7 @@ mod tests {
             .map(|&(slug, level)| ascribe_model::CheckSetting {
                 slug,
                 level: Some(level),
+                limit: None,
             })
             .collect();
         let sources = ascribe_check::Project::from_sources([(page, "# A\n".to_owned())]);

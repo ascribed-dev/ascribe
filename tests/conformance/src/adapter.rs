@@ -19,6 +19,9 @@ pub struct Diagnostic {
     pub line: u32,
     /// The 1-based column, counted in Unicode scalar values.
     pub column: u32,
+    /// `error`, `warning`, or `advice`, when the adapter reports it: the
+    /// severity after the content model's `[checks]` levels.
+    pub severity: Option<String>,
 }
 
 impl fmt::Display for Diagnostic {
@@ -27,7 +30,11 @@ impl fmt::Display for Diagnostic {
             f,
             "{} at {}:{}:{}",
             self.slug, self.file, self.line, self.column
-        )
+        )?;
+        if let Some(severity) = &self.severity {
+            write!(f, " ({severity})")?;
+        }
+        Ok(())
     }
 }
 

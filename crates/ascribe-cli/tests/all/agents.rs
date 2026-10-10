@@ -272,7 +272,7 @@ fn check_fails_when_the_content_model_changes() {
     let model = repo.path().join("ascribe.toml");
     write(
         &model,
-        &read(&model).replace("description = \"string?\"", "description = \"string\""),
+        &read(&model).replace("type = \"string?\", role", "type = \"string\", role"),
     );
     let out = run(repo.path(), &["agents", "sync", "--check"], 1);
     assert!(

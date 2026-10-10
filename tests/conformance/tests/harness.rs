@@ -62,6 +62,7 @@ fn fake_diagnostics(file: &str, text: &str) -> Vec<Diagnostic> {
                 file: file.into(),
                 line: i as u32 + 1,
                 column: line[..byte].chars().count() as u32 + 1,
+                severity: None,
             })
         })
         .collect()

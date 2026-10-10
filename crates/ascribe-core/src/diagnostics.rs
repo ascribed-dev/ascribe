@@ -475,14 +475,33 @@ pub const MODEL_INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("model-intended-
 /// `ASC147`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("model-intended-entry");
 
-/// `ASC148`, advice, file level: an alert from Vale about the prose.
+/// `ASC148`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
+
+/// `ASC149`, advice, page level: a content check (area `pages`).
+pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
+
+/// `ASC150`, advice, file level: a content check (area `pages`).
+pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
+
+/// `ASC151`, advice, page level: a content check (area `pages`).
+pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
+
+/// `ASC152`, advice, file level: a content check (area `pages`).
+pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
+
+/// `ASC153`, advice, file level: a content check (area `pages`).
+pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+
+/// `ASC154`, advice, file level: a content check (area `prose`): an alert
+/// from Vale about the prose.
 pub const PROSE: DiagnosticSlug = DiagnosticSlug("prose");
 
-/// `ASC149`, advice, file level: Vale couldn't be run, so the prose wasn't
-/// checked.
+/// `ASC155`, advice, file level: a content check (area `prose`): Vale
+/// couldn't be run, so the prose wasn't checked.
 pub const PROSE_NOT_CHECKED: DiagnosticSlug = DiagnosticSlug("prose-not-checked");
 
-/// `ASC150`, error, file level: a rule for loading `ascribe.toml`.
+/// `ASC156`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CHECKS_VALE: DiagnosticSlug = DiagnosticSlug("model-checks-vale");
 
 /// Every slug, in registry order.
@@ -634,6 +653,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     INTENDED_UNUSED,
     MODEL_INTENDED_CHECK,
     MODEL_INTENDED_ENTRY,
+    MODEL_FIELD_ROLE,
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
     PROSE,
     PROSE_NOT_CHECKED,
     MODEL_CHECKS_VALE,
@@ -642,9 +667,18 @@ pub const ALL: &[DiagnosticSlug] = &[
 /// The diagnostics a project may set the level of in `[checks]`: the
 /// registry's entries with `configurable = true`, in registry order. A test
 /// keeps it equal to the registry.
-pub const CONFIGURABLE: &[DiagnosticSlug] = &[PROSE, PROSE_NOT_CHECKED];
+pub const CONFIGURABLE: &[DiagnosticSlug] = &[
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
+    PROSE,
+    PROSE_NOT_CHECKED,
+];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
 /// whose next step is `review`, each with the place its problems are reported
 /// at, in registry order. A test keeps it equal to the registry.
-pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[];
+pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] =
+    &[(REVIEW_OVERDUE, crate::Place::Page)];

@@ -662,6 +662,7 @@ mod tests {
         model.checks.settings.push(ascribe_model::CheckSetting {
             slug: diagnostics::BINDING_BLANK_LINE,
             level: Some(CheckLevel::Off),
+            limit: None,
         });
         let applied = read(&project).apply(&model, Vec::new(), true);
         assert_eq!(applied.diagnostics.len(), 1);

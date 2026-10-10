@@ -148,6 +148,12 @@
 | [ASC145](../reference/diagnostics.md#asc145-intended-unused) | `intended-unused` | Advice | Page | fix |
 | [ASC146](../reference/diagnostics.md#asc146-model-intended-check) | `model-intended-check` | Error | File | choose |
 | [ASC147](../reference/diagnostics.md#asc147-model-intended-entry) | `model-intended-entry` | Error | File | choose |
-| [ASC148](../reference/diagnostics.md#asc148-prose) | `prose` | Advice | File | write |
-| [ASC149](../reference/diagnostics.md#asc149-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
-| [ASC150](../reference/diagnostics.md#asc150-model-checks-vale) | `model-checks-vale` | Error | File | write |
+| [ASC148](../reference/diagnostics.md#asc148-model-field-role) | `model-field-role` | Error | File | write |
+| [ASC149](../reference/diagnostics.md#asc149-page-size) | `page-size` | Advice | Page | write |
+| [ASC150](../reference/diagnostics.md#asc150-page-description-missing) | `page-description-missing` | Advice | File | write |
+| [ASC151](../reference/diagnostics.md#asc151-heading-level-skipped) | `heading-level-skipped` | Advice | Page | fix |
+| [ASC152](../reference/diagnostics.md#asc152-code-language-missing) | `code-language-missing` | Advice | File | choose |
+| [ASC153](../reference/diagnostics.md#asc153-review-overdue) | `review-overdue` | Advice | File | review |
+| [ASC154](../reference/diagnostics.md#asc154-prose) | `prose` | Advice | File | write |
+| [ASC155](../reference/diagnostics.md#asc155-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
+| [ASC156](../reference/diagnostics.md#asc156-model-checks-vale) | `model-checks-vale` | Error | File | write |

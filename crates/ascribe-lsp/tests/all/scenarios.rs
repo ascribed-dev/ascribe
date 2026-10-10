@@ -12,8 +12,8 @@ use crate::support::{Client, Fixture, MODEL, Setup, edit, slug};
 use ascribe_lsp::{Exit, Options};
 use lsp_types::{FileChangeType, PositionEncodingKind};
 
-const PAGE: &str = "---\ntitle: Home\n---\n# Home\n\n@include: _setup.md#install\n";
-const FRAGMENT: &str = "# Install\n@id: install\n\nRun it.\n";
+const PAGE: &str = "---\ntitle: Home\n---\n## Home\n\n@include: _setup.md#install\n";
+const FRAGMENT: &str = "## Install\n@id: install\n\nRun it.\n";
 
 fn project() -> Fixture {
     Fixture::new(
@@ -224,7 +224,7 @@ fn an_open_buffer_wins_over_the_file_on_disk() {
 
 // -- Acceptance: a widget declared in ascribe.toml --------------------------
 
-const WIDGET_PAGE: &str = "---\ntitle: W\n---\n# W\n\n@my-callout: Careful now.\n";
+const WIDGET_PAGE: &str = "---\ntitle: W\n---\n## W\n\n@my-callout: Careful now.\n";
 const WIDGET_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[widgets.my-callout]\nforms = [\"line\"]\nprimary = \"text\"\nbinding = \"self\"\n";
 
 #[test]

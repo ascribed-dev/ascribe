@@ -8,7 +8,7 @@ use toml::de::{DeTable, DeValue};
 use crate::inline::InlineMarkup;
 use crate::loader::{Loader, NameRule};
 use crate::toml_util::{V, describe, entries, join, sp, to_yaml};
-use crate::types::{Field, FieldType, default_mismatch};
+use crate::types::{Field, FieldRole, FieldType, default_mismatch};
 
 /// Which type language is being read.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -258,6 +258,8 @@ struct Common {
     phrases: bool,
     /// `inline`, with the span of its value.
     inline: Option<(InlineMarkup, Span)>,
+    /// `role`, with the span of its value.
+    role: Option<(FieldRole, Span)>,
     description: Option<String>,
 }
 
@@ -269,8 +271,8 @@ impl Loader<'_> {
         t: &DeTable<'_>,
         reserved: Option<&dyn Fn(&str) -> bool>,
     ) -> Vec<Field> {
-        // `inline` is for a content type's own fields: the outputs carry a
-        // formatted form only for those.
+        // `inline` and `role` are for a content type's own fields: the outputs
+        // carry a formatted form only for those, and a role is the page's.
         let place = if path.starts_with("types.") && path.ends_with(".frontmatter") {
             None
         } else if path.starts_with("fragments.") {
@@ -278,7 +280,7 @@ impl Loader<'_> {
         } else {
             Some("an object")
         };
-        let mut out = Vec::new();
+        let mut out: Vec<Field> = Vec::new();
         for (name, name_span, item) in entries(t) {
             let ok = self.name_ok(name, name_span, "frontmatter field", NameRule::NameWord);
             if let Some(is_reserved) = reserved
@@ -290,7 +292,23 @@ impl Loader<'_> {
                 continue;
             }
             let p = join(path, name);
-            if let Some(f) = self.field(&p, name, item, place) {
+            if let Some(mut f) = self.field(&p, name, item, place) {
+                // A type has one field with each role: the later loses it.
+                if let Some(role) = f.role
+                    && let Some(other) = out.iter().find(|o| o.role == Some(role))
+                {
+                    let span = match item.get_ref() {
+                        DeValue::Table(t) => t.get("role").map_or(sp(item), sp),
+                        _ => sp(item),
+                    };
+                    self.push(
+                        self.issue(diagnostics::MODEL_FIELD_ROLE, span)
+                            .with_variant("duplicate")
+                            .with_arg("other", other.name.as_str())
+                            .with_arg("role", role.name()),
+                    );
+                    f.role = None;
+                }
                 out.push(f);
             }
         }
@@ -358,6 +376,27 @@ impl Loader<'_> {
                 inline = Some(markup);
             }
         }
+        let mut role = None;
+        if let Some((r, span)) = c.role {
+            if let Some(place) = place {
+                self.push(
+                    self.issue(diagnostics::MODEL_FIELD_ROLE, span)
+                        .with_variant("nested")
+                        .with_arg("field", name)
+                        .with_arg("place", place),
+                );
+            } else if ty != r.field_type() {
+                self.push(
+                    self.issue(diagnostics::MODEL_FIELD_ROLE, span)
+                        .with_arg("role", r.name())
+                        .with_arg("expected", r.field_type().describe())
+                        .with_arg("field", name)
+                        .with_arg("type", base_text(&c.base)),
+                );
+            } else {
+                role = Some(r);
+            }
+        }
         let mut default = None;
         if let Some((span, _)) = c.default {
             let dv = default_value(v, span);
@@ -392,6 +431,7 @@ impl Loader<'_> {
             default,
             phrases: c.phrases,
             inline,
+            role,
             description: c.description,
         })
     }
@@ -500,6 +540,7 @@ impl Loader<'_> {
                         "default",
                         "phrases",
                         "inline",
+                        "role",
                         "description",
                     ],
                     Kind::Attribute => &["type", "values", "default", "description"],
@@ -544,6 +585,7 @@ impl Loader<'_> {
             default: None,
             phrases: false,
             inline: None,
+            role: None,
             description: None,
         };
         let Some(t) = table else { return Some(c) };
@@ -621,6 +663,18 @@ impl Loader<'_> {
                 Some(markup) => c.inline = Some((markup, sp(i))),
                 None => self.push(
                     self.issue(diagnostics::MODEL_INLINE_FIELD, sp(i))
+                        .with_variant("value")
+                        .with_arg("value", value),
+                ),
+            }
+        }
+        if let Some(r) = t.get("role")
+            && let Some(value) = self.string(&format!("{path}.role"), r, false)
+        {
+            match FieldRole::from_name(&value) {
+                Some(role) => c.role = Some((role, sp(r))),
+                None => self.push(
+                    self.issue(diagnostics::MODEL_FIELD_ROLE, sp(r))
                         .with_variant("value")
                         .with_arg("value", value),
                 ),

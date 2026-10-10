@@ -10,7 +10,10 @@
 //! connection, opens a page, types into it, and prints the load time and the
 //! min, median, and 95th percentile of the keystroke latency. Then it writes
 //! a page that isn't open on disk, as an agent's edit tool does, and times
-//! `workspace/didChangeWatchedFiles` to that page's diagnostics. A plain `main`
+//! `workspace/didChangeWatchedFiles` to that page's diagnostics. Each size
+//! runs again with `[checks.vale]` and a stand-in for Vale that takes 50 ms
+//! and finds nothing, which shows what checking the prose on open and on save
+//! costs a keystroke: it should cost nothing. A plain `main`
 //! rather than a benchmark framework: nothing here needs more statistics than
 //! that.
 
@@ -21,7 +24,10 @@
     clippy::panic
 )]
 
+use std::collections::BTreeMap;
 use std::str::FromStr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -41,21 +47,50 @@ use synthetic::Client;
 
 const KEYSTROKES: usize = 100;
 
+/// A stand-in for Vale: as slow as a small run of the real one, and it
+/// finds nothing. It counts its runs, so the benchmark knows it ran.
+struct SlowVale(AtomicUsize);
+
+impl ascribe_check::prose::Linter for SlowVale {
+    fn lint(
+        &self,
+        request: &ascribe_check::prose::Request,
+    ) -> Result<BTreeMap<String, Vec<ascribe_check::prose::Alert>>, ascribe_check::prose::ValeError>
+    {
+        self.0.fetch_add(1, Ordering::SeqCst);
+        thread::sleep(Duration::from_millis(50));
+        Ok(request
+            .files
+            .iter()
+            .map(|(path, _)| (path.clone(), Vec::new()))
+            .collect())
+    }
+}
+
 // Longer than the lint allows from before it was on. Split it only while
 // changing it for another reason.
 #[allow(clippy::too_many_lines)]
-fn run(pages: usize) {
+fn run(pages: usize, vale: bool) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
     let project = Synthetic::new(pages);
     project.write_to(&root).unwrap();
+    let mut options = Options::default();
+    let slow_vale = Arc::new(SlowVale(AtomicUsize::new(0)));
+    if vale {
+        let model = root.join("ascribe.toml");
+        let mut text = std::fs::read_to_string(&model).unwrap();
+        text.push_str("\n[checks.vale]\npreset = \"quiet\"\n");
+        std::fs::write(&model, text).unwrap();
+        options.linter = Some(slow_vale.clone());
+    }
     let edited = pages / 2;
     let path = root.join(format!("{CONTENT_ROOT}/{}", project.page_path(edited)));
     let uri = Uri::from_str(&format!("file://{}", path.display())).unwrap();
     let text = project.page_text(edited, "typed: ");
 
     let (client_side, server_side) = Connection::memory();
-    let server = thread::spawn(move || serve(server_side, Options::default()).unwrap());
+    let server = thread::spawn(move || serve(server_side, options).unwrap());
     let mut client = Client {
         conn: client_side,
         next: 0,
@@ -323,7 +358,8 @@ fn run(pages: usize) {
     disk_times.sort();
     let d = |x: f64| disk_times[((disk_times.len() as f64 - 1.0) * x).round() as usize];
     println!(
-        "{pages:>5} pages: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
+        "{pages:>5} pages{}: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
+        if vale { ", Vale on" } else { "" },
         q(0.5),
         q(0.95),
         pages / FRAGMENTS,
@@ -349,11 +385,17 @@ fn run(pages: usize) {
         .send(Notification::new("exit".into(), json!(null)).into())
         .unwrap();
     server.join().unwrap();
+    assert_eq!(
+        slow_vale.0.load(Ordering::SeqCst) > 0,
+        vale,
+        "Vale ran only with `[checks.vale]`"
+    );
 }
 
 fn main() {
     println!("keystroke-to-diagnostics latency, {KEYSTROKES} keystrokes per size");
     for pages in [20, 100, 300, 1000, 3000] {
-        run(pages);
+        run(pages, false);
+        run(pages, true);
     }
 }

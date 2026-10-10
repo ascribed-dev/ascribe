@@ -54,6 +54,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 | `sources/` | Sources in another repository: their copies and `ascribe.lock` (§7.4) |
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, assets, which files are pages (§9.2–§9.4) |
+| `content/` | The checks about a page's content rather than its validity, which `[checks]` can set the level of: page size, descriptions, heading levels, code block languages, and review dates (§7.2, §8.2) |
 | `projects/quill/` | The whole Quill project of `examples/quill`, with no diagnostics under any build |
 | `samples/` | The two worked examples |
 
@@ -64,6 +65,7 @@ Conventions the cases follow:
 - **A page needs a title.** The shared model's default type requires `title`, so a single-file case that expects diagnostics starts with a three-line frontmatter block. Diagnostic lines count it. A case that expects only an outline has none, and neither does a fragment.
 - **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so a case runs when its own adapter exists. A case carries several tags only when it needs several adapters.
 - **Page-level diagnostics need the `page-check` tag**, and top-level (file-level) diagnostics need `check`.
+- **Vale's alerts need the `prose` tag.** Its adapter runs a stand-in for Vale that flags a word written twice in a row outside code spans, so the cases show what reaches Vale and where an alert lands, not Vale's rules.
 
 ## Resolved outlines
 
@@ -118,6 +120,7 @@ outline: [...]         # single-file cases only; the expected parse (see Outline
 formatted: formatted.md  # single-file cases only; what formatting input.md gives (see Formatting)
 diagnostics: [...]     # expected file-level diagnostics (see Diagnostics)
 builds: {...}          # per-build expectations (see Builds)
+today: "2026-10-10"    # optional; the day the checks run on (see Diagnostics)
 ```
 
 A case must expect at least one of `outline`, `diagnostics`, `builds`, or `formatted`. Unknown keys are errors, so a typo can't silently turn off a check. Omitting `outline`, `diagnostics`, or a build means "not checked"; an empty list (`diagnostics: []`) means "expect none".
@@ -137,6 +140,7 @@ Tags route a case to adapters and let a runner select cases. **Area tags** name 
 | `include` | Includes and the source index (§4.2) | 11 |
 | `resolve` | Resolution passes and build modes (§9.2, §9.3) | 12 |
 | `page-check` | Page-level diagnostics (§8.1, §8.2) | 14 |
+| `prose` | Vale's alerts on the prose, with a stand-in for Vale (`[checks.vale]`) | content checks, phase 5 |
 | `output` | Plain, site, and JSON output (§9.4) | 18, 20 |
 | `format` | Canonical form (§8.3) | 23 |
 
@@ -274,12 +278,15 @@ diagnostics:
     line: 12                    # 1-based
     column: 1                   # optional, 1-based
     file: guides/setup.md       # required in project cases
+    severity: advice            # optional: error, warning, or advice
 ```
 
 - `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
 - `line` is 1-based and counts every line of the file, including frontmatter.
 - `column` is 1-based and counts Unicode scalar values (characters), not bytes or UTF-16 units. It's compared only when written.
 - `file` is relative to the content root. It defaults to `input.md` in single-file cases.
+- `severity` is compared only when written: the diagnostic's severity after the content model's `[checks]` levels, which the adapters apply as every tool does. A check set to `off` isn't reported.
+- A check that compares with today's date (a review date) has no day unless the case names one in `today`, so a case's result doesn't change with the day it runs.
 - The expected list must match the reported diagnostics exactly, as a multiset: every expected diagnostic must be reported, and every reported diagnostic must be expected. Order doesn't matter.
 - Top-level `diagnostics` holds **file-level** diagnostics (§8.1) from every source file in the case. **Page-level** diagnostics depend on a build, so they go under that build (see below).
 

@@ -1,0 +1,8 @@
+description: >-
+  A page without the field its content type marks as its description is
+  reported at its first line, whatever the field is named.
+spec: ["7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: page-description-missing, line: 1, severity: advice}

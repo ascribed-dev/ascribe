@@ -13,6 +13,7 @@ ascribe-core.workspace = true
 ascribe-model.workspace = true
 ascribe-syntax.workspace = true
 ascribe-resolve.workspace = true
+ascribe-emit.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml_ng.workspace = true

@@ -82,6 +82,7 @@ name = "ascribe-check"
 version = "0.2.0"
 dependencies = [
  "ascribe-core",
+ "ascribe-emit",
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
@@ -149,6 +150,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml_ng",
+ "tempfile",
  "thiserror",
  "toml",
 ]

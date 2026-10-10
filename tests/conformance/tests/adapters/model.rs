@@ -38,6 +38,7 @@ impl ConformanceAdapter for ModelAdapter {
                 file: "ascribe.toml".to_owned(),
                 line: pos.line + 1,
                 column: pos.col + 1,
+                severity: None,
             });
         }
         Ok(Some(out))

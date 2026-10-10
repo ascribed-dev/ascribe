@@ -1,8 +1,7 @@
 # The Ascribe diagnostics registry.
 #
 # One entry for every diagnostic an Ascribe processor reports: every row of
-# SPEC §8.2, every rule for loading ascribe.toml, and the findings of the
-# programs Ascribe runs, such as Vale. Crates report problems
+# SPEC §8.2, and every rule for loading ascribe.toml. Crates report problems
 # by slug (ascribe-core's `Issue`, whose slug constants mirror this file); the
 # checks map each slug to its code, severity, and message here; conformance
 # cases name diagnostics by slug.
@@ -36,11 +35,9 @@
 #             "review" when it may be fine as it is. A retired entry has
 #             neither `next` nor `evidence`.
 #   evidence  The named pieces of context an agent prompt about it carries,
-#             beyond the message and the line; may be empty. The names:
-#             "allowed-values", the values the content model allows, from the
-#             `values` placeholder; "rule", the name of the tool's rule; and
-#             "rule-link", the address of the rule's own documentation, when
-#             the tool gives one.
+#             beyond the message and the line; may be empty. The one name so
+#             far is "allowed-values": the values the content model allows,
+#             from the `values` placeholder.
 #   message   The message template. `{name}` is a placeholder, filled from the
 #             issue's arguments; `{{` and `}}` are literal braces. A message
 #             says what's wrong and, when there's a likely fix, what to do.
@@ -64,12 +61,8 @@
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
 #                exactly. Every row has exactly one entry.
 #   group        The group of docs/content/reference/diagnostics.md a loader rule is listed in:
-#                file, project, sources, content-types, names, phrases, widgets,
-#                consumer, or checks. Every loader rule has one.
-#   area         The area of docs/content/reference/diagnostics.md a check of the
-#                content's quality is listed in: prose. A quality check isn't
-#                a SPEC §8.2 diagnostic, so it has no `row` or `group`; it's
-#                configurable, and its `severity` is its default level.
+#                file, project, sources, content-types, names, phrases, widgets, or
+#                consumer. Every loader rule has one.
 #   retired      Why the diagnostic is no longer reported. Its code and slug
 #                stay reserved.
 #   fix          How to fix the problem, for docs/content/reference/diagnostics.md, which is
@@ -2677,6 +2670,89 @@ fix = "Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a gl
 
 [[diagnostic]]
 code = "ASC148"
+slug = "model-field-role"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+group = "content-types"
+message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
+messages.value = "role must be \"description\" or \"review-date\", not \"{value}\""
+messages.nested = "role only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
+fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, and `role = \"review-date\"` to one date field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
+
+[[diagnostic]]
+code = "ASC149"
+slug = "page-size"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["page-sections"]
+spec = "9.4"
+configurable = true
+area = "pages"
+message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
+messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`."
+
+[[diagnostic]]
+code = "ASC150"
+slug = "page-description-missing"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = ["page-opening"]
+spec = "7.2"
+configurable = true
+area = "pages"
+message = "this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title"
+fix = "Add the field the content type marks with `role = \"description\"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for."
+
+[[diagnostic]]
+code = "ASC151"
+slug = "heading-level-skipped"
+severity = "advice"
+level = "page"
+next = "fix"
+evidence = []
+spec = "9.4"
+configurable = true
+area = "pages"
+message = "this heading is level {level}, after a level-{previous} heading; make it level {expected}, so the outline has no gap"
+messages.title = "this heading is level 1, which the page's title already is; make it level 2"
+fix = "Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too."
+
+[[diagnostic]]
+code = "ASC152"
+slug = "code-language-missing"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = ["code-lines"]
+spec = "1.4"
+configurable = true
+area = "pages"
+message = "this code block has no language; write it after the opening fence, or `text` for output"
+fix = "Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is."
+
+[[diagnostic]]
+code = "ASC153"
+slug = "review-overdue"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+spec = "7.2"
+configurable = true
+area = "pages"
+place = "page"
+message = "this page was due for review on {date}; check it still holds, then move `{field}` to the next review"
+fix = "Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
+
+[[diagnostic]]
+code = "ASC154"
 slug = "prose"
 severity = "advice"
 level = "file"
@@ -2690,7 +2766,7 @@ messages.phrase = "{rule}: {message} (in the text of phrase `{key}`)"
 fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](../guides/vale.md)."
 
 [[diagnostic]]
-code = "ASC149"
+code = "ASC155"
 slug = "prose-not-checked"
 severity = "advice"
 level = "file"
@@ -2705,7 +2781,7 @@ messages.timeout = "the prose wasn't checked: `{command}` didn't finish within {
 fix = "Install [Vale](https://vale.sh) 3 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = \"off\"` in `[checks]`."
 
 [[diagnostic]]
-code = "ASC150"
+code = "ASC156"
 slug = "model-checks-vale"
 severity = "error"
 level = "file"

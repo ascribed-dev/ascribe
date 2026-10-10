@@ -1,6 +1,8 @@
 ---
 title: Test
+intended:
+  - check: review-overdue
+    reason: The problem was fixed since.
 ---
 
-@intended {check=some-review-check}: The problem was fixed since.
 Text.

@@ -20,7 +20,7 @@ builds:
     pages:
       index.md:
         outline:
-          - heading: 1
+          - heading: 2
             text: Install the Quill agent
           # The include is replaced by the fragment's content, with phrases substituted.
           - paragraph: The Quill agent syncs your docs to Quill.
@@ -39,7 +39,7 @@ builds:
     pages:
       index.md:
         outline:
-          - heading: 1
+          - heading: 2
             text: Install the Quill agent
           - paragraph: The Quill agent syncs your docs to Quill.
           # One arm survives, so its content replaces the group (SPEC §9.3).

@@ -191,6 +191,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
     core.folders = workspace_folders(&params);
+    core.clock = options.today.clone();
     let idle = options.idle.clone().unwrap_or_default();
     let show_document = params
         .capabilities

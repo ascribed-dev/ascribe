@@ -107,6 +107,33 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
     })
 }
 
+/// How many errors [`diagnose`] would report for the builds named in
+/// `names`, without the checks that can't report one and cost the most to
+/// run ([`PageChecker::errors_only`]): for a command that only says whether
+/// the project has errors, such as `ascribe diff`.
+///
+/// # Errors
+///
+/// The first name that isn't a build of the content model.
+pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, UnknownBuild> {
+    let builds = select_builds(project, names)?;
+    let checker = PageChecker::new(project).errors_only();
+    let mut diagnostics = check_files(project);
+    diagnostics.extend(if names.is_empty() {
+        checker.check_all()
+    } else {
+        checker.check_builds(&builds)
+    });
+    let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let applied =
+        Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
+    Ok(applied
+        .diagnostics
+        .iter()
+        .filter(|d| d.severity == crate::Severity::Error)
+        .count())
+}
+
 /// What the language server reports as you type, for `ascribe check
 /// --editor-build`: the file-level diagnostics, and the page-level ones of
 /// the editor's build alone (`[editor] build`;

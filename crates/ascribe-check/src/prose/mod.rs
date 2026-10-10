@@ -171,6 +171,9 @@ fn diagnostic(
     let mut issue = Issue::new(diagnostics::PROSE, at)
         .with_arg("rule", alert.check.clone())
         .with_arg("message", alert.message.trim().to_owned());
+    if !alert.link.is_empty() {
+        issue = issue.with_arg("link", alert.link.clone());
+    }
     if let Some(key) = &located.phrase {
         issue = issue.with_variant("phrase").with_arg("key", key.clone());
     }
@@ -182,7 +185,6 @@ fn diagnostic(
     let mut d = Diagnostic::from_issue(&issue);
     d.severity = severity(&alert.severity).min(cap(settings.max_level));
     d.rule = Some(alert.check.clone());
-    d.rule_link = (!alert.link.is_empty()).then(|| alert.link.clone());
     if !d.fixes.is_empty() {
         d.next = Some(Next::Fix);
     }

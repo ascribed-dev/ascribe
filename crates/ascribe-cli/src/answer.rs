@@ -137,7 +137,8 @@ pub struct FromDisk;
 
 impl Projects for FromDisk {
     fn load(&self, config: &Path) -> Result<Rc<Loaded>, LoadError> {
-        Project::load(config).map(|project| Rc::new(Loaded::new(project)))
+        Project::load(config)
+            .map(|project| Rc::new(Loaded::new(project.with_today(crate::clock::today()))))
     }
 }
 

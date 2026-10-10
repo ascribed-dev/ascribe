@@ -13,7 +13,7 @@ default = true
 
 [types.guide.frontmatter]
 title = "string"
-description = "string"
+description = { type = "string", role = "description" }
 
 # Two sources in one repository, so one commit there can move both pins, as
 # commits in two repositories would.

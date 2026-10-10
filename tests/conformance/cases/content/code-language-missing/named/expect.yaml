@@ -1,0 +1,7 @@
+description: >-
+  A fence with a language isn't reported, and an indented code block, which
+  can't have one, isn't either.
+spec: ["8.2"]
+tags: [check]
+
+diagnostics: []

@@ -119,6 +119,19 @@ impl Checks {
             .find(|s| s.slug == slug)
             .and_then(|s| s.level)
     }
+
+    /// Whether the project turns a check off.
+    pub fn is_off(&self, slug: DiagnosticSlug) -> bool {
+        self.level(slug) == Some(CheckLevel::Off)
+    }
+
+    /// The `limit` the project sets for a check, if it sets one.
+    pub fn limit(&self, slug: DiagnosticSlug) -> Option<u64> {
+        self.settings
+            .iter()
+            .find(|s| s.slug == slug)
+            .and_then(|s| s.limit)
+    }
 }
 
 /// One acknowledgement in `[[intended]]` (SPEC §4.9): a review check's
@@ -148,6 +161,8 @@ pub struct CheckSetting {
     /// The level it's set to; `None` for a table without `level`, which
     /// keeps the check's own.
     pub level: Option<CheckLevel>,
+    /// `limit`, for a check that takes one (`page-size`).
+    pub limit: Option<u64>,
 }
 
 /// The level a project sets a check to.
