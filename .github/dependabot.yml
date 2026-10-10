@@ -18,6 +18,34 @@ updates:
     groups:
       js-dependencies:
         patterns: ["*"]
+    # Type packages describe a runtime, so they follow the oldest one Ascribe
+    # supports, not the newest release.
+    ignore:
+      # Node's types stay on the major of `engines.node` in package.json: types
+      # for a newer Node would let code use what the supported one doesn't
+      # have. Minor and patch updates within that major still come.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # VS Code's types stay at `engines.vscode` in packages/vscode/package.json,
+      # which is the oldest VS Code the extension runs in; `vsce` refuses to
+      # package an extension whose types are newer. Raise both together, by hand.
+      - dependency-name: "@types/vscode"
+  # The docs site has its own package.json and lockfile, outside the pnpm
+  # workspace, so it's installed from npm as a user's site is (site/README.md).
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    groups:
+      site-dependencies:
+        patterns: ["*"]
+    ignore:
+      # The site follows `main`: its build installs the canary `next` names
+      # (site/scripts/follow-next.mjs), whatever the lockfile pins.
+      - dependency-name: "@ascribed/*"
+      # As above: Node's types stay on the major of `engines.node`.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
