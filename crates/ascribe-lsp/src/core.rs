@@ -146,6 +146,8 @@ pub(crate) struct Core {
     /// learns the server has caught up.
     forced: HashSet<PathBuf>,
     next_id: i32,
+    /// What gives the day the checks run on.
+    pub(crate) clock: Option<crate::Clock>,
 }
 
 impl Core {
@@ -166,7 +168,13 @@ impl Core {
             published: HashMap::new(),
             forced: HashSet::new(),
             next_id: 0,
+            clock: None,
         }
+    }
+
+    /// The day the checks run on, if the server was given a clock.
+    pub(crate) fn today(&self) -> Option<ascribe_core::Date> {
+        self.clock.as_ref().and_then(|clock| clock())
     }
 
     pub(crate) fn send(&self, message: impl Into<Message>) {
@@ -924,6 +932,7 @@ impl Core {
             content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             encoding: self.encoding,
             fs: loaded.fs.clone(),
+            today: self.today(),
         })
     }
 

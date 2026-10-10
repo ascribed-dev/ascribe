@@ -1,0 +1,11 @@
+spec = "0.1"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+next-review = { type = "date?", role = "review-date" }
+
+[checks]
+review-overdue = "warning"

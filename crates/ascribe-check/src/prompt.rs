@@ -243,8 +243,12 @@ pub fn problem(
             }
         ));
     }
-    if let Some(allowed) = &d.allowed {
-        known.push(format!("Allowed values: {allowed}"));
+    for evidence in &d.evidence {
+        if evidence.text.contains('\n') {
+            known.push(format!("{}:\n{}", evidence.label, evidence.text));
+        } else {
+            known.push(format!("{}: {}", evidence.label, evidence.text));
+        }
     }
     let registered = Registry::global().get(d.slug);
     if let Some(help) = registered.and_then(|e| e.fix.as_deref()) {

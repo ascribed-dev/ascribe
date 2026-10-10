@@ -484,3 +484,26 @@ fn an_unreadable_file_is_reported_not_a_panic() {
     let issues = load("/no/such/dir/ascribe.toml").unwrap_err();
     assert_eq!(issues[0].slug.as_str(), "model-toml-syntax");
 }
+
+#[test]
+fn full_marks_its_description_and_review_date() {
+    use ascribe_model::{CheckLevel, FieldRole};
+    let m = example("full.toml");
+    let guide = &m.types[0].frontmatter;
+    let name = |role| guide.field_with_role(role).map(|f| f.name.as_str());
+    assert_eq!(name(FieldRole::Description), Some("description"));
+    assert_eq!(name(FieldRole::ReviewDate), Some("review-by"));
+    assert_eq!(
+        m.types[1]
+            .frontmatter
+            .field_with_role(FieldRole::Description),
+        None
+    );
+    let page_size = ascribe_core::diagnostics::PAGE_SIZE;
+    assert_eq!(m.checks.limit(page_size), Some(40_000));
+    assert_eq!(
+        m.checks
+            .level(ascribe_core::diagnostics::CODE_LANGUAGE_MISSING),
+        Some(CheckLevel::Warning)
+    );
+}

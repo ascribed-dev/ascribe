@@ -523,6 +523,10 @@ fn compare_diagnostics(
                 && a.file == file
                 && a.line == exp.line
                 && exp.column.is_none_or(|c| c == a.column)
+                && exp
+                    .severity
+                    .as_ref()
+                    .is_none_or(|s| a.severity.as_ref() == Some(s))
         });
         match found {
             Some(i) => used[i] = true,

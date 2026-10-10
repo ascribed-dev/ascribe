@@ -1,0 +1,4 @@
+spec = "0.1"
+
+[checks.page-size]
+limit = 300

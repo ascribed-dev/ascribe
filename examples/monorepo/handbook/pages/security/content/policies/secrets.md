@@ -3,6 +3,7 @@ title: Secrets
 owner: security
 review: yearly
 effective: 2025-09-01
+review-by: 2030-09-01
 ---
 
 Secrets are passwords, API keys, tokens, and private keys: anything that grants access if someone else has it.

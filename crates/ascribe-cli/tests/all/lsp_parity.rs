@@ -330,6 +330,7 @@ impl Server {
             severity: match d["severity"].as_u64().expect("severity") {
                 1 => "error",
                 2 => "warning",
+                3 => "advice",
                 other => panic!("severity {other}"),
             }
             .to_owned(),

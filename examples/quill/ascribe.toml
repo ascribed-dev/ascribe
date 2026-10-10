@@ -13,7 +13,7 @@ default = true
 
 [types.page.frontmatter]
 title = "string"
-description = "string?"
+description = { type = "string?", role = "description" }
 
 # `@variant {pm=npm}:` and friends.
 [dimensions.pm]

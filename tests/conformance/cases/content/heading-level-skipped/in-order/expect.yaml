@@ -1,0 +1,10 @@
+description: >-
+  Headings that go down one level at a time, and back up any number of
+  levels, aren't reported; neither is a page whose first heading is level 2.
+spec: ["8.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

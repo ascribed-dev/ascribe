@@ -46,12 +46,12 @@ fn every_section_8_2_row_has_a_case() {
     let missing: Vec<_> = registry
         .entries
         .iter()
-        .filter(|e| e.row.is_some() && !expected.contains(&e.slug))
+        .filter(|e| (e.row.is_some() || e.area.is_some()) && !expected.contains(&e.slug))
         .map(|e| e.slug.as_str())
         .collect();
     assert!(
         missing.is_empty(),
-        "SPEC §8.2 rows with no case that expects them: {missing:?}"
+        "SPEC §8.2 rows and content checks with no case that expects them: {missing:?}"
     );
 }
 

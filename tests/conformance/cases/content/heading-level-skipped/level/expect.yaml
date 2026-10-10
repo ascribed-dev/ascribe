@@ -1,0 +1,10 @@
+description: >-
+  `[checks]` sets the check's level.
+spec: ["8.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-level-skipped, line: 5, severity: error}

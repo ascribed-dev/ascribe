@@ -42,13 +42,17 @@ mod tests {
         Diagnostic::from_issue(&issue)
     }
 
-    // No check is configurable yet, so these set the level of ones that
-    // aren't: the loader would refuse them, and `apply_levels` doesn't care.
+    // These set the level of checks that aren't configurable: the loader
+    // would refuse them, and `apply_levels` doesn't care.
     fn checks(settings: &[(ascribe_core::DiagnosticSlug, Option<CheckLevel>)]) -> Checks {
         Checks {
             settings: settings
                 .iter()
-                .map(|&(slug, level)| CheckSetting { slug, level })
+                .map(|&(slug, level)| CheckSetting {
+                    slug,
+                    level,
+                    limit: None,
+                })
                 .collect(),
         }
     }

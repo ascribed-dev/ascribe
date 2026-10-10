@@ -27,7 +27,11 @@ pub fn run(global: &Global, _args: Args) -> ExitCode {
         );
         return exit::code(exit::FAILURE);
     }
-    match ascribe_lsp::run_stdio() {
+    let options = ascribe_lsp::Options {
+        today: Some(std::sync::Arc::new(crate::clock::today)),
+        ..ascribe_lsp::Options::default()
+    };
+    match ascribe_lsp::run_stdio(options) {
         Ok(Exit::Clean) => exit::code(exit::OK),
         Ok(Exit::Abrupt) => exit::code(exit::PROBLEMS),
         Err(e) => {

@@ -81,15 +81,26 @@ pub struct Diagnostic {
     /// Whether the diagnostic is in content that no build publishes, and so
     /// belongs to none of them.
     pub unpublished: bool,
-    /// The values the content model allows, as the message lists them, when
-    /// the problem is a value that isn't one of them; for an agent prompt.
+    /// What an agent prompt about it carries beyond the message and the
+    /// line, as its registry entry's `evidence` names it: the values the
+    /// content model allows, a long page's sections, and so on.
     #[serde(skip)]
-    pub allowed: Option<String>,
+    pub evidence: Vec<Evidence>,
     /// The content model entry or image the problem is about, for a check
     /// that reports problems about one: its issue's `entry` argument
     /// (`phrase old-name`), which `[[intended]]` is matched against.
     #[serde(skip)]
     pub subject: Option<String>,
+}
+
+/// One piece of context for an agent prompt: what Ascribe knows that an
+/// agent can't cheaply find.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Evidence {
+    /// What the prompt calls it: `Allowed values`.
+    pub label: &'static str,
+    /// The text, which may be several lines.
+    pub text: String,
 }
 
 impl Diagnostic {
@@ -118,7 +129,7 @@ impl Diagnostic {
             fixes: issue.fixes.clone(),
             builds: Vec::new(),
             unpublished: false,
-            allowed: allowed(entry, issue),
+            evidence: evidence(entry, issue),
             subject: issue
                 .arg(ascribe_core::intended::ENTRY_ARG)
                 .map(str::to_owned),
@@ -162,19 +173,35 @@ impl Diagnostic {
     }
 }
 
-/// The values an issue says are allowed, when its registry entry's prompt
-/// carries them (`evidence` has `allowed-values`): its `values` placeholder,
-/// which every such diagnostic fills with the list.
-fn allowed(entry: Option<&Entry>, issue: &Issue) -> Option<String> {
-    if !entry.is_some_and(|e| e.evidence.iter().any(|name| name == ALLOWED_VALUES)) {
-        return None;
-    }
-    issue
-        .args
+/// The evidence of an issue whose registry entry's prompt carries some: each
+/// name its `evidence` lists, from the issue's argument for it, in the
+/// registry's order. A name the issue has no argument for is left out.
+fn evidence(entry: Option<&Entry>, issue: &Issue) -> Vec<Evidence> {
+    let Some(entry) = entry else {
+        return Vec::new();
+    };
+    entry
+        .evidence
         .iter()
-        .find(|a| a.name == "values")
-        .map(|a| a.value.clone())
+        .filter_map(|name| {
+            let (_, arg, label) = EVIDENCE.iter().find(|(n, _, _)| n == name)?;
+            let text = issue.args.iter().find(|a| a.name == *arg)?.value.clone();
+            Some(Evidence { label, text })
+        })
+        .collect()
 }
 
-/// The evidence that names the values the content model allows.
-pub const ALLOWED_VALUES: &str = "allowed-values";
+/// The evidence an agent prompt can carry: its name in the registry's
+/// `evidence`, the issue's argument that holds it, and the label the prompt
+/// gives it.
+pub const EVIDENCE: &[(&str, &str, &str)] = &[
+    // The values the content model allows, as the message lists them, when
+    // the problem is a value that isn't one of them.
+    ("allowed-values", "values", "Allowed values"),
+    // A long page's sections, each with its size, largest first.
+    ("page-sections", "sections", "Its sections, largest first"),
+    // A page's title and its first paragraph.
+    ("page-opening", "opening", "How the page begins"),
+    // The first lines of a code block.
+    ("code-lines", "lines", "The block begins"),
+];

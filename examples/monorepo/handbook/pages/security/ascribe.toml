@@ -12,7 +12,7 @@ default = true
 
 [types.page.frontmatter]
 title = "string"
-description = "string?"
+description = { type = "string?", role = "description" }
 
 # Policies record who owns them, how often they're reviewed, and since when
 # they apply.
@@ -24,6 +24,9 @@ title = "string"
 owner = "string"
 review = "enum(quarterly, yearly)"
 effective = "date"
+# The next review is due by this date; `review-overdue` reports a policy
+# whose date has passed.
+review-by = { type = "date?", role = "review-date" }
 
 [notes.policy]
 label = "Policy"

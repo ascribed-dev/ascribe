@@ -1076,16 +1076,14 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         ),
         ("directive-extra-text", "\n@steps foo\n1. One.\n", ""),
         ("phrase-double-braces", "\nInstall {{product}}.\n", ""),
+        ("heading-level-skipped", "\n#### Too deep\n\nText.\n", ""),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()
         .filter(|e| e.next == Some(ascribe_check::Next::Fix))
-        // No check is a review check yet, so no acknowledgement can be
-        // written, and none goes unused; the sample comes with the first.
-        .filter(|e| {
-            e.slug.as_str() != "intended-unused"
-                || !ascribe_core::diagnostics::ACKNOWLEDGEABLE.is_empty()
-        })
+        // Whether an acknowledgement covers nothing takes every build, so
+        // the editor never reports one; `ascribe check` carries its fix.
+        .filter(|e| e.slug.as_str() != "intended-unused")
         .map(|e| e.slug.as_str())
         .collect();
     let sampled: Vec<&str> = samples.iter().map(|(slug, _, _)| *slug).collect();

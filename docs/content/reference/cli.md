@@ -25,6 +25,9 @@ How diagnostics are reported:
 - **A problem in included content is reported at the include**, with its place in the fragment as related information.
 - **Content that no build publishes is checked too**, so a problem in an arm no build selects isn't missed. Its diagnostics say "in content that no build publishes". Not with `--build`, which is about one build.
 
+@available: next
+One check depends on the day it runs: `review-overdue` reports a page whose review date has passed, as of today's date in UTC. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day, such as in a test that mustn't change with the calendar. Every command that checks, the editor and the hook's check server included, reads it.
+
 Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md).
 
 ### Checking some files

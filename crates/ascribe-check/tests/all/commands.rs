@@ -8,7 +8,8 @@ use std::fs;
 use std::path::Path;
 
 use ascribe_check::{
-    LoadError, LocateError, MODEL_FILE, Project, Severity, UnknownBuild, diagnose, select_builds,
+    LoadError, LocateError, MODEL_FILE, Project, Severity, UnknownBuild, count_errors, diagnose,
+    select_builds,
 };
 
 const MODEL: &str =
@@ -110,4 +111,27 @@ fn diagnose_returns_what_check_reports_and_the_builds() {
         found.diagnostics
     );
     assert!(diagnose(&project, &["web".to_owned()]).is_err());
+}
+
+#[test]
+fn count_errors_counts_what_diagnose_reports_as_errors() {
+    // A broken link is an error; the page is over a small size limit, which is
+    // advice unless `[checks]` raises it.
+    let page = "---\ntitle: Big\n---\n\nSee [nothing](missing.md). Some words to pass the limit.\n";
+    let errors = |level: &str| {
+        let model = format!("{MODEL}[checks.page-size]\nlevel = \"{level}\"\nlimit = 10\n");
+        let dir = project(&model, &[("big.md", page)]);
+        let project = load(dir.path());
+        let reported = diagnose(&project, &[])
+            .expect("every build")
+            .diagnostics
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .count();
+        let counted = count_errors(&project, &[]).expect("every build");
+        assert_eq!(counted, reported, "level {level}");
+        counted
+    };
+    assert_eq!(errors("advice"), 1);
+    assert_eq!(errors("error"), 2);
 }
