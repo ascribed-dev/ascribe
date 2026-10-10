@@ -619,11 +619,26 @@ level = "off"
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
 
-Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named, and none is yet, so `[checks]` can't have a key yet. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named: the [content checks](diagnostics.md#content-checks), such as `page-orphan` or `phrase-unused`. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+
+For example, a site whose sidebar lists every page doesn't need to hear about pages nothing links to, and a team that wants smaller images can lower the limit:
+
+```toml
+[checks]
+page-orphan = "off"
+title-duplicate = "warning"
+
+[checks.image-large]
+limit = "200 KB"
+```
+
+| Setting | Of | Type | Default | Description |
+|---|---|---|---|---|
+| `limit` | `image-large` | size | `"500 KB"` | The size over which an image is reported: a number of bytes, or a string with `B`, `KB`, or `MB`, such as `"1.5 MB"`. A kilobyte is 1,000 bytes. |
 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
 
-**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`). A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`).
+**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`). A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). A `limit` is a size (`model-wrong-type`).
 
 ---
 

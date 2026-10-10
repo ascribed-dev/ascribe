@@ -655,7 +655,7 @@ missing = ["examples/quickstart.ts"]
 ## 20. `[checks]`
 @available: next
 
-How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. No check is configurable yet, so the table can't have a key yet; the two forms a key's value takes are:
+How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. The configurable checks are the content checks the [diagnostics reference](../reference/diagnostics.md#content-checks) lists. A key's value takes two forms:
 
 ```toml
 [checks]
@@ -669,11 +669,17 @@ level = "off"
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../reference/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
 
+The checks' settings:
+
+| Setting | Of | Type | Default | Description |
+|---|---|---|---|---|
+| `limit` | `image-large` | integer or string | `"500 KB"` | The size over which an image file is reported: a whole number of bytes, or a number followed by `B`, `KB`, or `MB` (a kilobyte is 1,000 bytes, a megabyte 1,000,000), with or without a space. |
+
 Only a check the diagnostics registry marks configurable can be named. The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name.
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
-**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); and a value is a string or a table (`model-wrong-type`).
+**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, and a `limit` is a size (`model-wrong-type`).
 
 ---
 

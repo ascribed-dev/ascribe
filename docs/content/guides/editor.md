@@ -36,6 +36,8 @@ After you install the extension, VS Code opens its walkthrough, **Get Started wi
 
 Every [diagnostic](../reference/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../reference/content-model.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
 
+The [content checks](../reference/diagnostics.md#content-checks) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
+
 In a workspace with several projects, the Problems panel lists only the projects whose language server is running. See [The Problems panel](#the-problems-panel).
 
 ### Quick fixes

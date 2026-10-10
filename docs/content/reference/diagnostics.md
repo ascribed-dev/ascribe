@@ -41,6 +41,7 @@ A check about the content's quality, rather than whether the project is valid, c
 @include: ../_generated/diagnostics-content-model.md
 
 ## Content checks
+@available: next
 
 Checks about the content's quality: what nothing uses, what nothing links to, and what readers would trip on. Each is advice unless your project sets it louder in [`[checks]`](content-model.md#19-checks), and `ascribe check` runs it. The editor reports a page's orphan and duplicate title, and what's unused, when you save; the checks of image files run only in `ascribe check`.
 

@@ -6,7 +6,7 @@
 
 Advice · page level · next step: review · configurable in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
-**When:** No other page the build publishes links to the page or includes it. Index pages (`index.md`) aren't reported.
+**When:** No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported.
 
 **Message:** no other page links to this page or includes it, so readers reach it only through the site's own navigation or search, if those list it
 

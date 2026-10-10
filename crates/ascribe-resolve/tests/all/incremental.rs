@@ -490,9 +490,15 @@ fn a_model_that_only_moves_its_own_warnings_changes_no_file() {
     // declared, which only the diagnostics of `ascribe.toml` read.
     assert_eq!(affected.model, Some(ModelImpact::Warnings));
     assert!(affected.recheck.is_empty() && affected.re_resolve.is_empty());
-    // An identical model is nothing either.
+    // An identical model is nothing.
     let affected = inc
-        .apply([Change::Model(ModelSpec::base().model())])
+        .apply([Change::Model(
+            ModelSpec {
+                comment: true,
+                ..ModelSpec::base()
+            }
+            .model(),
+        )])
         .unwrap();
     assert!(affected.is_empty());
 }
