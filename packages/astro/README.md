@@ -2,7 +2,7 @@
 
 The [Astro](https://astro.build) integration for [Ascribe](https://github.com/ascribed-dev/ascribe), for Astro 7.3.5 and later 7.x releases.
 
-It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro keeps its heading, table-of-contents, and image handling), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
+It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro keeps its heading, table-of-contents, and image handling), loads the element library, serves the files pages link to, and gives each permalink an address that forwards to its heading. In `astro dev`, it rebuilds as you edit.
 
 ```sh
 npm install @ascribed/astro
@@ -70,6 +70,7 @@ The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: 
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
 | `src/Availability.astro` | A page's availability as the element library's badge |
 | `src/code-titles.ts` | The Shiki transformer that shows code block titles |
+| `src/Permalink.astro`, `src/permalinks.ts` | The route at each permalink's address, and its pages, from the site output's `_ascribe/permalinks.json` |
 | `src/schema.ts` | Copies the generated schema inside the Astro root |
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |

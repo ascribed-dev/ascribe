@@ -188,6 +188,35 @@ describe("the built site", () => {
     await page.close();
   });
 
+  it("forwards a permalink's address to its heading, from a page that isn't indexed", async () => {
+    const page = await context.newPage();
+    // `@id {permalink=true}: weave-config`, published under `go/` in the base path.
+    await page.goto(`${origin}${BASE}/go/weave-config`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    const heading = page.locator("h2#weave-config");
+    await expect(heading.evaluate((element) => element.matches(":target"))).resolves.toBe(true);
+    await page.close();
+
+    // Without a script, a link to the same place, and no indexing.
+    const response = await fetch(`${origin}${BASE}/go/weave-config`);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    const to = `${BASE}/guides/my-setup#weave-config`;
+    expect(html).not.toContain("<script");
+    expect(html).toContain(`<meta http-equiv="refresh" content="0;url=${to}">`);
+    expect(html).toContain(`<a href="${to}">`);
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).toContain(`<link rel="canonical" href="https://docs.example.com${to}">`);
+  });
+
+  it("leaves permalinks' addresses out of what agents read", async () => {
+    const llms = await (await fetch(`${origin}${BASE}/llms.txt`)).text();
+    expect(llms).toContain("/guides/my-setup.md");
+    expect(llms).not.toContain("/go/");
+    const markdown = await fetch(`${origin}${BASE}/go/weave-config.md`);
+    expect(markdown.status).toBe(404);
+  });
+
   it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {
     // `ascribe build --emit json` records each page's route and heading ids.
     const binary = process.env["ASCRIBE_BIN"] ?? resolveBinary();

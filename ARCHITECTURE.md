@@ -34,7 +34,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | Package | What it's for |
 |---|---|
 | [`@ascribed/cli`](packages/cli) | The `ascribe` command for npm. It finds and runs the native binary from one of the `@ascribed/cli-<platform>` packages (`packages/cli/platforms/`). |
-| [`@ascribed/astro`](packages/astro) | The Astro integration: runs `ascribe build`, loads the site output as a content collection, renders its markers, and serves review in `astro dev`. |
+| [`@ascribed/astro`](packages/astro) | The Astro integration: runs `ascribe build`, loads the site output as a content collection, renders its markers, gives each permalink an address that forwards to it, and serves review in `astro dev`. |
 | [`@ascribed/elements`](packages/elements) | The custom elements the site output uses, to the letter of [CONTRACT.md](packages/elements/CONTRACT.md). |
 | [`@ascribed/review`](packages/review) | Reviewing pages as readers see them: marking changed blocks, and placing a pull request's review threads beside them. |
 | [Ascribe for VS Code](packages/vscode) (`ascribe-vscode`) | The editor extension: a client of the language server, the page preview, and review in the editor. |
