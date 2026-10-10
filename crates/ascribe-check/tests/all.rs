@@ -5,6 +5,8 @@
 //! `tests/`, where Cargo builds every file as a program of its own. To run
 //! one file's tests: `cargo test -p ascribe-check --test all parity`.
 
+#[path = "all/across.rs"]
+mod across;
 #[path = "all/checks.rs"]
 mod checks;
 #[path = "all/commands.rs"]

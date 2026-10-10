@@ -481,10 +481,10 @@ pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
 /// `ASC149`, advice, page level: a content check (area `pages`).
 pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
 
-/// `ASC155`, advice, file level: a content check (area `pages`).
+/// `ASC150`, advice, file level: a content check (area `pages`).
 pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
 
-/// `ASC156`, advice, page level: a content check (area `pages`).
+/// `ASC151`, advice, page level: a content check (area `pages`).
 pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
 
 /// `ASC152`, advice, file level: a content check (area `pages`).
@@ -493,13 +493,37 @@ pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-
 /// `ASC153`, advice, file level: a content check (area `pages`).
 pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
 
-/// `ASC154`, error, file level: a rule for loading `ascribe.toml`.
+/// `ASC154`, advice, page level: a content check (area `project`).
+pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
+
+/// `ASC155`, advice, file level: a content check (area `project`).
+pub const FRAGMENT_UNUSED: DiagnosticSlug = DiagnosticSlug("fragment-unused");
+
+/// `ASC156`, advice, file level: a content check (area `project`).
+pub const PHRASE_UNUSED: DiagnosticSlug = DiagnosticSlug("phrase-unused");
+
+/// `ASC157`, advice, file level: a content check (area `project`).
+pub const FEATURE_UNUSED: DiagnosticSlug = DiagnosticSlug("feature-unused");
+
+/// `ASC158`, advice, file level: a content check (area `project`).
+pub const GLOSSARY_TERM_UNUSED: DiagnosticSlug = DiagnosticSlug("glossary-term-unused");
+
+/// `ASC159`, advice, file level: a content check (area `project`).
+pub const IMAGE_UNUSED: DiagnosticSlug = DiagnosticSlug("image-unused");
+
+/// `ASC160`, advice, file level: a content check (area `project`).
+pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
+
+/// `ASC161`, advice, page level: a content check (area `project`).
+pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
+
+/// `ASC162`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CONSUMER_AGENTS_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-agents-site");
 
-/// `ASC155`, advice, file level: a content check (outputs), "A page's description is longer than its line in `llms.txt` should be".
+/// `ASC163`, advice, file level: a content check (area `outputs`).
 pub const DESCRIPTION_TOO_LONG: DiagnosticSlug = DiagnosticSlug("description-too-long");
 
-/// `ASC156`, advice, page level: a content check (outputs), "An `llms.txt` file is over its size limit even when the index is split by folder".
+/// `ASC164`, advice, page level: a content check (area `outputs`).
 pub const LLMS_SECTION_LARGE: DiagnosticSlug = DiagnosticSlug("llms-section-large");
 
 /// Every slug, in registry order.
@@ -657,6 +681,14 @@ pub const ALL: &[DiagnosticSlug] = &[
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
     REVIEW_OVERDUE,
+    PAGE_ORPHAN,
+    FRAGMENT_UNUSED,
+    PHRASE_UNUSED,
+    FEATURE_UNUSED,
+    GLOSSARY_TERM_UNUSED,
+    IMAGE_UNUSED,
+    IMAGE_LARGE,
+    TITLE_DUPLICATE,
     MODEL_CONSUMER_AGENTS_SITE,
     DESCRIPTION_TOO_LONG,
     LLMS_SECTION_LARGE,
@@ -671,6 +703,14 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
     REVIEW_OVERDUE,
+    PAGE_ORPHAN,
+    FRAGMENT_UNUSED,
+    PHRASE_UNUSED,
+    FEATURE_UNUSED,
+    GLOSSARY_TERM_UNUSED,
+    IMAGE_UNUSED,
+    IMAGE_LARGE,
+    TITLE_DUPLICATE,
     DESCRIPTION_TOO_LONG,
     LLMS_SECTION_LARGE,
 ];
@@ -678,5 +718,13 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
 /// whose next step is `review`, each with the place its problems are reported
 /// at, in registry order. A test keeps it equal to the registry.
-pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] =
-    &[(REVIEW_OVERDUE, crate::Place::Page)];
+pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
+    (REVIEW_OVERDUE, crate::Place::Page),
+    (PAGE_ORPHAN, crate::Place::Page),
+    (FRAGMENT_UNUSED, crate::Place::Page),
+    (PHRASE_UNUSED, crate::Place::Entry),
+    (FEATURE_UNUSED, crate::Place::Entry),
+    (GLOSSARY_TERM_UNUSED, crate::Place::Entry),
+    (IMAGE_UNUSED, crate::Place::Entry),
+    (IMAGE_LARGE, crate::Place::Entry),
+];

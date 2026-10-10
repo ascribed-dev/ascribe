@@ -38,7 +38,7 @@ lantern --version
 @id: connect
 
 @variant {edition=cloud}:
-Sign in with your {cloud} account. The CLI opens a browser window to finish signing in.
+Sign in with your {cloud} account. The CLI opens a browser window to finish signing in, then talks to the API at {api}.
 
 ```shell
 lantern login

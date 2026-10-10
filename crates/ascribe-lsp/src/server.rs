@@ -11,7 +11,7 @@ use ascribe_core::{LineIndex, Span};
 use lsp_server::{Connection, ErrorCode, Message, Notification, Request, RequestId, Response};
 use lsp_types::notification::{
     DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument, DidOpenTextDocument,
-    Notification as _,
+    DidSaveTextDocument, Notification as _,
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
@@ -25,7 +25,8 @@ use lsp_types::{
     SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
     ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    Uri, WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
+    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 
 use crate::compute::{Outcome, compute};
@@ -119,6 +120,8 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 TextDocumentSyncOptions {
                     open_close: Some(true),
                     change: Some(TextDocumentSyncKind::INCREMENTAL),
+                    // The content checks across the project run on save.
+                    save: Some(TextDocumentSyncSaveOptions::Supported(true)),
                     ..TextDocumentSyncOptions::default()
                 },
             )),
@@ -326,6 +329,11 @@ fn handle_notification(shared: &Shared, notification: Notification) {
                     );
                 }
             }
+            DidSaveTextDocument::METHOD => {
+                if let Some(p) = parse::<lsp_types::DidSaveTextDocumentParams>(&notification) {
+                    core.did_save(&p.text_document.uri);
+                }
+            }
             DidCloseTextDocument::METHOD => {
                 if let Some(p) = parse::<lsp_types::DidCloseTextDocumentParams>(&notification) {
                     core.did_close(&p.text_document.uri);
@@ -337,7 +345,7 @@ fn handle_notification(shared: &Shared, notification: Notification) {
                 }
             }
             // `initialized` was consumed by the handshake; the rest need no
-            // action (`didSave`, `$/cancelRequest`, `$/setTrace`, …).
+            // action (`$/cancelRequest`, `$/setTrace`, …).
             _ => {}
         }
         if core.has_work() {
@@ -416,13 +424,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            CodeActionRequest::METHOD => {
-                navigation(shared, &request, |p: lsp_types::CodeActionParams| {
-                    (p.text_document.uri.clone(), move |ctx: &Ctx| {
-                        Some(crate::code_action::actions(ctx, p))
-                    })
-                })
-            }
+            CodeActionRequest::METHOD => code_action_request(shared, &request),
             Formatting::METHOD => navigation(shared, &request, |p: DocumentFormattingParams| {
                 (p.text_document.uri.clone(), move |ctx: &Ctx| {
                     Some(crate::formatting::format(ctx, p))
@@ -568,6 +570,18 @@ where
     let target = shared.lock().project_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
     to_json(request, result)
+}
+
+/// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
+/// too, whose problems about an entry can be marked as intended.
+fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::CodeActionParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let target = shared.lock().code_action_target(&params.text_document.uri);
+    let Some(ctx) = target else {
+        return Ok(serde_json::Value::Null);
+    };
+    to_json(request, crate::code_action::actions(&ctx, params))
 }
 
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
@@ -892,7 +906,8 @@ fn worker(shared: &Shared) {
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| {
             let outcome = compute(&job, &|| job.snapshot.is_current());
-            if let (Some(hook), Outcome::Done(results)) = (&shared.options.before_publish, &outcome)
+            if let (Some(hook), Outcome::Done(results, _)) =
+                (&shared.options.before_publish, &outcome)
             {
                 hook(&PublishInfo {
                     version: job.snapshot.version().get(),

@@ -1,0 +1,11 @@
+description: >-
+  An image file under the content root that no file shows or links to is
+  reported, as is one over `[checks.image-large] limit`; each at the image
+  file itself. Files that aren't images, and anything in a folder whose
+  name starts with `.`, aren't looked at.
+spec: ["5.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-large, file: img/map.svg, line: 1}
+  - {slug: image-unused, file: img/old.svg, line: 1}

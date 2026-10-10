@@ -1,0 +1,41 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = { type = "string", phrases = true }
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud", "self-managed"]
+
+[features.sso]
+name = "Single sign-on"
+available = "cloud"
+
+[features.audit]
+name = "Audit log"
+available = "self-managed"
+
+[phrases]
+product = "Quill"
+in-title = "Quill"
+unused = "Nothing uses this"
+
+[glossary.terms.agent]
+term = "agent"
+aliases = ["agents"]
+definition = "The process that ships logs."
+
+[glossary.terms.relay]
+term = "relay"
+definition = "No page writes this word."
+
+[glossary.terms.build]
+term = "build"
+definition = "Linked only where an author links it."
+match = "marked"

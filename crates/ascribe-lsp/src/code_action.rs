@@ -16,7 +16,7 @@ use crate::nav::{Ctx, directive_at};
 #[allow(clippy::too_many_lines)]
 pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
     let Some(file) = ctx.file() else {
-        return Vec::new();
+        return model_actions(ctx, params);
     };
     let index = LineIndex::new(&file.source);
     let start = ctx
@@ -232,6 +232,44 @@ fn action(
     edits: Vec<TextEdit>,
 ) -> CodeActionOrCommand {
     workspace_action(ctx, title, diagnostics, edits, None)
+}
+
+/// The actions on `ascribe.toml`'s diagnostics: marking a problem about a
+/// content model entry or an image as intended, in `[[intended]]`.
+fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
+    let model_index = LineIndex::new(&ctx.model_text);
+    let mut actions = Vec::new();
+    for diagnostic in params.context.diagnostics {
+        let data = diagnostic.data.as_ref();
+        let field = |key: &str| {
+            data.and_then(|d| d.get(key))
+                .and_then(serde_json::Value::as_str)
+        };
+        let (Some(slug), Some(subject)) = (field("slug"), field("subject")) else {
+            continue;
+        };
+        let place = ascribe_check::Registry::global()
+            .entries()
+            .find(|e| e.slug.as_str() == slug)
+            .and_then(|e| e.place);
+        if place != Some(ascribe_core::Place::Entry) {
+            continue;
+        }
+        let Some(edit) = intended::entry(slug, subject, &ctx.model_text) else {
+            continue;
+        };
+        actions.push(workspace_action(
+            ctx,
+            intended::TITLE,
+            vec![diagnostic.clone()],
+            Vec::new(),
+            Some(TextEdit {
+                range: ctx.encoding.range(&model_index, edit.span),
+                new_text: edit.new_text,
+            }),
+        ));
+    }
+    actions
 }
 
 #[allow(clippy::mutable_key_type)]

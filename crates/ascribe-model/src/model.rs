@@ -88,7 +88,8 @@ impl Checks {
         self.level(slug) == Some(CheckLevel::Off)
     }
 
-    /// The `limit` the project sets for a check, if it sets one.
+    /// The `limit` the project sets for a check, if it sets one: a number
+    /// of characters for `page-size`, of bytes for `image-large`.
     pub fn limit(&self, slug: DiagnosticSlug) -> Option<u64> {
         self.settings
             .iter()
@@ -124,7 +125,8 @@ pub struct CheckSetting {
     /// The level it's set to; `None` for a table without `level`, which
     /// keeps the check's own.
     pub level: Option<CheckLevel>,
-    /// `limit`, for a check that takes one (`page-size`).
+    /// `limit`, for a check that takes one: characters for `page-size`,
+    /// bytes for `image-large`.
     pub limit: Option<u64>,
 }
 
@@ -291,6 +293,8 @@ pub struct Feature {
     pub available_text: String,
     /// The parsed spec. Spans are offsets into `ascribe.toml`.
     pub available: AvailabilitySpec,
+    /// The `[features.<key>]` key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// A note type.
@@ -311,6 +315,8 @@ pub struct Phrase {
     pub key: String,
     /// The literal replacement text.
     pub value: String,
+    /// The key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// Which glossary occurrences are linked.
@@ -356,6 +362,8 @@ pub struct GlossaryTerm {
     /// Which occurrences of this term are linked (the term's setting, else
     /// the glossary's).
     pub match_mode: GlossaryMatch,
+    /// The term id's key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// A project widget.

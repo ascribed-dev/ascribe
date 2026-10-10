@@ -23,7 +23,7 @@ use ascribe_syntax::BlockKind;
 /// A page-level issue and where its cause is, for deciding whether any build
 /// publishes that content.
 #[derive(Clone, Debug)]
-pub(super) struct Found {
+pub(crate) struct Found {
     /// The issue, located where it's reported. Ids are the index's.
     pub issue: Issue,
     /// The cause: a span in a file, reached through these includes.

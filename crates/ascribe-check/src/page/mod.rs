@@ -56,11 +56,12 @@ use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{AvailabilityMode, Build, CheckLevel, VariantMode};
 use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage, llms};
 
-use crate::{Diagnostic, Project, check_files};
+use crate::{Diagnostic, Project, check_files_with};
 
 use bridge::Indexed;
 pub(crate) use bridge::held_index;
-use collect::{Found, Identity, LinkProblems, check_page, identity};
+pub(crate) use collect::Found;
+use collect::{Identity, LinkProblems, check_page, identity};
 
 /// The name of the build that keeps everything, used to look for content no
 /// build publishes. It never appears in a diagnostic.
@@ -73,8 +74,9 @@ const KEEP_EVERYTHING: &str = "(everything)";
 /// project each time; to check several builds, call [`check_all_builds`], or
 /// keep a [`PageChecker`].
 pub fn check_project(project: &Project, build: &Build) -> Vec<Diagnostic> {
-    let mut out = check_files(project);
-    out.extend(PageChecker::new(project).check(build));
+    let checker = PageChecker::new(project);
+    let mut out = check_files_with(project, Some(&checker));
+    out.extend(checker.check(build));
     out
 }
 
@@ -83,8 +85,9 @@ pub fn check_project(project: &Project, build: &Build) -> Vec<Diagnostic> {
 /// it appears in (as [`check_all_builds`] does, without the pass over content
 /// no build publishes, which needs every build).
 pub fn check_builds(project: &Project, builds: &[&Build]) -> Vec<Diagnostic> {
-    let mut out = check_files(project);
-    out.extend(PageChecker::new(project).check_builds(builds));
+    let checker = PageChecker::new(project);
+    let mut out = check_files_with(project, Some(&checker));
+    out.extend(checker.check_builds(builds));
     out
 }
 
@@ -97,8 +100,9 @@ pub fn check_pages(project: &Project, build: &Build) -> Vec<Diagnostic> {
 /// page-level ones of every build, each distinct problem once with the builds
 /// it appears in, then the problems in content no build publishes.
 pub fn check_all_builds(project: &Project) -> Vec<Diagnostic> {
-    let mut out = check_files(project);
-    out.extend(PageChecker::new(project).check_all());
+    let checker = PageChecker::new(project);
+    let mut out = check_files_with(project, Some(&checker));
+    out.extend(checker.check_all());
     out
 }
 
@@ -175,7 +179,8 @@ impl<'p> PageChecker<'p> {
 
     /// The page-level diagnostics of `build` for these resolved pages alone:
     /// what [`PageChecker::check`] reports for them, and nothing about the
-    /// rest of the project. A diagnostic is located in the page's own file,
+    /// rest of the project, so not the content checks that need every page
+    /// of the build (`page-orphan`, `title-duplicate`). A diagnostic is located in the page's own file,
     /// except an `include-cycle`, which is located where the cycle closes (in
     /// a fragment), so the diagnostics located in a file are those of the
     /// pages that are the file or include it, transitively.
@@ -189,8 +194,9 @@ impl<'p> PageChecker<'p> {
 
     /// The page-level diagnostics of `build` for these pages alone, each
     /// resolved from the checker's index: what [`PageChecker::check`]
-    /// reports for them. A path that isn't a page, or that the build drops,
-    /// has none.
+    /// reports for them, apart from the content checks that need every page
+    /// of the build. A path that isn't a page, or that the build drops, has
+    /// none.
     pub fn check_pages(&self, build: &Build, pages: &[RelPath]) -> Vec<Diagnostic> {
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
         let found = pages
@@ -264,7 +270,24 @@ impl<'p> PageChecker<'p> {
             on_page(page);
             found.extend(self.page(build, page));
         }
-        found.extend(llms_sizes(&self.indexed.index, build, &resolved.pages));
+        let pages: Vec<&ResolvedPage> = resolved.pages.iter().collect();
+        found.extend(crate::across::for_build(
+            &self.indexed.index,
+            &self.project.model().checks,
+            &pages,
+            self.errors_only,
+        ));
+        // Like `page-size`, measured for errors only when raised to one.
+        if !self.errors_only
+            || self
+                .project
+                .model()
+                .checks
+                .level(diagnostics::LLMS_SECTION_LARGE)
+                == Some(CheckLevel::Error)
+        {
+            found.extend(llms_sizes(&self.indexed.index, build, &resolved.pages));
+        }
         found
     }
 
@@ -282,6 +305,41 @@ impl<'p> PageChecker<'p> {
             found.push(f);
         }
         found
+    }
+
+    /// The content checks across the project that the editor reports, for
+    /// `build`: `page-orphan` and `title-duplicate` from `pages`, which must
+    /// be every page the build publishes, in path order, and the checks
+    /// that hold for every build apart from the image checks
+    /// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)). The language server runs
+    /// them on save; levels aren't applied.
+    pub fn check_across(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
+        let found = crate::across::for_build(
+            &self.indexed.index,
+            &self.project.model().checks,
+            pages,
+            false,
+        );
+        let mut out = self.finish(vec![(Some(build.name.as_str()), found)]);
+        out.extend(self.for_every_build(false).into_values().flatten());
+        out
+    }
+
+    /// The diagnostics of the content checks that hold for every build
+    /// (`fragment-unused`, the unused entries of the content model, and,
+    /// when `images` is set, the image checks), by file, over this
+    /// checker's index.
+    pub(crate) fn for_every_build(
+        &self,
+        images: bool,
+    ) -> std::collections::BTreeMap<FileId, Vec<Diagnostic>> {
+        crate::across::for_every_build(
+            self.project,
+            &self.indexed.index,
+            &|id| self.indexed.file(id),
+            images,
+            self.errors_only,
+        )
     }
 
     /// The problems in content that no build publishes: those a build that

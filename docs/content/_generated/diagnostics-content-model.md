@@ -536,7 +536,7 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to the build the editor should check, or name one of the builds `site`.
 
-#### ASC154 `model-consumer-agents-site`
+#### ASC162 `model-consumer-agents-site`
 
 Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 

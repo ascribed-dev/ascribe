@@ -23,6 +23,10 @@ variants = { pm = "npm" }
 
 [editor]
 build = "site"
+
+[checks]
+page-orphan = "off"
+title-duplicate = "off"
 "#;
 
 const BROKEN: &str = "---\ntitle: Install\n---\n\nRead [the overview](overview.md).\n";

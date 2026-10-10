@@ -57,6 +57,8 @@ limit = 40_000
 
 `review-overdue` depends on the day, so `ascribe check` can report it on one day and not the day before. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day; Ascribe otherwise uses today's date in UTC.
 
+The checks across the project need every page, so the editor reports a page's orphan and duplicate title, and what's unused, when you save, and the checks of image files run only in `ascribe check`.
+
 @include: ../_generated/diagnostics-content-checks.md
 
 @include: ../_generated/diagnostics-retired.md

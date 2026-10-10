@@ -119,7 +119,7 @@ fn block(
 }
 
 /// An `[[intended]]` table at the end of `ascribe.toml`.
-fn entry(check: &str, subject: &str, model_text: &str) -> Option<TextEdit> {
+pub(crate) fn entry(check: &str, subject: &str, model_text: &str) -> Option<TextEdit> {
     let (key, name) = subject.split_once(' ')?;
     let kind = EntryKind::from_key(key)?;
     let nl = if model_text.contains("\r\n") {

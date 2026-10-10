@@ -651,11 +651,27 @@ limit = 40_000
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
 
-Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. `page-size` has one: `limit`, a whole number of characters above 0, `50_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Two have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, `"500 KB"` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+
+For example, a site whose sidebar lists every page doesn't need to hear about pages nothing links to, and a team that wants smaller images can lower the limit:
+
+```toml
+[checks]
+page-orphan = "off"
+title-duplicate = "warning"
+
+[checks.image-large]
+limit = "200 KB"
+```
+
+| Setting | Of | Type | Default | Description |
+|---|---|---|---|---|
+| `limit` | `page-size` | integer | `50_000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. Above 0. |
+| `limit` | `image-large` | size | `"500 KB"` | The size over which an image is reported: a number of bytes, or a string with `B`, `KB`, or `MB`, such as `"1.5 MB"`. A kilobyte is 1,000 bytes. |
 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
 
-**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`), and `limit` is a whole number above 0 (`model-wrong-type`).
+**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### `[[intended]]`: acknowledgements
 @id: intended-acknowledgements
@@ -675,6 +691,8 @@ reason = "Kept for the 2.x pages restored in the next release."
 | `check` | string | required | The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](diagnostics.md) says. |
 | `reason` | string | required | Why the problem is intended. Not empty. |
 | `phrase`, `feature`, `term`, or `image` | string | required | The entry: a phrase's key, a feature's key, a glossary term's id, or an image's path under the content root. Exactly one. |
+
+A glossary term whose only occurrences are inside a phrase's value is reported by `glossary-term-unused`, since the search for uses doesn't read phrase values. Acknowledge it here with `term`.
 
 **Rules.** A check that doesn't exist, isn't a review check, or reports its problems somewhere other than an entry is an error (`model-intended-check`). A table without exactly one entry key, or naming an entry that isn't declared, is an error (`model-intended-entry`).
 

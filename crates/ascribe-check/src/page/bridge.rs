@@ -58,6 +58,10 @@ impl FileSystem for Held<'_> {
         self.0.file_system().real_path(project_path)
     }
 
+    fn size(&self, project_path: &RelPath) -> Option<u64> {
+        self.0.file_system().size(project_path)
+    }
+
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
         self.0.file_system().files_in(project_dir)
     }

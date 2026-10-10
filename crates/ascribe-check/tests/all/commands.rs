@@ -115,12 +115,22 @@ fn diagnose_returns_what_check_reports_and_the_builds() {
 
 #[test]
 fn count_errors_counts_what_diagnose_reports_as_errors() {
-    // A broken link is an error; the page is over a small size limit, which is
-    // advice unless `[checks]` raises it.
+    // A broken link is an error; both pages are over a small size limit, and the
+    // two pages nothing links to and the fragment nothing includes are
+    // reported by the checks across the project, all advice unless
+    // `[checks]` raises them.
     let page = "---\ntitle: Big\n---\n\nSee [nothing](missing.md). Some words to pass the limit.\n";
-    let errors = |level: &str| {
-        let model = format!("{MODEL}[checks.page-size]\nlevel = \"{level}\"\nlimit = 10\n");
-        let dir = project(&model, &[("big.md", page)]);
+    let pages = [
+        ("big.md", page),
+        ("lonely.md", "---\ntitle: Lonely\n---\n\nHi.\n"),
+        ("_part.md", "A part.\n"),
+    ];
+    let errors = |size: &str, across: &str| {
+        let model = format!(
+            "{MODEL}[checks]\npage-orphan = \"{across}\"\nfragment-unused = \"{across}\"\n\
+             [checks.page-size]\nlevel = \"{size}\"\nlimit = 10\n"
+        );
+        let dir = project(&model, &pages);
         let project = load(dir.path());
         let reported = diagnose(&project, &[])
             .expect("every build")
@@ -129,9 +139,10 @@ fn count_errors_counts_what_diagnose_reports_as_errors() {
             .filter(|d| d.severity == Severity::Error)
             .count();
         let counted = count_errors(&project, &[]).expect("every build");
-        assert_eq!(counted, reported, "level {level}");
+        assert_eq!(counted, reported, "page-size {size}, across {across}");
         counted
     };
-    assert_eq!(errors("advice"), 1);
-    assert_eq!(errors("error"), 2);
+    assert_eq!(errors("advice", "advice"), 1);
+    assert_eq!(errors("error", "advice"), 3);
+    assert_eq!(errors("advice", "error"), 4);
 }

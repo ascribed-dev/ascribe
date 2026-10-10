@@ -3,8 +3,9 @@
 //!
 //! Three prompts, each built from what a check reported:
 //!
-//! - [`problem`]: one diagnostic, with its line, its fix advice, the values
-//!   the content model allows when it's about one, and its fixes;
+//! - [`problem`]: one diagnostic, with its line, its fix advice, the
+//!   evidence its registry entry names (such as the values the content model
+//!   allows, when it's about one), and its fixes;
 //! - [`file`]: a file's problems, one line each, at most [`MAX_LISTED`];
 //! - [`project`]: how many problems each file has, at most [`MAX_LISTED`]
 //!   files.
@@ -20,6 +21,7 @@ use std::path::{Path, PathBuf};
 use ascribe_core::path::relative_path;
 use ascribe_core::{Applicability, FileId, LineIndex, Location, RelPath};
 
+use crate::evidence;
 use crate::{Diagnostic, MODEL_FILE, Project, Registry, Reported, Severity};
 
 /// The most characters a prompt has: what the agents' own links take.
@@ -251,6 +253,13 @@ pub fn problem(
         }
     }
     let registered = Registry::global().get(d.slug);
+    // What only a prompt needs is gathered now, not when the check ran.
+    for name in registered
+        .map(|e| e.evidence.as_slice())
+        .unwrap_or_default()
+    {
+        known.extend(evidence::lines(project, d, name));
+    }
     if let Some(help) = registered.and_then(|e| e.fix.as_deref()) {
         known.push(format!("How to fix it: {help}"));
     }
@@ -507,6 +516,8 @@ struct Lines {
 
 fn lines_of(project: &Project, at: Location) -> Option<Lines> {
     let text: String = match project.file(at.file) {
+        // A file without text, such as an image, has no lines to quote.
+        Some(entry) if entry.text.is_empty() => return None,
         Some(entry) => entry.text.to_owned(),
         None => project.code_file(at.file)?.text.clone(),
     };
