@@ -59,17 +59,25 @@ pub enum FieldRole {
     /// When the page is next due for review (`role = "review-date"`): a date
     /// field.
     ReviewDate,
+    /// Who looks after the page (`role = "owner"`), such as a team: a string
+    /// or enum field.
+    Owner,
 }
 
 impl FieldRole {
     /// Every role, in the order the docs list them.
-    pub const ALL: [FieldRole; 2] = [FieldRole::Description, FieldRole::ReviewDate];
+    pub const ALL: [FieldRole; 3] = [
+        FieldRole::Description,
+        FieldRole::ReviewDate,
+        FieldRole::Owner,
+    ];
 
     /// The setting's value in `ascribe.toml`.
     pub fn name(self) -> &'static str {
         match self {
             FieldRole::Description => "description",
             FieldRole::ReviewDate => "review-date",
+            FieldRole::Owner => "owner",
         }
     }
 
@@ -78,11 +86,22 @@ impl FieldRole {
         FieldRole::ALL.into_iter().find(|r| r.name() == name)
     }
 
-    /// The type a field with this role has.
-    pub fn field_type(self) -> FieldType {
+    /// Whether a field of type `ty` can have this role.
+    pub fn accepts(self, ty: &FieldType) -> bool {
         match self {
-            FieldRole::Description => FieldType::String,
-            FieldRole::ReviewDate => FieldType::Date,
+            FieldRole::Description => *ty == FieldType::String,
+            FieldRole::ReviewDate => *ty == FieldType::Date,
+            FieldRole::Owner => matches!(ty, FieldType::String | FieldType::Enum(_)),
+        }
+    }
+
+    /// The types a field with this role can have, for messages: `string`,
+    /// `date`, or `string or enum`.
+    pub fn expected(self) -> &'static str {
+        match self {
+            FieldRole::Description => "string",
+            FieldRole::ReviewDate => "date",
+            FieldRole::Owner => "string or enum",
         }
     }
 }

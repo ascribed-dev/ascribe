@@ -281,7 +281,7 @@ Grammar (ABNF, with the rules of SPEC Appendix A):
 | `phrases` | boolean | `false` | Whether phrases (SPEC §5.1) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §12. |
 | `inline` | string | none | The inline markup the value is read with. The one value is `"code"`: code spans. Allowed only on a content type's top-level `string` fields (and `string?`), not in objects or the fragment schema. See §6.3. |
 | `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
-| `role` | string | none | What the field is for, for the checks that read it (SPEC §7.2): `"description"` or `"review-date"`. Allowed only on a content type's top-level fields, not in objects or the fragment schema. See §6.4. |
+| `role` | string | none | What the field is for, for the checks that read it (SPEC §7.2): `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields, not in objects or the fragment schema. See §6.4. |
 
 Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatter flat.
 
@@ -320,16 +320,17 @@ A field the page leaves out gets its default's formatted form, so `formatted.<fi
 ### 6.4 Field roles
 @available: next
 
-A page type's top-level field MAY have a `role`, which says what the field is for, so a check reads it whatever the field's name (SPEC §7.2):
+A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2):
 
 | Role | The field's type | Read by |
 |---|---|---|
 | `description` | `string` or `string?` | `page-description-missing`, which reports a page of the type whose field is absent, null, or blank. A field that's required or has a default is never absent, so the check skips it. |
 | `review-date` | `date` or `date?` | `review-overdue`, which reports a page whose date is before the day the check runs. |
+| `owner` | `string`, `string?`, or an `enum`, optional or not | `ascribe report inventory`, which counts pages by the field's value; a page without one counts as having no owner. |
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
 
-**Rules** (§22.3): the role is one of the two, on a field of its type, in a content type's own fields, and at most one field of a type has each role (`model-field-role`). A second field with a role keeps its type, and loses the role.
+**Rules** (§22.3): the role is one of the three, on a field of its type, in a content type's own fields, and at most one field of a type has each role (`model-field-role`). A second field with a role keeps its type, and loses the role.
 
 ---
 
@@ -706,7 +707,7 @@ Only a check the diagnostics registry marks configurable can be named; the [diag
 | `page-size` | `limit` | integer | `50000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. It MUST be above 0. |
 | `image-large` | `limit` | integer or string | `"500 KB"` | The size over which an image file is reported: a whole number of bytes, or a number followed by `B`, `KB`, or `MB` (a kilobyte is 1,000 bytes, a megabyte 1,000,000), with or without a space. |
 
-The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is §20.2; `links` has no keys yet.
+The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is §20.2, and `links` §20.3.
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
@@ -765,6 +766,26 @@ What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a pr
 Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
 
 **Rules** (§22.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
+
+### 20.3 `[checks.links]`
+@available: next
+
+How `ascribe report links` checks external links: with lychee, a program the project installs, which Ascribe runs with the addresses on its standard input. `ascribe check` never reaches the network.
+
+```toml
+[checks.links]
+command = "lychee"
+ignore = ["localhost", "*.internal.example.com"]
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `command` | string | `"lychee"` | The command run, in the project root. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. |
+| `ignore` | array of strings | `[]` | Hosts not checked. `name` matches that host; `*.name` matches every host that ends in `.name`, and not `name` itself. Matched without regard to case, after a trailing `.` is dropped. |
+
+The links checked are every link whose destination is an `http` or `https` URL, in every source file, each address once. A link whose address answers with an error, doesn't answer in time, or can't be reached is a `link-external-broken` advice (`ASC168`, `next = "review"`, `place = "block"`); one whose redirects begin with a `301` or `308` is a `link-external-moved` advice (`ASC169`, `next = "choose"`), with an unsafe fix that writes the address the permanent redirects end at. Both are at the link, and configurable in `[checks]`. An `@intended {check=link-external-broken}` that covers no broken link is `intended-unused` only when `ascribe report links` ran; `ascribe check` doesn't report it.
+
+**Rules** (§22.9): each `ignore` entry is a host name, or `*.` and one (`model-wrong-type`); `command` is a string (`model-wrong-type`); no other key (`model-unknown-key`).
 
 ---
 
@@ -840,7 +861,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-phrases-field-type` | `phrases = true` is set only on `string` and `list(string)` fields. | `` phrases = true only works on string and list(string) fields, and `{field}` is "{type}" `` |
 | `model-inline-field` | `inline` is `"code"`, and is set only on a content type's top-level `string` fields (§6.3). | `` inline = "code" only works on string fields, and `{field}` is "{type}" ``<br>`` inline must be "code", not "{value}" ``<br>`` inline = "code" only works on a content type's top-level fields, and `{field}` is in {place} `` |
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
-| `model-field-role` | `role` is `"description"`, on a `string` field, or `"review-date"`, on a `date` field; only on a content type's top-level fields; and a type has at most one field with each role (§6.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description" or "review-date", not "{value}" ``<br>`` role only works on a content type's top-level fields, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
+| `model-field-role` | `role` is `"description"`, on a `string` field, `"review-date"`, on a `date` field, or `"owner"`, on a `string` or `enum` field; only on a content type's top-level fields; and a type has at most one field with each role (§6.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description", "review-date", or "owner", not "{value}" ``<br>`` role only works on a content type's top-level fields, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `ascribe_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
 ### 22.4 Dimensions, names, lifecycle, notes, and features

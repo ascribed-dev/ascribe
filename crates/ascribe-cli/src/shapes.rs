@@ -131,6 +131,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::Refs>(),
     },
     Shape {
+        file: "report",
+        title: "ReportReport",
+        written_by: "`ascribe report --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::report::json::ReportJson>(),
+    },
+    Shape {
         file: "diff-html-data",
         title: "ReportData",
         written_by: "`ascribe diff --format html`, for the report's script",

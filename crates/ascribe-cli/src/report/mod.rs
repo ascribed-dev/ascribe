@@ -148,7 +148,8 @@ impl Counts {
         counts
     }
 
-    fn add(&mut self, severity: Severity) {
+    /// Counts one more of `severity`.
+    pub(crate) fn add(&mut self, severity: Severity) {
         match severity {
             Severity::Error => self.errors += 1,
             Severity::Warning => self.warnings += 1,

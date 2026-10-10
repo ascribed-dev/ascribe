@@ -54,6 +54,7 @@ mod tests {
     use crate::agents::sync::SyncError;
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
+    use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
     use crate::context::Failure;
 
@@ -145,6 +146,10 @@ mod tests {
             "initialize's parameters aren't understood",
         ),
         ("unknown_diagnostic", "no diagnostic has that code or name"),
+        (
+            "prompt_needs_one_section",
+            "report --format prompt without one section",
+        ),
         ("not_a_source", "a path isn't a page or fragment"),
         ("not_a_page", "a fragment, where only a page will do"),
         ("build_required", "several builds, and none was named"),
@@ -274,6 +279,11 @@ mod tests {
                 CheckError::Scope(_) | CheckError::Stdin(_) | CheckError::NoVale => {}
             }
         }
+        fn report(e: &ReportError) {
+            match e {
+                ReportError::PromptSection => {}
+            }
+        }
         fn eject(e: &EjectError) {
             match e {
                 EjectError::NoPreset { .. }
@@ -310,8 +320,8 @@ mod tests {
             }
         }
         let _ = (
-            locate, load, scope, check, eject, format, emit, store, diff, sources, serve, query,
-            agents,
+            locate, load, scope, check, report, eject, format, emit, store, diff, sources, serve,
+            query, agents,
         );
 
         let store_errors = || {
@@ -435,6 +445,7 @@ mod tests {
             Box::new(CheckError::Scope(ScopeError::Missing { path: path() })),
             Box::new(CheckError::Stdin(io_error())),
             Box::new(CheckError::NoVale),
+            Box::new(ReportError::PromptSection),
             Box::new(EjectError::NoPreset { config: None }),
             Box::new(EjectError::Exists { path: text() }),
             Box::new(EjectError::Write {

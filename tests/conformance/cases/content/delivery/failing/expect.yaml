@@ -1,0 +1,12 @@
+description: >-
+  `ascribe report agents` reports each of the delivery spec's checks that
+  fails on the site: one that what Ascribe writes should pass as
+  `delivery-output`, and one the hosting decides as `delivery-hosting`, at
+  the content model. One about the pages, such as their size, is `ascribe
+  check`'s to report, so the report doesn't repeat it.
+spec: ["9.5"]
+tags: [site]
+
+diagnostics:
+  - {slug: delivery-output, file: ascribe.toml, line: 1, severity: advice}
+  - {slug: delivery-hosting, file: ascribe.toml, line: 1, severity: advice}

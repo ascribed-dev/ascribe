@@ -99,6 +99,10 @@ pub struct Entry {
     /// For a check whose next step is review: where it reports its problems,
     /// and so where one is acknowledged (SPEC §4.9).
     pub place: Option<Place>,
+    /// Whether only `ascribe report` runs it (`stage = "report"`), since it
+    /// needs the network or a built site: never `ascribe check` or the
+    /// editor.
+    pub report_only: bool,
     /// Whether it's retired: no longer reported.
     pub retired: bool,
 }
@@ -238,6 +242,7 @@ impl Registry {
                 .and_then(toml::Value::as_bool)
                 .unwrap_or(false),
             place: text("place").and_then(|p| Place::from_name(&p)),
+            report_only: text("stage").as_deref() == Some("report"),
             retired: t.contains_key("retired"),
         })
     }

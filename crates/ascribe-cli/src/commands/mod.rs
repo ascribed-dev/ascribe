@@ -14,5 +14,6 @@ pub mod model;
 pub mod outline;
 pub mod refs;
 pub mod render;
+pub mod report;
 pub mod sources;
 pub mod vale;

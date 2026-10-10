@@ -1,0 +1,69 @@
+# The weekly report on docs/: its external links, and the delivery spec's
+# checks on the published site. It's the job docs/content/guides/report.md
+# ("On a schedule") gives users, and the page takes it from this file: the
+# lines marked `:remove:` are what this repository adds. Links and the
+# published site change without a commit, and checking them takes minutes and
+# the network, so it runs on a schedule, never on a pull request. When the
+# report finds something, or a section can't run, it opens one issue, or
+# updates the one that's open, and the run fails. It installs `next`, the
+# canary of `main`, over the release, since these docs follow `main`.
+# :snippet-start: job
+name: Report
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    name: links and site report # :remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      LYCHEE: "0.24.2"
+      LYCHEE_SHA256: 1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a
+      AFDOCS: "0.22.2"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm install --global @ascribed/cli "afdocs@$AFDOCS"
+      - run: npm install --global @ascribed/cli@next # :remove:
+      - name: Install lychee
+        run: |
+          name=lychee-x86_64-unknown-linux-gnu
+          curl -fsSL -o "$RUNNER_TEMP/$name.tar.gz" \
+            "https://github.com/lycheeverse/lychee/releases/download/lychee-v$LYCHEE/$name.tar.gz"
+          echo "$LYCHEE_SHA256  $RUNNER_TEMP/$name.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP" "$name/lychee"
+          echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
+      - name: Report
+        id: report
+        continue-on-error: true
+        run: >
+          ascribe report links agents --config docs
+          --site https://ascribed-dev.com --format summary --exit-code
+          > report.md
+      - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the issue
+        if: steps.report.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "Docs report: links and the published site"
+        run: |
+          echo "[The run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> report.md
+          number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file report.md
+          else
+            gh issue create --title "$TITLE" --body-file report.md
+          fi
+          exit 1
+
+# :snippet-end:

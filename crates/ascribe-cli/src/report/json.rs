@@ -86,7 +86,7 @@ struct Summary {
 /// A problem acknowledged as intended.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct AcknowledgedEntry {
+pub(crate) struct AcknowledgedEntry {
     /// The code of the check that found it, such as `ASC036`.
     code: &'static str,
     /// The check's name.
@@ -123,7 +123,7 @@ fn is_zero(n: &usize) -> bool {
     *n == 0
 }
 
-fn acknowledged(files: &FileTable, a: &Acknowledged) -> AcknowledgedEntry {
+pub(crate) fn acknowledged(files: &FileTable, a: &Acknowledged) -> AcknowledgedEntry {
     AcknowledgedEntry {
         code: a.problem.code,
         slug: a.problem.slug.to_string(),
@@ -170,7 +170,7 @@ struct FileCount {
 /// A diagnostic.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Entry {
+pub(crate) struct Entry {
     /// The code, such as `ASC036`.
     code: &'static str,
     /// The diagnostic's name, such as `link-target-missing`.
@@ -302,7 +302,7 @@ impl From<Position> for Pos {
     }
 }
 
-fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
+pub(crate) fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
     let (start, end) = files.range(at);
     Range {
         start: start.into(),
@@ -310,7 +310,7 @@ fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
     }
 }
 
-fn entry(files: &FileTable, d: &Diagnostic, repeats: usize) -> Entry {
+pub(crate) fn entry(files: &FileTable, d: &Diagnostic, repeats: usize) -> Entry {
     let registered = Registry::global().get(d.slug);
     Entry {
         code: d.code,

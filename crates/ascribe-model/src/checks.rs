@@ -6,13 +6,15 @@
 //! diagnostic about whether the project is valid can't be lowered or turned
 //! off.
 //!
+//! `[checks.links]` isn't a check: it's how `ascribe report links` checks the
+//! external links.
 //! `[checks.vale]` isn't a check: it's how the prose is checked with Vale.
 
 use ascribe_core::{DiagnosticSlug, diagnostics};
 use toml::de::DeValue;
 
 use crate::loader::Loader;
-use crate::model::{CheckLevel, CheckSetting, Checks, ValeSettings, ValeSource};
+use crate::model::{CheckLevel, CheckSetting, Checks, LinkSettings, ValeSettings, ValeSource};
 use crate::names::suggest;
 use crate::toml_util::{V, entries, join, sp, to_yaml};
 use crate::vale::Preset;
@@ -28,11 +30,20 @@ impl Loader<'_> {
     /// `[checks]`.
     pub(crate) fn checks(&mut self, v: Option<&V<'_>>) -> Checks {
         let mut settings = Vec::new();
+        let mut links = LinkSettings::default();
         let mut vale = None;
         let Some(t) = v.and_then(|v| self.as_table("checks", v)) else {
-            return Checks { settings, vale };
+            return Checks {
+                settings,
+                links,
+                vale,
+            };
         };
         for (key, span, value) in entries(t) {
+            if key == "links" {
+                links = self.links(value);
+                continue;
+            }
             if key == "vale" {
                 vale = self.vale(value, span);
                 continue;
@@ -91,7 +102,11 @@ impl Loader<'_> {
             }
             settings.push(setting);
         }
-        Checks { settings, vale }
+        Checks {
+            settings,
+            links,
+            vale,
+        }
     }
 
     /// `[checks.vale]`.
@@ -190,6 +205,38 @@ impl Loader<'_> {
         ok.then(|| names.into_iter().map(|(name, _)| name).collect())
     }
 
+    /// `[checks.links]`.
+    fn links(&mut self, v: &V<'_>) -> LinkSettings {
+        const PATH: &str = "checks.links";
+        let mut links = LinkSettings::default();
+        let Some(t) = self.as_table(PATH, v) else {
+            return links;
+        };
+        self.check_keys(PATH, t, &["command", "ignore"]);
+        if let Some(command) = t
+            .get("command")
+            .and_then(|c| self.string(&join(PATH, "command"), c, true))
+        {
+            links.command = command;
+        }
+        if let Some(list) = t.get("ignore") {
+            let at = join(PATH, "ignore");
+            for (host, span) in self.strings(&at, list).unwrap_or_default() {
+                if is_host_pattern(&host) {
+                    links.ignore.push(host);
+                } else {
+                    self.push(
+                        self.issue(diagnostics::MODEL_WRONG_TYPE, span)
+                            .with_arg("key", at.as_str())
+                            .with_arg("expected", HOST)
+                            .with_arg("found", format!("`\"{host}\"`")),
+                    );
+                }
+            }
+        }
+        links
+    }
+
     /// A size: a whole number of bytes, or a string with a unit, `B`, `KB`,
     /// or `MB` (`"500 KB"`, `"1.5 MB"`); a kilobyte is 1,000 bytes.
     fn size(&mut self, path: &str, v: &V<'_>) -> Option<u64> {
@@ -230,6 +277,22 @@ impl Loader<'_> {
         let name = self.choice(path, v, &CheckLevel::NAMES)?;
         CheckLevel::from_name(&name)
     }
+}
+
+/// What a host pattern is, in a message.
+const HOST: &str = "a host, such as \"example.com\" or \"*.example.com\"";
+
+/// Whether `text` is a host name, or `*.` and a host name: letters, digits,
+/// `-`, and `.` (and anything outside ASCII, for an international name), with
+/// no scheme, port, or path.
+fn is_host_pattern(text: &str) -> bool {
+    let host = text.strip_prefix("*.").unwrap_or(text);
+    !host.is_empty()
+        && !host.starts_with('.')
+        && !host.contains("..")
+        && host
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '.' || !c.is_ascii())
 }
 
 /// What a size is, in a message.
@@ -437,6 +500,35 @@ mod tests {
         assert_eq!(
             with_config,
             [(diagnostics::MODEL_CHECKS_VALE, "[\"A.B\"]".to_owned())]
+        );
+    }
+
+    #[test]
+    fn links_take_a_command_and_hosts_to_leave_out() {
+        let checks = load(
+            "[checks.links]\ncommand = \"bin/lychee\"\n\
+             ignore = [\"example.com\", \"*.internal.example\"]\n",
+        )
+        .unwrap();
+        assert_eq!(checks.links.command, "bin/lychee");
+        assert!(checks.links.ignores("Example.com"));
+        assert!(!checks.links.ignores("www.example.com"));
+        assert!(checks.links.ignores("docs.internal.example"));
+        assert!(!checks.links.ignores("internal.example"));
+        assert!(!checks.links.ignores("notinternal.example"));
+        assert_eq!(load("").unwrap().links.command, "lychee");
+
+        let found =
+            load("[checks.links]\nignore = [\"https://example.com/\"]\nretries = 3\n").unwrap_err();
+        assert_eq!(
+            found,
+            [
+                (
+                    diagnostics::MODEL_WRONG_TYPE,
+                    "\"https://example.com/\"".to_owned()
+                ),
+                (diagnostics::MODEL_UNKNOWN_KEY, "retries".to_owned()),
+            ]
         );
     }
 

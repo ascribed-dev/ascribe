@@ -1,0 +1,14 @@
+description: >-
+  `ascribe report links` reports each external link the checker finds
+  broken, slow, unreachable, or moved permanently, at the link, at its
+  `[checks]` level. A link to a host `[checks.links] ignore` names isn't
+  checked, nor is an address that isn't `http` or `https`.
+spec: ["5.2"]
+tags: [links]
+
+diagnostics:
+  - {slug: link-external-broken, file: input.md, line: 5, column: 5, severity: advice}
+  - {slug: link-external-moved, file: input.md, line: 5, column: 57, severity: warning}
+  - {slug: link-external-broken, file: input.md, line: 8, column: 3, severity: advice}
+  - {slug: link-external-broken, file: input.md, line: 8, column: 41, severity: advice}
+  - {slug: link-external-moved, file: input.md, line: 13, column: 3, severity: warning}

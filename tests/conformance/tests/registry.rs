@@ -129,6 +129,20 @@ fn only_content_checks_say_when() {
     }
 }
 
+/// A check's stage is written only when it runs at one stage alone, and the
+/// only such stage is `report`, for a content check that needs the network
+/// or a built site.
+#[test]
+fn only_content_checks_have_a_stage() {
+    for e in &registry().entries {
+        assert!(
+            e.stage.is_none() || (e.stage.as_deref() == Some("report") && e.area.is_some()),
+            "{}: `stage` is \"report\", on a content check",
+            e.slug
+        );
+    }
+}
+
 #[test]
 fn codes_are_sequential_and_slugs_unique() {
     let reg = registry();

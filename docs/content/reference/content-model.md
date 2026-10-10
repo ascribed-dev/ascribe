@@ -252,7 +252,7 @@ Grammar (ABNF, with the rules of SPEC Appendix A):
 | `phrases` | boolean | `false` | Whether phrases ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11. |
 | `inline` | string | none | `"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3. |
 | `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
-| `role` | string | none | What the field is for, which a check reads: `"description"` or `"review-date"`. Allowed only on a content type's top-level fields. See §5.4. |
+| `role` | string | none | What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a content type's top-level fields. See §5.4. |
 
 Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatter flat.
 
@@ -286,23 +286,25 @@ Only a content type's own `string` fields can set it, not fields in objects or t
 ### 5.4 Field roles
 
 @available: next
-A field's name is yours to choose, so a check that needs a page's description or the date it's due for review reads the field the content type marks with a `role`:
+A field's name is yours to choose, so a check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field the content type marks with a `role`:
 
 ```toml
 [types.guide.frontmatter]
 title = "string"
 summary = { type = "string?", role = "description" }
 review-by = { type = "date?", role = "review-date" }
+team = { type = "enum(docs, platform)", role = "owner" }
 ```
 
 | Role | The field's type | What reads it |
 |---|---|---|
 | `description` | `string`, optional or not | [`page-description-missing`](diagnostics.md#asc150-page-description-missing) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
 | `review-date` | `date`, optional or not | [`review-overdue`](diagnostics.md#asc153-review-overdue) reports a page whose date has passed. |
+| `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](cli.md#ascribe-report) counts pages by owner. |
 
-Without a role, those checks don't look at the type's pages. A role changes nothing in the outputs.
+Without a role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
-**Rules.** A role is one of the two (`model-field-role`), on a field of its type, in a content type's own fields: not a field in an object, nor in the fragment schema. Two fields of one type can't have the same role.
+**Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a content type's own fields: not a field in an object, nor in the fragment schema. Two fields of one type can't have the same role.
 
 ---
 
@@ -721,6 +723,25 @@ Ascribe writes the project's own words (phrase values, glossary terms and their 
 The level of every Vale alert can be set at once with `prose` in `[checks]`, and the advice that Vale couldn't be run with `prose-not-checked`.
 
 **Rules.** `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules (`model-checks-vale`). `preset` is one of Ascribe's presets, and `max-level` one of the three levels (`model-invalid-value`).
+
+### `[checks.links]`
+@available: next
+
+How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs. `ascribe check` never checks external links. [The project report](../guides/report.md#external-links) has the steps.
+
+```toml
+[checks.links]
+ignore = ["localhost", "*.internal.example.com"]
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `command` | string | `"lychee"` | The command that runs lychee. A path with a separator is from the project root; a bare name is looked up as the shell would. |
+| `ignore` | array of strings | `[]` | The hosts whose links aren't checked: a host name, such as `example.com`, or `*.` and a host name, which covers every host under it but not the name itself. Case doesn't matter. |
+
+A broken link is `link-external-broken` and a moved one `link-external-moved`; both are configurable in `[checks]`, and a broken one is acknowledged with `@intended` above its block.
+
+**Rules.** `ignore` names hosts, without a scheme, path, or port (`model-wrong-type`).
 
 ---
 

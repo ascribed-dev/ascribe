@@ -15,13 +15,13 @@ title = "string"
 description = { type = "string?", role = "description" }
 
 # Policies record who owns them, how often they're reviewed, and since when
-# they apply.
+# they apply. `ascribe report inventory` counts them by owner.
 [types.policy]
 files = ["policies/**"]
 
 [types.policy.frontmatter]
 title = "string"
-owner = "string"
+owner = { type = "string", role = "owner" }
 review = "enum(quarterly, yearly)"
 effective = "date"
 # The next review is due by this date; `review-overdue` reports a policy

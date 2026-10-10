@@ -536,6 +536,17 @@ pub const PROSE_NOT_CHECKED: DiagnosticSlug = DiagnosticSlug("prose-not-checked"
 
 /// `ASC167`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CHECKS_VALE: DiagnosticSlug = DiagnosticSlug("model-checks-vale");
+/// `ASC168`, advice, file level: a content check (area `links`).
+pub const LINK_EXTERNAL_BROKEN: DiagnosticSlug = DiagnosticSlug("link-external-broken");
+
+/// `ASC169`, advice, file level: a content check (area `links`).
+pub const LINK_EXTERNAL_MOVED: DiagnosticSlug = DiagnosticSlug("link-external-moved");
+
+/// `ASC170`, advice, file level: a content check (area `site`).
+pub const DELIVERY_HOSTING: DiagnosticSlug = DiagnosticSlug("delivery-hosting");
+
+/// `ASC171`, advice, file level: a content check (area `site`).
+pub const DELIVERY_OUTPUT: DiagnosticSlug = DiagnosticSlug("delivery-output");
 
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
@@ -706,6 +717,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     PROSE,
     PROSE_NOT_CHECKED,
     MODEL_CHECKS_VALE,
+    LINK_EXTERNAL_BROKEN,
+    LINK_EXTERNAL_MOVED,
+    DELIVERY_HOSTING,
+    DELIVERY_OUTPUT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -729,6 +744,10 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     LLMS_SECTION_LARGE,
     PROSE,
     PROSE_NOT_CHECKED,
+    LINK_EXTERNAL_BROKEN,
+    LINK_EXTERNAL_MOVED,
+    DELIVERY_HOSTING,
+    DELIVERY_OUTPUT,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
@@ -743,4 +762,5 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (GLOSSARY_TERM_UNUSED, crate::Place::Entry),
     (IMAGE_UNUSED, crate::Place::Entry),
     (IMAGE_LARGE, crate::Place::Entry),
+    (LINK_EXTERNAL_BROKEN, crate::Place::Block),
 ];
