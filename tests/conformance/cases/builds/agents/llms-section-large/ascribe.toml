@@ -14,3 +14,7 @@ default = true
 [types.page.frontmatter]
 title = "string"
 description = "string?"
+
+# The page is huge on purpose; its own size is another check.
+[checks]
+page-size = "off"
