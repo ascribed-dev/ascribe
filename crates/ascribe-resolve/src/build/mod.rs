@@ -71,6 +71,7 @@ use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Router, Slugger, Span};
 use ascribe_model::{Build, Segment};
+use ascribe_syntax::{Block, BlockKind};
 
 pub(crate) use glossary::Terms;
 pub use glossary::glossary_targets;
@@ -295,6 +296,10 @@ impl<'p> BuildResolver<'p> {
             .map(str::to_owned);
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
+        // Acknowledgements (SPEC §4.9) are for the checks: no output shows
+        // them, so a page reads as it would without them.
+        drop_acknowledgements(&mut blocks);
+        let frontmatter = frontmatter.and_then(without_acknowledgements);
         Some(ResolvedPage {
             path: path.clone(),
             file: index.file,
@@ -342,4 +347,35 @@ impl<'p> BuildResolver<'p> {
             dropped,
         }
     }
+}
+
+/// The frontmatter key and the directive that acknowledge a problem as
+/// intended (SPEC §4.9).
+const INTENDED: &str = "intended";
+
+/// Removes the `@intended` lines from `blocks` and the blocks in them.
+fn drop_acknowledgements(blocks: &mut Vec<ResolvedBlock>) {
+    blocks.retain(|b| {
+        !matches!(
+            &b.kind,
+            ResolvedKind::Leaf(Block { kind: BlockKind::Directive(line), .. }) if line.name == INTENDED
+        )
+    });
+    for block in blocks {
+        for list in block.child_lists_mut() {
+            drop_acknowledgements(list);
+        }
+    }
+}
+
+/// The frontmatter without its `intended` key; none when that was its only
+/// key.
+fn without_acknowledgements(mut frontmatter: serde_yaml_ng::Value) -> Option<serde_yaml_ng::Value> {
+    if let serde_yaml_ng::Value::Mapping(map) = &mut frontmatter
+        && map.remove(INTENDED).is_some()
+        && map.is_empty()
+    {
+        return None;
+    }
+    Some(frontmatter)
 }

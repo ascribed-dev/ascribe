@@ -558,6 +558,37 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[checks]\nlink-target-missing = \"warning\" #!\n",
         ),
+        // Acknowledgements
+        case(
+            "model-intended-check",
+            None,
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"bogus\" #!\nphrase = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-check",
+            Some("suggestion"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"link-target-mising\" #!\nphrase = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-check",
+            Some("not-review"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"link-target-missing\" #!\nphrase = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-entry",
+            None,
+            "spec = \"0.1\"\n[[intended]] #!\ncheck = \"link-target-missing\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-entry",
+            Some("several"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]] #!\ncheck = \"link-target-missing\"\nphrase = \"x\"\nterm = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-entry",
+            Some("unknown"),
+            "spec = \"0.1\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"nope\" #!\nreason = \"r\"\n",
+        ),
     ]
 }
 

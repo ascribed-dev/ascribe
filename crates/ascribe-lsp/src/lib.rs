@@ -20,6 +20,7 @@ mod formatting;
 mod fsx;
 mod headless;
 mod hover;
+mod intended;
 mod inventory;
 mod links;
 mod log;
