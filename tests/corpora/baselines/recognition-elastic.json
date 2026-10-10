@@ -1,6 +1,7 @@
 {
   "files": 3008,
   "classes": {
+    "diagnostic:code-language-missing": 832,
     "diagnostic:frontmatter-syntax": 2,
     "diagnostic:phrase-undeclared:directive-fence": 12568,
     "diagnostic:phrase-undeclared:mustache": 40729,
