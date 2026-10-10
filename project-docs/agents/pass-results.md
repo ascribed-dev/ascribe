@@ -28,8 +28,8 @@ Each was run in a scratch git repository outside this one, with `target/debug/as
 
 ## Needs design
 
-- **Working rule by rule.** Task 7 asks whether an agent works through hundreds of warnings rule by rule. `--summary` shows the rules, but nothing narrows `check` to one code, so the concise list cuts at 50 and its "next" command narrows by file, not by rule. A `--code` filter on `check` (and the MCP tool) would let an agent fix one rule across the project.
-- **The stop hook passes with warnings.** It holds an agent only on errors (decision 12 and phase 9), while this pass counts a run as passing at `--deny-warnings`. A project that wants warnings held needs a setting, or the hook needs to read `--deny-warnings` from somewhere. Left as it is until the runs below show whether agents leave warnings behind.
+- **Working rule by rule** ([#203](https://github.com/ascribed-dev/ascribe/issues/203)). Task 7 asks whether an agent works through hundreds of warnings rule by rule. `--summary` shows the rules, but nothing narrows `check` to one code, so the concise list cuts at 50 and its "next" command narrows by file, not by rule. A `--code` filter on `check` (and the MCP tool) would let an agent fix one rule across the project.
+- **The stop hook passes with warnings** ([#204](https://github.com/ascribed-dev/ascribe/issues/204)). It holds an agent only on errors (decision 12 and phase 9), while this pass counts a run as passing at `--deny-warnings`. A project that wants warnings held needs a setting, or the hook needs to read `--deny-warnings` from somewhere. Left as it is until the runs below show whether agents leave warnings behind.
 
 ## Runs with agents
 
