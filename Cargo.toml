@@ -12,6 +12,8 @@ members = [
     "crates/ascribe-sources",
     "crates/ascribe-fmt",
     "crates/ascribe-lsp",
+    "crates/ascribe-query",
+    "crates/ascribe-mcp",
     "crates/ascribe-cli",
     "tests/conformance",
     "tests/commonmark",
@@ -39,6 +41,8 @@ ascribe-diff = { path = "crates/ascribe-diff" }
 ascribe-sources = { path = "crates/ascribe-sources" }
 ascribe-fmt = { path = "crates/ascribe-fmt" }
 ascribe-lsp = { path = "crates/ascribe-lsp" }
+ascribe-query = { path = "crates/ascribe-query" }
+ascribe-mcp = { path = "crates/ascribe-mcp" }
 # The synthetic project the benchmarks share. A dev-dependency only.
 ascribe-synthetic = { path = "tests/corpora/synthetic" }
 # The comrak fork. Depend on it as `comrak-ascribe.workspace = true`.
@@ -61,6 +65,9 @@ serde_yaml_ng = "0.10"
 sha2 = "0.10"
 thiserror = "2"
 toml = "1.1"
+# Edits `ascribe.toml` in place, keeping its comments: the language server
+# finds where a change goes and renders it, never rewriting the file.
+toml_edit = "0.25"
 
 [workspace.lints.rust]
 missing_docs = "warn"

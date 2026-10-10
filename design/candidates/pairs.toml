@@ -1,6 +1,6 @@
 # The color pairings the stylesheets use, each checked in light and in dark
-# by scripts/design/specimen.ts and its test (README decision 5 of
-# project-docs/visual-design): 4.5:1 for `text` on its background, 3:1 for a
+# by scripts/design/specimen.ts and its test (decision 46 in
+# project-docs/decisions.md): 4.5:1 for `text` on its background, 3:1 for a
 # `graphic` (a border, bar, or fill that carries meaning). `fg` and `bg` are
 # semantic colors, the `[color]` names every candidate defines.
 #
@@ -197,6 +197,49 @@ fg = "focus"
 bg = "background"
 kind = "text"
 where = "Review's Show and Moved links"
+
+# Review's overlay: its threads, buttons, and the unsent bar.
+[[pair]]
+fg = "focus"
+bg = "surface"
+kind = "text"
+where = "Links in a thread"
+
+[[pair]]
+fg = "accent-text"
+bg = "focus"
+kind = "text"
+where = "A primary button's label"
+
+[[pair]]
+fg = "background"
+bg = "removed"
+kind = "text"
+where = "The Discard button's label"
+
+[[pair]]
+fg = "added"
+bg = "surface"
+kind = "text"
+where = "A resolved thread's badge"
+
+[[pair]]
+fg = "changed"
+bg = "surface"
+kind = "text"
+where = "An unsent thread's badge"
+
+[[pair]]
+fg = "removed"
+bg = "surface"
+kind = "text"
+where = "A removed or detached thread's badge"
+
+[[pair]]
+fg = "text"
+bg = "changed-background"
+kind = "text"
+where = "The unsent bar, and its note"
 
 [[distinct]]
 a = "added"

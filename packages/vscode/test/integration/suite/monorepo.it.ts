@@ -1,12 +1,13 @@
 import * as assert from "node:assert/strict";
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { ServerState } from "../../../src/client.js";
 import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
+import { MAX_WAIT_MS } from "../../../src/diskChanges.js";
 import { comparable, samePath } from "../../../src/projects.js";
-import { activated, diagnosticsOf, uriOf, waitFor, workspace } from "./helpers.js";
+import { activated, diagnosticsOf, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
 // The real `ascribe lsp` on test/fixtures/monorepo: a folder with no project
 // (code/), a project (docs/), and a project (handbook/) with another nested
@@ -124,8 +125,73 @@ describe("with several projects, one nested in another", () => {
     }
   }
 
+  /**
+   * Waits until changes just made on disk have been acted on: a project's
+   * files written before its ascribe.toml would otherwise start its server
+   * as soon as the project is found.
+   */
+  const afterDiskChanges = () => sleep(MAX_WAIT_MS + 1_000);
+
+  /**
+   * Makes a folder and those above it one at a time, each once the file
+   * watcher has reported the one before. The watcher never reports anything
+   * in a folder made before it took in the folder's parent (#56), so a file
+   * written there would start nothing. A folder that isn't reported is made
+   * again every two seconds.
+   */
+  async function mkdirWatched(folder: string): Promise<void> {
+    const missing: string[] = [];
+    for (let f = folder; !existsSync(f); f = path.dirname(f)) missing.unshift(f);
+    // Served by the workspace's own watcher, as the extension's is.
+    const watcher = vscode.workspace.createFileSystemWatcher("**/*");
+    const reported = new Set<string>();
+    watcher.onDidCreate((uri) => reported.add(comparable(uri.fsPath)));
+    try {
+      for (const dir of missing) {
+        const deadline = Date.now() + 30_000;
+        for (;;) {
+          rmSync(dir, { recursive: true, force: true });
+          mkdirSync(dir);
+          try {
+            await waitFor(
+              `the watcher to report ${dir}`,
+              () => reported.has(comparable(dir)),
+              2_000,
+            );
+            break;
+          } catch (error) {
+            if (Date.now() > deadline) throw error;
+          }
+        }
+      }
+    } finally {
+      watcher.dispose();
+    }
+  }
+
   const known = (folder: string): boolean =>
     api.projects().some((project) => samePath(project.folder, folder));
+
+  /** The Projects view's top level, by label: each project's state and its children's labels. */
+  async function viewed(): Promise<Map<string, { state: string; children: string[] }>> {
+    const items = await api.ui.projects.items();
+    return new Map(
+      items.map((item) => [
+        item.label,
+        {
+          state: item.contextValue.replace("ascribe.project.", ""),
+          children: item.children.map((child) => `${child.label} (${child.description})`),
+        },
+      ]),
+    );
+  }
+
+  /** The status bar item's text, once the item is shown and `check` accepts it. */
+  const statusText = (description: string, check: (text: string) => boolean) =>
+    waitFor(`the status bar to show ${description}`, () => {
+      const text = api.ui.statusBar.shown()?.text;
+      return text !== undefined && check(text) ? text : undefined;
+    });
 
   before(async () => {
     api = await activated();
@@ -144,12 +210,86 @@ describe("with several projects, one nested in another", () => {
       assert.deepEqual(vscode.languages.getDiagnostics(nestedPage), []);
     });
 
+    it("lists every project in the Projects view, and showing or refreshing it starts none", async () => {
+      const started: string[] = [];
+      const listener = api.onDidStartServer((f) => started.push(f));
+      try {
+        await vscode.commands.executeCommand("workbench.view.extension.ascribe");
+        const shown = await viewed();
+        await api.ui.projects.refresh();
+        await api.whenSettled();
+        assert.deepEqual(await viewed(), shown);
+        // Used by, Pages, and Content model have no running project to show.
+        await api.ui.sidebar.whenSettled();
+        assert.deepEqual(api.ui.sidebar.items("pages"), []);
+        assert.deepEqual(api.ui.sidebar.items("model"), []);
+        assert.deepEqual(
+          shown,
+          new Map(
+            ["docs", "handbook", "handbook/pages/nested"].map((name) => [
+              name,
+              { state: "stopped", children: ["ascribe.toml (content model)"] },
+            ]),
+          ),
+        );
+      } finally {
+        listener.dispose();
+        await vscode.commands.executeCommand("workbench.action.closeSidebar");
+      }
+      // What the view caused: no server started while it was shown and refreshed.
+      assert.deepEqual(started, []);
+    });
+
     it("starts exactly the server of the project whose file is opened", async () => {
       await open(handbookPage);
       await waitFor("the handbook's server", () => api.state(folder.handbook()) === "running");
       await api.whenSettled();
       assertRunning([folder.handbook()]);
       assert.equal(api.binary(folder.handbook())?.source, "setting");
+    });
+
+    it("shows the started project running in the Projects view, and in the status bar", async () => {
+      await api.ui.whenBuildsKnown();
+      const shown = await waitFor("the handbook's editor build in the view", async () => {
+        const view = await viewed();
+        return view.get("handbook")?.children.length === 3 ? view : undefined;
+      });
+      assert.deepEqual(shown.get("handbook")?.state, "running");
+      assert.deepEqual(shown.get("handbook")?.children.slice(0, 2), [
+        "ascribe.toml (content model)",
+        "site (editor build)",
+      ]);
+      assert.match(shown.get("handbook")?.children[2] ?? "", /^ascribe \S+ \(setting\)$/);
+      assert.equal(shown.get("docs")?.state, "stopped");
+      assert.equal(shown.get("handbook/pages/nested")?.state, "stopped");
+
+      await statusText("the handbook", (text) => text === "$(book) handbook · site");
+      const tooltip = api.ui.statusBar.shown()?.tooltip ?? "";
+      assert.ok(tooltip.includes(path.join(folder.handbook(), "ascribe.toml")), tooltip);
+      assert.match(tooltip, /Server: running/);
+    });
+
+    it("lists only the active project's own pages and content model in the sidebar", async () => {
+      await open(handbookPage);
+      const pages = await waitFor("the handbook's pages", async () => {
+        await api.ui.sidebar.whenSettled();
+        return samePath(api.ui.sidebar.project() ?? "", folder.handbook())
+          ? api.ui.sidebar.items("pages")
+          : undefined;
+      });
+      // The nested project's page is in the handbook's content root, but it's
+      // the nested project's.
+      assert.deepEqual(
+        pages.map((group) => [group.label, group.children.map((page) => page.description)]),
+        [["page", ["index.md"]]],
+      );
+      const phrases = api.ui.sidebar
+        .items("model")
+        .find((kind) => kind.label === "Phrases")
+        ?.children.map((entry) => `${entry.label} (${entry.description})`);
+      assert.deepEqual(phrases, ["product (1 use)"]);
+      // Filling the views started no other server.
+      assertRunning([folder.handbook()]);
     });
 
     it("diagnoses a file only through the project that owns it", async () => {
@@ -187,11 +327,47 @@ describe("with several projects, one nested in another", () => {
       await diagnosticsOf(docsPage, () => codes(docsPage).join() === "ASC036");
     });
 
+    it("restarts one project's server from the Projects view", async () => {
+      const started: string[] = [];
+      const listener = api.onDidStartServer((f) => started.push(comparable(f)));
+      try {
+        await api.ui.projects.run("restart", folder.docs());
+        await api.whenSettled();
+      } finally {
+        listener.dispose();
+      }
+      assert.deepEqual(started, [comparable(folder.docs())]);
+      assertRunning([folder.docs(), folder.handbook()]);
+      await diagnosticsOf(docsPage, () => codes(docsPage).join() === "ASC036");
+    });
+
     it("diagnoses a nested project's file through the nested project alone", async () => {
       await open(nestedPage);
       await diagnosticsOf(nestedPage, (all) => all.length > 0);
       await api.whenSettled();
       assertRunning([folder.docs(), folder.handbook(), folder.nested()]);
+      // The status bar names the nested project, not the one around it.
+      await statusText("the nested project", (text) =>
+        text.startsWith("$(book) handbook/pages/nested"),
+      );
+      // The sidebar lists the nested project's own pages and content model.
+      const pages = await waitFor("the nested project's pages", async () => {
+        await api.ui.sidebar.whenSettled();
+        return samePath(api.ui.sidebar.project() ?? "", folder.nested())
+          ? api.ui.sidebar.items("pages")
+          : undefined;
+      });
+      assert.deepEqual(
+        pages.map((group) => [group.label, group.children.map((page) => page.description)]),
+        [["page", ["index.md"]]],
+      );
+      const entries = (label: string) =>
+        api.ui.sidebar
+          .items("model")
+          .find((kind) => kind.label === label)
+          ?.children.map((entry) => entry.label);
+      assert.deepEqual(entries("Phrases"), ["product", "edition"]);
+      assert.deepEqual(entries("Dimensions"), ["tier"]);
       // `{edition}` is declared only in the nested project, so the page has no
       // ASC044, which the handbook's model would give it, and its ASC001 is
       // reported once. Once the handbook's server has answered an edit, it has
@@ -307,6 +483,43 @@ describe("with several projects, one nested in another", () => {
       );
     });
 
+    it("shares one build with the status bar", async () => {
+      // The choice made in the preview's picker above is the status bar's too.
+      let after = latestSeq();
+      await open(docsPage);
+      await drawnFor(
+        "the docs page in the cloud build",
+        (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "cloud",
+      );
+      await statusText("the cloud build", (text) => text === "$(book) docs · cloud");
+
+      await preview.receive({ type: "build", name: "site" });
+      await statusText("the site build", (text) => text === "$(book) docs · site");
+
+      // Switch build, from the status bar's menu, changes what the preview renders.
+      after = latestSeq();
+      api.ui.statusBar.answerNext("Switch build");
+      api.ui.statusBar.answerNext("cloud");
+      await vscode.commands.executeCommand("ascribe.projectMenu");
+      const cloud = await drawnFor(
+        "the docs page in the cloud build again",
+        (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "cloud",
+      );
+      assert.match(html(cloud), /Sign in to Quill Cloud/);
+      assert.equal(preview.build(), "cloud");
+      await statusText("the cloud build", (text) => text === "$(book) docs · cloud");
+
+      // And back to the editor's build, with the command.
+      after = latestSeq();
+      api.ui.statusBar.answerNext("site");
+      await vscode.commands.executeCommand("ascribe.switchBuild");
+      await drawnFor(
+        "the docs page in the site build",
+        (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "site",
+      );
+      await statusText("the site build", (text) => text === "$(book) docs · site");
+    });
+
     it("says when a file isn't part of any project", async () => {
       const after = latestSeq();
       await open(codeReadme);
@@ -319,6 +532,8 @@ describe("with several projects, one nested in another", () => {
       );
       // No server checks it: its broken link has no diagnostic.
       assert.deepEqual(vscode.languages.getDiagnostics(codeReadme), []);
+      // And the status bar names no project.
+      await waitFor("the status bar to hide", () => api.ui.statusBar.shown() === undefined);
     });
 
     it("says when a file is in a project but outside its content root", async () => {
@@ -337,6 +552,125 @@ describe("with several projects, one nested in another", () => {
     });
   });
 
+  describe("actions", () => {
+    it("are offered in a file of a project, and not in a Markdown file outside every project", async () => {
+      await open(codeReadme);
+      await waitFor("ascribe.inProject to be false", () => !api.actions.inProject());
+      await open(nestedPage);
+      await waitFor("ascribe.inProject", () => api.actions.inProject());
+    });
+
+    it("go to the server of the project that owns the file", async () => {
+      // `edition` is a phrase of the nested project only, and the handbook's
+      // server has no page here.
+      const editor = await open(nestedPage);
+      // Before "edition" in "## The {edition} edition".
+      editor.selection = new vscode.Selection(5, 17, 5, 17);
+      const before = api.actions.runs.length;
+      api.actions.answerNext(["edition"]);
+      await vscode.commands.executeCommand("ascribe.action.insertPhrase");
+      try {
+        assert.deepEqual(api.actions.runs[before]?.messages, []);
+        assert.equal(editor.document.lineAt(5).text, "## The {edition} {edition}edition");
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.files.revert");
+      }
+    });
+
+    it("open the bar in a page of a project, and nothing in a Markdown file outside every project", async () => {
+      const before = api.actions.bars.length;
+      await open(codeReadme);
+      await vscode.commands.executeCommand("ascribe.actions");
+      assert.equal(api.actions.bars.length, before);
+      await open(nestedPage);
+      await vscode.commands.executeCommand("ascribe.actions");
+      assert.equal(api.actions.bars.length, before + 1);
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+    });
+
+    it("offer the nested project's note types and dimensions in its page, not the handbook's", async () => {
+      const editor = await open(nestedPage);
+      // The blank line between "@id: edition" and the note.
+      editor.selection = new vscode.Selection(7, 0, 7, 0);
+      /** The values the first step of the bar's action offers; the wizard is then cancelled. */
+      async function offered(label: string): Promise<string[]> {
+        let values: string[] = [];
+        api.actions.answerNext([
+          (step) => {
+            values = step.kind === "text" ? [] : step.choices.map((choice) => choice.value);
+            return Promise.resolve(null);
+          },
+        ]);
+        const before = api.actions.runs.length;
+        await vscode.commands.executeCommand("ascribe.actions");
+        assert.ok(api.actions.selectInBar(label), `the bar has no row ${label}`);
+        await vscode.commands.executeCommand("workbench.action.acceptSelectedQuickOpenItem");
+        await waitFor(label, () => api.actions.runs[before]);
+        return values;
+      }
+      const notes = await offered("Insert a note");
+      assert.ok(notes.includes("edition"), notes.join());
+      assert.ok(!notes.includes("policy"), notes.join());
+      assert.deepEqual(await offered("Make the page one variant"), ["tier"]);
+    });
+  });
+
+  describe("files changed on disk", () => {
+    // A project none of whose files is open, as an agent that edits files
+    // without opening them leaves it.
+    const agent = () => path.join(workspace(), "agent");
+    const page = (name: string) => vscode.Uri.file(path.join(agent(), "docs", name));
+
+    before(async () => {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await mkdirWatched(path.join(agent(), "docs"));
+      writeFileSync(page("index.md").fsPath, "---\ntitle: Agent\n---\n\nAgent.\n");
+      await afterDiskChanges();
+      await createProject(agent());
+      assert.equal(api.state(agent()), "stopped");
+    });
+
+    after(async () => {
+      rmSync(path.join(agent(), "ascribe.toml"), { force: true });
+      await waitFor("the agent project to go", () => !known(agent()));
+      await api.whenSettled();
+      rmSync(agent(), { recursive: true, force: true });
+    });
+
+    it("starts nothing for a file written into the project's output directory", async () => {
+      const output = path.join(agent(), ".ascribe", "build", "site", "plain");
+      await mkdirWatched(output);
+      writeFileSync(path.join(output, "index.md"), "# Agent\n\nSee [](missing.md).\n");
+      await afterDiskChanges();
+      assert.equal(api.state(agent()), "stopped");
+    });
+
+    it("starts the project's server once for a burst of files, and shows their problems", async () => {
+      const started: string[] = [];
+      const listener = api.onDidStartServer((folder) => started.push(comparable(folder)));
+      try {
+        const broken = page("broken.md");
+        writeFileSync(broken.fsPath, "---\ntitle: Broken\n---\n\nSee [](missing.md).\n");
+        for (let i = 0; i < 30; i++) {
+          writeFileSync(page(`page-${i}.md`).fsPath, `---\ntitle: Page ${i}\n---\n\nPage.\n`);
+        }
+        await diagnosticsOf(broken, () => codes(broken).join() === "ASC036");
+        assert.equal(api.state(agent()), "running");
+        // Nothing opened the file.
+        assert.ok(
+          !vscode.workspace.textDocuments.some((document) =>
+            samePath(document.uri.fsPath, broken.fsPath),
+          ),
+        );
+        await afterDiskChanges();
+        await api.whenSettled();
+        assert.deepEqual(started, [comparable(agent())]);
+      } finally {
+        listener.dispose();
+      }
+    });
+  });
+
   describe("projects that come and go", () => {
     it("adds a project when its ascribe.toml appears, and stops its server when it goes", async () => {
       const guides = path.join(workspace(), "guides");
@@ -344,6 +678,7 @@ describe("with several projects, one nested in another", () => {
       mkdirSync(path.dirname(page.fsPath), { recursive: true });
       writeFileSync(page.fsPath, "---\ntitle: Guides\n---\n\nSee [](missing.md).\n");
       try {
+        await afterDiskChanges();
         await createProject(guides);
         assert.equal(api.state(guides), "stopped");
 
@@ -371,6 +706,7 @@ describe("with several projects, one nested in another", () => {
       mkdirSync(path.join(idle, "docs"), { recursive: true });
       writeFileSync(path.join(idle, "docs", "index.md"), "---\ntitle: Idle\n---\n\nIdle.\n");
       try {
+        await afterDiskChanges();
         await createProject(idle);
         assert.equal(api.state(idle), "stopped");
         await settings.update("startServers", "all", vscode.ConfigurationTarget.Workspace);

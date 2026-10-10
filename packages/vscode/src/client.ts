@@ -9,17 +9,20 @@ import {
   type ErrorHandler,
   type ErrorHandlerResult,
   type LanguageClientOptions,
+  type Message,
   type ServerOptions,
 } from "vscode-languageclient/node";
-import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
+import { PublishedDiagnostics } from "./agents/published.js";
+import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
+import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { globFolder, type Project } from "./projects.js";
 import { scopeMiddleware } from "./scope.js";
+import { ServerStatus, type ServerState } from "./serverState.js";
 import { parseVersion } from "./version.js";
 
-/** Where the server is in its life. */
-export type ServerState = "stopped" | "starting" | "running" | "failed";
+export type { ServerState } from "./serverState.js";
 
 const OPEN_SETTINGS = "Open Settings";
 const SHOW_OUTPUT = "Show Output";
@@ -41,13 +44,16 @@ export interface ProjectHost {
 export class ProjectServer implements vscode.Disposable {
   private client: LanguageClient | undefined;
   private current: ResolvedBinary | undefined;
-  private status: ServerState = "stopped";
+  private readonly status = new ServerStatus();
   private channel: vscode.LogOutputChannel | undefined;
   private readonly crashes: CrashCounter;
   private requested = false;
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
   private disposed = false;
+  private runningSince: number | undefined;
+  /** The diagnostics the running server last published for each file, with their versions. */
+  readonly published: PublishedDiagnostics;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -55,6 +61,14 @@ export class ProjectServer implements vscode.Disposable {
     private readonly host: ProjectHost,
   ) {
     this.crashes = new CrashCounter(readMaxCrashes());
+    this.published = new PublishedDiagnostics(fileOfUri, (file) =>
+      host.ownedElsewhere(project, vscode.Uri.file(file)),
+    );
+  }
+
+  /** When the server last reached the running state, in milliseconds since the epoch. */
+  get since(): number | undefined {
+    return this.runningSince;
   }
 
   /** The output channel, created when first needed so its name reflects the workspace then. */
@@ -71,7 +85,12 @@ export class ProjectServer implements vscode.Disposable {
   }
 
   get state(): ServerState {
-    return this.status;
+    return this.status.state;
+  }
+
+  /** Fires with the new state each time the server's state changes. */
+  get onDidChangeState(): vscode.Event<ServerState> {
+    return this.status.onDidChange;
   }
 
   /** Fires each time the server reaches the running state, at the first start and after a restart. */
@@ -83,12 +102,37 @@ export class ProjectServer implements vscode.Disposable {
    * Sends a custom request to the running server (the preview's
    * `ascribe/preview`). Rejects when the server isn't running.
    */
-  request(method: string, params: unknown): Promise<unknown> {
+  request(method: string, params: unknown, token?: vscode.CancellationToken): Promise<unknown> {
     const client = this.client;
-    if (!client || this.status !== "running") {
+    if (!client || this.status.state !== "running") {
       return Promise.reject(new Error("the Ascribe language server isn't running"));
     }
-    return client.sendRequest(method, params);
+    return token ? client.sendRequest(method, params, token) : client.sendRequest(method, params);
+  }
+
+  /**
+   * Sends a request that answers with an edit, as `ascribe/edit` does, and
+   * converts the edit and the range to select into the editor's types.
+   * With `refused`, a request that answers with a bare edit or `null`, as
+   * `textDocument/rename` does; `null` is that error. Rejects when the
+   * server isn't running or the answer isn't an edit.
+   */
+  async requestEdit(
+    method: string,
+    params: unknown,
+    refused?: string,
+  ): Promise<ServerEdit<vscode.WorkspaceEdit, vscode.Range>> {
+    const value = await this.request(method, params);
+    const converter = this.client?.protocol2CodeConverter;
+    if (!converter) throw new Error("the Ascribe language server isn't running");
+    return convertEdit(
+      value,
+      {
+        asWorkspaceEdit: (edit) => converter.asWorkspaceEdit(edit),
+        asRange: (range) => converter.asRange(range),
+      },
+      refused,
+    );
   }
 
   /** How many errors the server reports for the project, as the Problems panel lists them. */
@@ -98,6 +142,23 @@ export class ProjectServer implements vscode.Disposable {
       for (const d of diagnostics) if (d.severity === vscode.DiagnosticSeverity.Error) count++;
     });
     return count;
+  }
+
+  /** Whether the server reports a problem: in `uri`, or in any file of the project. */
+  hasProblems(uri?: vscode.Uri): boolean {
+    const diagnostics = this.client?.diagnostics;
+    if (!diagnostics) return false;
+    if (uri) return (diagnostics.get(uri)?.length ?? 0) > 0;
+    let found = false;
+    diagnostics.forEach((_uri, list) => {
+      if (list.length > 0) found = true;
+    });
+    return found;
+  }
+
+  /** A diagnostic the server published, as the protocol has it: what `ascribe/agentPrompt` takes. */
+  protocolDiagnostic(diagnostic: vscode.Diagnostic): unknown {
+    return this.client?.code2ProtocolConverter.asDiagnostic(diagnostic);
   }
 
   /** Settles when the current start or restart has finished, successfully or not. */
@@ -156,25 +217,18 @@ export class ProjectServer implements vscode.Disposable {
     this.disposed = true;
     this.channel?.dispose();
     this.started.dispose();
+    this.status.dispose();
   }
 
   private async startNow(): Promise<void> {
     if (this.client) return;
-    this.status = "starting";
+    this.status.set("starting");
 
-    const workspaceFolder =
-      vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
-      this.project.folder;
-    const resolution = await resolveBinary({
-      setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
-      projectRoots: ancestorsWithin(this.project.folder, workspaceFolder),
-      extensionPath: this.context.extensionPath,
-      minVersion: minServerVersion(this.context),
-      env: nodeEnvironment,
-    });
+    const workspaceFolder = workspaceFolderOf(this.project);
+    const resolution = await resolveProjectBinary(this.context, this.project);
 
     if (resolution.kind === "missing") {
-      this.status = "failed";
+      this.status.set("failed");
       this.current = undefined;
       const { message, tried } = resolution.error;
       this.output.appendLine(message);
@@ -209,13 +263,17 @@ export class ProjectServer implements vscode.Disposable {
           untilDisposed(this.output, () => this.disposed),
           (uri) => this.host.ownedElsewhere(this.project, uri),
           (error) => this.reportFeatureError("preparing workspace rename", error),
+          (message) => {
+            if (isPublication(message)) this.published.record(message.params);
+          },
         ),
         errorHandler: this.errorHandler(),
       },
     );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
-        this.status = "running";
+        this.runningSince = Date.now();
+        this.status.set("running");
         this.started.fire();
       }
     });
@@ -224,7 +282,7 @@ export class ProjectServer implements vscode.Disposable {
       await client.start();
     } catch (error) {
       this.client = undefined;
-      this.status = "failed";
+      this.status.set("failed");
       const message = error instanceof Error ? error.message : String(error);
       this.output.appendLine(`The language server didn't start: ${message}`);
       void vscode.window
@@ -238,7 +296,9 @@ export class ProjectServer implements vscode.Disposable {
   private async stopNow(): Promise<void> {
     const client = this.client;
     this.client = undefined;
-    this.status = "stopped";
+    this.runningSince = undefined;
+    this.published.clear();
+    this.status.set("stopped");
     if (!client) return;
     try {
       await client.dispose();
@@ -258,7 +318,7 @@ export class ProjectServer implements vscode.Disposable {
           );
           return { action: CloseAction.Restart, handled: true };
         }
-        this.status = "failed";
+        this.status.set("failed");
         const message =
           `The Ascribe language server crashed ${this.crashes.count} times, so it won't be ` +
           `restarted again. See the output for details, then restart it when you've fixed the cause.`;
@@ -337,6 +397,7 @@ function clientOptions(
   outputChannel: vscode.LogOutputChannel,
   ownedElsewhere: (uri: vscode.Uri) => boolean,
   reportRenameError: (error: unknown) => void,
+  observe: (message: Message) => void,
 ): LanguageClientOptions {
   const scope = scopeMiddleware(ownedElsewhere);
   const folder = globFolder(project.folder);
@@ -363,6 +424,17 @@ function clientOptions(
           ),
       },
     },
+    // Every message from the server passes here before the client handles
+    // it: the published diagnostics are kept with their document versions,
+    // which the client's own copy drops.
+    connectionOptions: {
+      messageStrategy: {
+        handleMessage: (message, next) => {
+          observe(message);
+          return next(message);
+        },
+      },
+    },
     // The server asks for the files it wants watched with dynamic
     // registrations (`workspace/didChangeWatchedFiles`), which the client
     // forwards, so files that aren't open are followed too. Watching them
@@ -370,9 +442,51 @@ function clientOptions(
   };
 }
 
+/** Whether a message is a `textDocument/publishDiagnostics` notification. */
+function isPublication(message: Message): message is Message & { params: unknown } {
+  return (
+    "method" in message &&
+    message.method === "textDocument/publishDiagnostics" &&
+    !("id" in message) &&
+    "params" in message
+  );
+}
+
+/** A `file:` URI's path; `undefined` for any other URI, or one that doesn't parse. */
+function fileOfUri(uri: string): string | undefined {
+  try {
+    const parsed = vscode.Uri.parse(uri, true);
+    return parsed.scheme === "file" ? parsed.fsPath : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function readMaxCrashes(): number {
   const value = vscode.workspace.getConfiguration("ascribe").get<number>("maxCrashes", 5);
   return Number.isInteger(value) && value >= 1 ? value : 5;
+}
+
+/** The workspace folder a project is in, or its own folder when it's in none. */
+export function workspaceFolderOf(project: Project): string {
+  return (
+    vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder))?.uri.fsPath ??
+    project.folder
+  );
+}
+
+/** Finds the binary a project runs: the `ascribe.path` setting, its own, or the bundled one. */
+export function resolveProjectBinary(
+  context: vscode.ExtensionContext,
+  project: Project,
+): Promise<Resolution> {
+  return resolveBinary({
+    setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
+    projectRoots: ancestorsWithin(project.folder, workspaceFolderOf(project)),
+    extensionPath: context.extensionPath,
+    minVersion: minServerVersion(context),
+    env: nodeEnvironment,
+  });
 }
 
 /** The oldest server this extension is written for (`ascribe.minServerVersion` in package.json). */

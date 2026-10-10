@@ -87,6 +87,10 @@ pub struct Entry {
     /// How to fix the problem, for the diagnostics reference.
     #[serde(default)]
     pub fix: Option<String>,
+    /// A page with the problem and the same page without it, for
+    /// `ascribe explain`; `ascribe-query` reads and checks it.
+    #[serde(default)]
+    pub example: Option<toml::Table>,
 }
 
 #[derive(Deserialize)]

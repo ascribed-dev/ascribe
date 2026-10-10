@@ -450,6 +450,15 @@ impl Project {
         )
     }
 
+    /// The source index over the texts this project holds, which can differ
+    /// from the files on disk: text laid over it with
+    /// [`Project::with_source`], or a project built in memory. Only its
+    /// sources are what's held; images and other files are read as
+    /// [`Project::index`] reads them.
+    pub fn held_index(&self) -> ascribe_resolve::Project {
+        crate::page::held_index(self)
+    }
+
     /// The content model's text.
     pub fn model_text(&self) -> &str {
         &self.model_text
@@ -542,6 +551,46 @@ impl Project {
             text: &source.text,
             content_path: Some(&source.path),
         })
+    }
+
+    /// The path a report shows for a file id: [`FileEntry::display_path`] for
+    /// the content model, the lock, and a source file, and the code file's
+    /// path for a code file a snippet read.
+    pub fn display_path(&self, id: FileId) -> Option<String> {
+        match self.file(id) {
+            Some(entry) => Some(entry.display_path),
+            None => self.code_file(id).map(|code| code.path.to_string()),
+        }
+    }
+
+    /// This project with the source file at `path` (a content path) holding
+    /// `text` instead of what was read, or added when there's none: a file
+    /// checked before it's saved. The ids are numbered again, in path order.
+    pub fn with_source(&self, path: &RelPath, text: String) -> Project {
+        let (readable, unreadable): (Vec<&SourceFile>, Vec<&SourceFile>) = self
+            .sources
+            .iter()
+            .filter(|s| &s.path != path)
+            .partition(|s| s.unreadable.is_none());
+        let mut files: Vec<(RelPath, String)> = readable
+            .into_iter()
+            .map(|s| (s.path.clone(), s.text.clone()))
+            .collect();
+        files.push((path.clone(), text));
+        let mut sources = Project::from_sources(files);
+        let first = sources.len() as u32 + 1;
+        sources.extend(unreadable.into_iter().enumerate().map(|(i, s)| SourceFile {
+            id: FileId::new(first + i as u32),
+            ..s.clone()
+        }));
+        Project::assemble(
+            self.root.clone(),
+            self.layout.content_root.clone(),
+            self.model.clone(),
+            self.model_text.clone(),
+            sources,
+            Some(self.fs.0.clone()),
+        )
     }
 
     /// A line index for a file's text, for turning spans into lines and columns.

@@ -4,15 +4,141 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+- **Instructions for AI coding agents.** `ascribe agents sync` writes your project's rules into the files agents read on their own, from `ascribe.toml`: `AGENTS.md` beside it, with the check to run after each edit, your page types and their frontmatter, your phrases, and the directives your pages use, in at most 4,000 characters, and a short block in the repository root's `AGENTS.md` when the project is in a subfolder. A project with another nested in its content root says that the nested project's pages follow their own rules. It writes only between its markers, so your own text in those files stays as it is. It also writes the Ascribe skill, which teaches an agent the check-and-fix loop and the commands that answer its questions, to `.agents/skills/ascribe/`. `--target claude` adds an import of `AGENTS.md` to `CLAUDE.md` and the skill for Claude Code, `--target claude-rules` and `--target copilot` write rules loaded only for your pages, and a target whose files exist is kept up to date. `--check` fails when a file is out of date, for CI. `ascribe agents skill` prints the skill, and `@ascribed/cli` ships it as `skills/ascribe/`. See [Agents](docs/content/guides/agents.md).
+- **A guide to working with agents.** [Agents](docs/content/guides/agents.md) covers the whole surface in one page: the loop, agent instructions, **Prompt agent**, the MCP server, VS Code, hooks and the plugin, GitHub Copilot, what works with any other agent, such as Cursor, and what Ascribe sends where (nothing, to no one). Getting started links to it.
+- **Commands that answer questions.** Six new commands tell an author, or an agent, what it would otherwise guess, and change nothing. `ascribe explain ASC036` says what a diagnostic means and how to fix it, with a checked example for the diagnostics people meet most; `ascribe model` shows what the content model allows, in under 4,000 characters; `ascribe outline <page>` lists a page's headings with the ids links use, including those from its fragments; `ascribe link <target> --from <page>` says whether a link works and what to write; `ascribe refs <target>` lists where a page, heading, fragment, phrase, feature, or other content model entry is used, as **Find All References** does in the editor; and `ascribe render <page> --build <name>` shows a page as that build's readers see it. Each takes `--format json`, described by a JSON Schema. `ascribe --help` starts with examples. See the [command reference](docs/content/reference/cli.md#ascribe-explain).
+- **Check one file, or text that isn't saved.** `ascribe check docs/guides/install.md` reports only what counts for that file: its own problems, and those its fragments cause on it; checking a fragment shows each of its problems once. `--stdin --path <file>` checks standard input as that file's text without writing it. `--editor-build` runs the editor's build's checks alone, and with a file named checks only it and the pages that include it, quick enough to run after every edit. `--format concise` writes one line per diagnostic, for an agent, and `--summary` counts the diagnostics by code and by file, listing at most 20 files in text. In the JSON, each diagnostic has its fix advice (`help`) and a link to its entry in the diagnostics reference (`docs`), and each fix says whether it's safe to apply as it is (`applicability`); `schema_version` stays `1`. In the editor, a diagnostic's code links to its entry. See [Checking some files](docs/content/reference/cli.md#checking-some-files).
+- **Prompt agent.** In VS Code, the lightbulb on a problem offers **Prompt agent: fix this problem**, after its quick fixes, and **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** cover every problem in the file or the project. Each builds a prompt for your AI agent: what to fix and where, the problem's message and fix advice, the values the content model allows, whether Ascribe has a fix, and the `ascribe check` command to finish with. The new `ascribe.agents.promptTarget` setting copies it (the default), or opens VS Code's chat, Claude Code, or Cursor's chat with it filled in; nothing is ever sent for you. `ascribe check --format prompt` writes the same prompt for an agent in a terminal. The language server answers a new request, `ascribe/agentPrompt`. See [Prompt your agent](docs/content/guides/agents.md#prompt-your-agent).
+- **Prompt agent in review.** While you review a pull request, each comment thread has **Prompt agent**, which asks your agent to address the comment, with the block's text and the comments fenced as data it shouldn't take orders from; the list of comments has **Prompt agent: all open**; and **More review actions** (**⋯**) prompts your agent to review the page, or to check every page a changed fragment reaches. They're in the page preview and the source editor in VS Code, which deliver them as `ascribe.agents.promptTarget` says, and in the site preview, which copies them. The HTML report has **Copy prompt** for each page. `ascribe diff --format prompt` writes the prompt about the change, and `ascribe diff --format prompt <page>` the one about a page or a fragment. The report's JSON data gives each page its `prompt`, and `ascribe/agentPrompt` takes `pageChanges` and `fragmentReach`. `@ascribed/review/prompt` builds the prompts about threads, and an overlay host may offer `promptAgent`. See [In review](docs/content/guides/agents.md#in-review).
+- **An MCP server.** `ascribe mcp` runs a [Model Context Protocol](https://modelcontextprotocol.io) server, for an agent with no shell, or a host that approves each command. Its tools, `ascribe_check`, `ascribe_explain`, `ascribe_model`, `ascribe_outline`, `ascribe_link`, `ascribe_refs`, `ascribe_render`, `ascribe_format`, and `ascribe_changes`, return what their commands write, and none writes a file. One server serves every project in a repository, keeps each loaded, and loads it again when its files change, so a second check of a large project is quick. Its resources are each directive's syntax and each project's content model and rules, and its prompts are `new-page`, `fix`, and `review`. `ascribe agents prompt` prints the same prompts, `ascribe agents rules` prints a project's rules, and `ascribe agents skill references/directives.md` the skill's directive reference. For the tools, `ascribe fmt --format json` lists the edits that format each file (with `--check`, without writing them), and `ascribe diff --pages-only` leaves the block-level changes out of the JSON. See [The MCP server](docs/content/guides/agents.md#the-mcp-server).
+- **Agents in VS Code get Ascribe's tools.** In a workspace with an Ascribe project, the extension offers `ascribe mcp` to VS Code's agents as an MCP server, with nothing to set up. It adds three tools of its own: `#ascribe_editor_problems` gives the language server's problems of a file or project as `ascribe check --format json` writes them, including unsaved edits and an edit made a moment before, for the editor's build; and, while review is on, `#ascribe_review_threads` lists the pull request's open threads with the pages that show each, their comments quoted as data, and `#ascribe_review_changes` the changed pages with their counts and causes. None changes a file, starts a server, or turns review on. The language server now publishes diagnostics for a closed file changed on disk even when they didn't change, so a tool waiting on the write answers at once. Its diagnostics carry their fix advice and each fix's safety in their `data`, and `@ascribed/review/github` has `buildThreadsList`, from `openThreadsList` in `@ascribed/review/prompt`. See [Agents in VS Code](docs/content/guides/editor.md#agents-in-vs-code).
+- **Hooks and a plugin for agents.** `ascribe agents hook claude-code`, `codex`, or `copilot` is the command an agent's hook runs: after each file it writes, it tells the agent the errors in that file, at most 10, as `ascribe check <file> --editor-build` finds them; and with `--event stop`, before the agent finishes, it checks every build of the projects whose pages changed and keeps the agent working while there are errors, asking once. The first hook in a project starts a check server in the background, which keeps the project loaded so a check after an edit takes milliseconds, and stops after 10 idle minutes (`ASCRIBE_HOOK_SERVER=off` turns it off). `ascribe agents sync --with-hook` writes the entries that run them into `.claude/settings.json` (with the MCP server in `.mcp.json`), `.codex/hooks.json` (a new target, `codex`), and `.github/hooks/ascribe.json`, merging into the files you have. The Ascribe plugin, `plugins/ascribe/`, gives Claude Code the language server's diagnostics after each edit, the stop hook, the MCP server, the skill, and `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`. See [Hooks](docs/content/guides/agents.md#hooks) and [The plugin](docs/content/guides/agents.md#the-plugin).
+- **Ascribe for Copilot's cloud agent.** `ascribe agents sync --cloud` writes what Copilot's cloud agent needs on GitHub: steps in `.github/workflows/copilot-setup-steps.yml` that install Node.js and `@ascribed/cli`, at the version your project pins or the one that wrote them, added between markers to a workflow you have; and the MCP server's JSON, printed for the repository's settings, or with `--agent` written into a custom agent, `.github/agents/ascribe-docs.md`. With the skill and `--with-hook`'s hooks, which the cloud agent reads from the repository, it checks its edits and is held at the end until the project passes. `--check` covers the new files. See [GitHub Copilot](docs/content/guides/agents.md#github-copilot).
+- **Problems for files changed on disk, in VS Code.** A project's language server now also starts when one of its files changes on disk while the window is open, not only when one is opened. An agent or a script that writes pages without opening them gets their problems in the Problems panel. A `git checkout` starts each touched project's server once, and opening the window still starts nothing. The Problems panel checks pages as the editor's build only; `ascribe check` checks every build. See [When servers start](docs/content/guides/editor.md#when-servers-start).
+- **Actions in VS Code, and the actions bar.** Actions write Ascribe for you, such as **Wrap in a note**, **Make the list steps**, **Link the selected text**, **Insert content that varies**, and **Mark where it's available**. Each asks what it needs in short steps, choosing from the project's note types, pages, phrases, dimensions, and features, and writes canonical Ascribe that one Undo takes back. `Ctrl+K A` (`Cmd+K A` on macOS), or **Ascribe: Actions for the Cursor**, opens the actions bar: the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, **Media**, and **Content model**. Every action is also in the Command Palette, in an **Ascribe** submenu of the editor's context menu, and, for those that rewrite what's at the cursor, in the lightbulb. The **Content model** actions make the selected text a phrase (and, if you choose, its other occurrences), add it to the glossary, change a feature's availability, and rename a phrase or a dimension value everywhere, editing `ascribe.toml` in place with its comments and layout; a rename that changes other files shows them in the refactor preview first. See [Actions](docs/content/guides/editor.md#actions).
+- **The Ascribe sidebar, the status bar, and the build lens in VS Code.** The Ascribe sidebar's **Projects** view lists every project in the workspace, started or not, with buttons to show a server's output or restart it; **Used by** lists what links to or includes the active page, or the heading at the cursor; **Pages** lists the project's pages by type, its fragments with what includes them, and pages nothing links to; **Content model** lists every phrase, feature, glossary term, dimension, note type, widget, and build with how many places use it, marks the unused ones, and opens each one's declaration. Filling a view never starts a server. While a page or an `ascribe.toml` is open, the status bar names its project, the build you're looking at, and whether its language server is running; click it to switch the build, show the server's output, restart the server, or open the preview. Each project has one build you're looking at: the preview renders it, and **Ascribe: Dim What the Build Leaves Out** turns on the build lens, which dims the variant arms it doesn't select and the sections, blocks, and table rows its availability filter removes, with a hover that says why. Switching the build in the status bar, with **Ascribe: Switch Build**, or in the preview's **Build** picker changes all three. The language server answers a new request, `ascribe/buildView`, from the same decisions `ascribe build` makes. See [The Ascribe sidebar](docs/content/guides/editor.md#the-ascribe-sidebar), [The status bar](docs/content/guides/editor.md#the-status-bar), and [The build lens](docs/content/guides/editor.md#the-build-lens).
+- **Find All References, and more renames.** **Find All References** lists the links to a page or heading, including links through a page that includes it, the includes of a fragment, and the uses of a phrase, feature, glossary term, note type, widget, or dimension, in VS Code and, through the language server, in other editors. `F2` renames a dimension value too, a phrase rename reaches frontmatter fields and `@snippet {phrases=true}` files, and `F2` on something that can't be renamed says why. See [Navigation](docs/content/guides/editor.md#navigation) and [Refactoring](docs/content/guides/editor.md#refactoring).
+- **A getting-started walkthrough in VS Code.** After you install the extension, **Get Started with Ascribe** goes through opening a project, previewing a page, the actions bar, the Ascribe sidebar, the build lens, and checking the project in CI. It's under **Help → Welcome**. See [The walkthrough](docs/content/guides/editor.md#the-walkthrough).
 - **A faster `ascribe diff` and `ascribe drift`.** `diff` compares only the pages a change can reach, and reads the two versions side by side: on 3,000 pages it takes a third less time than it did, and a third less memory. `drift` takes a third less time when an example changed. The reports are the same.
-- **JSON Schemas for the commands' JSON.** What `ascribe check`, `build`, `diff`, `drift`, `sources status`, and `sources update` write with `--format json` is described by a JSON Schema, generated from the code that writes it. See the [JSON report contract](docs/content/contracts/json-reports.md).
+- **JSON Schemas for the commands' JSON.** What `ascribe check`, `build`, `diff`, `drift`, `sources status`, `sources update`, and the commands that answer questions write with `--format json` is described by a JSON Schema, generated from the code that writes it. See the [JSON report contract](docs/content/contracts/json-reports.md).
 - **The `json` output's page `format` is `"ascribe-page"`,** where it was `"tessera-page"`, the project's working name. Its `schemaVersion` stays `1`. A tool that checks the value needs the new one. See [the JSON output](crates/ascribe-emit/README.md#json).
 - The language server's log lines, in the editor's output panel, start with `ascribe-lsp:`, where they started with `tessera-lsp:`.
 - **A snippet whose file isn't at the pin says so.** When a file a snippet names isn't in the code's repository at the commit `ascribe.lock` pins, because it was moved or deleted there, `ascribe check` says that, and how to fix it, where it said to run `ascribe sources fetch`, which can't help. The update pull request quotes the new message. `ascribe sources fetch` and `update` record those files in `ascribe.lock`, under a new key, `missing`, and `ascribe sources status` shows them as `not_at_pin`. The lock's `version` stays `1`; a lock with `missing` can't be read by an earlier release. See [`ascribe.lock` and the copies](docs/content/contracts/content-model.md#191-ascribelock-and-the-copies).
 - **Fixed:** `ascribe fmt` no longer follows a symbolic link out of the content root. A file that's a link, or is in a linked folder, that leads to a file that isn't a source file of the content root is left alone and reported as `ascribe check` reports it (`source-unreadable`), and `fmt` exits with 2. It was formatted and written where the link led. See [`ascribe fmt`](docs/content/reference/cli.md#ascribe-fmt).
 - **A title with code shows it in review.** The page preview's heading in VS Code, the HTML report's list of pages and its page headings, and the list of comments in the editor and the site preview show a title's code spans as code, where they showed plain text. **Ascribe: Changed Pages** writes them between backticks. The HTML report's data, and the language server's `ascribe/preview` and `ascribe/review/changes` answers, have the formatted title beside the plain one. See [code in a field](docs/content/reference/content-model.md#53-code-in-a-field).
+- **New default colors for the elements and review.** The element library, review's marks and comment threads, the review panel in Astro's dev toolbar, and the HTML report take Ascribe's palette: an indigo accent over cool grays, with notes, availability badges, and review's marks in matching hues. Added and removed differ in more than red and green, for readers with red-green color blindness. The report's frame uses Ascribe's type scale. **Behavior change:** a site that doesn't set the `--ascribe-*` and `--ascribe-review-*` custom properties looks different. Their names are unchanged, and their defaults may change again in a release, always noted here. To keep the previous look, add this to the site's stylesheet, after the element library's and review's:
+
+  <details>
+  <summary>The previous default colors</summary>
+
+  ```css
+  /* The element library */
+  @supports (color: light-dark(#000, #fff)) {
+    :root {
+      --ascribe-border-color: light-dark(#d0d7de, #3d444d);
+      --ascribe-muted-color: light-dark(#57606a, #9198a1);
+      --ascribe-note-color: light-dark(#0969da, #4493f8);
+      --ascribe-note-background: light-dark(#ddf4ff, #121d2f);
+      --ascribe-tip-color: light-dark(#1a7f37, #3fb950);
+      --ascribe-tip-background: light-dark(#dafbe1, #12261e);
+      --ascribe-important-color: light-dark(#8250df, #ab7df8);
+      --ascribe-important-background: light-dark(#fbefff, #1f1a33);
+      --ascribe-warning-color: light-dark(#9a6700, #d29922);
+      --ascribe-warning-background: light-dark(#fff8c5, #272115);
+      --ascribe-caution-color: light-dark(#cf222e, #f85149);
+      --ascribe-caution-background: light-dark(#ffebe9, #2d1517);
+      --ascribe-steps-color: light-dark(#0969da, #4493f8);
+      --ascribe-steps-marker-text-color: light-dark(#ffffff, #0d1117);
+      --ascribe-tab-color: light-dark(#57606a, #9198a1);
+      --ascribe-tab-active-color: light-dark(#0969da, #4493f8);
+      --ascribe-tab-focus-color: light-dark(#0969da, #4493f8);
+      --ascribe-tab-hover-background: light-dark(#f6f8fa, #151b23);
+      --ascribe-state-color: light-dark(#57606a, #9198a1);
+      --ascribe-state-background: light-dark(#eaeef2, #212830);
+      --ascribe-state-ga-color: light-dark(#1a7f37, #3fb950);
+      --ascribe-state-ga-background: light-dark(#dafbe1, #12261e);
+      --ascribe-state-preview-color: light-dark(#8250df, #ab7df8);
+      --ascribe-state-preview-background: light-dark(#fbefff, #1f1a33);
+      --ascribe-state-beta-color: light-dark(#0969da, #4493f8);
+      --ascribe-state-beta-background: light-dark(#ddf4ff, #121d2f);
+      --ascribe-state-deprecated-color: light-dark(#9a6700, #d29922);
+      --ascribe-state-deprecated-background: light-dark(#fff8c5, #272115);
+      --ascribe-state-removed-color: light-dark(#cf222e, #f85149);
+      --ascribe-state-removed-background: light-dark(#ffebe9, #2d1517);
+    }
+  }
+
+  /* Review's marks and overlay */
+  :root {
+    --ascribe-review-added: #1a7f37;
+    --ascribe-review-added-background: #dcf7e3;
+    --ascribe-review-changed: #8a5a00;
+    --ascribe-review-changed-background: #fff1c2;
+    --ascribe-review-removed: #c4222d;
+    --ascribe-review-removed-background: #ffe4e2;
+    --ascribe-review-moved: #7a3fd0;
+    --ascribe-review-moved-background: #f0e6ff;
+    --ascribe-review-muted: #5b6475;
+    --ascribe-review-surface: #ffffff;
+    --ascribe-review-flash: #fff6bf;
+    --ascribe-review-focus: #1f6feb;
+    --ascribe-review-text: #1d2330;
+    --ascribe-review-border: #d3d8e0;
+    --ascribe-review-thread: #f5f7fb;
+    --ascribe-review-input: #ffffff;
+    --ascribe-review-accent-text: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-ascribe-scheme="light"]) {
+      --ascribe-review-added: #4fc572;
+      --ascribe-review-added-background: #133520;
+      --ascribe-review-changed: #dcb13a;
+      --ascribe-review-changed-background: #3a2f0d;
+      --ascribe-review-removed: #ff8279;
+      --ascribe-review-removed-background: #401918;
+      --ascribe-review-moved: #c59bff;
+      --ascribe-review-moved-background: #2d2440;
+      --ascribe-review-muted: #929bab;
+      --ascribe-review-surface: #1e2026;
+      --ascribe-review-flash: #3b3514;
+      --ascribe-review-focus: #5aa2ff;
+      --ascribe-review-text: #d9dde5;
+      --ascribe-review-border: #343a45;
+      --ascribe-review-thread: #272b33;
+      --ascribe-review-input: #1e2026;
+      --ascribe-review-accent-text: #0b1220;
+    }
+  }
+
+  :root[data-ascribe-scheme="dark"] {
+    --ascribe-review-added: #4fc572;
+    --ascribe-review-added-background: #133520;
+    --ascribe-review-changed: #dcb13a;
+    --ascribe-review-changed-background: #3a2f0d;
+    --ascribe-review-removed: #ff8279;
+    --ascribe-review-removed-background: #401918;
+    --ascribe-review-moved: #c59bff;
+    --ascribe-review-moved-background: #2d2440;
+    --ascribe-review-muted: #929bab;
+    --ascribe-review-surface: #1e2026;
+    --ascribe-review-flash: #3b3514;
+    --ascribe-review-focus: #5aa2ff;
+    --ascribe-review-text: #d9dde5;
+    --ascribe-review-border: #343a45;
+    --ascribe-review-thread: #272b33;
+    --ascribe-review-input: #1e2026;
+    --ascribe-review-accent-text: #0b1220;
+  }
+  ```
+
+  </details>
+
+  See [theming](packages/elements/README.md#theming).
 - **Smaller downloads.** The `ascribe` binary is built with link-time optimization: about a third smaller on macOS and Linux (7.0 MB on macOS arm64, from 10.5 MB) and 8 percent smaller on Windows, and a little faster.
 - `@ascribed/astro` declares `satteri` and `@types/hast` as optional peer dependencies. Its `@ascribed/astro/satteri` and `@ascribed/astro/rehype` declarations import types from them, so a project that type-checks those declarations (`skipLibCheck: false`) needs the one it imports, which a Sätteri or `unified()` processor already brings.
+- **The VS Code extension has an icon:** the Ascribe mark, in the Extensions view and on its Marketplace page, whose header takes the icon's dark tile color.
+- **Fixed:** in a high-contrast dark theme, the page preview's **Page | Site** switch shows which side is on, with the theme's active border, and the preview's buttons are in the theme's text color. They took a button background the theme doesn't set.
 
 ## 0.2.0 (2026-10-06)
 

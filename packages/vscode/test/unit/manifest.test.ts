@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
+import { MCP_LABEL } from "../../src/agents/mcpServer.js";
 
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");
 
@@ -21,6 +23,16 @@ interface Manifest {
     semanticTokenTypes: { id: string }[];
     semanticTokenModifiers: { id: string }[];
     semanticTokenScopes: { language: string; scopes: Record<string, string[]> }[];
+    keybindings: { command: string; key: string; mac?: string; when: string }[];
+    mcpServerDefinitionProviders: { id: string; label: string }[];
+    languageModelTools: {
+      name: string;
+      toolReferenceName: string;
+      canBeReferencedInPrompt: boolean;
+      when: string;
+      modelDescription: string;
+      inputSchema: { type: string; properties: Record<string, unknown>; required?: string[] };
+    }[];
   };
 }
 
@@ -51,8 +63,31 @@ describe("package.json", () => {
       // A review thread's buttons in the source editor act on that thread, so
       // the palette never shows them.
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
-      else expect(entry.when).toMatch(/^ascribe\.active\b/);
+      // So do the Projects view's buttons, which act on their project.
+      else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
+      // So do the walkthrough's buttons, which bring back a page first.
+      else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
+      // Prompt agent on one problem is a code action on that problem.
+      else if (entry.command === "ascribe.promptAgent") expect(entry.when).toBe("false");
+      // An action, and the actions bar, are for a page, so they're shown in a
+      // Markdown file of a project.
+      else if (entry.command === "ascribe.actions" || entry.command.startsWith("ascribe.action.")) {
+        expect(entry.when).toBe("ascribe.inProject && editorLangId == markdown");
+      } else expect(entry.when).toMatch(/^ascribe\.active\b/);
     }
+  });
+
+  it("binds the actions bar's key only in a page of a project, with the editor focused", () => {
+    // Ctrl+K A is unbound in VS Code's default keymaps on every platform;
+    // Ctrl+Alt+A would be AltGr+A, which types a letter in some layouts.
+    expect(manifest.contributes.keybindings).toEqual([
+      {
+        command: "ascribe.actions",
+        key: "ctrl+k a",
+        mac: "cmd+k a",
+        when: "editorTextFocus && ascribe.inProject && editorLangId == markdown",
+      },
+    ]);
   });
 
   it("shows Start Review on the preview's title bar while review is off, then Changed Pages and Refresh Comments", () => {
@@ -86,24 +121,41 @@ describe("package.json", () => {
   });
 
   it("declares the commands and settings the extension reads", () => {
-    expect(manifest.contributes.commands.map((command) => command.command)).toEqual([
-      "ascribe.restartServer",
-      "ascribe.showOutput",
-      "ascribe.openPagePreview",
+    // The actions' commands are the registry's, held to it by actions.test.ts.
+    const commands = manifest.contributes.commands
+      .map((command) => command.command)
+      .filter((id) => !id.startsWith("ascribe.action."));
+    expect(commands).toEqual([
       "ascribe.openPreview",
+      "ascribe.openPagePreview",
       "ascribe.openSitePreview",
       "ascribe.selectPreviewBuild",
+      ...Object.values(PROMPT_COMMANDS),
+      "ascribe.actions",
+      "ascribe.switchBuild",
+      "ascribe.projectMenu",
+      "ascribe.toggleBuildLens",
       "ascribe.startReview",
       "ascribe.stopReview",
       "ascribe.changedPages",
       "ascribe.refreshComments",
+      "ascribe.showOutput",
+      "ascribe.restartServer",
+      "ascribe.projects.refresh",
+      "ascribe.projects.showOutput",
+      "ascribe.projects.restart",
       "ascribe.review.replyNow",
       "ascribe.review.addToReview",
       "ascribe.review.resolve",
       "ascribe.review.reopen",
+      "ascribe.review.promptAgent",
+      "ascribe.walkthrough.preview",
+      "ascribe.walkthrough.actions",
+      "ascribe.walkthrough.lens",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([
+      "ascribe.agents.promptTarget",
       "ascribe.formatOnSave",
       "ascribe.maxCrashes",
       "ascribe.path",
@@ -118,6 +170,8 @@ describe("package.json", () => {
     expect(properties["ascribe.startServers"]?.default).toBe("onDemand");
     expect(properties["ascribe.review.sourceComments"]?.default).toBe("auto");
     expect(properties["ascribe.review.sourceComments"]?.enum).toEqual(["auto", "on", "off"]);
+    expect(properties["ascribe.agents.promptTarget"]?.default).toBe("clipboard");
+    expect(properties["ascribe.agents.promptTarget"]?.enum).toEqual([...PROMPT_TARGETS]);
   });
 
   it("lets startServers be on demand or all, per window", () => {
@@ -170,5 +224,33 @@ describe("semantic tokens and the server's legend", () => {
   it.skipIf(modifiers.length === 0)("declares every token modifier", () => {
     const declared = manifest.contributes.semanticTokenModifiers.map((modifier) => modifier.id);
     expect(declared.sort()).toEqual([...modifiers].sort());
+  });
+
+  it("offers ascribe mcp to VS Code's agents, through one provider", () => {
+    // The id is the one src/agents/mcp.ts registers.
+    const mcp = read("../../src/agents/mcp.ts");
+    expect(manifest.contributes.mcpServerDefinitionProviders).toEqual([
+      { id: "ascribe.mcp", label: MCP_LABEL },
+    ]);
+    expect(mcp).toContain('const MCP_PROVIDER = "ascribe.mcp";');
+  });
+
+  it("declares the tools the extension registers, each one chat can name", () => {
+    const tools = read("../../src/agents/tools.ts");
+    const registered = [...tools.matchAll(/^ {2}\w+: "(ascribe_\w+)",$/gm)].map((m) => m[1]);
+    const declared = manifest.contributes.languageModelTools;
+    expect(declared.map((t) => t.name)).toEqual(registered);
+    for (const tool of declared) {
+      expect(tool.toolReferenceName).toBe(tool.name);
+      expect(tool.canBeReferencedInPrompt).toBe(true);
+      expect(tool.when).toBe("ascribe.active");
+      // Optional input only: a tool with none acts on the active editor's project.
+      expect(tool.inputSchema).toMatchObject({ type: "object", properties: { path: {} } });
+      expect(tool.inputSchema.required).toBeUndefined();
+    }
+    // The problems tool says what it doesn't cover, and what does.
+    const problems = declared.find((t) => t.name === "ascribe_editor_problems");
+    expect(problems?.modelDescription).toContain("editor's build only");
+    expect(problems?.modelDescription).toContain("ascribe_check");
   });
 });

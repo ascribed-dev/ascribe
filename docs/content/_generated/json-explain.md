@@ -1,0 +1,157 @@
+<!-- Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/explain.schema.json. Change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. -->
+[`schemas/explain.schema.json`]({repo}/blob/main/schemas/explain.schema.json):
+
+```json
+{
+  "$defs": {
+    "ExampleFile": {
+      "description": "A file an example assumes besides its page.",
+      "properties": {
+        "path": {
+          "description": "Its content path.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Its text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "text"
+      ],
+      "type": "object"
+    },
+    "ExampleText": {
+      "description": "A diagnostic's example.",
+      "properties": {
+        "files": {
+          "description": "The project's other files the example assumes, in path order.",
+          "items": {
+            "$ref": "#/$defs/ExampleFile"
+          },
+          "type": "array"
+        },
+        "model": {
+          "description": "The content model the example assumes, when the problem depends on\none: the example's own fragment, or else the explain model. `null`\nwhen it's a problem under any content model.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "right": {
+          "description": "The same page, fixed.",
+          "type": "string"
+        },
+        "wrong": {
+          "description": "The page, `page.md`, with the problem.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "wrong",
+        "right",
+        "model",
+        "files"
+      ],
+      "type": "object"
+    },
+    "MessageVariant": {
+      "description": "Another wording of a diagnostic's message.",
+      "properties": {
+        "message": {
+          "description": "The message, with its placeholders as written.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The case it's for.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "message"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe explain <CODE>` answers: one diagnostic.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "code": {
+      "description": "The code, such as `ASC036`.",
+      "type": "string"
+    },
+    "docs": {
+      "description": "The address of its entry in the diagnostics reference.",
+      "type": "string"
+    },
+    "example": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExampleText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "A page that has the problem and the same page fixed; `null` when the\ndiagnostic has no example."
+    },
+    "fix": {
+      "description": "How to fix it, in general. `null` for a diagnostic that's no longer\nreported.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "level": {
+      "description": "`file` for a problem found in each file on its own; `page` for one\nfound in each page as a build resolves it.",
+      "type": "string"
+    },
+    "message": {
+      "description": "The message, with its placeholders (`{path}`) as written.",
+      "type": "string"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "severity": {
+      "description": "`error` or `warning`.",
+      "type": "string"
+    },
+    "slug": {
+      "description": "The diagnostic's name, such as `link-target-missing`.",
+      "type": "string"
+    },
+    "variants": {
+      "description": "The other ways the message is worded, by the case they're for, in\nname order.",
+      "items": {
+        "$ref": "#/$defs/MessageVariant"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "code",
+    "slug",
+    "severity",
+    "level",
+    "message",
+    "variants",
+    "fix",
+    "docs",
+    "example"
+  ],
+  "title": "ExplainReport",
+  "type": "object"
+}
+```

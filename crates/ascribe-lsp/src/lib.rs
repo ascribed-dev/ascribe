@@ -6,23 +6,34 @@
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
+mod agent_prompt;
+mod build_view;
 mod code_action;
 mod complete;
 mod compute;
+mod context;
 mod core;
 mod definition;
 mod docs;
+mod edit;
 mod formatting;
 mod fsx;
+mod headless;
 mod hover;
+mod inventory;
 mod links;
 mod log;
+mod model_file;
 mod nav;
 mod position;
 mod preview;
 mod refactor;
+mod references;
 mod review;
+#[cfg(feature = "json-schema")]
+mod schema;
 mod server;
+mod targets;
 mod tokens;
 mod uri;
 
@@ -31,6 +42,22 @@ use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
 
+pub use agent_prompt::{
+    AgentPromptParams, AgentPromptResult, METHOD as AGENT_PROMPT_METHOD, PromptKind,
+};
+pub use build_view::{
+    BuildViewParams, BuildViewResult, Excluded, ExclusionReason, METHOD as BUILD_VIEW_METHOD,
+};
+pub use context::{
+    AttributePair, ContextNode, ContextParams, ContextProject, ContextResult, ContextToken, Form,
+    FrontmatterValue, METHOD as CONTEXT_METHOD, Selection, SelectionKind, VariantArm,
+};
+pub use edit::{EditAction, EditParams, EditResult, METHOD as EDIT_METHOD};
+pub use headless::{Problem, Watched};
+pub use inventory::{
+    InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
+    METHOD as INVENTORY_METHOD, ModelKind,
+};
 pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
@@ -41,6 +68,12 @@ pub use review::{
     SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,
 };
 pub use server::{Exit, ServeError, serve};
+pub use targets::{
+    AttributeKind, BindingKind, METHOD as TARGETS_METHOD, PrimaryKind, TargetAttribute,
+    TargetBuild, TargetDimension, TargetDimensionValue, TargetFeature, TargetFragment,
+    TargetHeading, TargetImage, TargetKind, TargetNote, TargetPage, TargetPhrase, TargetRegion,
+    TargetSource, TargetSourceFile, TargetWidget, TargetsParams, TargetsResult,
+};
 pub use tokens::{MODIFIERS as TOKEN_MODIFIERS, TYPES as TOKEN_TYPES, legend as token_legend};
 
 /// What a round of diagnostics is about to publish, for tests to observe and

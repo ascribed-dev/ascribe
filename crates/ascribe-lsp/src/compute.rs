@@ -9,7 +9,7 @@
 //! It doesn't call `ascribe_check::diagnose`, the entry `ascribe check`
 //! uses: that checks every build of a whole project at once, and the server
 //! checks only the files an edit affects, in the editor's one build, over the
-//! index it keeps current. `crates/ascribe-cli/tests/lsp_parity.rs` holds
+//! index it keeps current. `crates/ascribe-cli/tests/all/lsp_parity.rs` holds
 //! the two to the same diagnostics.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -17,13 +17,15 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::{
-    Diagnostic, PageChecker, Project, ReadFailure, Severity, SourceFile, check_file,
+    Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity, SourceFile, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
-use lsp_types::{DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString};
+use lsp_types::{
+    CodeDescription, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
+};
 
 use crate::core::Core;
 use crate::fsx::LayerFs;
@@ -289,13 +291,36 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
 /// The checked project of a snapshot: its sources with the snapshot's ids, and
 /// the files the editor and the watcher reported over the disk.
 fn check_project_of(job: &Job) -> Project {
-    let snapshot = &job.snapshot;
+    checked_project(
+        &job.snapshot,
+        job.root.clone(),
+        &job.model,
+        &job.model_text,
+        &job.fs,
+        &[],
+    )
+}
+
+/// The checked project of `snapshot`, with each of `replaced`'s files holding
+/// the text given instead of its own: what `ascribe/edit` checks an edit's
+/// result in.
+pub(crate) fn checked_project(
+    snapshot: &Snapshot,
+    root: PathBuf,
+    model: &ContentModel,
+    model_text: &str,
+    fs: &Arc<LayerFs>,
+    replaced: &[(&RelPath, &str)],
+) -> Project {
     let mut sources: Vec<SourceFile> = snapshot
         .files()
         .map(|f| SourceFile {
             id: f.file,
             path: f.path.clone(),
-            text: f.source.to_string(),
+            text: match replaced.iter().find(|(path, _)| **path == f.path) {
+                Some((_, text)) => (*text).to_owned(),
+                None => f.source.to_string(),
+            },
             unreadable: None,
         })
         .collect();
@@ -319,12 +344,12 @@ fn check_project_of(job: &Job) -> Project {
     }
     sources.sort_by(|a, b| a.path.cmp(&b.path));
     Project::from_parts_with_fs(
-        job.root.clone(),
+        root,
         snapshot.layout().content_root.clone(),
-        (*job.model).clone(),
-        job.model_text.clone(),
+        model.clone(),
+        model_text.to_owned(),
         sources,
-        job.fs.clone(),
+        fs.clone(),
     )
 }
 
@@ -353,18 +378,27 @@ pub(crate) fn to_lsp(
             Severity::Warning => DiagnosticSeverity::WARNING,
         }),
         code: Some(NumberOrString::String(d.code.to_owned())),
-        code_description: None,
+        // The code links to its entry in the diagnostics reference.
+        code_description: Registry::global()
+            .get(d.slug)
+            .and_then(|entry| entry.docs().parse().ok())
+            .map(|href| CodeDescription { href }),
         source: Some("ascribe".to_owned()),
         message: d.message.clone(),
         related_information: (!related_information.is_empty()).then_some(related_information),
         tags: None,
+        // What `ascribe check --format json` says besides the protocol's
+        // fields, for the extension's tool that reports problems to agents
+        // in that shape.
         data: Some(serde_json::json!({
             "slug": d.slug.as_str(),
             "builds": d.builds,
             "unpublished": d.unpublished,
+            "help": Registry::global().get(d.slug).and_then(|entry| entry.fix.as_deref()).unwrap_or_default(),
             "fixes": d.fixes.iter().filter(|fix| fix.file == d.location.file).map(|fix| {
                 serde_json::json!({
                     "title": fix.title,
+                    "applicability": fix.applicability.as_str(),
                     "edits": fix.edits.iter().map(|edit| serde_json::json!({
                         "range": encoding.range(index, edit.span),
                         "newText": edit.new_text,

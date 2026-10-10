@@ -83,6 +83,27 @@ export function cargoVersion(): string {
   return version;
 }
 
+/**
+ * The skill `@ascribed/cli` ships, whose metadata names the version. The
+ * binary writes the same file, and `crates/ascribe-cli/src/agents/skill.rs`
+ * fails when this copy differs.
+ */
+export const skill = "packages/cli/skills/ascribe/SKILL.md";
+
+/**
+ * The plugin's copy of the skill, and its two manifests, which name the
+ * version too. The binary writes them, and
+ * `crates/ascribe-cli/src/agents/plugin.rs` fails when they differ.
+ */
+export const pluginSkill = "plugins/ascribe/skills/ascribe/SKILL.md";
+export const pluginManifests = [
+  "plugins/ascribe/.claude-plugin/plugin.json",
+  "plugins/ascribe/plugin.json",
+];
+
+/** The skill's version line, with the version as its one group. */
+export const SKILL_VERSION = /^ {2}ascribe-version: "([^"]+)"$/m;
+
 /** A file that carries the version, and the version it says. */
 export interface FoundVersion {
   file: string;
@@ -101,6 +122,15 @@ export function versions(): FoundVersion[] {
     file: `${extension.dir}/package.json (ascribe.minServerVersion)`,
     version: vscode.ascribe?.minServerVersion,
   });
+  for (const file of [skill, pluginSkill]) {
+    found.push({
+      file,
+      version: SKILL_VERSION.exec(readFileSync(join(root, file), "utf8"))?.[1],
+    });
+  }
+  for (const file of pluginManifests) {
+    found.push({ file, version: readJson(file).version });
+  }
   return found;
 }
 

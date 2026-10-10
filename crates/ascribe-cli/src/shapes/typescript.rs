@@ -6,6 +6,9 @@
 //! numbers, booleans, `null`, string constants and enumerations, unions,
 //! references to `$defs`, and `true` (any value).
 //!
+//! A union with an object among its options (a tagged enum) is written one
+//! option to a line, as Prettier formats it.
+//!
 //! An interface lists the required properties in the order the Rust type
 //! declares them, then the optional ones by name.
 //!
@@ -30,12 +33,40 @@ pub(super) fn module(defs: &BTreeMap<String, Value>) -> String {
                 members(&mut out, schema, properties, "  ");
                 out.push_str("}\n");
             }
-            None => {
-                writeln!(out, "export type {name} = {};", type_of(schema)).ok();
-            }
+            None => match object_union(schema) {
+                Some(options) => {
+                    writeln!(out, "export type {name} =").ok();
+                    for option in options {
+                        match properties(option) {
+                            Some(properties) => {
+                                out.push_str("  | {\n");
+                                members(&mut out, option, properties, "      ");
+                                out.push_str("    }\n");
+                            }
+                            None => {
+                                writeln!(out, "  | {}", type_of(option)).ok();
+                            }
+                        }
+                    }
+                    out.pop();
+                    out.push_str(";\n");
+                }
+                None => {
+                    writeln!(out, "export type {name} = {};", type_of(schema)).ok();
+                }
+            },
         }
     }
     out
+}
+
+/// The options of a union that has an object among them, which is written
+/// one option to a line, as Prettier writes it: a tagged enum's variants.
+fn object_union(schema: &Value) -> Option<&Vec<Value>> {
+    ["anyOf", "oneOf"]
+        .iter()
+        .find_map(|key| schema.get(*key).and_then(Value::as_array))
+        .filter(|options| options.iter().any(|o| properties(o).is_some()))
 }
 
 /// A schema's `properties`, when it's an object that has them.

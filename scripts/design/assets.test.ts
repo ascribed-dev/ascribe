@@ -152,3 +152,25 @@ test("an icon file holds one PNG", () => {
   expect(out.readUInt32LE(14)).toBe(png.length);
   expect(out.subarray(22).equals(png)).toBe(true);
 });
+
+test("the extension's Marketplace banner is the icon's tile, so the two read as one", () => {
+  const { colors } = readSources();
+  const extension = JSON.parse(read("packages/vscode/package.json")) as {
+    icon: string;
+    galleryBanner: { color: string; theme: string };
+  };
+  expect(ASSETS.map((a) => a.path)).toContain(`packages/vscode/${extension.icon}`);
+  expect(extension.galleryBanner).toEqual({ color: colors.surface.dark, theme: "dark" });
+});
+
+test("the extension's README shows its header as a PNG by an absolute URL, as the Marketplace requires", () => {
+  const images = [
+    ...read("packages/vscode/README.md").matchAll(
+      /<img [^>]*src="([^"]+)"|!\[[^\]]*\]\(([^)]+)\)/g,
+    ),
+  ].map((m) => m[1] ?? m[2]);
+  expect(images).toEqual([
+    "https://raw.githubusercontent.com/ascribed-dev/ascribe/main/design/out/header-vscode.png",
+  ]);
+  expect(ASSETS.map((a) => a.path)).toContain("design/out/header-vscode.png");
+});

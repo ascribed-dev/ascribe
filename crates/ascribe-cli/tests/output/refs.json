@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "target": "phrase:cloud",
+  "kind": "phrase",
+  "exists": true,
+  "places": [
+    {
+      "file": "docs/install-agent.md",
+      "line": 7,
+      "column": 181,
+      "use": "phrase"
+    },
+    {
+      "file": "docs/install-agent.md",
+      "line": 61,
+      "column": 12,
+      "use": "phrase"
+    },
+    {
+      "file": "docs/install-agent.md",
+      "line": 83,
+      "column": 1,
+      "use": "phrase"
+    }
+  ],
+  "total": 5,
+  "shown": 3,
+  "truncated": true,
+  "next_command": "ascribe refs phrase:cloud --limit 5 --project examples/quill --format json"
+}

@@ -1,0 +1,36 @@
+ASC036 link-target-missing: error, found in each file
+
+Message: `{path}` doesn't exist
+  or: `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive
+  or: `{path}` is outside the project, so it can't be copied into the output
+
+Fix: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
+
+Wrong, in page.md:
+```md
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](api-key.md).
+```
+
+Right:
+```md
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](keys.md).
+```
+
+And keys.md:
+```md
+---
+title: API keys
+---
+
+Create a key in **Settings**.
+```
+
+Docs: https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing

@@ -40,14 +40,18 @@ mod tests {
     use std::io;
     use std::path::PathBuf;
 
-    use ascribe_check::{LoadError, LocateError, UnknownBuild};
+    use ascribe_check::{LoadError, LocateError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
     use ascribe_lsp::ServeError;
+    use ascribe_query::QueryError;
     use ascribe_sources::SourcesError;
 
+    use crate::agents::markers::Damage;
+    use crate::agents::sync::SyncError;
+    use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::sources::PagesUnavailable;
     use crate::context::Failure;
@@ -67,6 +71,15 @@ mod tests {
         ),
         ("model_invalid", "the content model has errors"),
         ("unknown_build", "a build name isn't one of the model's"),
+        ("path_missing", "a path to check doesn't exist"),
+        (
+            "path_not_in_a_project",
+            "no ascribe.toml at or above a path",
+        ),
+        ("paths_in_two_projects", "a path is in another project"),
+        ("path_outside_project", "a path isn't in the project"),
+        ("path_not_a_source", "--path names no possible source file"),
+        ("stdin_unreadable", "standard input can't be read as text"),
         ("format_io", "fmt can't read or write a path"),
         ("not_utf8", "a file to format isn't UTF-8"),
         ("format_bad_edits", "the formatter's edits don't apply"),
@@ -115,6 +128,35 @@ mod tests {
         (
             "lsp_initialize_params",
             "initialize's parameters aren't understood",
+        ),
+        ("unknown_diagnostic", "no diagnostic has that code or name"),
+        ("not_a_source", "a path isn't a page or fragment"),
+        ("not_a_page", "a fragment, where only a page will do"),
+        ("build_required", "several builds, and none was named"),
+        ("bad_target", "refs can't read the target"),
+        (
+            "markers_damaged",
+            "a file's generated block has damaged markers",
+        ),
+        (
+            "instructions_in_content",
+            "an instruction file would be a page",
+        ),
+        (
+            "copilot_needs_repository",
+            "Copilot's files outside a repository",
+        ),
+        (
+            "instructions_unreadable",
+            "an instruction file can't be read",
+        ),
+        (
+            "instructions_unwritable",
+            "an instruction file can't be written",
+        ),
+        (
+            "settings_unreadable",
+            "an agent's settings file can't be merged into",
         ),
     ];
 
@@ -202,12 +244,51 @@ mod tests {
                 | SourcesError::Write { .. } => {}
             }
         }
+        fn scope(e: &ScopeError) {
+            match e {
+                ScopeError::Locate(_)
+                | ScopeError::Missing { .. }
+                | ScopeError::NoProject { .. }
+                | ScopeError::OtherProject { .. }
+                | ScopeError::Outside { .. }
+                | ScopeError::NotASource { .. } => {}
+            }
+        }
+        fn check(e: &CheckError) {
+            match e {
+                CheckError::Scope(_) | CheckError::Stdin(_) => {}
+            }
+        }
         fn serve(e: &ServeError) {
             match e {
                 ServeError::Protocol(_) | ServeError::Params(_) => {}
             }
         }
-        let _ = (locate, load, format, emit, store, diff, sources, serve);
+        fn query(e: &QueryError) {
+            match e {
+                QueryError::UnknownDiagnostic { .. }
+                | QueryError::NotASource { .. }
+                | QueryError::NotAPage { .. }
+                | QueryError::BuildRequired { .. }
+                | QueryError::UnknownBuild(_)
+                | QueryError::BadTarget { .. }
+                | QueryError::Render(_) => {}
+            }
+        }
+        fn agents(e: &SyncError) {
+            match e {
+                SyncError::Damaged { .. }
+                | SyncError::InContent { .. }
+                | SyncError::NoRepository
+                | SyncError::Git(_)
+                | SyncError::Read { .. }
+                | SyncError::Settings { .. }
+                | SyncError::Write { .. } => {}
+            }
+        }
+        let _ = (
+            locate, load, scope, check, format, emit, store, diff, sources, serve, query, agents,
+        );
 
         let store_errors = || {
             vec![
@@ -310,7 +391,25 @@ mod tests {
             Box::new(ServeError::Params(
                 serde_json::from_str::<u8>("x").unwrap_err(),
             )),
+            Box::new(ScopeError::Locate(LocateError::NotFound { dir: path() })),
+            Box::new(ScopeError::Missing { path: path() }),
+            Box::new(ScopeError::NoProject { path: path() }),
+            Box::new(ScopeError::OtherProject {
+                path: path(),
+                its: path(),
+                config: path(),
+            }),
+            Box::new(ScopeError::Outside {
+                path: path(),
+                config: path(),
+            }),
+            Box::new(ScopeError::NotASource {
+                path: path(),
+                content_root: text(),
+            }),
             // The CLI's own errors wrap these.
+            Box::new(CheckError::Scope(ScopeError::Missing { path: path() })),
+            Box::new(CheckError::Stdin(io_error())),
             Box::new(Failure::Config(LocateError::NotFound { dir: path() })),
             Box::new(Failure::Load(model_invalid())),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),
@@ -321,6 +420,41 @@ mod tests {
             Box::new(FmtError::Format(FormatFilesError::NotUtf8 { path: path() })),
             Box::new(PagesUnavailable::Load(Failure::Load(model_invalid()))),
             Box::new(PagesUnavailable::Drift(not_a_repository())),
+            Box::new(QueryError::UnknownDiagnostic {
+                given: text(),
+                closest: Vec::new(),
+            }),
+            Box::new(QueryError::NotASource { path: text() }),
+            Box::new(QueryError::NotAPage { path: text() }),
+            Box::new(QueryError::BuildRequired {
+                builds: vec![text()],
+            }),
+            Box::new(QueryError::UnknownBuild(unknown_build())),
+            Box::new(QueryError::BadTarget {
+                given: text(),
+                reason: text(),
+            }),
+            Box::new(QueryError::Render(EmitError::Invalid { message: text() })),
+            Box::new(SyncError::Damaged {
+                path: text(),
+                name: text(),
+                damage: Damage::NoEnd,
+            }),
+            Box::new(SyncError::InContent { path: text() }),
+            Box::new(SyncError::NoRepository),
+            Box::new(SyncError::Git(DiffError::GitNotFound)),
+            Box::new(SyncError::Read {
+                path: text(),
+                source: io_error(),
+            }),
+            Box::new(SyncError::Settings {
+                path: text(),
+                why: text(),
+            }),
+            Box::new(SyncError::Write {
+                path: text(),
+                source: io_error(),
+            }),
         ];
         for e in store_errors() {
             all.push(Box::new(EmitError::Store(e)));

@@ -275,6 +275,34 @@ impl Repository {
         Ok(files)
     }
 
+    /// The files under the project's folder that the working tree changes
+    /// against `HEAD`, staged or not, untracked ones included and deleted
+    /// ones too: by their path from the repository's root, through one `git
+    /// status`. Ignored files aren't listed.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when the files can't be listed.
+    pub fn working_changes(&self) -> Result<Vec<RelPath>, DiffError> {
+        let out = self.run(&[
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--no-renames",
+            "--",
+            // The whole working tree, wherever in it `git` runs.
+            ":/",
+        ])?;
+        // `XY <path>` entries, NUL-separated; the paths are from the root.
+        Ok(out
+            .split(|b| *b == 0)
+            .filter_map(|entry| entry.get(3..))
+            .filter_map(|path| std::str::from_utf8(path).ok())
+            .filter_map(|path| RelPath::parse(path).ok())
+            .collect())
+    }
+
     /// The contents of several blobs, read through one `git cat-file --batch`.
     ///
     /// # Errors

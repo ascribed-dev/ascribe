@@ -25,7 +25,17 @@ const HEADER: &str = "<!-- Generated from the help text in crates/ascribe-cli/sr
 /// marks them `@available: next`. Remove an entry when the option's command
 /// section is itself marked, or when `next` stops meaning "unreleased" and
 /// the release that shipped the option is named instead.
-const UNRELEASED: &[(&str, &str)] = &[("build", "anchors")];
+const UNRELEASED: &[(&str, &str)] = &[
+    ("build", "anchors"),
+    ("check", "paths"),
+    ("check", "stdin"),
+    ("check", "path"),
+    ("check", "editor_build"),
+    ("check", "summary"),
+    ("diff", "page"),
+    ("diff", "pages_only"),
+    ("fmt", "format"),
+];
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -52,9 +62,10 @@ fn help_links_to_the_docs_site() {
     // Rendering builds the command, which adds clap's own `help` subcommand.
     for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
         helps.push(command.render_long_help().to_string());
+        // A hidden command, run only by Ascribe itself, isn't documented.
         for sub in command
             .get_subcommands_mut()
-            .filter(|c| c.get_name() != "help")
+            .filter(|c| c.get_name() != "help" && !c.is_hide_set())
         {
             helps.push(sub.render_long_help().to_string());
         }
@@ -78,6 +89,47 @@ fn help_links_to_the_docs_site() {
             );
         }
     }
+}
+
+/// Each diagnostic's link, in `check`'s JSON and the language server's
+/// `codeDescription`, is to its own heading in the diagnostics reference, as
+/// the site's slugger makes an anchor of it.
+#[test]
+fn diagnostics_link_to_their_entries_in_the_reference() {
+    use ascribe_core::Slugger;
+
+    assert_eq!(
+        ascribe_check::registry::REFERENCE,
+        format!("{}/reference/diagnostics/", crate::cli::DOCS_SITE)
+    );
+    let page =
+        std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
+    let mut entries = String::new();
+    for part in ["source-files", "content-model"] {
+        assert!(page.contains(&format!("@include: ../_generated/diagnostics-{part}.md\n")));
+        let path = repo().join(format!("docs/content/_generated/diagnostics-{part}.md"));
+        entries.push_str(&std::fs::read_to_string(path).unwrap());
+    }
+    let mut linked = 0;
+    for entry in ascribe_check::Registry::global().entries() {
+        // A retired diagnostic isn't reported, so it's never linked to.
+        if entry.fix.is_none() {
+            continue;
+        }
+        let heading = format!("\n#### {} `{}`\n", entry.code, entry.slug);
+        assert!(
+            entries.contains(&heading),
+            "no heading{heading}in the reference"
+        );
+        let text = format!("{} {}", entry.code, entry.slug);
+        let anchor = ascribe_resolve::slug::GithubSlugger.new_scope().slug(&text);
+        assert_eq!(
+            entry.docs(),
+            format!("{}#{anchor}", ascribe_check::registry::REFERENCE)
+        );
+        linked += 1;
+    }
+    assert!(linked > 100, "only {linked} entries");
 }
 
 #[test]
@@ -163,7 +215,7 @@ fn leaves(cli: &Command) -> Vec<(String, &Command)> {
     for command in cli.get_subcommands() {
         let subcommands: Vec<&Command> = command
             .get_subcommands()
-            .filter(|c| c.get_name() != "help")
+            .filter(|c| c.get_name() != "help" && !c.is_hide_set())
             .collect();
         if subcommands.is_empty() {
             out.push((command.get_name().to_owned(), command));
@@ -203,7 +255,8 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
 }
 
 /// How an argument is written in the synopsis: `[--build <NAME>]...`,
-/// `[--format text|json]`, `[--check]`, `[PATHS]...`.
+/// `[--format text|json]`, `[--check]`, `[PATHS]...`, and without brackets
+/// when it's required: `TARGET --from <PAGE>`.
 fn usage(arg: &Arg) -> String {
     let values: Vec<String> = arg
         .get_possible_values()
@@ -222,6 +275,11 @@ fn usage(arg: &Arg) -> String {
         Some(long) if takes_value(arg) => format!("[--{long} {value}]"),
         Some(long) => format!("[--{long}]"),
         None => format!("[{}]", value_name(arg)),
+    };
+    let written = if arg.is_required_set() {
+        written[1..written.len() - 1].to_owned()
+    } else {
+        written
     };
     if repeated {
         format!("{written}...")

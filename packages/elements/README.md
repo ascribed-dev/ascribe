@@ -29,6 +29,12 @@ directly.
 Set any of these custom properties on `:root`, or on any ancestor of the
 elements. Defaults are in `css/style.css`.
 
+The names are part of the [contract](CONTRACT.md) and don't change. The
+default values are Ascribe's design tokens, shared with review and the HTML
+report, and a release may change them; the changelog says so under **Behavior
+change**, with the previous values. A site that needs a fixed look sets the
+properties itself.
+
 | Group | Properties |
 |---|---|
 | Type | `--ascribe-font-family`, `--ascribe-font-size-small`, `--ascribe-font-weight-strong` |
@@ -105,9 +111,12 @@ ascribe-availability::before {
 
 ## Tests
 
-`pnpm --filter @ascribed/elements test` compiles the library and drives Chromium
-through Playwright in Chromium, Firefox, and WebKit. Install them with
+`pnpm --filter @ascribed/elements test` compiles the library and drives it
+through Playwright. Locally it runs Chromium alone; in CI (`CI` set, as Actions
+sets it) it runs Chromium, Firefox, and WebKit, in Playwright's container
+image, which has all three. `ASCRIBE_ENGINES=chromium,firefox,webkit` (any
+comma-separated subset) chooses the engines either way; install them with
 `pnpm --filter @ascribed/elements exec playwright-core install chromium firefox webkit`.
 Chromium uses `/opt/pw-browsers/chromium` when present, or the binary in
-`ASCRIBE_CHROMIUM`. `ASCRIBE_ENGINES=chromium` (a comma-separated subset) runs
-fewer engines on a machine that can't install all three.
+`ASCRIBE_CHROMIUM`. The compile is skipped when every file in `dist/` is newer
+than every file in `src/` and both tsconfigs.

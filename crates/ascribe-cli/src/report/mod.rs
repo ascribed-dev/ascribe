@@ -1,14 +1,16 @@
-//! Showing diagnostics: readable text with source snippets, and JSON.
+//! Showing diagnostics: readable text with source snippets, one line each,
+//! and JSON.
 //!
-//! Both renderers read a [`FileTable`], which holds what a diagnostic's
+//! The renderers read a [`FileTable`], which holds what a diagnostic's
 //! locations point into (the path to show and the text), and turn a
 //! `ascribe_check::Diagnostic` into lines and columns the same way, so text
 //! and JSON always agree.
 
+pub mod concise;
 pub mod json;
 pub mod text;
 
-use ascribe_check::{Diagnostic, Project, Severity};
+use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::{FileId, LineIndex, Location, WideEncoding};
 
 /// One file a diagnostic can point into.
@@ -84,22 +86,14 @@ impl FileTable {
 
     /// The position of a byte offset in a file.
     pub fn position(&self, id: FileId, offset: usize) -> Position {
-        let unknown = Position {
-            line: 1,
-            column: 1,
-            offset,
-        };
-        let Some(entry) = self.entry(id) else {
-            return unknown;
-        };
-        entry
-            .index
-            .wide_line_col(WideEncoding::Utf32, offset)
-            .map_or(unknown, |p| Position {
-                line: p.line + 1,
-                column: p.col + 1,
+        match self.entry(id) {
+            Some(entry) => position_in(&entry.index, offset),
+            None => Position {
+                line: 1,
+                column: 1,
                 offset,
-            })
+            },
+        }
     }
 
     /// The start and end positions of a location.
@@ -109,6 +103,22 @@ impl FileTable {
             self.position(at.file, at.span.end()),
         )
     }
+}
+
+/// The position of a byte offset in the text `index` indexes.
+pub fn position_in(index: &LineIndex, offset: usize) -> Position {
+    index.wide_line_col(WideEncoding::Utf32, offset).map_or(
+        Position {
+            line: 1,
+            column: 1,
+            offset,
+        },
+        |p| Position {
+            line: p.line + 1,
+            column: p.col + 1,
+            offset,
+        },
+    )
 }
 
 /// How many errors and warnings a list of diagnostics has.
@@ -123,13 +133,77 @@ impl Counts {
     pub fn of(diagnostics: &[Diagnostic]) -> Counts {
         let mut counts = Counts::default();
         for d in diagnostics {
-            match d.severity {
-                Severity::Error => counts.errors += 1,
-                Severity::Warning => counts.warnings += 1,
-            }
+            counts.add(d.severity);
         }
         counts
     }
+
+    /// Counts a report.
+    pub fn of_reported(reported: &[Reported]) -> Counts {
+        let mut counts = Counts::default();
+        for r in reported {
+            counts.add(r.diagnostic.severity);
+        }
+        counts
+    }
+
+    fn add(&mut self, severity: Severity) {
+        match severity {
+            Severity::Error => self.errors += 1,
+            Severity::Warning => self.warnings += 1,
+        }
+    }
+
+    /// Errors and warnings together.
+    pub fn total(self) -> usize {
+        self.errors + self.warnings
+    }
+}
+
+/// How many diagnostics have one code, for `--summary`.
+pub struct ByCode {
+    pub code: &'static str,
+    pub slug: String,
+    pub severity: Severity,
+    pub count: usize,
+}
+
+/// How many diagnostics are in one file, for `--summary`.
+pub struct ByFile {
+    pub file: String,
+    pub counts: Counts,
+}
+
+/// A report's diagnostics counted by code and by file, most first; a tie
+/// keeps the order the report first shows them in.
+pub fn tally(files: &FileTable, reported: &[Reported]) -> (Vec<ByCode>, Vec<ByFile>) {
+    let mut codes: Vec<ByCode> = Vec::new();
+    let mut by_file: Vec<ByFile> = Vec::new();
+    for r in reported {
+        let d = &r.diagnostic;
+        match codes.iter_mut().find(|c| c.code == d.code) {
+            Some(c) => c.count += 1,
+            None => codes.push(ByCode {
+                code: d.code,
+                slug: d.slug.to_string(),
+                severity: d.severity,
+                count: 1,
+            }),
+        }
+        let file = files.path(d.location.file);
+        match by_file.iter_mut().find(|f| f.file == file) {
+            Some(f) => f.counts.add(d.severity),
+            None => {
+                let mut counts = Counts::default();
+                counts.add(d.severity);
+                by_file.push(ByFile { file, counts });
+            }
+        }
+    }
+    // Stable sorts: ties stay in the report's order.
+    codes.sort_by_key(|c| std::cmp::Reverse(c.count));
+    by_file.sort_by_key(|f| std::cmp::Reverse(f.counts.total()));
+    (codes, by_file)
 }
 
 impl FileTable {

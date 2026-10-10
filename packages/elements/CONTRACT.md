@@ -16,7 +16,7 @@ A change to this contract changes the site emitter (`crates/ascribe-emit`), the 
 
 ## 0. Rules for every element
 
-**Light DOM, CSS, no behavior.** Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology (SPEC §9.7). They're styled with CSS and themed with custom properties whose names start with `--ascribe-`; the package README lists them. Only `<ascribe-tabs>` runs JavaScript. Everything else must render meaningfully with the library's CSS and no script, and must stay readable with neither.
+**Light DOM, CSS, no behavior.** Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology (SPEC §9.7). They're styled with CSS and themed with custom properties whose names start with `--ascribe-`; the package README lists them. The names are part of this contract; their default values aren't, and a release may change them, noting it in the changelog. Only `<ascribe-tabs>` runs JavaScript. Everything else must render meaningfully with the library's CSS and no script, and must stay readable with neither.
 
 **How the emitter writes elements.** Custom elements are raw HTML blocks in CommonMark, so the layout matters:
 

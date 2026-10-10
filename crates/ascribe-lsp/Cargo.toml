@@ -24,6 +24,7 @@ serde.workspace = true
 serde_json.workspace = true
 serde_yaml_ng.workspace = true
 thiserror.workspace = true
+toml_edit.workspace = true
 schemars = { workspace = true, optional = true }
 
 [features]
@@ -34,6 +35,8 @@ json-schema = ["dep:schemars", "ascribe-diff/json-schema"]
 
 [dev-dependencies]
 tempfile = "3"
+# `ascribe refs` answers what Find All References does (tests/references.rs).
+ascribe-query.workspace = true
 ascribe-synthetic.workspace = true
 
 [[bench]]
@@ -42,6 +45,10 @@ harness = false
 
 [[bench]]
 name = "completion"
+harness = false
+
+[[bench]]
+name = "inventory"
 harness = false
 
 [lints]

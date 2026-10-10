@@ -2,11 +2,13 @@
 
 Ideas for Ascribe after 0.1.1 (written 2026-10-02). This is exploration, not a plan: nothing here is decided. Each idea says what it is, how it fits Ascribe, what's hard about it, and the questions to answer before designing it. The suggested order and the open questions are at the end.
 
-Three groups:
+Five groups:
 
-- [Product features](#product-features): code snippets from tested code, editable previews, OpenAPI, editor UI (an actions bar, a sidebar, and more), prose linting with Vale, and other CMS features.
+- [Product features](#product-features): code snippets from tested code, editable previews, OpenAPI, editor UI (an actions bar, a sidebar, and more), prose linting with Vale, other CMS features, and embedded help.
 - [Agents](#agents): publishing docs that agents can read (the Web Documentation Delivery Spec), and helping agents that write docs (diagnostics, the CLI, an MCP server, GitHub Copilot, and Claude Code).
 - [Review](#review): seeing what a pull request changes as readers will see it, and commenting on it there.
+- [Beyond the pages](#beyond-the-pages): what a project knows that isn't in its pages: a cache and a search index Ascribe can rebuild, and notes that people write.
+- [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
 
 Ascribe's own docs, and the drift checks built on them (generated reference, coverage, and snippets from section 1), are planned in [docs/](docs/README.md).
 
@@ -248,6 +250,40 @@ Per-page translation status from a hash of the source: a translation is marked s
 
 External link checking (opt-in, for CI); a PDF or print output; image checks (unused images, large files).
 
+## 17. Embedded help
+
+Added 2026-10-09. Not planned. It builds on [permalinks](permalinks.md), which come first.
+
+### The idea
+
+A permalink lets a product link to a section of its docs by a name that doesn't change. Embedded help goes one step further: the product shows the section's text itself, in a tooltip, a side panel, or beside an error, without sending anyone to a browser.
+
+Help-authoring tools have had this for years. MadCap Flare calls it micro content: short answers written once and shown in the product, in search results, and in the docs.
+
+### How it fits Ascribe
+
+Most of the parts exist or are proposed:
+
+- **A stable name for the content:** a permalink.
+- **The content, resolved and structured:** the JSON output has every page as blocks, and the plain output has it as Markdown, per build, with phrases, variants, and availability already applied.
+- **The right version of it:** a build filters for a target and version, so a product at 3.4 can be given the 3.4 text.
+
+What's missing is the join: an output keyed by permalink, holding each named section's text in a form a product can show. A product would bundle that file at build time, or fetch it from the docs site.
+
+### What Ascribe adds that a help-authoring tool can't
+
+- **It's the same source as the docs,** so the tooltip and the page can't disagree.
+- **It's checked.** A product asking for an id that doesn't exist fails `ascribe permalinks verify` in its own CI.
+- **It's per version and per variant** without a second copy.
+
+### Hard parts and questions
+
+- **Size.** A section written for a docs page is usually too long for a tooltip. Either authors mark a short form (the section's first paragraph, or a summary of its own), or the product truncates, which reads badly. Does this need a construct in the language, or is "the first paragraph" enough?
+- **Format.** A product can't render Ascribe's custom elements. The plain Markdown output is the safe form, and loses notes' styling and tabs.
+- **Bundled or fetched?** Bundled text is as old as the product's build, and works offline. Fetched text is current, and needs the docs site to be reachable and to allow the request. Ascribe hosts nothing, so fetching means a static file on the docs' own host.
+- **Links inside the text** point at docs pages. In a product they'd need to be absolute, as the plain output's already are when `[consumer] site` is set.
+- **Who is it for?** A product team has to build the part that shows the text. Ascribe can supply the file and a small example of reading it, and no more.
+
 ---
 
 # Agents
@@ -318,6 +354,8 @@ How Ascribe would use it:
 
 ## 8. Diagnostics agents can use
 
+Planned in [agents/](agents/README.md) and built (phases 1 and 3).
+
 The rest of this group is about agents that write documentation. The goal is one feedback loop agents can run themselves: **write, check, fix**, with Ascribe's knowledge of the content model, the ids, the phrases, and the diagnostics. Each harness gets that loop through its own channels.
 
 ### What already works
@@ -336,6 +374,8 @@ With `ascribe.startServers: "onDemand"`, a project's server starts when someone 
 
 ## 9. A CLI for agents
 
+Planned in [agents/](agents/README.md) and built (phases 1 and 2), with `link` and `refs` added.
+
 Every harness can run shell commands, so this layer reaches all of them. `ascribe check --format json` exists; these are missing:
 
 | Command | What it gives an agent |
@@ -351,6 +391,8 @@ Each is a thin wrapper over something the server already computes. Output should
 
 ## 10. An MCP server: `ascribe mcp`
 
+Planned in [agents/](agents/README.md) and built (phase 7). `rename` was left out: tools stay read-only.
+
 The same capabilities as typed tools, which both harnesses prefer to shell commands.
 
 - **Stateless and multi-project.** Every tool takes a path and finds the nearest `ascribe.toml`, so one server handles a monorepo.
@@ -360,6 +402,8 @@ The same capabilities as typed tools, which both harnesses prefer to shell comma
 - **Prompts:** "new page of type X", with the frontmatter the type requires.
 
 ## 11. GitHub Copilot
+
+Planned in [agents/](agents/README.md) and built (phases 8 and 10). Prompt files were left out: the cloud agent doesn't load them, and the MCP server's prompts do the same in VS Code.
 
 ### In VS Code
 
@@ -377,11 +421,15 @@ It runs on GitHub without VS Code. The MCP server (configured in the repository'
 
 ## 12. Claude Code (CLI and its VS Code extension)
 
+Planned in [agents/](agents/README.md) and built (phase 9). The hook command serves Codex and Copilot too, which share Claude Code's hook format.
+
 - **A hook for automatic feedback.** A `PostToolUse` hook on `Edit|Write` for Markdown files runs `ascribe check <file> --format json` and returns any errors to Claude, so every edit is checked without Claude remembering to. The most effective single item for Claude Code, and it needs only the per-file check in [section 9](#9-a-cli-for-agents).
 - **A plugin** bundling a skill ("Writing Ascribe documentation", loaded only when relevant), the MCP server, the hook, and commands such as `/ascribe:new-page` and `/ascribe:check`. Installed in one step from a plugin marketplace; the same plugin works in the CLI and in the VS Code extension.
 - **Project files** for teams without the plugin: `.mcp.json` at the repository root, and `CLAUDE.md`.
 
 ## 13. One source for agent instructions
+
+Planned in [agents/](agents/README.md) and built (phase 4), as `ascribe agents sync` rather than `ascribe init --agents`.
 
 `AGENTS.md`, `CLAUDE.md`, Copilot's instruction files, and a skill all want the same guidance. Generate them from one source, the project's content model plus Ascribe's directive reference:
 
@@ -438,6 +486,149 @@ Each view links to the other two: "open source" from a block or a thread, "open 
 
 ---
 
+# Beyond the pages
+
+## 15. A cache, a search index, and notes
+
+Added 2026-10-09. Not planned.
+
+### The idea
+
+A project knows things that aren't in its pages. Some of it Ascribe works out and could keep, instead of working it out again: the result of checking an external link, the text of every resolved page. Some of it people know and have nowhere to put: why a page is written the way it is.
+
+These are two kinds of data with opposite needs, and keeping them apart is the first design decision:
+
+| | Derived | Authored |
+|---|---|---|
+| Examples | Cached link and Vale results; a search index | Notes; the reasons behind decisions |
+| Source of truth | The pages. This is a copy | Itself |
+| If deleted | Rebuilt, with nothing lost | Gone |
+| Shared by | Rebuilding it anywhere | Committing it, or a server |
+
+One mechanism for both would be a mistake. The rule that makes a cache safe (deleting it changes nothing but time) is the one thing notes can't live with.
+
+### Derived: a cache
+
+Ascribe stores nothing between runs today. `ascribe check` doesn't need to: it takes 0.8 to 2 seconds at 3,000 pages, and the language server answers in about 3 ms. What's slow is other tools and the network, and that's where a cache pays:
+
+- **External link results,** kept with an expiry, so a report rechecks only links that are new or stale. The [content checks plan](content-checks/phase-7-report.md) leaves this out; it's the difference between minutes and seconds.
+- **Vale results by the hash of a page's prose,** so a hook or `ascribe check --vale` lints only what changed.
+- **The delivery spec's results** for pages that didn't change.
+- **Differences between runs:** "3 dead links since the last report", which needs the last report's findings and nothing more.
+
+It would live under `.ascribe/`, which projects already ignore, as plain files keyed by content hash. No database is needed for any of the above.
+
+### Derived: a search index
+
+A text search of the source misses what Ascribe resolves: a phrase's value, a fragment's text on the pages that include it, the arm a build selects. An index of resolved pages, per build, finds what a reader would.
+
+Three things would use it:
+
+- **A command,** `ascribe search`, with results as `file:line` in the source, not the output.
+- **The editor:** a search across pages as readers see them. (The actions bar deliberately has no project-wide search; this would be its own command.)
+- **An agent tool,** through the agents plan's MCP server. An agent that can ask "where do the docs already explain rate limits?" writes less duplicate content.
+
+This is the one item here that might want a real index on disk rather than files, and so the one that might add a database engine to the binary. The plain output already exists as the text to index. Notes (below) could be indexed alongside pages.
+
+### Authored: notes
+
+Meta documentation: what explains the docs to the people, and agents, who maintain them. Why this page uses a table and not prose. Why the install steps are in this order. What a subject expert said and where.
+
+Parts of this exist already in other forms:
+
+- **An acknowledgement's reason** (the content checks plan's "this is intended") is a note attached to one place, committed, and never published.
+- **Review anchors comments to blocks** and follows them as text moves. Notes need the same anchoring.
+
+The biggest payoff may be for agents. "Why is this written this way" is what an agent editing a page most needs and can't work out. Notes that Ascribe hands over with a page would do more than the same notes in a wiki.
+
+Code keeps three kinds of commentary apart, and notes should too:
+
+| Kind | Where it lives | Like |
+|---|---|---|
+| A short "why" about one block | In the page, beside the block, never in any output | A code comment |
+| A longer explanation of a page's or a section's approach | A note file of its own | A decision record |
+| Discussion | Pull request review, which Ascribe already shows beside blocks | An issue thread |
+
+**Personal notes** stay on one machine, under `.ascribe/`. **Team notes** are committed.
+
+### Keeping committed notes out of git's way
+
+Committed notes can become a burden: conflicts, noisy pull requests, files that change whenever the content does. Each has a cause that design avoids:
+
+| Problem | Cause | Avoided by |
+|---|---|---|
+| Every content edit rewrites the notes | Positions stored as line numbers | Anchoring by heading id or `@id`, plus a short quote of the text; the position is worked out when the note is read, and never written back |
+| Merge conflicts | Many notes in one file | One file per note. Two people adding notes never touch the same file |
+| Pull requests full of notes | Notes changing alongside content | A folder of their own, and no rewrites on content edits |
+| Notes pointing at nothing | A page renamed, a block deleted | Rename moves them; `ascribe check` reports a note whose anchor is gone, as it will a stale acknowledgement |
+| Growth without limit | Notes used as conversation | No replies. An advisory check on a note's length. Discussion stays in review |
+
+The last row matters most. If notes are allowed to become threads, no storage design saves them. Limited to explanation that lasts, they're small text files, added now and then and almost never edited, which git handles well.
+
+### What git can't do
+
+- **People without a checkout can't add notes:** reviewers, subject experts, support.
+- **A note isn't visible to the team until it merges.**
+- **Nothing is live.**
+
+These are the reasons a server might one day be worth having, and they're about who can take part, not about file size. See [paid features](#paid-features). To keep that open, a note's format is the contract, and where notes are stored sits behind one interface: committed files first, anything else later, with no change to what a note is or how the editor and agents read it.
+
+### Hard parts and questions
+
+- **A cache must never change a result.** The repository tests that two runs write the same bytes. A cache is a new way for them to differ, and a wrong expiry on a link is a wrong report.
+- **Several processes write at once:** one language server per project, the CLI, and a hook, on Windows too, where file locking is stricter.
+- **CI starts with no cache.** Anything that needs one to be correct, rather than fast, is broken there.
+- **The in-page note needs a form.** An HTML comment is dropped from the plain output, but the site output is Markdown that passes HTML through, so a comment may reach a published page's source. A note that must never be published needs a construct Ascribe strips from every output, which is a language addition, like the acknowledgement.
+- **How a note is anchored when its quote changes.** Review already has "outdated" and "detached" for comments; notes probably want the same two states.
+- **Is a note per build?** Probably not: it's about the source.
+- **Does search need a database,** and what does that add to a binary that's 3 to 4 MB compressed today?
+- **A baseline is a different thing.** A committed list of a project's existing findings, so a team adopting the advisory checks sees only new ones, was raised alongside these ideas. It's shared and reviewed, like `ascribe.lock`, and belongs with the content checks, not here.
+
+---
+
+# Paid features
+
+## 16. What could be charged for
+
+Added 2026-10-09. A place to collect ideas, so they're on record if the question is ever opened. Nothing here is planned, and the research is against starting now: [Ascribe fit for docs pain points](../reports/Ascribe%20fit%20for%20docs%20pain%20points.md) concludes that a paid tier is premature and its price ceiling low.
+
+### What an idea is judged against
+
+- **Everything local and deterministic stays free:** every check, snippets, the rendered diff, the report, the agent interfaces. Charging for any of them means maintaining two editions, and they're what would earn Ascribe its users.
+- **The paid unit is what a file in a repository can't provide:** state, identity, and compute that someone else runs. The report found that the open-core services that last charge for something metered, stateful, or heavy that customers can't easily host themselves.
+- **Ascribe hosts nothing today,** and calls no model. A paid service reverses the first, on purpose.
+- **Holding a company's private content has fixed costs** that don't depend on the size of the service: becoming a data processor, security reviews, and a first SOC 2 audit quoted at $25,000 to $50,000.
+- **The ceiling is low.** The nearest comparison charges $29 an organization a month. Reviewers and readers are free everywhere.
+
+### The list
+
+| Idea | What a team would pay for | The catch | From |
+|---|---|---|---|
+| Guest reviewers | People without a GitHub account or a checkout reading a change as pages and commenting | The market prices reviewers at zero | Section 14; the report |
+| Hosted previews with comments | A deployed preview of each pull request, with the review overlay, and no local setup | Netlify and Vercel give this away for the page; only the resolved diff and block anchors are Ascribe's | Section 14 |
+| Sign-off | A required status check that a named person approved the rendered change, for AI-written pull requests | The one competitor moved to exactly this pitch, which suggests review alone didn't sell | The report |
+| Notes for people outside git | Subject experts and support leaving notes on published pages, visible to the team at once | Small audience; committed notes already serve teams in git | Section 15 |
+| Project history | Check and report results kept across CI runs: trends, "new since last week", a dashboard | A CI artifact and a committed file get most of the way for free | Section 15; the content checks plan |
+| Scheduled link and site checks | External links and the delivery spec checked on a schedule, with alerts | A scheduled workflow in the team's own CI does this already | The content checks plan |
+| A docs service for agents | A hosted endpoint that answers an agent's question with a small, correct piece of the docs for the product and version in use | The most metered and stateful idea here, and the least proven; see the agent-first docs experiment | The agent-first docs research |
+| Proposed doc updates | An agent that drafts changes when code or an API changes | Needs a model, so it has a cost per use and no published accuracy; a team's own agent can do it through Ascribe's commands at no cost to anyone | The report |
+| Single sign-on and audit logs | What a company's security team requires before buying anything above | Only exists if something above does | The report |
+| Support or a membership | Priority answers, a say in what's next, a named contact | Not a product; income tracks the maintainer's hours | The report |
+
+### What the list suggests
+
+- **Most of these are thin.** Each row's catch is usually "the free way already works for teams in git". The ideas with real substance are the ones that bring in people who aren't in git (guest reviewers, notes for experts) and the one that serves agents rather than authors.
+- **A docs service for agents is the outlier:** metered, stateful, hard to host yourself, and aimed at a need that's growing. It's also the furthest from what Ascribe is today, and unmeasured.
+- **Support or a membership is the cheapest experiment,** since it needs no service at all.
+
+### Questions
+
+- Is the buyer a docs team, or the engineering team that owns the product?
+- Would a hosted service be a separate product built on Ascribe, rather than a tier of it?
+- What number of teams using Ascribe on private repositories would make this worth opening? The report's answer is "more than none", which is where things stand.
+
+---
+
 # Suggested order
 
 1. **Agent-friendly diagnostics and CLI** (sections 8 and 9): start servers on file changes, clearer messages with links, per-file and stdin checks, `explain`, `model`. Cheap, and every harness benefits.
@@ -463,7 +654,9 @@ Harness and spec details change quickly: VS Code's MCP and language model APIs, 
 - **The actions bar's key:** one that's free on macOS, Windows, and Linux, and doesn't clash with VS Code's own (`Cmd+.` is the lightbulb).
 - **Navigation:** deliberately left to the site generator, or a gap? `llms.txt` sections and OpenAPI pages both want an answer.
 - **Variants for agents:** labeled sections in one Markdown page, or a page per variant value?
-- **Which agent harnesses come first:** Copilot, Claude Code, or both?
-- **Should Ascribe ever apply edits for an agent** (`rename` applying its changes), or always return edits for the harness to apply with its own approvals?
-- **Review beyond a checkout:** is a hosted review service (guest reviewers, deployed previews) ever in scope, and would it be paid?
+- **Which agent harnesses come first:** Copilot, Claude Code, or both? *Answered: both, through what they share.* The commands, `AGENTS.md`, the skill, the hook format, and the MCP server each reach several harnesses from one file, so neither came first; a file for one harness is written only where no shared format reaches it ([agents decision 9](agents/README.md#decisions)).
+- **Should Ascribe ever apply edits for an agent** (`rename` applying its changes), or always return edits for the harness to apply with its own approvals? *Not yet.* Every tool returns edits, and each fix says whether it's safe to apply ([agents decision 4](agents/README.md#decisions)). The first likely exceptions are `ascribe check --fix` for safe fixes, and a `rename` that applies its changes with a dry run; the [agents pass](agents/pass-results.md) records whether agents left edits half done.
+- **Review beyond a checkout:** is a hosted review service (guest reviewers, deployed previews) ever in scope, and would it be paid? Section 16 lists it with the other ideas.
+- **Notes:** one construct in the language for a note that's never published, or two (in the page, and a file)? And do they ever need more than git?
+- **A cache:** worth a database for search, or files only?
 - **Review hosts:** GitHub only, or GitLab too?

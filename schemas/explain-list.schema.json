@@ -1,0 +1,55 @@
+{
+  "$defs": {
+    "ListedDiagnostic": {
+      "description": "A diagnostic in the list.",
+      "properties": {
+        "code": {
+          "description": "The code.",
+          "type": "string"
+        },
+        "severity": {
+          "description": "`error` or `warning`.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The slug.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "severity"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe explain --list` answers: every diagnostic.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "diagnostics": {
+      "description": "Every diagnostic, in code order.",
+      "items": {
+        "$ref": "#/$defs/ListedDiagnostic"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "diagnostics"
+  ],
+  "title": "ExplainListReport",
+  "type": "object"
+}

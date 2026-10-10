@@ -46,7 +46,7 @@ mod bridge;
 mod collect;
 
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Span};
@@ -56,6 +56,7 @@ use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage};
 use crate::{Diagnostic, Project, check_files};
 
 use bridge::Indexed;
+pub(crate) use bridge::held_index;
 use collect::{Found, Identity, LinkProblems, check_page, identity};
 
 /// The name of the build that keeps everything, used to look for content no
@@ -106,7 +107,29 @@ pub struct PageChecker<'p> {
     links: LinkProblems,
 }
 
+/// A project's source index as a [`PageChecker`] reads it, made once and
+/// kept, so the checks of a project kept loaded don't index it each time.
+/// It's of the project it was made from, which mustn't change.
+pub struct PageIndex(Indexed<'static>);
+
+impl PageIndex {
+    /// Indexes the project, as [`PageChecker::new`] does.
+    pub fn new(project: &Project) -> PageIndex {
+        PageIndex(Indexed::new(project))
+    }
+}
+
 impl<'p> PageChecker<'p> {
+    /// A checker over `index`, made from `project` by [`PageIndex::new`]:
+    /// the same checks as [`PageChecker::new`]'s, without indexing again.
+    pub fn with_page_index(project: &'p Project, index: &'p PageIndex) -> PageChecker<'p> {
+        PageChecker {
+            project,
+            indexed: index.0.borrowed(),
+            links: RefCell::new(HashMap::new()),
+        }
+    }
+
     /// Indexes the project.
     pub fn new(project: &'p Project) -> PageChecker<'p> {
         PageChecker {
@@ -145,6 +168,34 @@ impl<'p> PageChecker<'p> {
             .flat_map(|page| check_page(&self.indexed.index, page, &self.links))
             .collect();
         self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
+    /// The page-level diagnostics of `build` for these pages alone, each
+    /// resolved from the checker's index: what [`PageChecker::check`]
+    /// reports for them. A path that isn't a page, or that the build drops,
+    /// has none.
+    pub fn check_pages(&self, build: &Build, pages: &[RelPath]) -> Vec<Diagnostic> {
+        let router = DefaultRouter::from_consumer(&self.project.model().consumer);
+        let found = pages
+            .iter()
+            .filter_map(|path| self.indexed.index.resolve_page(path, build, &router))
+            .flat_map(|page| check_page(&self.indexed.index, &page, &self.links))
+            .collect();
+        self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
+    /// The page-level diagnostics of `build` for the pages that are one of
+    /// `files` or include one, transitively: every page-level diagnostic
+    /// located in those files or with a related place in them.
+    pub fn check_reaching(&self, build: &Build, files: &[RelPath]) -> Vec<Diagnostic> {
+        let index = &self.indexed.index;
+        let mut pages: BTreeSet<RelPath> = BTreeSet::new();
+        for file in files {
+            pages.insert(file.clone());
+            pages.extend(index.including_pages(file));
+        }
+        let pages: Vec<RelPath> = pages.into_iter().collect();
+        self.check_pages(build, &pages)
     }
 
     /// The page-level diagnostics of one build.

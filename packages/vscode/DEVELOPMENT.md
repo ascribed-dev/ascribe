@@ -32,7 +32,7 @@ The server logs to the development window's **Ascribe** output channels (**Ascri
 
 ## Projects
 
-`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or at discovery with `ascribe.startServers: "all"`. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/content/guides/editor.md](../../docs/content/guides/editor.md#workspaces-with-several-projects).
+`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or changes on disk, or at discovery with `ascribe.startServers: "all"`. For changes on disk, the registry keeps one watcher per workspace folder (`**/*`) and hands what it reports to `src/diskChanges.ts`, which gathers a burst (`ChangeBatch`) and decides from each idle project's `[project]` and `[sources]` paths whether a file is the project's (`startsServer`); `test/unit/diskChanges.test.ts` checks both without VS Code. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/content/guides/editor.md](../../docs/content/guides/editor.md#workspaces-with-several-projects).
 
 ## The preview
 
@@ -108,6 +108,33 @@ server.
 `pnpm --filter ascribe-vscode build` bundles the element library, from the
 `@ascribed/elements` package's source and stylesheet, into `dist/webview/`.
 
+## Actions
+
+The editor's actions (**Wrap in a note**, **Insert content that varies**, and the rest) are defined once, in `src/actions/registry.ts`: each has a title and description for writers, where it applies (`applies`, from the language server's `ascribe/context` answer), what it asks (`ask`, a wizard of steps built from `ascribe/targets`), and what it does (an `ascribe/edit` operation, or a function of the extension's own, such as **Copy a link to this section**). `crates/ascribe-lsp/README.md` documents the three requests.
+
+The registry feeds the Command Palette (`ascribe.action.<id>`), the editor's context menu (the **Ascribe** submenu, `ascribe.actions`), the lightbulb (code actions of kind `refactor.rewrite.ascribe`), and the actions bar (the command `ascribe.actions`, on `Ctrl+K A` / `Cmd+K A`). VS Code reads commands and menus from `package.json`, so it repeats each action's command, title, and menu `when` clause; `test/unit/actions.test.ts` fails when they differ from the registry, and checks that each `when` clause agrees with `applies` on sample contexts. The commands table and the actions table in the guide are generated from the registry by `test/unit/docs.test.ts`.
+
+- **One cached context** (`src/actions/context.ts`). The extension asks `ascribe/context` for the active editor's selection once it has stayed put for a moment, cancelling the request for a selection it moved on from. The answer sets the context keys the menu's `when` clauses read (`ascribe.at.note`, `ascribe.insertable`, and the others in `CONTEXT_KEYS`). The lightbulb answers from that cache only, and with nothing when it's for another version or range: VS Code asks the lightbulb on every cursor move, and asks again. `ascribe.inProject` is true when the active editor's file belongs to a project.
+- **Running an action** (`src/actions/run.ts`): the context for the selection, then the wizard (`src/actions/steps.ts` builds and runs the steps, `src/actions/ask.ts` shows them in the quick input with a step counter and Back), then `ascribe/edit` with the document's version through `ProjectServer.requestEdit`, which converts the server's `WorkspaceEdit` with the language client's converter. The edit is applied with `workspace.applyEdit`, one undo step, and its `select` range is selected. When the page changed after the context was asked for, the server refuses the stale version; the run asks for the context again and tries once more with the same answers.
+- **The actions bar** (`src/actions/bar.ts` lists, `src/actions/barPick.ts` shows). A quick pick that shows at once, busy, and fills once the cached context and VS Code's quick fixes at the cursor (`vscode.executeCodeActionProvider`) are in: the fixes that edit the text first (not those that only run a command, such as a chat's **Fix** and **Explain**), leaving out the registry's own `quickfix.ascribe` actions, then the actions that apply, by group, each with what it writes when that's known before the wizard (`preview` in the registry). A chosen action runs through the runner; its wizard's first step is shown before the bar is disposed, so it takes the bar's place in the quick input instead of closing it and opening another. Escape before then cancels the wizard.
+- **Tests** answer a wizard from a script: `api.actions.answerNext([...])` before running the command, and `api.actions.runs` says what each run did. `api.actions.bars` says what each opening of the bar listed, and `api.actions.selectInBar(label)` makes a row active for `workbench.action.acceptSelectedQuickOpenItem` to choose.
+
+## The status bar and the sidebar
+
+`src/ui/` holds the editor's UI around projects. **The build you're looking at** is one value per project, `ChosenBuilds` in `src/ui/chosenBuild.ts`: the preview renders it, the status bar names it, and the preview's picker and **Switch Build** both set it, so either one changes the other. No choice means the editor build, and choosing the editor build clears the choice, so it follows `[editor] build`.
+
+`src/ui/projectBuilds.ts` asks each running server for its builds (`ascribe/targets`, through its `ascribe.toml`, which the server answers for as it does for a page), again when a server starts or its `ascribe.toml` changes, and never starts a server. `src/ui/describe.ts` works out what the status bar item and the view's items say from plain values, so `test/unit/ui.test.ts` checks it without VS Code; `src/ui/statusBar.ts` and `src/ui/projectsView.ts` show it. The view lists `ProjectRegistry.servers`, started or not, and redraws on the registry's `onDidChangeProjects` and `onDidChangeState` (each `ProjectServer`'s `onDidChangeState`, from `src/serverState.ts`). Its inline buttons are the commands `ascribe.projects.showOutput` and `ascribe.projects.restart`, which the palette doesn't show; a project's `contextValue`, `ascribe.project.<state>`, decides which it offers.
+
+The sidebar's other views, **Used by**, **Pages**, and **Content model**, are `src/ui/sidebarViews.ts`, with what their items say worked out from plain values in `src/ui/sidebar.ts` (`test/unit/sidebar.test.ts`). They show the active file's project, and ask only its server, only while it runs. Pages and Content model draw `ascribe/inventory`, asked through the project's `ascribe.toml` on a save of one of its files and when the active project changes, debounced. Used by asks `textDocument/references` for the active page as the cursor moves: at the cursor on a heading's line, else at the start of the file, which the server reads as the file itself. It sorts the places into links and includes by the text of their lines, read from the open document or the disk.
+
+**The build lens** (`src/ui/buildLens.ts`) dims what the build you're looking at leaves out of each visible page of a project whose lens is on. Which projects have it on is `BuildLenses` in `src/ui/lens.ts`, beside `lensView`, which turns an `ascribe/buildView` answer into the ranges to dim, their hovers, and the line for a page the build drops, so `test/unit/lens.test.ts` checks them without VS Code. The lens has no build of its own: it asks for `ChosenBuilds`' choice, the preview's, and asks again on an edit (debounced), when an editor is shown, when the choice or the lens changes, and when `ProjectBuilds` fires (a server started or stopped, or the content model changed). An answer for an older version of the page, or for a request since replaced, is dropped. It asks only a running server, and the status bar item's menu toggles it through `ascribe.toggleBuildLens`.
+
+## The walkthrough
+
+**Get Started with Ascribe** is `contributes.walkthroughs` in `package.json`, with each step's media, a short Markdown file, in `media/walkthrough/`. VS Code checks none of what a step names, so `test/unit/walkthrough.test.ts` does: every command a button runs exists, every step has a completion event, each `onCommand`, `onView`, and `onContext` names a command, view, or context key the extension has, each `onLink` is a link the step shows, every media file exists, and each link to the docs site names a page and heading of `docs/content/`.
+
+A button runs from the Welcome page, where no text editor is active, so a step that acts on a page runs one of the hidden commands in `src/ui/walkthroughSteps.ts`. `src/ui/walkthrough.ts` shows the page the writer last had open (or one open in a tab since the window opened), then runs the command the step is about. VS Code completes a step on the id of a command it ran, not on a command an extension runs, so such a step completes on either id: its button's, and the command's when the writer uses it another way.
+
 ## Highlighting
 
 `syntaxes/` holds two TextMate injections into markdown (one for top level, one
@@ -119,6 +146,56 @@ undeclared phrases, project widgets, and a text primary's later lines. The
 `semanticTokenTypes` and `semanticTokenScopes` in `package.json` map the server's
 legend (`crates/ascribe-lsp/README.md`) to theme scopes; a unit test keeps them
 in step.
+
+## Icons and colors
+
+The extension takes its look from the user's theme. Ascribe's own colors are in
+the Marketplace icon and banner, and in the preview's webview only as fallbacks
+for theme colors it can't read.
+
+- **Colors.** The native UI (status bar, tree views, decorations) uses theme
+  colors (`new vscode.ThemeColor("…")`), never a hex value; `test/unit/theme.test.ts`
+  fails on a color written in `src/`. Declare one in `contributes.colors` only
+  when no built-in color fits: an `ascribe.`-prefixed id, a description, and
+  `light`, `dark`, `highContrast`, and `highContrastLight` defaults, each a
+  reference to a built-in color where one fits. An id is public once released,
+  since users override it in `workbench.colorCustomizations`, so it's listed in
+  `docs/content/guides/editor.md`. None is declared today.
+- **Icons.** [Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
+  for everything they cover, the same one for a concept everywhere:
+
+  | Concept | Codicon |
+  |---|---|
+  | Project | `$(book)` |
+  | Page | `$(file)` |
+  | Fragment | `$(file-symlink-file)` |
+  | Link | `$(link)` |
+  | References, what uses a thing | `$(references)` |
+  | Build | `$(package)` |
+  | Problem | `$(error)`, `$(warning)`, `$(info)`, by severity |
+  | A project's server: running or not started, starting, failed | `$(book)`, `$(sync~spin)`, `$(warning)` |
+  | Dimension | `$(symbol-enum)` |
+  | Variant, one value of a dimension | `$(symbol-enum-member)` |
+  | Phrase | `$(symbol-string)` |
+  | Availability, feature | `$(tag)` |
+  | Glossary term | `$(symbol-key)` |
+  | Note type | `$(note)` |
+  | Widget | `$(symbol-class)` |
+  | Orphan pages | `$(warning)` |
+  | Unused, not included | the concept's icon in `disabledForeground` |
+  | The build lens, dimming what a build leaves out | `$(eye)` |
+
+  An icon of Ascribe's own is added only for a concept no codicon reads right
+  for. It's drawn as a one-color SVG on the codicon grid (16 pixels, 1 pixel
+  strokes), built into one icon font with the mark's assets
+  (`scripts/design/assets.ts`), declared in `contributes.icons` as
+  `ascribe-<name>`, and used as `$(ascribe-<name>)`; the theme test fails on one
+  that's used and not declared. There are none today.
+- **The activity bar icon** is `media/activity.svg`, generated from the mark in
+  one color for VS Code to tint. The Marketplace icon is `media/icon.png`, and the
+  banner behind it (`galleryBanner`) is the icon's tile color, which
+  `scripts/design/assets.test.ts` holds to the palette.
+  [design/README.md](../../design/README.md#the-assets) has how they're made.
 
 ## Development
 
@@ -133,13 +210,15 @@ pnpm --filter ascribe-vscode test:parity        # the preview against the Astro 
 
 The integration tests download VS Code into `out/vscode-test` and need a
 display: on Linux without one, use `pnpm --filter ascribe-vscode
-test:integration:headless` (it runs under `xvfb-run -a`). They have five
-suites: `activation` (no `ascribe.toml`: the extension stays off), `stub` (a
+test:integration:headless` (it runs under `xvfb-run -a`). Their
+suites include `activation` (no `ascribe.toml`: the extension stays off), `stub` (a
 stub server in `test/stub-server`), `quill` (the real `ascribe lsp` on a
 copy of `examples/quill` with a broken page added), `preview` (the preview
-panel against the real server on a copy of `examples/quill`), and `monorepo`
-(several projects, one nested in another, in `test/fixtures/monorepo`); the
-last three run only when `ASCRIBE_BIN` names a built `ascribe`. `ASCRIBE_SUITE` runs one suite.
+panel against the real server on a copy of `examples/quill`), `actions` (the
+editor's actions, run through their commands, on a copy of `examples/quill`),
+and `monorepo` (several projects, one nested in another, in
+`test/fixtures/monorepo`); `test/integration/run.ts` lists them all. Those
+against the real server run only when `ASCRIBE_BIN` names a built `ascribe`. `ASCRIBE_SUITE` runs one suite.
 
 The webview tests (`test/webview/`) load the preview's shell and bundles into
 Chromium under the real policy (`/opt/pw-browsers/chromium`, or
@@ -156,3 +235,9 @@ is in `test/parity/normalize.ts`.
 
 `test/fixtures/markdown.tmLanguage.json` is VS Code's markdown grammar (MIT,
 microsoft/vscode), so the grammar tests see the scopes it really produces.
+
+## Agents
+
+`src/agents/` is what agents running in VS Code get. `mcp.ts` registers one MCP server definition provider (`ascribe.mcp`): `ascribe mcp`, run with the binary the first project resolves (`resolveProjectBinary`, as a server's start does), in that project's workspace folder; `mcpServer.ts` works it out from plain values. `tools.ts` registers the language model tools `contributes.languageModelTools` declares, for what needs the running extension: `ascribe_editor_problems`, and, while review is on, `ascribe_review_threads` and `ascribe_review_changes`. Both registrations are skipped when `vscode.lm` lacks the API, and the rest of the extension works without them. No tool starts a server, turns review on, or writes.
+
+The problems tool answers from `ProjectServer.published` (`published.ts`): every `textDocument/publishDiagnostics` the server sends, kept with its document version, through the client's `connectionOptions.messageStrategy`, since the client's own copy drops the version, and the `data` that carries each diagnostic's slug, builds, advice, and fixes. When the file changed since the server last published for it (an open document of another version, or a file on disk written since), it waits for the next publication, up to `WAIT_MS`. `problems.ts` turns publications into `ascribe check --format json`'s shape, counting columns in characters and offsets in UTF-8 bytes from the text the server checked, so `test/unit/agents.test.ts` checks it without VS Code. The threads tool's text is `@ascribed/review`'s `openThreadsList`, through `ThreadsController.list`.

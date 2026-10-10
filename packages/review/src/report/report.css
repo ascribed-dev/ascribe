@@ -8,16 +8,20 @@
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, light. */
   --r-page: #ffffff;
-  --r-ink: #1d2330;
-  --r-muted: #5b6475;
-  --r-side: #f3f4f7;
-  --r-line: #d3d8e0;
-  --r-accent: #1f6feb;
+  --r-ink: #22272e;
+  --r-muted: #676c75;
+  --r-side: #f7f9fd;
+  --r-line: #e3e6ec;
+  --r-accent: #5962e8;
   --r-accent-ink: #ffffff;
-  --r-code: #f0f2f6;
-  --r-notice: #fff6bf;
+  --r-code: #f7f9fd;
+  --r-notice: #fef5eb;
   --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-caption: 600 0.75rem/1.4;
+  --r-small: 400 0.875rem/1.5;
+  --r-body: 400 1rem/1.6;
+  --r-h1: 700 1.875rem/1.2;
   /* End of generated frame. */
   color-scheme: light dark;
 }
@@ -25,47 +29,49 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, dark. */
-    --r-page: #1e2026;
-    --r-ink: #d9dde5;
-    --r-muted: #929bab;
-    --r-side: #23262d;
-    --r-line: #343a45;
-    --r-accent: #5aa2ff;
-    --r-accent-ink: #0b1220;
-    --r-code: #282c35;
-    --r-notice: #3b3514;
+    --r-page: #0c0f16;
+    --r-ink: #f0f3f7;
+    --r-muted: #a5a9b2;
+    --r-side: #13171f;
+    --r-line: #393d46;
+    --r-accent: #91a1fe;
+    --r-accent-ink: #0c0f16;
+    --r-code: #13171f;
+    --r-notice: #2b1a03;
     /* End of generated frame. */
 
     /* The element library's colors, for a dark page. */
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: elements, dark. */
-    --ascribe-border-color: #343a45;
-    --ascribe-muted-color: #929bab;
-    --ascribe-note-color: #5aa2ff;
-    --ascribe-note-background: #172a45;
-    --ascribe-tip-color: #4fc572;
-    --ascribe-tip-background: #133520;
-    --ascribe-important-color: #c59bff;
-    --ascribe-important-background: #2d2440;
-    --ascribe-warning-color: #dcb13a;
-    --ascribe-warning-background: #3a2f0d;
-    --ascribe-caution-color: #ff8279;
-    --ascribe-caution-background: #401918;
-    --ascribe-steps-color: #5aa2ff;
-    --ascribe-steps-marker-text-color: #0b1220;
-    --ascribe-tab-color: #929bab;
-    --ascribe-tab-active-color: #5aa2ff;
-    --ascribe-tab-focus-color: #5aa2ff;
-    --ascribe-tab-hover-background: #272b33;
-    --ascribe-state-color: #929bab;
-    --ascribe-state-background: #272b33;
-    --ascribe-state-ga-color: #4fc572;
-    --ascribe-state-ga-background: #133520;
-    --ascribe-state-preview-color: #c59bff;
-    --ascribe-state-preview-background: #2d2440;
-    --ascribe-state-beta-color: #5aa2ff;
-    --ascribe-state-beta-background: #172a45;
-    --ascribe-state-deprecated-color: #dcb13a;
-    --ascribe-state-deprecated-background: #3a2f0d;
+    --ascribe-border-color: #393d46;
+    --ascribe-muted-color: #a5a9b2;
+    --ascribe-note-color: #91a1fe;
+    --ascribe-note-background: #161b3a;
+    --ascribe-tip-color: #22c598;
+    --ascribe-tip-background: #02251a;
+    --ascribe-important-color: #ffc8f9;
+    --ascribe-important-background: #2d132b;
+    --ascribe-warning-color: #e0992e;
+    --ascribe-warning-background: #2b1a03;
+    --ascribe-caution-color: #fe7f57;
+    --ascribe-caution-background: #341308;
+    --ascribe-steps-color: #91a1fe;
+    --ascribe-steps-marker-text-color: #0c0f16;
+    --ascribe-tab-color: #a5a9b2;
+    --ascribe-tab-active-color: #91a1fe;
+    --ascribe-tab-focus-color: #b3c0ff;
+    --ascribe-tab-hover-background: #13171f;
+    --ascribe-state-color: #a5a9b2;
+    --ascribe-state-background: #22272e;
+    --ascribe-state-ga-color: #22c598;
+    --ascribe-state-ga-background: #02251a;
+    --ascribe-state-preview-color: #ffc8f9;
+    --ascribe-state-preview-background: #2d132b;
+    --ascribe-state-beta-color: #91a1fe;
+    --ascribe-state-beta-background: #161b3a;
+    --ascribe-state-deprecated-color: #e0992e;
+    --ascribe-state-deprecated-background: #2b1a03;
+    --ascribe-state-removed-color: #fe7f57;
+    --ascribe-state-removed-background: #341308;
     /* End of generated elements. */
   }
 }
@@ -83,7 +89,7 @@ body {
 body {
   background: var(--r-page);
   color: var(--r-ink);
-  font: 14px/1.5 var(--r-ui);
+  font: var(--r-small) var(--r-ui);
 }
 
 .r {
@@ -100,10 +106,28 @@ body {
 
 .r-sub {
   color: var(--r-muted);
-  font-size: 12.5px;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
 }
 
-.r-head .r-notice {
+.r-head .r-status {
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
+  color: var(--r-muted);
+  margin-top: 6px;
+}
+
+.r-status:empty {
+  margin: 0;
+}
+
+.r-offscreen {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+}
+
+.r-notice {
   margin-top: 8px;
 }
 
@@ -124,7 +148,7 @@ body {
 
 .r-side h2,
 .r-side h3 {
-  font-size: 12px;
+  font: var(--r-caption) var(--r-ui);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--r-muted);
@@ -133,7 +157,8 @@ body {
 
 .r-build {
   display: block;
-  font-size: 12px;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
   color: var(--r-muted);
   margin-bottom: 4px;
 }
@@ -188,20 +213,21 @@ body {
 .r-page-path,
 .r-page-via {
   display: block;
-  font-family: var(--r-mono);
-  font-size: 11.5px;
+  font: var(--r-caption) var(--r-mono);
+  font-weight: 400;
   color: var(--r-muted);
   overflow-wrap: anywhere;
 }
 
 .r-page-counts {
   display: block;
-  font-size: 12px;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
 }
 
 .r-omitted li {
-  font-family: var(--r-mono);
-  font-size: 11.5px;
+  font: var(--r-caption) var(--r-mono);
+  font-weight: 400;
   color: var(--r-muted);
   padding: 2px 8px;
 }
@@ -237,12 +263,12 @@ body {
 }
 
 .r-show {
-  font-size: 12px;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
   color: var(--r-muted);
 }
 
 .r-quiet {
-  font-size: 13px;
   color: var(--r-muted);
 }
 
@@ -258,7 +284,6 @@ body {
 .r-primary,
 .r-link {
   font: inherit;
-  font-size: 13px;
   color: inherit;
   background: transparent;
   border: 0;
@@ -299,7 +324,8 @@ body {
 }
 
 .r-legend {
-  font-size: 12.5px;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
   color: var(--r-muted);
   margin-top: 6px;
 }
@@ -328,12 +354,13 @@ body {
   border-radius: 4px;
   padding: 8px 12px;
   color: var(--r-muted);
-  font-size: 12.5px;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
 }
 
 /* The page: Ascribe's bare render, in a readable measure. */
 .r-page-heading {
-  font-size: 1.9em;
+  font: var(--r-h1) var(--r-ui);
   margin: 8px 0 12px;
 }
 
@@ -341,8 +368,7 @@ body {
   position: relative;
   max-width: 46rem;
   padding-left: 12px;
-  font-size: 16px;
-  line-height: 1.6;
+  font: var(--r-body) var(--r-ui);
 }
 
 .r-page img {

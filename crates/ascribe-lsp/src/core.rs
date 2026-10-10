@@ -5,7 +5,7 @@
 //! computes without the lock, and comes back to publish under it, so a change
 //! and the check that a result is still current are never interleaved.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -15,7 +15,7 @@ use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{
     Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
-    is_source_path,
+    in_nested_project, is_source_path,
 };
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
@@ -141,6 +141,10 @@ pub(crate) struct Core {
     pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
+    /// Closed files changed on disk, published at their next diagnostics
+    /// even when those didn't change, so a client waiting on the change
+    /// learns the server has caught up.
+    forced: HashSet<PathBuf>,
     next_id: i32,
 }
 
@@ -160,6 +164,7 @@ impl Core {
             review: None,
             epoch: 0,
             published: HashMap::new(),
+            forced: HashSet::new(),
             next_id: 0,
         }
     }
@@ -467,7 +472,23 @@ impl Core {
             }
         }
         if !changes.is_empty() {
+            let written: Vec<RelPath> = changes
+                .iter()
+                .filter_map(|change| match change {
+                    Change::Edited { path, .. } | Change::Unreadable { path, .. } => {
+                        Some(path.clone())
+                    }
+                    _ => None,
+                })
+                .collect();
             self.apply(changes, &mirror);
+            if let Some(loaded) = self.loaded.as_mut() {
+                for path in written {
+                    self.forced.insert(loaded.source_path(&path));
+                    // Checked again even when its text is what it was.
+                    loaded.dirty.insert(path);
+                }
+            }
         }
         if sync_model {
             self.sync_model();
@@ -721,7 +742,8 @@ impl Core {
 
     // A closed file keeps its diagnostics.
     /// Publishes a file's diagnostics when they, or the version of the document
-    /// they're for, changed since the last time.
+    /// they're for, changed since the last time, or when the file was changed
+    /// on disk since.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
         let doc = self.docs.get(path);
         let version = doc.map(|d| d.version);
@@ -730,7 +752,8 @@ impl Core {
             None => !diagnostics.is_empty() || is_open,
             Some(last) => last.diagnostics != diagnostics || last.version != version,
         };
-        if !changed {
+        let forced = self.forced.remove(path);
+        if !changed && !forced {
             return;
         }
         let uri = match doc {
@@ -803,6 +826,23 @@ fn start_message(config: Option<&Path>, folders: &[PathBuf]) -> String {
 }
 
 impl Core {
+    /// The diagnostics last published for a file: none when nothing was.
+    pub(crate) fn published(&self, path: &Path) -> &[lsp_types::Diagnostic] {
+        self.published
+            .get(path)
+            .map_or(&[], |p| p.diagnostics.as_slice())
+    }
+
+    /// The diagnostics last published, for each file that has any.
+    pub(crate) fn all_published(
+        &self,
+    ) -> impl Iterator<Item = (&PathBuf, &[lsp_types::Diagnostic])> {
+        self.published
+            .iter()
+            .map(|(path, p)| (path, p.diagnostics.as_slice()))
+            .filter(|(_, d)| !d.is_empty())
+    }
+
     /// Whether files are waiting to have their diagnostics computed.
     pub(crate) fn has_work(&self) -> bool {
         self.loaded.as_ref().is_some_and(|l| !l.dirty.is_empty())
@@ -837,14 +877,53 @@ impl Core {
         };
         let snapshot = loaded.inc.snapshot();
         snapshot.file(&content)?;
+        self.ctx(loaded, snapshot, content, &path)
+    }
+
+    /// What a request about the whole project works from, asked through any
+    /// of the project's files: a source file, `ascribe.toml`, or any other
+    /// file in its folder. For a file that isn't a source, the context's path
+    /// is [`Ctx::PROJECT`], so paths are written from the content root.
+    pub(crate) fn project_target(&self, uri: &Uri) -> Option<Ctx> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let content = match loaded.classify(&path)? {
+            Kind::Source(content, _) => content,
+            Kind::Model => RelPath::parse(Ctx::PROJECT).ok()?,
+            Kind::Asset(project_rel) => {
+                let content_dir = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
+                // A file in a nested project's folder is that project's.
+                let nested = relative_path(&content_dir, &path).is_some_and(|content| {
+                    content.is_inside()
+                        && in_nested_project(&content, loaded.inc.snapshot().nested_projects())
+                });
+                if !project_rel.is_inside() || nested {
+                    return None;
+                }
+                RelPath::parse(Ctx::PROJECT).ok()?
+            }
+        };
+        self.ctx(loaded, loaded.inc.snapshot(), content, &path)
+    }
+
+    fn ctx(
+        &self,
+        loaded: &Loaded,
+        snapshot: ascribe_resolve::Snapshot,
+        content: RelPath,
+        path: &Path,
+    ) -> Option<Ctx> {
         Some(Ctx {
             snapshot,
             path: content,
+            version: self.docs.get(path).map(|d| d.version),
             model: loaded.model.clone(),
             model_text: loaded.model_text.clone(),
+            model_problem: self.model_problem.is_some(),
             config: self.config.clone()?,
             content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             encoding: self.encoding,
+            fs: loaded.fs.clone(),
         })
     }
 

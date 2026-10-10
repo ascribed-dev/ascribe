@@ -1,0 +1,243 @@
+{
+  "$defs": {
+    "InventoryEntry": {
+      "description": "An entry of the content model.",
+      "properties": {
+        "declaration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where `ascribe.toml` declares it; `null` for a built-in note type,\nand for an entry that can't be found there."
+        },
+        "key": {
+          "description": "Its key, id, or name, as pages write it.",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ModelKind",
+          "description": "What kind of entry it is."
+        },
+        "label": {
+          "description": "Its label, name, or term, where it has one besides its key.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uses": {
+          "description": "How many places use it; `null` for a build, which pages don't name,\nand for a glossary term with `match = \"marked\"`, whose uses are links\nto its page.",
+          "format": "uint",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "key",
+        "label",
+        "uses",
+        "declaration"
+      ],
+      "type": "object"
+    },
+    "InventoryFragment": {
+      "description": "A fragment.",
+      "properties": {
+        "includedBy": {
+          "description": "The content paths of the files that include it, in order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "path": {
+          "description": "Its content path.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "includedBy"
+      ],
+      "type": "object"
+    },
+    "InventoryPage": {
+      "description": "A page.",
+      "properties": {
+        "incoming": {
+          "description": "How many links from other files, and includes, name it.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "path": {
+          "description": "Its content path.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Its title (frontmatter `title`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "description": "Its content type; `null` when no one type applies.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "title",
+        "type",
+        "incoming"
+      ],
+      "type": "object"
+    },
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "ModelKind": {
+      "description": "A kind of content model entry.",
+      "oneOf": [
+        {
+          "const": "phrase",
+          "description": "A phrase.",
+          "type": "string"
+        },
+        {
+          "const": "feature",
+          "description": "A feature.",
+          "type": "string"
+        },
+        {
+          "const": "term",
+          "description": "A glossary term.",
+          "type": "string"
+        },
+        {
+          "const": "dimension",
+          "description": "A dimension.",
+          "type": "string"
+        },
+        {
+          "const": "note",
+          "description": "A note type.",
+          "type": "string"
+        },
+        {
+          "const": "widget",
+          "description": "A project widget.",
+          "type": "string"
+        },
+        {
+          "const": "build",
+          "description": "A build.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/inventory`. A document that isn't one of the\nproject's files gets empty lists.",
+  "properties": {
+    "contentUri": {
+      "description": "The `file:` URI of the content root, which content paths are\nrelative to.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fragments": {
+      "description": "The fragments, by content path.",
+      "items": {
+        "$ref": "#/$defs/InventoryFragment"
+      },
+      "type": "array"
+    },
+    "model": {
+      "description": "The content model's entries: phrases, features, glossary terms,\ndimensions, note types, widgets, then builds, each kind in\ndeclaration order.",
+      "items": {
+        "$ref": "#/$defs/InventoryEntry"
+      },
+      "type": "array"
+    },
+    "modelUri": {
+      "description": "The `file:` URI of the project's `ascribe.toml`, which the ranges of\ndeclarations are in.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "orphans": {
+      "description": "The content paths of the pages no other file links to or includes,\nother than index pages (`index.md`, in any folder). Without a\nnavigation file a reader may still reach them, so this is a hint.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "pages": {
+      "description": "The pages, by content path.",
+      "items": {
+        "$ref": "#/$defs/InventoryPage"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "pages",
+    "fragments",
+    "orphans",
+    "model"
+  ],
+  "title": "InventoryResult",
+  "type": "object"
+}

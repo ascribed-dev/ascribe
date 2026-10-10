@@ -26,8 +26,9 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **Diagnostics live in one file,** `tests/conformance/diagnostics.toml`. A new one is added there and in `crates/ascribe-core/src/diagnostics.rs`, in the same order; a test compares them.
 - **Behavior changes come with a conformance case** in `tests/conformance/cases/`.
 - **Generated files aren't edited by hand.** A file that says what generates it is rewritten by running its test with `ASCRIBE_BLESS=1`; read the diff before committing it. See ARCHITECTURE.md's list.
+- **Colors are written in `design/tokens.toml` only,** and a stylesheet change is an output change: the HTML report embeds the stylesheets. [design/README.md](design/README.md) has the steps; a test fails on a color written in a stylesheet.
 - **Never accept snapshots blindly.** Review `insta` changes with `cargo insta review`.
-- **Read project files through `ascribe_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/ascribe-resolve/tests/file_reads.rs` fails.
+- **Read project files through `ascribe_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/ascribe-resolve/tests/all/file_reads.rs` fails.
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
 - **`crates/comrak-ascribe` is a fork.** Mark each change `// ASCRIBE:` and list it in `crates/comrak-ascribe/FORK.md`.
 - **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and the unreleased section of `CHANGELOG.md`. Don't run a formatter over Markdown.
@@ -38,6 +39,7 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, the checks, documenting a change, and the docs site.
 - [RELEASING.md](RELEASING.md): how a release and the nightly canary are made.
 - [project-docs/checklists.md](project-docs/checklists.md): what a change to the language, a command, or the site output's markup must touch. Go through the one that fits before opening a pull request.
+- [.claude/skills/writing-tests/SKILL.md](.claude/skills/writing-tests/SKILL.md): the test layers and what each proves, where a test of each kind goes, the fixture helpers to build on, and what keeps a test fast. Read it before adding or changing a test.
 - [project-docs/decisions.md](project-docs/decisions.md): the decisions in force. A decision made in an issue or a review is added there in the pull request that acts on it.
 - [project-docs/outside.md](project-docs/outside.md): every account, secret, and package Ascribe relies on outside the repository, and who can change each. [project-docs/lints.md](project-docs/lints.md): the lints tried, and why each was kept or not.
 - `project-docs/`: plans, each with its decisions. A plan says what was intended; the code and ARCHITECTURE.md say what is.

@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { format, resolveConfig } from "prettier";
 import { describe, expect, test } from "vitest";
 import { blank, declarations, sheet } from "./css.ts";
+import { COLORS, contrast, EMIT, MINIMUM, readCandidate, readPairs } from "./specimen.ts";
 import { blocks, load, references, render, ROOT, source, type Tokens } from "./tokens.ts";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts";
@@ -151,4 +152,139 @@ test("the source is checked", () => {
   expect(unused).toContain('emit x.css b --b: "blue.1" isn\'t a token');
   expect(unused).toContain("color.b isn't used by any stylesheet");
   expect(unused).toContain("palette blue.2 isn't used by any color");
+});
+
+// The colors the element library, review, the HTML report, and the Astro
+// toolbar share: the top-level [color] tokens named as the candidates name
+// their semantic colors.
+describe("the shared colors", () => {
+  const tokens = source();
+  const semantic = new Set<string>(COLORS);
+  const shared = new Map(
+    [...tokens.colors]
+      .filter(([token]) => semantic.has(token.slice("color.".length)))
+      .map(([token, { light, dark }]) => [
+        token.slice("color.".length),
+        { light: tokens.palette.get(light) ?? "", dark: tokens.palette.get(dark) ?? "" },
+      ]),
+  );
+  const { pairs } = readPairs(read("design/candidates/pairs.toml"));
+
+  test("pass every pairing in design/candidates/pairs.toml, in light and dark", () => {
+    const failing = pairs
+      .flatMap((pair) => {
+        const [fg, bg] = [shared.get(pair.fg), shared.get(pair.bg)];
+        if (fg === undefined || bg === undefined) return [];
+        return (["light", "dark"] as const).map((scheme) => {
+          return { pair, scheme, ratio: contrast(fg[scheme], bg[scheme]) };
+        });
+      })
+      .filter(({ pair, ratio }) => Math.round(ratio * 100) / 100 < MINIMUM[pair.kind])
+      .map(
+        ({ pair, scheme, ratio }) => `${scheme}: ${pair.fg} on ${pair.bg}, ${ratio.toFixed(2)}:1`,
+      );
+    expect(failing).toEqual([]);
+  });
+
+  test("are every color the pairings name", () => {
+    const named = new Set(pairs.flatMap(({ fg, bg }) => [fg, bg]));
+    expect([...named].filter((name) => !shared.has(name))).toEqual([]);
+  });
+
+  test("are the chosen palette's", () => {
+    const chosen = readCandidate("chosen", read("design/candidates/chosen.toml"));
+    for (const [name, value] of shared) {
+      const color = chosen.colors.get(name);
+      expect({ name, light: color?.light.hex, dark: color?.dark.hex }).toEqual({ name, ...value });
+    }
+  });
+
+  test("are what the specimen shows the element library and review with", () => {
+    for (const file of ["packages/elements/css/style.css", "packages/review/src/marks/marks.css"]) {
+      const emitted = new Map(
+        [...(tokens.emit.get(file)?.values() ?? [])].flatMap((block) => [...block]),
+      );
+      const colors = Object.entries(EMIT[file] ?? {}).filter(([, t]) => t.startsWith("color."));
+      for (const [property, token] of colors) {
+        expect(`${property}: ${emitted.get(property)}`).toBe(`${property}: ${token}`);
+      }
+    }
+  });
+});
+
+// The public custom properties: a site themes the elements and review's marks
+// with these names, so none is renamed or removed (decision 44 in
+// project-docs/decisions.md). Their default values may change.
+test("the public custom properties keep their names", () => {
+  const declared = (file: string): string[] =>
+    [
+      ...new Set(
+        declarations(sheet(file, read(file)))
+          .map(({ property }) => property)
+          .filter((property) => property.startsWith("--ascribe-")),
+      ),
+    ].sort();
+  expect(declared("packages/elements/css/style.css")).toEqual([
+    "--ascribe-border-color",
+    "--ascribe-border-width",
+    "--ascribe-caution-background",
+    "--ascribe-caution-color",
+    "--ascribe-font-family",
+    "--ascribe-font-size-small",
+    "--ascribe-font-weight-strong",
+    "--ascribe-important-background",
+    "--ascribe-important-color",
+    "--ascribe-muted-color",
+    "--ascribe-note-background",
+    "--ascribe-note-color",
+    "--ascribe-radius",
+    "--ascribe-space",
+    "--ascribe-space-small",
+    "--ascribe-state-background",
+    "--ascribe-state-beta-background",
+    "--ascribe-state-beta-color",
+    "--ascribe-state-color",
+    "--ascribe-state-deprecated-background",
+    "--ascribe-state-deprecated-color",
+    "--ascribe-state-ga-background",
+    "--ascribe-state-ga-color",
+    "--ascribe-state-preview-background",
+    "--ascribe-state-preview-color",
+    "--ascribe-state-removed-background",
+    "--ascribe-state-removed-color",
+    "--ascribe-steps-color",
+    "--ascribe-steps-marker-size",
+    "--ascribe-steps-marker-text-color",
+    "--ascribe-surface-color",
+    "--ascribe-tab-active-color",
+    "--ascribe-tab-color",
+    "--ascribe-tab-focus-color",
+    "--ascribe-tab-hover-background",
+    "--ascribe-text-color",
+    "--ascribe-tip-background",
+    "--ascribe-tip-color",
+    "--ascribe-warning-background",
+    "--ascribe-warning-color",
+  ]);
+  expect(declared("packages/review/src/marks/marks.css")).toEqual([
+    "--ascribe-review-accent-text",
+    "--ascribe-review-added",
+    "--ascribe-review-added-background",
+    "--ascribe-review-blend",
+    "--ascribe-review-border",
+    "--ascribe-review-changed",
+    "--ascribe-review-changed-background",
+    "--ascribe-review-flash",
+    "--ascribe-review-focus",
+    "--ascribe-review-input",
+    "--ascribe-review-mono",
+    "--ascribe-review-moved",
+    "--ascribe-review-moved-background",
+    "--ascribe-review-muted",
+    "--ascribe-review-removed",
+    "--ascribe-review-removed-background",
+    "--ascribe-review-surface",
+    "--ascribe-review-text",
+    "--ascribe-review-thread",
+  ]);
 });

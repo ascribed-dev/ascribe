@@ -3,9 +3,29 @@
 // schemas/, by crates/ascribe-cli/src/shapes.rs. Change the Rust types, then
 // run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. Don't edit it.
 //
+// - CheckReport (`ascribe check --format json` and `ascribe build --format json`)
 // - PreviewResult (the language server, answering `ascribe/preview`)
 // - SetBaseResult (the language server, answering `ascribe/review/setBase`)
 // - ChangesResult (the language server, answering `ascribe/review/changes`)
+// - ContextResult (the language server, answering `ascribe/context`)
+// - TargetsResult (the language server, answering `ascribe/targets`)
+// - InventoryResult (the language server, answering `ascribe/inventory`)
+// - EditResult (the language server, answering `ascribe/edit`)
+// - BuildViewResult (the language server, answering `ascribe/buildView`)
+// - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
+
+/**
+ * The answer to `ascribe/agentPrompt`, or `null` when there's nothing to
+ * prompt about: the file has no problem, the diagnostic is no longer
+ * reported, review is off, or the page or fragment didn't change.
+ */
+export interface AgentPromptResult {
+  /**
+   * The prompt: plain text with Markdown, short enough for an agent's
+   * link to carry.
+   */
+  prompt: string;
+}
 
 /**
  * Where a block's text is written: the README's anchor grammar, the same
@@ -28,6 +48,20 @@ export interface Anchor {
 /** What a page uses an asset as. */
 export type AssetKind = "image" | "link";
 
+/** An attribute's type. */
+export type AttributeKind = "string" | "number" | "boolean" | "enum" | "set" | "noteType";
+
+/** An attribute, as written. */
+export interface AttributePair {
+  /** The key. */
+  key: string;
+  /**
+   * The value, without quotes (a value set's members joined by `|`);
+   * `null` for a key with no value.
+   */
+  value: string | null;
+}
+
 /** The base of a comparison, in the report. */
 export interface BaseInfo {
   /** The revision asked for, or the default branch used. */
@@ -39,6 +73,34 @@ export interface BaseInfo {
    * `null` with `--base-exact`, which reads `commit`.
    */
   merge_base: string | null;
+}
+
+/** What a line-form directive applies to. */
+export type BindingKind = "self" | "heading" | "block" | "headingOrBlock";
+
+/**
+ * The answer to `ascribe/buildView`. A document that isn't a source file of
+ * the project, or a build the content model doesn't have, gets an answer
+ * with an empty `build` and nothing left out.
+ */
+export interface BuildViewResult {
+  /** The build the answer is for; empty when there is none. */
+  build: string;
+  /**
+   * The version of the open document the answer was computed from, or
+   * `null` when the file isn't open.
+   */
+  documentVersion: number | null;
+  /**
+   * Whether the build publishes the page. `false` when it drops the whole
+   * page (its `variant` or `available` frontmatter); a fragment, which is
+   * part of the pages that include it, counts as published.
+   */
+  pageIncluded: boolean;
+  /** Why the build doesn't publish the page, when it doesn't. */
+  pageDetail: string | null;
+  /** What the build leaves out of the page's own text, in document order. */
+  excluded: Excluded[];
 }
 
 /** One block's change. */
@@ -127,6 +189,351 @@ export interface ChangesResult {
   problem: string | null;
 }
 
+/**
+ * What `ascribe check --format json` and `ascribe build --format json`
+ * write: one document, whatever the outcome. Fields can be added without a
+ * new `schema_version`, so a reader ignores fields it doesn't know.
+ */
+export interface CheckReport {
+  /**
+   * The version of this schema. It changes only when a field is removed
+   * or changes meaning.
+   */
+  schema_version: number;
+  /** The version of Ascribe that wrote it. */
+  ascribe_version: string;
+  /**
+   * Why the project couldn't be checked (exit code 2), or `null`. When it
+   * isn't `null`, `diagnostics` holds what was found first: the content
+   * model's problems.
+   */
+  error: string | null;
+  /** How many source files were checked: the project's. */
+  files_checked: number;
+  /**
+   * How many of them the report covers: the source files in the paths
+   * named, or every one when no path was.
+   */
+  files_reported: number;
+  /**
+   * The builds whose page-level checks ran, in `ascribe.toml`'s order:
+   * every build, the ones named with `--build`, or the editor's with
+   * `--editor-build`. Empty when the project couldn't be checked.
+   */
+  builds_checked: string[];
+  /**
+   * Every diagnostic, in file order, and in source order within a file.
+   * With paths, only those that count for them. With `--summary`, none:
+   * see `truncated`.
+   */
+  diagnostics: Entry[];
+  /**
+   * Whether `diagnostics` leaves some out. It does with `--summary`,
+   * which lists none.
+   */
+  truncated: boolean;
+  /** How many diagnostics `diagnostics` lists. */
+  shown: number;
+  /** How many diagnostics there are. */
+  total: number;
+  /**
+   * The command that lists the ones left out, when `truncated`; `null`
+   * otherwise.
+   */
+  next_command: string | null;
+  /** How many errors and warnings. */
+  summary: Summary;
+}
+
+/** How many diagnostics have one code. */
+export interface CodeCount {
+  /** The code, such as `ASC036`. */
+  code: string;
+  /** The diagnostic's name, such as `link-target-missing`. */
+  slug: string;
+  /** `error` or `warning`. */
+  severity: string;
+  /** How many. */
+  count: number;
+}
+
+/**
+ * Something that contains a position: a block, a construct that groups
+ * blocks, or an inline node. Every range is in the negotiated position
+ * encoding.
+ */
+export type ContextNode =
+  | {
+      kind: "frontmatter";
+      /** The frontmatter, delimiters included. */
+      range: LspRange;
+      /** Its `variant` key's value, when it has one. */
+      variant: FrontmatterValue | null;
+      /** Its `available` key's value, when it has one. */
+      available: FrontmatterValue | null;
+    }
+  | {
+      kind: "section";
+      /** The section. */
+      range: LspRange;
+      /** The id of its heading; empty when the heading has none. */
+      headingId: string;
+    }
+  | {
+      kind: "heading";
+      /** The heading. */
+      range: LspRange;
+      /** 1 to 6. */
+      level: number;
+      /** Its id: its `@id`, or its slug; empty when it has none. */
+      id: string;
+      /** Whether the id is an `@id`. */
+      explicitId: boolean;
+    }
+  | {
+      kind: "paragraph";
+      /** The paragraph. */
+      range: LspRange;
+    }
+  | {
+      kind: "list";
+      /** The list. */
+      range: LspRange;
+      /** Whether it's ordered. */
+      ordered: boolean;
+      /** Whether a `@steps` binds it. */
+      steps: boolean;
+    }
+  | {
+      kind: "listItem";
+      /** The item, from its marker. */
+      range: LspRange;
+    }
+  | {
+      kind: "blockQuote";
+      /** The block quote. */
+      range: LspRange;
+    }
+  | {
+      kind: "note";
+      /**
+       * The note: its line, the block it binds, or the container, with
+       * its title line.
+       */
+      range: LspRange;
+      /** Its type (`note` when it gives none). */
+      type: string;
+      /** Its form. */
+      form: Form;
+    }
+  | {
+      kind: "details";
+      /**
+       * The details: the block it binds, or the container, with its title
+       * line.
+       */
+      range: LspRange;
+      /** Its title's text, as written. */
+      title: string | null;
+      /** Its form. */
+      form: Form;
+    }
+  | {
+      kind: "steps";
+      /** From the `@steps` through the list. */
+      range: LspRange;
+    }
+  | {
+      kind: "variantGroup";
+      /** The group, through its `@end`. */
+      range: LspRange;
+      /** The dimension every arm names; `null` for labeled arms. */
+      dimension: string | null;
+      /** The arms, in order. */
+      arms: VariantArm[];
+      /**
+       * The index of the arm the position is in; `null` on the group's
+       * `@end`.
+       */
+      arm: number | null;
+    }
+  | {
+      kind: "availability";
+      /** The line, or the line and the block it binds. */
+      range: LspRange;
+      /** The spec or feature key, as written. */
+      spec: string;
+    }
+  | {
+      kind: "include";
+      /** The directive line. */
+      range: LspRange;
+      /** The path as written, without the `#id`. */
+      path: string;
+      /** The id after `#`, when it includes one section. */
+      section: string | null;
+    }
+  | {
+      kind: "snippet";
+      /** The directive line. */
+      range: LspRange;
+      /** Its address as written: `<source>:<path>#<region>`. */
+      address: string;
+    }
+  | {
+      kind: "widget";
+      /**
+       * The widget: its line, the block it binds, its container, or its
+       * group of arms.
+       */
+      range: LspRange;
+      /** Its name. */
+      name: string;
+      /**
+       * Its attributes, as written: of the group's arm the position is in,
+       * for a group.
+       */
+      attributes: AttributePair[];
+      /** Its form. */
+      form: Form;
+    }
+  | {
+      kind: "codeBlock";
+      /** The block, fences included. */
+      range: LspRange;
+      /** The fence's info string; empty when it has none. */
+      info: string;
+      /** Whether it's fenced. */
+      fenced: boolean;
+    }
+  | {
+      kind: "table";
+      /** The table. */
+      range: LspRange;
+    }
+  | {
+      kind: "tableRow";
+      /** The row. */
+      range: LspRange;
+      /** Whether it's the header row. */
+      header: boolean;
+      /** Its `available` attribute's value, when it has one. */
+      available: string | null;
+    }
+  | {
+      kind: "link";
+      /** The link, brackets included. */
+      range: LspRange;
+      /** Its destination, escapes decoded. */
+      destination: string;
+      /** Whether it has no text, so it takes its target's title. */
+      textEmpty: boolean;
+    }
+  | {
+      kind: "image";
+      /** The image, its attribute block included. */
+      range: LspRange;
+      /** Its source, escapes decoded. */
+      src: string;
+      /** Its alt text, as written. */
+      alt: string;
+      /** Its attributes (`{width=600}`), as written. */
+      attributes: AttributePair[];
+    }
+  | {
+      kind: "phrase";
+      /** The candidate, braces included. */
+      range: LspRange;
+      /** The key. */
+      key: string;
+      /** Whether the content model declares it. */
+      declared: boolean;
+    };
+
+/** The project a page is in. */
+export interface ContextProject {
+  /** The directory of its `ascribe.toml`, as a path. */
+  root: string;
+  /** The editor's build (`[editor] build`), which decides the diagnostics. */
+  editorBuild: string;
+}
+
+/**
+ * The answer to `ascribe/context`. A document that isn't a source file of
+ * the project gets an empty answer: no project, nothing at the range.
+ */
+export interface ContextResult {
+  /** The project the page is in; `null` when it's in none. */
+  project: ContextProject | null;
+  /** What contains the start of the range, innermost first. */
+  at: ContextNode[];
+  /** What the selection is; `null` for an empty range. */
+  selection: Selection | null;
+  /** The token under the start of the range, if there is one. */
+  token: ContextToken | null;
+  /**
+   * Whether the line at the start of the range is blank and between
+   * blocks, where a block can be inserted: not in a code block or the
+   * frontmatter.
+   */
+  insertable: boolean;
+}
+
+/** The token under a position. */
+export type ContextToken =
+  | {
+      kind: "link";
+      /** The link, brackets included. */
+      range: LspRange;
+      /** Its destination, escapes decoded. */
+      destination: string;
+      /** Whether it has no text. */
+      textEmpty: boolean;
+    }
+  | {
+      kind: "image";
+      /** The image, its attribute block included. */
+      range: LspRange;
+      /** Its source, escapes decoded. */
+      src: string;
+    }
+  | {
+      kind: "include";
+      /** The path, and the `#id` if it has one. */
+      range: LspRange;
+      /** The path as written, without the `#id`. */
+      path: string;
+      /** The id after `#`. */
+      section: string | null;
+    }
+  | {
+      kind: "phrase";
+      /** The candidate, braces included. */
+      range: LspRange;
+      /** The key. */
+      key: string;
+      /** Whether the content model declares it. */
+      declared: boolean;
+    }
+  | {
+      kind: "directiveName";
+      /** The `@` and the name. */
+      range: LspRange;
+      /** The name, without `@`. */
+      name: string;
+    }
+  | {
+      kind: "attribute";
+      /** From the key through the value. */
+      range: LspRange;
+      /** The directive's name. */
+      directive: string;
+      /** The key. */
+      key: string;
+      /** The value, without quotes; `null` for a key with no value. */
+      value: string | null;
+    };
+
 /** How many changes of each kind a page has. */
 export interface Counts {
   /** Blocks whose content changed. */
@@ -139,6 +546,129 @@ export interface Counts {
   moved: number;
 }
 
+/** One edit of a fix. */
+export interface Edit {
+  /** The text it replaces. */
+  range: Range;
+  /** The text that replaces it. */
+  new_text: string;
+}
+
+/** The answer to `ascribe/edit`: the edit, or why there is none. */
+export type EditResult =
+  | {
+      /**
+       * Plain text edits under `changes`, in canonical form: to the
+       * requested document, and, for an action on the content model, to
+       * `ascribe.toml` and any other pages it changes.
+       */
+      edit: LspWorkspaceEdit;
+      /**
+       * The placeholder text the edit wrote, in the document as it is
+       * after the edit, for the client to leave selected; `null` when it
+       * wrote none.
+       */
+      select: LspRange | null;
+    }
+  | {
+      /** The message. */
+      error: string;
+    };
+
+/** A diagnostic. */
+export interface Entry {
+  /** The code, such as `ASC036`. */
+  code: string;
+  /** The diagnostic's name, such as `link-target-missing`. */
+  slug: string;
+  /** `error` or `warning`. */
+  severity: string;
+  /** What's wrong, and what to do about it. */
+  message: string;
+  /**
+   * The file, relative to the project root (the directory of
+   * `ascribe.toml`), with `/` separators. `ascribe.toml` for a
+   * content-model problem.
+   */
+  file: string;
+  /** Where in the file. */
+  range: Range;
+  /** Other places that explain it. */
+  related: Related[];
+  /** Edits that would fix it. */
+  fixes: Fix[];
+  /**
+   * The builds a page-level diagnostic appears in, in `ascribe.toml`'s
+   * order. Empty for a file-level diagnostic, and for one in content no
+   * build publishes. With `--build`, only that build.
+   */
+  builds: string[];
+  /** Whether it's in content that no build publishes. */
+  unpublished: boolean;
+  /**
+   * How to fix it, in general: the diagnostics reference's advice for its
+   * code.
+   */
+  help: string;
+  /** The address of its entry in the diagnostics reference. */
+  docs: string;
+  /**
+   * For a problem in included content reported because one of its related
+   * places is in a path named: at how many other includes it's reported
+   * too, collapsed into this one. `0` otherwise.
+   */
+  repeats: number;
+}
+
+/** Text a build leaves out of a page. */
+export interface Excluded {
+  /**
+   * What's left out: whole blocks, arms, or table rows, from the first
+   * directive line through the last line. Neighbors left out for the same
+   * reason are one range.
+   */
+  range: LspRange;
+  /** Why. */
+  reason: ExclusionReason;
+  /**
+   * The reason, for the author: `Shows only edition=self-hosted`, or
+   * `Scheduled rollouts: available on Lantern Cloud (preview), not
+   * Self-hosted 2.5`, with the content model's display labels.
+   */
+  detail: string;
+}
+
+/** Why a build leaves text out of a page. */
+export type ExclusionReason = "variant" | "availability";
+
+/** How many diagnostics are in one file. */
+export interface FileCount {
+  /** The file, as a diagnostic's `file` is. */
+  file: string;
+  /** How many errors. */
+  errors: number;
+  /** How many warnings. */
+  warnings: number;
+}
+
+/** Edits that would fix a diagnostic. */
+export interface Fix {
+  /** What the fix does. */
+  title: string;
+  /** The file the edits are in, as a diagnostic's `file` is. */
+  file: string;
+  /** The edits, each replacing the text of its range. */
+  edits: Edit[];
+  /**
+   * `safe` when applying the edits as they are can't change what the page
+   * says and leaves nothing to decide; `unsafe` otherwise.
+   */
+  applicability: string;
+}
+
+/** How a directive is written (SPEC §3.5, §3.6). */
+export type Form = "line" | "block" | "container" | "group";
+
 /**
  * A piece of a formatted value, as the JSON output writes it:
  * `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
@@ -150,6 +680,124 @@ export interface FormattedPiece {
   /** Its text: a code span's content without its backticks. */
   value: string;
 }
+
+/** A frontmatter key's value. */
+export interface FrontmatterValue {
+  /** The value, after the key's colon, through its last line. */
+  range: LspRange;
+  /** The value's YAML, as written; a one-line value without its quotes. */
+  value: string;
+}
+
+/** An entry of the content model. */
+export interface InventoryEntry {
+  /** What kind of entry it is. */
+  kind: ModelKind;
+  /** Its key, id, or name, as pages write it. */
+  key: string;
+  /** Its label, name, or term, where it has one besides its key. */
+  label: string | null;
+  /**
+   * How many places use it; `null` for a build, which pages don't name,
+   * and for a glossary term with `match = "marked"`, whose uses are links
+   * to its page.
+   */
+  uses: number | null;
+  /**
+   * Where `ascribe.toml` declares it; `null` for a built-in note type,
+   * and for an entry that can't be found there.
+   */
+  declaration: LspRange | null;
+}
+
+/** A fragment. */
+export interface InventoryFragment {
+  /** Its content path. */
+  path: string;
+  /** The content paths of the files that include it, in order. */
+  includedBy: string[];
+}
+
+/** A page. */
+export interface InventoryPage {
+  /** Its content path. */
+  path: string;
+  /** Its title (frontmatter `title`). */
+  title: string | null;
+  /** Its content type; `null` when no one type applies. */
+  type: string | null;
+  /** How many links from other files, and includes, name it. */
+  incoming: number;
+}
+
+/**
+ * The answer to `ascribe/inventory`. A document that isn't one of the
+ * project's files gets empty lists.
+ */
+export interface InventoryResult {
+  /** The pages, by content path. */
+  pages: InventoryPage[];
+  /** The fragments, by content path. */
+  fragments: InventoryFragment[];
+  /**
+   * The content paths of the pages no other file links to or includes,
+   * other than index pages (`index.md`, in any folder). Without a
+   * navigation file a reader may still reach them, so this is a hint.
+   */
+  orphans: string[];
+  /**
+   * The content model's entries: phrases, features, glossary terms,
+   * dimensions, note types, widgets, then builds, each kind in
+   * declaration order.
+   */
+  model: InventoryEntry[];
+  /**
+   * The `file:` URI of the content root, which content paths are
+   * relative to.
+   */
+  contentUri?: string;
+  /**
+   * The `file:` URI of the project's `ascribe.toml`, which the ranges of
+   * declarations are in.
+   */
+  modelUri?: string;
+}
+
+/**
+ * A position in a document: a zero-based line, and a zero-based column in
+ * the position encoding the client and server agreed on.
+ */
+export interface LspPosition {
+  /** The line, from 0. */
+  line: number;
+  /** The column, from 0, in the negotiated position encoding. */
+  character: number;
+}
+
+/** A range in a document, from `start` up to (not including) `end`. */
+export interface LspRange {
+  /** Where it starts. */
+  start: LspPosition;
+  /** Where it ends. */
+  end: LspPosition;
+}
+
+/** A text edit: replace `range` with `newText`. */
+export interface LspTextEdit {
+  /** The range to replace, in the document as it is before the edit. */
+  range: LspRange;
+  /** The text that replaces it. */
+  newText: string;
+}
+
+/** Changes to documents. */
+export interface LspWorkspaceEdit {
+  /** The edits to each document, by its URI. */
+  changes: Record<string, LspTextEdit[]>;
+}
+
+/** A kind of content model entry. */
+export type ModelKind = "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build";
 
 /** What changed on one page of a build. */
 export interface PageDiff {
@@ -182,7 +830,8 @@ export interface PageDiff {
   counts: Counts;
   /**
    * The block-level changes, in the page's order, a removed block where
-   * it was. Empty for an added or removed page.
+   * it was. Empty for an added or removed page, and for every page when
+   * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
 }
@@ -192,6 +841,19 @@ export type PageStatus = "added" | "removed" | "changed";
 
 /** What a piece of a formatted value is. */
 export type PieceKind = "text" | "code";
+
+/** A position in a file. */
+export interface Pos {
+  /** The line, from 1. */
+  line: number;
+  /**
+   * The column, from 1, in Unicode characters (not bytes or UTF-16
+   * units).
+   */
+  column: number;
+  /** The byte offset from the start of the file. */
+  offset: number;
+}
 
 /** An asset the page uses. */
 export interface PreviewAsset {
@@ -358,8 +1020,45 @@ export interface PreviewSection {
   line: number;
 }
 
+/** What a directive takes after its colon. */
+export type PrimaryKind = "none" | "identifier" | "text" | "availability";
+
 /** How much a problem with showing a page matters. */
 export type ProblemSeverity = "error" | "warning" | "info";
+
+/**
+ * A span of a file. `end` is just past its last character; an empty range
+ * (an insertion) has equal positions.
+ */
+export interface Range {
+  /** Its first character. */
+  start: Pos;
+  /** Just past its last character. */
+  end: Pos;
+}
+
+/** Another place that explains a diagnostic. */
+export interface Related {
+  /** The file, as a diagnostic's `file` is. */
+  file: string;
+  /** Where in the file. */
+  range: Range;
+  /** What it has to do with the diagnostic. */
+  message: string;
+}
+
+/** What a selection is. */
+export interface Selection {
+  /** Its kind. */
+  kind: SelectionKind;
+  /** The selected text. */
+  text: string;
+  /** Whether it's inside one paragraph's or heading's text. */
+  inline: boolean;
+}
+
+/** The kinds of selection. Whitespace at either end doesn't count. */
+export type SelectionKind = "prose" | "blocks" | "code" | "mixed" | "other";
 
 /** The answer to `ascribe/review/setBase`. */
 export interface SetBaseResult {
@@ -373,6 +1072,278 @@ export interface SetBaseResult {
    * unknown revision, `git` missing. The base set before, if any, stays.
    */
   problem: string | null;
+}
+
+/** How many diagnostics of each severity. */
+export interface Summary {
+  /** How many errors. */
+  errors: number;
+  /** How many warnings. */
+  warnings: number;
+  /** With `--summary`: how many diagnostics have each code, most first. */
+  by_code?: CodeCount[];
+  /** With `--summary`: how many diagnostics are in each file, most first. */
+  by_file?: FileCount[];
+}
+
+/** An attribute a widget accepts. */
+export interface TargetAttribute {
+  /** The key. */
+  key: string;
+  /** The value's type. */
+  type: AttributeKind;
+  /**
+   * The values it allows, for `enum` and a `set` of named values; empty
+   * otherwise.
+   */
+  values: string[];
+  /** Whether every use must give it. */
+  required: boolean;
+  /**
+   * The value used when it's left out, as written (a set's members joined
+   * by `|`).
+   */
+  default: string | null;
+  /** What it's for. */
+  description: string | null;
+}
+
+/** A build. */
+export interface TargetBuild {
+  /** Its name. */
+  name: string;
+  /** Whether it's the editor's build (`[editor] build`). */
+  editor: boolean;
+}
+
+/** A dimension. */
+export interface TargetDimension {
+  /** Its name. */
+  name: string;
+  /** Its label. */
+  label: string;
+  /** Its values, in display order. */
+  values: TargetDimensionValue[];
+}
+
+/** A value of a dimension. */
+export interface TargetDimensionValue {
+  /** The value. */
+  value: string;
+  /** Its label. */
+  label: string;
+  /** Whether it's versionless. */
+  versionless: boolean;
+  /**
+   * The value in its dimension's `values` in `ascribe.toml`, inside its
+   * quotes; `null` when it can't be found there.
+   */
+  range: LspRange | null;
+}
+
+/** A feature. */
+export interface TargetFeature {
+  /** Its key. */
+  key: string;
+  /** Its name. */
+  name: string;
+  /** Its availability spec, as written. */
+  availability: string;
+  /**
+   * Its `[features.<key>]` table header in `ascribe.toml`; `null` when it
+   * can't be found there.
+   */
+  range: LspRange | null;
+}
+
+/** A fragment. */
+export interface TargetFragment {
+  /** Its content path. */
+  path: string;
+  /** The path an `@include` on the requesting page writes for it. */
+  include: string;
+  /** Whether its first block is a heading. */
+  startsWithHeading: boolean;
+}
+
+/** A heading a link can name. */
+export interface TargetHeading {
+  /** The content path of the page a link names it on. */
+  page: string;
+  /** The heading's text, phrases replaced by their values. */
+  text: string;
+  /** Its id. */
+  id: string;
+  /** 1 to 6. */
+  level: number;
+  /**
+   * The destination of a link to it from the requesting page: `page.md#id`,
+   * or `#id` on the requesting page itself.
+   */
+  link: string;
+  /**
+   * The destination of a link to it from the content root,
+   * `/page.md#id`, which any page of the project can use.
+   */
+  rootLink: string;
+}
+
+/** An image file. */
+export interface TargetImage {
+  /** Its path from the project root. */
+  path: string;
+  /** The source of an image of it on the requesting page. */
+  link: string;
+}
+
+/** A note type. */
+export interface TargetNote {
+  /** The type, as `@note {type=…}` writes it. */
+  type: string;
+  /** Its label. */
+  label: string;
+}
+
+/** Where some text occurs. */
+export interface TargetOccurrence {
+  /** The file's content path. */
+  path: string;
+  /** The text, in that file. */
+  range: LspRange;
+}
+
+/** A page. */
+export interface TargetPage {
+  /** Its content path. */
+  path: string;
+  /** Its title (frontmatter `title`). */
+  title: string | null;
+  /** Its content type; `null` when no one type applies. */
+  type: string | null;
+  /** The destination of a link to it from the requesting page. */
+  link: string;
+  /**
+   * The destination of a link to it from the content root, `/page.md`,
+   * which any page of the project can use.
+   */
+  rootLink: string;
+}
+
+/** A phrase. */
+export interface TargetPhrase {
+  /** The key. */
+  key: string;
+  /** The value. */
+  value: string;
+  /** Its key in `ascribe.toml`; `null` when it can't be found there. */
+  range: LspRange | null;
+}
+
+/** A region of a source file. */
+export interface TargetRegion {
+  /** Its name. */
+  name: string;
+  /** The address a `@snippet` writes for it. */
+  address: string;
+}
+
+/** A source of the content model and its files. */
+export interface TargetSource {
+  /** The source's name. */
+  name: string;
+  /** The files a snippet can take code from, by path. */
+  files: TargetSourceFile[];
+}
+
+/** A file a snippet can take code from. */
+export interface TargetSourceFile {
+  /** Its path relative to the source's folder. */
+  path: string;
+  /** The address a `@snippet` writes for the whole file. */
+  address: string;
+  /** Its regions, in the order they start. */
+  regions: TargetRegion[];
+}
+
+/** A project widget. */
+export interface TargetWidget {
+  /** Its name. */
+  name: string;
+  /** What it's for, as the content model describes it. */
+  description: string | null;
+  /** Whether it may be one line. */
+  line: boolean;
+  /** Whether it may be a container. */
+  container: boolean;
+  /** Whether its openers form groups of arms. */
+  groupable: boolean;
+  /** What its line form takes after the colon. */
+  primary: PrimaryKind;
+  /** What its line form applies to; `null` when it has no line form. */
+  binding: BindingKind | null;
+  /** Its attributes, in canonical order. */
+  attributes: TargetAttribute[];
+}
+
+/**
+ * The answer to `ascribe/targets`: a list for each kind asked for, and no
+ * others. A document that isn't one of the project's files gets no lists.
+ */
+export interface TargetsResult {
+  /** Builds, in declaration order. */
+  builds?: TargetBuild[];
+  /** Dimensions, in declaration order. */
+  dimensions?: TargetDimension[];
+  /** Features, in declaration order. */
+  features?: TargetFeature[];
+  /** Fragments, by content path. */
+  fragments?: TargetFragment[];
+  /**
+   * The headings a link can name, page by page in content path order,
+   * each page's in document order: a page's own, and those of the
+   * fragments it includes.
+   */
+  headings?: TargetHeading[];
+  /** The image files under the content root, by path. */
+  images?: TargetImage[];
+  /**
+   * The `file:` URI of the project's `ascribe.toml`, which the ranges of
+   * declarations are in.
+   */
+  modelUri?: string;
+  /** Note types: the built-ins, then the declared ones. */
+  notes?: TargetNote[];
+  /**
+   * The other whole-word occurrences, in the project's prose, of the text
+   * the range selects, by content path: those making the selection a
+   * phrase everywhere (`makePhrase` with `everywhere`) replaces. Empty
+   * when the selection isn't text a phrase can take the place of.
+   */
+  occurrences?: TargetOccurrence[];
+  /** Pages, by content path. */
+  pages?: TargetPage[];
+  /** Phrases, in declaration order. */
+  phrases?: TargetPhrase[];
+  /**
+   * The content model's sources, in the order it declares them, with the
+   * files a snippet can take code from.
+   */
+  snippets?: TargetSource[];
+  /** Project widgets, in declaration order. */
+  widgets?: TargetWidget[];
+}
+
+/** An arm of a `@variant` group. */
+export interface VariantArm {
+  /**
+   * The arm's values of the group's dimension, as written
+   * (`cloud|self-managed`); `null` for a labeled arm.
+   */
+  value: string | null;
+  /** The arm's title, for a labeled arm. */
+  label: string | null;
+  /** The arm, from its title line or opener through its last block. */
+  range: LspRange;
 }
 
 /**

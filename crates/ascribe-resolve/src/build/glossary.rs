@@ -37,30 +37,20 @@ pub(crate) fn link_terms(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) 
     if glossary.terms.is_empty() {
         return;
     }
-    let mut candidates: Vec<Candidate> = Vec::new();
     let mut urls: BTreeMap<&str, String> = BTreeMap::new();
-    for term in &glossary.terms {
+    let linked_terms = glossary.terms.iter().filter(|term| {
         if term.match_mode == GlossaryMatch::Marked {
-            continue;
+            return false;
         }
-        if let Some(url) = term_url(resolver, page, term) {
-            urls.insert(term.id.as_str(), url);
-        } else {
-            continue;
-        }
-        for text in std::iter::once(&term.term).chain(&term.aliases) {
-            candidates.push(Candidate {
-                text: text.clone(),
-                term: term.id.clone(),
-                case_sensitive: term.case_sensitive,
-                first_only: term.match_mode == GlossaryMatch::First,
-            });
-        }
-    }
-    // Longest first, so that where terms overlap the longest wins.
-    candidates.sort_by_key(|c| std::cmp::Reverse(c.text.chars().count()));
+        let Some(url) = term_url(resolver, page, term) else {
+            return false;
+        };
+        urls.insert(term.id.as_str(), url);
+        true
+    });
+    let terms = Terms::new(linked_terms.collect::<Vec<_>>());
     let mut linker = Linker {
-        candidates,
+        terms,
         urls,
         linked: BTreeSet::new(),
     };
@@ -108,15 +98,72 @@ fn term_url(
     }
 }
 
-struct Candidate {
+/// The glossary's terms and aliases, ready to be found in text.
+pub(crate) struct Terms {
+    /// Longest first, so that where terms overlap the longest wins.
+    candidates: Vec<Candidate>,
+}
+
+/// A term, or one of its aliases.
+pub(crate) struct Candidate {
     text: String,
-    term: String,
+    /// The term's id.
+    pub(crate) term: String,
     case_sensitive: bool,
     first_only: bool,
 }
 
+impl Terms {
+    /// The terms' texts and aliases, matched as each term's settings say.
+    pub(crate) fn new<'a>(terms: impl IntoIterator<Item = &'a GlossaryTerm>) -> Terms {
+        let mut candidates: Vec<Candidate> = Vec::new();
+        for term in terms {
+            for text in std::iter::once(&term.term).chain(&term.aliases) {
+                candidates.push(Candidate {
+                    text: text.clone(),
+                    term: term.id.clone(),
+                    case_sensitive: term.case_sensitive,
+                    first_only: term.match_mode == GlossaryMatch::First,
+                });
+            }
+        }
+        candidates.sort_by_key(|c| std::cmp::Reverse(c.text.chars().count()));
+        Terms { candidates }
+    }
+
+    /// The first occurrence at or after byte offset `at`, as its start, its
+    /// end, and the candidate it matches.
+    pub(crate) fn next_match(
+        &self,
+        text: &str,
+        mut at: usize,
+    ) -> Option<(usize, usize, &Candidate)> {
+        while at < text.len() {
+            if let Some((len, candidate)) = self.match_at(text, at) {
+                return Some((at, at + len, candidate));
+            }
+            at += text[at..].chars().next().map_or(1, char::len_utf8);
+        }
+        None
+    }
+
+    /// The longest candidate that matches as a whole word at byte offset
+    /// `at`, and its length in `text`.
+    fn match_at(&self, text: &str, at: usize) -> Option<(usize, &Candidate)> {
+        let before = text[..at].chars().next_back();
+        if before.is_some_and(is_word) {
+            return None;
+        }
+        self.candidates.iter().find_map(|c| {
+            let len = prefix_len(&text[at..], &c.text, c.case_sensitive)?;
+            let after = text[at + len..].chars().next();
+            (!after.is_some_and(is_word)).then_some((len, c))
+        })
+    }
+}
+
 struct Linker<'a> {
-    candidates: Vec<Candidate>,
+    terms: Terms,
     urls: BTreeMap<&'a str, String>,
     linked: BTreeSet<String>,
 }
@@ -178,28 +225,22 @@ impl Linker<'_> {
     ) {
         let mut plain_from = 0;
         let mut at = 0;
-        while at < text.len() {
-            let Some((len, candidate)) = self.match_at(text, at) else {
-                at += text[at..].chars().next().map_or(1, char::len_utf8);
-                continue;
-            };
-            let end = at + len;
+        while let Some((start, end, candidate)) = self.terms.next_match(text, at) {
+            at = end;
             let term = candidate.term.clone();
             if candidate.first_only && self.linked.contains(&term) {
-                at = end;
                 continue;
             }
             let Some(url) = self.urls.get(term.as_str()).cloned() else {
-                at = end;
                 continue;
             };
-            if plain_from < at {
+            if plain_from < start {
                 out.push(Inline {
                     span,
-                    kind: InlineKind::Text(text[plain_from..at].to_owned()),
+                    kind: InlineKind::Text(text[plain_from..start].to_owned()),
                 });
             }
-            let matched = text[at..end].to_owned();
+            let matched = text[start..end].to_owned();
             out.push(Inline {
                 span,
                 kind: InlineKind::Link(Link {
@@ -221,7 +262,6 @@ impl Linker<'_> {
             });
             self.linked.insert(term);
             plain_from = end;
-            at = end;
         }
         if plain_from < text.len() {
             out.push(Inline {
@@ -229,20 +269,6 @@ impl Linker<'_> {
                 kind: InlineKind::Text(text[plain_from..].to_owned()),
             });
         }
-    }
-
-    /// The longest candidate that matches as a whole word at byte offset
-    /// `at`, and its length in `text`.
-    fn match_at(&self, text: &str, at: usize) -> Option<(usize, &Candidate)> {
-        let before = text[..at].chars().next_back();
-        if before.is_some_and(is_word) {
-            return None;
-        }
-        self.candidates.iter().find_map(|c| {
-            let len = prefix_len(&text[at..], &c.text, c.case_sensitive)?;
-            let after = text[at + len..].chars().next();
-            (!after.is_some_and(is_word)).then_some((len, c))
-        })
     }
 }
 

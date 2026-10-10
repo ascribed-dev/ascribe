@@ -45,18 +45,26 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] Completion (`Completion`; `crates/ascribe-lsp/src/complete.rs`), and its trigger characters in `server.rs` if the form starts with a new one.
 - [ ] Hover (`HoverRequest`; `crates/ascribe-lsp/src/hover.rs`).
 - [ ] Go to definition (`GotoDefinition`; `crates/ascribe-lsp/src/definition.rs`).
+- [ ] Find all references (`References`; `crates/ascribe-lsp/src/references.rs`), which counts uses through `Project::uses` in `crates/ascribe-resolve/src/uses.rs`: a new form that uses a page, heading, or content model entry is a kind of use.
 - [ ] Document links (`DocumentLinkRequest`), CodeLens (`CodeLensRequest`), and inlay hints (`InlayHintRequest`), all in `crates/ascribe-lsp/src/links.rs`.
 - [ ] Quick fixes and other code actions (`CodeActionRequest`; `crates/ascribe-lsp/src/code_action.rs`).
 - [ ] Formatting (`Formatting`; `crates/ascribe-lsp/src/formatting.rs`), which calls `ascribe-fmt`.
-- [ ] Rename (`Rename`), and the edits when a file is moved (`WillRenameFiles`), both in `crates/ascribe-lsp/src/refactor.rs`.
+- [ ] Rename (`Rename`), what can be renamed at a position (`PrepareRenameRequest`), and the edits when a file is moved (`WillRenameFiles`), all in `crates/ascribe-lsp/src/refactor.rs`.
 - [ ] The command a CodeLens runs (`ExecuteCommand`, `ascribe.openFile`).
 - [ ] The page preview (`ascribe/preview`; `crates/ascribe-lsp/src/preview.rs`).
 - [ ] Review's changes (`ascribe/review/setBase` and `ascribe/review/changes`; `crates/ascribe-lsp/src/review.rs`).
-- [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics with `ascribe check`'s.
+- [ ] What's at a position (`ascribe/context`; `crates/ascribe-lsp/src/context.rs`): a new block or inline construct is a node kind, and a new token is a token kind.
+- [ ] What actions can point at (`ascribe/targets`; `crates/ascribe-lsp/src/targets.rs`): a new kind of content model entry is a kind of target.
+- [ ] The project's inventory (`ascribe/inventory`; `crates/ascribe-lsp/src/inventory.rs`): a new kind of content model entry is a kind of entry.
+- [ ] Page edits (`ascribe/edit`; `crates/ascribe-lsp/src/edit.rs`): an operation that writes a changed construct writes it the new way, and a new directive may need an operation.
+- [ ] What a build leaves out (`ascribe/buildView`; `crates/ascribe-lsp/src/build_view.rs`): a new way a build removes content is removed in `crates/ascribe-resolve/src/build/modes.rs`, which says why, and the build lens shows it.
+- [ ] A prompt for an agent (`ascribe/agentPrompt`; `crates/ascribe-lsp/src/agent_prompt.rs`), built by `ascribe_check::prompt`: a new diagnostic's prompt is worth reading, and a value it's about goes in its `values` placeholder, which the prompt lists as the allowed values.
+- [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics and agent prompts with `ascribe check`'s, and `build_view_parity`, which compares what the build lens dims with what `ascribe build` leaves out.
 
 **The editor**
 
 - [ ] The VS Code grammar, in `packages/vscode/syntaxes/`.
+- [ ] The editor's actions, in `packages/vscode/src/actions/registry.ts`: a new `ascribe/edit` operation gets an action (a test fails without one), and a new node kind in `ascribe/context` is considered for where each action applies.
 
 **The docs**
 
@@ -71,7 +79,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] With `--format json`: the shape's fields documented in the command's section of `docs/content/reference/cli.md`, keys in snake_case, and a schema version that rises when a field is removed or changes meaning.
 - [ ] The shape's schema and TypeScript, generated from its Rust types by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`): a doc comment on every field, a new shape added to `SHAPES` (and to `PACKAGES` when a package reads it), and a new command's schema included in `docs/content/contracts/json-reports.md`. The packages read the generated `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, never a type of their own.
 - [ ] The TypeScript that runs the command, if it passes the new option: `packages/astro/src/run.ts`.
-- [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/output.rs`.
+- [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
 - [ ] A line in the unreleased section of `CHANGELOG.md`.
 - [ ] The agents plan's table of tools, once that plan has started (see [agents](agents/README.md)).
 
@@ -83,7 +91,7 @@ An element, an attribute, a class, or the order of what the `site` output writes
 - [ ] A new or renamed element, attribute, class, or id: in `crates/ascribe-core/src/names.rs`, its one home, then each package's generated `names.ts` (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), rewritten by `ASCRIBE_BLESS=1 cargo test -p ascribe-core --test names`. Code uses the constant, never the literal; that test fails on a literal elsewhere, and on a stylesheet selecting a name that isn't declared.
 - [ ] Ascribe's own renderer, `render_site_html` in `crates/ascribe-emit/src/render/`, which the page preview and the HTML report use.
 - [ ] The fixtures in `tests/render/`, which both renderers must pass: ours, and the site's through `@ascribed/astro`.
-- [ ] Source anchors in review mode (`crates/ascribe-emit/src/site/anchor.rs`, tested by `crates/ascribe-emit/tests/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.
+- [ ] Source anchors in review mode (`crates/ascribe-emit/src/site/anchor.rs`, tested by `crates/ascribe-emit/tests/all/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.
 - [ ] `@ascribed/elements`: `packages/elements/src/`, `packages/elements/css/style.css`, and its contract, `packages/elements/CONTRACT.md`.
 - [ ] `@ascribed/astro`: `packages/astro/src/rehype.ts`, `packages/astro/src/attributes.ts`, `packages/astro/src/code-titles.ts`, and the components `packages/astro/src/Elements.astro` and `packages/astro/src/Availability.astro`.
 - [ ] `@ascribed/review`'s marks and placement, in `packages/review/src/marks/` and `packages/review/src/place/`.
@@ -92,3 +100,18 @@ An element, an attribute, a class, or the order of what the `site` output writes
 - [ ] The Astro example's end-to-end tests, in `examples/astro-site/test/e2e/`.
 - [ ] The docs site's own styles, in `site/src/styles/site.css`, if they style the changed markup.
 - [ ] A line in the unreleased section of `CHANGELOG.md`.
+
+## A change to how something looks
+
+A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML report, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
+
+- [ ] The value is in `design/tokens.toml`, and a stylesheet takes it through its `[emit]` block; no stylesheet writes a color of its own. A changed shared color is changed in `design/candidates/chosen.toml` too.
+- [ ] The generated blocks rewritten (`ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts`), and the diff read.
+- [ ] The report's embedded stylesheet rebuilt (`pnpm --filter @ascribed/review embed`).
+- [ ] The mark's images rewritten (`node scripts/design/assets.ts`) if a shared color or a source SVG changed, and looked at.
+- [ ] Contrast: a new text or meaningful graphic color has its pairings in `design/candidates/pairs.toml`, and `pnpm exec vitest run scripts/design` passes.
+- [ ] The specimen rewritten (`node scripts/design/specimen.ts`) and looked at.
+- [ ] Screenshots in light and dark of each surface it reaches, in the pull request.
+- [ ] `node scripts/compare/outputs.ts --base main`: only the HTML report's files differ, accepted by name, with the label `outputs changed`.
+- [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in the unreleased section of `CHANGELOG.md`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
+- [ ] In the extension: a codicon and a theme color first (`packages/vscode/DEVELOPMENT.md`, "Icons and colors").

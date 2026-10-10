@@ -1,0 +1,19 @@
+---
+source: crates/ascribe-check/tests/all/prompt.rs
+expression: text
+---
+Fix this problem in `docs/install.md`.
+
+Where: docs/install.md:5
+
+Problem: ASC041 `link-route`, a warning
+Message: this looks like the published route of `guide.md`; link to the file instead: `/guide.md`
+How to fix it: Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.
+Ascribe has a safe automatic fix: `Link to the page's file instead of its route`.
+Reference: https://ascribed-dev.com/reference/diagnostics/#asc041-link-route
+Line 5:
+```markdown
+See [the guide](/guide/).
+```
+
+When you're done, run `ascribe check docs/install.md` and fix what it reports.

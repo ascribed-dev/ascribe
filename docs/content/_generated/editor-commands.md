@@ -2,13 +2,20 @@
 
 | Command | What it does |
 |---|---|
-| **Ascribe: Restart Language Server** | Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted. |
-| **Ascribe: Show Server Output** | Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running. |
-| **Ascribe: Open Page Preview** {available=next} | Opens the page preview of the active page in place of the editor, starting its project's server if it hasn't started. |
 | **Ascribe: Open Page Preview to the Side** | Opens the page preview of the active page beside the editor, starting its project's server if it hasn't started. |
+| **Ascribe: Open Page Preview** {available=next} | Opens the page preview of the active page in place of the editor, starting its project's server if it hasn't started. |
 | **Ascribe: Open Site Preview** {available=next} | Opens the active page on its project's dev server, in the browser. See [Site preview](../guides/editor.md#site-preview). |
-| **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project. |
+| **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project, as the preview's **Build** picker does. It's the same choice as **Switch Build**. |
+| **Ascribe: Prompt Agent to Fix This File** {available=next} | Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../guides/agents.md#prompt-your-agent). |
+| **Ascribe: Prompt Agent to Fix This Project** {available=next} | Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems. |
+| **Ascribe: Actions for the Cursor** {available=next} | Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection. |
+| **Ascribe:** *an action* {available=next} | Runs the action, such as **Ascribe: Wrap in a note**, in a Markdown file of a project. Each of the [actions](../guides/editor.md#actions) is a command. |
+| **Ascribe: Switch Build** {available=next} | Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar). |
+| **Ascribe: Project Menu** {available=next} | Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, dim what the build leaves out, or open the preview. |
+| **Ascribe: Dim What the Build Leaves Out** {available=next} | Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../guides/editor.md#the-build-lens). |
 | **Ascribe: Start Review** {available=next} | Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../guides/editor.md#review-in-the-preview). |
 | **Ascribe: Stop Review** {available=next} | Turns review off for the active page's project, and frees its base. |
 | **Ascribe: Changed Pages** {available=next} | Lists the pages the change touches in the preview's build; choosing one opens it and its preview. |
 | **Ascribe: Refresh Comments** {available=next} | Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview). |
+| **Ascribe: Show Server Output** | Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running. |
+| **Ascribe: Restart Language Server** | Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted. |

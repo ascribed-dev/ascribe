@@ -85,6 +85,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "insta",
  "proptest",
  "serde",
  "serde_yaml_ng",
@@ -105,7 +106,9 @@ dependencies = [
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-lsp",
+ "ascribe-mcp",
  "ascribe-model",
+ "ascribe-query",
  "ascribe-resolve",
  "ascribe-sources",
  "clap",
@@ -113,6 +116,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "serde_yaml_ng",
  "tempfile",
  "thiserror",
 ]
@@ -185,6 +189,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "insta",
  "proptest",
  "schemars",
  "serde",
@@ -239,6 +244,7 @@ dependencies = [
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-model",
+ "ascribe-query",
  "ascribe-resolve",
  "ascribe-syntax",
  "ascribe-synthetic",
@@ -251,6 +257,15 @@ dependencies = [
  "serde_yaml_ng",
  "tempfile",
  "thiserror",
+ "toml_edit",
+]
+
+[[package]]
+name = "ascribe-mcp"
+version = "0.2.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -260,6 +275,22 @@ dependencies = [
  "ascribe-core",
  "serde_yaml_ng",
  "sha2",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-query"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-emit",
+ "ascribe-model",
+ "ascribe-resolve",
+ "schemars",
+ "serde",
+ "serde_yaml_ng",
+ "thiserror",
  "toml",
 ]
 
@@ -1583,6 +1614,7 @@ dependencies = [
  "indexmap",
  "toml_datetime",
  "toml_parser",
+ "toml_writer",
  "winnow",
 ]
 

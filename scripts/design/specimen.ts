@@ -1,13 +1,14 @@
-// Builds design/specimen.html: every candidate palette and type scale in
-// design/candidates/*.toml, and every candidate mark (design/candidates/
-// mark-*.svg), shown together in light and dark, with the contrast of every
-// pairing in design/candidates/pairs.toml.
+// Builds design/specimen.html: the chosen palette and type scale
+// (design/candidates/chosen.toml) and the mark (design/mark.svg), shown in
+// light and dark, with the contrast of every pairing in
+// design/candidates/pairs.toml. A candidate added to design/candidates/
+// (*.toml, or mark-*.svg) is shown beside them.
 //
 //   node scripts/design/specimen.ts
 //
 // The page is one self-contained file to open in a browser. It renders the
 // element library's, review's, and the docs site's own stylesheets with each
-// candidate's colors, so adding a candidate adds no code.
+// palette's colors, so adding a candidate adds no code.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -49,7 +50,6 @@ export interface Candidate {
   id: string;
   name: string;
   summary: string;
-  baseline: boolean;
   /** Hue, then step, then hex. */
   palette: Map<string, Map<string, string>>;
   /** Each semantic color's palette reference and hex, per scheme. */
@@ -123,7 +123,7 @@ export const EMIT: Record<string, Record<string, string>> = {
     "--border": "color.border",
     "--accent": "color.accent",
     "--accent-surface": "color.accent-surface",
-    "--code-background": "color.code-background",
+    "--focus": "color.focus",
   },
   "packages/elements/css/style.css": {
     "--ascribe-border-color": "color.border",
@@ -257,7 +257,6 @@ export function readCandidate(id: string, text: string): Candidate {
     id,
     name: string(meta.name, `${file} candidate.name`),
     summary: string(meta.summary, `${file} candidate.summary`),
-    baseline: meta.baseline === true,
     palette,
     colors,
     font: { ui: string(font.ui, `${file} font.ui`), mono: string(font.mono, `${file} font.mono`) },
@@ -324,13 +323,15 @@ export interface Inputs {
   stylesheets: Record<string, string>;
 }
 
-/** Everything the specimen shows, read from the repository. Baseline first, then by name. */
+/** Everything the specimen shows, read from the repository. The chosen palette first, then by name. */
 export function readInputs(): Inputs {
   const files = readdirSync(CANDIDATES).sort();
   const candidates = files
     .filter((f) => f.endsWith(".toml") && f !== "pairs.toml")
     .map((f) => readCandidate(f.slice(0, -5), readFileSync(join(CANDIDATES, f), "utf8")))
-    .sort((a, b) => Number(b.baseline) - Number(a.baseline) || a.id.localeCompare(b.id));
+    .sort(
+      (a, b) => Number(b.id === "chosen") - Number(a.id === "chosen") || a.id.localeCompare(b.id),
+    );
   const marks = files
     .filter((f) => f.startsWith("mark-") && f.endsWith(".svg"))
     .map((f) => {
@@ -666,8 +667,6 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
 </div>`;
 
 const STYLE = `
-:root { color-scheme: light dark; --page: #ffffff; --ink: #1f2328; --soft: #59636e; --line: #d1d9e0; }
-@media (prefers-color-scheme: dark) { :root { --page: #0d1117; --ink: #e6edf3; --soft: #9198a1; --line: #3d444d; } }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 2rem; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 h1 { margin: 0 0 0.25rem; font-size: 1.75rem; }
@@ -776,6 +775,17 @@ ${typeBlock(candidate)}
 </section>`;
 }
 
+/** The page's own colors: the first palette's text, muted, background, and border. */
+function pageColors(candidate: Candidate | undefined): string {
+  if (candidate === undefined) throw new Error("design/candidates/ has no palette");
+  const vars = (scheme: Scheme) =>
+    `--page: ${hexOf(candidate, "background", scheme)}; --ink: ${hexOf(candidate, "text", scheme)}; ` +
+    `--soft: ${hexOf(candidate, "muted", scheme)}; --line: ${hexOf(candidate, "border", scheme)};`;
+  return `
+:root { color-scheme: light dark; ${vars("light")} }
+@media (prefers-color-scheme: dark) { :root { ${vars("dark")} } }`;
+}
+
 /** The specimen page, as text. */
 export function renderSpecimen(inputs: Inputs): string {
   const stylesheets = Object.entries(inputs.stylesheets)
@@ -788,7 +798,11 @@ export function renderSpecimen(inputs: Inputs): string {
         `<div><h3>${esc(m.title)}</h3><p>${esc(m.description)}</p><p><code>${esc(m.path)}</code></p></div>`,
     )
     .join("\n");
-  const toc = inputs.candidates.map((c) => `<a href="#${esc(c.id)}">${esc(c.name)}</a>`).join("");
+  // A list of the palettes, when there's more than one to jump between.
+  const toc =
+    inputs.candidates.length > 1
+      ? `<nav class="toc">${inputs.candidates.map((c) => `<a href="#${esc(c.id)}">${esc(c.name)}</a>`).join("")}</nav>\n`
+      : "";
   return `<!doctype html>
 <!-- Generated by scripts/design/specimen.ts from design/candidates/. Don't edit it: run
      node scripts/design/specimen.ts, or its test with ASCRIBE_BLESS=1. -->
@@ -796,14 +810,13 @@ export function renderSpecimen(inputs: Inputs): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ascribe design candidates</title>
-<style>${STYLE}</style>
+<title>Ascribe's design</title>
+<style>${pageColors(inputs.candidates[0])}${STYLE}</style>
 </head>
 <body>
-<h1>Ascribe design candidates</h1>
-<p class="lede">The candidate marks, palettes, and type scales, each in light and dark. The docs pages are the element library's, review's, and the docs site's own stylesheets with the candidate's colors. Contrast is WCAG 2's: ${MINIMUM.text}:1 for text, ${MINIMUM.graphic}:1 for a bar, border, or mark that carries meaning.</p>
-<nav class="toc">${toc}</nav>
-<h2>The marks</h2>
+<h1>Ascribe's design</h1>
+<p class="lede">The mark, the palette, and the type scale, in light and dark. The docs pages are the element library's, review's, and the docs site's own stylesheets with the palette's colors. How to change them is in <code>design/README.md</code>. Contrast is WCAG 2's: ${MINIMUM.text}:1 for text, ${MINIMUM.graphic}:1 for a bar, border, or mark that carries meaning.</p>
+${toc}<h2>The marks</h2>
 <p class="note">Each palette below shows every mark: in one color, in full color with the palette's accent as the second color, at 16, 24, 32, 64, and 128 pixels, and in VS Code's activity bar and a browser tab.</p>
 <div class="candidate-marks">
 ${marks}

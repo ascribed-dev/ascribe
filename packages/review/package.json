@@ -34,6 +34,10 @@
     "./place": {
       "types": "./dist/place/index.d.ts",
       "default": "./dist/place/index.js"
+    },
+    "./prompt": {
+      "types": "./dist/prompt/index.d.ts",
+      "default": "./dist/prompt/index.js"
     }
   },
   "engines": {

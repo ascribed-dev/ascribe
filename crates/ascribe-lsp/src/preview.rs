@@ -447,17 +447,10 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
         return result;
     }
     if let Some(reason) = snapshot.dropped(path, build) {
-        let why = match reason {
-            DropReason::Variant => {
-                "its variant frontmatter names a dimension the build selects, and none of the selected values"
-            }
-            DropReason::Unavailable => {
-                "its available frontmatter makes it unavailable for the build's target and version"
-            }
-        };
         result.problems.push(PreviewProblem::info(format!(
-            "The build {} doesn't publish {path}: {why}. Pick another build to preview it.",
-            build.name
+            "The build {} doesn't publish {path}: {}. Pick another build to preview it.",
+            build.name,
+            drop_explanation(&reason)
         )));
         return result;
     }
@@ -597,6 +590,11 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
         sections,
     });
     result
+}
+
+/// Why a build doesn't publish a page, as the end of a sentence.
+pub(crate) fn drop_explanation(reason: &DropReason) -> &'static str {
+    reason.explanation()
 }
 
 /// What changed on the page at `path` against `base`, as `ascribe diff`

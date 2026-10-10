@@ -24,6 +24,12 @@ export {
   type OverlayMethod,
   type RequestContext,
 } from "./requests.js";
+export {
+  buildThreadsList,
+  buildThreadsPrompt,
+  promptProject,
+  type ThreadPromptContext,
+} from "./prompt.js";
 export { parseRemote, readCheckout, type CheckoutInfo, type RepositoryRef } from "./repository.js";
 export {
   ghTransport,
@@ -36,4 +42,4 @@ export {
 } from "./transport.js";
 export { formatSection, marker, parseSections, type MarkedSection } from "./marker.js";
 export { ReviewError, type ReviewErrorCode } from "../shared/errors.js";
-export type { Author, Side, Thread, ThreadComment } from "../shared/types.js";
+export type { Author, PromptRequest, Side, Thread, ThreadComment } from "../shared/types.js";

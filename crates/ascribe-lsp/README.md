@@ -8,9 +8,11 @@ computes nothing itself: every diagnostic comes from `ascribe_check`, over a
 disagree (SPEC §8, §10).
 
 It provides initialization, document and file synchronization, diagnostics, and
-semantic tokens; completion, hover, go to definition, document links, CodeLens,
-and inlay hints (see [Navigation](#navigation)); code actions, rename, and
-formatting; and the custom `ascribe/preview` request.
+semantic tokens; completion, hover, go to definition, find references, document
+links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
+rename, and formatting; and the custom requests `ascribe/preview`,
+`ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/context`,
+`ascribe/targets`, `ascribe/edit`, `ascribe/buildView`, and `ascribe/inventory`.
 
 ## The project
 
@@ -188,13 +190,384 @@ A base costs about as much memory as the project: on the synthetic
 3,000-page project, the project's source index is 67 MB and the base adds
 another 67 MB, all freed when it's dropped. Reading it takes about a second.
 
+## What's at a position: `ascribe/context`
+
+A custom request that says what is at a position or a selection of a page,
+so a client knows which actions apply there: the editor's actions are built
+on it, and any client can use it. It answers from the current snapshot, so it
+includes unsaved edits, and holds nothing about the rest of the project (that's
+`ascribe/targets`). No capability is advertised: a client that wants it sends
+the request.
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/install.md" },
+  "range": { "start": { "line": 20, "character": 5 }, "end": { "line": 20, "character": 5 } }
+}
+```
+
+An empty range is the cursor. Every range in the answer is in the negotiated
+position encoding. The result, whose TypeScript type is `ContextResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-context.schema.json`):
+
+| Field | Meaning |
+|---|---|
+| `project` | `{ root, editorBuild }`: the directory of `ascribe.toml`, and `[editor] build`. |
+| `at` | What contains the start of the range, innermost first, each `{ kind, range, … }`. |
+| `selection` | For a non-empty range, `{ kind, text, inline }`; `null` for the cursor. |
+| `token` | The token under the start of the range, `{ kind, range, … }`, or `null`. |
+| `insertable` | Whether the cursor's line is blank and between blocks, where a block can go: not in a code block or the frontmatter. |
+
+The kinds in `at`, and what each adds to `range`:
+
+| Kind | Adds |
+|---|---|
+| `frontmatter` | `variant` and `available`: each `{ range, value }` of the key's value, or `null` |
+| `section` | `headingId` |
+| `heading` | `level`, `id` (its source id), `explicitId` (written with `@id`) |
+| `paragraph`, `listItem`, `blockQuote`, `table` | |
+| `list` | `ordered`, and `steps` when a `@steps` binds it |
+| `note` | `type`, `form`: `line` (a primary), `block` (binds the next block), or `container` |
+| `details` | `title` as written, `form`: `block` or `container` |
+| `steps` | The `@steps` line and its list |
+| `variantGroup` | `dimension` (the key every arm has; `null` for labeled arms), `arms` (`{ value, label, range }`), `arm` (the index the position is in) |
+| `availability` | `spec`. At the top of a section, the line; binding a block, the line and the block |
+| `include` | `path` as written, `section` |
+| `snippet` | `address` as written |
+| `widget` | `name`, `attributes` (`{ key, value }`; of the arm the position is in, for a group), `form`: `line`, `block`, `container`, or `group` |
+| `codeBlock` | `info`, `fenced` |
+| `tableRow` | `header`, `available` (its `available` attribute) |
+| `link` | `destination`, `textEmpty` |
+| `image` | `src`, `alt` as written, `attributes` |
+| `phrase` | `key`, `declared` |
+
+A directive that binds the block below it (`@note` without a colon,
+`@details`, `@steps`, `@available`, a widget) contains that block: the
+cursor in the block has the directive in its chain.
+
+`selection.kind` is decided with whitespace at either end left out:
+
+| Kind | When |
+|---|---|
+| `prose` | Inside one paragraph's or heading's text, or all of it (`inline` is `true` only for this kind) |
+| `blocks` | Whole blocks of any kind, side by side: whole lists, whole containers, whole groups |
+| `code` | Inside one code block |
+| `mixed` | Anything else that spans blocks: part of one of them, a directive's own lines (an opener, its title, an `@end`) with some of what it holds, or some of a list's items or a group's arms |
+| `other` | Part of one table or directive line, or the frontmatter |
+
+`token.kind` is `link` (`destination`, `textEmpty`), `image` (`src`),
+`include` (the path and its `#id`: `path`, `section`), `phrase` (`key`,
+`declared`), `directiveName` (`name`), or `attribute` (`directive`, `key`,
+`value`; on any part of `key=value`).
+
+A document that isn't a source file of the project (outside the content
+root, or in a nested project's folder) gets the empty answer: `project` is
+`null` and `at` is empty. The request is answered in `src/context.rs`, from
+the syntax tree and the file's index, as navigation is (`nav.rs`).
+
+## What actions can point at: `ascribe/targets`
+
+A custom request that lists what an action can point at or use in the page's
+project, so a client can offer choices instead of asking for syntax. The
+client asks for the kinds it needs:
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/guide/install.md" },
+  "kinds": ["pages", "headings", "fragments", "images", "snippets", "phrases",
+            "notes", "dimensions", "widgets", "features", "builds", "occurrences"],
+  "range": { "start": { "line": 8, "character": 4 }, "end": { "line": 8, "character": 15 } }
+}
+```
+
+`range`, the cursor or selection, is optional; only `occurrences` reads it.
+
+The result has a list for each kind asked for and no others, and `modelUri`,
+the `file:` URI of `ascribe.toml`, which declaration ranges are in. Its
+TypeScript type is `TargetsResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-targets.schema.json`). Paths are written from the requesting
+page, as completion writes them (`relative_path`, percent-encoded where a
+destination needs it):
+
+| Kind | Each entry |
+|---|---|
+| `pages` | `path` (content path), `title`, `type` (content type), `link` (the destination from the requesting page), `rootLink` (`/page.md`, from the content root) |
+| `headings` | `page`, `text`, `id`, `level`, `link` (`page.md#id`, or `#id` on the requesting page), `rootLink` (`/page.md#id`, from the content root). A page's headings include those of the fragments it includes, each id once |
+| `fragments` | `path`, `include` (the `@include` path from the requesting page), `startsWithHeading` |
+| `images` | `path` (from the project root), `link`. Image files under the content root, not in a folder whose name starts with `.`, `node_modules`, a nested project's folder, or the output directory |
+| `snippets` | One entry per `[sources.<name>]`: `name`, `files` (`{ path, address, regions }`, each region `{ name, address }`) |
+| `phrases` | `key`, `value`, `range` (its key in `ascribe.toml`) |
+| `notes` | `type`, `label` |
+| `dimensions` | `name`, `label`, `values` (`{ value, label, versionless, range }`, `range` inside the value's quotes in `values`) |
+| `widgets` | `name`, `description`, `line`, `container`, `groupable`, `primary` (`none`, `identifier`, `text`), `binding`, `attributes` (`{ key, type, values, required, default, description }`) |
+| `features` | `key`, `name`, `availability` (the spec as written), `range` (its table header) |
+| `builds` | `name`, `editor` (whether it's `[editor] build`) |
+| `occurrences` | `path` (content path), `range`: each other whole-word occurrence, in the project's prose, of the text `range` selects, which `makePhrase` with `everywhere` replaces. Empty when the selection isn't text a phrase can take the place of |
+
+Images and the files of sources are listed through the project's
+`FileSystem`. A source's files are those its `include` and `ignore` take in,
+read by the code that resolves `@snippet` (`ascribe_resolve::source_files`),
+so every address listed resolves; a file that isn't text, or whose tags have
+problems, isn't listed. A source in another repository lists its copies under
+`sources/<name>/`; nothing reaches the network. A declaration's `range` is
+found by reading `ascribe.toml`'s text (`find_entry` in `src/definition.rs`),
+since the model keeps no spans; it's `null` when the entry isn't written as
+a table and key there.
+
+Everything comes from the current snapshot and model, so it includes unsaved
+edits. The request can be sent for any of the project's files: for
+`ascribe.toml`, or another file in the project's folder that isn't a source
+(not in a nested project's folder), the lists are the same, with paths written
+from the content root. A document that isn't one of the project's files gets
+`{}`.
+
+## Page edits: `ascribe/edit`
+
+A custom request that performs one action on a page and returns the edit,
+so a client can offer actions without writing syntax itself. It answers
+from the current snapshot, so it sees unsaved edits. No capability is
+advertised: a client that wants it sends the request.
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/install.md" },
+  "range": { "start": { "line": 20, "character": 0 }, "end": { "line": 20, "character": 0 } },
+  "action": "wrapNote",
+  "args": { "type": "tip" },
+  "version": 12
+}
+```
+
+`range` is the cursor or selection the action was invoked on, `args` what
+the action needs (each operation's are below; missing means `{}`), and
+`version`, optional, the document version the client saw. The result, whose
+TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-edit.schema.json`), is one of:
+
+| Result | Meaning |
+|---|---|
+| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
+| `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
+
+The operations, where each applies, and its arguments (`?` is optional):
+
+| Action | Applies to | Args | Writes |
+|---|---|---|---|
+| `wrapNote` | One paragraph, or whole blocks | `type?` (default `note`) | `@note` before one paragraph, or a container (`@note:` … `@end`) around several blocks; `{type=…}` unless the type is `note` |
+| `setNoteType` | A note | `type` | The note's `type` attribute, or none for `note` |
+| `unwrapNote` | A note | | The note's content, without the directive |
+| `noteToDetails` | A note | `title` | `.Title` and `@details`, keeping the content and the form |
+| `wrapDetails` | One block, or whole blocks | `title` | `.Title` and `@details` (or `@details:` … `@end`) |
+| `unwrapDetails` | A details block | | Its content, without the title and the directive |
+| `makeSteps` | An ordered list | | `@steps` above it |
+| `removeSteps` | Steps | | The ordered list, without `@steps` |
+| `addHeadingId` | A heading without `@id` | `id?` (default its slug) | `@id: …` after the heading |
+| `insertNote` | An insertable line | `type?`, `text?` | A note; without `text`, a placeholder |
+| `insertSteps` | An insertable line | `count?` (1 to 50, default 3) | `@steps` and a numbered list of placeholders |
+| `insertVariantGroup` | An insertable line | `dimension`, `values` | One `@variant {dimension=value}:` arm per value, each with a placeholder, and `@end` |
+| `addVariantArm` | A group of one dimension's arms | `value` | A new arm, in the dimension's declared order |
+| `removeVariantArm` | An arm of a group with others | | The group without it |
+| `insertDetails` | An insertable line | `title` | `.Title`, `@details:`, a placeholder, `@end` |
+| `insertInclude` | An insertable line | `path` (with `#id` for a section) | `@include: …` |
+| `insertSnippet` | An insertable line | `address`, `lang?`, `title?` | `@snippet: …`, with the attributes given |
+| `insertImage` | An insertable line | `path`, `alt`, `attributes?` | An image of `path`, with `alt` as its text and the attributes after it |
+| `insertWidget` | An insertable line | `name`, `primary?`, `attributes?` | The widget, attributes in declared order; the container form with a placeholder when it takes one, and a `.Title` placeholder when its title is required |
+| `markAvailable` | A heading (its section), a block, or a table's body row | `spec` (a spec or a feature key) | `@available: …` under the heading or before the block; for a row, `{available=…}` at the end of its first cell |
+| `setPageVariant` | Anywhere in a page | `dimension`, `value` | That dimension's value under `variant:` in the frontmatter, keeping the rest |
+| `setPageAvailable` | Anywhere in a page | `spec` | `available:` in the frontmatter |
+| `linkSelection` | Prose selected in one paragraph or heading | `destination` | A link to `destination`, with the selection as its text |
+| `insertLink` | A cursor in prose | `destination` | A link to `destination` with empty text, so the target's title fills it |
+| `insertPhrase` | A cursor in prose | `key` | `{key}` |
+| `setLinkTarget` | A link | `destination` | The link's destination |
+| `useTargetTitle` | A link to a page | | Empty link text, so the target's title fills it |
+| `setImageWidth` | An image | `width` | The image's `width` attribute, when the model declares one |
+| `setImageAlt` | An image | `alt` | The image's alt text |
+| `makePhrase` | Plain text selected in prose, on one line | `key`, `everywhere?` (default `false`) | `key = "<the text>"` in `[phrases]`, and `{key}` in place of the selection; with `everywhere`, in place of each of its `occurrences` too |
+| `addGlossaryTerm` | Anywhere in a page | `id`, `term`, `definition`, `aliases?` (a list), `link?` (a page from the content root, with `#id`) | A `[glossary.terms.<id>]` table with those keys |
+| `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
+
+An insertable line is where `ascribe/context` says `insertable`: a blank
+line between blocks. `attributes` is an object of key to value (a string,
+number, boolean, or a list for a set). Names, types, dimensions, values,
+specs, keys, pages, fragments, images, snippet addresses, and widget
+attributes are checked against the project and its model; the valid choices
+are what `ascribe/targets` lists.
+
+What every edit holds to:
+
+- **Canonical.** `ascribe fmt` changes nothing the edit wrote: directives,
+  attributes, and images are written by `ascribe-fmt`'s own functions.
+- **Minimal.** The edit touches only what the action changes, and keeps the
+  rest of the page, the frontmatter's other fields and comments included, as
+  written.
+- **In place.** Inside a list item or a block quote, what's written is
+  indented or prefixed to match, and a blank line is added where the blocks
+  around it need one.
+- **No new problems.** An edit that would add a diagnostic in the editor
+  build, to the page, to a page that includes it, or to a page that links
+  to either, is refused with an error instead, naming the other page when
+  the problem is there.
+- **The content model in place.** The content model's actions edit
+  `ascribe.toml` as text (`src/model_file.rs`), as it is in the editor when
+  it's open: an entry goes after the last one of its table, a new table after
+  the last of its section, and a value is replaced where it's written, so
+  comments, blank lines, and order stay. `toml_edit` finds the place from
+  its spans and renders the new text, and the edited file is checked to hold
+  what `toml_edit`'s own API would have made of it. A key or value the model
+  doesn't allow (a key's syntax, a key that's taken, a spec that names
+  nothing) is an error before any edit, and so is a model that doesn't load
+  as it is. The edits are checked as the whole project, with the model as it
+  would be: an action that would add a diagnostic anywhere is refused.
+- **Every wrap has an unwrap.** `wrapNote` and `unwrapNote`, `wrapDetails`
+  and `unwrapDetails`, `makeSteps` and `removeSteps` undo each other: one
+  and then the other gives back the original text.
+
+A document that isn't a source file of the project gets an error. The
+request is answered in `src/edit.rs` and the files under `src/edit/`, with
+the targets found as `ascribe/context` finds them.
+
+## The project's inventory: `ascribe/inventory`
+
+A custom request that answers what the project has and how much each part is
+used, for the editor's Pages and Content model views:
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/ascribe.toml" } }
+```
+
+Like `ascribe/targets`, it can be sent for any of the project's files. Its
+TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-inventory.schema.json`):
+
+```jsonc
+{
+  "modelUri": "file:///…/ascribe.toml",
+  "contentUri": "file:///…/docs",
+  "pages": [{ "path": "guide.md", "title": "Guide", "type": "page", "incoming": 3 }],
+  "fragments": [{ "path": "_setup.md", "includedBy": ["guide.md"] }],
+  "orphans": ["old.md"],
+  "model": [{ "kind": "phrase", "key": "product", "label": "Quill", "uses": 14,
+              "declaration": { "start": …, "end": … } }]
+}
+```
+
+- Paths are content paths, relative to `contentUri`, the content root.
+- `incoming` is how many links from other files, and includes, name the page.
+- `orphans` are the pages whose `incoming` is 0, other than index pages
+  (`index.md`, in any folder). A reader may still reach one through a
+  navigation the project doesn't know about, so it's a hint, not an error.
+- `model` lists the phrases, features, glossary terms, dimensions, note types,
+  widgets, and builds, each kind in declaration order. `kind` is `phrase`,
+  `feature`, `term`, `dimension`, `note`, `widget`, or `build`; `label` is the
+  phrase's value, the feature's name, the term, the dimension's label (when it
+  isn't its name), the note type's label, or the widget's description.
+  `uses` is `null` for a build, which pages don't name, and for a glossary
+  term with `match = "marked"`, whose uses are the links to its page.
+  `declaration` is the entry's table header in `ascribe.toml` (a phrase's
+  key), in `modelUri`, found as `ascribe/targets` finds ranges; it's `null`
+  for a built-in note type.
+
+Every count is the length of the list Find All References returns for the same
+thing ([Navigation](#navigation)): both come from
+`ascribe_resolve::Project::uses`, and the inventory counts every kind in one
+pass over the snapshot (`Project::use_counts`). It answers from the current
+snapshot, so it includes unsaved edits. See [Performance](#performance) for
+its cost.
+
+## What a build leaves out: `ascribe/buildView`
+
+A custom request that says what a build leaves out of a page, for a client
+that dims it in the source (the editor's build lens). The client names the
+page and the build; without `build`, the editor's build (`[editor] build`):
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/docs/guides/rollouts.md" }, "build": "self-hosted" }
+```
+
+The result's TypeScript type is `BuildViewResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-build-view.schema.json`):
+
+```jsonc
+{
+  "build": "self-hosted",
+  "documentVersion": 4,          // the open document's version, or null
+  "pageIncluded": true,          // false when the build drops the whole page
+  "pageDetail": null,            // why, when it does
+  "excluded": [
+    { "range": …, "reason": "variant", "detail": "Shows only edition=self-hosted" },
+    { "range": …, "reason": "availability",
+      "detail": "Scheduled rollouts: available on Lantern Cloud (preview), not Self-hosted 2.5" }
+  ]
+}
+```
+
+What's excluded is what `ascribe build` removes, from the resolver's own
+decisions (`Project::removed` and `Project::dropped` in `ascribe-resolve`),
+not worked out a second way: the variant arms the build's selection doesn't
+select (a group none of whose arms survives, whole), and the content its
+availability filter removes, a section from its heading through its last
+block, and a table row as its line. A range runs from a directive line
+through the last line, `@end` included, and neighbors left out for the same
+reason are one range. Only the page's own text is listed: what an
+`@include` brings in is in another file. The detail uses the content model's
+display labels. A `switch` and `badge` build leaves nothing out.
+
+The answer comes from the current snapshot, so it includes unsaved edits. A
+document that isn't a source file of the project, or a build the content
+model doesn't have, gets an empty `build` and nothing excluded.
+
+## A prompt for an agent: `ascribe/agentPrompt`
+
+A custom request for **Prompt agent**: a prompt for the user's agent about one
+problem, a file's problems, or the project's. The client says which, and lists
+the documents with unsaved changes, so a prompt about one says to save it:
+
+```jsonc
+{ "kind": "problem",                  // or "file", or "project"
+  "textDocument": { "uri": "file:///…/docs/guides/install.md" },  // optional for "project"
+  "diagnostic": { "range": …, "code": "ASC036", "message": "…" },  // for "problem", as published
+  "unsaved": ["file:///…/docs/guides/install.md"] }
+```
+
+The result's TypeScript type is `AgentPromptResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-agent-prompt.schema.json`):
+`{ "prompt": "Fix this problem in …" }`, or `null` when there's no problem: the
+file has none, or the diagnostic isn't reported any more.
+
+The answer comes from the current snapshot, so it includes unsaved edits, and
+from what `ascribe check --editor-build` checks: the file-level checks and the
+editor's build (`ascribe_check::diagnose_editor_build`). The prompt is built
+by `ascribe_check::prompt`, which `ascribe check --format prompt` calls too,
+so for a saved file the two give the same prompt; `lsp_parity` in
+`crates/ascribe-cli/tests/` holds them to it. A diagnostic is found by its
+code and range, and its message when two share a place.
+
+While review is on (`ascribe/review/setBase`), two more kinds prompt about
+changes, against the base the server holds:
+
+```jsonc
+{ "kind": "pageChanges",              // what changed on this page
+  "textDocument": { "uri": "file:///…/docs/guides/install.md" },
+  "build": "site",                    // optional: the editor's build
+  "unsaved": [] }
+{ "kind": "fragmentReach",            // the pages that changed through a fragment
+  "fragment": "_fragments/prereqs.md", // a content path, as a page's `because` names it
+  "build": "site",
+  "unsaved": [] }
+```
+
+They answer `null` when review is off, or the page or fragment didn't change
+in the build. The prompts are built by `ascribe_diff::prompt`, as `ascribe diff
+--format prompt [PAGE]` builds them, so for saved files the two give the same
+prompt.
+
 ## Capabilities
 
 Advertised: incremental text document sync (open/close, no save), semantic
 tokens (full and range), the position encoding, and completion
-(triggered by `@ { ( # / = , |` and a space), hover, definition, document
-links, CodeLens, inlay hints, code actions, document formatting, rename, and one
-command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
+(triggered by `@ { ( # / = , |` and a space), hover, definition, references,
+document links, CodeLens, inlay hints, code actions, document formatting, rename (with
+`prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
@@ -203,7 +576,19 @@ advertise pull diagnostics.
 Code actions carry the checker's existing diagnostic fixes (including the
 router's reverse route suggestion) and the Ascribe-specific repairs. Rename and
 file-move edits use the current project snapshot, including open buffers, its
-source index, and reverse references. Formatting returns only the minimal edits
+source index, and reverse references. A rename starts on a heading or an `@id`,
+a phrase (a `{key}` use or its key in `ascribe.toml`), or a dimension value (in
+a `@variant` attribute or a `[dimensions.<name>] values` item). A phrase rename
+reaches every use the source index records: prose, link text and destinations,
+frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and
+the files `@snippet {phrases=true}` reads (a remote source refuses the rename).
+A dimension value rename edits the dimension's `values`, `labels`, and
+`versionless`, every `@variant` attribute and `variant` frontmatter field, every
+availability spec (markers, frontmatter, `[features]`, and a build's `filter`),
+and a build's `variants`. `ascribe.toml` is edited in place, keeping its
+comments and layout. A new name that isn't valid or is already taken gets no
+edit. `prepareRename` answers with the range and the current name, or says why
+nothing at the cursor can be renamed. Formatting returns only the minimal edits
 from `ascribe-fmt`; the VS Code client applies those edits on save when
 `ascribe.formatOnSave` is enabled, and requests file-move edits before renaming.
 
@@ -226,8 +611,10 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
 - **Diagnostics** are `ascribe_check::check_file` for each file in
   `Affected::recheck`, plus the page-level diagnostics of the editor's build
   (`[editor] build`; `ContentModel::editor_default_build`) located in those
-  files, published for every affected file, open or not. A deleted file's
-  diagnostics are cleared. The file-level checks probe the disk with the files
+  files, published for every affected file, open or not. Each one's code links
+  to its entry in the diagnostics reference (`codeDescription.href`, the same
+  address as `docs` in `ascribe check`'s JSON), so the code is a link in the
+  Problems panel. A deleted file's diagnostics are cleared. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
   (`Project::from_parts_with_fs`), as the source index does.
 - **Stale results.** A worker thread computes from a `Snapshot`. Before it
@@ -265,6 +652,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `complete.rs` | Completion |
 | `hover.rs` | Hover |
 | `definition.rs` | Go to definition |
+| `references.rs` | Find all references |
 | `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
@@ -293,6 +681,24 @@ says so), a phrase (its value), an availability spec or feature key (SPEC
 **Go to definition**: links and includes to the file or heading;
 `@id`'s primary to its heading; phrases and feature keys to their entries in
 `ascribe.toml`.
+
+**Find all references** lists every place that uses what's under the cursor,
+from `ascribe_resolve::Project::uses`, the search the inventory counts with:
+
+| Cursor | Lists |
+|---|---|
+| A link or an `@include` | What it names: the links and includes of the heading after `#`, else of the file |
+| A heading, or its `@id`'s primary | The links whose `#id` names it, on its page or on a page that includes its file, and the includes of its section |
+| The start of the file, its frontmatter, or its title | The links from other files to the file, and its includes |
+| A `{key}` | Every declared `{key}` |
+| An availability spec that is a feature key | The specs that are that key (`@available`, a row's `available`, frontmatter `available`); a spec of targets lists the uses of its dimension |
+| A glossary term in prose | Its occurrences in prose, and its aliases', matched as the build matches them (whole words, its case rule), whether it links them first or every time. A term with `match = "marked"` has none: its uses are the links to its page |
+| A `@note`, or its `type` | The notes of that type (`note` when none is given) |
+| A widget's name | Its directives |
+| A `@variant` or its attribute | The dimension's `@variant` attributes, frontmatter `variant` keys, and the availability specs that name it or its values |
+
+With `includeDeclaration`, the declaration comes first: the file's start, the
+heading, or the entry in `ascribe.toml`.
 
 **Document links** make every link, image, and include destination
 clickable, with `#L<line>` for a heading. **CodeLens** puts
@@ -376,6 +782,29 @@ headings (no cache, so it can't be stale), rank the matches, and cut the list at
 100; the cost grows linearly with the project and the ranking is a sort of the
 matches.
 
+### Inventory
+
+`cargo bench -p ascribe-lsp --bench inventory` (release build) changes a page
+of the same generated projects, with a glossary term added that is in every
+page's prose, and times `ascribe/inventory` after each change, with the server
+checking the edit in the background. 100 requests, median / 95th percentile;
+one run on a 4-core 2.1 GHz Xeon container:
+
+| Pages | Inventory, median (p95) |
+|---|---|
+| 20 | 0.8 ms (1.1) |
+| 100 | 1.1 ms (1.6) |
+| 300 | 1.9 ms (2.3) |
+| 1,000 | 5.5 ms (7.4) |
+| 3,000 | 24 ms (29) |
+
+The target is a median under 50 ms at 3,000 pages, since the views ask on
+every save. It counts from the snapshot's index in one pass, with no cache to
+go stale: the links and includes the project resolved, the phrases and
+availability markers it indexed, each directive line, and the glossary's terms
+in each page's prose. Without the glossary term, the 3,000-page median is
+15 ms.
+
 ## Library choice
 
 Chosen: **`lsp-server` with `lsp-types`** (rust-analyzer's synchronous
@@ -398,15 +827,17 @@ scaffold and the protocol types), over `tower-lsp-server`.
 
 ## Testing
 
-- `tests/` drives the server in-process over `Connection::memory()`: the
+- `tests/all/` drives the server in-process over `Connection::memory()`, as one
+  program (`tests/all.rs`; `cargo test -p ascribe-lsp --test all scenarios::`
+  runs one file's tests): the
   scripted scenarios of the acceptance criteria, multi-byte positions, stale
   computations (a hook holds a computation until a newer edit lands), file
   watching, model changes, and which project a workspace folder gets.
-- `crates/ascribe-cli/tests/lsp_parity.rs` starts the real `ascribe lsp` binary
+- `crates/ascribe-cli/tests/all/lsp_parity.rs` starts the real `ascribe lsp` binary
   over stdio and compares its published diagnostics with
   `ascribe check --build <name> --format json`, for every build of
   `examples/quill` and fixture projects with known problems.
-- `tests/navigation.rs` scripts every navigation feature over a copy of
+- `tests/all/navigation.rs` scripts every navigation feature over a copy of
   `examples/quill` (with a features registry added): each completion context,
   hover, definition, document links, CodeLens and its command, inlay hints,
   answers after an edit or a deletion, the negotiated encodings, files outside

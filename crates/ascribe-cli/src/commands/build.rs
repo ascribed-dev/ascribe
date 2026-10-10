@@ -10,15 +10,15 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnosed, LoadError, Project, diagnose};
+use ascribe_check::{Diagnosed, LoadError, Project, Reported, diagnose};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions};
 use ascribe_model::Build;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::commands::check::Format;
 use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
+use crate::report::json::About;
 use crate::report::{Counts, FileTable, json, text};
 
 /// Arguments of `ascribe build`.
@@ -67,6 +67,15 @@ pub enum Emit {
     Json,
 }
 
+/// How to show the checks' results.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum Format {
+    /// Diagnostics with source snippets, for people.
+    Text,
+    /// One JSON document, for tools.
+    Json,
+}
+
 /// Runs the command. Exit codes: 0 on success, 1 when the checks found errors
 /// (nothing is written), 2 when it couldn't do its work: a usage error, no
 /// `ascribe.toml`, a content model with errors, or an output that couldn't be
@@ -101,7 +110,18 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     let checked = project.sources().len();
     let written = match args.format {
         Format::Text => text::write(out, &files, &diagnostics, checked, color),
-        Format::Json => json::write(out, &files, &diagnostics, checked, None),
+        Format::Json => json::write(
+            out,
+            &files,
+            &Reported::all(diagnostics.clone()),
+            &About {
+                error: None,
+                files_checked: checked,
+                files_reported: checked,
+                builds_checked: builds.iter().map(|b| b.name.clone()).collect(),
+                summary_only: None,
+            },
+        ),
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe
@@ -207,7 +227,12 @@ fn report_failure(
             let _ = text::write_diagnostics(out, &files, &diagnostics, color);
             writeln!(err, "error: {message}")
         }
-        Format::Json => json::write(out, &files, &diagnostics, 0, Some(&message)),
+        Format::Json => json::write(
+            out,
+            &files,
+            &Reported::all(diagnostics),
+            &About::failed(&message),
+        ),
     };
     exit::FAILURE
 }

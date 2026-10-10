@@ -23,6 +23,7 @@ const review = fileURLToPath(new URL("../review/", import.meta.url));
 const reviewAlias = {
   "@ascribed/review/github": `${review}src/github/index.ts`,
   "@ascribed/review/place": `${review}src/place/index.ts`,
+  "@ascribed/review/prompt": `${review}src/prompt/index.ts`,
   "@ascribed/review/overlay": `${review}src/overlay/index.ts`,
   "@ascribed/review/marks.css": `${review}src/marks/marks.css`,
   "@ascribed/review/marks": `${review}src/marks/index.ts`,
@@ -97,7 +98,9 @@ if (process.argv.includes("--tests")) {
     entryPoints: {
       run: "test/integration/run.ts",
       "suite/index": "test/integration/suite/index.ts",
+      "suite/actions.it": "test/integration/suite/actions.it.ts",
       "suite/activation.it": "test/integration/suite/activation.it.ts",
+      "suite/lens.it": "test/integration/suite/lens.it.ts",
       "suite/monorepo.it": "test/integration/suite/monorepo.it.ts",
       "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",

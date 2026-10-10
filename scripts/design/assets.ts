@@ -1,9 +1,9 @@
 // Every image of the mark that something needs, generated from the sources in
-// design/: the favicons and touch icon in site/public/, the Marketplace and
-// activity bar icons in packages/vscode/media/, and the README header and the
-// avatar in design/out/. design/assets.json records each output and the hash
-// of each source it came from; assets.test.ts fails when a source changed and
-// this script wasn't run. design/README.md has the table.
+// design/: the favicons and touch icon in site/public/, the header logo in
+// site/src/assets/, the Marketplace and activity bar icons in packages/vscode/media/,
+// and the README header and the avatar in design/out/. design/assets.json records
+// each output and the hash of each source it came from; assets.test.ts fails when
+// a source changed and this script wasn't run. design/README.md has the table.
 
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -124,18 +124,22 @@ function tile(
   return svg(size, size, back + paths(mark, ink, offset, offset, drawn / width));
 }
 
+// The mark beside the wordmark. The mark's a sits on y = 29.13 of its 32; the
+// wordmark's baseline is y = 0. The wordmark is 25/32 of the mark's height, as
+// the specimen's lockup has it, and the gap between them 0.225 of it.
+const MARK_BASELINE = 29.13;
+const WORDMARK_HEIGHT = 25 / 32;
+const LOCKUP_GAP = 0.225;
+
 /** The mark beside the wordmark, sharing a baseline, and the tagline under both. */
 function card(sources: Sources, colors: Colors): string {
   const [W, H] = [1200, 630];
   const { mark, wordmark, tagline } = sources;
   const ink = { first: colors.text.light, second: colors.accent.light };
-  // The mark's a sits on y = 29.13 of its 32; the wordmark's baseline is y = 0.
-  const MARK_BASELINE = 29.13;
   const markScale = 5;
   const markSize = mark.box[2] * markScale;
-  // The wordmark beside the mark at 25/32 of its height, as the specimen's lockup has it.
-  const wordScale = (markSize * (25 / 32)) / wordmark.box[3];
-  const gap = 36;
+  const wordScale = (markSize * WORDMARK_HEIGHT) / wordmark.box[3];
+  const gap = markSize * LOCKUP_GAP;
   const lineScale = 44 / 24;
   const lockupWidth = markSize + gap + wordmark.box[2] * wordScale;
   const lineGap = 72;
@@ -168,6 +172,34 @@ function card(sources: Sources, colors: Colors): string {
         lineY,
         lineScale,
       ),
+  );
+}
+
+/**
+ * The mark beside the wordmark, as tall as the mark, in `currentColor` for
+ * the page to color. The mark's asterisk keeps `class="second"`, so the page
+ * can give it a second color.
+ */
+function logo(mark: Drawing, wordmark: Drawing): string {
+  const size = mark.box[3];
+  const wordScale = (size * WORDMARK_HEIGHT) / wordmark.box[3];
+  const wordX = size + size * LOCKUP_GAP;
+  const width = Math.ceil(wordX + wordmark.box[2] * wordScale);
+  const marked = mark.shapes
+    .map((s) => `<path${s.second ? ' class="second"' : ""} fill="currentColor" d="${s.d}"/>`)
+    .join("");
+  return svg(
+    width,
+    size,
+    marked +
+      paths(
+        wordmark,
+        "currentColor",
+        wordX,
+        MARK_BASELINE + wordmark.box[1] * wordScale,
+        wordScale,
+      ),
+    false,
   );
 }
 
@@ -221,6 +253,24 @@ interface Sources {
 }
 
 /** An output: where it goes, its size, which sources make it, and how. */
+/**
+ * The wordmark `height` pixels tall on a rounded plate of `background`, with
+ * `pad` around it: a header that reads on a light or a dark page, where an
+ * image can't follow the reader's scheme.
+ */
+function plate(wordmark: Drawing, color: string, background: string, height: number, pad: number) {
+  const [, , w, h] = wordmark.box;
+  const scale = height / h;
+  const [W, H] = [Math.ceil(w * scale) + 2 * pad, height + 2 * pad];
+  return svg(
+    W,
+    H,
+    title("Ascribe") +
+      `<rect width="${W}" height="${H}" rx="${num(pad / 2)}" fill="${background}"/>` +
+      paths(wordmark, { first: color, second: color }, pad, pad, scale),
+  );
+}
+
 export interface Asset {
   path: string;
   width: number;
@@ -268,6 +318,15 @@ export const ASSETS: Asset[] = [
     draw: (s) => card(s, s.colors),
   },
   {
+    path: "site/src/assets/logo.svg",
+    width: 153,
+    height: 32,
+    from: [MARK, WORDMARK],
+    form: "svg",
+    oneColor: true,
+    draw: (s) => logo(s.mark, s.wordmark),
+  },
+  {
     path: "packages/vscode/media/icon.png",
     width: 256,
     height: 256,
@@ -299,6 +358,14 @@ export const ASSETS: Asset[] = [
     from: [WORDMARK, PALETTE],
     form: "svg",
     draw: (s) => header(s.wordmark, s.colors.text.dark, 48),
+  },
+  {
+    path: "design/out/header-vscode.png",
+    width: 532,
+    height: 192,
+    from: [WORDMARK, PALETTE],
+    form: "png",
+    draw: (s) => plate(s.wordmark, s.colors.text.dark, s.colors.surface.dark, 96, 48),
   },
   {
     path: "design/out/avatar.png",

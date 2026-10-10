@@ -63,6 +63,16 @@ impl FileSystem for Held<'_> {
     }
 }
 
+/// The source index over a checked project's texts, in the project's
+/// own order.
+pub(crate) fn held_index(project: &Project) -> ascribe_resolve::Project {
+    ascribe_resolve::Project::load(
+        Arc::new(project.model().clone()),
+        project.layout().clone(),
+        &Held(project),
+    )
+}
+
 /// The source index a [`PageChecker`](super::PageChecker) reads: built from a
 /// checked project's texts, or one the caller already has (the language server's
 /// incremental index).
@@ -94,11 +104,7 @@ pub(super) struct Indexed<'p> {
 
 impl<'p> Indexed<'p> {
     pub fn new(project: &Project) -> Indexed<'p> {
-        let index = ascribe_resolve::Project::load(
-            Arc::new(project.model().clone()),
-            project.layout().clone(),
-            &Held(project),
-        );
+        let index = held_index(project);
         let ids = index
             .files()
             .filter_map(|f| Some((f.file, project.source_at(&f.path)?.id)))
@@ -115,6 +121,14 @@ impl<'p> Indexed<'p> {
         Indexed {
             index: IndexRef::Borrowed(index),
             ids: HashMap::new(),
+        }
+    }
+
+    /// The same index, borrowed, for another checker.
+    pub fn borrowed(&self) -> Indexed<'_> {
+        Indexed {
+            index: IndexRef::Borrowed(&self.index),
+            ids: self.ids.clone(),
         }
     }
 

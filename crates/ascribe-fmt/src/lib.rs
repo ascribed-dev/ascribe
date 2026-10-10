@@ -63,6 +63,7 @@ use ascribe_syntax::{
     PrimaryValue, parse,
 };
 
+pub use attributes::{directive_block, image_block, written_value};
 pub use files::{FormatFilesError, Formatted, Refused, format_files};
 
 use indent::Owner;

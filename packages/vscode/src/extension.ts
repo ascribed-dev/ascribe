@@ -3,6 +3,19 @@ import type { ProjectServer, ServerState } from "./client.js";
 import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
+import { ActionsController, type ActionsApi } from "./actions/controller.js";
+import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
+import { McpRegistration, type McpApi } from "./agents/mcp.js";
+import { AgentTools, type ToolsApi } from "./agents/tools.js";
+import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { ChosenBuilds } from "./ui/chosenBuild.js";
+import { STATE_NAMES } from "./ui/describe.js";
+import { BuildLenses } from "./ui/lens.js";
+import { ProjectBuilds } from "./ui/projectBuilds.js";
+import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
+import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
+import { StatusBar, type StatusBarApi } from "./ui/statusBar.js";
+import { Walkthrough } from "./ui/walkthrough.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -21,6 +34,22 @@ export interface AscribeApi {
   whenSettled(): Promise<void>;
   /** The preview, for tests. */
   preview: PreviewApi;
+  /** The editor's actions, for tests. */
+  actions: ActionsApi;
+  /** Prompt agent, for tests. */
+  promptAgent: PromptAgentApi;
+  /** What agents in VS Code get: the MCP server and the tools, for tests. */
+  agents: { mcp: McpApi; tools: ToolsApi };
+  /** The status bar item and the sidebar's views, for tests. */
+  ui: {
+    statusBar: StatusBarApi;
+    projects: ProjectsViewApi;
+    lens: BuildLensApi;
+    /** The Used by, Pages, and Content model views. */
+    sidebar: SidebarApi;
+    /** Settles when every request for a project's builds has been answered. */
+    whenBuildsKnown(): Promise<void>;
+  };
 }
 
 let registry: ProjectRegistry | undefined;
@@ -29,8 +58,32 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const projects = new ProjectRegistry(context);
   registry = projects;
 
-  const preview = new PreviewController(context, projects);
+  const chosen = new ChosenBuilds();
+  const promptAgent = new PromptAgent(context, projects);
+  promptAgent.register();
+  const preview = new PreviewController(context, projects, chosen, promptAgent);
   preview.register();
+  const mcp = new McpRegistration(context, projects);
+  mcp.register();
+  const tools = new AgentTools(projects, preview.review);
+  tools.register();
+
+  const lenses = new BuildLenses();
+  const builds = new ProjectBuilds(projects, chosen, lenses);
+  builds.register();
+  const statusBar = new StatusBar(projects, builds, chosen, lenses);
+  statusBar.register();
+  const lens = new BuildLens(projects, builds, chosen, lenses);
+  lens.register();
+  const projectsView = new ProjectsView(projects, builds);
+  projectsView.register();
+  const sidebar = new SidebarViews(projects);
+  sidebar.register();
+
+  const actions = new ActionsController(projects);
+  actions.register();
+  const walkthrough = new Walkthrough(projects);
+  walkthrough.register();
 
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument((event) => {
@@ -67,6 +120,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   context.subscriptions.push(
     projects,
     preview,
+    mcp,
+    tools,
+    actions,
+    promptAgent,
+    chosen,
+    lenses,
+    builds,
+    statusBar,
+    lens,
+    projectsView,
+    sidebar,
+    walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
       if (projects.projects.length === 0) {
@@ -116,6 +181,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       ),
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
+    actions: actions.api,
+    promptAgent: promptAgent.api,
+    agents: { mcp: mcp.api, tools: tools.api },
+    ui: {
+      statusBar: statusBar.api,
+      projects: projectsView.api,
+      lens: lens.api,
+      sidebar: sidebar.api,
+      whenBuildsKnown: () => builds.whenSettled(),
+    },
   };
 }
 
@@ -136,13 +211,6 @@ async function pickServer(projects: ProjectRegistry): Promise<ProjectServer | un
   );
   return picked?.server;
 }
-
-const STATE_NAMES: Record<ServerState, string> = {
-  stopped: "not started",
-  starting: "starting",
-  running: "running",
-  failed: "failed",
-};
 
 /** Tells VS Code whether the workspace has a project, for the `ascribe.active` conditions. */
 function updateActive(projects: ProjectRegistry): Thenable<unknown> {

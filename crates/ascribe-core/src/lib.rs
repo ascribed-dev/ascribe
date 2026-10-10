@@ -43,15 +43,27 @@ pub mod schema;
 pub mod span;
 pub mod text_edit;
 
+/// The docs site's address, with no trailing slash. It's `[consumer] site` in
+/// `docs/ascribe.toml`, and a test in `ascribe-cli` checks that they agree.
+/// The command line's help links to the site's pages from here, and so does
+/// each diagnostic, to its entry in the diagnostics reference.
+#[macro_export]
+macro_rules! docs_site {
+    () => {
+        "https://ascribed-dev.com"
+    };
+}
+
 pub use attribute_block::{Attribute, AttributeBlock, AttributeValue, Token};
 pub use attributes::{ParsedAttributes, parse_attribute_block};
 pub use boundary::SourceBoundary;
 pub use consumer::{AssetPlacement, AssetUse, ConsumerProfile, Router, SlugScope, Slugger};
 pub use error::Coded;
-pub use issue::{Arg, DiagnosticSlug, Fix, Issue, Related};
+pub use issue::{Applicability, Arg, DiagnosticSlug, Fix, Issue, Related};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use path::{
-    Destination, LocalDestination, PathError, RelPath, classify_destination, percent_decode,
+    Destination, LocalDestination, PathError, RelPath, classify_destination, image_media_type,
+    percent_decode,
 };
 pub use schema::{
     AttributeSchema, AttributeType, Attributes, Binding, Builtin, DefaultValue, DirectiveSchema,

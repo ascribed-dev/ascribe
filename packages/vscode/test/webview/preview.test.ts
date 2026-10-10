@@ -774,6 +774,59 @@ describe("review threads in the preview webview", () => {
     await preview.page.close();
   });
 
+  it("asks the extension for an agent prompt about a thread, the page, or a fragment's pages", async () => {
+    const preview = await open();
+    const requests = serveThreads(preview, (method) => {
+      if (method === "load") {
+        return {
+          pullRequest: { number: 128, url: THREADS_ON.pullRequest.url },
+          threads: {
+            blocks: [{ anchor: { source: "page.md:3-3", via: [] }, threads: [thread("T1")] }],
+            removed: [],
+            detached: [],
+          },
+          pending: pending(0),
+          viewer: "kyle",
+        };
+      }
+      if (method === "allThreads") return [];
+      return null;
+    });
+    const view = reviewed(1, { threads: THREADS_ON });
+    if (view.type !== "render" || !view.review?.page) throw new Error();
+    view.review.page.because = ["_f/frag.md", "ascribe.toml"];
+    await preview.send(view);
+    await preview.next("threadsDrawn");
+    const prompts = () =>
+      requests.filter((r) => r.method === "promptAgent").map((r) => r.params["request"]);
+
+    await preview.page.getByRole("button", { name: "Prompt agent", exact: true }).click();
+    await expect.poll(prompts).toEqual([{ kind: "thread", threadId: "T1" }]);
+
+    const more = preview.page.getByRole("button", { name: "More review actions" });
+    await more.click();
+    await expect(more.getAttribute("aria-expanded")).resolves.toBe("true");
+    // The model file isn't a fragment: it has no item.
+    await expect(preview.page.getByRole("menuitem").allTextContents()).resolves.toEqual([
+      "Prompt agent: review this page",
+      "Prompt agent: check the pages that show _f/frag.md",
+    ]);
+    await preview.page.keyboard.press("ArrowDown");
+    await preview.page.keyboard.press("Enter");
+    await expect.poll(prompts).toEqual([
+      { kind: "thread", threadId: "T1" },
+      { kind: "fragment-reach", fragment: "_f/frag.md" },
+    ]);
+    await expect(preview.page.getByRole("menu").count()).resolves.toBe(0);
+    await more.click();
+    await preview.page.keyboard.press("Escape");
+    await expect(preview.page.getByRole("menu").count()).resolves.toBe(0);
+    await more.click();
+    await preview.page.getByRole("menuitem", { name: "Prompt agent: review this page" }).click();
+    await expect.poll(() => prompts().at(-1)).toEqual({ kind: "page-changes" });
+    await preview.page.close();
+  });
+
   it("says comments need GitHub when signed out, and offers both ways in", async () => {
     const preview = await open();
     await preview.send(
@@ -823,6 +876,33 @@ describe("review threads in the preview webview", () => {
 
 describe("the Page | Site switch", () => {
   const frame = (preview: Preview) => preview.page.locator('iframe[title="Site preview"]');
+
+  it("marks the pressed side with the active border in a high-contrast dark theme, which gives buttons no background", async () => {
+    const preview = await open();
+    await preview.send(render(1, "<p>Hello</p>"));
+    await preview.next("rendered");
+    // What VS Code sets for its high-contrast dark theme: no button background.
+    await preview.page.evaluate(() => {
+      document.body.classList.add("vscode-high-contrast");
+      const root = document.documentElement.style;
+      root.setProperty("--vscode-foreground", "rgb(255, 255, 255)");
+      root.setProperty("--vscode-button-foreground", "rgb(255, 255, 255)");
+      root.setProperty("--vscode-contrastActiveBorder", "rgb(243, 133, 24)");
+    });
+    const pressed = preview.page
+      .getByRole("group", { name: "Preview" })
+      .getByRole("button", { name: "Page" });
+    const style = await pressed.evaluate((e) => {
+      const { color, backgroundColor, boxShadow } = getComputedStyle(e);
+      return { color, backgroundColor, boxShadow };
+    });
+    expect(style).toEqual({
+      color: "rgb(255, 255, 255)",
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      boxShadow: "rgb(243, 133, 24) 0px 0px 0px 1px inset",
+    });
+    await preview.page.close();
+  });
 
   it("asks for the site, then shows the dev server's page in a frame", async () => {
     const preview = await open({ frameOrigin: SITE });

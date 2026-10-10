@@ -15,8 +15,8 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, Rename, Request as _,
-    SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, PrepareRenameRequest, References,
+    Rename, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
     CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
@@ -141,6 +141,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             definition_provider: Some(OneOf::Left(true)),
+            references_provider: Some(OneOf::Left(true)),
             document_link_provider: Some(DocumentLinkOptions {
                 resolve_provider: Some(false),
                 work_done_progress_options: Default::default(),
@@ -152,7 +153,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
             document_formatting_provider: Some(OneOf::Left(true)),
             rename_provider: Some(OneOf::Right(RenameOptions {
-                prepare_provider: Some(false),
+                prepare_provider: Some(true),
                 work_done_progress_options: Default::default(),
             })),
             workspace: Some(WorkspaceServerCapabilities {
@@ -387,6 +388,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            References::METHOD => navigation(shared, &request, |p: lsp_types::ReferenceParams| {
+                let at = p.text_document_position;
+                (at.text_document.uri, move |ctx: &Ctx| {
+                    crate::references::references(ctx, at.position, p.context.include_declaration)
+                })
+            }),
             DocumentLinkRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::DocumentLinkParams| {
                     (p.text_document.uri, |ctx: &Ctx| {
@@ -421,9 +428,43 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                 })
             }),
             Rename::METHOD => rename_request(shared, &request),
+            PrepareRenameRequest::METHOD => prepare_rename_request(shared, &request),
             WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
+            crate::build_view::METHOD => {
+                answer(shared, &request, |p: crate::build_view::BuildViewParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::build_view::build_view(ctx, p.build.as_deref())
+                    })
+                })
+            }
+            crate::context::METHOD => {
+                answer(shared, &request, |p: crate::context::ContextParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::context::context(ctx, p.range)
+                    })
+                })
+            }
+            crate::edit::METHOD => answer(shared, &request, |p: crate::edit::EditParams| {
+                let uri = p.text_document.uri.clone();
+                (uri.clone(), move |ctx: &Ctx| {
+                    crate::edit::edit(ctx, &uri, &p)
+                })
+            }),
+            crate::targets::METHOD => {
+                project_answer(shared, &request, |p: crate::targets::TargetsParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::targets::targets(ctx, &p.kinds, p.range)
+                    })
+                })
+            }
+            crate::inventory::METHOD => {
+                project_answer(shared, &request, |p: crate::inventory::InventoryParams| {
+                    (p.text_document.uri, crate::inventory::inventory)
+                })
+            }
+            crate::agent_prompt::METHOD => agent_prompt_request(shared, &request),
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
             crate::review::CHANGES_METHOD => changes_request(shared, &request),
             method => Err(Response::new_err(
@@ -487,6 +528,47 @@ where
     }
 }
 
+/// Answers a custom request about one document as [`navigation`] does, but
+/// with the empty answer (`R::default()`), not `null`, for a document that
+/// isn't a source file of the project.
+fn answer<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize + Default,
+    F: FnOnce(&Ctx) -> R,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, compute) = read(params);
+    let target = shared.lock().nav_target(&uri);
+    let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// Answers a custom request about the whole project as [`answer`] does,
+/// asked through any of the project's files ([`Core::project_target`]).
+fn project_answer<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize + Default,
+    F: FnOnce(&Ctx) -> R,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, compute) = read(params);
+    let target = shared.lock().project_target(&uri);
+    let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: lsp_types::RenameParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
@@ -520,6 +602,48 @@ fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Valu
             )
         }),
         None => Ok(serde_json::Value::Null),
+    }
+}
+
+/// What a rename at a position would rename, or, as an error the client
+/// shows, why nothing there can be renamed.
+fn prepare_rename_request(
+    shared: &Shared,
+    request: &Request,
+) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::TextDocumentPositionParams =
+        serde_json::from_value(request.params.clone())
+            .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri;
+    let answer = {
+        let core = shared.lock();
+        let is_model = core
+            .config
+            .as_ref()
+            .zip(crate::uri::uri_to_path(&uri))
+            .is_some_and(|(config, path)| normalize(config) == normalize(&path));
+        if is_model {
+            core.project_nav_target()
+                .map(|ctx| crate::refactor::prepare_model(&ctx, params.position))
+        } else {
+            core.nav_target(&uri)
+                .map(|ctx| crate::refactor::prepare(&ctx, params.position))
+        }
+    };
+    match answer {
+        None => Ok(serde_json::Value::Null),
+        Some(Err(message)) => Err(Response::new_err(
+            request.id.clone(),
+            ErrorCode::RequestFailed as i32,
+            message,
+        )),
+        Some(Ok(answer)) => serde_json::to_value(answer).map_err(|e| {
+            Response::new_err(
+                request.id.clone(),
+                ErrorCode::InternalError as i32,
+                e.to_string(),
+            )
+        }),
     }
 }
 
@@ -639,6 +763,32 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
             e.to_string(),
         )
     })
+}
+
+/// Answers `ascribe/agentPrompt`. A prompt about a problem, a file, or a
+/// page's changes needs a source file of the project; one about the project
+/// or a fragment's reach takes any of its files, or none.
+fn agent_prompt_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    use crate::agent_prompt::{AgentPromptParams, PromptKind, agent_prompt};
+    let params: AgentPromptParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (target, review) = {
+        let core = shared.lock();
+        // Any file of the project: a source the index can't read is still
+        // one whose problems a prompt is about.
+        let target = match (&params.text_document, params.kind) {
+            (Some(document), _) => core.project_target(&document.uri),
+            (None, PromptKind::Project | PromptKind::FragmentReach) => core
+                .config
+                .as_deref()
+                .and_then(crate::uri::path_to_uri)
+                .and_then(|uri| core.project_target(&uri)),
+            (None, _) => None,
+        };
+        (target, core.review.clone())
+    };
+    let result = target.and_then(|ctx| agent_prompt(&ctx, &params, review));
+    to_json(request, result)
 }
 
 fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {

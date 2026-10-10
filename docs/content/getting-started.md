@@ -37,6 +37,9 @@ code --install-extension Ascribe.ascribe-vscode
 
 It checks your pages as you type, completes directives, [phrases](reference/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
 
+@available: next
+After you install it, its walkthrough, **Get Started with Ascribe**, shows the preview, the actions bar that writes directives for you, and the Ascribe sidebar. It's under **Help → Welcome** whenever you want it again.
+
 ## Create `ascribe.toml`
 
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and the smallest one is a single line:
@@ -152,6 +155,25 @@ jobs:
       - run: npx ascribe fmt --check
 ```
 
+## Work with an AI agent
+
+@available: next
+If you write with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, give it your project's rules:
+
+@available: next
+@variant {pm=npm}:
+```sh
+npx ascribe agents sync
+```
+@variant {pm=pnpm}:
+```sh
+pnpm exec ascribe agents sync
+```
+@end
+
+@available: next
+That writes `AGENTS.md`, with your page types, phrases, and the check to run after each edit, and a skill that teaches the agent to check and fix its own work. Most agents read both on their own. [Agents](guides/agents.md) covers the rest: the commands an agent uses, prompts you hand it, the MCP server, and hooks that check each edit.
+
 ## Next
 
 - [Directive reference](reference/directives.md): the language.
@@ -160,3 +182,5 @@ jobs:
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](guides/editor.md): the VS Code extension.
 - [Astro](guides/astro.md): publishing a site.
+- @available: next
+  [Agents](guides/agents.md): working with an AI coding agent.

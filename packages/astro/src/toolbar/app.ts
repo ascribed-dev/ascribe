@@ -26,6 +26,7 @@ import {
   type Overlay,
   type OverlayData,
   type OverlayHost,
+  type PromptRequest,
 } from "@ascribed/review/overlay";
 import { defineToolbarApp } from "astro/toolbar";
 import {
@@ -86,6 +87,9 @@ const TIMEOUT_MS = 120_000;
 /** This tab's memory: whether the panel is open, and a page to step into. */
 const OPEN_KEY = "ascribe-review-open";
 const FIRST_KEY = "ascribe-review-first";
+
+/** The model file, which a page can change through but isn't a file of content. */
+const MODEL_FILE = "ascribe.toml";
 
 const SHOWS: [Show, string][] = [
   ["changes", "Changes"],
@@ -162,6 +166,8 @@ class ReviewApp {
   private at = -1;
   private atEnd = false;
   private breakdown = false;
+  /** Whether the More review actions row is open. */
+  private more = false;
   private overlay: Overlay | undefined;
   private overlayFor: number | undefined;
   private listeners: (() => void)[] = [];
@@ -494,6 +500,7 @@ class ReviewApp {
       resolve: (threadId, resolved) => ask("resolve", { threadId, resolved }),
       submit: (event, body) => ask("submit", body === undefined ? { event } : { event, body }),
       discard: () => ask("discard"),
+      promptAgent: (request) => this.promptAgent(request),
       openSource: (anchor) => this.openSource(anchor.source),
       openThread: (threadId, pagePath) => this.openThread(threadId, pagePath),
       notify: (message) => this.notify(message),
@@ -501,6 +508,29 @@ class ReviewApp {
         this.listeners.push(listener);
       },
     };
+  }
+
+  /**
+   * Has the dev server build a prompt and puts it on the clipboard: a page
+   * can't fill in an agent on the machine. Rejects with what went wrong.
+   */
+  private async promptAgent(request: PromptRequest): Promise<void> {
+    const path = this.stage.kind === "on" ? this.stage.view.path : null;
+    const prompt = await this.channel.request<string | null>("prompt", { request, path });
+    if (prompt === null) {
+      throw {
+        message:
+          request.kind === "page-changes"
+            ? "nothing on this page changed."
+            : request.kind === "fragment-reach"
+              ? "no page changed through that file."
+              : "no review comment is open.",
+      } satisfies HostError;
+    }
+    if (!(await copyText(this.doc, prompt))) {
+      throw { message: "the browser didn't allow copying it." } satisfies HostError;
+    }
+    this.notify("Prompt copied. Paste it into your agent.");
   }
 
   /** Every anchored block on the page, in its order. */
@@ -710,6 +740,8 @@ class ReviewApp {
 
   private onPage(view: PageView): HTMLElement[] {
     const parts: HTMLElement[] = [this.controls(view)];
+    const more = this.moreRow(view);
+    if (more) parts.push(more);
     if (this.breakdown && view.page) {
       parts.push(this.el("div", "legend", countsText(view.page.counts) || "No changes"));
     }
@@ -812,7 +844,48 @@ class ReviewApp {
     const refresh = this.button("Refresh", "ghost", () => void this.refresh());
     refresh.setAttribute("aria-label", "Refresh comments and changes");
     row.append(refresh);
+    if (page && page.status !== "removed") {
+      const more = this.button("⋯", "ghost square", () => {
+        this.more = !this.more;
+        this.render();
+      });
+      more.setAttribute("aria-label", "More review actions");
+      more.title = "More review actions";
+      more.setAttribute("aria-expanded", String(this.more));
+      row.append(more);
+    }
     return row;
+  }
+
+  /** More review actions: Prompt agent about the page, and about each file it changed through. */
+  private moreRow(view: PageView): HTMLElement | undefined {
+    const page = view.page;
+    if (!this.more || !page || page.status === "removed") return undefined;
+    const menu = this.el("div", "row menu");
+    menu.setAttribute("role", "group");
+    menu.setAttribute("aria-label", "More review actions");
+    const items: [string, PromptRequest][] = [
+      ["Prompt agent: review this page", { kind: "page-changes" }],
+    ];
+    const fragments = page.because.filter((cause) => cause !== MODEL_FILE);
+    for (const fragment of fragments) {
+      items.push([
+        fragments.length === 1
+          ? "Prompt agent: check this fragment's pages"
+          : `Prompt agent: check the pages that show ${fragment}`,
+        { kind: "fragment-reach", fragment },
+      ]);
+    }
+    for (const [label, request] of items) {
+      menu.append(
+        this.button(label, "ghost", () => {
+          this.promptAgent(request).catch((error: HostError) =>
+            this.notify(`The prompt couldn't be built: ${error.message}`),
+          );
+        }),
+      );
+    }
+    return menu;
   }
 
   /** Past the last change: the next changed page. */
@@ -1062,4 +1135,35 @@ function recall(key: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Puts `text` on the clipboard, through the old `execCommand` way where the
+ * Clipboard API isn't allowed. Whether it got there.
+ */
+async function copyText(doc: Document, text: string): Promise<boolean> {
+  const clipboard = doc.defaultView?.navigator.clipboard;
+  if (clipboard) {
+    try {
+      await clipboard.writeText(text);
+      return true;
+    } catch {
+      // Not allowed here: the old way below.
+    }
+  }
+  const area = doc.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  doc.body.append(area);
+  area.select();
+  let copied = false;
+  try {
+    copied = doc.execCommand("copy");
+  } catch {
+    copied = false;
+  }
+  area.remove();
+  return copied;
 }

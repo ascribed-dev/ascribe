@@ -56,3 +56,14 @@ export interface Thread {
   /** The text the thread is on, when known: quoted by a conversation comment, or read from git. */
   quote: string | undefined;
 }
+
+/**
+ * What **Prompt agent** asks a host for: a prompt about a thread, every open
+ * thread, the page's changes, or the pages a changed fragment (a content
+ * path) shows on.
+ */
+export type PromptRequest =
+  | { kind: "thread"; threadId: string }
+  | { kind: "open-threads" }
+  | { kind: "page-changes" }
+  | { kind: "fragment-reach"; fragment: string };

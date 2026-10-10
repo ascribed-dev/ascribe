@@ -22,6 +22,9 @@ labels = { cloud = "Quill Cloud" }
 [phrases]
 product = "Quill"
 
+[notes.policy]
+label = "Policy"
+
 [builds.site]
 variants = "switch"
 availability = "badge"

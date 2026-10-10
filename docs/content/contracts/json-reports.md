@@ -1,6 +1,6 @@
 ---
 title: JSON report contract
-description: The JSON Schemas of what ascribe check, diff, drift, and sources write with --format json.
+description: The JSON Schemas of what the ascribe commands write with --format json.
 ---
 
 The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. They're in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder. The [command reference](../reference/cli.md) says what each field is for, with an example of each document.
@@ -34,3 +34,42 @@ Every document follows these rules:
 @available: next
 
 @include: ../_generated/json-sources-update.md
+
+## `ascribe fmt`
+@available: next
+
+@include: ../_generated/json-fmt.md
+
+## `ascribe explain`
+@available: next
+
+@include: ../_generated/json-explain.md
+
+With `--list`:
+
+@include: ../_generated/json-explain-list.md
+
+## `ascribe model`
+@available: next
+
+@include: ../_generated/json-model.md
+
+## `ascribe outline`
+@available: next
+
+@include: ../_generated/json-outline.md
+
+## `ascribe link`
+@available: next
+
+@include: ../_generated/json-link.md
+
+## `ascribe refs`
+@available: next
+
+@include: ../_generated/json-refs.md
+
+## `ascribe render`
+@available: next
+
+@include: ../_generated/json-render.md

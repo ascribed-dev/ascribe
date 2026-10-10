@@ -14,6 +14,8 @@
 //! - the edges between files, forward and back: [`Project::includers`],
 //!   [`Project::including_pages`], [`Project::links_to`],
 //!   [`Project::links_to_id`], and [`Project::asset_users`];
+//! - where each page, fragment, heading, and content model entry is used
+//!   ([`Project::uses`], [`Project::use_counts`]);
 //! - the problems that follow from the source ([`Project::problems`]), by
 //!   registry slug, for the checks to report.
 //!
@@ -79,17 +81,19 @@ pub mod fs;
 pub mod incremental;
 mod index;
 mod layout;
+mod links;
 mod project;
 pub mod references;
 pub mod slug;
 pub mod snippet;
+mod uses;
 
 pub use astro::AstroRouter;
 pub use build::{
     Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage,
-    FormattedField, GlossaryUse, HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild,
-    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
-    glossary_targets,
+    FormattedField, GlossaryUse, HeadingIds, LinkTarget, Removal, Removed, ResolvedArm,
+    ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage,
+    ResolvedRow, Scope, Substitution, glossary_targets,
 };
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,
@@ -104,6 +108,7 @@ pub use index::{
     PhraseUse, RefKind, Reference, Target, heading_text, index_file,
 };
 pub use layout::Layout;
+pub use links::{encode_destination, link_path, named_headings};
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };
@@ -112,6 +117,7 @@ pub use references::{
     reference_issue, reference_target, resolve_reference,
 };
 pub use snippet::{
-    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, resolve_snippet,
-    snippet_issues,
+    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,
+    snippet_issues, source_files,
 };
+pub use uses::{Usable, Use, UseKind};

@@ -1,0 +1,29 @@
+# The content model `ascribe explain`'s examples are checked under, and
+# shown with when an example needs it: each example in diagnostics.toml is a
+# page, `page.md`, in a project with this model, with the example's own
+# `example.model` laid over it. Keep it small: it's printed whole.
+spec = "0.1"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+audience = "enum(admin, developer)?"
+
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm"]
+
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[features.sso]
+name = "Single sign-on"
+available = "cloud, self-managed 3.2"
+
+[phrases]
+product = "Quill"

@@ -13,9 +13,11 @@
 //! - the **includes**, each with the path it names, resolved (SPEC §4.2);
 //! - the **references**: links and images, each resolved from this file,
 //!   and so each **asset reference** among them;
-//! - every **phrase candidate**, and every **`@available`** directive;
+//! - every **phrase candidate**, those in the frontmatter fields that take
+//!   phrases included, and every **`@available`** directive;
 //! - every **`@snippet`**, with its address read (SPEC §4.8).
 
+mod frontmatter;
 mod headings;
 mod refs;
 pub(crate) mod walk;
@@ -139,6 +141,9 @@ pub enum PhrasePlace {
     Destination,
     /// In a fenced code block that opts in with `phrases=true`.
     Code,
+    /// In a frontmatter field that takes phrases. Only declared candidates
+    /// are listed here: in the frontmatter, the rest is literal text.
+    Frontmatter,
 }
 
 /// A phrase candidate: `{key}` (SPEC §5.1), declared or not.
@@ -272,6 +277,9 @@ pub(crate) fn index_parsed(
         }
     };
     walk::walk_blocks(&document.blocks, &mut visit);
+    if let Some(fm) = &document.frontmatter {
+        phrases.extend(frontmatter::phrases(text, fm.content, path.as_str(), model));
+    }
     // A definition's destination holds phrases too, once, wherever the
     // links that use it are.
     for definition in &document.definitions {
