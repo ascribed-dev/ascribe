@@ -5,18 +5,13 @@
 //! completion writes ([`link_path`], [`encode_destination`]).
 
 use ascribe_core::RelPath;
-use ascribe_model::edit_distance;
 use ascribe_resolve::{
-    FileKind, FileSystem, Missing, Project, RefKind, Resolution, Target, encode_destination,
-    link_path, reference_target, resolve_reference,
+    Closest, FileSystem, Missing, Project, RefKind, Resolution, Target, closest_targets,
+    encode_destination, link_href, link_path, reference_target, resolve_reference,
 };
 use serde::Serialize;
 
 use crate::{ASCRIBE_VERSION, QueryError, SCHEMA_VERSION};
-
-/// How many targets an answer suggests when the one asked about doesn't
-/// exist.
-const SUGGESTIONS: usize = 5;
 
 /// What `ascribe link <TARGET> --from <PAGE>` answers.
 #[derive(Debug, Serialize)]
@@ -136,6 +131,7 @@ pub fn link(
         Target::Local(local) => local.written.clone(),
         Target::External => String::new(),
     };
+    let closest = closest_targets(project, from, &parsed, &resolution);
     match resolution {
         Resolution::External => {
             answer.exists = true;
@@ -151,12 +147,6 @@ pub fn link(
             answer.problem = Some(format!(
                 "`{path}` is a fragment, which isn't published on its own; include it with `@include`, or link to a page that includes it"
             ));
-            answer.closest = project
-                .including_pages(&path)
-                .iter()
-                .take(SUGGESTIONS)
-                .map(|page| suggestion(project, from, page, None))
-                .collect();
             answer.path = Some(path.to_string());
         }
         Resolution::Source {
@@ -170,17 +160,16 @@ pub fn link(
             if project.page_heading(&path, &id).is_some() {
                 answer.exists = true;
                 answer.title = project.title_for(&path, Some(&id)).map(str::to_owned);
-                answer.href = Some(href(from, &path, Some(&id)));
+                answer.href = Some(link_href(from, &path, Some(&id)));
             } else {
                 answer.problem = Some(format!("`{path}` has no heading with the id `{id}`"));
-                answer.closest = closest_headings(project, from, &path, &id);
             }
         }
         Resolution::Source { target: path, .. } => {
             answer.exists = true;
             answer.kind = LinkKind::Page;
             answer.title = project.title_for(&path, None).map(str::to_owned);
-            answer.href = Some(href(from, &path, None));
+            answer.href = Some(link_href(from, &path, None));
             answer.path = Some(path.to_string());
         }
         Resolution::Asset { path, fragment } => {
@@ -194,29 +183,16 @@ pub fn link(
             answer.href = Some(written);
             answer.path = Some(path.to_string());
         }
-        Resolution::SourceMissing { actual } => {
+        Resolution::SourceMissing { .. } => {
             answer.problem = Some(format!("`{written}` doesn't exist"));
-            answer.closest = closest_pages(project, from, &written, actual.as_ref());
         }
         Resolution::AssetMissing(missing) => {
-            let actual = match &missing {
-                Missing::Case(actual) => Some(actual.clone()),
-                _ => None,
-            };
             answer.problem = Some(match missing {
                 Missing::Outside => {
                     format!("`{written}` is outside the project, so a build can't copy it")
                 }
                 _ => format!("`{written}` doesn't exist"),
             });
-            if let Some(actual) = actual {
-                answer.closest.push(LinkSuggestion {
-                    href: encode_destination(&link_path(&actual, from)),
-                    path: actual.to_string(),
-                    id: None,
-                    title: None,
-                });
-            }
         }
         Resolution::Route {
             page, page_exists, ..
@@ -225,94 +201,31 @@ pub fn link(
                 "this looks like the published route of `{page}`; link to the file instead"
             ));
             if page_exists && let Ok(page) = RelPath::parse(&page) {
-                answer.closest.push(suggestion(project, from, &page, None));
+                let closest = Closest {
+                    href: link_href(from, &page, None),
+                    path: page,
+                    id: None,
+                };
+                answer.closest.push(suggested(project, closest));
             }
         }
     }
+    answer
+        .closest
+        .extend(closest.into_iter().map(|c| suggested(project, c)));
     Ok(answer)
 }
 
-/// The destination of a link from `from` to `path`, and the heading `id` on
-/// it: `#id` on the page itself.
-fn href(from: &RelPath, path: &RelPath, id: Option<&str>) -> String {
-    match id {
-        Some(id) if path == from => format!("#{}", encode_destination(id)),
-        Some(id) => format!(
-            "{}#{}",
-            encode_destination(&link_path(path, from)),
-            encode_destination(id)
-        ),
-        None => encode_destination(&link_path(path, from)),
-    }
-}
-
-fn suggestion(
-    project: &Project,
-    from: &RelPath,
-    path: &RelPath,
-    id: Option<&str>,
-) -> LinkSuggestion {
+/// A closest target, with the title a link with no text shows: none for a
+/// file that isn't a source.
+fn suggested(project: &Project, closest: Closest) -> LinkSuggestion {
+    let title = project
+        .title_for(&closest.path, closest.id.as_deref())
+        .map(str::to_owned);
     LinkSuggestion {
-        href: href(from, path, id),
-        path: path.to_string(),
-        id: id.map(str::to_owned),
-        title: project.title_for(path, id).map(str::to_owned),
+        href: closest.href,
+        path: closest.path.to_string(),
+        id: closest.id,
+        title,
     }
-}
-
-/// The headings of the page at `path` whose ids are closest to `id`: the
-/// page exists, so its headings are the likely targets, however far.
-fn closest_headings(
-    project: &Project,
-    from: &RelPath,
-    path: &RelPath,
-    id: &str,
-) -> Vec<LinkSuggestion> {
-    let Some(file) = project.file(path) else {
-        return Vec::new();
-    };
-    let mut scored: Vec<(usize, String)> = project
-        .link_headings(file)
-        .into_iter()
-        .map(|(_, h)| (edit_distance(id, &h.source_id), h.source_id.clone()))
-        .collect();
-    scored.sort();
-    scored
-        .into_iter()
-        .take(SUGGESTIONS)
-        .map(|(_, id)| suggestion(project, from, path, Some(&id)))
-        .collect()
-}
-
-/// The pages whose paths, written from `from`, are closest to `written`: a
-/// file whose name differs only in case first, then pages within a few
-/// edits of the path or of its file name.
-fn closest_pages(
-    project: &Project,
-    from: &RelPath,
-    written: &str,
-    actual: Option<&RelPath>,
-) -> Vec<LinkSuggestion> {
-    let written = written.trim_start_matches("./");
-    let name = |path: &str| path.rsplit('/').next().unwrap_or(path).to_owned();
-    let limit = (written.chars().count() / 3).max(3);
-    let mut scored: Vec<(usize, RelPath)> = project
-        .pages()
-        .filter(|f| f.kind == FileKind::Page && Some(&f.path) != actual)
-        .map(|f| {
-            let candidate = link_path(&f.path, from);
-            let distance = edit_distance(written, &candidate)
-                .min(edit_distance(&name(written), &name(&candidate)));
-            (distance, f.path.clone())
-        })
-        .filter(|(distance, _)| *distance <= limit)
-        .collect();
-    scored.sort();
-    actual
-        .cloned()
-        .into_iter()
-        .chain(scored.into_iter().map(|(_, path)| path))
-        .take(SUGGESTIONS)
-        .map(|path| suggestion(project, from, &path, None))
-        .collect()
 }

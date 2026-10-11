@@ -342,6 +342,16 @@ fn link_answers_from_a_page() {
     assert!(missing["href"].is_null());
     assert_eq!(missing["closest"][0]["path"], "keys.md");
 
+    // A page whose name is far from the one written is found by the heading
+    // the link names.
+    let renamed = json(
+        dir.path(),
+        &["link", "credentials.md#rotate-keys", "--from", from],
+        1,
+    );
+    assert_eq!(renamed["closest"][0]["href"], "keys.md#rotate-keys");
+    assert_eq!(renamed["closest"][0]["title"], "Rotate keys");
+
     let fragment = json(
         dir.path(),
         &["link", "_fragments/before.md", "--from", from],
@@ -373,32 +383,32 @@ fn refs_finds_uses_through_includes() {
 
     let phrase = json(
         dir.path(),
-        &["refs", "phrase:{product}", "--project", "site"],
+        &["refs", "phrase:{product}", "--config", "site"],
         0,
     );
     assert_eq!(phrase["total"], 3);
     assert_eq!(phrase["truncated"], false);
     assert!(phrase["next_command"].is_null());
+
+    // `--config` is how to name the project: `refs` has no option of its own.
+    run(
+        dir.path(),
+        &["refs", "phrase:product", "--project", "site"],
+        2,
+    );
 }
 
 #[test]
 fn refs_cuts_the_list_and_says_how_to_see_it_all() {
     let dir = project();
-    let args = [
-        "refs",
-        "phrase:product",
-        "--project",
-        "site",
-        "--limit",
-        "1",
-    ];
+    let args = ["refs", "phrase:product", "--config", "site", "--limit", "1"];
     let value = json(dir.path(), &args, 0);
     assert_eq!(value["shown"], 1);
     assert_eq!(value["total"], 3);
     assert_eq!(value["truncated"], true);
     assert_eq!(
         value["next_command"],
-        "ascribe refs phrase:product --limit 3 --project site --format json"
+        "ascribe refs phrase:product --limit 3 --config site --format json"
     );
     let text = stdout(&run(dir.path(), &args, 0));
     assert!(text.contains("Showing 1 of them"), "{text}");
@@ -427,10 +437,10 @@ fn refs_cuts_the_list_and_says_how_to_see_it_all() {
 #[test]
 fn refs_to_nothing_is_exit_code_1() {
     let dir = project();
-    let value = json(dir.path(), &["refs", "phrase:nope", "--project", "site"], 1);
+    let value = json(dir.path(), &["refs", "phrase:nope", "--config", "site"], 1);
     assert_eq!(value["exists"], false);
     run(dir.path(), &["refs", "site/docs/keys.md#nope"], 1);
-    run(dir.path(), &["refs", "phrase:", "--project", "site"], 2);
+    run(dir.path(), &["refs", "phrase:", "--config", "site"], 2);
 }
 
 #[test]

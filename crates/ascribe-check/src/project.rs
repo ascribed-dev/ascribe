@@ -187,6 +187,10 @@ pub struct Project {
     /// root and from the content root, once the image checks have listed
     /// them.
     images: OnceLock<Vec<(RelPath, RelPath)>>,
+    /// The source index a broken link's closest targets are looked for in:
+    /// the one the caller gave ([`Project::with_link_index`]), or one built
+    /// from the held texts the first time a link is broken.
+    link_index: OnceLock<Arc<ascribe_resolve::Project>>,
     /// The day the checks run on, which `review-overdue` compares with.
     today: Option<Date>,
 }
@@ -459,6 +463,7 @@ impl Project {
             permalinks_text,
             permalinks,
             images: OnceLock::new(),
+            link_index: OnceLock::new(),
             today: None,
         }
     }
@@ -704,6 +709,22 @@ impl Project {
     pub fn with_today(mut self, today: Option<Date>) -> Project {
         self.today = today;
         self
+    }
+
+    /// This project, with `index` as the source index a broken link's
+    /// closest targets are looked for in, so none is built for them: the
+    /// language server gives its incremental index. `index` must be an index
+    /// of the same files.
+    #[must_use]
+    pub fn with_link_index(self, index: Arc<ascribe_resolve::Project>) -> Project {
+        let link_index = OnceLock::new();
+        let _ = link_index.set(index);
+        Project { link_index, ..self }
+    }
+
+    /// The source index a broken link's closest targets are looked for in.
+    pub(crate) fn link_index(&self) -> &ascribe_resolve::Project {
+        self.link_index.get_or_init(|| Arc::new(self.held_index()))
     }
 
     /// The day the checks run on, if the caller gave one.

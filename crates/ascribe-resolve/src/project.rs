@@ -6,6 +6,7 @@ use ascribe_model::ContentModel;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
+use crate::closest::closest_fixes;
 use crate::expand::{ExpandedPage, Expander, IncludeSite};
 use crate::fs::FileSystem;
 use crate::incremental::FileIds;
@@ -843,7 +844,7 @@ impl Project {
         } = resolution
             && (!fragment || names_itself)
         {
-            out.extend(self.link_id_problem(reference, at, target, id));
+            out.extend(self.link_id_problem(index, reference, resolution, at, target, id));
         }
         out
     }
@@ -853,7 +854,9 @@ impl Project {
     /// keeps the heading is the build's check (`link-id-removed`).
     fn link_id_problem(
         &self,
-        _reference: &Reference,
+        index: &FileIndex,
+        reference: &Reference,
+        resolution: &Resolution,
         at: Location,
         target: &RelPath,
         id: &str,
@@ -861,11 +864,21 @@ impl Project {
         if !self.files.contains_key(target) || self.page_heading(target, id).is_some() {
             return Vec::new();
         }
-        vec![
-            Issue::new(diagnostics::LINK_ID_MISSING, at)
-                .with_arg("path", target.to_string())
-                .with_arg("id", id),
-        ]
+        let mut issue = Issue::new(diagnostics::LINK_ID_MISSING, at)
+            .with_arg("path", target.to_string())
+            .with_arg("id", id);
+        // The headings `ascribe link` lists as closest: the target page's,
+        // which the problem already depends on. A missing page's closest
+        // targets can be any page, so the file-level check offers those.
+        issue.fixes = closest_fixes(
+            self,
+            &index.path,
+            &reference.target,
+            resolution,
+            index.file,
+            reference.destination_span,
+        );
+        vec![issue]
     }
 }
 
