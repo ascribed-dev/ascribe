@@ -527,8 +527,14 @@ the documents with unsaved changes, so a prompt about one says to save it:
 { "kind": "problem",                  // or "file", or "project"
   "textDocument": { "uri": "file:///…/docs/guides/install.md" },  // optional for "project"
   "diagnostic": { "range": …, "code": "ASC036", "message": "…" },  // for "problem", as published
-  "unsaved": ["file:///…/docs/guides/install.md"] }
+  "unsaved": ["file:///…/docs/guides/install.md"],
+  "program": "/…/bin/linux-x64/ascribe" }  // optional: what the prompt's commands start with
 ```
+
+`program` is how the agent runs Ascribe when `ascribe` isn't the binary the
+editor runs: the extension sends the binary's path when `ascribe` on the
+window's path is another binary or none. Without it, the prompt's commands
+start with `ascribe`. Every kind takes it.
 
 The result's TypeScript type is `AgentPromptResult` in
 `packages/vscode/src/shapes.ts` (`schemas/lsp-agent-prompt.schema.json`):

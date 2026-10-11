@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { changesReport, MAX_PAGES } from "../../src/agents/changes.js";
 import { mcpServerSpec } from "../../src/agents/mcpServer.js";
+import { ascribeElsewhere, ascribeOnPath, type PathEnvironment } from "../../src/agents/reach.js";
 import {
   CHECK_SCHEMA_VERSION,
   MAX_PROBLEMS,
@@ -417,5 +418,60 @@ describe("the changes report", () => {
     expect(report.next_command).toBe(
       "ascribe diff --base origin/main --build site --pages-only --format json",
     );
+  });
+});
+
+describe("an agent beside the editor", () => {
+  /** A machine whose files are `links`' keys, each a link to its value or itself. */
+  const machine = (
+    platform: NodeJS.Platform,
+    pathEnv: string,
+    links: Record<string, string>,
+  ): PathEnvironment => ({
+    path: pathEnv,
+    pathext: undefined,
+    platform,
+    realpath: (file) => Promise.resolve(links[file]),
+  });
+
+  it("runs the editor's binary as `ascribe` when the path's `ascribe` is it", async () => {
+    const env = machine("linux", "/usr/bin:/usr/local/bin", {
+      "/usr/local/bin/ascribe": "/opt/ascribe/ascribe",
+      "/opt/ascribe/ascribe": "/opt/ascribe/ascribe",
+    });
+    expect(await ascribeElsewhere("/opt/ascribe/ascribe", env)).toBeUndefined();
+  });
+
+  it("is given the binary's path, and its folder, when the path has no `ascribe`", async () => {
+    const bundled = "/home/jane/.vscode/extensions/ascribe/bin/linux-x64/ascribe";
+    const env = machine("linux", "/usr/bin", { [bundled]: bundled });
+    expect(await ascribeElsewhere(bundled, env)).toEqual({
+      program: bundled,
+      directory: "/home/jane/.vscode/extensions/ascribe/bin/linux-x64",
+    });
+  });
+
+  it("is given the binary's path when the path's `ascribe` is another binary", async () => {
+    const project = "/w/node_modules/.bin/ascribe";
+    const env = machine("darwin", "/opt/homebrew/bin", {
+      "/opt/homebrew/bin/ascribe": "/opt/homebrew/Cellar/ascribe/0.2.0/bin/ascribe",
+      [project]: "/w/node_modules/@ascribed/cli/bin/ascribe.js",
+    });
+    expect(await ascribeElsewhere(project, env)).toEqual({
+      program: project,
+      directory: "/w/node_modules/.bin",
+    });
+  });
+
+  it("finds `ascribe` on Windows by the path's extensions, and names the binary with `/`", async () => {
+    const shim = "C:\\w\\node_modules\\.bin\\ascribe.cmd";
+    const env = machine("win32", "C:\\Windows;C:\\w\\node_modules\\.bin", { [shim]: shim });
+    expect(await ascribeOnPath(env)).toBe(shim);
+    expect(await ascribeElsewhere("C:\\W\\node_modules\\.bin\\ascribe.cmd", env)).toBeUndefined();
+    const other = machine("win32", "C:\\Windows", { [shim]: shim });
+    expect(await ascribeElsewhere(shim, other)).toEqual({
+      program: "C:/w/node_modules/.bin/ascribe.cmd",
+      directory: "C:\\w\\node_modules\\.bin",
+    });
   });
 });

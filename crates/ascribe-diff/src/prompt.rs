@@ -86,7 +86,7 @@ impl Review<'_> {
     /// `ascribe diff` against the same base, from the repository's root,
     /// with `options` after it.
     fn diff_command(&self, context: &Context, builds: &[&str], options: &[&str]) -> String {
-        let mut words = vec!["ascribe".to_owned(), "diff".to_owned()];
+        let mut words = vec![context.ascribe(), "diff".to_owned()];
         if let Some(folder) = &context.folder {
             words.push("--config".to_owned());
             words.push(shell_word(&format!("{folder}/ascribe.toml")));
@@ -114,7 +114,8 @@ fn short(commit: &str) -> String {
 /// reader sees it, from the repository's root.
 fn render_command(context: &Context, page: &str, build: &str) -> String {
     format!(
-        "ascribe render {} --build {}",
+        "{} render {} --build {}",
+        context.ascribe(),
         shell_word(&context.in_repository(page)),
         shell_word(build)
     )
@@ -263,12 +264,13 @@ pub fn fragment_reach(
             shell_word(&in_repository)
         ),
         format!(
-            "To read a page: `ascribe render <page> --build {}`",
+            "To read a page: `{} render <page> --build {}`",
+            context.ascribe(),
             shell_word(&build.build)
         ),
         "Pages:".to_owned(),
     ];
-    let refs = format!("ascribe refs {}", shell_word(&in_repository));
+    let refs = format!("{} refs {}", context.ascribe(), shell_word(&in_repository));
     known.extend(
         pages
             .iter()
@@ -317,7 +319,10 @@ pub fn pages(context: &Context, review: &Review<'_>, builds: &[BuildDiff]) -> Op
     };
     let mut known = vec![
         review.base_line(),
-        format!("To read a page: `ascribe render <page> --build {build_word}`"),
+        format!(
+            "To read a page: `{} render <page> --build {build_word}`",
+            context.ascribe()
+        ),
     ];
     let mut listed = 0;
     let total: usize = changed.iter().map(|b| b.pages.len()).sum();

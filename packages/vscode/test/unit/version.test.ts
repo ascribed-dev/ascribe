@@ -18,6 +18,12 @@ describe("parseVersion", () => {
     expect(v("ascribe 1.0.0").prerelease).toBeUndefined();
   });
 
+  it("reads a build from main as its release, not a pre-release", () => {
+    const dev = v("ascribe 0.2.0+dev (42f00096ceb0)");
+    expect(dev.parts).toEqual([0, 2, 0]);
+    expect(dev.prerelease).toBeUndefined();
+  });
+
   it("returns undefined without a three-part version", () => {
     expect(parseVersion("ascribe")).toBeUndefined();
     expect(parseVersion("1.2")).toBeUndefined();

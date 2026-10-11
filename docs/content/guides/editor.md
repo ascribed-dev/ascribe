@@ -72,6 +72,8 @@ The extension also gives agents three tools of its own, for what only the editor
 
 The review tools answer while [review](#review-in-the-preview) is on, and say so in one line when it's off; they never turn it on. `#ascribe_review_threads` gives each open thread's comments as data, under the same sentence a [prompt](agents.md#what-a-prompt-says) puts over them, so the agent doesn't take them as instructions. None of the tools changes a file.
 
+An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on the window's path is another binary or none, the extension puts the folder of the binary each workspace folder's first project uses first on the path of that folder's terminals; a terminal that was open before asks to be relaunched. [Prompt agent](agents.md#prompt-your-agent)'s prompts then name the binary by its path, for an agent that doesn't work in the window's terminals, such as Claude Code's extension.
+
 ### Completion
 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.
@@ -107,6 +109,8 @@ The review tools answer while [review](#review-in-the-preview) is on, and say so
 ### Formatting
 
 **Format Document** rewrites Ascribe constructs into canonical form, as `ascribe fmt` does. Turn on `ascribe.formatOnSave` to do it on every save. It changes only Ascribe constructs, never how a page renders.
+
+When another extension is VS Code's formatter for Markdown, such as Prettier through `editor.defaultFormatter`, it formats your pages too, and can change what they build to: `version: {version}` becomes `version: { version }`. When you open a page and another formatter is set, the extension offers to be the Markdown formatter for that workspace folder. **Use Ascribe** writes `editor.defaultFormatter` under `[markdown]` in the folder's `.vscode/settings.json`, so **Format Document** and `editor.formatOnSave` run Ascribe on your pages. Ascribe formats only its projects' pages, so other Markdown files in the folder are no longer formatted. **Keep** leaves the setting as it is and doesn't ask again for that folder.
 
 ### Highlighting
 
@@ -288,4 +292,4 @@ When one project is nested in another's content root, the outer project's server
 
 ## Other formatters
 
-A Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and would join them with the text below. Exclude Ascribe sources from it, for example with `**/*.md` in `.prettierignore`, and use `ascribe fmt`.
+A Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and would join them with the text below. Exclude Ascribe sources from it, for example with `**/*.md` in `.prettierignore`, and use `ascribe fmt`. In VS Code, the extension offers to be the Markdown formatter for your pages; see [Formatting](#formatting).

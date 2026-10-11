@@ -7,7 +7,9 @@
 // problems: `ascribe.problems.file` and `ascribe.problems.project` say so.
 
 import * as vscode from "vscode";
+import { ascribeElsewhere } from "../agents/reach.js";
 import type { ProjectServer } from "../client.js";
+import { nodePathEnvironment } from "../environment.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { AgentPromptResult } from "../shapes.js";
 import {
@@ -175,9 +177,13 @@ export class PromptAgent implements vscode.Disposable {
     const unsaved = vscode.workspace.textDocuments
       .filter((d) => d.isDirty && d.uri.scheme === "file")
       .map((d) => d.uri.toString());
+    // An agent beside the editor may not have `ascribe`, or have another one.
+    const binary = server.binary;
+    const program = binary && (await ascribeElsewhere(binary.path, nodePathEnvironment()))?.program;
     const answer = (await server.request("ascribe/agentPrompt", {
       ...request,
       unsaved,
+      ...(program !== undefined && { program }),
     })) as AgentPromptResult | null;
     if (!answer) return undefined;
     // Only a file's prompt is about one file; a project's names its unsaved files itself.

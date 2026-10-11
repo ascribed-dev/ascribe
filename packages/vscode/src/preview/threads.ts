@@ -27,7 +27,9 @@ import {
   type ReviewSession,
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
+import { ascribeElsewhere } from "../agents/reach.js";
 import type { ProjectServer } from "../client.js";
+import { nodePathEnvironment } from "../environment.js";
 import { comparable, throughFolder } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
 import { hasSignIn, noSignInReason, tokenFor, type SignIns } from "./signIn.js";
@@ -294,10 +296,13 @@ export class ThreadsController implements vscode.Disposable {
       throw new ReviewError("not-found", "Review comments aren't on for this project.");
     }
     let aboutUnsaved = false;
+    // An agent beside the editor may not have `ascribe`, or have another one.
+    const binary = server.binary;
+    const program = binary && (await ascribeElsewhere(binary.path, nodePathEnvironment()))?.program;
     const prompt = await buildThreadsPrompt(
       {
         session: connection.session,
-        project: promptProject(server.project.folder),
+        project: { ...promptProject(server.project.folder), program },
         changedPages: () => this.host.changedPages(server),
         // GitHub's lines are the file's on disk, which is what the agent reads.
         readSource: async (file) => {

@@ -64,7 +64,6 @@
         },
         "count": {
           "description": "How many.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -157,7 +156,6 @@
         },
         "repeats": {
           "description": "For a problem in included content reported because one of its related\nplaces is in a path named: at how many other includes it's reported\ntoo, collapsed into this one. `0` otherwise.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -204,13 +202,11 @@
       "properties": {
         "advice": {
           "description": "How many advice.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "errors": {
           "description": "How many errors.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -220,7 +216,6 @@
         },
         "warnings": {
           "description": "How many warnings.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -287,19 +282,16 @@
       "properties": {
         "column": {
           "description": "The column, from 1, in Unicode characters (not bytes or UTF-16\nunits).",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "line": {
           "description": "The line, from 1.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "offset": {
           "description": "The byte offset from the start of the file.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -357,13 +349,11 @@
       "properties": {
         "acknowledged": {
           "description": "How many problems are acknowledged as intended. Left out when there\nare none.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "advice": {
           "description": "How many advice.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -389,13 +379,11 @@
         },
         "errors": {
           "description": "How many errors.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "warnings": {
           "description": "How many warnings.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -445,13 +433,11 @@
     },
     "files_checked": {
       "description": "How many source files were checked: the project's.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },
     "files_reported": {
       "description": "How many of them the report covers: the source files in the paths\nnamed, or every one when no path was.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },
@@ -464,13 +450,11 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },
     "shown": {
       "description": "How many diagnostics `diagnostics` lists.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },
@@ -480,7 +464,6 @@
     },
     "total": {
       "description": "How many diagnostics there are.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },
