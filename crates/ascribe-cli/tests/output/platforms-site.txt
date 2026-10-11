@@ -2,6 +2,8 @@
 
 ## Install the CLI
 
+<!-- A switcher: a reader sees one of the next 3 sections at a time, chosen by `platform`. -->
+
 **Linux**
 
 ```sh
