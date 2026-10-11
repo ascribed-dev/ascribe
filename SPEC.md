@@ -85,7 +85,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves four keys: `available` (§4.4), `variant` (§4.3), `intended` (§4.9), and `permalink` (below).
 
 - Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, or a name) is a frontmatter value of the wrong type (§8.2).
-- `permalink` gives a page a **permalink**: a name for the page that something outside the documentation can link to, which a build publishes at an address of its own that leads to the page wherever it is (§9.5). Its value is a name with the characters of an `@id` (§4.1), and it shares one set of names with the headings' permalinks: a build MUST publish each name once, whether on a page or a heading.
+- `permalink` gives a page a **permalink**: a name for the page that something outside the documentation can link to, which a build publishes at an address of its own that leads to the page wherever it is (§9.5). Its value is a name with the characters of an `@id` (§4.1), and it shares one set of names with the headings' permalinks: a build MUST publish each name once, whether on a page or a heading, and names that differ only in case are one name.
 
   ```yaml
   ---
@@ -363,7 +363,7 @@ Gives a heading an explicit, stable id.
   @id {permalink=true}: cli-check
   ```
 
-  A build MUST publish a permalink in one place only, and a page's own permalink (§2.1) shares one set of names with the headings'. A heading in a fragment is published on every page that includes it, so its permalink is published on each. Two pages that no build publishes together may share a permalink.
+  A build MUST publish a permalink in one place only, and a page's own permalink (§2.1) shares one set of names with the headings'. Names that differ only in case are one name, since a site may serve every spelling of an address at one. A heading in a fragment is published on every page that includes it, so its permalink is published on each. Two pages that no build publishes together may share a permalink.
 
 ### 4.2 `@include`
 
@@ -951,7 +951,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Title | Title given to a directive that doesn't accept one | Warning |
 | Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
-| `@id` | Permalink published by one build in more than one place: on two pages, or as a page's own and a heading's (page level) | Error |
+| `@id` | Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's (page level) | Error |
 | `@id` | Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods | Error |
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |

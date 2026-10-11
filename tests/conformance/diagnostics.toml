@@ -3084,9 +3084,11 @@ level = "page"
 next = "write"
 evidence = []
 spec = "4.1"
-row = "`@id` | Permalink published by one build in more than one place: on two pages, or as a page's own and a heading's (page level)"
+row = "`@id` | Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's (page level)"
 message = "the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only"
 messages.include = "including `{path}` here puts the permalink `{name}` on this page, and it's also on `{page}`; a build can publish each permalink in one place only"
+messages.case = "the permalink `{name}` differs only in case from `{other}` on `{page}`, and a site may serve both at one address; a build can publish each permalink in one place only, ignoring case"
+messages.include-case = "including `{path}` here puts the permalink `{name}` on this page, and `{other}`, which differs only in case, is on `{page}`; a site may serve both at one address, so a build can publish each permalink in one place only, ignoring case"
 fix = "Give one of them a different name (a heading's `@id`, or a page's `permalink`), or stop it being a permalink: remove `{permalink=true}` from the `@id`, or `permalink` from the frontmatter. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages."
 
 [[diagnostic]]
