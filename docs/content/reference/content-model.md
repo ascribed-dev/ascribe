@@ -428,10 +428,13 @@ ignore = ["localhost", "*.internal.example.com"]
 |---|---|---|---|
 | `command` | string | `"lychee"` | The command that runs lychee. A path with a separator is from the project root; a bare name is looked up as the shell would. |
 | `ignore` | array of strings | `[]` | The hosts whose links aren't checked: a host name, such as `example.com`, or `*.` and a host name, which covers every host under it but not the name itself. Case doesn't matter. |
+| `reuse-days` | whole number | `14` | How many days an address that answered isn't asked about again. Each address's own limit falls between half of this and all of it, so addresses first checked together don't all come due on one day. `0` asks about every address on every run. |
+
+An answer is reused only when it had nothing to report: a link that moved, failed, or timed out is asked about on every run, so every problem in a report was found in that run. The answers are kept in `.ascribe/cache/links/`; deleting it costs the next run time, and nothing else. `ascribe report links --recheck` asks about every address.
 
 A broken link is `link-external-broken` and a moved one `link-external-moved`; both are configurable in `[checks]`, and a broken one is acknowledged with `@intended` above its block.
 
-**Rules.** `ignore` names hosts, without a scheme, path, or port (`model-wrong-type`).
+**Rules.** `ignore` names hosts, without a scheme, path, or port, and `reuse-days` is a whole number, 0 or more (`model-wrong-type`).
 
 ---
 

@@ -16,6 +16,11 @@
 //! every other host answers. A `[checks.links] command` of `not-installed`
 //! is a checker that can't be run.
 //!
+//! A case with a `link-cache/` folder has the answers the report reuses:
+//! the folder is copied to a temporary project's `.ascribe/cache/links/`,
+//! so the case's own files are never written, and the store is read as on
+//! the case's `today`.
+//!
 //! The site checker's stand-in checks `[consumer] site`: on a host
 //! `failing.test`, three checks fail, one each that Ascribe, the hosting,
 //! and the pages own (`llms-txt-exists`, `content-negotiation`,
@@ -84,11 +89,22 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
         site_timeout: Duration::from_secs(5),
     };
     let site = project.model().consumer.site.clone();
+    let cached = case.dir.join("link-cache");
+    let store = match project.today() {
+        Some(today) if cached.is_dir() => {
+            let dir = tempfile::tempdir().map_err(|e| AdapterError(e.to_string()))?;
+            copy(&cached, &dir.path().join(links::cache::FOLDER))?;
+            let cache = links::Cache::open(&project, dir.path(), today, false);
+            Some((dir, cache))
+        }
+        _ => None,
+    };
     let options = Options {
         sections: &[section],
         builds: &[],
         site: site.as_deref(),
         tools: &tools,
+        link_cache: store.as_ref().map(|(_, cache)| cache),
     };
     let report =
         ascribe_query::report(&project, &options).map_err(|e| AdapterError(e.to_string()))?;
@@ -104,6 +120,24 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
         (None, None) => Vec::new(),
     };
     Ok((project, found))
+}
+
+/// Copies the folder `from` to `to`, with what's in it.
+fn copy(from: &std::path::Path, to: &std::path::Path) -> Result<(), AdapterError> {
+    let failed = |e: std::io::Error| AdapterError(format!("couldn't copy {}: {e}", from.display()));
+    std::fs::create_dir_all(to).map_err(failed)?;
+    for entry in std::fs::read_dir(from).map_err(failed)? {
+        let path = entry.map_err(failed)?.path();
+        let Some(name) = path.file_name() else {
+            continue;
+        };
+        if path.is_dir() {
+            copy(&path, &to.join(name))?;
+        } else {
+            std::fs::copy(&path, to.join(name)).map_err(failed)?;
+        }
+    }
+    Ok(())
 }
 
 /// A link checker that answers from the host alone.

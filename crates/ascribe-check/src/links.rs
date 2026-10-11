@@ -10,18 +10,25 @@
 //! author can acknowledge. The checker is [lychee](https://lychee.cli.rs),
 //! run as a program ([`Lychee`]); a test gives a stand-in ([`LinkChecker`]).
 //! The binary itself makes no request.
+//!
+//! An address that answered a few days ago isn't asked about again: its
+//! answer is reused from the project's store ([`cache`]).
+
+pub mod cache;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
+use ascribe_core::{Applicability, Date, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::CheckLevel;
 use ascribe_resolve::{RefKind, Target};
 use serde::Deserialize;
 
 use crate::tool::{self, ToolError};
 use crate::{Diagnostic, Project};
+
+pub use cache::Cache;
 
 /// How long the link checker may take, in all.
 pub const TIMEOUT: Duration = Duration::from_secs(30 * 60);
@@ -105,8 +112,15 @@ pub struct Checked {
     /// A diagnostic for each link that moved or is broken, in file order and
     /// source order, before `[checks]` levels and acknowledgements.
     pub diagnostics: Vec<Diagnostic>,
-    /// How many different addresses were checked.
+    /// How many different addresses were checked: those asked about, and
+    /// those whose answer was reused.
     pub checked: usize,
+    /// How many different addresses the checker was asked about.
+    pub asked: usize,
+    /// How many different addresses' answers were reused from the store.
+    pub reused: usize,
+    /// The day of the oldest answer reused, when one was.
+    pub oldest_answer: Option<Date>,
     /// How many different addresses `[checks.links] ignore` left out.
     pub ignored: usize,
 }
@@ -139,8 +153,9 @@ pub fn external_links(project: &Project) -> Vec<Link> {
 }
 
 /// Checks the project's external links with `checker`, leaving out the
-/// hosts `[checks.links] ignore` names. The checker isn't run when there's
-/// nothing to check, or when `[checks]` turns both link checks off.
+/// hosts `[checks.links] ignore` names, and reusing the answers `cache`
+/// holds when there is one. The checker isn't run when there's nothing to
+/// ask about, or when `[checks]` turns both link checks off.
 ///
 /// # Errors
 ///
@@ -149,6 +164,7 @@ pub fn check(
     project: &Project,
     checker: &dyn LinkChecker,
     timeout: Duration,
+    cache: Option<&Cache>,
 ) -> Result<Checked, ToolError> {
     let checks = &project.model().checks;
     let links = external_links(project);
@@ -166,21 +182,45 @@ pub fn check(
     }
     let off = |slug| checks.level(slug) == Some(CheckLevel::Off);
     let mut out = Checked {
-        diagnostics: Vec::new(),
         checked: checked.len(),
         ignored: ignored.len(),
+        ..Checked::default()
     };
     if checked.is_empty()
         || (off(diagnostics::LINK_EXTERNAL_BROKEN) && off(diagnostics::LINK_EXTERNAL_MOVED))
     {
         return Ok(out);
     }
-    let answers = checker.check(&Request {
-        command: checks.links.command.clone(),
-        root: project.root().to_owned(),
-        urls: checked,
-        timeout,
-    })?;
+    let mut ask = Vec::new();
+    for url in checked {
+        match cache.and_then(|c| c.reusable(&url)) {
+            Some(day) => {
+                out.reused += 1;
+                out.oldest_answer = Some(out.oldest_answer.map_or(day, |d| d.min(day)));
+            }
+            None => ask.push(url),
+        }
+    }
+    out.asked = ask.len();
+    let answers = if ask.is_empty() {
+        BTreeMap::new()
+    } else {
+        checker.check(&Request {
+            command: checks.links.command.clone(),
+            root: project.root().to_owned(),
+            urls: ask.clone(),
+            timeout,
+        })?
+    };
+    if let Some(cache) = cache {
+        for url in &ask {
+            match answers.get(url) {
+                None | Some(Answer::Fine) => cache.remember(url),
+                Some(_) => cache.forget(url),
+            }
+        }
+        cache.clean();
+    }
     for link in &links {
         let Some(answer) = answers.get(&link.url) else {
             continue;

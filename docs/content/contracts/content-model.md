@@ -425,10 +425,13 @@ ignore = ["localhost", "*.internal.example.com"]
 |---|---|---|---|
 | `command` | string | `"lychee"` | The command run, in the project root. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. |
 | `ignore` | array of strings | `[]` | Hosts not checked. `name` matches that host; `*.name` matches every host that ends in `.name`, and not `name` itself. Matched without regard to case, after a trailing `.` is dropped. |
+| `reuse-days` | integer | `14` | How many days an answer is reused. An address that answered with nothing to report isn't asked about again while its answer is younger than its own limit: a number of days from half of `reuse-days`, rounded up, through all of it, fixed by a hash of the address. `0` reuses nothing. |
+
+Answers are kept in `.ascribe/cache/links/` in the project's folder, one file an address, keyed by the address exactly as lychee is given it and a hash of the project's `lychee.toml`. Only an answer with nothing to report is kept, so every diagnostic in a report comes from an address asked about in that run. A file that can't be read, has another version, or holds another key counts as no answer. `ascribe check`, `build`, `diff`, `drift`, `fmt`, the language server, and the agents' hook never read or write the folder.
 
 The links checked are every link whose destination is an `http` or `https` URL, in every source file, each address once. A link whose address answers with an error, doesn't answer in time, or can't be reached is a `link-external-broken` advice (`ASC168`, `next = "review"`, `place = "block"`); one whose redirects begin with a `301` or `308` is a `link-external-moved` advice (`ASC169`, `next = "choose"`), with an unsafe fix that writes the address the permanent redirects end at. Both are at the link, and configurable in `[checks]`. An `@intended {check=link-external-broken}` that covers no broken link is `intended-unused` only when `ascribe report links` ran; `ascribe check` doesn't report it.
 
-**Rules** (§22.9): each `ignore` entry is a host name, or `*.` and one (`model-wrong-type`); `command` is a string (`model-wrong-type`); no other key (`model-unknown-key`).
+**Rules** (§22.9): each `ignore` entry is a host name, or `*.` and one (`model-wrong-type`); `command` is a string, and `reuse-days` an integer of 0 or more (`model-wrong-type`); no other key (`model-unknown-key`).
 
 ---
 

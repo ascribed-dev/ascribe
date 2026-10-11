@@ -95,11 +95,18 @@ pub struct LinkSettings {
     /// such as `example.com`, or `*.` and a host name, which covers every
     /// host under it, such as `*.example.com`.
     pub ignore: Vec<String>,
+    /// How many days an address's answer is reused (`reuse-days`, 14 by
+    /// default): each address's own limit falls between half of it and all
+    /// of it. `0` asks about every address on every run.
+    pub reuse_days: u32,
 }
 
 impl LinkSettings {
     /// The command `[checks.links] command` defaults to.
     pub const COMMAND: &'static str = "lychee";
+
+    /// The days `[checks.links] reuse-days` defaults to.
+    pub const REUSE_DAYS: u32 = 14;
 
     /// Whether `ignore` leaves out links to `host`, ignoring case.
     pub fn ignores(&self, host: &str) -> bool {
@@ -121,6 +128,7 @@ impl Default for LinkSettings {
         LinkSettings {
             command: LinkSettings::COMMAND.to_owned(),
             ignore: Vec::new(),
+            reuse_days: LinkSettings::REUSE_DAYS,
         }
     }
 }

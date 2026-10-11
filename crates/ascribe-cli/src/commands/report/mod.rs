@@ -9,6 +9,7 @@ mod text;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
+use ascribe_check::links::Cache;
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::Coded;
@@ -59,6 +60,14 @@ pub struct Args {
     /// is counted, with the command that lists it.
     #[arg(long, value_name = "N")]
     pub limit: Option<usize>,
+
+    /// For `links`: ask about every address, reusing no answer from an
+    /// earlier run, and keep what this run gets.
+    ///
+    /// By default, an address that answered within `[checks.links]
+    /// reuse-days` isn't asked about again.
+    #[arg(long)]
+    pub recheck: bool,
 
     /// Exit with 1 when a section finds something at this severity or
     /// above, and with 2 when a section asked for couldn't run: for a
@@ -216,11 +225,18 @@ pub(crate) fn report(
             return exit::FAILURE;
         }
     };
+    // The store of answers `links` reuses, in the project's `.ascribe/`,
+    // on the day the binary gives.
+    let link_cache = project
+        .today()
+        .filter(|_| sections.contains(&Section::Links))
+        .map(|today| Cache::open(&project, project.root(), today, args.recheck));
     let options = Options {
         sections: &sections,
         builds: &args.build,
         site: args.site.as_deref(),
         tools,
+        link_cache: link_cache.as_ref(),
     };
     let report = match ascribe_query::report(&project, &options) {
         Ok(report) => report,
