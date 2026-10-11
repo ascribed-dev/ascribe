@@ -1,10 +1,13 @@
 // The built site in Chromium: the landing page, the changelog, the head and the header,
-// variants, availability, code titles, links between pages, search, the edit
-// link, the 404 page, the narrow layout, the landing page's demonstration,
-// marks, phone width, and reading without a script, and Why Ascribe.
+// each page's social card, variants, availability, code titles, links between
+// pages, search, the edit link, the 404 page, the narrow layout, the landing
+// page's demonstration, marks, phone width, and reading without a script, and
+// Why Ascribe, with its screenshots.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
-import { launchChromium, requireBuild, serve, siteAddress } from "./built.ts";
+import { readdirSync } from "node:fs";
+import path from "node:path";
+import { launchChromium, requireBuild, serve, siteAddress, siteDir } from "./built.ts";
 
 let server: Awaited<ReturnType<typeof serve>>;
 let browser: Browser;
@@ -74,6 +77,44 @@ test("the head names the icons, the social card, and a theme color per scheme", 
     expect(background, scheme).toBe(rgb(color ?? ""));
   }
   await page.close();
+});
+
+test("a screenshot shows the reader's scheme, optimized by Astro, with text that says what it shows", async () => {
+  for (const scheme of ["light", "dark"] as const) {
+    const page = await open("/why/");
+    await page.emulateMedia({ colorScheme: scheme });
+    const shown = page.locator("claim-example img[scheme]:visible");
+    await expect(shown.count()).resolves.toBe(2);
+    for (const image of await shown.all()) {
+      await image.scrollIntoViewIfNeeded();
+      expect(await image.getAttribute("scheme")).toBe(scheme);
+      expect(await image.getAttribute("src")).toMatch(/^\/_astro\/.+\.webp$/);
+      expect((await image.getAttribute("alt"))?.length).toBeGreaterThan(40);
+      await expect
+        .poll(() => image.evaluate((img) => (img as HTMLImageElement).naturalWidth))
+        .toBeGreaterThan(0);
+    }
+    await page.close();
+  }
+});
+
+test("each page outside the docs names its own social card, which is served", async () => {
+  // Generated into public/cards/ by ../design: one per page of home/, by its
+  // entry id, and the changelog's.
+  const cards = readdirSync(path.join(siteDir, "public", "cards")).map((f) => f.slice(0, -4));
+  expect(cards.sort()).toEqual(["changelog", "index", "why"]);
+  for (const name of cards) {
+    const page = await open(name === "index" ? "/" : `/${name}/`);
+    const card = await page.locator('meta[property="og:image"]').getAttribute("content");
+    expect(card, name).toBe(`${await siteAddress()}/cards/${name}.png`);
+    const served = await page.request.get(`${server.url}${new URL(card ?? "").pathname}`);
+    expect(served.status(), name).toBe(200);
+    expect(served.headers()["content-type"]).toBe("image/png");
+    const alt = await page.locator('meta[property="og:image:alt"]').getAttribute("content");
+    const heading = await page.locator("h1").textContent();
+    expect(alt, name).toBe(`Ascribe: ${heading?.trim()}`);
+    await page.close();
+  }
 });
 
 test("the header's mark links home and is named, and Docs links to the docs", async () => {

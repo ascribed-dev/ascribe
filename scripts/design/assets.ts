@@ -1,13 +1,15 @@
 // Every image of the mark that something needs, generated from the sources in
-// design/: the favicons and touch icon in site/public/, the header logo in
-// site/src/assets/, the Marketplace and activity bar icons in packages/vscode/media/,
-// and the README header and the avatar in design/out/. design/assets.json records
-// each output and the hash of each source it came from; assets.test.ts fails when
-// a source changed and this script wasn't run. design/README.md has the table.
+// design/: the favicons, touch icon, and social cards in site/public/, the
+// header logo in site/src/assets/, the Marketplace and activity bar icons in
+// packages/vscode/media/, and the README header and the avatar in design/out/.
+// design/assets.json records each output and the hash of each source it came
+// from; assets.test.ts fails when a source changed and this script wasn't
+// run. design/README.md has the table.
 
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import opentype from "opentype.js";
 import sharp from "sharp";
 import { readCandidate, ROOT, type Scheme } from "./specimen.ts";
 
@@ -18,6 +20,38 @@ const MARK = "design/mark.svg";
 const WORDMARK = "design/wordmark.svg";
 const TAGLINE = "design/tagline.svg";
 const PALETTE = "design/candidates/chosen.toml";
+/** The font a social card's title is drawn in, for generation only: no reader downloads it. */
+const FONT = "design/fonts/InterDisplay-SemiBold.ttf";
+/** The site's own pages, each of which gets a card titled with its heading. */
+const HOME = "site/home/content";
+
+/**
+ * A source that's a page's level-1 heading, the title its card shows: the
+ * page's file and `#heading`. Its hash is of the heading alone, so the rest
+ * of the page can change without the card.
+ */
+const heading = (file: string): string => `${file}#heading`;
+
+/** A social card: the page it's for, by the address it's at, and the heading it shows. */
+interface Card {
+  /** The card's file under site/public/cards/. */
+  name: string;
+  /** The source of its title. */
+  title: string;
+}
+
+/**
+ * A card for each page of the site outside the docs: each page of home/, by
+ * its entry id, and the changelog, from CHANGELOG.md. The docs' pages share
+ * site/public/social-card.png.
+ */
+export const CARDS: Card[] = [
+  ...readdirSync(join(ROOT, HOME))
+    .filter((file) => file.endsWith(".md"))
+    .sort()
+    .map((file) => ({ name: file.slice(0, -3), title: heading(`${HOME}/${file}`) })),
+  { name: "changelog", title: heading("CHANGELOG.md") },
+];
 
 /** A path of a source drawing, and whether it takes the second color. */
 interface Shape {
@@ -175,6 +209,93 @@ function card(sources: Sources, colors: Colors): string {
   );
 }
 
+// A page's card: the mark beside the wordmark at the top, and the page's
+// title below in the pinned font, as outlines, so it's the same wherever it's
+// drawn. A title too wide for one line wraps at spaces, into even lines.
+const CARD_MARGIN = 96;
+const TITLE_SIZE = 84;
+const TITLE_LEADING = 96;
+/**
+ * `text`'s glyphs at `size`, each with where it starts, from `x`: each
+ * character's own glyph, with the font's kerning between them. Laid out here
+ * rather than by opentype.js, which applies substitutions it can't read all
+ * of in Inter; a title has none to lose.
+ */
+function layout(font: opentype.Font, text: string, x: number, size: number) {
+  const scale = size / font.unitsPerEm;
+  // By code point, which is what a glyph is looked up by.
+  const glyphs = Array.from(text, (char) => font.charToGlyph(char));
+  let at = x;
+  return {
+    glyphs: glyphs.map((glyph, i) => {
+      const start = at;
+      const next = glyphs[i + 1];
+      const kern = next === undefined ? 0 : font.getKerningValue(glyph, next);
+      at += ((glyph.advanceWidth ?? 0) + kern) * scale;
+      return { glyph, x: start };
+    }),
+    width: at - x,
+  };
+}
+
+/** `text` in lines no wider than `width` at `size`, broken at spaces. */
+function wrap(font: opentype.Font, text: string, size: number, width: number): string[] {
+  const lines: string[] = [];
+  for (const word of text.split(/\s+/)) {
+    const last = lines.at(-1);
+    if (last !== undefined && layout(font, `${last} ${word}`, 0, size).width <= width) {
+      lines[lines.length - 1] = `${last} ${word}`;
+    } else {
+      lines.push(word);
+    }
+  }
+  return lines;
+}
+
+/** The card for a page whose title is `title`. */
+function pageCard(sources: Sources, title: string): string {
+  const [W, H] = [1200, 630];
+  const { mark, wordmark, colors } = sources;
+  const font = sources.font();
+  const markScale = 2;
+  const markSize = mark.box[2] * markScale;
+  const wordScale = (markSize * WORDMARK_HEIGHT) / wordmark.box[3];
+  const left = CARD_MARGIN;
+  const top = CARD_MARGIN - 16;
+  const baseline = top + MARK_BASELINE * markScale;
+  // As few lines as fit, as even as they go: the narrowest measure that
+  // still takes no more lines, so a last line isn't one word.
+  const fewest = wrap(font, title, TITLE_SIZE, W - 2 * CARD_MARGIN).length;
+  let measure = W - 2 * CARD_MARGIN;
+  while (measure > 0 && wrap(font, title, TITLE_SIZE, measure - 8).length === fewest) measure -= 8;
+  const lines = wrap(font, title, TITLE_SIZE, measure);
+  // The title's last line sits on the card's bottom margin.
+  const last = H - CARD_MARGIN - 8;
+  const titlePaths = lines
+    .map((line, i) => {
+      const y = last - (lines.length - 1 - i) * TITLE_LEADING;
+      const d = layout(font, line, left, TITLE_SIZE)
+        .glyphs.map(({ glyph, x }) => glyph.getPath(x, y, TITLE_SIZE).toPathData(2))
+        .join("");
+      return `<path fill="${colors.text.light}" d="${precise(d)}"/>`;
+    })
+    .join("");
+  return svg(
+    W,
+    H,
+    `<rect width="${W}" height="${H}" fill="${colors.background.light}"/>` +
+      paths(mark, lightInk(colors), left, top, markScale) +
+      paths(
+        wordmark,
+        { first: colors.text.light, second: colors.text.light },
+        left + markSize + markSize * LOCKUP_GAP,
+        baseline + wordmark.box[1] * wordScale,
+        wordScale,
+      ) +
+      titlePaths,
+  );
+}
+
 /**
  * The mark beside the wordmark, as tall as the mark, in `currentColor` for
  * the page to color. The mark's asterisk keeps `class="second"`, so the page
@@ -250,6 +371,10 @@ interface Sources {
   wordmark: Drawing;
   tagline: Drawing;
   colors: Colors;
+  /** The cards' font, read only when a card is drawn. */
+  font: () => opentype.Font;
+  /** A source's text, for the cards' titles. */
+  text: (source: string) => string;
 }
 
 /** An output: where it goes, its size, which sources make it, and how. */
@@ -317,6 +442,14 @@ export const ASSETS: Asset[] = [
     form: "png",
     draw: (s) => card(s, s.colors),
   },
+  ...CARDS.map((c): Asset => ({
+    path: `site/public/cards/${c.name}.png`,
+    width: 1200,
+    height: 630,
+    from: [MARK, WORDMARK, PALETTE, FONT, c.title],
+    form: "png",
+    draw: (s) => pageCard(s, s.text(c.title)),
+  })),
   {
     path: "site/src/assets/logo.svg",
     width: 153,
@@ -390,19 +523,41 @@ function darkInk(colors: Colors): Ink {
 /** Every source an asset is made from. */
 export const SOURCES = [...new Set(ASSETS.flatMap((a) => a.from))].sort();
 
-const read = (file: string): string =>
+/**
+ * A source as text: a file's text, a font's bytes in base64, or, for
+ * `<file>#heading`, the file's level-1 heading.
+ */
+export function readSource(source: string): string {
+  const [file = source, part] = source.split("#");
+  if (file.endsWith(".ttf")) return readFileSync(join(ROOT, file)).toString("base64");
   // A checkout may write CRLF; the hash is of the text, not the line endings.
-  readFileSync(join(ROOT, file), "utf8").replace(/\r\n/g, "\n");
+  const text = readFileSync(join(ROOT, file), "utf8").replace(/\r\n/g, "\n");
+  if (part === undefined) return text;
+  const found = /^# (.+)$/m.exec(text)?.[1];
+  if (part !== "heading" || found === undefined) throw new Error(`${file} has no ${part}`);
+  return found.trim();
+}
+
+const read = readSource;
 
 export const hash = (text: string): string =>
   createHash("sha256").update(text.replace(/\r\n/g, "\n")).digest("hex");
 
 export function readSources(reader: (file: string) => string = read): Sources {
+  let font: opentype.Font | undefined;
   return {
     mark: readDrawing(MARK, reader(MARK)),
     wordmark: readDrawing(WORDMARK, reader(WORDMARK)),
     tagline: readDrawing(TAGLINE, reader(TAGLINE)),
     colors: readColors(reader(PALETTE)),
+    font: () => {
+      const bytes = Buffer.from(reader(FONT), "base64");
+      font ??= opentype.parse(
+        bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length),
+      );
+      return font;
+    },
+    text: reader,
   };
 }
 

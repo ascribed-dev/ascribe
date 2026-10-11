@@ -10,13 +10,14 @@ Ascribe's mark and design tokens, and the images made from them. Everything Ascr
 | `mark.svg` | The mark in one color, from `currentColor`. Its asterisk carries `class="second"`, the part a second color goes on |
 | `mark-color.svg` | The mark in the light text and accent colors, for a light background |
 | `wordmark.svg`, `tagline.svg` | "ascribe", and the line on the social card |
+| `fonts/InterDisplay-SemiBold.ttf` | The font a page's social card draws its title in, for generation only, with its license (SIL Open Font License) in `fonts/LICENSE.txt` |
 | `assets.json` | The generated images of the mark, their sizes, and the hashes of their sources |
 | `out/` | The generated images nothing builds from: the README headers and the avatar |
 | `candidates/chosen.toml` | The palette and type scale the mark's images are drawn in. `tokens.toml`'s shared colors are the same, by test |
 | `candidates/pairs.toml` | Every pairing of colors the stylesheets use, with the contrast each must reach |
 | `specimen.html` | The mark, the palette, and the type scale in light and dark, with a docs page in each and every pairing's contrast. Open it in a browser |
 
-The mark, wordmark, and tagline are outlines from Inter (SIL Open Font License), so no font file ships with them. Ascribe uses no web font anywhere; the stylesheets use the system's.
+The mark, wordmark, and tagline are outlines from Inter (SIL Open Font License), so no font file ships with them. Ascribe uses no web font anywhere; the stylesheets use the system's. The one font file here, Inter Display SemiBold from [Inter 4.1](https://github.com/rsms/inter/releases/tag/v4.1), is read by the assets script, which outlines a social card's title with it, so the title is drawn the same on every machine; nothing ships it to a reader (decision 48).
 
 ## Changing a color
 
@@ -95,7 +96,7 @@ The marker names the `[emit]` block and how to write colors: `light` or `dark` w
 
 ## The assets
 
-Every image of the mark that something needs is generated from `mark.svg`, `wordmark.svg`, `tagline.svg`, and the colors in `candidates/chosen.toml`, by one script. The full-color mark for a dark background is `mark.svg` with its `class="second"` asterisk in the dark accent and the rest in the dark text color; it isn't a file of its own.
+Every image of the mark that something needs is generated from `mark.svg`, `wordmark.svg`, `tagline.svg`, and the colors in `candidates/chosen.toml`, by one script, and the social cards from those, the font, and each page's title. The full-color mark for a dark background is `mark.svg` with its `class="second"` asterisk in the dark accent and the rest in the dark text color; it isn't a file of its own.
 
 | Asset | For | Form |
 |---|---|---|
@@ -103,6 +104,7 @@ Every image of the mark that something needs is generated from `mark.svg`, `word
 | `site/public/favicon.ico` | Browsers that want an `.ico` | 32 pixels, the full-color mark on a white tile, so it shows on a light or a dark tab |
 | `site/public/apple-touch-icon.png` | A phone's home screen | 180 pixels, the full-color mark on white |
 | `site/public/social-card.png` | Links to the docs site and the repository | 1200 × 630: the mark, the wordmark, and the tagline on white |
+| `site/public/cards/<page>.png` | Links to a page of the site outside the docs: one for each page of `site/home/content/`, by its entry id (`index.png` for the landing page), and `changelog.png` | 1200 × 630: the mark and the wordmark, and the page's level-1 heading below in the font, on white. A page's heading is a source of its card, by itself (`<file>#heading` in `assets.json`), so the rest of the page can change without the card. A new page of `site/home/` gets a card when the script runs |
 | `site/src/assets/logo.svg` | The docs site's header, inline | The mark beside the wordmark, `currentColor` only, its asterisk keeping `class="second"` for the page to color |
 | `packages/vscode/media/icon.png` | The extension's Marketplace listing and Extensions view | 256 pixels, the dark full-color mark on a rounded tile in the dark surface color, so it reads in a light or a dark editor |
 | `packages/vscode/media/activity.svg` | The extension's activity bar icon | 24 pixels, `currentColor` only, which VS Code tints. The mark takes the middle 20, as tall as the codicons beside it |
@@ -110,7 +112,7 @@ Every image of the mark that something needs is generated from `mark.svg`, `word
 | `design/out/header-vscode.png` | The header of `packages/vscode/README.md`, the extension's Marketplace page, which takes no SVG and can't follow the reader's scheme | 192 pixels tall, for a 96 pixel header on a high-density screen: the wordmark in the dark text color on a rounded plate in the dark surface color, the icon's tile, so it reads on a light or a dark page |
 | `design/out/avatar.png` | The GitHub organization and the Marketplace publisher | 512 pixels, the full-color mark on white, inside the circle an avatar is cropped to |
 
-The SVGs are written in a fixed form (paths only, two decimals, no comments or metadata), so they're the same bytes on every platform. The PNGs come from `sharp`, whose output can differ slightly between platforms.
+The SVGs are written in a fixed form (paths only, two decimals, no comments or metadata), so they're the same bytes on every platform. A card's title is outlined from the font by `opentype.js`, at a version pinned in the root `package.json`, so its drawing is the same everywhere too. The PNGs come from `sharp`, whose output can differ slightly between platforms.
 
 After changing a source, rewrite them all and look at them:
 
@@ -118,7 +120,7 @@ After changing a source, rewrite them all and look at them:
 node scripts/design/assets.ts
 ```
 
-`scripts/design/assets.test.ts` fails when a source has changed since the script last ran, naming the command, and when an asset is missing, the wrong size, or, for an SVG, different from what the script writes now. It doesn't compare a PNG's pixels. The avatar is uploaded by hand where [project-docs/outside.md](../project-docs/outside.md) lists it.
+`scripts/design/assets.test.ts` fails when a source has changed since the script last ran, naming the command, and when an asset is missing, the wrong size, or, for an SVG, different from what the script writes now. It doesn't compare a PNG's pixels. A new page outside the docs, or a changed heading on one, is a changed source too. The avatar is uploaded by hand where [project-docs/outside.md](../project-docs/outside.md) lists it.
 
 ## In VS Code
 

@@ -31,7 +31,11 @@ const kind = kindUnder(entry.data.repository);
 const html = anchorReleases(await pointLinks(entry.rendered.html, entry.body, { pages, repo, kind }));
 ---
 
-<Base title="Changelog" description={firstParagraph(html)}>
+<Base
+  title="Changelog"
+  description={firstParagraph(html)}
+  card={{ name: "changelog", alt: "Ascribe: Changelog" }}
+>
   <main id="content" class="page landing changelog">
     <article set:html={html} />
   </main>

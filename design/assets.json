@@ -40,6 +40,42 @@
       }
     },
     {
+      "path": "site/public/cards/index.png",
+      "width": 1200,
+      "height": 630,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54",
+        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "site/home/content/index.md#heading": "c945ce11b811a12af022f35d9b512bde04be0d382b6204de0f1bde9baa03156e"
+      }
+    },
+    {
+      "path": "site/public/cards/why.png",
+      "width": 1200,
+      "height": 630,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54",
+        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "site/home/content/why.md#heading": "81c83d34e56d4c9cb4e87ca2f8cf7b90164837580b8ee48c6f9999747e638952"
+      }
+    },
+    {
+      "path": "site/public/cards/changelog.png",
+      "width": 1200,
+      "height": 630,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54",
+        "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
+        "CHANGELOG.md#heading": "ead07c84baac57a9542f388a07a2a5209456ce790b04251bc9bd7d179ea85cb1"
+      }
+    },
+    {
       "path": "site/src/assets/logo.svg",
       "width": 153,
       "height": 32,

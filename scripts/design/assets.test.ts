@@ -3,6 +3,7 @@
 // Run `node scripts/design/assets.ts` to rewrite them; design/README.md has
 // the table.
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -13,7 +14,9 @@ import {
   ico,
   manifest,
   MANIFEST,
+  CARDS,
   readDrawing,
+  readSource,
   readSources,
   render,
   SOURCES,
@@ -45,16 +48,16 @@ function pngSize(bytes: Buffer): [number, number] {
 
 describe("design/assets.json", () => {
   test("is current with the sources", () => {
-    expect(stale(committed, read)).toEqual([]);
+    expect(stale(committed, readSource)).toEqual([]);
   });
 
   test("lists every asset, at its size, and nothing else", () => {
-    expect(committed).toEqual(manifest(read));
+    expect(committed).toEqual(manifest(readSource));
   });
 
   test("a changed source names the command that rewrites the assets", () => {
     const changed = (file: string) => {
-      const text = read(file);
+      const text = readSource(file);
       return file === "design/mark.svg" ? text.replace("29.5", "29.6") : text;
     };
     expect(stale(committed, changed)).toEqual([
@@ -116,11 +119,48 @@ describe.each(ASSETS)("$path", (asset) => {
 
 test("every source is read", () => {
   expect(SOURCES).toEqual([
+    "CHANGELOG.md#heading",
     "design/candidates/chosen.toml",
+    "design/fonts/InterDisplay-SemiBold.ttf",
     "design/mark.svg",
     "design/tagline.svg",
     "design/wordmark.svg",
+    "site/home/content/index.md#heading",
+    "site/home/content/why.md#heading",
   ]);
+});
+
+describe("the social cards", () => {
+  test("are one for each page of home/ and the changelog", () => {
+    expect(CARDS.map((c) => c.name)).toEqual(["index", "why", "changelog"]);
+  });
+
+  test("take a page's level-1 heading, so the rest of the page can change without them", () => {
+    expect(readSource("site/home/content/why.md#heading")).toBe("Why Ascribe");
+    expect(readSource("CHANGELOG.md#heading")).toBe("Changelog");
+  });
+
+  test("are drawn in a font that's in design/ with its license, the only font in the repository", () => {
+    expect(read("design/fonts/LICENSE.txt")).toContain("SIL Open Font License, Version 1.1");
+    // Ascribe ships no font (decision 48): the repository's one is this.
+    const fonts = execFileSync(
+      "git",
+      [
+        "ls-files",
+        "--cached",
+        "--others",
+        "--exclude-standard",
+        "*.ttf",
+        "*.otf",
+        "*.woff",
+        "*.woff2",
+      ],
+      { cwd: ROOT, encoding: "utf8" },
+    );
+    expect(fonts.split("\n").filter((f) => f !== "")).toEqual([
+      "design/fonts/InterDisplay-SemiBold.ttf",
+    ]);
+  });
 });
 
 test("the favicon is one color, from the reader's scheme", () => {
