@@ -73,7 +73,14 @@ When it stops, the preparer runs `ascribe check` in the copy and notes the exit 
 
 ## Notes
 
-One section per walk. Each has the same parts; an agent's has two more.
+One section per walk. Each has the same parts; an agent's has two more:
+
+- **When, with what:** the date and time, the editor or shell, the binary and its version, and which copy.
+- **Steps:** a numbered list, written as you go. One line per step: what you did (the command as typed, or what you clicked), then what came back, quoted. Not a table: the maintainer's first walk showed a table is too fiddly to fill while working, so the agents' dry runs are the only ones in that form.
+- **Doubts:** for each, what was expected, what happened, how it was resolved.
+- **Time:** from opening the project to deciding you're done.
+- **Result:** fixed or not; how the walker knew; what the preparer's `ascribe check` said afterwards.
+- **Seen on the way:** one line per thing that looks like a finding, to move to `findings.md`.
 
 The first two sections are a dry run of the maintainer's walks, done by an agent on 10 October 2026 to try the script before the maintainer spends the half hour. They don't stand in for the maintainer's walks. The agent prepared the copies itself, so it knew where the link was, and went through the surface anyway.
 
@@ -196,6 +203,7 @@ The setup worked: both copies gave the one error and the one advice "Preparing a
 - **In the editor** now says the folder opens in Restricted Mode and has to be trusted. Without that step the walk ends at "No problems have been detected in the workspace."
 - **The notes' "When, with what"** asked for `ascribe --version` from the output channel, which doesn't print it. It now asks for the binary's path from there, and the version from the preparer.
 - **Preparing a copy** now says the extension runs the binary it bundles, and to compare that with the release build; and what a clean `ascribe check` prints.
+- **The notes' steps are a numbered list, not a table.** After the maintainer's editor walk: "there's no way I'm going to work in a markdown table as I go. It's too fiddly." Phase 3's scripts take the list.
 
 Decided by the maintainer on 10 October 2026, and written into the script:
 
@@ -242,7 +250,7 @@ Decided by the maintainer on 10 October 2026, and written into the script:
 
 *Not yet walked.*
 
-The same parts. "Did" is the command as typed; "Saw" is its output, quoted, with its exit code where it mattered.
+The same parts. A step is the command as typed, then its output, quoted, with its exit code where it mattered.
 
 ### Through the hook
 
