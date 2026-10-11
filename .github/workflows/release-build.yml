@@ -69,9 +69,12 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: test "$(node scripts/release/version.ts --canary "$CANARY")" = "$VERSION"
       - run: rustup toolchain install
-      # A canary's `ascribe --version` names the commit it was built from.
+      # A canary's `ascribe --version` names the commit it was built from. A
+      # release's is the version alone; any other build says `+dev`.
       - if: inputs.canary
         run: echo "ASCRIBE_COMMIT=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - if: "!inputs.canary"
+        run: echo "ASCRIBE_RELEASE=1" >> "$GITHUB_ENV"
       # Zig comes from PyPI (the ziglang package), in a virtual environment so
       # cargo-zigbuild finds it through `python3 -m ziglang`.
       - name: Install Zig and cargo-zigbuild
