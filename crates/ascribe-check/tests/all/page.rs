@@ -146,6 +146,25 @@ fn a_clean_project_has_no_diagnostics_in_any_build() {
     );
 }
 
+/// A link to a heading its page lacks is offered the page's headings,
+/// closest first, as `ascribe link` lists them.
+#[test]
+fn a_link_to_a_missing_heading_is_offered_the_closest_headings() {
+    let p = project(&[
+        ("index.md", &page("See [it](other.md#instal).")),
+        ("other.md", &page("## Install\n\n## Upgrade")),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("link-id-missing", "index.md", 5)]);
+    let hrefs: Vec<&str> = found[0]
+        .fixes
+        .iter()
+        .map(|f| f.edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(hrefs, ["other.md#install", "other.md#upgrade"]);
+    assert_eq!(found[0].fixes[0].file, found[0].location.file);
+}
+
 #[test]
 fn a_problem_in_a_fragment_is_reported_at_the_include_site_and_noted_in_the_fragment() {
     // The link's target id doesn't exist. The link is in `_f.md`, which

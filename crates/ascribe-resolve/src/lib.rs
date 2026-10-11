@@ -76,6 +76,7 @@
 
 mod astro;
 pub mod build;
+mod closest;
 mod expand;
 pub mod fs;
 pub mod incremental;
@@ -97,6 +98,7 @@ pub use build::{
     ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution, glossary_targets,
     permalinks,
 };
+pub use closest::{Closest, closest_fixes, closest_targets, link_href};
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
     MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,

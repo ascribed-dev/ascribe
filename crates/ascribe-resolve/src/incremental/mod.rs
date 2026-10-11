@@ -305,6 +305,12 @@ impl Snapshot {
         &self.project
     }
 
+    /// The project as of this snapshot, shared: for a caller that keeps it
+    /// past the snapshot's borrow.
+    pub fn shared_project(&self) -> Arc<Project> {
+        Arc::clone(&self.project)
+    }
+
     /// This snapshot's version.
     pub fn version(&self) -> Version {
         self.version
