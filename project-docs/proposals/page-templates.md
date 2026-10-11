@@ -138,4 +138,4 @@ It's a restructuring of the docs, so it's its own step, after the feature works.
 
 ## Waiting on the audit
 
-**What the command is called.** The [surface audit](../surface-audit/README.md)'s first phase writes the conventions for naming a command and a group of subcommands, and its last phase checks this proposal's names against them. Until then the command has no name here.
+**What the command is called.** `ascribe templates eject`, by the [surface audit](../surface-audit/findings.md#the-proposals-against-the-findings)'s conventions: a group named for the thing, and the verb `ascribe vale eject` uses for the same job, writing Ascribe's defaults out once as the project's own. The later run that says what's changed upstream since is `ascribe templates status`.
