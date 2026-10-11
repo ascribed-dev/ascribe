@@ -45,7 +45,7 @@ Then the reverse: pages or sections that describe nothing in the inventory.
 
 And the structure itself: what a guide is and what a reference is here, whether each page is one or the other, and where a reader looking for a task lands on a specification.
 
-The maintainer's first journey (phase 3) is the test of the getting-started page. This phase covers the rest of the docs by reading.
+Journey 1's session (phase 3), an agent given the getting-started page and an empty folder, is the test of that page. This phase covers the rest of the docs by reading.
 
 ## Tasks
 
