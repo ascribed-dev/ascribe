@@ -38,6 +38,11 @@ attributes = { page = "string" }
 description = "A claim about Ascribe, then the smallest example that shows it."
 forms = ["container"]
 
+# A screenshot is a picture for each scheme, `![…](screenshots/review-light.png){scheme=light}`
+# beside its dark one; the site shows the reader's (../src/styles/site.css).
+[images.attributes]
+scheme = "enum(light, dark)"
+
 # Commands that differ by package manager, as in the docs.
 [dimensions.pm]
 label = "Package manager"

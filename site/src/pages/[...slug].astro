@@ -1,7 +1,7 @@
 ---
-import { getCollection, getEntry, render } from "astro:content";
+import { getCollection, render } from "astro:content";
+import Demonstrations from "../components/Demonstrations.astro";
 import Page from "../layouts/Page.astro";
-import { splitAtResults } from "../demo.ts";
 
 // The site's own pages, from home/: at the site's root, the base path of that
 // project, plus each entry id, with the landing page (id `index`) at `/`.
@@ -14,30 +14,12 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-// The page's HTML, with each demonstration's page from demo/ drawn after its
-// source (src/demo.ts). A page with none is its HTML alone.
-const parts = splitAtResults(entry.rendered?.html ?? "");
-const results = await Promise.all(
-  parts.map(async (part) => {
-    if (!("page" in part)) return undefined;
-    const page = await getEntry("demo", part.page);
-    if (page === undefined) throw new Error(`${entry.id}: demo/ has no page "${part.page}"`);
-    return { title: page.data.title, Content: (await render(page)).Content };
-  }),
-);
+// Through `render()`, which gives the page's images Astro's processing.
+const { Content, headings } = await render(entry);
+const heading = headings.find((h) => h.depth === 1)?.text;
+if (heading === undefined) throw new Error(`${entry.id}: the page has no level-1 heading`);
 ---
 
-<Page entry={entry}>
-  {
-    parts.map((part, index) => {
-      const result = results[index];
-      if (result === undefined) return "html" in part ? <Fragment set:html={part.html} /> : null;
-      return (
-        <div class="result" role="group" aria-label="What a reader sees">
-          <p class="result-title">{result.title}</p>
-          <result.Content />
-        </div>
-      );
-    })
-  }
+<Page entry={entry} heading={heading}>
+  <Demonstrations id={entry.id}><Content /></Demonstrations>
 </Page>

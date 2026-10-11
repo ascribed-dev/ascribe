@@ -46,6 +46,8 @@
       ],
     },
     "packages/vscode": {
+      // The site's editor picture, which scripts/docs-site/screenshots.ts runs.
+      "entry": ["scripts/screenshot.ts"],
       // Release packaging runs `vsce` by name (scripts/release/pack.ts and
       // publish.ts), and the language server packages are the test stub's
       // (test/stub-server/ascribe), a script with no extension.

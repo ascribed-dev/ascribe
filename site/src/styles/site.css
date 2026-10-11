@@ -595,6 +595,36 @@ claim-example > :not(pre, figure, ascribe-tabs) {
   margin-top: 1.25rem;
 }
 
+/*
+ * A screenshot (home/content/screenshots/): a picture for each scheme, each
+ * marked with `scheme` (`[images.attributes]` in home/ascribe.toml), and only
+ * the reader's shown. As wide as the claim's example, with a border, since
+ * the picture's own background can be the page's.
+ */
+.page p:has(> img[scheme]) {
+  max-width: none;
+}
+
+.page img[scheme] {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.page img[scheme="dark"] {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page img[scheme="light"] {
+    display: none;
+  }
+
+  .page img[scheme="dark"] {
+    display: block;
+  }
+}
+
 .page-footer {
   max-width: var(--measure);
   margin-top: 3rem;

@@ -28,7 +28,14 @@ Ascribe reads a code example from the code's own file with `@snippet`, every tim
 
 On a pull request, a reviewer can read the rendered page or comment on a line of its source, but not both, and people have built browser extensions to work around it. Reading prose as lines has costs teams describe: text that moved reads as text that was deleted, and a small edit to a wrapped paragraph shows as a change to all of it. Writing with AI adds to the load. Teams that use it report spending more time checking and editing what it writes, so more of the work is now reading changes.
 
-Ascribe compares pages as readers will see them, not lines. [Review]({site}/go/review-guide/) shows a pull request's changes on the rendered page, in VS Code's preview or in the site's own, with what changed marked and the pull request's review comments beside the blocks they're about. Reformatting isn't a change, a move is shown as a move, and a page that changed only through a fragment it includes is listed with the cause. [`ascribe diff`]({site}/go/cli-diff/) writes the same comparison as text, or as an HTML file that CI can attach to the pull request:
+Ascribe compares pages as readers will see them, not lines. [Review]({site}/go/review-guide/) shows a pull request's changes on the rendered page, in VS Code's preview or in the site's own, with what changed marked and the pull request's review comments beside the blocks they're about. Reformatting isn't a change, a move is shown as a move, and a page that changed only through a fragment it includes is listed with the cause.
+
+Here is the site's preview of one of these docs' pages, with a pull request's change and the comments on it:
+
+![A page of these docs in the site's preview during review: a changed paragraph is marked, the pull request's two comments on it are beside it, and the review panel below names the pull request and its one change.](screenshots/review-light.png){scheme=light}
+![A page of these docs in the site's preview during review: a changed paragraph is marked, the pull request's two comments on it are beside it, and the review panel below names the pull request and its one change.](screenshots/review-dark.png){scheme=dark}
+
+[`ascribe diff`]({site}/go/cli-diff/) writes the same comparison as text, or as an HTML file that CI can attach to the pull request:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
@@ -56,6 +63,11 @@ When docs are reorganized, a page's old address goes away. Links from other page
 In Ascribe, a link names the page's file, not its address. A link to a file or a heading that isn't there is an error, in the editor and in CI, and moving or renaming a file in VS Code updates the links to it. A link written as an address is reported, with the file to link to instead:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
+
+In VS Code, the warning is on the link as you type, with a quick fix that makes the change:
+
+![VS Code with a page whose link is written as an address: the link is underlined, the Problems view says to link to the file instead, and the quick fix menu offers "Link to the page's file instead of its route".](screenshots/editor-light.png){scheme=light}
+![VS Code with a page whose link is written as an address: the link is underlined, the Problems view says to link to the file instead, and the quick fix menu offers "Link to the page's file instead of its route".](screenshots/editor-dark.png){scheme=dark}
 
 @available: next
 For links from outside the docs, a page or a heading can have a [permalink]({site}/go/directives/): a name, at an address that leads to it wherever it moves. With the list of permalinks committed, `ascribe check` warns when one goes away. Ascribe's command and editor link to these docs by permalink, which is how the docs moved to `/docs/` without breaking those links.
