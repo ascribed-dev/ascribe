@@ -958,6 +958,60 @@ fn a_pinned_project_runs_its_own_mcp_server() {
 }
 
 #[test]
+fn projects_that_install_differently_get_a_server_each() {
+    let repo = repository("monorepo");
+    let root = repo.path();
+    write(
+        &root.join("docs/package.json"),
+        "{\"devDependencies\": {\"@ascribed/cli\": \"1.0.0\"}}\n",
+    );
+    write(&root.join("docs/package-lock.json"), "{}\n");
+    // docs installs its pinned version, and handbook (with the project
+    // nested in it) this one, globally: one JSON document, a server each,
+    // named as the steps' blocks are.
+    let out = run(root, &["agents", "sync", "--cloud"], 0);
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert_eq!(text.matches("mcpServers").count(), 1, "{text}");
+    let json = text
+        .split_once("\n\n{")
+        .map(|(_, json)| format!("{{{json}"))
+        .unwrap_or_default();
+    let settings: serde_json::Value = serde_json::from_str(&json).unwrap();
+    let servers = settings["mcpServers"].as_object().unwrap();
+    let names: Vec<&str> = servers.keys().map(String::as_str).collect();
+    assert_eq!(names, ["ascribe", "ascribe-docs"], "{json}");
+    assert_eq!(
+        servers["ascribe-docs"]["args"][1],
+        "exec \"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\" mcp"
+    );
+    assert_eq!(servers["ascribe"]["command"], "ascribe");
+    let steps = read(&root.join(SETUP_STEPS));
+    assert!(steps.contains("# ascribe:copilot:docs start ("), "{steps}");
+    assert!(steps.contains("# ascribe:copilot start ("), "{steps}");
+
+    // One project synced alone still prints every server.
+    let out = sync(root, "handbook", &["--cloud"]);
+    let alone = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(alone.ends_with(&json), "{alone}");
+
+    // The custom agent carries every server too, under the same names.
+    run(root, &["agents", "sync", "--cloud", "--agent"], 0);
+    let agent = read(&root.join(".github/agents/ascribe-docs.md"));
+    let front = agent.split("---\n").nth(1).unwrap_or_default();
+    let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap();
+    let ours = value["mcp-servers"].as_mapping().unwrap();
+    let names: Vec<&str> = ours.keys().filter_map(|k| k.as_str()).collect();
+    assert_eq!(names, ["ascribe-docs", "ascribe"], "{agent}");
+    assert!(
+        agent.contains("`ascribe-docs` for a project that installs it from `docs/package.json`"),
+        "{agent}"
+    );
+    sync(root, "docs", &[]);
+    assert_eq!(read(&root.join(".github/agents/ascribe-docs.md")), agent);
+    run(root, &["agents", "sync", "--check"], 0);
+}
+
+#[test]
 fn each_yarn_is_installed_its_own_way() {
     const BERRY: &str = "__metadata:\n  version: 8\n";
     let case = |lock: &str, yarnrc: Option<&str>, spec: &str| {

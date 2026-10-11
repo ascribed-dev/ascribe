@@ -37,7 +37,7 @@ It's TOML, with these keys:
 
 An entry's value is where the name is **declared**: the path of the file it's written in, from the content root, and, for a heading, `#` and the heading's id. A page's own permalink, from its frontmatter, is the page's path alone. A heading in a fragment is declared in the fragment, whichever pages include it.
 
-- **`[aliases]`** has an entry for each alias in `ascribe.toml`'s [`[permalinks.aliases]`](content-model.md#21-permalinks), keyed by its name, whose value is the name it leads to. Absent when there are none.
+- **`[aliases]`** has an entry for each alias in `ascribe.toml`'s [`[permalinks.aliases]`](content-model.md#20-permalinks), keyed by its name, whose value is the name it leads to. Absent when there are none.
 - **`[retired]`** has an entry for each retired permalink in `[permalinks.retired]`, keyed by its name, whose value is why it was retired. Absent when there are none.
 
 A name is in one of the three tables, never two. The two tables were added to version 1: a list without them is a list with none, and a version of Ascribe that predates them reports a list with them as invalid rather than misread it.

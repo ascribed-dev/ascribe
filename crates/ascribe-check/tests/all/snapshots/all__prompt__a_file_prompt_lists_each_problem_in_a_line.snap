@@ -1,9 +1,9 @@
 ---
 source: crates/ascribe-check/tests/all/prompt.rs
-assertion_line: 226
+assertion_line: 259
 expression: text
 ---
-Fix the 2 problems `ascribe check` reports in `docs/install.md`.
+Fix the 2 errors `ascribe check` reports in `docs/install.md`.
 
 Where: docs/install.md
 Paths and commands here are from the repository's root.
