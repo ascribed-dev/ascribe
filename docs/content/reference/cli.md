@@ -14,6 +14,11 @@ Install it in a project with `npm install --save-dev @ascribed/cli` (see [Gettin
 
 @include: ../_generated/cli-global-options.md
 
+Without `--config`, a command's project is the nearest `ascribe.toml` at or above the current directory, or at or above the path it's given.
+
+@available: next
+When there's none, and the folder holds projects in its subfolders, as a repository with several does at its root, the error names their folders, so you can run the command in one, or pass `--config` with its folder: `the projects below it are in docs, handbook: run ascribe in one of them, or pass --config with its folder`. `ascribe agents sync` is the exception: there, it syncs each of them.
+
 ## `ascribe check`
 @id {permalink=true}: cli-check
 
@@ -733,6 +738,8 @@ Writes the files AI coding agents read on their own: your project's rules, from 
 @id {permalink=true}: cli-agents-sync
 
 Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. It also keeps up to date each other target whose files exist already, and writes those `--target` names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
+
+Run where there's no `ascribe.toml` at or above, such as at the root of a repository with several projects, it syncs each project in the folders below, in path order, and says which. Each writes its own block in the root's `AGENTS.md`, and the list names each file once.
 
 With `--with-hook`, it also writes the [hooks](../guides/agents.md#hooks) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
 
