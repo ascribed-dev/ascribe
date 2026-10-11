@@ -64,6 +64,8 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
+[Files Ascribe writes](reference/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+
 ## Write a page
 
 Create `docs/install.md`:

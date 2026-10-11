@@ -25,6 +25,7 @@ permalink: docs
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.
 - [Element library reference](reference/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
+- [Files Ascribe writes](reference/project-files.md): every file Ascribe puts in a project, and which to commit.
 
 ## For implementers
 

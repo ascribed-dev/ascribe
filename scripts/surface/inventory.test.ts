@@ -36,6 +36,7 @@ test("the map has a section for each surface", () => {
     "`@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli`",
     "The outputs",
     "The docs",
+    "Files Ascribe puts in a project",
     "What nothing declares",
   ]);
 });
