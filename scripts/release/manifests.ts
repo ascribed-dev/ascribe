@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { UNRELEASED, changesDir, readChanges } from "./changes.ts";
 
 export const root = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 
@@ -136,8 +137,9 @@ export function versions(): FoundVersion[] {
 
 /**
  * Checks that every file carries the same version, that it's a version, that
- * the changelog has a section for it, and, given a tag, that the tag is
- * `v<version>`. Returns the version and the problems found.
+ * the changelog has a section for it, that a release has no entry left in
+ * `changes/`, and, given a tag, that the tag is `v<version>`. Returns the
+ * version and the problems found.
  */
 export function checkVersion(tag?: string): { version: string; problems: string[] } {
   const found = versions();
@@ -154,8 +156,16 @@ export function checkVersion(tag?: string): { version: string; problems: string[
     if (unreleasedSection(readChangelog()) === undefined) {
       problems.push(`CHANGELOG.md has no "## Unreleased" section, which a canary needs`);
     }
-  } else if (changelogSection(version) === undefined) {
-    problems.push(`CHANGELOG.md has no "## ${version}" section`);
+  } else {
+    if (changelogSection(version) === undefined) {
+      problems.push(`CHANGELOG.md has no "## ${version}" section`);
+    }
+    const left = readChanges(root);
+    if (left.length > 0) {
+      problems.push(
+        `${changesDir}/ has ${left.length} ${left.length === 1 ? "entry" : "entries"} the changelog doesn't; run node scripts/release/changes.ts gather`,
+      );
+    }
   }
   return { version, problems };
 }
@@ -171,7 +181,7 @@ function readChangelog(): string {
  */
 export function unreleasedSection(changelog: string): { version: string | undefined } | undefined {
   for (const line of changelog.split("\n")) {
-    const match = /^## (?:Unreleased|(\d+\.\d+\.\d+) \(unreleased\))\s*$/i.exec(line);
+    const match = UNRELEASED.exec(line);
     if (match) return { version: match[1] };
   }
   return undefined;

@@ -30,8 +30,11 @@ on:
       - "examples/**"
       - ".github/workflows/**"
       - "crates/ascribe-cli/tests/output/**"
-      # The changelog, which the site renders: src/changelog.ts in site/.
+      # The changelog, which the site renders with the entries not yet gathered
+      # into it, and the code that gathers them: src/changelog.ts in site/.
       - "CHANGELOG.md"
+      - "changes/**"
+      - "scripts/release/changes.ts"
   workflow_dispatch:
 
 permissions:

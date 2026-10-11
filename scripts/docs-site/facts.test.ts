@@ -15,6 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
 import { expect, test } from "vitest";
+import { changesDir } from "../release/changes.ts";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -179,6 +180,10 @@ test("the docs' source folders and the changelog are named everywhere a build is
   const changelog =
     /^export const changelogFile = "([^"]+)";$/m.exec(read("site/src/changelog.ts"))?.[1] ?? "";
   expect(changelog).toBe("CHANGELOG.md");
+  // The entries not yet gathered into it, which the site renders in its
+  // unreleased section, and the script it gathers them with.
+  const gather = "scripts/release/changes.ts";
+  expect(read("site/src/changelog.ts")).toContain(`"../../${gather}"`);
 
   // A folder inside site/, such as the landing page's demonstration, is
   // covered by the site's own pattern in both of the next two.
@@ -188,7 +193,7 @@ test("the docs' source folders and the changelog are named everywhere a build is
   const npm = read(".github/workflows/site-npm.yml");
   const paths = /^ {4}paths:\n((?: {6}.*\n)+)/m.exec(npm)?.[1] ?? "";
   expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(
-    ["docs/**", "site/**", ...outside, changelog].sort(),
+    ["docs/**", "site/**", ...outside, changelog, `${changesDir}/**`, gather].sort(),
   );
 
   // Netlify skips a push to `main` when none of them changed.
@@ -199,6 +204,8 @@ test("the docs' source folders and the changelog are named everywhere a build is
       "../docs",
       ...outside.map((glob) => `../${glob.replace(/\/\*\*$/, "")}`),
       `../${changelog}`,
+      `../${changesDir}`,
+      `../${gather}`,
     ].sort(),
   );
 
@@ -216,7 +223,9 @@ test("the docs' source folders and the changelog are named everywhere a build is
     expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
   }
   expect(site.test("docs/content/index.md")).toBe(true);
-  expect(site.test(changelog), `ci.yml's site pattern matches ${changelog}`).toBe(true);
+  for (const file of [changelog, `${changesDir}/an-entry.md`, gather]) {
+    expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
+  }
 });
 
 test("the site's own pages share the docs' release tables, sources, and address, and the report checks the docs", () => {

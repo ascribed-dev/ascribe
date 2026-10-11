@@ -6,7 +6,6 @@ import type { PermalinkList } from "../src/permalinks.js";
 import { readProject } from "../src/project.js";
 import {
   basePathClashes,
-  entryId,
   nameProblems,
   pagesUnderOtherPaths,
   permalinkProblems,
@@ -71,14 +70,6 @@ describe("basePathClashes", () => {
     const docs = project("/docs/");
     expect(basePathClashes([entry("home", project("/")), entry("docs", docs)])).toEqual([]);
     expect(basePathClashes([entry("docs", docs), entry("all", docs, "all")])).toEqual([]);
-  });
-});
-
-describe("entryId", () => {
-  it("is Astro's: each segment slugged, without the extension or a final index", () => {
-    expect(entryId("Guides/My Setup.md")).toBe("guides/my-setup");
-    expect(entryId("index.md")).toBe("index");
-    expect(entryId("guides/index.md")).toBe("guides");
   });
 });
 

@@ -37,7 +37,7 @@ To change the accent, or any color:
 3. Run the tests: `pnpm exec vitest run scripts/design`. They fail on a pairing below its contrast in light or dark (4.5:1 for text, 3:1 for a border, bar, or mark that carries meaning), on a stale block or image, and on a color written in a stylesheet outside its generated blocks.
 4. Look at it, in light and dark: the specimen, then each surface the token reaches. The tests check contrast, not taste.
 5. The report's embedded stylesheet is compiled into the binary, so the change is an output change: `node scripts/compare/outputs.ts --base main` lists the report's files, which the pull request accepts by name (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
-6. A change to a default of an `--ascribe-*` or `--ascribe-review-*` property is a **Behavior change** in `CHANGELOG.md`, with the previous values for a site to paste (decision 44).
+6. A change to a default of an `--ascribe-*` or `--ascribe-review-*` property is a **Behavior change** in its changelog entry, a file in `changes/`, with the previous values for a site to paste (decision 44).
 
 The full list is the checklist for [a change to how something looks](../project-docs/checklists.md#a-change-to-how-something-looks).
 

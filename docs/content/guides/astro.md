@@ -40,34 +40,53 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 `build` names the [build](../reference/content-model.md#16-buildsname) in `ascribe.toml` whose output the site shows. A project without `[builds]` has one, `site`.
 
-### 4. Define the collection
+### 4. Write the site's files
+@available: next
+
+A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar too. One command writes the four files, in the Astro project's root:
+
+@variant {pm=npm}:
+```sh
+npx @ascribed/astro init
+```
+@variant {pm=pnpm}:
+```sh
+pnpm exec ascribe-astro init
+```
+@end
+
+It writes `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts`, and from then on they're yours to change; it never writes over a file, and if any of the four is there, it writes nothing. It builds the project first, to list its pages in the sidebar. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
+
+In a release without `init`, write the four files yourself, from the sections below.
+
+#### The collection
 
 @snippet {title=src/content.config.ts}: code:examples/astro-site/src/content.config.ts
 
 The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the directory holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
 
 @available: ascribe 0.2.0
-If the Ascribe project is outside the Astro root (`project: "../docs"`), import the copy of the schema the integration writes inside it instead, `.astro/integrations/_ascribed_astro/schema.ts`, which is `../.astro/integrations/_ascribed_astro/schema.ts` from `src/content.config.ts`. The schema imports `astro/zod`, which TypeScript can only find from inside the Astro project, so type-checking (`astro check`, `tsc`) fails on the original there; Astro's own build works with either. The integration updates the copy after each build.
+If the Ascribe project is outside the Astro root (`project: "../docs"`), import the copy of the schema the integration writes inside it instead, `.astro/integrations/_ascribed_astro/schema.ts`, which is `../.astro/integrations/_ascribed_astro/schema.ts` from `src/content.config.ts`, as `init --project` does. The schema imports `astro/zod`, which TypeScript can only find from inside the Astro project, so type-checking (`astro check`, `tsc`) fails on the original there; Astro's own build works with either. The integration updates the copy after each build.
 
-### 5. Add a route
+#### The route
 
 A page's URL is the base path plus its entry id, and the root page, `content/index.md` (entry id `index`), is at the base path itself. That's what Ascribe's links point to:
 
 @snippet {title=src/pages/[...slug].astro}: code:examples/astro-site/src/pages/[...slug].astro
 
-Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`.
+Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`. The route is at the root of `src/pages/` because the base path is Astro's `base`; with the docs under it, move the route to their folder ([a home page in front of the docs](#a-home-page-in-front-of-the-docs)).
 
-### 6. Load the elements in your layout
+#### The layout
 
-A layout loads the element library and shows the page's availability:
+A layout loads the element library, and shows the sidebar, the page's availability, and its table of contents:
 
 @available: ascribe 0.2.0
 @snippet {title=src/layouts/Docs.astro}: code:examples/astro-site/src/layouts/Docs.astro
 
-`<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: the page title, navigation, and table of contents (`headings` from `render`) come from your own components.
+`<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
 
 @available: ascribe 0.2.0
-The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`: use `title` everywhere. See [code in a field](../reference/content-model.md#53-code-in-a-field).
+The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../reference/content-model.md#53-code-in-a-field).
 
 A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
 
@@ -76,7 +95,16 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 
 In a release without `Availability.astro`, copy [its markup]({repo}/blob/main/packages/astro/src/Availability.astro) into your layout in place of the component.
 
-### 7. Build
+#### The sidebar
+@available: next
+
+Ascribe's content model doesn't order or group pages yet, so the site lists them, by their source files under the content root, in groups:
+
+@snippet {title=src/nav.ts}: code:examples/astro-site/src/nav.ts
+
+`init` writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(nav, await getCollection("docs"))`, from `@ascribed/astro/content`, gives each page its entry and its address, the one Ascribe's links use, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(nav, entries, { name: "docs" })` names it, as `ascribeCollection` does.
+
+### 5. Build
 
 ```sh
 npx astro dev     # rebuilds as you edit
@@ -111,7 +139,7 @@ npx astro build
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
 - @available: ascribe 0.2.0
-  **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([step 4](#4-define-the-collection)).
+  **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([the collection](#the-collection)).
 
 ### In `astro dev`
 
@@ -144,7 +172,7 @@ base-path = "/docs/"
 trailing-slash = "never"
 ```
 
-The collection names its entry, `ascribeCollection({ schema, name: "docs" })`, and imports its schema from `.astro/integrations/_ascribed_astro/docs/schema.ts`. A page's route is then `base-path` less Astro's `base`, plus its entry id, so the docs' route goes in `src/pages/docs/[...slug].astro`, with the same `getStaticPaths` as [step 5](#5-add-a-route). Your home page is `src/pages/index.astro`, or a second Ascribe project ([below](#several-projects-in-one-site)).
+The collection names its entry, `ascribeCollection({ schema, name: "docs" })`, and imports its schema from `.astro/integrations/_ascribed_astro/docs/schema.ts`. A page's route is then `base-path` less Astro's `base`, plus its entry id, so the docs' route goes in `src/pages/docs/[...slug].astro`, with the same `getStaticPaths` as [the route](#the-route). Your home page is `src/pages/index.astro`, or a second Ascribe project ([below](#several-projects-in-one-site)).
 
 Everything Ascribe publishes for the docs is at their base path: the files pages link to (`/docs/_ascribe/files/`), `llms.txt` and each page's Markdown, and, by default, the permalinks (`/docs/go/`). [`permalink-path`](../reference/content-model.md#15-consumer) can put the permalinks anywhere under Astro's `base`, such as `/go/`. A base path outside Astro's `base` still fails the build, since an Astro site serves nothing outside it.
 

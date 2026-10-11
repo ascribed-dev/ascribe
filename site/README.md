@@ -1,6 +1,6 @@
 # site/
 
-Ascribe's website: a landing page at the root and Why Ascribe at `/why/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md`, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+Ascribe's website: a landing page at the root and Why Ascribe at `/why/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md` with the entries in `../changes/` not yet gathered into it, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
 astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]
@@ -36,7 +36,7 @@ test/                       navigation, links and anchors, redirects, the projec
 
 The site is at <https://ascribed-dev.com>, the address in each project's `[consumer]`, and the docs at <https://ascribed-dev.com/docs/>, their `base-path`.
 
-- **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/`, `site/`, a file the docs take code examples from (`[sources.code]` in `docs/ascribe.toml`), or `CHANGELOG.md`, and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
+- **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/`, `site/`, a file the docs take code examples from (`[sources.code]` in `docs/ascribe.toml`), or `CHANGELOG.md`, `changes/`, or the script that gathers them (`scripts/release/changes.ts`), and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
 - **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app` (the Netlify site's name, `ascribe-docs`, is in the workflow), which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and both projects' `[consumer]` alike, and as `home/`'s `site` phrase. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
 
 ## Building
@@ -100,13 +100,13 @@ A link into the docs is to a permalink, written `{site}/go/<name>/` with the `si
 
 ## The changelog
 
-`/changelog/` is `../CHANGELOG.md`, which stays where it is and isn't an Ascribe page. The `changelog` collection (`src/changelog.ts`) reads it from the repository at build time, which Netlify's clone has, and renders it with Astro's Markdown and the site's settings; in `astro dev` an edit to it reloads it. The page then points its links, which are written relative to the repository's root, as GitHub reads them:
+`/changelog/` is `../CHANGELOG.md`, which stays where it is and isn't an Ascribe page. The `changelog` collection (`src/changelog.ts`) reads it from the repository at build time, which Netlify's clone has, and puts the entries in `../changes/` at the top of its unreleased section as a release would gather them (`withChanges` in `../scripts/release/changes.ts`, which the site imports, so `main`'s unreleased changes are on the page before a release), and renders it with Astro's Markdown and the site's settings; in `astro dev` an edit to either reloads it. The page then points its links, which are written relative to the repository's root, as GitHub reads them:
 
 - a docs page's source, a `.md` file under `docs/content/`, becomes that page's route on this site, with its fragment kept. The route is the one `src/pages/docs/[...slug].astro` gives the page, from the `docs` collection, so a page the docs' build didn't publish has none;
 - any other file or folder in the repository becomes its address on GitHub, on `main`, from `repo` in `src/site.ts`;
 - an address, or a heading of the changelog, stays as it is.
 
-Anything else, a docs file that isn't a published page, or a file that isn't in the repository, fails the build, naming the line of `CHANGELOG.md` it's on. `test/links.test.ts` then checks each fragment like any page's.
+Anything else, a docs file that isn't a published page, or a file that isn't in the repository, fails the build, naming the line it's on, counted in `CHANGELOG.md` with the entries gathered. (`pnpm test` checks an entry's links to files when it's added; see `changes/README.md`.) `test/links.test.ts` then checks each fragment like any page's.
 
 Each release's heading is anchored by `v` and its version, its tag (`/changelog/#v0.2.0`), so a release's notes can link to it; a heading inside a release is anchored by both (`#v0.2.0-the-language`). The unreleased section, `## Unreleased` or a version marked `(unreleased)`, is `#unreleased`, and says under its heading that it's in `main` and not yet released.
 

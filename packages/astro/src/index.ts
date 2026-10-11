@@ -21,6 +21,10 @@
 //   import Elements from "@ascribed/astro/Elements.astro";           // <Elements /> in <head>
 //   import Availability from "@ascribed/astro/Availability.astro";   // the page's availability
 //
+//   // the sidebar: src/nav.ts's list, checked against the collection
+//   import { sidebar } from "@ascribed/astro/content";
+//   const groups = sidebar(nav, await getCollection("docs"));
+//
 //   // src/pages/404.astro
 //   import MissingPermalink from "@ascribed/astro/MissingPermalink.astro"; // a permalink that isn't here
 //
@@ -365,12 +369,20 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                 load: (id) =>
                   id === `\0${SITE_MODULE}`
                     ? `export const siteRoot = ${JSON.stringify(entries[0]?.siteRoot ?? "")};\n` +
+                      `export const astroRoot = ${JSON.stringify(root)};\n` +
                       `export const home = ${JSON.stringify(homeRoute(astro.base, astro.trailingSlash))};\n` +
                       `export const collections = ${JSON.stringify(
                         named ? Object.fromEntries(entries.map((e) => [e.name, e.siteRoot])) : {},
                       )};\n` +
                       `export const permalinks = ${JSON.stringify(
                         entries.map((e) => ({ siteRoot: e.siteRoot, home: projectHome(e) })),
+                      )};\n` +
+                      `export const routes = ${JSON.stringify(
+                        entries.map((e) => ({
+                          siteRoot: e.siteRoot,
+                          basePath: e.project.consumer.basePath,
+                          trailingSlash: e.project.consumer.trailingSlash,
+                        })),
                       )};`
                     : undefined,
               },
