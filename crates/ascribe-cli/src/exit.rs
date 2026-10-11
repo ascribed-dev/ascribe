@@ -87,6 +87,10 @@ mod tests {
             "vale_not_set_up",
             "--vale, and ascribe.toml has no [checks.vale]",
         ),
+        (
+            "fix_unwritable",
+            "a file check --fix fixed can't be written",
+        ),
         ("vale_no_preset", "[checks.vale] names no preset to eject"),
         ("vale_config_exists", ".vale.ini or .vale is there already"),
         (
@@ -305,7 +309,10 @@ mod tests {
         }
         fn check(e: &CheckError) {
             match e {
-                CheckError::Scope(_) | CheckError::Stdin(_) | CheckError::NoVale => {}
+                CheckError::Scope(_)
+                | CheckError::Stdin(_)
+                | CheckError::NoVale
+                | CheckError::Fix(_) => {}
             }
         }
         fn report(e: &ReportError) {
@@ -493,6 +500,10 @@ mod tests {
             Box::new(CheckError::Scope(ScopeError::Missing { path: path() })),
             Box::new(CheckError::Stdin(io_error())),
             Box::new(CheckError::NoVale),
+            Box::new(CheckError::Fix(ascribe_check::fix::FixError {
+                path: path(),
+                source: io_error(),
+            })),
             Box::new(ReportError::PromptSection),
             Box::new(EjectError::NoPreset { config: None }),
             Box::new(EjectError::Exists { path: text() }),
