@@ -803,7 +803,7 @@ Run where there's no `ascribe.toml` at or above, such as at the root of a reposi
 
 With `--with-hook`, it also writes the [hooks](../guides/agents.md#hooks) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
 
-With `--cloud`, it also writes what [Copilot's cloud agent](../guides/agents.md#github-copilot) needs: steps that install Ascribe in `.github/workflows/copilot-setup-steps.yml`, creating the workflow or adding them between markers to its `copilot-setup-steps` job. It then prints the MCP server's JSON for the repository's settings, after the list of files; with `--agent`, it writes the custom agent `.github/agents/ascribe-docs.md`, which carries the server, instead. `--cloud` implies `--target copilot`. The steps and the custom agent are kept up to date without it.
+With `--cloud`, it also writes what [Copilot's cloud agent](../guides/agents.md#github-copilot) needs: steps that install Ascribe in `.github/workflows/copilot-setup-steps.yml`, creating the workflow or adding them between markers to its `copilot-setup-steps` job. It then prints the MCP server's JSON for the repository's settings, after the list of files; with `--agent`, it writes the custom agent `.github/agents/ascribe-docs.md`, which carries the server, instead. When the repository's projects install Ascribe in different ways, the JSON is still one document, and it and the custom agent carry a server for each way, named as [the guide](../guides/agents.md#github-copilot) says. `--cloud` implies `--target copilot`. The steps and the custom agent are kept up to date without it.
 
 @include: ../_generated/cli-agents-sync-options.md
 

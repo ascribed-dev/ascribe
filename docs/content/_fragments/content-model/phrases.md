@@ -1,0 +1,14 @@
+The phrases registry ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
+
+@snippet: code:examples/content-models/full.toml#phrases
+
+Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phrase`), and every value MUST be a TOML string (`model-phrase-value-type`). `version = 3.4` is a float and an error; that's the kind of silent type change TOML exists to prevent ([SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)). Values are inserted as literal text ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
+
+**Phrases in frontmatter.** [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases) lets the content model decide which frontmatter fields accept phrases. A field accepts them when its table form sets `phrases = true` (§5.2):
+
+```toml
+[types.guide.frontmatter]
+title = { type = "string", phrases = true }
+```
+
+Only `string` and `list(string)` fields can accept phrases (`model-phrases-field-type`). By default, no field does. The setting lives on the field, not in `[phrases]`, so that a phrase key can never collide with a setting's name.
