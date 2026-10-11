@@ -111,12 +111,19 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     diagnostics.sort_by_key(|d| d.severity == Severity::Advice);
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
+    let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
+    let covered = if args.build.is_empty() {
+        text::Covered::Every
+    } else {
+        text::Covered::Named(&names)
+    };
     let written = match args.format {
         Format::Text => text::write(
             out,
             &files,
             &diagnostics,
             checked,
+            &covered,
             acknowledged.len(),
             color,
         ),
@@ -128,7 +135,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
                 error: None,
                 files_checked: checked,
                 files_reported: checked,
-                builds_checked: builds.iter().map(|b| b.name.clone()).collect(),
+                builds_checked: names.clone(),
                 acknowledged: &acknowledged,
                 summary_only: None,
             },

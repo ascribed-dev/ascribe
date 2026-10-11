@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
 import { TOGGLE_LENS_COMMAND } from "./buildLens.js";
+import { CHECK_EVERY_BUILD_COMMAND } from "./checkEveryBuild.js";
 import type { ChosenBuilds } from "./chosenBuild.js";
 import { RESTRICTED_NOTICE, statusFor, waitingNotice, type Notice } from "./describe.js";
 import type { BuildLenses } from "./lens.js";
@@ -107,6 +108,10 @@ export class StatusBar implements vscode.Disposable {
         label: "$(package) Switch build",
         description: this.builds.info(server).build ?? "",
         run: () => this.switchBuild(),
+      },
+      {
+        label: "$(checklist) Check every build",
+        run: () => vscode.commands.executeCommand(CHECK_EVERY_BUILD_COMMAND),
       },
       { label: "$(output) Show output", run: () => server.showOutput() },
       { label: "$(debug-restart) Restart server", run: () => server.restart() },

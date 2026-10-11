@@ -52,10 +52,18 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<L
     let loaded = answer::load(projects, global, Some(&args.from))?;
     let project = &loaded.project;
     let from = answer::source_path(project, &args.from)?;
+    // The page is named back as `check` names a file: from the folder the
+    // command was run in, whichever form it was given in.
+    let in_project = project
+        .content_root()
+        .join(from.as_str())
+        .map_or_else(|_| from.to_string(), |path| path.to_string());
+    let named = answer::from_here(project.root(), &in_project);
     Ok(ascribe_query::link(
         loaded.index(),
         project.file_system(),
         &from,
+        &named,
         &args.target,
     )?)
 }
@@ -91,9 +99,20 @@ fn write_text(out: &mut dyn Write, l: &LinkAnswer) -> io::Result<()> {
             (_, None) => "it".to_owned(),
         };
         writeln!(out, "{} exists: {what}.", l.target)?;
-        let text = l.title.as_deref().unwrap_or("");
-        if let Some(href) = &l.href {
-            writeln!(out, "Write: [{text}]({href})")?;
+        let titled = matches!(
+            l.kind,
+            ascribe_query::LinkKind::Page | ascribe_query::LinkKind::Heading
+        );
+        match (&l.href, l.title.as_deref()) {
+            // Empty link text shows the target's title (SPEC §5.2), so the
+            // empty form is as good, and a smaller edit to a link that has
+            // none.
+            (Some(href), Some(text)) if titled => writeln!(
+                out,
+                "Write: [{text}]({href}), or []({href}), which shows the same title"
+            )?,
+            (Some(href), text) => writeln!(out, "Write: [{}]({href})", text.unwrap_or(""))?,
+            (None, _) => {}
         }
         return Ok(());
     }

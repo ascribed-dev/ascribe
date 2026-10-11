@@ -282,7 +282,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-63 commands, 35 of them actions.
+64 commands, 35 of them actions.
 
 Commands that aren't actions:
 
@@ -297,6 +297,7 @@ Commands that aren't actions:
 | Ascribe: Prompt Agent to Fix This Project | `ascribe.promptAgentProject` |
 | Ascribe: Actions for the Cursor | `ascribe.actions` |
 | Ascribe: Switch Build | `ascribe.switchBuild` |
+| Ascribe: Check Every Build | `ascribe.checkEveryBuild` |
 | Ascribe: Project Menu | `ascribe.projectMenu` |
 | Ascribe: Dim What the Build Leaves Out | `ascribe.toggleBuildLens` |
 | Ascribe: Start Review | `ascribe.startReview` |
@@ -401,7 +402,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 63 |
+| `commandPalette` | 64 |
 | `editor/title` | 5 |
 | `view/title` | 1 |
 | `view/item/context` | 2 |

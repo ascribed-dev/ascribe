@@ -105,6 +105,32 @@ describe("the prompt about a thread", () => {
     expect(text).toContain(", and 3 more: `ascribe refs site/docs/_fragments/prereqs.md`\n");
   });
 
+  it("starts its commands with the program the editor names", () => {
+    const program = "/home/jane doe/.vscode/extensions/ascribe/bin/linux-x64/ascribe";
+    const word = `'${program}'`;
+    const text = threadPrompt({
+      project: { ...PROJECT, program },
+      thread: thread({
+        repositoryPath: "site/docs/_fragments/prereqs.md",
+        path: "_fragments/prereqs.md",
+        lines: { first: 3, last: 3 },
+      }),
+      source: { first: 3, last: 3, text: "- Lantern agent 2.4 or later" },
+      shownOn: Array.from({ length: MAX_SHOWN_ON + 1 }, (_, i) => `guides/page-${i}.md`),
+    });
+    expect(text).toContain(`, and 1 more: \`${word} refs site/docs/_fragments/prereqs.md\`\n`);
+    expect(text).toContain(
+      `When you're done, run \`${word} check site/docs/_fragments/prereqs.md\``,
+    );
+    const open =
+      openThreadsPrompt({
+        project: { ...PROJECT, program },
+        pullRequest: 128,
+        threads: [thread()],
+      }) ?? "";
+    expect(open).toContain(`When you're done, run \`${word} check `);
+  });
+
   it("says when the text changed since the comment, with what it was", async () => {
     const text = threadPrompt({
       project: { folder: "", contentRoot: "docs", agents: undefined },
@@ -288,7 +314,9 @@ describe("the list of open threads for an agent", () => {
       threads: [thread({ resolved: true })],
       shownOn: () => [],
     });
-    expect(text).toBe("Pull request #128 has no open review threads.\nProject: site/\n");
+    expect(text).toBe(
+      "Pull request #128 has no open review threads.\nPaths and commands here are from the repository's root.\nProject: site/\n",
+    );
   });
 });
 
@@ -364,7 +392,7 @@ describe("gathering a thread prompt on the host's side", () => {
     };
     const text = (await buildThreadsPrompt(context, { kind: "thread", threadId: "F" })) ?? "";
     expect(text).toContain(
-      "Where: docs/_fragments/prereqs.md:3\nThe file has unsaved changes; save it before you start.\nProject: site/\nShown on: docs/guides/install.md, docs/guides/upgrade.md\n",
+      "Where: site/docs/_fragments/prereqs.md:3\nThe file has unsaved changes; save it before you start.\nPaths and commands here are from the repository's root.\nProject: site/\nShown on: site/docs/guides/install.md, site/docs/guides/upgrade.md\n",
     );
     expect(text).toContain("Line 3:\n```markdown\n- Lantern agent 2.4 or later\n```\n");
     const open = await buildThreadsPrompt(context, { kind: "open-threads" });

@@ -93,7 +93,7 @@
       "type": "boolean"
     },
     "from": {
-      "description": "The page the link is written on, as a path from the content root.",
+      "description": "The page the link is written on, as the command was given it: a path\nfrom the folder it was run in, as `ascribe check` names a file.",
       "type": "string"
     },
     "href": {
@@ -130,7 +130,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },

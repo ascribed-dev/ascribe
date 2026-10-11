@@ -58,7 +58,7 @@ fn a_problems_prompt_names_its_place_and_the_editors_build() {
     );
     let text = prompt(&answer);
     assert!(
-        text.starts_with("Fix this problem in `docs/install.md`.\n\nWhere: docs/install.md:5\nBuild: `site`, the editor's. `ascribe check` checks every build.\n"),
+        text.starts_with("Fix this problem in `docs/install.md`.\n\nWhere: docs/install.md:5\nPaths and commands here are from the project's folder, where `ascribe.toml` is.\nBuild: `site`, the editor's. `ascribe check` checks every build.\n"),
         "{text}"
     );
     assert!(
@@ -145,6 +145,34 @@ fn the_projects_prompt_needs_no_file() {
     );
     assert!(
         text.contains("- docs/install.md: 1 error\n- docs/upgrade.md: 1 error\n"),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_program_the_editor_sends_starts_the_prompts_commands() {
+    let fixture = Fixture::new(MODEL, &[("docs/install.md", BROKEN)]);
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let answer = ask(
+        &mut client,
+        json!({ "kind": "project", "program": "/opt/ascribe/bin/ascribe" }),
+    );
+    let text = prompt(&answer);
+    assert!(
+        text.contains(
+            "Build: `site`, the editor's. `/opt/ascribe/bin/ascribe check` checks every build.\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("To list each problem: `/opt/ascribe/bin/ascribe check --format concise`\n"),
+        "{text}"
+    );
+    assert!(
+        text.ends_with(
+            "When you're done, run `/opt/ascribe/bin/ascribe check` and fix what it reports.\n"
+        ),
         "{text}"
     );
 }

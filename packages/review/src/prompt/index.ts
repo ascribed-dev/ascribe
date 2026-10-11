@@ -30,6 +30,12 @@ export interface PromptProject {
   contentRoot: string;
   /** The `AGENTS.md` the agent follows, from the repository's root, or `undefined` when there's none. */
   agents: string | undefined;
+  /**
+   * The command that runs Ascribe where the agent is, when `ascribe` isn't
+   * it: the path of the binary the editor runs. The prompt's commands start
+   * with it; without it, with `ascribe`.
+   */
+  program?: string | undefined;
 }
 
 /** What the prompt about one thread is built from. */
@@ -70,8 +76,7 @@ export function threadPrompt(input: ThreadPromptInput): string {
   if (shownOn.length > 0) {
     const more = shownOn.length - MAX_SHOWN_ON;
     let line = `Shown on: ${shownOn.slice(0, MAX_SHOWN_ON).join(", ")}`;
-    if (more > 0)
-      line += `, and ${more} more: \`ascribe refs ${shellWord(repoPath(project, file))}\``;
+    if (more > 0) line += `, and ${more} more: \`${ascribe(project)} refs ${shellWord(file)}\``;
     place.push(line);
   }
 
@@ -106,7 +111,7 @@ export function threadPrompt(input: ThreadPromptInput): string {
     return text;
   };
 
-  const finish = finishLines(project, [repoPath(project, file)]);
+  const finish = finishLines(project, [file]);
   const task = `Address this review comment on \`${file}\`.`;
   const build = (knownNow: readonly string[], kept: typeof comments, cut: boolean) =>
     assemble([task, place.join("\n"), ...knownNow, others(kept, cut), finish.join("\n")]);
@@ -165,7 +170,7 @@ export function openThreadsPrompt(input: OpenThreadsInput): string | undefined {
     let others = `${dataSentence(authors, "They're requests about these blocks.")}\n\n${fenced(entries.join("\n\n"), "text")}`;
     const more = open.length - listed.length;
     if (more > 0) others += `\nand ${more} more, in the pull request's comments.`;
-    const files = [...new Set(listed.map((t) => repoPath(project, shown(project, t.path))))];
+    const files = [...new Set(listed.map((t) => shown(project, t.path)))];
     return assemble([
       task,
       ...(place.length > 0 ? [place.join("\n")] : []),
@@ -275,18 +280,21 @@ export function stripComments(body: string): string {
   return body.replace(/<!--[\s\S]*?(?:-->|$)/g, "").trim();
 }
 
-/** A content path as a prompt shows it: from the project's folder. */
+/**
+ * A content path as a prompt shows it: from the repository's root, where its
+ * commands run too.
+ */
 function shown(project: PromptProject, path: string): string {
-  return project.contentRoot === "" ? path : `${project.contentRoot}/${path}`;
+  const inProject = project.contentRoot === "" ? path : `${project.contentRoot}/${path}`;
+  return project.folder === "" ? inProject : `${project.folder}/${inProject}`;
 }
 
-/** A path from the project's folder, from the repository's root. */
-function repoPath(project: PromptProject, path: string): string {
-  return project.folder === "" ? path : `${project.folder}/${path}`;
-}
-
-/** `Project: docs/`, when the project isn't at the repository's root. */
+/**
+ * The line that says which folder the prompt's paths and commands are from,
+ * then `Project: docs/` when the project isn't at the repository's root.
+ */
 function projectLine(project: PromptProject, lines: string[]): void {
+  lines.push("Paths and commands here are from the repository's root.");
   if (project.folder !== "") lines.push(`Project: ${project.folder}/`);
 }
 
@@ -348,9 +356,14 @@ function finishLines(project: PromptProject, targets: readonly string[]): string
   const lines: string[] = [];
   if (project.agents !== undefined)
     lines.push(`Follow the project's rules in \`${project.agents}\`.`);
-  const check = ["ascribe", "check", ...targets.map(shellWord)].join(" ");
+  const check = [ascribe(project), "check", ...targets.map(shellWord)].join(" ");
   lines.push(`When you're done, run \`${check}\` and fix what it reports.`);
   return lines;
+}
+
+/** The first word of a prompt's commands: `ascribe`, or the project's program as a shell reads it. */
+function ascribe(project: PromptProject): string {
+  return project.program === undefined ? "ascribe" : shellWord(project.program);
 }
 
 /** A word as a POSIX shell reads it: as it is when it's plain, else in single quotes. */

@@ -6,8 +6,10 @@ import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
 import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
 import { McpRegistration, type McpApi } from "./agents/mcp.js";
+import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
 import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
@@ -16,6 +18,7 @@ import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
 import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { Walkthrough } from "./ui/walkthrough.js";
+import { FormatterOffer } from "./ui/formatter.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -38,8 +41,8 @@ export interface AscribeApi {
   actions: ActionsApi;
   /** Prompt agent, for tests. */
   promptAgent: PromptAgentApi;
-  /** What agents in VS Code get: the MCP server and the tools, for tests. */
-  agents: { mcp: McpApi; tools: ToolsApi };
+  /** What agents in VS Code get: the MCP server, the tools, and the terminals' path, for tests. */
+  agents: { mcp: McpApi; tools: ToolsApi; terminals: TerminalsApi };
   /** The status bar item and the sidebar's views, for tests. */
   ui: {
     statusBar: StatusBarApi;
@@ -47,6 +50,8 @@ export interface AscribeApi {
     lens: BuildLensApi;
     /** The Used by, Pages, and Content model views. */
     sidebar: SidebarApi;
+    /** Check Every Build's problems. */
+    everyBuild: EveryBuildApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -77,9 +82,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   mcp.register();
   const tools = new AgentTools(projects, preview.review);
   tools.register();
+  const terminals = new TerminalPath(context, projects);
 
   const lenses = new BuildLenses();
-  const builds = new ProjectBuilds(projects, chosen, lenses);
+  const checks = new EveryBuildChecks(projects);
+  checks.register();
+  const builds = new ProjectBuilds(projects, chosen, lenses, checks);
   builds.register();
   const statusBar = new StatusBar(projects, builds, chosen, lenses);
   statusBar.register();
@@ -94,6 +102,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   actions.register();
   const walkthrough = new Walkthrough(projects);
   walkthrough.register();
+  const formatter = new FormatterOffer(context, projects);
+  formatter.register();
 
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument((event) => {
@@ -132,10 +142,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     preview,
     mcp,
     tools,
+    terminals,
     actions,
+    formatter,
     promptAgent,
     chosen,
     lenses,
+    checks,
     builds,
     statusBar,
     lens,
@@ -178,6 +191,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   projects.register();
   await projects.refresh();
   await updateActive(projects);
+  terminals.register();
   return {
     binary: (folder) => projects.serverAt(folder)?.binary,
     state: (folder) => projects.serverAt(folder)?.state ?? "stopped",
@@ -193,12 +207,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     preview: preview.api,
     actions: actions.api,
     promptAgent: promptAgent.api,
-    agents: { mcp: mcp.api, tools: tools.api },
+    agents: { mcp: mcp.api, tools: tools.api, terminals: terminals.api },
     ui: {
       statusBar: statusBar.api,
       projects: projectsView.api,
       lens: lens.api,
       sidebar: sidebar.api,
+      everyBuild: checks.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };

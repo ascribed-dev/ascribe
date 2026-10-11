@@ -119,7 +119,10 @@ pub enum Command {
     #[command(after_help = docs_link!("cli-drift"))]
     Drift(commands::drift::Args),
     /// Explain a diagnostic: what it means, how to fix it, and an example.
-    #[command(after_help = docs_link!("cli-explain"))]
+    #[command(
+        after_help = docs_link!("cli-explain"),
+        override_usage = "ascribe explain [OPTIONS] <CODE>\n       ascribe explain [OPTIONS] --list"
+    )]
     Explain(commands::explain::Args),
     /// Rewrite Ascribe constructs into canonical form.
     #[command(after_help = docs_link!("cli-fmt"))]

@@ -1,11 +1,12 @@
 ---
 source: crates/ascribe-check/tests/all/prompt.rs
-assertion_line: 125
+assertion_line: 126
 expression: "one_problem(&project, &plain(), \"docs/install.md\")"
 ---
 Fix this problem in `docs/install.md`.
 
 Where: docs/install.md:5
+Paths and commands here are from the repository's root.
 
 Problem: ASC025 `variant-unknown`, an error
 Message: `bun` isn't a value of `pm`; its values are: `npm`, `pnpm`, `yarn`

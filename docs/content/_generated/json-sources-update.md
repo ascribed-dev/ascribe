@@ -37,7 +37,6 @@
       "properties": {
         "added": {
           "description": "Lines only in the code now.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -51,7 +50,6 @@
         },
         "removed": {
           "description": "Lines only in the code at the base.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -100,7 +98,6 @@
       "properties": {
         "count": {
           "description": "How many.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -331,7 +328,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },

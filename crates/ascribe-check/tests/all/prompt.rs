@@ -6,7 +6,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use ascribe_check::prompt::{self, Builds, Context, LIMIT};
+use ascribe_check::prompt::{self, Base, Builds, Context, LIMIT};
 use ascribe_check::{Project, Reported, Scope, diagnose};
 use ascribe_core::{FileId, RelPath};
 
@@ -63,10 +63,12 @@ fn page(body: &str) -> String {
 /// repository's root, every build, no `AGENTS.md`.
 fn plain() -> Context {
     Context {
+        base: Base::Repository,
         folder: None,
         agents: None,
         builds: Builds::All,
         unsaved: Vec::new(),
+        program: None,
     }
 }
 
@@ -183,12 +185,45 @@ fn a_fragment_shown_on_many_pages_names_ten_and_the_command_for_the_rest() {
 fn a_project_in_a_subfolder_writes_commands_from_the_repository_root() {
     let project = project(&[("install.md", &page("Read [the overview](overview.md)."))]);
     let context = Context {
+        base: Base::Repository,
         folder: Some("site/docs".to_owned()),
         agents: Some("site/docs/AGENTS.md".to_owned()),
         builds: Builds::Named(vec!["self-hosted".to_owned()]),
-        unsaved: Vec::new(),
+        ..plain()
     };
     insta::assert_snapshot!(one_problem(&project, &context, "docs/install.md"));
+}
+
+#[test]
+fn a_program_the_editor_names_starts_every_command() {
+    let links: String = (1..=25)
+        .map(|n| format!("Read [part {n}](missing-{n}.md).\n\n"))
+        .collect();
+    let project = project(&[("install.md", &page(&links))]);
+    let context = Context {
+        builds: Builds::Editor("site".to_owned()),
+        program: Some("/home/jane doe/.vscode/extensions/ascribe/bin/linux-x64/ascribe".to_owned()),
+        ..plain()
+    };
+    let reported = reported(&project, "docs/install.md");
+    let text = prompt::file(
+        &project,
+        &context,
+        id(&project, "install.md"),
+        &reported,
+        &shown_on(&project),
+    )
+    .expect("problems");
+    let program = "'/home/jane doe/.vscode/extensions/ascribe/bin/linux-x64/ascribe'";
+    assert!(text.contains(&format!(
+        "Build: `site`, the editor's. `{program} check` checks every build.\n"
+    )));
+    assert!(text.contains(&format!(
+        "and 5 more: `{program} check docs/install.md --format concise`"
+    )));
+    assert!(text.ends_with(&format!(
+        "When you're done, run `{program} check docs/install.md` and fix what it reports.\n"
+    )));
 }
 
 #[test]
@@ -341,4 +376,55 @@ fn the_context_finds_the_projects_folder_and_its_agents_md() {
     let at_root = context_of(dir.path());
     assert_eq!(at_root.folder, None);
     assert_eq!(at_root.agents.as_deref(), Some("AGENTS.md"));
+}
+
+#[test]
+fn a_context_seen_from_a_folder_writes_its_paths_from_there() {
+    let (dir, docs) = repository(true, false);
+    let seen_from = |here: &Path| Context::seen_from(&docs, Some(here), Builds::All);
+
+    // From the project's folder, paths are the project's own.
+    let in_project = seen_from(&docs);
+    assert_eq!(in_project.base, Base::InRepository("docs".to_owned()));
+    assert_eq!(in_project.folder, None);
+    assert_eq!(in_project.agents.as_deref(), Some("../AGENTS.md"));
+    assert_eq!(in_project.shown("guides/install.md"), "guides/install.md");
+
+    // From the repository's root, as `of_project` has it.
+    assert_eq!(seen_from(dir.path()), context_of(&docs));
+
+    // From a folder inside the project, the project's folder.
+    let content = docs.join("content");
+    fs::create_dir(&content).unwrap();
+    assert_eq!(seen_from(&content), in_project);
+
+    // From a folder beside the project's, whose paths to it would climb
+    // out, the repository's root.
+    let other = dir.path().join("other");
+    fs::create_dir(&other).unwrap();
+    assert_eq!(seen_from(&other), context_of(&docs));
+
+    // From outside the repository, its root.
+    let elsewhere = tempfile::tempdir().expect("a temporary folder");
+    assert_eq!(seen_from(elsewhere.path()), context_of(&docs));
+}
+
+#[test]
+fn a_prompt_says_once_which_folder_its_paths_are_from() {
+    let (_dir, docs) = repository(false, false);
+    let mut place = Vec::new();
+    context_of(&docs).project_lines(&mut place);
+    assert_eq!(
+        place,
+        [
+            "Paths and commands here are from the repository's root.",
+            "Project: docs/"
+        ]
+    );
+    let mut place = Vec::new();
+    Context::seen_from(&docs, Some(&docs), Builds::All).project_lines(&mut place);
+    assert_eq!(
+        place,
+        ["Paths and commands here are from `docs` in the repository."]
+    );
 }

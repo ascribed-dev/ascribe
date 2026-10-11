@@ -5,6 +5,7 @@ import type { ProjectRegistry } from "../registry.js";
 import type { TargetBuild, TargetsResult } from "../shapes.js";
 import type { ChosenBuilds } from "./chosenBuild.js";
 import type { ProjectInfo } from "./describe.js";
+import type { EveryBuildChecks } from "./checkEveryBuild.js";
 import type { BuildLenses } from "./lens.js";
 
 /** How long after the last change to an `ascribe.toml` its builds are asked for again. */
@@ -27,11 +28,12 @@ export class ProjectBuilds implements vscode.Disposable {
     private readonly projects: ProjectRegistry,
     private readonly chosen: ChosenBuilds,
     private readonly lenses: BuildLenses,
+    private readonly checks: EveryBuildChecks,
   ) {}
 
   /**
    * Fires when what `info` says may have changed: a project, a state, its
-   * builds, the choice, or the lens.
+   * builds, the choice, the lens, or a check of every build.
    */
   get onDidChange(): vscode.Event<void> {
     return this.changed.event;
@@ -52,6 +54,7 @@ export class ProjectBuilds implements vscode.Disposable {
       }),
       this.chosen.onDidChange(() => this.changed.fire()),
       this.lenses.onDidChange(() => this.changed.fire()),
+      this.checks.onDidChange(() => this.changed.fire()),
       // The server reads an open `ascribe.toml` as it's edited.
       vscode.workspace.onDidChangeTextDocument(({ document }) => {
         if (path.basename(document.uri.fsPath) !== "ascribe.toml") return;
@@ -80,6 +83,7 @@ export class ProjectBuilds implements vscode.Disposable {
       builds,
       build: this.chosen.shown(server.project.folder, builds),
       lens: this.lenses.isOn(server.project.folder),
+      everyBuild: this.checks.isCurrent(server.project.folder),
     };
   }
 

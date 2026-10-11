@@ -36,7 +36,8 @@ use std::cell::RefCell;
 use ascribe_core::{AssetUse, RelPath};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
-    AstroRouter, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedLink, ResolvedPage, llms,
+    AstroRouter, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedLink,
+    ResolvedPage, llms,
 };
 use ascribe_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
@@ -44,7 +45,7 @@ use crate::assets::{Placement, mirrored_path};
 use crate::emitter::{EmitContext, Emitter, PageContext, mirrored_placement};
 use crate::error::EmitError;
 use crate::labels::{availability_display, availability_display_of_text, dimensional_label};
-use crate::site::{FILES_DIR, route_collisions};
+use crate::site::{FILES_DIR, arm_values, route_collisions, sync_dimension};
 use crate::store::{Contents, EmittedFile, FileKind};
 use inline::{Style, escape};
 
@@ -54,6 +55,9 @@ pub struct PlainEmitter {
     /// The router of the outputs for agents, when the content model asks for
     /// them (`[consumer] agents = true`).
     agents: Option<Agents>,
+    /// Whether a switcher says above its arms that a reader sees one at a
+    /// time: for `ascribe render`, never in the plain output.
+    switchers: bool,
 }
 
 /// What the outputs for agents need: where each page is published, and the
@@ -86,7 +90,18 @@ impl PlainEmitter {
                     router: AstroRouter::from_consumer(consumer),
                     origin: origin.clone(),
                 }),
+            switchers: false,
         }
+    }
+
+    /// The emitter that says, above a switcher's arms, that a reader sees one
+    /// of them at a time and what chooses: for `ascribe render`, which shows
+    /// a page as one build's readers see it, and whose text would otherwise
+    /// show a switcher as sections in a row. The plain output never says so.
+    #[must_use]
+    pub fn noting_switchers(mut self) -> PlainEmitter {
+        self.switchers = true;
+        self
     }
 }
 
@@ -113,7 +128,7 @@ impl Emitter for PlainEmitter {
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
-        let text = render_page(cx, page);
+        let text = render_page(cx, page, self.switchers);
         Ok(match &self.agents {
             Some(agents) => {
                 let index = agents.absolute(&agents.router.url_of("llms.txt"));
@@ -183,11 +198,12 @@ impl Emitter for PlainEmitter {
 }
 
 /// Renders a page as plain markdown.
-fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
+fn render_page(cx: &PageContext<'_>, page: &ResolvedPage, switchers: bool) -> String {
     let r = Renderer {
         page: cx,
         model: cx.emit.model,
         arms: RefCell::new(Vec::new()),
+        switchers,
     };
     let mut chunks = Vec::new();
     if let Some(segments) = page.formatted_title() {
@@ -254,6 +270,8 @@ pub(crate) struct Renderer<'a> {
     /// The labels of the arms the block being written is in, outermost
     /// first, which its headings carry.
     arms: RefCell<Vec<String>>,
+    /// Whether a switcher says it is one ([`PlainEmitter::noting_switchers`]).
+    switchers: bool,
 }
 
 impl Renderer<'_> {
@@ -339,6 +357,9 @@ impl Renderer<'_> {
                     if widget.plain_content == PlainContent::Drop {
                         return out;
                     }
+                }
+                if self.switchers && name == "variant" && arms.len() > 1 {
+                    out.push(self.switcher_note(arms));
                 }
                 for arm in arms {
                     let label = self.arm_label(block, &arm.opener);
@@ -535,6 +556,24 @@ impl Renderer<'_> {
             },
         );
         (!text.trim().is_empty()).then_some(text)
+    }
+
+    /// What `ascribe render` writes above a switcher's arms: that a reader
+    /// sees one at a time, and the dimension the site's tabs choose by
+    /// (contract §3), or that they choose by label.
+    fn switcher_note(&self, arms: &[ResolvedArm]) -> String {
+        let values: Vec<_> = arms
+            .iter()
+            .map(|arm| arm_values(self.model, &arm.opener))
+            .collect();
+        let chosen = match sync_dimension(self.model, &values) {
+            Some(dimension) => format!("by `{dimension}`"),
+            None => "by label".to_owned(),
+        };
+        format!(
+            "<!-- A switcher: a reader sees one of the next {} sections at a time, chosen {chosen}. -->",
+            arms.len()
+        )
     }
 
     /// The label that leads an arm's section: its title, or the display labels

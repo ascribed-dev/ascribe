@@ -72,6 +72,8 @@ The extension also gives agents three tools of its own, for what only the editor
 
 The review tools answer while [review](#review-in-the-preview) is on, and say so in one line when it's off; they never turn it on. `#ascribe_review_threads` gives each open thread's comments as data, under the same sentence a [prompt](agents.md#what-a-prompt-says) puts over them, so the agent doesn't take them as instructions. None of the tools changes a file.
 
+An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on the window's path is another binary or none, the extension puts the folder of the binary each workspace folder's first project uses first on the path of that folder's terminals; a terminal that was open before asks to be relaunched. [Prompt agent](agents.md#prompt-your-agent)'s prompts then name the binary by its path, for an agent that doesn't work in the window's terminals, such as Claude Code's extension.
+
 ### Completion
 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.
@@ -108,6 +110,8 @@ The review tools answer while [review](#review-in-the-preview) is on, and say so
 ### Formatting
 
 **Format Document** rewrites Ascribe constructs into canonical form, as `ascribe fmt` does. Turn on `ascribe.formatOnSave` to do it on every save. It changes only Ascribe constructs, never how a page renders.
+
+When another extension is VS Code's formatter for Markdown, such as Prettier through `editor.defaultFormatter`, it formats your pages too, and can change what they build to: `version: {version}` becomes `version: { version }`. When you open a page and another formatter is set, the extension offers to be the Markdown formatter for that workspace folder. **Use Ascribe** writes `editor.defaultFormatter` under `[markdown]` in the folder's `.vscode/settings.json`, so **Format Document** and `editor.formatOnSave` run Ascribe on your pages. Ascribe formats only its projects' pages, so other Markdown files in the folder are no longer formatted. **Keep** leaves the setting as it is and doesn't ask again for that folder.
 
 ### Highlighting
 
@@ -183,11 +187,11 @@ Pages and Content model update when you save a file of the project, when a page 
 ### The status bar
 @available: ascribe 0.2.0
 
-While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. A project's language server starts when one of its pages opens, so until then nothing has checked it: while no page of a project is active, the status bar says so, such as **docs: not checked yet**, or **2 projects: not checked yet**, and its tooltip names them. Otherwise a file that isn't in a project shows nothing.
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. While the project has several builds and the Problems panel holds the problems of the editor build alone, it adds what the panel covers, such as **docs · site · problems: this build only**, or **docs · cloud · problems: site only** while you look at another build; once you [check every build](#the-problems-panel), and until something changes, it doesn't. A project's language server starts when one of its pages opens, so until then nothing has checked it: while no page of a project is active, the status bar says so, such as **docs: not checked yet**, or **2 projects: not checked yet**, and its tooltip names them. Otherwise a file that isn't in a project shows nothing.
 
 In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The status bar shows **Ascribe: not checking**, and the Problems panel's "No problems" doesn't mean the project is clean. Click it to manage the folder's trust; once you trust it, Ascribe starts.
 
-Click it for a menu of the project: **Switch build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
+Click it for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
 
 Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
 
@@ -251,7 +255,12 @@ Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 
 The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened or changed shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
 
-A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel. An agent that reads the Problems panel sees the same: before calling a project clean, run `ascribe check`, which checks every build.
+A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](#the-status-bar) says so: **docs · site · problems: this build only**.
+
+@available: next
+**Ascribe: Check Every Build** (also **Check every build** in the status bar's menu) runs `ascribe check` over every build of the active file's project, as it reads the files on disk, and adds the problems the server doesn't show to the Problems panel: those of other builds, each naming the builds it's in (`only in build cloud`), and those of the checks the editor doesn't run, such as `image-unused`. It says how many problems it found in all, and how many it added. When a file changes, the problems it added to that file go, since they may have moved, and the status bar says the panel covers the editor's build alone again, until you run it again. In a workspace with several projects and no file of one active, it asks which project to check.
+
+An agent that reads the Problems panel sees the same: before calling a project clean, check every build, or run `ascribe check`, which checks every build.
 
 `ascribe check` checks a project whether or not the editor has it open. Run it in the project's folder, or from anywhere with `--config` naming the project's folder or its `ascribe.toml`:
 
@@ -289,4 +298,4 @@ When one project is nested in another's content root, the outer project's server
 
 ## Other formatters
 
-A Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and would join them with the text below. Exclude Ascribe sources from it, for example with `**/*.md` in `.prettierignore`, and use `ascribe fmt`.
+A Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and would join them with the text below. Exclude Ascribe sources from it, for example with `**/*.md` in `.prettierignore`, and use `ascribe fmt`. In VS Code, the extension offers to be the Markdown formatter for your pages; see [Formatting](#formatting).

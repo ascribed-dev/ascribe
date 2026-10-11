@@ -9,7 +9,6 @@
       "properties": {
         "column": {
           "description": "The column, from 1, in Unicode characters.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
@@ -19,7 +18,6 @@
         },
         "line": {
           "description": "The line, from 1.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
@@ -118,13 +116,11 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },
     "shown": {
       "description": "How many are listed.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },
@@ -134,7 +130,6 @@
     },
     "total": {
       "description": "How many places use it.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },

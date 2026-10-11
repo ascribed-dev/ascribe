@@ -2,7 +2,7 @@
 //! building; with paths, only what counts for them.
 
 use std::io::{self, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::rc::Rc;
 
@@ -13,7 +13,6 @@ use ascribe_check::{
     diagnose, diagnose_editor_build_in, locate_for,
 };
 use ascribe_core::Coded;
-use ascribe_core::path::relative_path;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{Found, FromDisk, Loaded, Projects};
@@ -390,13 +389,16 @@ pub fn write(
     let project = &loaded.project;
     let checked = project.sources().len();
     let files_reported = scope.as_ref().map(|s| s.sources(project).len());
+    let covered = match builds_checked.first() {
+        Some(build) if args.editor_build => text::Covered::Editor(build),
+        _ if args.build.is_empty() => text::Covered::Every,
+        _ => text::Covered::Named(builds_checked),
+    };
     let summary = text::check_summary(
         *counts,
         checked,
-        files_reported,
-        args.editor_build
-            .then(|| builds_checked.first().map(String::as_str))
-            .flatten(),
+        &covered,
+        files_reported.unwrap_or(checked),
     ) + &text::acknowledged(acknowledged.len());
     let command = Command::new(global, args);
     match (args.format, args.summary) {
@@ -447,7 +449,11 @@ fn write_prompt(
     } else {
         Builds::Named(args.build.clone())
     };
-    let mut context = prompt::Context::of_project(project.root(), builds);
+    let mut context = prompt::Context::seen_from(
+        project.root(),
+        std::env::current_dir().ok().as_deref(),
+        builds,
+    );
     let named = scope.and_then(|s| s.named_sources(project));
     let one = named.as_deref().and_then(|files| match files {
         [file] => project.source_at(file),
@@ -606,30 +612,11 @@ impl<'a> Command<'a> {
             return self.listing();
         }
         let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
-        words.push(quote(&from_here(project.root(), file)));
+        words.push(quote(&crate::answer::from_here(project.root(), file)));
         words.extend(self.options());
         words.extend(["--format".to_owned(), "concise".to_owned()]);
         words.join(" ")
     }
-}
-
-/// `file`, relative to the project root, as a path from the current
-/// directory, `/`-separated.
-fn from_here(root: &Path, file: &str) -> String {
-    let target = root.join(file);
-    let here = std::env::current_dir().ok();
-    let absolute = std::path::absolute(&target).unwrap_or_else(|_| target.clone());
-    here.and_then(|here| relative_path(&here, &absolute))
-        .map_or_else(
-            || absolute.to_string_lossy().replace('\\', "/"),
-            |rel| {
-                if rel.is_root() {
-                    ".".to_owned()
-                } else {
-                    rel.to_string()
-                }
-            },
-        )
 }
 
 /// Reports a check that couldn't be made, and returns the exit code: as
@@ -745,13 +732,29 @@ mod tests {
         let reported = reported();
         let counts = Counts::of_reported(&reported);
         assert_eq!(
-            text::check_summary(counts, 1, None, None),
-            "checked 1 file: 0 errors, 1 warning, 1 advice"
+            text::check_summary(counts, 1, &text::Covered::Every, 1),
+            "checked 1 file for every build, reported on 1: 0 errors, 1 warning, 1 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 1, None, None),
-            "checked 1 file: 0 errors, 0 warnings",
-            "the summary names advice only when there is some"
+            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1),
+            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice",
+            "the summary counts advice even when there is none"
+        );
+        let builds = ["cloud".to_owned(), "site".to_owned(), "v2".to_owned()];
+        let named = |n: usize| {
+            text::check_summary(Counts::default(), 3, &text::Covered::Named(&builds[..n]), 1)
+        };
+        assert_eq!(
+            named(1),
+            "checked 3 files for build `cloud`, reported on 1: 0 errors, 0 warnings, 0 advice"
+        );
+        assert_eq!(
+            named(3),
+            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1: 0 errors, 0 warnings, 0 advice"
+        );
+        assert_eq!(
+            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1),
+            "checked 3 files with the page-level checks of build `site` only, reported on 1: 0 errors, 0 warnings, 0 advice"
         );
 
         let order = concise::order(&files, &reported);

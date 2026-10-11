@@ -4,19 +4,22 @@ use std::io::{self, Write};
 use std::ops::Range;
 
 use ariadne::{Cache, Config, FnCache, Label, Report, ReportKind};
-use ascribe_check::{Diagnostic, Reported, Severity};
+use ascribe_check::{Diagnostic, Registry, Reported, Severity};
 
 use super::{ByCode, ByFile, Counts, FileTable};
 
-/// Writes every diagnostic, then a one-line summary.
+/// Writes every diagnostic, then `ascribe check`'s summary line, as
+/// `ascribe build` reports its checks.
 ///
-/// `files_checked` is how many source files were checked, and `acknowledged`
-/// how many problems were acknowledged as intended.
+/// `files_checked` is how many source files were checked, all reported on,
+/// `covered` the builds, and `acknowledged` how many problems were
+/// acknowledged as intended.
 pub fn write(
     out: &mut dyn Write,
     files: &FileTable,
     diagnostics: &[Diagnostic],
     files_checked: usize,
+    covered: &Covered<'_>,
     acknowledged: usize,
     color: bool,
 ) -> io::Result<()> {
@@ -24,7 +27,12 @@ pub fn write(
     writeln!(
         out,
         "{}{}",
-        summary(Counts::of(diagnostics), files_checked),
+        check_summary(
+            Counts::of(diagnostics),
+            files_checked,
+            covered,
+            files_checked
+        ),
         self::acknowledged(acknowledged)
     )
 }
@@ -153,33 +161,51 @@ pub fn repeats_note(repeats: usize) -> Option<String> {
     })
 }
 
-/// The summary line: `checked 12 files: 1 error, 2 warnings`.
-pub fn summary(counts: Counts, files_checked: usize) -> String {
-    format!(
-        "checked {}: {}",
-        plural(files_checked, "file"),
-        counted(counts)
-    )
+/// The builds a check covered, as `ascribe check`'s summary names them.
+pub enum Covered<'a> {
+    /// Every build in `ascribe.toml`: `for every build`.
+    Every,
+    /// The builds `--build` named: `for build `site``, or
+    /// `for builds `site` and `cloud``.
+    Named(&'a [String]),
+    /// The editor's build, whose page-level checks alone ran, with
+    /// `--editor-build`.
+    Editor(&'a str),
 }
 
-/// The summary line of `ascribe check`: [`summary`]'s, plus how many files the
-/// paths named, when paths were named (`checked 12 files, reported on 1`), and
-/// the one build whose page-level checks ran, with `--editor-build`
-/// (`, build site only`).
+/// The summary line of `ascribe check`, in one form whatever was asked: the
+/// files checked, the builds covered, the files reported on, and all three
+/// counts, as `checked 12 files for every build, reported on 1: 1 error,
+/// 0 warnings, 0 advice`.
 pub fn check_summary(
     counts: Counts,
     files_checked: usize,
-    files_reported: Option<usize>,
-    only_build: Option<&str>,
+    covered: &Covered<'_>,
+    files_reported: usize,
 ) -> String {
-    let mut line = format!("checked {}", plural(files_checked, "file"));
-    if let Some(n) = files_reported {
-        line.push_str(&format!(", reported on {n}"));
+    let builds = match covered {
+        Covered::Every => "for every build".to_owned(),
+        Covered::Named([one]) => format!("for build `{one}`"),
+        Covered::Named(names) => format!("for builds {}", listed(names)),
+        Covered::Editor(build) => format!("with the page-level checks of build `{build}` only"),
+    };
+    format!(
+        "checked {} {builds}, reported on {files_reported}: {}, {}, {} advice",
+        plural(files_checked, "file"),
+        plural(counts.errors, "error"),
+        plural(counts.warnings, "warning"),
+        counts.advice
+    )
+}
+
+/// Names in backticks, the last after `and`: `` `a`, `b` and `c` ``.
+fn listed(names: &[String]) -> String {
+    let quoted: Vec<String> = names.iter().map(|n| format!("`{n}`")).collect();
+    match quoted.split_last() {
+        Some((last, [])) => last.clone(),
+        Some((last, rest)) => format!("{} and {last}", rest.join(", ")),
+        None => String::new(),
     }
-    if let Some(build) = only_build {
-        line.push_str(&format!(", page-level checks of build `{build}` only"));
-    }
-    format!("{line}: {}", counted(counts))
 }
 
 /// What a summary line adds for the problems acknowledged as intended:
@@ -225,8 +251,16 @@ fn write_diagnostic(
             .with_message(&related.message),
         );
     }
-    if let Some(fix) = d.fixes.first() {
-        report = report.with_help(&fix.title);
+    // The first fix's title, which says what applying it does; else the
+    // registry's help, the next step `check`'s JSON gives as `help`.
+    let help = d.fixes.first().map(|fix| fix.title.as_str()).or_else(|| {
+        Registry::global()
+            .get(d.slug)
+            .and_then(|e| e.fix.as_deref())
+            .filter(|help| !help.is_empty())
+    });
+    if let Some(help) = help {
+        report = report.with_help(help);
     }
     report.finish().write(cache, out)
 }
