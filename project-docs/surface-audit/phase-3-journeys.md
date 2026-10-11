@@ -26,10 +26,12 @@ Each has a goal a user would recognize, a starting point, and who walks it. The 
 | 3 | Show an example from the code, and keep it current | `examples/quill`, with a code file to draw from | The maintainer. An agent |
 | 4 | Rename a phrase everywhere | `examples/quill` | The maintainer, in the editor. An agent |
 | 5 | Review a pull request's docs | A branch with changes, as the review fixture makes one | The maintainer: in the editor, in the site preview, and from the report |
-| 6 | Set up checks in CI | A project with no workflow | The maintainer |
+| 6 | Set up checks in CI | A project with no workflow | The maintainer, with an agent from the start |
 | 7 | Arrive in an unfamiliar project and make a correct edit | `examples/monorepo`, and a one-line request | An agent with the plugin. An agent with nothing but what `ascribe agents sync` wrote. An agent with nothing |
 
 That's ten walks for the maintainer and seven sessions for agents.
+
+**The maintainer's walks allow an agent.** Phase 1's two walks both ended with the maintainer reaching for one: in the editor, **Prompt agent** sent to Claude Code's extension; at the terminal, a stop rather than an edit by hand. The verdict, 10 October 2026: the editor walk was a reasonable ask, a person at a terminal with a plain editor isn't how the maintainer works, and that's how people work now. So a maintainer's walk is the maintainer's real editor, agent included, and the walk notes what the agent was asked, what it answered, and what it could and couldn't do. The walker still doesn't ask the agent about Ascribe's code or plans, and doesn't correct it. The command line is the agents' surface: journey 6, which is command-line by nature, is walked with an agent from the start, and no journey asks the maintainer to work in a terminal with a plain editor.
 
 Notes on three of them:
 
@@ -39,7 +41,7 @@ Notes on three of them:
 
 ## How a walk is noted
 
-As phase 1 settled it. At least: each step with what was typed or clicked and what came back, quoted; each moment of doubt, with what was expected; the time taken; and, for an agent, what it tried before what worked.
+As phase 1 settled it: the parts under "Notes" in [`journeys/fix-a-broken-link.md`](journeys/fix-a-broken-link.md). The steps are a numbered list written as the walk goes, one line per step with what was typed, clicked, or asked and what came back, quoted; not a table, which the maintainer found too fiddly to fill while working. Then each moment of doubt, with what was expected; the time taken; and, for an agent, what it tried before what worked.
 
 A walk that can't be finished is noted to where it stopped, with why. That's a result.
 

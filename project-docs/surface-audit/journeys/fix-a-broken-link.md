@@ -14,6 +14,7 @@ That sentence is all the walker is told. Not which page, not which link, not wha
 - **Note each step as you take it**: what you typed, clicked, or asked, and what came back, quoted. Not from memory afterwards.
 - **Note each moment of doubt**: what you expected, what happened, how you got past it.
 - **Don't fix anything else**, don't look at Ascribe's code or its docs' source, and don't read a plan to get unstuck. The published docs, `--help`, and the editor's own help are part of the surface: use them, and note that you did.
+- **Your agent is part of your editor.** Use it as you would, and note what you asked, what it answered, and what it could and couldn't do. Don't ask it about Ascribe's code or plans, and don't correct it: what it gets wrong is a finding too.
 - **Stuck for five minutes: stop.** Note where, and what you tried. Getting stuck is the finding.
 - **Time it**, from opening the project to deciding you're done.
 - **Don't read "Preparing a copy"** at the end before your walk. It says where the link is.
@@ -28,14 +29,14 @@ The binary is the release build of `main` (`cargo build --release -p ascribe-cli
 
 | Walk | By | With | Without |
 |---|---|---|---|
-| In the editor | The maintainer | VS Code with the Ascribe extension, the copy opened as the only workspace folder | The integrated terminal, any `ascribe` command, any agent |
+| In the editor | The maintainer | VS Code with the Ascribe extension, the copy opened as the only workspace folder, and the agent the maintainer has there | The integrated terminal, any `ascribe` command |
 | At the command line | The maintainer | A terminal with `ascribe` on the path, and a plain editor (`nano`, `vim`, or TextEdit) | VS Code, the extension, any agent |
 | Through the hook | An agent, fresh session | Claude Code in a terminal, with the plugin, in a copy with nothing else | `AGENTS.md`, `.claude/`, `.mcp.json`, the user's own settings and plugins |
 | Through MCP | An agent, fresh session | Claude Code in a terminal, with `.mcp.json` registering `ascribe mcp`, and no shell | The plugin, `AGENTS.md`, `.claude/`, Bash |
 
 ### In the editor
 
-Open the copy's folder in VS Code and start from there. VS Code opens a folder it hasn't seen in Restricted Mode, where the extension reports nothing: trust the folder (**Manage** in the banner, then **Trust**) and note what you saw before you did. The extension's settings stay at their defaults, so the project's server starts when you open one of its pages; whether the problem is found before that is part of the walk. **Prompt agent** may be opened to see what it builds, and nothing is sent. Your own editor settings stay as they are: the walk is your real editor, and if saving does more than save, note it and stop. Done when you believe the project has no problems left: say how you know, and which builds that covers.
+Open the copy's folder in VS Code and start from there. VS Code opens a folder it hasn't seen in Restricted Mode, where the extension reports nothing: trust the folder (**Manage** in the banner, then **Trust**) and note what you saw before you did. The extension's settings stay at their defaults, so the project's server starts when you open one of its pages; whether the problem is found before that is part of the walk. Your agent is allowed, as it is in your real editor; the script first said nothing is sent to one, and the maintainer's walk went straight past that, which settled it. Your own editor settings stay as they are: the walk is your real editor, and if saving does more than save, note it and stop. Done when you believe the project has no problems left: say how you know, and which builds that covers.
 
 ### At the command line
 
@@ -293,7 +294,11 @@ The same parts as the hook's, with the tools it called in place of what the hook
 
 ## What the walks had in common
 
-*After all four.* Where the four paths met, and where they didn't; whether the maintainer's two together took under half an hour, and if not, what in the script to change before phase 3.
+**The maintainer's two,** 10 October 2026. Together they took 11 minutes, well under the half hour, and both ended with the same move: on seeing the problem, the maintainer reached for an agent. In the editor, that was the lightbulb's **Prompt agent**, sent to Claude Code's extension though the script said nothing is sent; at the terminal, it was stopping rather than editing by hand. The maintainer's verdict: the editor walk was a reasonable ask; a person at a terminal with a plain editor isn't how they work, so phase 3's maintainer walks happen in the editor with an agent allowed, and the command line is the agents' surface. "That's just how people work these days." Written into this script's rules and into [phase 3](../phase-3-journeys.md).
+
+Where the paths met: every one of the four found the problem with its first look at the project's problems (the Explorer's red `1` and the Problems panel; `ascribe check`), and every finished one made the same one-line change. Where they didn't: nothing on any surface offered `api-keys.md` as the page the link meant, so each walker worked that out from the folder listing, and the editor's one click path to it (**Change where the link goes**) was found by the dry run and not by the maintainer, who went to the agent first.
+
+*After the agents' two walks:* what they tried first, and whether the hook and the MCP server changed what the agent did.
 
 ## Preparing a copy
 
