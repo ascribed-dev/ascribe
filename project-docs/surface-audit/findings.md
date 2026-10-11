@@ -270,6 +270,73 @@ The group merged the day the conventions were written, so it was built without t
 - **Recommendation:** leave. An option is named for its part in its own command, which is what the convention says. It's listed so phase 5 sees it beside the others.
 - **Size:** none.
 
+## The docs site
+
+[Phase 4](phase-4-docs-site.md)'s, from [the docs site's notes](docs-site.md): the site read as the first one built with Ascribe (findings 28 to 34), and as the way people find the surface (35 to 43). They come after the others because no walk met them; phase 5 puts them in order with the rest.
+
+### 28. The sidebar is a list kept by hand, and the site orders its pages three ways
+
+- **Kind:** a gap.
+- **Where:** `site/src/nav.ts`, `site/test/nav.test.ts`; `llms.txt`; `docs/content/index.md`.
+- **Evidence:** `nav.ts`: "Ascribe's content model has no page order or grouping, so the site lists its pages here, by their source files under docs/content/." The test: "The navigation lists every published page, and only those." The published sidebar's groups are "Start", "Guides", "Reference", "Contracts", with the guides in the order `nav.ts` gives. `https://ascribed-dev.com/llms.txt`, which Ascribe writes, has "## Pages", "## Contracts", "## Guides", "## Reference", each in order of file name. The home page is a third list, written in `index.md`, and it has fallen behind the other two (finding 40). The Pages view in the editor says it outright: "Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error."
+- **Cost:** 126 lines and a test in the first site, and the same again in each site after it. An agent reading `llms.txt` and a person reading the sidebar are given the same pages in two orders, and nothing can check a third list written in a page.
+- **Recommendation:** add, as `site/README.md` lists it under "Navigation": an order and a group for each page, `ascribe check` reporting a published page in no group, the groups in the outputs, and a label for the navigation. No proposal in `project-docs/proposals/` plans it; the brainstorm's "Navigation and site structure" records the gap, and the versions proposal already writes its own way around it.
+- **Size:** large.
+
+### 29. Six more things the next site will write again
+
+- **Kind:** a gap, in part deliberate.
+- **Where:** `site/src/pages/[...slug].astro`, `site/src/content.config.ts`, `site/src/components/Toc.astro`, `site/src/components/Search.astro`, `site/src/pages/404.astro`, `site/test/links.test.ts`, `site/test/redirects.test.ts`, `site/netlify/edge-functions/markdown.ts`.
+- **Evidence:** Getting started ends its Astro steps with "Define the content collection, a route, and a layout that loads the elements. [Astro] walks through each file." `examples/astro-site/src` has the same `content.config.ts`, `pages/[...slug].astro`, `pages/404.astro`, and `layouts/Docs.astro` the site has. Of the rest: the search proposal says "Search for readers, and anything a site serves. That's Pagefind's job, or the site's choice."; the search and answers proposal says "What the host owns: status codes, headers, content negotiation, bot protection, logs.", and plans redirects while carving out "everything that needs to know what was published before". `site/public/_redirects` has no rule yet, and a 41-line test for the rules it will have. `links.test.ts` checks "Every link and anchor inside the built site", which no command of Ascribe's does for a site's own built pages.
+- **Cost:** A site builder copies four files from a guide before a page shows, then writes search, redirects, and a check of the built links themselves. Each is small; together they're 361 lines of this site.
+- **Recommendation:** leave search, the table of contents, the not-found page, and the request for Markdown: each is decided, or already as small as it gets. Add a starter with the four files, so the guide's steps 4 to 6 are a command. Whether Ascribe checks a built site's own links, and notices a page whose address moved, is for the search and answers proposal's carved-out part, and should be said there.
+- **Size:** small for the starter.
+
+### 30. "Unreleased" is kept by hand, in five places
+
+- **Kind:** a gap, already planned.
+- **Where:** `docs/ascribe.toml`: `[dimensions.release]`, `[versions]`, `[lifecycle.unreleased]`, `[features.next]`, `[phrases] version`; `site/src/styles/site.css`; every `next` mark in `docs/content/`.
+- **Evidence:** The model: "A feature in `main` that no release has yet is `@available: next`. When a release ships it, each `next` mark becomes `ascribe <version>`". `RELEASING.md`: "set `version` in `docs/ascribe.toml`'s `[phrases]` and `[versions] current` to the release, and change each `next` mark under `docs/content/` to `ascribe <version>`". There are 106 such marks today, 86 written by hand. The stylesheet: "Unreleased features are this site's one lifecycle state." The versions proposal: "Pointing `next` at the following line, and rewriting the marks that meant this one, is a second, and it's the one that was done by hand after 0.2.0."
+- **Cost:** A release ends with a pull request that edits one number in two places and about a hundred marks, by hand, and a dimension exists that no content varies along.
+- **Recommendation:** add, as the versions proposal's level 2 has it ("One site that knows its versions"). Nothing new to plan: this is the first customer having asked for what's proposed.
+- **Size:** medium, the proposal's.
+
+### 31. A layout can't ask a page where its source is
+
+- **Kind:** a gap.
+- **Where:** `site/src/site.ts`, `site/src/layouts/Docs.astro`; what `@ascribed/astro`'s collection gives a layout.
+- **Evidence:** For "Edit this page on GitHub", `site.ts` takes the source path out of the path the collection loaded the page from: `/\.ascribe\/build\/[^/]+\/site\/(.+)$/`, with the comment "the site output mirrors the content root's paths", and throws "not a page of the site output" otherwise. A built page's frontmatter has its `title` and no path. `_ascribe/permalinks.json` in the same output has one for each permalink: `"source": "a.md"`.
+- **Cost:** An edit link, which most docs sites have, depends on where Ascribe's output folder is and how it's laid out, read back out of a file path.
+- **Recommendation:** add. The page's path from the content root is in what the collection gives a layout, beside `title` and `available`.
+- **Size:** small. It adds a field to the site output, which is a contract.
+
+### 32. The site's address is written in two files that must agree
+
+- **Kind:** a duplicate.
+- **Where:** `[consumer] site`, `base-path`, `trailing-slash` in `ascribe.toml`; `site`, `base`, `trailingSlash` in `astro.config.mjs`.
+- **Evidence:** `site/astro.config.mjs`: "`site`, `base`, and `trailingSlash` repeat ../docs/ascribe.toml's [consumer]; the integration fails the build if they disagree." So a pull request's preview, which has its own address, rewrites both files before it builds, in `.github/workflows/site.yml`: `sed -i "s|\"$site\"|\"$address\"|" docs/ascribe.toml site/astro.config.mjs`, then two `grep -q` lines to check the rewrite took.
+- **Cost:** Every site states three settings twice, and any site with previews at their own addresses writes this step. Question 5 asks whether a choice is made in two places; this one is, and the product's answer is to fail when they differ.
+- **Recommendation:** merge. The integration gives Astro the three settings from `[consumer]` when `astro.config.mjs` doesn't set them, and goes on failing when both are set and differ. A preview then changes one line.
+- **Size:** small.
+
+### 33. Facts the docs repeat from other files are held by tests, not by Ascribe
+
+- **Kind:** friction.
+- **Where:** `docs/ascribe.toml` `[phrases]` and `[sources.code]`; `tests/conformance/tests/docs.rs`; `scripts/docs-site/facts.test.ts`.
+- **Evidence:** Four of the docs' five phrases copy a value from another file: `version` ("the workspace version in Cargo.toml"), `node` ("`engines.node` in package.json"), `glibc` ("`GLIBC` in .github/workflows/release-build.yml"), and `vscode` ("`engines.vscode` in packages/vscode/package.json"). `the_docs_phrases_match_their_sources` fails with "the phrase `{key}` is … in docs/ascribe.toml, but … in {file}". The folders in `[sources.code] include` are "listed in three other places, which need the same change when `include` changes", and `facts.test.ts` "fails until they agree".
+- **Cost:** About 160 lines of test in two languages to keep seven values equal. A project without Ascribe's test suite would have the phrases and nothing holding them.
+- **Recommendation:** leave. The tests work, the versions proposal gives `version` a home, and three values don't make the case for a phrase read from a file. It's listed so phase 5 sees that the first customer asked, and that no proposal answers.
+- **Size:** none.
+
+### 34. The docs' own model declares a field no page uses
+
+- **Kind:** left over.
+- **Where:** `docs/ascribe.toml`, `[types.reference.frontmatter]`.
+- **Evidence:** `since = "string?"`. No file under `docs/content/` has `since:` in its frontmatter; the six pages that say when they arrived use `available:`. `ascribe report inventory --config docs` answers "Entries nothing uses: none.", because what it counts is "the fragments, phrases, features, glossary terms, and images nothing uses". With `since` gone the two page types, `guide` and `reference`, declare the same two fields.
+- **Cost:** None to a reader. It shows that a frontmatter field can go unused without anything saying so.
+- **Recommendation:** remove the field from the docs' model. Whether the inventory should count a field no page sets is a question for phase 5, with the rest of what `report` counts.
+- **Size:** small.
+
 ## Not findings
 
 - **`explain ASC036`'s example calls `keys.md` right and `api-key.md` wrong.** That's this script's rename meeting Ascribe's own example, not something a user's project would meet.
