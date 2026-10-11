@@ -142,7 +142,7 @@ In an [Astro](https://astro.build) project (`npm create astro@latest` makes one)
 
 Run the same command the editor runs, and the formatting check, on every pull request:
 
-@snippet {lang=yaml, title=".github/workflows/check.yml"}: code:examples/docs-repository/.github/workflows/check.yml#workflow
+@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow
 
 It installs the latest release. To run the version your `package.json` pins instead, replace that step with `npm ci`, and run each command with `npx`.
 
