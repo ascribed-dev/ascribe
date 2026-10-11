@@ -35,6 +35,7 @@ See [](keys.md#rotate-keys) to rotate your API key.
 
 ```sh
 npm install --save-dev @ascribed/cli
+code --install-extension Ascribe.ascribe-vscode
 npx ascribe check
 ```
 
