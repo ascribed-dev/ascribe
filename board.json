@@ -411,7 +411,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Permalinks that differ only by case are accepted"
     },
     {
