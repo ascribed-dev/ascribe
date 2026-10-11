@@ -1,4 +1,4 @@
-Fix the problem `ascribe check` reports in `docs/keys.md`.
+Fix the 1 warning `ascribe check` reports in `docs/keys.md`.
 
 Where: docs/keys.md
 Paths and commands here are from the project's folder, where `ascribe.toml` is.

@@ -152,7 +152,7 @@ Each one fills the prompt in and leaves it for you to send. When the one you cho
 
 ### From the command line
 
-`ascribe check --format prompt` writes the same prompt to standard output, for an agent in a terminal. With a file named, the prompt is about that file; otherwise, about the paths named or the whole project. It writes nothing when there are no problems, and exits as `ascribe check` does. For a file on disk, `ascribe check <file> --editor-build --format prompt` writes the prompt the editor builds.
+`ascribe check --format prompt` writes the same prompt to standard output, for an agent in a terminal. With a file named, the prompt is about that file; otherwise, about the paths named or the whole project. A file's or a project's prompt counts what it's about as `ascribe check`'s summary does, and asks the agent to fix the errors and warnings; advice, which never fails the check, comes after them as something to look at. It writes nothing when there are no problems, and exits as `ascribe check` does. For a file on disk, `ascribe check <file> --editor-build --format prompt` writes the prompt the editor builds.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-prompt.txt
 
