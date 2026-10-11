@@ -15,7 +15,7 @@ fn body(source: &str) -> String {
 }
 
 fn strip_frontmatter(text: &str) -> String {
-    text.strip_prefix("---\ntitle: Test\n---\n\n")
+    text.strip_prefix("---\ntitle: Test\nsource: index.md\n---\n\n")
         .unwrap_or_else(|| panic!("unexpected frontmatter in {text:?}"))
         .to_owned()
 }
@@ -25,7 +25,7 @@ fn a_page_is_its_frontmatter_and_its_body() {
     let project = memory_project(FULL_MODEL, &[("index.md", &page("Hello.\n"))]);
     assert_eq!(
         site(&project, "site", "index.md"),
-        "---\ntitle: Test\n---\n\nHello.\n"
+        "---\ntitle: Test\nsource: index.md\n---\n\nHello.\n"
     );
 }
 
@@ -234,7 +234,7 @@ fn page_level_availability_is_a_list_of_targets_in_the_frontmatter() {
         out,
         "---\ntitle: Test\navailable:\n- target: cloud\n  dimension: deployment\n  states:\n  - ga\n  text: Quill Cloud (GA)\n\
          - target: self-managed\n  dimension: deployment\n  states:\n  - preview\n  - ga\n  versions:\n  - '3.3'\n  - '3.5'\n  text: Self-managed (preview 3.3, GA 3.5)\n\
-         variant:\n  pm:\n  - npm\n  - yarn\n---\n\nBody.\n"
+         variant:\n  pm:\n  - npm\n  - yarn\nsource: index.md\n---\n\nBody.\n"
     );
     // No element is written for it: the layout renders that.
     assert!(!out.contains("<ascribe-availability"));

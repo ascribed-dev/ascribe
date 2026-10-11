@@ -53,6 +53,7 @@ export const guideSchema = z.strictObject({
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
   permalink: z.string().optional(),
+  source: z.string(),
 });
 export type Guide = z.infer<typeof guideSchema>;
 
@@ -63,6 +64,7 @@ export const referenceSchema = z.strictObject({
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
   permalink: z.string().optional(),
+  source: z.string(),
   formatted: z.strictObject({
     title: z.string(),
   }),

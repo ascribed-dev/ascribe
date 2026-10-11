@@ -32,6 +32,15 @@
 //! formatted:
 //!   title: <code>ascribe.toml</code> reference
 //! ```
+//!
+//! Every page ends with the reserved `source`: its path from the content
+//! root, with `/`, as `_ascribe/permalinks.json` writes it, so a layout's
+//! edit link needn't take apart the path its collection loaded the page from.
+//!
+//! ```yaml
+//! title: Install
+//! source: guides/install.md
+//! ```
 
 use ascribe_model::Segment;
 use ascribe_resolve::ResolvedPage;
@@ -42,8 +51,8 @@ use super::element::escape;
 use crate::emitter::PageContext;
 use crate::error::EmitError;
 
-/// The page's frontmatter block, `---` lines included and a blank line after,
-/// or an empty string when the page has nothing to put in it.
+/// The page's frontmatter block, `---` lines included and a blank line after.
+/// Every page has one, since every page has its `source`.
 pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
     let mut map = match &page.frontmatter {
         Some(Value::Mapping(map)) => map.clone(),
@@ -76,9 +85,10 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
         }
         map.insert(key, Value::Mapping(formatted));
     }
-    if map.is_empty() {
-        return Ok(String::new());
-    }
+    map.insert(
+        Value::String("source".to_owned()),
+        Value::String(page.path.to_string()),
+    );
     let yaml = serde_yaml_ng::to_string(&Value::Mapping(map)).map_err(|e| EmitError::Render {
         page: page.path.to_string(),
         message: format!("can't write the frontmatter: {e}"),

@@ -18,6 +18,7 @@ available:
   versions:
   - '3.3'
   text: self-managed (preview, 3.3+)
+source: install-agent.md
 ---
 
 The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see [Try Quill in the browser](/quickstart/#try-in-browser).

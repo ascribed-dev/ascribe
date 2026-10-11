@@ -1781,6 +1781,7 @@ messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments ca
 messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
 messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]`"
+messages.source = "`source` is reserved by the site output, which writes each page's path from the content root under it; remove it from `[types.{type}.frontmatter]`"
 fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
 
 [[diagnostic]]

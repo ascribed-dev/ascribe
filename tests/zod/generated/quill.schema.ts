@@ -35,6 +35,7 @@ export const pageSchema = z.strictObject({
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
   permalink: z.string().optional(),
+  source: z.string(),
 });
 export type Page = z.infer<typeof pageSchema>;
 

@@ -4,7 +4,7 @@
 import type { CollectionEntry } from "astro:content";
 import Availability from "@ascribed/astro/Availability.astro";
 import Toc from "../components/Toc.astro";
-import { contentDir, repo, sourceFile } from "../site.ts";
+import { contentDir, repo } from "../site.ts";
 import Base from "./Base.astro";
 
 interface Props {
@@ -15,9 +15,9 @@ interface Props {
 const { entry, headings } = Astro.props;
 // `title` is plain text, for <title>; `formatted.title` is the title as HTML,
 // with its code spans as <code> (`inline = "code"` in ../docs/ascribe.toml).
-const { title, formatted, description, available } = entry.data;
-if (!entry.filePath) throw new Error(`${entry.id} has no source file`);
-const edit = `${repo}/edit/main/${contentDir}/${sourceFile(entry.filePath)}`;
+// `source` is the page's path from the content root.
+const { title, formatted, description, available, source } = entry.data;
+const edit = `${repo}/edit/main/${contentDir}/${source}`;
 // The description is in llms.txt and not in the page's Markdown, so it's
 // marked for the delivery spec's parity check (`data-markdown-ignore`).
 ---

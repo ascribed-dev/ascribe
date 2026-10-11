@@ -79,6 +79,9 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 @available: ascribe 0.2.0
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
+@available: next
+`source` is reserved on page types too: the site output writes each page's path from the content root under it, for a layout's edit link, so a type must not declare it (`model-field-reserved`).
+
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
 **Reserved keys on fragments.** The spec defines `available`, `variant`, and `permalink` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.

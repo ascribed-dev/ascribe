@@ -5,6 +5,7 @@ expression: text
 ---
 title: API keys
 description: Create and rotate the API keys the Quill agent uses.
+source: keys.md
 ---
 
 ## Create a key <ascribe-attributes id="create-key"></ascribe-attributes>

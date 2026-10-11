@@ -135,7 +135,9 @@ fn a_page_s_permalink_reaches_its_frontmatter_in_the_site_output() {
         .remove("reference/cli.md")
         .expect("the page is in the site output");
     assert!(
-        page.starts_with("---\ntitle: CLI\npermalink: cli-reference\n---\n"),
+        page.starts_with(
+            "---\ntitle: CLI\npermalink: cli-reference\nsource: reference/cli.md\n---\n"
+        ),
         "{page}"
     );
 }

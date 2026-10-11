@@ -35,11 +35,11 @@ fn the_site_output_writes_the_plain_title_and_the_formatted_one() {
     let p = project("'`ascribe.toml` & <keys>'");
     assert_eq!(
         site(&p, "site", "reference/toml.md"),
-        "---\ntitle: ascribe.toml & <keys>\nformatted:\n  title: <code>ascribe.toml</code> &amp; &lt;keys&gt;\n---\n\nKeys.\n"
+        "---\ntitle: ascribe.toml & <keys>\nformatted:\n  title: <code>ascribe.toml</code> &amp; &lt;keys&gt;\nsource: reference/toml.md\n---\n\nKeys.\n"
     );
     assert_eq!(
         site(&p, "site", "index.md"),
-        "---\ntitle: Home\n---\n\nSee [`ascribe.toml` & \\<keys>](/docs/reference/toml).\n"
+        "---\ntitle: Home\nsource: index.md\n---\n\nSee [`ascribe.toml` & \\<keys>](/docs/reference/toml).\n"
     );
 }
 
@@ -81,6 +81,6 @@ fn a_title_without_code_spans_still_has_a_formatted_form() {
     let p = project("Keys");
     assert_eq!(
         site(&p, "site", "reference/toml.md"),
-        "---\ntitle: Keys\nformatted:\n  title: Keys\n---\n\nKeys.\n"
+        "---\ntitle: Keys\nformatted:\n  title: Keys\nsource: reference/toml.md\n---\n\nKeys.\n"
     );
 }
