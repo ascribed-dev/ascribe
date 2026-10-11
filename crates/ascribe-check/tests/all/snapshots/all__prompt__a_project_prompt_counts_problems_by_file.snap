@@ -1,9 +1,9 @@
 ---
 source: crates/ascribe-check/tests/all/prompt.rs
-assertion_line: 261
+assertion_line: 294
 expression: text
 ---
-Fix the 3 problems `ascribe check` reports in this project.
+Fix the 3 errors `ascribe check` reports in this project.
 
 Some files have unsaved changes; save them before you start: `docs/docs/upgrade.md`
 Paths and commands here are from the repository's root.

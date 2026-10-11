@@ -9,7 +9,7 @@
 //! - [`file`]: a file's problems, one line each, at most [`MAX_LISTED`];
 //! - [`project`]: how many problems each file has, at most [`MAX_LISTED`]
 //!   files;
-//! - [`batch`]: the findings of one of `ascribe report`'s sections, at most
+//! - [`batch`]: the problems of one of `ascribe report`'s sections, at most
 //!   [`MAX_LISTED`], each with the evidence its registry entry names.
 //!
 //! They follow the agent prompt format (`project-docs/agents/README.md`):
@@ -420,9 +420,11 @@ pub fn problem(
     )
 }
 
-/// The prompt about one file's problems: "Fix the N problems `ascribe
-/// check` reports in `<file>`." `file` is the file's id; `reported` is what
-/// counts for it, in the report's order. `None` when there are none.
+/// The prompt about one file's problems: "Fix the 2 errors and 1 warning
+/// `ascribe check` reports in `<file>`.", each listed in a line, with the
+/// advice after them as something to look at (see [`task`]). `file` is the
+/// file's id; `reported` is what counts for it, in the report's order.
+/// `None` when there are none.
 pub fn file(
     project: &Project,
     context: &Context,
@@ -442,32 +444,32 @@ pub fn file(
 
     let target = path.clone();
     let rest = context.check_command(std::slice::from_ref(&target), &["--format", "concise"]);
-    let order = in_order(reported);
-    let mut listed: Vec<String> = order
-        .iter()
-        .take(MAX_LISTED)
-        .map(|r| {
-            let d = &r.diagnostic;
-            let line = lines_of(project, d.location).map_or(1, |l| l.first);
-            let at = if d.location.file == file {
-                line.to_string()
-            } else {
-                format!(
-                    "{}:{line}",
-                    context.shown(&path_of(project, d.location.file))
-                )
-            };
-            format!("- {at}: [{}] {}", d.code, d.message)
-        })
-        .collect();
+    // The errors and warnings first, then the advice, each in file order.
+    let mut order = in_order(reported);
+    order.sort_by_key(|r| r.diagnostic.severity == Severity::Advice);
+    let counts = counts_of(reported);
+    let mut listed = Vec::new();
+    for (n, r) in order.iter().take(MAX_LISTED).enumerate() {
+        let d = &r.diagnostic;
+        if d.severity == Severity::Advice && n == counts.to_fix() && n > 0 {
+            listed.push(format!("Then look at the advice. {ADVICE}"));
+        }
+        let line = lines_of(project, d.location).map_or(1, |l| l.first);
+        let at = if d.location.file == file {
+            line.to_string()
+        } else {
+            format!(
+                "{}:{line}",
+                context.shown(&path_of(project, d.location.file))
+            )
+        };
+        listed.push(format!("- {at}: [{}] {}", d.code, d.message));
+    }
     if order.len() > MAX_LISTED {
         listed.push(format!("and {} more: `{rest}`", order.len() - MAX_LISTED));
     }
     Some(assemble(
-        &format!(
-            "Fix {} `ascribe check` reports in `{path}`.",
-            the_problems(reported.len())
-        ),
+        &task(counts, &format!("`{path}`")),
         &place,
         &listed,
         &format!("(cut: run `{rest}` for the rest)"),
@@ -476,9 +478,9 @@ pub fn file(
 }
 
 /// The prompt about a project's problems, or those of the paths named
-/// (relative to the project root; none for the whole project): "Fix the
-/// problems `ascribe check` reports in this project." `None` when there are
-/// none.
+/// (relative to the project root; none for the whole project): "Fix the 1
+/// error `ascribe check` reports in this project.", with each file's counts
+/// (see [`task`]). `None` when there are none.
 pub fn project(
     project: &Project,
     context: &Context,
@@ -526,13 +528,17 @@ pub fn project(
     if files.len() > MAX_LISTED {
         listed.push(format!("and {} more files.", files.len() - MAX_LISTED));
     }
+    let counts = counts_of(reported);
+    if counts.to_fix() > 0 && counts.advice > 0 {
+        listed.push(format!(
+            "Then look at the {}. {ADVICE}",
+            plural(counts.advice, "advice", "advice")
+        ));
+    }
     listed.push(format!("To list each problem: `{concise}`"));
 
     Some(assemble(
-        &format!(
-            "Fix {} `ascribe check` reports in {where_}.",
-            the_problems(reported.len())
-        ),
+        &task(counts, &where_),
         &place,
         &listed,
         &format!("(cut: run `{concise}` for the rest)"),
@@ -557,29 +563,29 @@ pub fn compose(
     assemble(task, &place, known, cut, &context.finish(targets))
 }
 
-/// The prompt about a batch of findings that aren't `ascribe check`'s,
+/// The prompt about a batch of problems that aren't `ascribe check`'s,
 /// such as the broken links `ascribe report links` finds: `task`; then
 /// `place`, followed by the `Project:` and `Build:` lines; then each
-/// finding, at most [`MAX_LISTED`], with the evidence it carries, and how to
+/// problem, at most [`MAX_LISTED`], with the evidence it carries, and how to
 /// fix each kind; then the lines that end every prompt, with `verify`, the
-/// command that checks the work. A finding about no place in the source
+/// command that checks the work. A problem about no place in the source
 /// (the published site's) is listed without one. `None` when there are no
-/// findings.
+/// problems.
 pub fn batch(
     project: &Project,
     context: &Context,
     task: &str,
     mut place: Vec<String>,
-    findings: &[&Diagnostic],
+    problems: &[&Diagnostic],
     verify: &str,
 ) -> Option<String> {
-    if findings.is_empty() {
+    if problems.is_empty() {
         return None;
     }
     context.project_lines(&mut place);
     let mut known = Vec::new();
     let mut kinds: Vec<ascribe_core::DiagnosticSlug> = Vec::new();
-    for d in findings.iter().take(MAX_LISTED) {
+    for d in problems.iter().take(MAX_LISTED) {
         let at = if d.location.file == FileId::new(0) && d.location.span.is_empty() {
             String::new()
         } else {
@@ -600,10 +606,10 @@ pub fn batch(
             kinds.push(d.slug);
         }
     }
-    if findings.len() > MAX_LISTED {
+    if problems.len() > MAX_LISTED {
         known.push(format!(
             "and {} more: `{verify}` lists them.",
-            findings.len() - MAX_LISTED
+            problems.len() - MAX_LISTED
         ));
     }
     for slug in kinds {
@@ -615,7 +621,7 @@ pub fn batch(
         }
         if let Some(place) = entry.place {
             known.push(format!(
-                "A `{slug}` finding may be intended. Only when the user says it is, acknowledge it {} with the reason they give, instead of fixing it.",
+                "A `{slug}` problem may be intended. Only when the user says it is, acknowledge it {} with the reason they give, instead of fixing it.",
                 place.written()
             ));
         }
@@ -629,13 +635,38 @@ pub fn batch(
     ))
 }
 
-/// "the problem" or "the N problems".
-fn the_problems(n: usize) -> String {
-    if n == 1 {
-        "the problem".to_owned()
-    } else {
-        format!("the {n} problems")
+/// What a prompt says of the advice it names: something to look at.
+const ADVICE: &str = "It never fails the check: change what helps, and leave the rest.";
+
+/// The task of a file's or a project's prompt, counted as `ascribe check`'s
+/// summary counts: "Fix the 2 errors and 1 warning `ascribe check` reports
+/// in `where_`." The advice isn't in it; the prompt lists it after, as
+/// something to look at. With only advice: "Look at the 2 advice …", and
+/// what to do with it.
+fn task(counts: Counts, where_: &str) -> String {
+    let mut fix = Vec::new();
+    if counts.errors > 0 {
+        fix.push(plural(counts.errors, "error", "errors"));
     }
+    if counts.warnings > 0 {
+        fix.push(plural(counts.warnings, "warning", "warnings"));
+    }
+    if fix.is_empty() {
+        format!(
+            "Look at the {} `ascribe check` reports in {where_}. {ADVICE}",
+            plural(counts.advice, "advice", "advice")
+        )
+    } else {
+        format!(
+            "Fix the {} `ascribe check` reports in {where_}.",
+            fix.join(" and ")
+        )
+    }
+}
+
+/// "1 error", "2 errors".
+fn plural(n: usize, one: &str, many: &str) -> String {
+    format!("{n} {}", if n == 1 { one } else { many })
 }
 
 /// `a`, `b`, as code.
@@ -828,10 +859,13 @@ impl Counts {
         self.errors + self.warnings + self.advice
     }
 
+    /// How many errors and warnings: what a prompt asks to fix.
+    fn to_fix(self) -> usize {
+        self.errors + self.warnings
+    }
+
     /// "3 errors, 1 warning, 2 advice".
     fn words(self) -> String {
-        let plural =
-            |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
         let mut parts = Vec::new();
         if self.errors > 0 {
             parts.push(plural(self.errors, "error", "errors"));
@@ -844,6 +878,15 @@ impl Counts {
         }
         parts.join(", ")
     }
+}
+
+/// How many errors, warnings, and advice `reported` has.
+fn counts_of(reported: &[Reported]) -> Counts {
+    let mut counts = Counts::default();
+    for r in reported {
+        counts.add(&r.diagnostic);
+    }
+    counts
 }
 
 /// Each file's counts, most problems first; a tie keeps file order.

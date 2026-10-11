@@ -140,7 +140,7 @@ fn the_projects_prompt_needs_no_file() {
     let answer = ask(&mut client, json!({ "kind": "project" }));
     let text = prompt(&answer);
     assert!(
-        text.starts_with("Fix the 2 problems `ascribe check` reports in this project.\n"),
+        text.starts_with("Fix the 2 errors `ascribe check` reports in this project.\n"),
         "{text}"
     );
     assert!(

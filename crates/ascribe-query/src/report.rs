@@ -283,8 +283,9 @@ impl Report {
         out
     }
 
-    /// Every finding: the diagnostics of `problems`, `links`, and `agents`.
-    pub fn findings(&self) -> impl Iterator<Item = &Diagnostic> {
+    /// Every problem the report found: the diagnostics of `problems`,
+    /// `links`, and `agents`.
+    pub fn all_problems(&self) -> impl Iterator<Item = &Diagnostic> {
         let problems = self.problems.iter().flat_map(|p| &p.diagnostics);
         let links = self
             .links

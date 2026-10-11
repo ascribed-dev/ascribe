@@ -261,6 +261,57 @@ fn a_file_prompt_lists_each_problem_in_a_line() {
 }
 
 #[test]
+fn a_file_prompt_asks_to_fix_errors_and_lists_advice_after_them() {
+    let project = project(&[(
+        "install.md",
+        &page("```\nnpm install\n```\n\nRead [the overview](overview.md)."),
+    )]);
+    let reported = reported(&project, "docs/install.md");
+    let text = prompt::file(
+        &project,
+        &plain(),
+        id(&project, "install.md"),
+        &reported,
+        &shown_on(&project),
+    )
+    .expect("problems");
+    insta::assert_snapshot!(text);
+}
+
+#[test]
+fn a_prompt_about_advice_alone_asks_to_look_at_it() {
+    let project = project(&[("install.md", &page("```\nnpm install\n```"))]);
+    let text = prompt::project(&project, &plain(), &[], &all(&project)).expect("problems");
+    assert!(
+        text.starts_with(
+            "Look at the 1 advice `ascribe check` reports in this project. It never fails the \
+             check: change what helps, and leave the rest.\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_project_prompt_counts_advice_apart() {
+    let project = project(&[
+        ("install.md", &page("Read [a](a.md).")),
+        ("upgrade.md", &page("```\nnpm install\n```")),
+    ]);
+    let text = prompt::project(&project, &plain(), &[], &all(&project)).expect("problems");
+    assert!(
+        text.starts_with("Fix the 1 error `ascribe check` reports in this project.\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "\nThen look at the 1 advice. It never fails the check: change what helps, and \
+             leave the rest.\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
 fn a_file_prompt_lists_twenty_problems_and_names_the_command_for_the_rest() {
     let links: String = (1..=25)
         .map(|n| format!("Read [part {n}](missing-{n}.md).\n\n"))

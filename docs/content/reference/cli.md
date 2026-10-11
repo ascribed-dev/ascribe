@@ -43,7 +43,7 @@ Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md
 `ascribe check docs/guides/install.md` reports on that file alone. Paths are relative to the current directory, and each is a file or a directory. Without `--config`, the project is the nearest `ascribe.toml` at or above the first path, so the command works from a repository's root as well as from inside the project.
 
 @available: next
-The whole project is still checked, since links, includes, and ids need it, and only the diagnostics that count for the paths are shown. **A diagnostic counts for a path when its file, or the file of one of its related places, is in that path.** So checking a page shows the problems its fragments cause on it, and checking a fragment shows the problems in it. A fragment's problem is reported at every page that includes it; checking the fragment shows it once, at the first include, and its `repeats` says at how many other includes it appears too. The diagnostics are the whole check's, filtered this way, in the same order.
+The whole project is still checked, since links, includes, and ids need it, and only the problems that count for the paths are shown. **A problem counts for a path when its file, or the file of one of its related places, is in that path.** So checking a page shows the problems its fragments cause on it, and checking a fragment shows the problems in it. A fragment's problem is reported at every page that includes it; checking the fragment shows it once, at the first include, and its `repeats` says at how many other includes it appears too. The problems are the whole check's, filtered this way, in the same order.
 
 @available: next
 A path that doesn't exist, isn't in an Ascribe project, or is in another project than the first path's (a project nested in the content root, say) is exit code `2`, with a message naming it.
@@ -51,7 +51,7 @@ A path that doesn't exist, isn't in an Ascribe project, or is in another project
 ### Checking text before it's saved
 
 @available: next
-`--stdin --path docs/guides/new.md` checks standard input as that file's text, laid over the project on disk. Nothing is written, and the file doesn't have to exist, but it has to be where a source file could be: a `.md` file in the content root. Only the diagnostics that count for that file are shown, so a link from another page that the new text breaks isn't. `--stdin` without `--path`, or with other paths, is a usage error.
+`--stdin --path docs/guides/new.md` checks standard input as that file's text, laid over the project on disk. Nothing is written, and the file doesn't have to exist, but it has to be where a source file could be: a `.md` file in the content root. Only the problems that count for that file are shown, so a link from another page that the new text breaks isn't. `--stdin` without `--path`, or with other paths, is a usage error.
 
 ```sh
 npx ascribe check --stdin --path docs/guides/new.md < draft.md
@@ -75,15 +75,15 @@ With `--vale`, or with `in-check = true` in [`[checks.vale]`](content-model.md#c
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
 
 @available: next
-`--format prompt` writes a prompt for an agent that fixes the problems: about the file, when the paths name one file, and otherwise about the paths or the whole project. It lists at most 20 problems, or 20 files, then names the command that lists the rest, and ends with how to check the result. It writes nothing when there are no problems, and the exit codes are the same. With `--stdin`, it says the file has unsaved changes. See [Prompt your agent](../guides/agents.md#prompt-your-agent).
+`--format prompt` writes a prompt for an agent that fixes the problems: about the file, when the paths name one file, and otherwise about the paths or the whole project. It counts them as the summary does, and asks the agent to fix the errors and warnings (`Fix the 1 error`), with advice after them as something to look at, since it never fails the check. It lists at most 20 problems, or 20 files, then names the command that lists the rest, and ends with how to check the result. It writes nothing when there are no problems, and the exit codes are the same. With `--stdin`, it says the file has unsaved changes. See [Prompt your agent](../guides/agents.md#prompt-your-agent).
 
 @available: next
-`--summary` replaces the list with how many diagnostics each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first. The text lists at most 20 files, then the command whose JSON lists them all, and ends, before the summary line, with the command that lists the first code's diagnostics: `To work through the first code: ascribe check --code ASC037`.
+`--summary` replaces the list with how many problems each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first. The text lists at most 20 files, then the command whose JSON lists them all, and ends, before the summary line, with the command that lists the first code's problems: `To work through the first code: ascribe check --code ASC037`.
 
 ### Checking one rule at a time
 
 @available: next
-`--code ASC037` shows only the diagnostics with that code, or with that name (`--code link-id-missing`), as [`ascribe explain`](#cli-explain) takes it. Repeat it for several. The whole project is still checked, and the rest is left out afterwards, as paths leave out what doesn't count for them, so an agent, or a person, can fix one rule across the project instead of working file by file. Everything after is about what's left: the counts, and the summary line, which names the codes (``reported on 12 for code `ASC037` ``); the exit code, `1` only when a diagnostic shown is an error; `--format prompt`, about the problems left; and `--fix`, which applies only their fixes. The commands a report names keep the codes: the concise list's `and N more:`, and the JSON's `next_command`. A code no diagnostic has is exit code `2`, with the closest named, as on `explain`.
+`--code ASC037` shows only the problems with that code, or with that name (`--code link-id-missing`), as [`ascribe explain`](#cli-explain) takes it. Repeat it for several. The whole project is still checked, and the rest is left out afterwards, as paths leave out what doesn't count for them, so an agent, or a person, can fix one rule across the project instead of working file by file. Everything after is about what's left: the counts, and the summary line, which names the codes (``reported on 12 for code `ASC037` ``); the exit code, `1` only when a problem shown is an error; `--format prompt`, about the problems left; and `--fix`, which applies only their fixes. The commands a report names keep the codes: the concise list's `and N more:`, and the JSON's `next_command`. A code no diagnostic has is exit code `2`, with the closest named, as on `explain`.
 
 ```sh
 npx ascribe check --code link-id-missing --format concise
@@ -383,7 +383,7 @@ Each example:
 @id {permalink=true}: cli-report
 @available: next
 
-Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. Every finding in it carries its kind of next step, as in the editor. It's for a scheduled job, or for a look at the whole project; [Reading the report](../guides/report.md) says how to act on each section.
+Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. Every problem in it carries its kind of next step, as in the editor. It's for a scheduled job, or for a look at the whole project; [Reading the report](../guides/report.md) says how to act on each section.
 
 @include: ../_generated/cli-report-options.md
 
@@ -403,7 +403,7 @@ With no section named, it runs the first three. Each section is independent: one
 
 ### The summary and the prompt
 
-`--format markdown` writes the same sections as Markdown, for a CI job's summary or an issue's body. `--format prompt` writes one prompt for an agent about the findings of one section, `problems`, `links`, or `agents`, with what each kind carries (the sentence around a link, the setting to change) and the command that checks the work; nothing when the section finds nothing. Each list holds at most `--limit` items; what's left out is counted, with the command that lists it.
+`--format markdown` writes the same sections as Markdown, for a CI job's summary or an issue's body. `--format prompt` writes one prompt for an agent about the problems of one section, `problems`, `links`, or `agents`, with what each kind carries (the sentence around a link, the setting to change) and the command that checks the work; nothing when the section finds nothing. Each list holds at most `--limit` items; what's left out is counted, with the command that lists it.
 
 ### Exit codes
 @id: report-exit-codes
@@ -411,7 +411,7 @@ With no section named, it runs the first three. Each section is independent: one
 | Code | Meaning |
 |---|---|
 | `0` | It ran, whatever it found |
-| `1` | With `--exit-code`: a section found something at the level given, or above (`advice` when none is: any finding) |
+| `1` | With `--exit-code`: a section found something at the level given, or above (`advice` when none is: any problem) |
 | `2` | With `--exit-code`: a section asked for couldn't run. Without it, too: a usage error, an unknown build, or a project that doesn't load. The reason goes to standard error. |
 
 ### Report JSON
@@ -426,11 +426,11 @@ With no section named, it runs the first three. Each section is independent: one
 | `sections` | array of strings | The sections asked for, in the report's order |
 | `builds_checked` | array of strings | The builds `problems` checked and `builds` reports on |
 | `not_run` | array of strings | The sections asked for that couldn't run; each says why in its own `not_run` |
-| `findings` | object | How many `errors`, `warnings`, and `advice` the sections found, and how many of each kind of next step (`by_next`) |
+| `summary` | object | How many `errors`, `warnings`, and `advice` the sections found, and how many of each kind of next step (`by_next`) |
 | `next_command` | string or null | The command that lists everything a list leaves out |
 | `problems`, `inventory`, `builds`, `links`, `agents` | | Each section asked for |
 
-A finding is a diagnostic as `ascribe check` writes it in [its JSON](#json-output), with `next`, `help`, and `docs`. Each list is an object: `items`, at most `--limit` of them, `shown`, `total`, and `truncated`. A section that runs a program has `not_run`, `null` when it ran, or its `reason` and `how` to get it to run.
+A problem is a diagnostic as `ascribe check` writes it in [its JSON](#json-output), with `next`, `help`, and `docs`. Each list is an object: `items`, at most `--limit` of them, `shown`, `total`, and `truncated`. A section that runs a program has `not_run`, `null` when it ran, or its `reason` and `how` to get it to run.
 
 ## `ascribe fmt`
 @id {permalink=true}: cli-fmt
