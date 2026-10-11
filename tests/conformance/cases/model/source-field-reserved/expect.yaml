@@ -1,0 +1,9 @@
+description: >-
+  `source` is reserved on page types: the site output writes each page's
+  path from the content root under it (content-model.md §4.1), so a
+  content type can't declare it.
+spec: ["2.1", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-field-reserved, file: ascribe.toml, line: 8}

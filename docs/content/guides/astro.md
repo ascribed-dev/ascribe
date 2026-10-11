@@ -88,6 +88,9 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 @available: ascribe 0.2.0
 The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../reference/content-model.md#53-code-in-a-field).
 
+@available: next
+`entry.data.source` is the page's path from the content root, with `/`, as `guides/install.md`. An "Edit this page" link is your repository's edit address, the content root's folder in it, and `source`, wherever Ascribe's build folder is.
+
 A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
 
 @available: ascribe 0.2.0

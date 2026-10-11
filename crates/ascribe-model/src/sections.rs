@@ -149,7 +149,7 @@ impl Loader<'_> {
                     // Under the `astro` profile, `slug` is
                     // the entry id Astro's loader uses instead of the path.
                     // The site output writes `inline` fields' formatted form
-                    // under `formatted`.
+                    // under `formatted`, and each page's path under `source`.
                     let reserved: &dyn Fn(&str) -> bool = &|n| {
                         matches!(
                             n,
@@ -159,6 +159,7 @@ impl Loader<'_> {
                                 | "intended"
                                 | "slug"
                                 | "formatted"
+                                | "source"
                         )
                     };
                     for (fname, span, _) in entries(ft) {
@@ -170,6 +171,7 @@ impl Loader<'_> {
                             self.push(match fname {
                                 "slug" => issue.with_variant("slug"),
                                 "formatted" => issue.with_variant("formatted"),
+                                "source" => issue.with_variant("source"),
                                 _ => issue,
                             });
                         }

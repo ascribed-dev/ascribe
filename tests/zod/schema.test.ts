@@ -37,6 +37,12 @@ describe("the Quill schema", () => {
     ]);
   });
 
+  it("gives a layout each page's path from the content root", () => {
+    const page = quill.pageSchema.parse(frontmatter["install-agent.md"]);
+    expect(page.source).toBe("install-agent.md");
+    expect(quill.pageSchema.safeParse({ title: "T" }).success).toBe(false);
+  });
+
   it("rejects an unknown key, a missing title, and a source-style available", () => {
     expect(quill.pageSchema.safeParse({ title: "T", surprise: 1 }).success).toBe(false);
     expect(quill.pageSchema.safeParse({ description: "no title" }).success).toBe(false);
@@ -44,7 +50,11 @@ describe("the Quill schema", () => {
   });
 
   it("takes variant as a mapping to a value or a list", () => {
-    const ok = quill.pageSchema.safeParse({ title: "T", variant: { pm: ["npm", "yarn"], deployment: "cloud" } });
+    const ok = quill.pageSchema.safeParse({
+      title: "T",
+      variant: { pm: ["npm", "yarn"], deployment: "cloud" },
+      source: "a.md",
+    });
     expect(ok.success).toBe(true);
     expect(quill.pageSchema.safeParse({ title: "T", variant: "cloud" }).success).toBe(false);
   });
@@ -70,6 +80,7 @@ describe("the full content model's schema", () => {
     author: { name: "Ann" },
     related: [{ title: "T", url: "https://example.com" }],
     variant: { pm: "npm" },
+    source: "guide.md",
   };
 
   it("accepts every field type and applies defaults", () => {
@@ -98,16 +109,25 @@ describe("the full content model's schema", () => {
   it("has a schema for each type, and one for any of them", () => {
     expect(Object.keys(full.schemas)).toEqual(["guide", "reference"]);
     expect(full.contentTypes.reference.files).toEqual(["reference/**", "api/**/*.md"]);
-    const reference = { title: "R", "api-version": "3", formatted: { title: "<code>R</code>" } };
+    const reference = {
+      title: "R",
+      "api-version": "3",
+      source: "reference/r.md",
+      formatted: { title: "<code>R</code>" },
+    };
     expect(full.schema.safeParse(reference).success).toBe(true);
     expect(full.schema.safeParse({ nope: 1 }).success).toBe(false);
   });
 
   it("has the formatted form of a field that sets inline", () => {
-    const page = { title: "ascribe.toml reference", formatted: { title: "<code>ascribe.toml</code> reference" } };
+    const page = {
+      title: "ascribe.toml reference",
+      source: "reference/toml.md",
+      formatted: { title: "<code>ascribe.toml</code> reference" },
+    };
     expect(full.referenceSchema.parse(page).formatted.title).toBe("<code>ascribe.toml</code> reference");
     // The site output always writes it beside the title.
-    expect(full.referenceSchema.safeParse({ title: "R" }).success).toBe(false);
+    expect(full.referenceSchema.safeParse({ title: "R", source: "r.md" }).success).toBe(false);
     expect(full.referenceSchema.safeParse({ ...page, formatted: { title: "R", nope: "" } }).success).toBe(false);
   });
 });

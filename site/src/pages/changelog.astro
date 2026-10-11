@@ -11,7 +11,7 @@ import {
   kindUnder,
   pointLinks,
 } from "../changelog.ts";
-import { contentDir, docsPath, repo, sourceFile } from "../site.ts";
+import { contentDir, docsPath, repo } from "../site.ts";
 
 const entry = await getEntry("changelog", changelogId);
 if (entry?.rendered === undefined || entry.body === undefined) {
@@ -23,7 +23,7 @@ if (entry?.rendered === undefined || entry.body === undefined) {
 const base = import.meta.env.BASE_URL;
 const pages = new Map(
   (await getCollection("docs")).map((page) => [
-    `${contentDir}/${sourceFile(page.filePath ?? "")}`,
+    `${contentDir}/${page.data.source}`,
     `${base}${docsPath}${page.id === "index" ? "" : `${page.id}/`}`,
   ]),
 );

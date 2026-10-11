@@ -733,7 +733,7 @@ These are part of the surface, and no file a script can read lists them, so they
 | Surface | What | Where it lives instead |
 |---|---|---|
 | The command line | What each command's exit codes mean | The prose of `docs/content/reference/cli.md`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs` |
-| The language | The reserved frontmatter keys: `available`, `variant`, `formatted`, `permalink`, `intended`, and `slug` under the `astro` profile | Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1 |
+| The language | The reserved frontmatter keys: `available`, `variant`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile | Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1 |
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | `ascribe.toml` | Each section's keys | The loader, `crates/ascribe-model/src/`, and the reference's prose |
 | The VS Code extension | The status bar item (the build, and review's state), the preview and its header, the build lens, and review's marks and threads | `packages/vscode/src/`, as code |
