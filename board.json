@@ -213,7 +213,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/324"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Remove the backwards-compat alias nativeBinaryPath in @ascribed/cli"
     },
     {
@@ -347,7 +347,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/310"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "One base for a page's path: in what commands print, accept, and write into prompts"
     },
     {
@@ -424,7 +424,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/318"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Say which projects are there when a command is run above several"
     },
     {
@@ -512,7 +512,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/321"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "What the commands' text output leaves out"
     },
     {
@@ -606,7 +606,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/323"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "One recipe for checking a project in CI"
     },
     {
@@ -672,6 +672,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzg_8VyM",
       "labels": [
         "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/327"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
