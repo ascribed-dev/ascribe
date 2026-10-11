@@ -712,8 +712,6 @@ fn leaf_name(block: &ResolvedBlock) -> Option<&str> {
     }
 }
 
-/// A heading's text with a trailing `#` escaped, so it isn't read as a
-/// closing sequence. A `#` that is already escaped is left alone.
 /// An ATX heading: its marks, and its text when it has some.
 fn heading(level: u8, text: &str) -> String {
     let marks = "#".repeat(usize::from(level));
@@ -736,6 +734,8 @@ fn in_a_sentence(label: &str) -> String {
     }
 }
 
+/// A heading's text with a trailing `#` escaped, so it isn't read as a
+/// closing sequence. A `#` that is already escaped is left alone.
 pub(crate) fn escape_closing_hash(text: String) -> String {
     let Some(rest) = text.strip_suffix('#') else {
         return text;
