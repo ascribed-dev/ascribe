@@ -685,6 +685,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/report.md` | The project report |  |
 | `guides/review.md` | Review |  |
 | `guides/vale.md` | Prose, through Vale |  |
+| `guides/variants.md` | Content that varies |  |
 | `index.md` | Ascribe documentation |  |
 | `reference/cli.md` | Command reference |  |
 | `reference/content-model.md` | `ascribe.toml` reference |  |

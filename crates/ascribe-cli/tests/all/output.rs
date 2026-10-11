@@ -646,6 +646,23 @@ fn getting_started() {
     );
 }
 
+/// `ascribe render` on `examples/platforms`, the guide to content that
+/// varies: its one page, for each of the project's two builds.
+#[test]
+fn platforms() {
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/platforms");
+    for build in ["site", "windows"] {
+        expect(
+            &format!("platforms-{build}.txt"),
+            &stdout(&run(
+                &example,
+                &["render", "docs/install.md", "--build", build],
+                0,
+            )),
+        );
+    }
+}
+
 fn file_url(dir: &Path) -> String {
     let text = dir.display().to_string().replace('\\', "/");
     if text.starts_with('/') {

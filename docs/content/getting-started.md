@@ -71,7 +71,7 @@ Create `docs/install.md`:
 @snippet {lang=markdown}: code:examples/getting-started/docs/install.md
 
 - `@note` is a callout; `{type=tip}` is its attribute.
-- `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one.
+- `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](guides/variants.md).
 - `{product}` and `{version}` are phrases from `ascribe.toml`.
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
@@ -180,6 +180,7 @@ That writes `AGENTS.md`, with your page types, phrases, and the check to run aft
 
 ## Next
 
+- [Content that varies](guides/variants.md): alternatives by platform or product, availability, and builds.
 - [Directive reference](reference/directives.md): the language.
 - [`ascribe.toml` reference](reference/content-model.md): the content model.
 - [Command reference](reference/cli.md): `check`, `build`, `fmt`, and `lsp`.
