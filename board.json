@@ -167,8 +167,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/180"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/343"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Name palette steps the same way in chosen.toml and tokens.toml"
     },
     {
@@ -213,7 +216,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/324"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Remove the backwards-compat alias nativeBinaryPath in @ascribed/cli"
     },
     {
@@ -403,8 +406,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/338"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`ascribe diff PAGE`: show one page's changes in a terminal"
     },
     {
@@ -440,8 +446,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/330"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Permalinks that differ only by case are accepted"
     },
     {
@@ -457,8 +466,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/331"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "`permalinks sync --check`, and rename `verify --list`"
     },
     {
@@ -473,6 +485,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzg_8VtI",
       "labels": [
         "enhancement"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/329"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
@@ -548,8 +563,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/342"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]`"
     },
     {
@@ -586,7 +604,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/325"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Link the READMEs to permalinks, and remove the moved-page stubs"
     },
     {
@@ -639,8 +657,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/332"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`ascribe model` shows sources, and `agents sync` says which agents read each file"
     },
     {
@@ -656,8 +677,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/328"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Link each diagnostic's entry to its section of the references"
     },
     {
@@ -677,7 +701,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/327"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "A guide to content that varies"
     },
     {
@@ -744,8 +768,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/335"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "The home page and getting started: what they list, and where getting started ends"
     },
     {
@@ -761,8 +788,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/341"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Share what's identical between the `ascribe.toml` reference and its contract"
     },
     {
@@ -798,8 +828,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/334"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`ascribe check --fix`: apply the safe fixes"
     },
     {
@@ -819,7 +852,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/320"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Rename across a project from the command line"
     },
     {
@@ -974,6 +1007,57 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Docs: update or acknowledge the four links the report says moved"
+    },
+    {
+      "content": {
+        "body": "From the review of #318 (non-blocking note), left out of #332.\n\n## What happens\n\nIn a repository with several projects that install Ascribe differently (one pins `@ascribed/cli` in a `package.json`, another uses a global install, or two pin it in different `package.json` files), `ascribe agents sync --cloud` prints one MCP settings document per install, joined by a blank line (`crates/ascribe-cli/src/commands/agents.rs`, `mcp_settings.join(\"\\n\")`). Each is a whole `{\"mcpServers\": {\"ascribe\": …}}` document, and every one names its server `ascribe`, so the text can't be pasted into the repository's Copilot MCP settings as it stands, and merging them by hand collides on the server name.\n\n## What done looks like\n\n- `sync --cloud` prints one JSON document that can be pasted as it is.\n- When the installs differ, each server has its own name, chosen the same way the setup steps' marker blocks are told apart (`ascribe:copilot`, `ascribe:copilot:pinned`, `ascribe:copilot:<package>` in `plan_cloud`), and the setup steps and any custom agent agree with the names.\n- A test in `crates/ascribe-cli/tests/all/agents.rs` covers two projects with different installs.\n\nOpen question: whether `--agent`, which writes one `.github/agents/ascribe-docs.md`, should carry every server in that case too; today the last project's wins.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+        "number": 333,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`agents sync --cloud` prints several MCP JSON blocks that can't be pasted as one",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/333"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhACKy4",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`agents sync --cloud` prints several MCP JSON blocks that can't be pasted as one"
+    },
+    {
+      "content": {
+        "body": "From the [cache proposal](https://github.com/ascribed-dev/ascribe/blob/097cc3d496fa2f3b08a69958ccacc50c76849126/project-docs/proposals/cache.md), its first half. The proposal has the design in full; this issue is what to build from it. The proposal's open questions are decided, below.\n\n## What to do\n\n`ascribe report links` doesn't ask again about an address that answered a few days ago.\n\n- **A store of good answers,** `.ascribe/cache/links/`: one file an address, named by a hash of its key, written to a `tmp-` file and renamed. An entry says an address answered with nothing to report, on a day. A link that moved, failed, or timed out is never an entry, so **every finding in a report was asked about in that run.**\n- **The key** is the address exactly as it's handed to lychee, and a hash of the project's `lychee.toml`. Not the redirect chain, and not lychee's version. Ascribe hashes the file and doesn't interpret it.\n- **`[checks.links] reuse-days`,** 14 by default, and `0` asks about every address on every run. Each address's own limit falls between half of that and all of it, fixed by its hash, so addresses first checked together don't all come due on one day.\n- **Days, not seconds.** The binary hands the libraries the day, as it does for `review-overdue`, so `ASCRIBE_TODAY` makes a test of expiry the same on any date.\n- **`--recheck`** asks about every address and replaces the entries.\n- **Cleanup needs no command:** a run deletes each entry too old to reuse, and a `tmp-` file over a day old.\n- **A reader trusts nothing:** a file that doesn't parse, has another version, or holds a different address is treated as absent. A write that fails is skipped.\n- **The report says what it did:** `Checked 1786 addresses: asked about 64, and reused 1722 answers, the oldest from 28 September.` A first run says nothing was remembered. The Markdown format says the same.\n- **The JSON's `links` gains `asked`, `reused`, and `oldest_answer`,** and changes nothing: `checked` stays the sum, and `schema_version` stays 1.\n- **In CI:** the docs' recipe and this repository's `.github/workflows/report.yml` restore and save the two folders with `actions/cache`, under a key that's new each run and restored by prefix, and both move from weekly to daily. With the cache a daily run asks about roughly a tenth of the addresses, and GitHub removes a cache nobody has read for seven days.\n\nThe proposal's \"Several writers, and a crash\" and \"What never depends on it\" are requirements, not background:\n\n- These files aren't the project's sources, so they're read outside `ascribe_resolve::FileSystem`, with the comment that says why. `lychee.toml` is a project file and goes through it.\n- A test holds that only the report's code opens `.ascribe/cache/`, as `file_reads.rs` holds file reads. `check`, `build`, `diff`, `drift`, `fmt`, the language server, and the hook never read or write it.\n\n## The thread to prove first\n\nThe proposal's: the job on Ascribe's own docs runs twice, and the second run's summary says it asked about 1 address and reused 13. That's entries written by one process on one machine and trusted by another, through `actions/cache`. If it fails, the store's place or its key is wrong, and it's cheaper to learn that before the rest is built.\n\n## Decided\n\nThe maintainer said yes to each on 11 October 2026.\n\n- **The default is 14 days, and it's a setting from the start,** since `0` is the off switch and has to exist anyway (the proposal's question 2).\n- **The recipe and `report.yml` go daily** (question 4).\n- **A run doesn't ask twice** (question 3). Measured, a second pass cleared 5 of 77 failures and cost 20 seconds, and the history in the follow-up issue is the better answer to the same noise.\n\nEach is a change to the content model or to a command's JSON, so the pull request adds them to `project-docs/decisions.md`. Nothing here waits on an answer.\n\n## What else it touches\n\n- `docs/content/reference/content-model.md` (`[checks.links]`), the command reference, `guides/report.md`, and `CHANGELOG.md`.\n- The reference stops saying `.ascribe/` is written again whenever it's needed without saying what deleting it costs: time, and nothing else.\n- The table of files Ascribe writes into a project (#283), and the map of the surface.\n- lychee's own cache is already turned off (`--cache=false`, from #239), which this relies on.\n\n**Size:** Medium.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\n",
+        "number": 339,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe report links`: don't ask again about an address that answered",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/339"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhACZro",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe report links`: don't ask again about an address that answered"
+    },
+    {
+      "content": {
+        "body": "From the [cache proposal](https://github.com/ascribed-dev/ascribe/blob/097cc3d496fa2f3b08a69958ccacc50c76849126/project-docs/proposals/cache.md), its second half: \"The history\". Needs #339 first, which builds the store's place, the day, and the CI recipe this uses.\n\n## What to do\n\n`ascribe report links` reports a link as broken only when it has reason to believe it.\n\n> A link that fails is reported, unless the history shows it answering before. Then it's **unconfirmed** until it has kept failing for `confirm-days`, with no answer in between.\n\n- **`.ascribe/history/links.json`:** for each address, the last day it answered and the day it started failing, and whether the last run reported it. One file, sorted, written whole through a rename after each run. It forgets an address the pages no longer link to.\n- **`[checks.links] confirm-days`,** 3 by default, and `0` reports every failure at once.\n- **A failure that says the page is gone, a 404 or a 410, is reported at once.** Every other failure can be held.\n- **A first run reports everything.** Holding takes evidence: a link is held only because this project's checker got an answer from that address before.\n- **An unconfirmed link is shown, not hidden.** It has its own list, with its status and both dates. It isn't a problem: it's not counted, it doesn't make `--exit-code` fail, and it's left out of `--format prompt`.\n- **An acknowledged link stays acknowledged,** and a moved link is never held: a permanent redirect is an answer, not a failure.\n- **`--no-history`** reports as a first run would, and still records what it saw.\n- **What's new:** the history knows what the last run reported, so the report says which problems are new since then and how many went away.\n- **The JSON's `links` gains `previous_run`, `new`, `resolved`, and `unconfirmed`** (a capped list, as the others are), and changes nothing. `diagnostics` is untouched, and `schema_version` stays 1.\n\nThe proposal's \"What the report says\" has the text, word for word, for a run with both stores and for a first run.\n\n## Decided\n\nThe maintainer said yes to each on 11 October 2026.\n\n- **A 404 or a 410 is reported at once, and isn't held** (the proposal's question 1). The rule stays one sentence with one exception: a failure that says the page is gone isn't the kind that's back tomorrow. Of the thirteen 404s measured, one passed when asked again, which is the cost of this choice. Every other failure (a 5xx, a 429, a refusal, a timeout, a network error) is held.\n- **The default is 3 days, and it's a setting from the start,** since `0` is the off switch.\n\nEach is a change to the content model, to what a report says, or to a command's JSON, so the pull request adds them to `project-docs/decisions.md`. Nothing here waits on an answer.\n\n## Requirements from the proposal\n\n- When two runs finish together, one run's observations are lost. That can make a link's confirmation later and never earlier; a test shows it.\n- Deleting the history costs one noisier report and never a missed finding. The reference says so plainly, since `.ascribe/` is a folder people delete.\n- Only the report's code opens `.ascribe/history/`, held by the same test as the cache's.\n- Tests are exact: a stand-in checker, a day from `ASCRIBE_TODAY`, and a store in a temporary folder give the same bytes every time. One test for each row of the proposal's table of what the history says.\n\n## What else it touches\n\n`docs/content/reference/content-model.md`, the command reference, `guides/report.md`, `CHANGELOG.md`, the table of files Ascribe writes into a project (#283), and the map of the surface.\n\n**Size:** Medium.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\n",
+        "number": 340,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe report links`: hold a link that answered before until it keeps failing",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/340"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhACZsQ",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe report links`: hold a link that answered before until it keeps failing"
     }
   ]
 }
