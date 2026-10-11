@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::rc::Rc;
 
+use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::prose;
 use ascribe_check::{
@@ -83,6 +84,16 @@ pub struct Args {
     #[arg(long)]
     pub deny_warnings: bool,
 
+    /// Apply the fixes marked safe, then report what's left.
+    ///
+    /// A fix is safe when applying it can't change what the page says and
+    /// leaves nothing to decide, such as linking to a page's file instead of
+    /// its route. Only the fixes of the diagnostics reported are applied, so
+    /// with paths, those that count for them. Unsafe fixes are never applied.
+    /// The report, and the exit code, are the check after the fixes.
+    #[arg(long, conflicts_with = "stdin")]
+    pub fix: bool,
+
     /// Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml`
     /// sets it up.
     ///
@@ -150,6 +161,9 @@ pub enum CheckError {
     /// `--vale` was given to a project that doesn't set Vale up.
     #[error("--vale checks the prose as `[checks.vale]` sets it up, and ascribe.toml has none")]
     NoVale,
+    /// `--fix` couldn't write a file it fixed.
+    #[error(transparent)]
+    Fix(#[from] fix::FixError),
 }
 
 impl Coded for CheckError {
@@ -158,6 +172,7 @@ impl Coded for CheckError {
             CheckError::Scope(e) => e.code(),
             CheckError::Stdin(_) => "stdin_unreadable",
             CheckError::NoVale => "vale_not_set_up",
+            CheckError::Fix(e) => e.code(),
         }
     }
 }
@@ -177,21 +192,27 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-/// The project, and the scope of the paths named, if any.
+/// The project, its content model's file, and the scope of the paths named,
+/// if any.
 struct Checked {
     loaded: Rc<Loaded>,
+    config: PathBuf,
     scope: Option<Scope>,
 }
 
 /// What a check found, ready to write in any format.
 pub struct Outcome {
     loaded: Rc<Loaded>,
+    /// The content model's file.
+    config: PathBuf,
     scope: Option<Scope>,
     reported: Vec<Reported>,
     builds_checked: Vec<String>,
     /// The problems acknowledged as intended in the files reported on.
     acknowledged: Vec<Acknowledged>,
     files: FileTable,
+    /// With `--fix`, the safe fixes applied before this check.
+    fixed: Vec<json::FixedEntry>,
     /// How many errors, warnings, and advice are reported.
     pub counts: Counts,
 }
@@ -229,10 +250,29 @@ fn check(
     err: &mut dyn Write,
 ) -> u8 {
     let color = use_color(global, stdout_is_terminal());
-    let outcome = match run_check(&FromDisk, global, args, stdin) {
+    let mut outcome = match run_check(&FromDisk, global, args, stdin) {
         Ok(outcome) => outcome,
         Err(stopped) => return report_stopped(stopped, args, color, out, err),
     };
+    if args.fix {
+        let files = fix::safe_fixes(
+            outcome.project(),
+            &outcome.config,
+            outcome.reported.iter().map(|r| &r.diagnostic),
+        );
+        if !files.is_empty() {
+            if let Err(e) = fix::write(&files) {
+                let stopped = Stopped::Failure(Failure::Check(CheckError::Fix(e)));
+                return report_stopped(stopped, args, color, out, err);
+            }
+            // What's left is the check of the files as they are now.
+            outcome = match run_check(&FromDisk, global, args, &mut io::empty()) {
+                Ok(outcome) => outcome,
+                Err(stopped) => return report_stopped(stopped, args, color, out, err),
+            };
+            outcome.fixed = json::FixedEntry::of(&files);
+        }
+    }
     if let Err(e) = write(&outcome, global, args, color, out) {
         // A closed pipe (`| head`) isn't a problem with the project.
         if e.kind() != io::ErrorKind::BrokenPipe {
@@ -267,8 +307,11 @@ pub fn run_check(
     args: &Args,
     stdin: &mut dyn Read,
 ) -> Result<Outcome, Stopped> {
-    let Checked { loaded, scope } =
-        load(projects, global, args, stdin).map_err(Stopped::Failure)?;
+    let Checked {
+        loaded,
+        config,
+        scope,
+    } = load(projects, global, args, stdin).map_err(Stopped::Failure)?;
     let project = &loaded.project;
     let names = |d: Diagnosed<'_>| Found {
         builds: d.builds.iter().map(|b| b.name.clone()).collect(),
@@ -308,11 +351,13 @@ pub fn run_check(
     let counts = Counts::of_reported(&reported);
     Ok(Outcome {
         loaded: Rc::clone(&loaded),
+        config,
         scope,
         reported,
         builds_checked,
         acknowledged,
         files,
+        fixed: Vec::new(),
         counts,
     })
 }
@@ -379,11 +424,13 @@ pub fn write(
 ) -> io::Result<()> {
     let Outcome {
         loaded,
+        config: _,
         scope,
         reported,
         builds_checked,
         acknowledged,
         files,
+        fixed,
         counts,
     } = outcome;
     let project = &loaded.project;
@@ -401,6 +448,9 @@ pub fn write(
         files_reported.unwrap_or(checked),
     ) + &text::acknowledged(acknowledged.len());
     let command = Command::new(global, args);
+    if matches!(args.format, Format::Text | Format::Concise) {
+        write_fixed(out, fixed)?;
+    }
     match (args.format, args.summary) {
         (Format::Json, summary_only) => json::write(
             out,
@@ -413,6 +463,7 @@ pub fn write(
                 builds_checked: builds_checked.clone(),
                 acknowledged,
                 summary_only: summary_only.then(|| command.listing()),
+                fixed,
             },
         ),
         (Format::Prompt, _) => write_prompt(out, project, args, scope.as_ref(), reported),
@@ -429,6 +480,22 @@ pub fn write(
             concise::write(out, files, reported, &summary, &more)
         }
     }
+}
+
+/// Writes a line for each file `--fix` changed, with how many problems it
+/// fixed there, before what's left is reported.
+fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry]) -> io::Result<()> {
+    let mut i = 0;
+    while let Some(first) = fixed.get(i) {
+        let n = fixed[i..]
+            .iter()
+            .take_while(|f| f.file == first.file)
+            .count();
+        let problems = if n == 1 { "problem" } else { "problems" };
+        writeln!(out, "fixed {n} {problems} in {}", first.file)?;
+        i += n;
+    }
+    Ok(())
 }
 
 /// Writes the prompt for an agent about what's reported: about one file
@@ -523,17 +590,20 @@ fn load(
                 .ok();
             Ok(Checked {
                 loaded: Rc::new(Loaded::new(project)),
+                config,
                 scope,
             })
         }
         _ if named.is_empty() => Ok(Checked {
             loaded,
+            config,
             scope: None,
         }),
         _ => {
             let scope = Scope::of_paths(project, &config, &named, true).map_err(check)?;
             Ok(Checked {
                 loaded,
+                config,
                 scope: Some(scope),
             })
         }
@@ -768,6 +838,7 @@ mod tests {
             builds_checked: Vec::new(),
             acknowledged: &[],
             summary_only: None,
+            fixed: &[],
         };
         json::write(&mut out, &files, &reported, &about).unwrap();
         let report: serde_json::Value = serde_json::from_slice(&out).unwrap();

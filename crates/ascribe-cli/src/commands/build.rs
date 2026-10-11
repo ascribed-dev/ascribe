@@ -138,6 +138,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
                 builds_checked: names.clone(),
                 acknowledged: &acknowledged,
                 summary_only: None,
+                fixed: &[],
             },
         ),
     };
