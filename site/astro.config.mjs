@@ -1,10 +1,12 @@
 import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
 
-// Two Ascribe projects in one site: the site's own pages (home/, at the root)
-// and the docs (../docs, under /docs/). `site` and `trailingSlash` repeat each
-// project's [consumer], and `base`, Astro's default `/`, is the root of both
-// base paths; the integration fails the build if they disagree.
+// Three Ascribe projects in one site: the site's own pages (home/, at the
+// root), the docs (../docs, under /docs/), and the landing page's
+// demonstration (demo/, whose one page the landing page draws; it has no
+// route). `site` and `trailingSlash` repeat each project's [consumer], and
+// `base`, Astro's default `/`, is the root of every base path; the
+// integration fails the build if they disagree.
 export default defineConfig({
   site: "https://ascribed-dev.com",
   trailingSlash: "always",
@@ -20,6 +22,7 @@ export default defineConfig({
       projects: [
         { name: "docs", project: "../docs", build: "site" },
         { name: "home", project: "home", build: "site" },
+        { name: "demo", project: "demo", build: "site" },
       ],
       // Review in `astro dev` covers the docs, the pages that get reviewed.
       review: "docs",

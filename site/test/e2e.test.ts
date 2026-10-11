@@ -1,6 +1,7 @@
 // The built site in Chromium: the landing page, the head and the header,
 // variants, availability, code titles, links between pages, search, the edit
-// link, the 404 page, and the narrow layout.
+// link, the 404 page, the narrow layout, and the landing page's demonstration,
+// marks, phone width, and reading without a script.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { launchChromium, requireBuild, serve, siteAddress } from "./built.ts";
@@ -244,4 +245,64 @@ test("at phone width, the sidebar opens from the menu and nothing scrolls sidewa
   );
   expect(overflow).toBe(0);
   await page.close();
+});
+
+test("the demonstration draws its page beside its source, and under it at phone width", async () => {
+  for (const [width, beside] of [
+    [1280, true],
+    [390, false],
+  ] as const) {
+    const page = await open("/", width);
+    const source = page.locator("source-and-result > figure");
+    const result = page.locator("source-and-result > .result");
+    expect(await result.locator(".result-title").textContent()).toBe("Install Quill");
+    // Drawn by the element library, as on any page.
+    expect(await result.locator("ascribe-note").count()).toBe(1);
+    expect(await result.locator("ascribe-tabs").count()).toBe(1);
+    expect(await result.locator("ascribe-steps").count()).toBe(1);
+    const [left, right] = [await source.boundingBox(), await result.boundingBox()];
+    if (left === null || right === null) throw new Error("not drawn");
+    expect(right.x > left.x + left.width, `${width}: beside`).toBe(beside);
+    expect(right.y >= left.y + left.height, `${width}: under`).toBe(!beside);
+    await page.close();
+  }
+});
+
+test("the landing page marks a claim no release has, as the docs do", async () => {
+  const page = await open("/");
+  const marks = page.locator("claim-example ascribe-availability");
+  expect(await marks.count()).toBeGreaterThan(0);
+  expect(await marks.first().isVisible()).toBe(true);
+  expect(await marks.first().textContent()).toContain("not yet released");
+  await page.close();
+});
+
+test("at phone width, nothing on the landing page scrolls sideways", async () => {
+  const page = await open("/", 390);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(0);
+  await page.close();
+});
+
+test("the landing page reads without a script", async () => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+  await page.goto(server.url + "/");
+  for (const text of [
+    "Documentation written as code",
+    "Install Quill",
+    "Checked",
+    "Reviewed as pages",
+    "npm install --save-dev @ascribed/cli",
+    "Where it’s going",
+  ]) {
+    expect(await page.getByText(text, { exact: true }).first().isVisible(), text).toBe(true);
+  }
+  expect(await page.locator("source-and-result .result ascribe-note").isVisible()).toBe(true);
+  await context.close();
 });
