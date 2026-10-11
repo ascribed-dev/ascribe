@@ -218,6 +218,7 @@ Some files are generated from a source, or copied from what the code writes, and
 | `crates/ascribe-emit/tests/all/zod.rs` | The generated schemas in `tests/zod/generated/` |
 | `packages/astro/test/init.test.ts` | `examples/astro-site`'s collection, route, layout, and sidebar list (`examples/astro-site/src/nav.ts`): what `npx @ascribed/astro init` writes for it, from `packages/astro/starter/` |
 | `packages/vscode/test/unit/docs.test.ts` | The extension's settings, commands, and actions in `docs/content/_generated/` |
+| `scripts/docs-site/elements.test.ts` | The element library reference's table of custom properties in `docs/content/_generated/`, from `packages/elements/css/style.css` |
 | `scripts/surface/inventory.test.ts` | The map of Ascribe's surface, `project-docs/surface.md`: every command, directive, `ascribe.toml` section, diagnostic, editor command and setting, request, tool, and package entry, read from where each is declared. Its diff in a pull request is what the change added to the surface |
 | `scripts/design/specimen.test.ts` | The design specimen, `design/specimen.html`, from `design/candidates/` and the stylesheets it renders |
 | `scripts/design/tokens.test.ts` | The generated blocks of each stylesheet `design/tokens.toml` lists, and the shared colors in `design/candidates/chosen.toml`, from it. Then `pnpm --filter @ascribed/review embed` copies them into the report's stylesheet |

@@ -695,6 +695,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `reference/content-model.md` | `ascribe.toml` reference |  |
 | `reference/diagnostics.md` | Diagnostics |  |
 | `reference/directives.md` | Directive reference |  |
+| `reference/elements.md` | Element library reference |  |
 
 READMEs published with a package, a crate, or the repository:
 

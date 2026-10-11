@@ -32,6 +32,7 @@ export const nav: NavGroup[] = [
       "reference/content-model.md",
       "reference/directives.md",
       "reference/diagnostics.md",
+      "reference/elements.md",
     ],
   },
   {
