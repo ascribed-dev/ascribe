@@ -2,7 +2,7 @@
 
 Part of [The surface audit](README.md), [phase 2](phase-2-inventory.md). Every thing a user wants to do, in a user's words, against the surfaces someone does it on. Written by hand from the generated [map of the surface](../surface.md), so each name in a cell is a row of the map.
 
-It's the audit's answer to question 3. It doesn't judge: a gap is listed, and what to do about it is a finding, in [phase 5](phase-5-findings.md). Phase 3's sessions may show a cell wrong, and phase 5 settles those too.
+It's the audit's answer to question 3. It doesn't judge: a gap is listed, and what to do about it is a finding, in [findings.md](findings.md). [Phase 5](phase-5-findings.md) finished it against phase 3's sessions: every cell that was open is settled, and five cells the sessions showed to be less than they said are corrected, each with the session it's from.
 
 ## How to read it
 
@@ -21,7 +21,6 @@ A cell holds what does the job there, or one of these:
 | by hand | It's written into the page or `ascribe.toml`, and nothing on this surface helps |
 | no (D1) | It isn't there, on purpose. The number is a reason in [Why not](#why-not) |
 | **gap** | It isn't there, and nothing found says that's on purpose |
-| **gap?** | It isn't in the map. Whether it's missing or only undeclared is for phase 3 or 5 to settle |
 
 ## Starting
 
@@ -29,7 +28,7 @@ A cell holds what does the job there, or one of these:
 |---|---|---|---|---|---|
 | Start a project | **gap**: `ascribe.toml` is written by hand, from getting started | **gap**: the walkthrough's "Open a project" opens one that exists | no (D1) | no (D2) | no (D3) |
 | Start a new page of a type | `ascribe agents prompt new-page`, which writes a prompt for an agent. For a person, **gap** | **gap** | The prompt `new-page` | no (D2) | no (D3) |
-| See what the project allows: its types, phrases, features, builds | `ascribe model` | The **Content model** view; completion; hover | `ascribe_model`; the resource `ascribe://model/{+project}` | no (D2) | no (D3) |
+| See what the project allows: its types, phrases, features, builds | `ascribe model`. Not its sources: `ascribe model --section sources` is `error: invalid value 'sources'` ([journey 3](journeys/show-an-example-from-code.md)) | The **Content model** view; completion; hover | `ascribe_model`; the resource `ascribe://model/{+project}` | no (D2) | no (D3) |
 | Learn the directives | `ascribe agents skill references/directives.md` | Completion; hover; the actions bar (`Cmd+K A`) | The resource `ascribe://directives` | no (D2) | no (D3) |
 
 ## Writing
@@ -64,8 +63,8 @@ A cell holds what does the job there, or one of these:
 | A user wants to | Command line | VS Code | MCP tools | In VS Code, for an agent | Site preview |
 |---|---|---|---|---|---|
 | Find where something is used | `ascribe refs` | **Find All References**; the **Used by** view | `ascribe_refs` | no (D2) | no (D3) |
-| See a page's headings | `ascribe outline` | The **Pages** view; **gap?** for the headings of one page | `ascribe_outline` | no (D2) | no (D3) |
-| Rename a phrase everywhere | **gap** | **Rename this phrase everywhere**; `F2` | no (D1): `ascribe_refs` finds the uses, and the agent edits each | no (D2) | no (D3) |
+| See a page's headings | `ascribe outline` | The **Pages** view. For the headings of one page, VS Code's own Outline, which reads a Markdown file's headings; the server answers no request for them | `ascribe_outline` | no (D2) | no (D3) |
+| Rename a phrase everywhere | **gap**: the session's rename was `sed`, with `ascribe refs` before and after ([journey 4](journeys/rename-a-phrase.md)) | **Rename this phrase everywhere**; `F2` | no (D1): `ascribe_refs` finds the uses, and the agent edits each | no (D2) | no (D3) |
 | Rename a dimension's value everywhere | **gap** | **Rename a dimension value everywhere**; `F2` | no (D1) | no (D2) | no (D3) |
 | Rename or move a page and keep its links | **gap**: `ascribe refs` lists the links to fix | Renaming or moving the file in the Explorer | no (D1) | no (D2) | no (D3) |
 | Search the pages' text as readers see it | **gap** (the [search proposal](../proposals/search.md)) | **gap** | **gap** | no (D2) | no (D3) |
@@ -74,7 +73,7 @@ A cell holds what does the job there, or one of these:
 
 | A user wants to | Command line | VS Code | MCP tools | In VS Code, for an agent | Site preview |
 |---|---|---|---|---|---|
-| See a page as one build's readers do | `ascribe render --build` | **Open Page Preview**, **Select Preview Build**, **Switch Build** | `ascribe_render` | no (D2) | The page itself, in the site's own layout |
+| See a page as one build's readers do | `ascribe render --build`. A switcher's arms come one after another, each under a bold label, so "one at a time" can't be seen ([journey 2](journeys/add-a-platform-section.md)) | **Open Page Preview**, **Select Preview Build**, **Switch Build** | `ascribe_render` | no (D2) | The page itself, in the site's own layout |
 | See what a build leaves out of a page | `ascribe render` for each build, compared by eye; `ascribe report builds` for the project | **Dim What the Build Leaves Out** | `ascribe_render`, for each build | no (D2) | no (D3) |
 | See the page on the real site | `astro dev`, which isn't Ascribe's | **Open Site Preview** | no (D1) | no (D2) | It is this |
 
@@ -82,27 +81,27 @@ A cell holds what does the job there, or one of these:
 
 | A user wants to | Command line | VS Code | MCP tools | In VS Code, for an agent | Site preview |
 |---|---|---|---|---|---|
-| See which pages a change touches, and how | `ascribe diff`, as `text`, `json`, or `html` | **Start Review**, **Changed Pages**, the marks in the preview | `ascribe_changes` | `#ascribe_review_changes` | The **Ascribe review** app in the toolbar |
-| Know when an example changed and its words didn't | `ascribe drift` | **gap?** | **gap?** | no (D2) | **gap?** |
+| See which pages a change touches, and how | `ascribe diff`, as `text`, `json`, or `html`. One page's changes, in the terminal: **gap**; a page is named "only with --format prompt" ([journey 5](journeys/review-a-pull-request.md)) | **Start Review**, **Changed Pages**, the marks in the preview | `ascribe_changes` | `#ascribe_review_changes` | The **Ascribe review** app in the toolbar |
+| Know when an example changed and its words didn't | `ascribe drift` | **gap**: review marks what changed on a page, and nothing lists the pages whose examples moved alone | **gap**: `ascribe_changes` is `ascribe diff`, and no tool is `drift` | no (D2) | no (D3) |
 | Read a pull request's comments beside the page | no (D6) | The comments in the preview | no (D6) | `#ascribe_review_threads` | The **Ascribe review** app |
 | Answer, resolve, or add a comment | no (D6) | **Reply Now**, **Add to Review**, **Resolve**, **Reopen** | no (D1) | no (D2) | The **Ascribe review** app |
-| Ask an agent to review a page | `ascribe diff --format prompt` | **Prompt Agent** on a changed page | The prompt `review` | no (D2) | **gap?** |
+| Ask an agent to review a page | `ascribe diff --format prompt` | **Prompt Agent** on a changed page | The prompt `review` | no (D2) | **gap**: the Astro guide's account of the app has changes and comments, and no prompt |
 
 ## Building and publishing
 
 | A user wants to | Command line | VS Code | MCP tools | In VS Code, for an agent | Site preview |
 |---|---|---|---|---|---|
-| Build the outputs | `ascribe build` | **gap?**: the preview builds one page, and no command builds the project | no (D1) | no (D2) | The integration runs the build |
+| Build the outputs | `ascribe build` | no (D7): the preview renders the page, and the site preview runs the site's own build | no (D1) | no (D2) | The integration runs the build |
 | Publish with Astro | `npm install @ascribed/astro`, and its seven steps in the guide | no (D4) | no (D1) | no (D2) | It is this |
 | Publish what AI agents read | by hand: `[consumer] agents = true` | by hand | no (D1) | no (D2) | The integration serves `llms.txt` and each page's Markdown |
 | Give something outside the docs a link that stays | by hand, `@id {permalink=true}`; then `ascribe permalinks sync`, `list`, `verify`, `retire` | by hand; a quick fix runs the sync | no (D1) | no (D2) | The integration serves each permalink's address |
-| Keep examples from another repository current | `ascribe sources fetch`, `update`, `status` | **gap?** | no (D1) | no (D2) | no (D3) |
+| Keep examples from another repository current | `ascribe sources fetch`, `update`, `status` | **gap** | no (D1) | no (D2) | no (D3) |
 
 ## Keeping a project healthy
 
 | A user wants to | Command line | VS Code | MCP tools | In VS Code, for an agent | Site preview |
 |---|---|---|---|---|---|
-| Check in CI | `ascribe check --deny-warnings`; `ascribe fmt --check`; `ascribe agents sync --check`; `ascribe diff --exit-code`; `ascribe drift --exit-code` | The walkthrough's "Check in CI", which leads to the docs | no (D1) | no (D2) | no (D3) |
+| Check in CI | `ascribe check --deny-warnings`; `ascribe fmt --check`; `ascribe agents sync --check`; `ascribe diff --exit-code`; `ascribe drift --exit-code`. Nothing a project holds says which to run: the session went looking outside it ([journey 6](journeys/set-up-ci-checks.md)) | The walkthrough's "Check in CI", which leads to the docs | no (D1) | no (D2) | no (D3) |
 | Know what state the project is in: counts, what each build leaves out, outside links, delivery to agents | `ascribe report` | **gap** | **gap** | no (D2) | no (D3) |
 | Give an agent the project's rules | `ascribe agents sync`; `ascribe agents rules`; `ascribe agents skill` | no (D4) | The resource `ascribe://instructions/{+project}` | no (D2) | no (D3) |
 
@@ -116,15 +115,15 @@ The reasons behind each "no", and where each is said.
 - **D4. The editor doesn't set up what lives outside it:** an agent's files, a site's packages. Not said anywhere found; it's how the extension is drawn.
 - **D5. A check nobody asked for is a hook's job, not a tool's.** The tools answer when called.
 - **D6. The binary doesn't talk to GitHub** ([decision 1](../decisions.md)). Comments are read and written by the extension and the site preview's app, in TypeScript.
+- **D7. The editor shows; it doesn't publish.** Building a project's outputs belongs to the command line, CI, and the site. Not said anywhere found.
 
 ## What the table shows
 
-For phase 5, not findings yet.
+Each of these is a finding now, in [findings.md](findings.md).
 
-- **The command line and the MCP tools are the same nine jobs.** Every tool answers as a command does, and the map names the command beside each. The MCP column's gaps are the command line's: neither renames, and neither searches.
-- **The editor is where the writing is.** Eight rows are "by hand" on the command line and for an agent, and thirty-five actions in VS Code. An agent writing a variant or a snippet has the skill's reference and nothing that writes the construct for it.
-- **Three things only the command line does:** `ascribe report`, `ascribe sources`, and `ascribe build`. Two only the editor does: renaming across the project, and applying a fix.
-- **Fixes can be listed everywhere and applied in one place.** `check`'s JSON carries each fix, and only the lightbulb applies one.
-- **Nothing starts a project or a page for a person.** An agent gets a prompt for a new page. The [page templates proposal](../proposals/page-templates.md) is about the second.
-- **Rows with four or five full cells:** seeing problems, seeing what the project allows, checking a link, finding uses, rendering a page, seeing what a change touches. Each is one command with a tool and an editor feature over it, which is one job said three ways rather than three jobs. Whether the three say it in the same words is question 1.
-- **Seven cells are open** (`gap?`): the map doesn't show them, and a session or a look at the editor will say whether they're missing.
+- **The command line and the MCP tools are the same nine jobs.** Every tool answers as a command does, and the map names the command beside each. The MCP column's gaps are the command line's: neither renames (finding 51), and neither searches.
+- **The editor is where the writing is.** Eight rows are "by hand" on the command line and for an agent, against thirty-five actions in VS Code. In phase 3 the agents wrote each construct by hand from the skill's reference, and got each right.
+- **Three things only the command line does:** `ascribe report`, `ascribe sources`, and `ascribe build`. Two only the editor does: renaming across the project (finding 51), and applying a fix (finding 52).
+- **Nothing starts a project or a page for a person** (finding 53).
+- **Rows with four or five full cells:** seeing problems, seeing what the project allows, checking a link, finding uses, rendering a page, seeing what a change touches. Each is one command with a tool and an editor feature over it: one job said three ways, not three jobs. In the sessions, an agent with a shell used the command every time and the tool never (finding 17).
+- **No cell is open.** The seven that were are settled: four are gaps, two are deliberate, and one is VS Code's own to do.
