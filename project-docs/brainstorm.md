@@ -299,7 +299,7 @@ How Ascribe would use it:
 
 ## 15. A cache, a search index, and notes
 
-Added 2026-10-09. Not planned. Each of the three now has a proposal of its own, since they share no layer: [notes](proposals/notes.md), [the cache](proposals/cache.md), and [search](proposals/search.md). Where one of those disagrees with this section, it's the later thinking: search was measured and needs no index, and the cache's case rests on speed more than on false reports.
+Added 2026-10-09. Not planned. Each of the three now has a proposal of its own, since they share no layer: [notes](proposals/notes.md), [the cache](https://github.com/ascribed-dev/ascribe/blob/097cc3d496fa2f3b08a69958ccacc50c76849126/project-docs/proposals/cache.md), and [search](proposals/search.md). Where one of those disagrees with this section, it's the later thinking: search was measured and needs no index, and the cache's case rests on speed more than on false reports.
 
 ### The idea
 

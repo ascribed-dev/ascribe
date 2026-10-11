@@ -203,6 +203,51 @@ export function render(tokens: Tokens, file: string, text: string): string {
   return out;
 }
 
+/** The candidate the mark's images and the specimen take the shared colors from. */
+export const CHOSEN = "design/candidates/chosen.toml";
+
+const CHOSEN_START =
+  "# Generated from design/tokens.toml by scripts/design/tokens.ts: the shared colors.";
+const CHOSEN_END = "# End of the shared colors.";
+
+/**
+ * `text`, design/candidates/chosen.toml, with its generated block rewritten:
+ * the [color] of each of `names` as tokens.toml has it, and the palette steps
+ * they point at, under the same names.
+ */
+export function renderChosen(tokens: Tokens, names: readonly string[], text: string): string {
+  const start = text.indexOf(`${CHOSEN_START}\n`);
+  const close = text.indexOf(CHOSEN_END, start);
+  if (start === -1 || close === -1) {
+    throw new Error(`${CHOSEN}: no "${CHOSEN_START}" and "${CHOSEN_END}"`);
+  }
+  const colors = names.map((name) => {
+    const color = tokens.colors.get(`color.${name}`);
+    if (color === undefined) throw new Error(`design/tokens.toml: no color.${name}`);
+    return [name, color] as const;
+  });
+  const used = new Set(colors.flatMap(([, { light, dark }]) => [light, dark]));
+  // Hues in tokens.toml's order, and each hue's steps from lightest.
+  const hues = new Map<string, [number, string][]>();
+  for (const [ref, value] of tokens.palette) {
+    if (!used.has(ref)) continue;
+    const [hue = "", step = ""] = ref.split(".");
+    hues.set(hue, [...(hues.get(hue) ?? []), [Number(step), value]]);
+  }
+  const lines: string[] = [];
+  for (const [hue, steps] of hues) {
+    lines.push(`[palette.${hue}]`);
+    for (const [step, value] of steps.sort(([a], [b]) => a - b)) lines.push(`${step} = "${value}"`);
+    lines.push("");
+  }
+  lines.push("[color]");
+  for (const [name, { light, dark }] of colors) {
+    lines.push(`${name} = { light = "${light}", dark = "${dark}" }`);
+  }
+  const body = start + CHOSEN_START.length + 1;
+  return `${text.slice(0, body)}${lines.join("\n")}\n${text.slice(close)}`;
+}
+
 /** design/tokens.toml, loaded. */
 export function source(): Tokens {
   return load(readFileSync(new URL("design/tokens.toml", ROOT), "utf8"));

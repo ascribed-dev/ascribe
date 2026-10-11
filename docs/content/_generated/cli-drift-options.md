@@ -5,5 +5,5 @@
 - `--format <FORMAT>`: How to show the report.
   - `text` (the default): The groups of pages, with each example that broke or changed, for people.
   - `json`: One JSON document, for tools.
-  - `summary`: Markdown for a CI job's summary, each page linked to the site; nothing when no example changed.
+  - `markdown`: Markdown for a CI job's summary, each page linked to the site; nothing when no example changed.
 - `--exit-code`: Exit with 1 when a page's example no longer resolves, or changed while the page didn't.

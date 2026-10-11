@@ -551,10 +551,116 @@ fn prompt_output_is_about_every_page_or_the_one_named() {
     let out = ascribe(&site(&dir), &["diff", "--format", "prompt", "docs/nope.md"]);
     assert_eq!(code(&out), 2);
     assert!(stderr(&out).contains("docs/nope.md isn't a file of the project"));
-    // A page with another format.
-    let out = ascribe(&site(&dir), &["diff", "docs/install.md"]);
+}
+
+#[test]
+fn a_page_named_narrows_the_text_and_the_json_to_it() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/_fragments/prereqs.md",
+        "You need agent 2.4 or later.\n",
+    );
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "# About us\n\nAbout us.\n\nWrite to us.\n",
+    );
+
+    // The text: the page's changes, block by block, in each build.
+    for named in ["docs/about.md", "about.md"] {
+        let out = ascribe(&site(&dir), &["diff", named]);
+        assert_eq!(code(&out), 0, "{}", stderr(&out));
+        let text = stdout(&out);
+        let after_base = text.split_once('\n').map(|(_, rest)| rest);
+        assert_eq!(
+            after_base,
+            Some(
+                "site: about.md: 1 changed, 1 added
+  changed about.md:1
+    - About
+    + About {+us+}
+  added about.md:5
+    + Write to us.
+other: about.md: 1 changed, 1 added
+  changed about.md:1
+    - About
+    + About {+us+}
+  added about.md:5
+    + Write to us.
+"
+            ),
+            "{text}"
+        );
+    }
+
+    // A fragment: the pages that changed through it, and a block shown
+    // through an include says so.
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "docs/_fragments/prereqs.md", "--build", "site"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.ends_with(
+            "site: install.md: 1 changed (through _fragments/prereqs.md)
+  changed _fragments/prereqs.md:1, shown through install.md:9
+    - You need agent [-2.2-] or later.
+    + You need agent {+2.4+} or later.
+"
+        ),
+        "{text}"
+    );
+
+    // --pages-only leaves out the blocks.
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "docs/about.md", "--build", "site", "--pages-only"],
+    );
+    assert!(
+        stdout(&out).ends_with("\nsite: about.md: 1 changed, 1 added\n"),
+        "{}",
+        stdout(&out)
+    );
+
+    // The JSON: the same shape, with only that page.
+    let out = ascribe(&site(&dir), &["diff", "docs/about.md", "--format", "json"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+    assert_eq!(json["schema_version"], 1);
+    for build in json["builds"].as_array().expect("builds") {
+        let pages = build["pages"].as_array().expect("pages");
+        let paths: Vec<&str> = pages.iter().filter_map(|p| p["path"].as_str()).collect();
+        assert_eq!(paths, ["about.md"], "{build}");
+        assert_eq!(pages[0]["changes"].as_array().map(Vec::len), Some(2));
+    }
+
+    // The HTML report: that page alone.
+    let out = ascribe(&site(&dir), &["diff", "docs/about.md", "--format", "html"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let data = report_data(&stdout(&out), &[]);
+    for build in data["builds"].as_array().expect("builds") {
+        let pages = build["pages"].as_array().expect("pages");
+        let paths: Vec<&str> = pages.iter().filter_map(|p| p["path"].as_str()).collect();
+        assert_eq!(paths, ["about.md"], "{build}");
+    }
+
+    // An unchanged page: no changes, and --exit-code says so. A path
+    // that's no file of the project: an error.
+    git(dir.path(), &["checkout", "-q", "--", "site/docs/about.md"]);
+    let out = ascribe(&site(&dir), &["diff", "docs/about.md", "--exit-code"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).ends_with("\nsite: about.md: no changes\nother: about.md: no changes\n"),
+        "{}",
+        stdout(&out)
+    );
+    let out = ascribe(&site(&dir), &["diff", "docs/install.md", "--exit-code"]);
+    assert_eq!(code(&out), 1);
+    let out = ascribe(&site(&dir), &["diff", "docs/nope.md", "--format", "json"]);
     assert_eq!(code(&out), 2);
-    assert!(stderr(&out).contains("a PAGE is named only with --format prompt"));
+    assert!(stderr(&out).contains("docs/nope.md isn't a file of the project"));
 }
 
 #[test]

@@ -1,0 +1,11 @@
+# Install Lantern
+
+## Install the CLI
+
+```powershell
+winget install Lantern.CLI
+```
+
+## Sign in
+
+Run `lantern login` and follow the link it prints.

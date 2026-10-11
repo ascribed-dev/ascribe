@@ -123,6 +123,48 @@ fn sync_makes_the_list_and_check_then_passes() {
 }
 
 #[test]
+fn sync_check_writes_nothing_and_fails_while_the_list_is_behind() {
+    let dir = project();
+    let none = ascribe(dir.path(), &["permalinks", "sync", "--check"]);
+    assert_eq!(code_of(&none), 1);
+    assert_eq!(
+        stderr(&none),
+        "error: there's no ascribe.permalinks; run `ascribe permalinks sync` to make one\n"
+    );
+    assert!(!dir.path().join("ascribe.permalinks").exists());
+
+    ascribe(dir.path(), &["permalinks", "sync"]);
+    let current = ascribe(dir.path(), &["permalinks", "sync", "--check"]);
+    assert_eq!(code_of(&current), 0, "{}", stderr(&current));
+    assert_eq!(stdout(&current), "ascribe.permalinks is up to date.\n");
+
+    let before = list_text(dir.path());
+    write(
+        dir.path(),
+        "docs/guide.md",
+        "---\ntitle: Guide\n---\n\n## Deploy\n@id {permalink=true}: deploy\n",
+    );
+    let behind = ascribe(dir.path(), &["permalinks", "sync", "--check"]);
+    assert_eq!(code_of(&behind), 1);
+    assert_eq!(stdout(&behind), "would add deploy\n");
+    assert_eq!(
+        stderr(&behind),
+        "error: ascribe.permalinks is out of date; run `ascribe permalinks sync` to update it\n"
+    );
+    assert_eq!(list_text(dir.path()), before, "--check wrote the list");
+
+    let json = ascribe(
+        dir.path(),
+        &["permalinks", "sync", "--check", "--format", "json"],
+    );
+    assert_eq!(code_of(&json), 1);
+    let json: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(json["changed"], true);
+    assert_eq!(json["added"], serde_json::json!(["deploy"]));
+    assert_eq!(list_text(dir.path()), before, "--check wrote the list");
+}
+
+#[test]
 fn deleting_a_marked_heading_warns_naming_it_and_what_the_check_cant_see() {
     let dir = project();
     ascribe(dir.path(), &["permalinks", "sync"]);
@@ -261,7 +303,7 @@ fn verify_needs_only_the_list_and_fails_on_a_name_it_doesnt_have() {
         "links.txt",
         "# The names the product links to.\ninstall\n\nrotate-keys\n",
     );
-    let list = ["--list", "docs.permalinks"];
+    let list = ["--against", "docs.permalinks"];
 
     let pass = ascribe(
         product.path(),

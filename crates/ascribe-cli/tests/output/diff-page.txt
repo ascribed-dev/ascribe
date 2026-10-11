@@ -1,0 +1,31 @@
+compared with main (375192d), from its merge base with HEAD (e49444a)
+site: guides/rollouts.md: 4 changed, 5 added, 2 removed, 1 moved
+  changed guides/rollouts.md:6
+    - Roll the agent out to a few servers first, then to the [-rest-].
+    + Roll the agent out to a few servers first, then to {+all+} the {+others+}.
+  changed guides/rollouts.md:10
+    - Pick servers that see little traffic.
+    + Pick servers that see little traffic {+and run the newest release+}.
+  changed guides/rollouts.md:14
+    - Install
+    + Install {+the agent+}
+  changed guides/rollouts.md:16
+    - Install the agent on the tagged servers.
+    + Install the agent on the tagged servers{+, one at a time+}.
+  removed guides/rollouts.md:18 in the base
+    - Watch their logs for an hour.
+  removed guides/rollouts.md:22 in the base
+    - Remove the agent from the tagged servers.
+  added guides/rollouts.md:20
+    + Watch their logs for a day.
+  added guides/rollouts.md:22
+    + Check the error rate in the dashboard.
+  moved guides/rollouts.md:24, from guides/rollouts.md:20 in the base
+      ## Roll back
+  added guides/rollouts.md:26
+    + Remove the agent from the tagged servers, and its configuration.
+  added guides/rollouts.md:28
+    + Send us the logs.
+  added guides/rollouts.md:34
+    + Untag the servers.
+cloud: guides/rollouts.md: no changes

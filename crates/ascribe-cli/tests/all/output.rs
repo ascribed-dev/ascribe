@@ -362,6 +362,24 @@ fn diff_text() {
     );
 }
 
+/// `ascribe diff <PAGE>`: one page's changes, block by block.
+#[test]
+fn diff_page() {
+    let dir = lantern();
+    let root = dir.path();
+    write(root, "docs/docs/guides/rollouts.md", ROLLOUTS_NOW);
+    commit(root, "Rework the rollout");
+    let docs = root.join("docs");
+    expect(
+        "diff-page.txt",
+        &stdout(&run(
+            &docs,
+            &["diff", "docs/guides/rollouts.md", "--base", "main"],
+            0,
+        )),
+    );
+}
+
 /// `ascribe diff --format json`, for a change that reaches a page through a
 /// fragment.
 #[test]
@@ -644,6 +662,23 @@ fn getting_started() {
         "getting-started-check.txt",
         &stdout(&run(&example, &["check"], 1)),
     );
+}
+
+/// `ascribe render` on `examples/platforms`, the guide to content that
+/// varies: its one page, for each of the project's two builds.
+#[test]
+fn platforms() {
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/platforms");
+    for build in ["site", "windows"] {
+        expect(
+            &format!("platforms-{build}.txt"),
+            &stdout(&run(
+                &example,
+                &["render", "docs/install.md", "--build", build],
+                0,
+            )),
+        );
+    }
 }
 
 fn file_url(dir: &Path) -> String {
