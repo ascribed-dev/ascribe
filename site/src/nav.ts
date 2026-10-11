@@ -22,6 +22,7 @@ export const nav: NavGroup[] = [
       "guides/agents.md",
       "guides/vale.md",
       "guides/report.md",
+      "guides/permalinks.md",
     ],
   },
   {

@@ -19,6 +19,8 @@ permalink: docs
   [Prose, through Vale](guides/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
 - @available: next
   [The project report](guides/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
+- @available: next
+  [Permalinks](guides/permalinks.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.
