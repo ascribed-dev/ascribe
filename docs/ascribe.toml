@@ -21,7 +21,6 @@ files = ["reference/**", "contracts/**"]
 [types.reference.frontmatter]
 title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
-since = "string?"
 
 # What isn't in the latest release is marked with availability. A feature in
 # `main` that no release has yet is `@available: next`. When a release ships
