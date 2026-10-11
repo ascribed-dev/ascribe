@@ -248,9 +248,32 @@ Decided by the maintainer on 10 October 2026, and written into the script:
 
 ### At the command line
 
-*Not yet walked.*
+- **When, with what:** 10 October 2026, 7:41 to 7:44 PM. Terminal.app, with the release build first on the path, `ascribe 0.2.0`. The copy `~/ascribe-walks/fix-a-broken-link-cli`, prepared by the agent.
 
-The same parts. A step is the command as typed, then its output, quoted, with its exit code where it mattered.
+- **Steps, as the walker noted them:**
+
+   1. time: 7:41 PM
+   2. initial output:
+   ```
+   cd ~/ascribe-walks/fix-a-broken-link-cli
+   ascribe --version
+
+   ascribe 0.2.0
+   ```
+   3. use `ascribe --help`
+   4. use `ascribe check`
+   5. see the errors found, realize I hate text editing in the terminal and start wondering if this isn't something an agent is better suited to
+   6. 7:44PM end because family needs me
+
+- **Doubts:** one, in step 5, and it ended the walk: whether a person at a terminal is who does this at all. "realize I hate text editing in the terminal and start wondering if this isn't something an agent is better suited to".
+
+- **Time:** 3 minutes, to where it stopped.
+
+- **Result:** not finished. The walker found the problem with the second command, `ascribe check`, and stopped before editing. The preparer's `ascribe check` afterwards exited 1 with the copy as prepared, `1 error, 0 warnings, 1 advice`, and no file changed. Not walked again: the agent's dry run above is the command-line path finished, and phase 1's two agent walks are the agent's version of it.
+
+- **Seen on the way:**
+  - Two commands found the problem: `ascribe --help`, then `ascribe check`. The help was enough to pick the command.
+  - The maintainer, given a terminal and a plain editor, didn't want to edit the page there and reached for an agent, as in the editor walk. Both of the maintainer's walks ended with the same move. For phase 3, that's the answer to whether a person at the command line is a journey worth walking by hand.
 
 ### Through the hook
 
