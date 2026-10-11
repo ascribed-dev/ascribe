@@ -16,6 +16,7 @@ import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
 import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { Walkthrough } from "./ui/walkthrough.js";
+import { FormatterOffer } from "./ui/formatter.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -94,6 +95,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   actions.register();
   const walkthrough = new Walkthrough(projects);
   walkthrough.register();
+  const formatter = new FormatterOffer(context, projects);
+  formatter.register();
 
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument((event) => {
@@ -133,6 +136,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     mcp,
     tools,
     actions,
+    formatter,
     promptAgent,
     chosen,
     lenses,
