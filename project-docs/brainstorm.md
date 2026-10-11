@@ -182,7 +182,7 @@ External link checking (opt-in, for CI); a PDF or print output; image checks (un
 
 ## 17. Embedded help
 
-Added 2026-10-09. Not planned. It builds on [permalinks](proposals/permalinks.md), which come first.
+Added 2026-10-09. Not planned. It builds on [permalinks](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/proposals/permalinks.md), which come first.
 
 ### The idea
 
@@ -218,7 +218,7 @@ What's missing is the join: an output keyed by permalink, holding each named sec
 
 ## 18. Widgets for a page's layout
 
-The landing page (`site/home/content/index.md`) was the experiment of the [website plan](website/README.md): whether a handful of project widgets carry a marketing page without changing the language. **They carried part of it.** Three widgets did: the hero, a claim with its example, and a page's source beside its result. The lists, the install commands, and the status needed none, and an availability mark inside a claim worked as it does on any page.
+The landing page (`site/home/content/index.md`) was the experiment of the [website plan](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/website/README.md): whether a handful of project widgets carry a marketing page without changing the language. **They carried part of it.** Three widgets did: the hero, a claim with its example, and a page's source beside its result. The lists, the install commands, and the status needed none, and an availability mark inside a claim worked as it does on any page.
 
 What didn't fit:
 

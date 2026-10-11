@@ -36,7 +36,7 @@ Every existing checker needs a deployed site. Nothing reports these before deplo
 
 - **Ascribe emits** `llms.txt`, a Markdown version of each page, and the pointer, and checks page size and missing descriptions. `ascribe report` runs a link checker and the agent delivery spec's checker against a published site.
 - **Nothing else about search is Ascribe's today.** The docs site writes its own page head by hand in its layout (`site/src/layouts/Base.astro`): the canonical link, the Open Graph tags, the social card. It has no sitemap and no `robots.txt`. The first Ascribe site built these for itself or went without, and so will every other.
-- **Proposed, and related:** [versions](versions.md) (canonical links across versions, and whether old versions are indexed), [permalinks](permalinks.md) (stable addresses, and a committed list), redirects (in the [brainstorm](../brainstorm.md)), and the [website](website.md).
+- **Proposed, and related:** [versions](versions.md) (canonical links across versions, and whether old versions are indexed), [permalinks](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/proposals/permalinks.md) (stable addresses, and a committed list), redirects (in the [brainstorm](../brainstorm.md)), and the [website](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/proposals/website.md).
 
 ## The principle: one set of facts, every output from it
 
