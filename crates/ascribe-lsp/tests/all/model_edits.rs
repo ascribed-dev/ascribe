@@ -962,15 +962,20 @@ fn renamed_by_name(f: &Fixture, renaming: &ascribe_lsp::Renaming) -> BTreeMap<St
     renamed
         .files
         .into_iter()
-        .map(|file| (file.path.to_string_lossy().to_lowercase(), file.text))
+        .map(|file| (key(&file.path), file.text))
         .collect()
+}
+
+/// A path as a key both sides write alike, as [`same`] compares paths.
+fn key(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/").to_lowercase()
 }
 
 /// The same, from the editor's rename.
 fn renamed_by_editor(done: &Done) -> BTreeMap<String, String> {
     done.files
         .iter()
-        .map(|(path, text, _)| (path.to_string_lossy().to_lowercase(), text.clone()))
+        .map(|(path, text, _)| (key(path), text.clone()))
         .collect()
 }
 
