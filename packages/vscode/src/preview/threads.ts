@@ -22,6 +22,7 @@ import {
   ReviewError,
   tokenTransport,
   type GitHubTransport,
+  type HostToken,
   type PromptRequest,
   type ReviewSession,
 } from "@ascribed/review/github";
@@ -29,6 +30,7 @@ import type { PageRef } from "@ascribed/review/place";
 import type { ProjectServer } from "../client.js";
 import { comparable, throughFolder } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
+import { hasSignIn, noSignInReason, tokenFor, type SignIns } from "./signIn.js";
 
 /** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
 const GITHUB_SCOPES = ["repo"];
@@ -37,8 +39,11 @@ const GITHUB_SCOPES = ["repo"];
 export type Connection =
   /** No GitHub remote, a detached `HEAD`, or no open pull request for the branch: nothing to show. */
   | { state: "none" }
-  /** No GitHub sign-in: the changes show without threads. */
-  | { state: "signed-out"; host: string; gh: boolean }
+  /**
+   * No GitHub sign-in: the changes show without threads. `reason` says why,
+   * when the host gets no sign-in from VS Code at all.
+   */
+  | { state: "signed-out"; host: string; gh: boolean; reason?: string }
   | { state: "error"; message: string }
   | {
       state: "on";
@@ -215,7 +220,7 @@ export class ThreadsController implements vscode.Disposable {
         pullRequest: null,
         local: null,
         gh: connection.gh,
-        message: null,
+        message: connection.reason ?? null,
         goTo: null,
       };
     }
@@ -347,7 +352,15 @@ export class ThreadsController implements vscode.Disposable {
     }
     if (!transport) {
       const signedIn = await githubSession(host, interactive);
-      if (!signedIn) return { state: "signed-out", host, gh: await ghSignedIn(host) };
+      if (!signedIn) {
+        const reason = noSignInReason(host, signIns.enterpriseUri());
+        return {
+          state: "signed-out",
+          host,
+          gh: await ghSignedIn(host),
+          ...(reason === undefined ? {} : { reason }),
+        };
+      }
       transport = (h) => tokenTransport(() => githubToken(h), { host: h });
       via = "vscode";
     }
@@ -403,35 +416,27 @@ function key(server: ProjectServer): string {
   return comparable(server.project.folder);
 }
 
-/** VS Code's authentication provider for a host. */
-function provider(host: string): string {
-  return host === "github.com" ? "github" : "github-enterprise";
-}
+/** VS Code's GitHub sign-ins and the GitHub Enterprise server they're set up for. */
+const signIns: SignIns = {
+  getSession: (provider, scopes, interactive) =>
+    Promise.resolve(
+      vscode.authentication.getSession(
+        provider,
+        scopes,
+        interactive ? { createIfNone: true } : { silent: true },
+      ),
+    ),
+  enterpriseUri: () => vscode.workspace.getConfiguration("github-enterprise").get<string>("uri"),
+};
 
 /** Whether there's a GitHub sign-in for the host; with `interactive`, asks for one. */
-async function githubSession(host: string, interactive: boolean): Promise<boolean> {
-  try {
-    const session = await vscode.authentication.getSession(
-      provider(host),
-      GITHUB_SCOPES,
-      interactive ? { createIfNone: true } : { silent: true },
-    );
-    return session !== undefined;
-  } catch {
-    // Declined, or no provider for the host (GitHub Enterprise isn't set up).
-    return false;
-  }
+function githubSession(host: string, interactive: boolean): Promise<boolean> {
+  return hasSignIn(host, GITHUB_SCOPES, interactive, signIns);
 }
 
-/** The host's token, read for each request so VS Code can refresh it. */
-async function githubToken(host: string): Promise<string | undefined> {
-  const session = await vscode.authentication
-    .getSession(provider(host), GITHUB_SCOPES, { silent: true })
-    .then(
-      (s) => s,
-      () => undefined,
-    );
-  return session?.accessToken;
+/** The host's token and the host it's for, read for each request so VS Code can refresh it. */
+function githubToken(host: string): Promise<HostToken | undefined> {
+  return tokenFor(host, GITHUB_SCOPES, signIns);
 }
 
 /** Runs a command with a fixed argument list; resolves with its output, or `undefined` if it failed. */

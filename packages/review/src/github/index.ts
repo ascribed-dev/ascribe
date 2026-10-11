@@ -38,6 +38,7 @@ export {
   tokenTransport,
   type GhTransportOptions,
   type GitHubTransport,
+  type HostToken,
   type TokenTransportOptions,
 } from "./transport.js";
 export { formatSection, marker, parseSections, type MarkedSection } from "./marker.js";

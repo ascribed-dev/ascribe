@@ -137,7 +137,7 @@ interface GitHubTransport {
 ```
 
 - `ghTransport({ host?, command? })` runs `gh api graphql --hostname <host>`, with the query on standard input and each variable as an argument (`-f` for strings, `-F` for numbers, booleans, and `null`). It needs `gh` 2.0.0 or later, signed in to the host (`gh auth login --hostname <host>`).
-- `tokenTransport(getToken, { host?, fetch? })` posts to the host's GraphQL endpoint (`https://api.github.com/graphql`, or `https://<host>/api/graphql`) with the token `getToken` returns, called for each request.
+- `tokenTransport(getToken, { host?, fetch? })` posts to the host's GraphQL endpoint (`https://api.github.com/graphql`, or `https://<host>/api/graphql`) with the token `getToken` returns, called for each request. `getToken` may return a `HostToken`, `{ token, host }`, naming the host the token was issued for: a token for another host is refused (`not-signed-in`) before anything is sent. Redirects aren't followed.
 
 Neither stores a token, and neither puts one in an error: anything shaped like a GitHub token is removed from error messages.
 
