@@ -343,7 +343,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Let an agent in the editor's window run the binary the editor runs"
     },
     {
