@@ -28,6 +28,8 @@ export interface RootFileSources extends Omit<SitemapSources, "site"> {
   base: string;
   /** Whether the site has its own `robots.txt`, in `public/`. */
   ownRobots: boolean;
+  /** Whether the site has its own `sitemap.xml`, in `public/`. */
+  ownSitemap: boolean;
 }
 
 /** A thing the build says about the files, and how loudly. */
@@ -49,7 +51,11 @@ export function rootFiles(sources: RootFileSources): RootFiles {
   const base = normalizeBase(sources.base);
   let sitemap: string | undefined;
   let sitemapAddress: string | undefined;
-  if (sources.site === undefined) {
+  if (sources.ownSitemap) {
+    // The site's own, at the same address, which robots.txt points to when there's an address.
+    notes.push({ level: "info", text: "no sitemap.xml: public/sitemap.xml is the site's own." });
+    if (sources.site !== undefined) sitemapAddress = new URL(sitemapRoute(base), sources.site).href;
+  } else if (sources.site === undefined) {
     notes.push({
       level: "warn",
       text: "no sitemap.xml: a sitemap lists pages by their absolute addresses, and the site has no address. Set [consumer] site in ascribe.toml, or Astro's `site`.",

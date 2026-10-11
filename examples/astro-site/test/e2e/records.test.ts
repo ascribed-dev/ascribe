@@ -121,6 +121,8 @@ describe("a site at the host's root", () => {
       ),
     );
     await write(root, {
+      // A dot in a page's last segment doesn't make it a file.
+      "src/pages/v1.2.astro": '<html lang="en"><head><title>1.2</title></head><body>1.2</body></html>\n',
       "src/pages/hidden.astro":
         '<html lang="en"><head><meta name="robots" content="noindex" /></head><body>Hidden</body></html>\n',
     });
@@ -133,6 +135,7 @@ describe("a site at the host's root", () => {
     "https://docs.example.com/",
     "https://docs.example.com/docs",
     `https://docs.example.com${LISTED}`,
+    "https://docs.example.com/v1.2",
   ];
 
   it("writes each page's head, the sitemap, and robots.txt from the records in a build", async () => {
@@ -216,14 +219,18 @@ describe("two projects", () => {
 });
 
 describe("what a site leaves out", () => {
-  it("keeps a robots.txt of the site's own", async () => {
+  it("keeps a robots.txt and a sitemap of the site's own", async () => {
     const root = await withUnlisted(await homeInFront("records-own-robots"));
     const own = "User-agent: *\nAllow: /\n";
+    const sitemap = "<urlset/>\n";
     await mkdir(path.join(root, "public"));
     await writeFile(path.join(root, "public", "robots.txt"), own);
     await buildSite(root);
     expect(await readFile(path.join(root, "dist", "robots.txt"), "utf8")).toBe(own);
     expect(existsSync(path.join(root, "dist", "sitemap.xml"))).toBe(true);
+    await writeFile(path.join(root, "public", "sitemap.xml"), sitemap);
+    await buildSite(root);
+    expect(await readFile(path.join(root, "dist", "sitemap.xml"), "utf8")).toBe(sitemap);
   });
 
   it("writes no sitemap for a site with no address, and robots.txt without it", async () => {

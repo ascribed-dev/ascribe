@@ -229,6 +229,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       site: routing?.site,
       base,
       ownRobots: existsSync(path.join(publicDir, "robots.txt")),
+      ownSitemap: existsSync(path.join(publicDir, "sitemap.xml")),
     };
   };
   return {
@@ -544,13 +545,12 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       "astro:build:done": async ({ dir, pages, logger }) => {
         const base = routing?.base ?? "/";
         const trailingSlash = routing?.trailingSlash ?? "ignore";
-        // Every page Astro built, by its route from the host's root. A file
-        // such as a feed isn't a page a sitemap lists.
-        const built = pages
-          .map((page) =>
-            routeAs(`${normalizeBase(base)}${page.pathname.replace(/^\//, "")}`, trailingSlash),
-          )
-          .filter((route) => !/\.[A-Za-z0-9]+$/.test(route));
+        // Every page Astro built, by its route from the host's root. Astro lists
+        // pages only, not endpoints such as a feed, so a dot in a page's last
+        // segment, as in `/v1.2`, is still a page.
+        const built = pages.map((page) =>
+          routeAs(`${normalizeBase(base)}${page.pathname.replace(/^\//, "")}`, trailingSlash),
+        );
         const builtKeys = new Set(built.map(routeKey));
         const files = rootFiles(rootSources(built, (route) => builtKeys.has(routeKey(route))));
         for (const note of files.notes) logger[note.level](note.text);

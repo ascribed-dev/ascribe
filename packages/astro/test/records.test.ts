@@ -204,6 +204,7 @@ describe("rootFiles", () => {
     site: "https://docs.example.com",
     base: "/",
     ownRobots: false,
+    ownSitemap: false,
   };
 
   it("writes both at the host's root", () => {
@@ -230,6 +231,16 @@ describe("rootFiles", () => {
     expect(files.sitemap).toBeDefined();
     expect(files.notes[0]?.text).toContain("public/robots.txt is the site's own");
     expect(files.notes[0]?.text).toContain("Disallow: /docs/drafts/");
+  });
+
+  it("writes no sitemap when the site has its own, and robots.txt points to it", () => {
+    const files = rootFiles({ ...sources, ownSitemap: true });
+    expect(files.sitemap).toBeUndefined();
+    expect(files.robots).toContain("Sitemap: https://docs.example.com/sitemap.xml\n");
+    expect(files.notes).toEqual([
+      { level: "info", text: "no sitemap.xml: public/sitemap.xml is the site's own." },
+    ]);
+    expect(rootFiles({ ...sources, ownSitemap: true, site: undefined }).notes).toHaveLength(1);
   });
 
   it("writes the sitemap under a base that isn't /, no robots.txt, and the host's lines", () => {
