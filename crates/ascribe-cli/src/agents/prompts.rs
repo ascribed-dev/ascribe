@@ -305,6 +305,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         summary: false,
         format: check::Format::Prompt,
         deny_warnings: false,
+        fix: false,
         vale: false,
         vale_timeout: None,
         // The MCP server serves this prompt too, and starts no program.

@@ -1,6 +1,6 @@
 //! What the content model allows, resolved: its page types and their
-//! frontmatter, dimensions, phrases, features, glossary, widgets, and
-//! builds. [`model`] gives every section in full, for tools; [`summary`]
+//! frontmatter, dimensions, phrases, features, glossary, widgets, builds,
+//! and sources. [`model`] gives every section in full, for tools; [`summary`]
 //! gives a short Markdown summary for an agent to read, cut to a character
 //! budget.
 
@@ -27,11 +27,13 @@ pub enum Section {
     Widgets,
     /// Builds.
     Builds,
+    /// Sources.
+    Sources,
 }
 
 impl Section {
     /// Every section, in the order answers list them.
-    pub const ALL: [Section; 7] = [
+    pub const ALL: [Section; 8] = [
         Section::Types,
         Section::Dimensions,
         Section::Phrases,
@@ -39,6 +41,7 @@ impl Section {
         Section::Glossary,
         Section::Widgets,
         Section::Builds,
+        Section::Sources,
     ];
 
     /// The section's name, as `--section` takes it.
@@ -51,6 +54,7 @@ impl Section {
             Section::Glossary => "glossary",
             Section::Widgets => "widgets",
             Section::Builds => "builds",
+            Section::Sources => "sources",
         }
     }
 
@@ -63,6 +67,7 @@ impl Section {
             Section::Glossary => "Glossary",
             Section::Widgets => "Widgets",
             Section::Builds => "Builds",
+            Section::Sources => "Sources",
         }
     }
 }
@@ -99,6 +104,9 @@ pub struct ModelReport {
     /// Builds, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub builds: Option<Vec<ModelBuild>>,
+    /// Sources, in declaration order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sources: Option<Vec<ModelSource>>,
 }
 
 /// A page type.
@@ -254,6 +262,35 @@ pub struct ModelBuild {
     pub editor: bool,
 }
 
+/// A source: a folder of files, such as code, that pages can show.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelSource {
+    /// Its name, as addresses write it: `code:` for a source named `code`.
+    pub name: String,
+    /// Its folder, relative to the project's folder: the `path` written,
+    /// or, for a source in another repository, the folder of its copies.
+    pub path: String,
+    /// The patterns of the files it makes readable, relative to its folder;
+    /// empty for every file.
+    pub include: Vec<String>,
+    /// The patterns of the files it doesn't make readable, though `include`
+    /// matches them.
+    pub ignore: Vec<String>,
+    /// The repository it's in, for a source in another repository.
+    pub git: Option<ModelRemote>,
+}
+
+/// The repository a source is in.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelRemote {
+    /// Its URL.
+    pub url: String,
+    /// The branch an update follows; `null` for the repository's default.
+    pub branch: Option<String>,
+}
+
 /// The content model's sections, or only `section`.
 pub fn model(model: &ContentModel, section: Option<Section>) -> ModelReport {
     let wants = |s: Section| section.is_none_or(|wanted| wanted == s).then_some(());
@@ -303,7 +340,28 @@ pub fn model(model: &ContentModel, section: Option<Section>) -> ModelReport {
         }),
         widgets: wants(Section::Widgets).map(|()| widgets(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
+        sources: wants(Section::Sources).map(|()| sources(model)),
     }
+}
+
+fn sources(model: &ContentModel) -> Vec<ModelSource> {
+    let patterns = |list: &[ascribe_model::Pattern]| -> Vec<String> {
+        list.iter().map(|p| p.as_str().to_owned()).collect()
+    };
+    model
+        .sources
+        .iter()
+        .map(|s| ModelSource {
+            name: s.name.clone(),
+            path: s.path.clone(),
+            include: patterns(&s.include),
+            ignore: patterns(&s.ignore),
+            git: s.git.as_ref().map(|g| ModelRemote {
+                url: g.url.clone(),
+                branch: g.branch.clone(),
+            }),
+        })
+        .collect()
 }
 
 fn types(model: &ContentModel) -> Vec<ModelType> {
@@ -573,7 +631,31 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
                 )
             })
             .collect(),
+        Section::Sources => report.sources.iter().flatten().map(source_line).collect(),
     }
+}
+
+fn source_line(s: &ModelSource) -> String {
+    let code = |list: &[String]| -> String {
+        list.iter()
+            .map(|p| format!("`{p}`"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let mut notes = vec![format!("folder `{}`", s.path)];
+    if !s.include.is_empty() {
+        notes.push(format!("files {}", code(&s.include)));
+    }
+    if !s.ignore.is_empty() {
+        notes.push(format!("not {}", code(&s.ignore)));
+    }
+    if let Some(git) = &s.git {
+        match &git.branch {
+            Some(branch) => notes.push(format!("from `{}`, branch `{branch}`", git.url)),
+            None => notes.push(format!("from `{}`", git.url)),
+        }
+    }
+    format!("`{}:` ({})", s.name, notes.join("; "))
 }
 
 fn type_line(t: &ModelType) -> String {
