@@ -272,7 +272,7 @@ The group merged the day the conventions were written, so it was built without t
 
 ## The docs site
 
-[Phase 4](phase-4-docs-site.md)'s, from [the docs site's notes](docs-site.md): the site read as the first one built with Ascribe (findings 28 to 34), and as the way people find the surface (35 to 43). They come after the others because no walk met them; phase 5 puts them in order with the rest.
+[Phase 4](phase-4-docs-site.md)'s, from [the docs site's notes](docs-site.md): the site read as the first one built with Ascribe (findings 28 to 34), and as the way people find the surface (35 to 44). They come after the others because no walk met them; phase 5 puts them in order with the rest.
 
 ### 28. The sidebar is a list kept by hand, and the site orders its pages three ways
 
@@ -335,6 +335,96 @@ The group merged the day the conventions were written, so it was built without t
 - **Evidence:** `since = "string?"`. No file under `docs/content/` has `since:` in its frontmatter; the six pages that say when they arrived use `available:`. `ascribe report inventory --config docs` answers "Entries nothing uses: none.", because what it counts is "the fragments, phrases, features, glossary terms, and images nothing uses". With `since` gone the two page types, `guide` and `reference`, declare the same two fields.
 - **Cost:** None to a reader. It shows that a frontmatter field can go unused without anything saying so.
 - **Recommendation:** remove the field from the docs' model. Whether the inventory should count a field no page sets is a question for phase 5, with the rest of what `report` counts.
+- **Size:** small.
+
+### 35. A diagnostic's address takes two requests on this host
+
+- **Kind:** friction. It's what finding 7 left for this phase.
+- **Where:** `https://ascribed-dev.com/go/ASC036/`, which `ascribe explain`, `check`'s JSON, and the Problems panel print; Netlify.
+- **Evidence:** `curl -sI https://ascribed-dev.com/go/ASC036/` answers `HTTP/2 301`, `location: /go/asc036/`, `server: Netlify`; `/go/asc036/` answers 200 with a page whose `<meta http-equiv="refresh">` goes to `/reference/diagnostics/#ASC036`. It's the host, not the integration or Astro's build: an address that has nothing to do with permalinks does the same (`/Reference/cli/` answers `301`, `location: /reference/cli/`; `/go/CLI-CHECK/` answers `301`, `location: /go/cli-check/`), and a capitalised address with no page behind it gets no redirect (`/go/NO-SUCH/` answers 404). The integration makes one route, `` `/${at.slice(root.length)}[id]` `` in `packages/astro/src/permalinks.ts`, with each permalink's name as it's written, so the build has the page at `go/ASC036/` (read in the code; the site wasn't built for this). By these answers, Netlify serves a path in lower case and redirects any other spelling of it there. The redirect keeps a query (`/go/ASC036/?pm=pnpm` goes to `/go/asc036/?pm=pnpm`), and the fragment is in the page's own forward, so nothing is lost.
+- **Cost:** One more request on every diagnostic's link, 181 of the docs' 219 permalinks: measured once, 0.27 s against 0.21 s. A reader doesn't see it. A permalink whose name has a capital behaves this way on any host that folds case.
+- **Recommendation:** leave. Printing the code in lower case would fix this host and break one that keeps case, where the page is at `go/ASC036/` and nowhere else; and `ASC036` is how the code is written everywhere a person reads it. If it's ever worth a hop, the place to change is what the integration names the page, not what the binary prints.
+- **Size:** none.
+
+### 36. Permalinks that differ only by case are accepted, and are one address here
+
+- **Kind:** a gap.
+- **Where:** `@id {permalink=true}`, `permalink:` in frontmatter; `ascribe check`; a host that folds case.
+- **Evidence:** Tried on 10 October 2026 in a scratch project: two headings on one page with `@id {permalink=true}: Setup` and `@id {permalink=true}: setup`, and another page with `permalink: SETUP`. `ascribe check --format concise` answered `checked 2 files: 0 errors, 0 warnings`, and `ascribe build` wrote all three to `_ascribe/permalinks.json`: `"SETUP"` to `/b/`, `"Setup"` and `"setup"` to `/a/`. On the published site every spelling of an address is sent to the lower-case one (finding 35), so there the three would be one address. Build names already have the rule: "Build names are unique ignoring case (content-model.md, `model-build-name-case`)", and the output-layout contract refuses "paths that differ only in case (they'd be one file on macOS and Windows)". What the host does with two such pages wasn't tried; that both can't be reached is inferred from finding 35.
+- **Cost:** Two names a product links to, one page answering for both, and nothing reported before or after the deploy. Unlikely, and silent when it happens.
+- **Recommendation:** add. `permalink-duplicate` compares names without case, as the rule for build names does.
+- **Size:** small.
+
+### 37. Every diagnostic's entry sends its reader on to the specification
+
+- **Kind:** a gap.
+- **Where:** the Diagnostics reference's entries, generated from `tests/conformance/diagnostics.toml`.
+- **Evidence:** The entry the binary's address leads to, for the broken link: "#### ASC036 `link-target-missing`", then "Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)", then **When**, **Message**, and **Fix**. All 180 entries have a link to `SPEC.md` on GitHub in that place. Links to a page of the docs are rare beside it: in the three generated files, two lines link to the directive reference, four to the `ascribe.toml` reference (all among the 22 content checks, none among the 72 entries about `ascribe.toml` itself), and three to a guide. The directive reference has the reverse link for each of its sections ("each section links to its part of the spec"), with 29 of them.
+- **Cost:** The one page a person is sent to from an error has, as its only way onward, the normative specification on another site. The page written for them, with the example of a link that works, is two clicks back through the sidebar. Question 6 asks what a problem says to do next; in the docs the answer is "read the spec".
+- **Recommendation:** add. Each entry links to the section of the directive reference or the `ascribe.toml` reference that covers it, beside the spec's. The registry already names the spec's section, and the two references already name theirs, so the link can be generated.
+- **Size:** medium.
+
+### 38. No guide covers content that varies
+
+- **Kind:** a gap.
+- **Where:** the sidebar's "Guides"; `@variant`, `@available`, `[dimensions]`, `[builds]`.
+- **Evidence:** The seven guides are "Astro", "Editing", "Review", "Drift", "Agents", "Prose, through Vale", and "The project report". Counting `@variant`, `[builds.`, and `[dimensions.` in the guides: getting started has 5, the Astro guide 2, the editor guide 2, and the other five none. What getting started says of the feature is one bullet: "`@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one." The rest is `reference/directives.md` ("### `@variant`", "#### Whole-page variants", "### `@available`", "#### Availability specs") and `reference/content-model.md` ("## 6. `[dimensions.<name>]`", "## 16. `[builds.<name>]`"). The docs' own project has one build, so it has no page that shows a second one either.
+- **Cost:** The proposal's second task, "Add a section that differs by platform", has no guide: the reader lands on two references and assembles a dimension, a variant group, and a build from them. It's what the language is for, by getting started's first sentence: "alternatives by platform or product, availability".
+- **Recommendation:** add a guide: one dimension, one variant group, one availability mark, and two builds that publish them differently. Phase 3's journey for that task will show how far an agent gets without it.
+- **Size:** medium.
+
+### 39. The guide to permalinks is a section of the Astro guide
+
+- **Kind:** friction.
+- **Where:** `docs/content/guides/astro.md`, "## Permalinks"; `ascribe permalinks`.
+- **Evidence:** The section is 100 of the page's 287 lines, with "### Linking from a product", "### Checking a product's links", "### Moving, aliasing, and retiring", and "### A permalink that isn't here". It's the only guide that names `ascribe permalinks`, seven times. Three of its four parts aren't about Astro: a product's code, a workflow "in the product's repository", and `ascribe permalinks retire`. It has a paragraph for everyone else: "**With another generator,** read `_ascribe/permalinks.json`". The home page mentions permalinks once, under "For implementers", as the format of a file.
+- **Cost:** Someone who reads `ascribe permalinks --help`, follows it to the reference, and wants the how finds it under a site generator's name, or doesn't. A project on another generator has no reason to open the page.
+- **Recommendation:** document. Permalinks get a guide of their own, and the Astro guide keeps what the integration does.
+- **Size:** small.
+
+### 40. The home page and getting started describe fewer pages and commands than there are
+
+- **Kind:** a contradiction.
+- **Where:** `docs/content/index.md`; `docs/content/getting-started.md`, "Next".
+- **Evidence:** The home page: "[Command reference](reference/cli.md): `ascribe check`, `build`, `diff`, `drift`, `fmt`, and `lsp`, their options, outputs, and exit codes." Getting started: "[Command reference](reference/cli.md): `check`, `build`, `fmt`, and `lsp`." `ascribe --help` lists eighteen commands, and the reference has a section for each. The home page's list has sixteen of the docs' eighteen other pages; `guides/vale.md` ("Prose, through Vale") and `guides/report.md` ("The project report") aren't on it. Checked on the published page: its article links to neither `/guides/vale/` nor `/guides/report/`, and the sidebar beside it lists both.
+- **Cost:** A reader who starts at the home page isn't told about two guides or twelve commands. The sidebar and `llms.txt` are right, so it's the page that's behind.
+- **Recommendation:** document: add the two guides, and describe the command reference without listing commands. It will fall behind again while it's a list kept by hand (finding 28).
+- **Size:** small.
+
+### 41. `ascribe.toml` is described twice, in the same words
+
+- **Kind:** a duplicate.
+- **Where:** `docs/content/reference/content-model.md` (812 lines); `docs/content/contracts/content-model.md` (1,013 lines).
+- **Evidence:** Of the reference's 301 lines longer than 40 characters, 123 are in the contract word for word. Both open with "### 1.1 The file", "### 1.2 Names", "### 1.3 Paths and patterns", and "### 1.4 How this reference describes keys"; the contract kept the last heading, and says its example files are "each valid under this reference". One piece is shared properly: both have `@include: ../_fragments/field-type-grammar.md`, the docs' only fragment written by hand. The sections are numbered one apart (`[builds.<name>]` is §16 in one and §17 in the other). Each page calls the other its counterpart: the contract says "For a guide to writing one, see the [`ascribe.toml` reference]".
+- **Cost:** A change to a table of `ascribe.toml` is made in two pages, by hand, and `AGENTS.md`'s rule is "One home per fact. Don't copy a list, a name, or a version into a second file." A reader who searches for a key gets two pages that say the same thing and doesn't know which to trust.
+- **Recommendation:** merge what's the same into fragments both pages include, as the field types' grammar already is. The contract keeps what only it has: the map to the spec, the validation rules, the decisions. The contract's text doesn't change, so no contract moves.
+- **Size:** medium.
+
+### 42. The element library and the review package have no page on the site
+
+- **Kind:** a gap.
+- **Where:** `@ascribed/elements`, `@ascribed/review`; `docs/content/guides/astro.md`, "Styling".
+- **Evidence:** "Styling" is one paragraph: the elements are "themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README]({repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states." The site that says so needed it: `site/src/styles/site.css` sets `--_color: var(--ascribe-state-preview-color)` for its own lifecycle state. `@ascribed/review` is linked the same way, to `packages/review/README.md`. Neither is a page, so neither is in the sidebar, in `llms.txt`, or in what search indexes.
+- **Cost:** A site builder theming the elements, the third kind of user the audit names, leaves the docs for a README on GitHub at `main`, which may not be the version they installed. The names are a contract (`packages/elements/CONTRACT.md`) and the docs don't list them.
+- **Recommendation:** document. A reference page for the elements and their properties, taking the list from the package so it has one home. Leave `@ascribed/review`: its README says "This README is for building a host", which nobody outside the repository does yet.
+- **Size:** small.
+
+### 43. READMEs link to pages by address, and the last move left twelve stubs
+
+- **Kind:** a contradiction, and something left over.
+- **Where:** `README.md`, `packages/*/README.md`, `crates/*/README.md`, `plugins/ascribe/README.md`; `docs/*.md` outside `content/`.
+- **Evidence:** `site/README.md`: "What links in from outside the docs, the binary's help and diagnostics and the editor's links, uses a permalink instead, such as `/go/ASC036/`". The READMEs published to npm and the Marketplace are outside the docs too, and none of them does: the READMEs have 27 links to pages by address and none to `/go/`. Nineteen of the 27 are in the root's, the packages', and the plugin's (`https://ascribed-dev.com/guides/review/` four times, `/guides/editor/` four times, `/guides/agents/` three times); the other eight are in the crates'. It has already cost once. `docs/cli.md` and eleven files like it say: "This page is now [content/reference/cli.md](content/reference/cli.md). Package READMEs published before the move link here, so this file stays until a release republishes them." They were added on 5 October 2026. `v0.2.0` was tagged on 6 October, and its `packages/cli/README.md` links to `ascribed-dev.com/reference/cli/`, so the release that republishes them has happened.
+- **Cost:** A page that moves breaks the READMEs of every version already published, and the only cover is a line in `site/public/_redirects` someone remembers to write. The twelve stubs are files a reader of the repository opens and learns nothing from.
+- **Recommendation:** rename and remove. The READMEs link to permalinks, as the manifest and the plugin do (`/go/editor-guide/`, `/go/cli-reference/`, `/go/getting-started/`, `/go/agents-guide/`, and `/go/diagnostics/` exist; the Astro and review guides, the `ascribe.toml` reference, and two contracts need one each). The twelve stubs go: nothing has to be kept for 0.1.1's READMEs (README decision 3).
+- **Size:** small.
+
+### 44. What Ascribe writes into a project is said on seven pages, and listed on none
+
+- **Kind:** a gap.
+- **Where:** `.ascribe/`, `ascribe.lock`, `sources/`, `ascribe.permalinks`, the block in `AGENTS.md`, the skill's folder, the hooks' files.
+- **Evidence:** Getting started: "Add the output directory to `.gitignore`". The Vale guide: "Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there". The drift guide: "Commit `ascribe.lock` and `sources/`." The Astro guide: "It writes where it's running (`url` and `build`) to `.ascribe/dev.json`", and "The docs commit their list of permalinks, `ascribe.permalinks`". The agents guide has a table of three more (`.claude/settings.json` and `.mcp.json`, `.codex/hooks.json`, `.github/hooks/ascribe.json`), and `AGENTS.md` and the skill above it. Two contracts cover the formats of two of them. The proposal's table has this as a surface of its own, "Files Ascribe puts in a project", and no page has it as a subject.
+- **Cost:** Someone who finds a file they didn't write, or is deciding what to commit, has no page that says which files are Ascribe's, which to commit, and which to ignore.
+- **Recommendation:** document: one table, in the `ascribe.toml` reference or a page of its own, of each file, what writes it, and whether it's committed. Phase 2's inventory has the same list to draw on.
 - **Size:** small.
 
 ## Not findings

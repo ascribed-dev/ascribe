@@ -1,6 +1,6 @@
 # The docs site
 
-Part of [The surface audit](README.md), [phase 4](phase-4-docs-site.md). The docs site is looked at twice (README decision 7): as the first site built with Ascribe, and as the way people find the surface. Section 1 is the first; sections 2 and 3 are the second. What's certain is written as findings 28 to 43 in [findings.md](findings.md#the-docs-site).
+Part of [The surface audit](README.md), [phase 4](phase-4-docs-site.md). The docs site is looked at twice (README decision 7): as the first site built with Ascribe, and as the way people find the surface. Section 1 is the first; sections 2 and 3 are the second. What's certain is written as findings 28 to 44 in [findings.md](findings.md#the-docs-site).
 
 Everything here is from `main` at `a138d68b`, the published site at <https://ascribed-dev.com>, and a binary built from that code (`ascribe 0.2.0`), on 10 October 2026. Phase 2's generated inventory wasn't done, so "the surface" is the fifteen rows of the [proposal's table](../proposals/surface-audit.md#what-the-surface-is), with [phase 1's tables](inventory-slice.md) and the sources they were built from.
 
@@ -63,6 +63,8 @@ Each of these would be written again by the next site. The last column names the
 
 Three more things the site carries that aren't in the three folders, for completeness: `site/netlify.toml` (20 lines, the host's build), `site/astro.config.mjs` (17 lines, the integration and the code themes), and `site/README.md`, whose list of the files says `src/components/` holds "search, the sidebar, the table of contents, the page's availability badge". The folder has three files; the badge is `@ascribed/astro/Availability.astro` now.
 
+And in `docs/`, outside `content/`: `docs/ascribe.permalinks` (223 lines, written by `ascribe permalinks sync`), `docs/README.md`, and twelve files of three lines each at the docs' old paths, such as `docs/cli.md`: "# Moved", then "This page is now [content/reference/cli.md](content/reference/cli.md). Package READMEs published before the move link here, so this file stays until a release republishes them." They're redirects written as pages, for links that named a source file on GitHub. Finding 43.
+
 ### What the first customer asked for
 
 Counting the rows above that are a gap in the product, and leaving out the site's own business and the two rows that need nothing:
@@ -110,3 +112,92 @@ Never used by the project's own docs:
 One thing is declared and not used: `since = "string?"` in `[types.reference.frontmatter]`. No page has `since:`. Availability does that job now. Nothing reports it: the inventory's unused entries are "the fragments, phrases, features, glossary terms, and images nothing uses", and it answers "Entries nothing uses: none." Finding 34.
 
 The two page types differ only by that field. `guide` and `reference` have the same `title` and `description`, so the type a page has changes nothing a reader or a check sees.
+
+## 2. The surface against the docs, both ways
+
+"Reference" and "guide" here are the sidebar's groups, not a judgment; section 3 is about how well the two words fit. "How someone gets there" was checked on the published site with `curl` for every address the product prints; search was only read (`site/src/components/Search.astro` and its test), not tried.
+
+### From the surface to the docs
+
+| Surface | Reference | Guide | How someone gets there | Are the page's words the surface's? |
+|---|---|---|---|---|
+| The command line: 18 commands, 27 with the subcommands of `agents`, `permalinks`, `sources`, and `vale` | `reference/cli.md`, "Command reference", a section for each, with its options included from 26 generated files (`_generated/cli-*-options.md`) | By command, in the next table | Every command's and subcommand's `--help` ends `Documentation: https://ascribed-dev.com/go/cli-<command>/`, and all 31 of those addresses answer 200. The home page, the sidebar, and `packages/cli/README.md` link to the page. | Yes: each heading is the command as typed (`` ## `ascribe check` ``), and a test holds the options to the binary. The order isn't the binary's: `--help` lists them by name, and the page goes `check`, `build`, `diff`, `drift`, `report`, `fmt`, `lsp`, `mcp`, `sources`, `permalinks`, `vale`, `explain`, `model`, `outline`, `link`, `refs`, `render`, `agents`. The home page and getting started describe the page by six and by four of its commands (finding 40). |
+| The language: directives, attributes, phrases, frontmatter | `reference/directives.md`, "Directive reference"; `SPEC.md`, on GitHub | Getting started's "Write a page", five bullets. No other guide (finding 38). | The home page; the sidebar; the last line of the rules `ascribe agents sync` writes ("Every directive: https://ascribed-dev.com/go/directives/"); the skill. From a diagnostic, not: its entry links to `SPEC.md` (finding 37). | Yes: a heading for each directive, as written (`` ### `@variant` ``). |
+| `ascribe.toml` | `reference/content-model.md`, "`ascribe.toml` reference", and `contracts/content-model.md`, "`ascribe.toml` format contract", which share much of their text (finding 41) | Getting started's "Create `ascribe.toml`" | The home page; the sidebar; the extension's walkthrough links `/go/create-ascribetoml/`. From a `model-` diagnostic, not: none of the 72 entries links to either page. | Yes: a numbered section for each table, as written (`` ## 16. `[builds.<name>]` ``). The address says `content-model`, and the title says `ascribe.toml`. |
+| Diagnostics: 180, and one retired | `reference/diagnostics.md`, "Diagnostics", generated from the registry | None of its own. `ascribe explain` is the guide, and the agents guide names it. | `ascribe explain`'s last line, `docs` in `check`'s JSON, and the code's link in the Problems panel are all `https://ascribed-dev.com/go/ASC036/`, which takes two requests on this host (finding 35). `ascribe check`'s text prints the code and no address. A diagnostic's name isn't an address: `/go/link-target-missing/` answers 404. | Yes, by generation. The page is titled "Diagnostics" and described as "Every problem Ascribe reports", which is finding 9's two words on one page. |
+| The VS Code extension | `guides/editor.md`, "Editing": its "Settings", "Commands", and "Actions" tables are generated from the manifest and the action registry | The same page, and `guides/review.md` | The manifest's `homepage` is `/go/editor-guide/`; the Projects view's empty state links `/go/getting-started/`, and the walkthrough `/go/create-ascribetoml/` and `/go/cli-check/`; getting started's "Install the editor"; the Marketplace README links the page as "Editing with Ascribe". | The tables, yes: 51 of the manifest's 63 commands are in them, and the other 12 are buttons the palette doesn't list, each named in the prose. The page's own title isn't: the sidebar says "Editing", the README "Editing with Ascribe", the permalink `editor-guide`, and the thing itself is "the **Ascribe** extension for VS Code". |
+| The language server | `reference/cli.md`, `ascribe lsp` | `guides/editor.md`, "Other editors" | `ascribe lsp --help`; the editor guide. | Yes, for the command. Its nine requests of its own (`ascribe/preview`, `ascribe/context`, `ascribe/edit`, and the rest) aren't on the site; they're in `crates/ascribe-lsp/README.md`. |
+| The MCP server | `reference/cli.md`, `ascribe mcp`: a table of the nine tools, its resources and prompts, written by hand | `guides/agents.md`, "The MCP server" | `ascribe mcp --help`; the agents guide. | Yes: the nine tool names match the server's. I found no test that compares the table with the server. |
+| VS Code's agent tools | `guides/editor.md`, "Agents in VS Code", with a generated table | `guides/agents.md`, "VS Code" | The two guides. | Yes, by generation: `#ascribe_editor_problems`, `#ascribe_review_threads`, `#ascribe_review_changes`. |
+| The plugin | None | `guides/agents.md`, "The plugin"; `plugins/ascribe/README.md` | The plugin's `homepage` is `/go/agents-guide/`. | Yes, and it repeats a difference in the surface faithfully: the commands are "`/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`", and the prompts they run are "`new-page`, `fix`, and `review`". |
+| What `ascribe agents sync` writes | `reference/cli.md`, `ascribe agents sync` | `guides/agents.md`, "Agent instructions", "The skill", and the table under "Hooks" | Getting started's "Work with an AI agent"; `ascribe agents sync --help`. | Yes. |
+| `@ascribed/astro` | `guides/astro.md`, "Options" and "What the integration does" | The same page, and getting started's "Publish it with Astro" | The home page; the sidebar; `packages/astro/README.md`. | Yes: the six options in the table are the six in `packages/astro/src/index.ts`. The table is written by hand. |
+| `@ascribed/elements`, `@ascribed/review` | None on the site. `packages/elements/README.md`, `packages/elements/CONTRACT.md`, and `packages/review/README.md`, on GitHub | None | The Astro guide's "Styling" links the element library's README, and "Review in the site preview" the review package's. | Not applicable: there's no page (finding 42). |
+| The outputs | `contracts/output-layout.md`, `contracts/site-render.md`, `contracts/assets.md`, `contracts/json-reports.md` with 18 generated schemas; `reference/cli.md`'s "Outputs", "JSON output", and "The HTML report" | `guides/review.md`, "The report in CI", for the HTML report | The home page's "For implementers"; the sidebar's "Contracts". | Yes. |
+| Files Ascribe puts in a project | `contracts/permalinks-list.md` for `ascribe.permalinks`; `contracts/content-model.md` §19.1 for `ascribe.lock` | None of its own | Each from the guide of the feature that writes it: seven pages (finding 44). | Yes, where they're named. |
+| The docs themselves | | | `--help`, the manifest, and the plugin link by permalink. The READMEs link by a page's address (finding 43). | |
+
+Each command, and where a person would read how to use it rather than what it takes. The count is how many times the guide names the command.
+
+| Command | A guide that covers it | Notes |
+|---|---|---|
+| `check` | Getting started, "Check it"; `guides/agents.md`, "The loop" (14) | Named in all seven guides |
+| `build` | Getting started, "Build it"; `guides/astro.md` | |
+| `diff` | `guides/review.md` (5) | The guide is titled "Review" |
+| `drift` | `guides/drift.md` (7) | |
+| `report` | `guides/report.md` (9) | |
+| `fmt` | Getting started, "Format it"; `guides/editor.md`, "Formatting" | |
+| `lsp` | `guides/editor.md`, "Other editors" | |
+| `mcp` | `guides/agents.md`, "The MCP server" | |
+| `sources` | `guides/drift.md`, "Docs kept apart from the code" (8) | The guide is titled "Drift" |
+| `permalinks` | `guides/astro.md`, "Permalinks" (7) | The guide is titled "Astro" (finding 39) |
+| `vale` | `guides/vale.md` | |
+| `explain`, `model`, `outline`, `link`, `refs`, `render` | `guides/agents.md`, one row each of a table under "The loop" | The command reference says they're "for writers and for agents". The only guide that names them is for agents. |
+| `agents` | `guides/agents.md` (18) | |
+
+### From the docs to the surface
+
+Pages and sections that describe nothing a user of Ascribe touches:
+
+- **`docs/content/contracts/content-model.md`, §2 "Map of SPEC §7.2 to this file" and §24 "Decisions".** They're about how the file format was decided, for someone changing the loader. The page says so: "The loader in `ascribe-model` implements it."
+- **`docs/content/contracts/site-render.md`, `output-layout.md`, and `assets.md`, most of each.** They describe what an emitter writes for someone writing another consumer. The home page puts them apart and says who they're for: "They matter if you're changing Ascribe's outputs or writing a consumer, and not if you're writing documentation with it." They take six of the sidebar's nineteen lines.
+- **`docs/content/contracts/output-layout.md`, §5 "Why this shape".** A decision's reasons.
+- **Twelve files in `docs/` outside `content/`,** each "# Moved" and one sentence, at the paths the docs had before they moved under `content/`. They aren't published. Their reason has passed (finding 43).
+
+Nothing else was found. No page describes a command, a setting, or a directive that isn't there: the command reference's sections are the binary's eighteen commands, the editor's tables are generated from its manifest, and the diagnostics are generated from the registry.
+
+Where a page describes more than is released, it says so. 106 marks say `next`, and six pages are `available: next` or `ascribe 0.2.0` as a whole. That's the surface of `main`, not of what `npm install` gives, and the site follows `main` on purpose.
+
+## 3. Notes on the structure
+
+**What a guide and a reference are, here.** The content model has two page types, `guide` ("the default") and `reference` (`files = ["reference/**", "contracts/**"]`), and they declare the same fields (finding 34), so the type records which folder a page is in and nothing more. The sidebar has four groups, "Start", "Guides", "Reference", and "Contracts", which `site/src/nav.ts` lists by hand. So a page is a guide or a reference by its folder, and nothing checks that it reads like one.
+
+**Most pages are what their group says.** `guides/drift.md`, `guides/review.md`, `guides/report.md`, and `guides/vale.md` are tasks in order, with numbered steps. `reference/diagnostics.md` is a list. The pages that are both:
+
+- **`guides/editor.md` is the editor's reference too.** It's 289 lines under "Guides", with "## Settings", "## Commands", and the actions table included from generated files, and "### Which `ascribe` it runs" as a numbered list of rules. There's no other page for the extension, so a person looking up a setting and a person installing the extension for the first time read the same page.
+- **`guides/astro.md` is the integration's reference, and the permalinks guide.** "## Options" and "## What the integration does" are reference. "## Review in the site preview" says of itself: "[Review] walks through reviewing a pull request with it; this section is the reference for the site's side." And "## Permalinks", 100 of the page's 287 lines, is the guide to a feature of the language and a command group, for any site (finding 39).
+- **`reference/cli.md` has tasks inside `ascribe check`.** Its subsections are "Checking some files", "Checking text before it's saved", "Checking the prose", "A quick check after each edit", and "Output for agents", before "Exit codes" and "Text output". The other commands' sections are what the command takes and writes.
+- **`reference/content-model.md` is called a guide by the pages that link to it.** The home page: "The [reference] above is the guide for writing one." The contract: "For a guide to writing one, see the [`ascribe.toml` reference]". It's a numbered section for each table with every key, which is a reference, and there is no guide to writing a content model beyond getting started's one section, "Create `ascribe.toml`".
+
+**Where a reader with a task lands on a specification.** Taking the eight tasks of the [proposal's journeys](../proposals/surface-audit.md#2-journeys):
+
+| Task | Where the docs take it |
+|---|---|
+| Start a project and publish a first page | `getting-started.md`, then `guides/astro.md`. A guide. Journey 1 in phase 3 tests it. |
+| Add a section that differs by platform | `reference/directives.md#variant`, then `reference/content-model.md` §6 and §16. A reference, and a specification's numbered sections. Getting started has one bullet: "`@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one." (finding 38) |
+| Fix a broken link | The diagnostic's entry, then `SPEC.md` on GitHub (finding 37). `ascribe link` is named in one guide, for agents. |
+| Show an example from the code, and keep it current | `guides/drift.md`. A guide. |
+| Rename a phrase everywhere | `guides/editor.md`, "Refactoring" and "Changing the content model". A guide, for the editor. For the command line, `reference/cli.md`'s `ascribe refs`. |
+| Review a pull request's docs | `guides/review.md`. A guide. |
+| Set up checks in CI | No one place. Getting started's "Check it in CI" has `ascribe check --deny-warnings` and `ascribe fmt --check`. The rest is one section in each of five guides: "Keeping them current in CI" (`agents sync --check`), "The report in CI" twice (`diff` in the review guide, `drift` in the drift guide), "On a schedule" (`report`), and "Checking a product's links" (`permalinks verify`). |
+| Arrive in an unfamiliar project and make a correct edit | `guides/agents.md`. A guide. |
+
+Five of the eight have a guide. The three that don't are the language's own subject (content that varies), the most common problem (a broken link), and CI, which is spread out rather than missing.
+
+**The guides are about tools, and the language has none.** The sidebar's seven guides are "Astro", "Editing", "Review", "Drift", "Agents", "Prose, through Vale", and "The project report": a site generator, an editor, and five features around the language. Variants, availability, builds, phrases, the glossary, and fragments are reached only through the two references. A count of where the guides write `@variant`, `[builds.`, or `[dimensions.`: getting started 5, the Astro guide 2, the editor guide 2, and the other five guides none.
+
+**A guide's title is the feature's name, not the command's.** Someone who knows a command and looks for it in the sidebar finds "Review" for `ascribe diff`, "Drift" for `ascribe sources`, "Astro" for `ascribe permalinks`, "Editing" for the extension. Each `--help` leads to the command reference, and the reference's section links on to the guide, so the path exists; the sidebar alone doesn't give it.
+
+**Section numbers are in the addresses.** The two `ascribe.toml` pages number their sections, and a heading's id is its slug, so the docs link to `reference/content-model.md#16-buildsname` and `#6-dimensionsname`, and the glossary in `docs/ascribe.toml` does too. A table added anywhere but the end renumbers what follows and changes those ids. `[permalinks]` was added last, as §20. The same table is §16 in the reference and §17 in the contract, since the contract has one more section before it.
+
+**Three lists of the pages, kept three ways.** The sidebar (`site/src/nav.ts`, by hand, with a test), `llms.txt` (written by Ascribe, by folder and file name), and the home page (`docs/content/index.md`, by hand, with no test). Findings 28 and 40.
