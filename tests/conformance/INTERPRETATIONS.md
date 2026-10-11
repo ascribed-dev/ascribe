@@ -34,6 +34,7 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Th
 - A link to an empty-text target, a same-file `#id`, an external URL, and `mailto:` are valid. A link to a non-page local file is an asset link.
 - A link or an include naming a Markdown file that isn't a source because it's in a directory whose name starts with `.`, or in a nested project's folder (§2.1), is reported as a target that doesn't exist, with the plain message; an image or another file there is an ordinary local file, and is copied.
 - `heading-duplicate-without-id` and `id-duplicate` are checked on the expanded page, so a fragment's headings count. They are reported once each, at the later occurrence.
+- A processor limits how many blocks a page's includes expand it to (§4.2 allows one, set far above what a real page reaches). The `expansion-limit` case expects a page that would be a million paragraphs to pass it, and the limit to be reported once, at the page's include that passes it.
 
 **Builds**
 

@@ -90,7 +90,7 @@ For authors. Read from `docs/content/reference/content-model.md`.
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-180 in use, and 1 retired. By severity: 23 advice, 135 error, 22 warning. By level: 164 file, 16 page. By kind of next step: 40 choose, 11 fix, 3 outside, 10 review, 116 write.
+181 in use, and 1 retired. By severity: 23 advice, 136 error, 22 warning. By level: 164 file, 17 page. By kind of next step: 40 choose, 11 fix, 3 outside, 10 review, 117 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -275,6 +275,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC179` | `permalink-alias-target-missing` | error | write | the alias `{name}` leads to `{target}`, which no heading or page declares |
 | `ASC180` | `permalink-name-conflict` | error | write | `{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing |
 | `ASC181` | `permalink-retired-target-missing` | error | write | `{name}` is retired to `{to}`, and there's no page `{path}` |
+| `ASC182` | `include-limit` | error | write | including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is |
 
 ## The VS Code extension
 

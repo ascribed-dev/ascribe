@@ -1,0 +1,12 @@
+description: >-
+  Includes without a cycle that would make a page enormous: each fragment
+  includes the next ten times, so the page would be a million paragraphs.
+  The page's include that takes it past the processor's limit is an error,
+  and it and the include after it are left unexpanded.
+spec: ["4.2", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: include-limit, file: index.md, line: 7}
