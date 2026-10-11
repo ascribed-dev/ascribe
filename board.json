@@ -513,7 +513,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/349"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One word for what Ascribe reports, and one count of them"
     },
     {
@@ -573,7 +573,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/342"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]`"
     },
     {
@@ -1090,6 +1090,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "A starter for an Astro site: the four files every site writes again"
+    },
+    {
+      "content": {
+        "body": "Follow-up to #273 / #342.\n\n## What to do\n\nOnce a `next` canary of `@ascribed/astro` includes #342, which supplies Astro's `site` and `trailingSlash` from `[consumer]`:\n\n- Remove `site` and `trailingSlash` from `site/astro.config.mjs`, and update its comment.\n- In `.github/workflows/site.yml`'s \"Use the preview's address\" step, stop rewriting `site/astro.config.mjs`: drop it from the `sed -i` line and drop its `grep -q` check.\n- Update `site/README.md`'s preview paragraph, which says the address is written in `astro.config.mjs`, and `scripts/docs-site/facts.test.ts`, which lists the files the preview rewrites.\n\n**Done when:** the site builds in production and in a PR preview with its address written only in the projects' `ascribe.toml`, and canonical and social-card URLs are still absolute on the site's address.\n\n## Why it waits\n\nProduction builds `site/` from npm with the newest canary (`site/netlify.toml`), not from the workspace. Removing the settings before a canary carries #342 would build production without `site`, so `Base.astro` would fall back to `Astro.url` for canonical and card URLs.\n\n**Size:** Small.",
+        "number": 350,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Drop `site` and `trailingSlash` from `site/astro.config.mjs` once a canary supplies them",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/350"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAC6AU",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Drop `site` and `trailingSlash` from `site/astro.config.mjs` once a canary supplies them"
     }
   ]
 }
