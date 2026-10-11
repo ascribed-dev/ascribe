@@ -410,7 +410,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/338"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`ascribe diff PAGE`: show one page's changes in a terminal"
     },
     {
@@ -490,7 +490,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/329"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Rename `--format summary` to `markdown`"
     },
     {
@@ -641,7 +641,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The skill: say where the rules are, and how to do five things agents needed"
     },
     {
@@ -718,7 +718,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "A guide to permalinks, out of the Astro guide"
     },
     {
