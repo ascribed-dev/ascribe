@@ -10,7 +10,7 @@ The maintainer's walks are gone from this phase (README decision 9). Phase 1's t
 
 ## Context
 
-- Phase 1's script, [`journeys/fix-a-broken-link.md`](journeys/fix-a-broken-link.md): the form a script and its notes take, how a copy is prepared, and how a session is run and recorded (`claude -p` with a clean profile and `--output-format stream-json`).
+- Phase 1's script, [`journeys/fix-a-broken-link.md`](journeys/fix-a-broken-link.md): the form a script and its notes take, how a copy is prepared, and how a session is run and recorded (`claude -p` with only the project's settings read, hook events included, and `--output-format stream-json`), and why a new profile can't be used.
 - README decisions 5, 6, and 9: a session is run as written and noted as it went; it's a fresh session with nothing but the project and what Ascribe put in it, and its whole transcript is kept.
 - The guides a newcomer starts from: `docs/content/getting-started.md`, and those under `docs/content/guides/`.
 - `examples/quill`, `examples/monorepo`, and `examples/docs-repository`: starting points, each in a fresh copy.
@@ -30,7 +30,14 @@ Each has a goal a user would recognize, a starting point, and the setups to run 
 | 6 | Set up checks in CI | A project with no workflow | An agent with the plugin |
 | 7 | Arrive in an unfamiliar project and make a correct edit | `examples/monorepo`, and a one-line request | Three: with the plugin; with only what `ascribe agents sync` wrote; with nothing |
 
-Nine sessions, after phase 1's two. Each is a fresh session with a clean profile, in a copy that holds the project and what its row adds, with the task's sentence as the whole prompt, recorded whole to `journeys/transcripts/<journey>-<setup>.jsonl`. When it stops, the preparer runs `ascribe check` in the copy and notes the exit code and the diff.
+Nine sessions, after phase 1's two. Each is a fresh session that reads only the project's settings, in a copy that holds the project and what its row adds, with the task's sentence as the whole prompt, recorded whole to `journeys/transcripts/<journey>-<setup>.jsonl`. When it stops, the preparer runs `ascribe check` in the copy and notes the exit code and the diff.
+
+What phase 1's sessions settled, for all nine:
+
+- **A copy leaves out the example's `README.md`.** It describes the example to someone reading the repository, and in phase 1 it told the agent which file had been renamed.
+- **The commands are phase 1's,** flag for flag: `--setting-sources project`, `--no-session-persistence`, `--include-hook-events`, and for a session with the plugin, its tools allowed and no `--strict-mcp-config`. The user's synced skills and the account's connectors still reach a session; the notes say whether one was used.
+- **The task has to be hard enough to need more than `ascribe check`.** Phase 1's three sessions took 15 seconds each and used none of what the plugin adds. A task that ends at the first clean check shows nothing about the skill, the tools, or the hook, so each script's goal names a result a check alone can't confirm: a page that reads right in two builds, an example that stays current, a workflow that fails when it should.
+- **A session is run once.** Phase 1's hook session was recorded twice only because the first recording left the hook's events out.
 
 Notes on three of them:
 
