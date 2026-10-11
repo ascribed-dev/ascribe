@@ -4,7 +4,7 @@ description: Install Ascribe, write a first page, check it, build it, and publis
 permalink: getting-started
 ---
 
-Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project, writes a first page, and publishes it with Astro.
+Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](guides/astro.md), publishes the page as a site.
 
 You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later (2.39 for 0.1.1 and earlier), which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
 
@@ -114,29 +114,15 @@ rewrites directives and attribute blocks into their canonical spelling, and chan
 
 ## Publish it with Astro
 
-In an [Astro](https://astro.build) project (`npm create astro@latest` makes one), with `ascribe.toml` beside `astro.config.mjs`:
+Publishing the site is this guide's second half, on its own page: [Astro](guides/astro.md) adds Ascribe to an [Astro](https://astro.build) project file by file, and ends with the site open in your browser. Start it one of two ways:
 
-@steps
-1. Install the integration:
+- **A new site.** Create an Astro project (`npm create astro@latest`), move `ascribe.toml` and `docs/` into it, beside `astro.config.mjs`, and follow the guide from its first step.
+- **An existing site.** Keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's directory.
 
-   ```sh
-   npm install @ascribed/astro
-   ```
+Either way:
 
-2. Add it to `astro.config.mjs`:
-
-   ```js
-   // astro.config.mjs
-   import { defineConfig } from "astro/config";
-   import ascribe from "@ascribed/astro";
-
-   export default defineConfig({
-     site: "https://docs.example.com",
-     integrations: [ascribe({ build: "site" })],
-   });
-   ```
-
-3. Define the content collection, a route, and a layout that loads the elements. [Astro](guides/astro.md) walks through each file.
+- `ascribe.toml`'s `[consumer]` `site` and Astro's `site` must be the same address. The `ascribe.toml` above sets it, and the Astro build fails when the two differ.
+- You don't run `ascribe build` yourself: the integration runs it before Astro loads the pages, and again as you edit in `astro dev`.
 
 ## Check it in CI
 
@@ -169,7 +155,7 @@ That writes `AGENTS.md`, with your page types, phrases, and the check to run aft
 
 - [Directive reference](reference/directives.md): the language.
 - [`ascribe.toml` reference](reference/content-model.md): the content model.
-- [Command reference](reference/cli.md): `check`, `build`, `fmt`, and `lsp`.
+- [Command reference](reference/cli.md): every command, its options, and its exit codes.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](guides/editor.md): the VS Code extension.
 - [Astro](guides/astro.md): publishing a site.
