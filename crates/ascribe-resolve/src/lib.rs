@@ -84,6 +84,7 @@ mod index;
 mod layout;
 mod links;
 pub mod llms;
+pub mod pages;
 mod project;
 pub mod references;
 pub mod slug;

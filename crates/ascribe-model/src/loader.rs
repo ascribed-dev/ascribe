@@ -343,6 +343,7 @@ impl<'s> Loader<'s> {
                 "checks",
                 "intended",
                 "permalinks",
+                "crawlers",
             ],
         );
 
@@ -376,6 +377,7 @@ impl<'s> Loader<'s> {
         let checks = self.checks(root.get("checks"));
         let intended = self.intended(root.get("intended"), &phrases, &features, &glossary);
         let permalinks = self.permalinks(root.get("permalinks"));
+        let crawlers = self.crawlers(root.get("crawlers"));
 
         Some(ContentModel {
             spec: spec?,
@@ -399,6 +401,7 @@ impl<'s> Loader<'s> {
             checks,
             intended,
             permalinks,
+            crawlers,
             warnings: Vec::new(),
         })
     }

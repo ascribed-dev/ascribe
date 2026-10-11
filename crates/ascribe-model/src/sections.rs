@@ -79,8 +79,12 @@ impl Loader<'_> {
         if let Some(f) = t.get("frontmatter")
             && let Some(ft) = self.as_table("fragments.frontmatter", f)
         {
-            let reserved: &dyn Fn(&str) -> bool =
-                &|n| matches!(n, "available" | "variant" | "permalink" | "intended");
+            let reserved: &dyn Fn(&str) -> bool = &|n| {
+                matches!(
+                    n,
+                    "available" | "variant" | "permalink" | "listing" | "intended"
+                )
+            };
             for (name, span, _) in entries(ft) {
                 if reserved(name) {
                     // Fragments accept `intended`, and can't use the others.
@@ -156,6 +160,7 @@ impl Loader<'_> {
                             "available"
                                 | "variant"
                                 | "permalink"
+                                | "listing"
                                 | "intended"
                                 | "slug"
                                 | "formatted"

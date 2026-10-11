@@ -43,7 +43,7 @@ Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section wh
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
-**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`) and its list of permalinks (`_ascribe/permalinks.json`, §1.2).
+**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), and its page records (`_ascribe/pages.json`, §1.3).
 
 ### 1.2 The permalinks list
 @available: next
@@ -81,6 +81,46 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 | `removed` | The retired permalinks with nowhere to lead in this build, keyed by name and sorted: those without `to`, and those whose `to`'s page the build doesn't publish. Each has `reason`, why it was retired. Their addresses show that what was there was removed, and why. Absent when there are none. |
 
 An address forwards to `route`, then `#` and `fragment` when there is one. A later version may add keys to the file or to an entry; it doesn't change these.
+
+### 1.3 The page records
+@available: next
+
+The site output holds `_ascribe/pages.json`: a record of each page the build publishes (SPEC §9.4), saying what every reader that isn't a person is told about it, and what the project says to crawlers, for a site to write each page's head, its sitemap, and its `robots.txt` from. `llms.txt` is written from the same records. It's `generated` in the manifest, and written for every build, with an empty table when the build has no pages.
+
+```json
+{
+  "version": 1,
+  "site": "https://docs.example.com",
+  "pages": {
+    "/guides/install/": {
+      "source": "guides/install.md",
+      "title": "Install the agent",
+      "description": "Install and connect the sync agent.",
+      "canonical": "https://docs.example.com/guides/install/",
+      "listing": "listed",
+      "markdown": "/guides/install.md"
+    }
+  },
+  "robots": { "lines": ["Disallow: /drafts/"] }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
+| `site` | The project's address, `[consumer] site`, without a final `/`. Absent when it isn't set. |
+| `pages` | One entry per page the build publishes, keyed by its route, sorted by route. An entry doesn't repeat its route. |
+| `pages.*` key | The page's route, from the host's root, as the site output's links write it. |
+| `pages.*.source` | The page's source path, relative to the content root, with `/`, as the page's frontmatter `source` has it. |
+| `pages.*.title` | The page's title, as plain text: the site output's `title`, never its formatted form. Absent when the page has none. |
+| `pages.*.description` | The page's description, the field its type marks `role = "description"`, as plain text on one line, as `llms.txt` shows it. Absent when it has none. |
+| `pages.*.canonical` | The page's own address, absolute: `site`, then the route. Absent when `site` is. |
+| `pages.*.listing` | The page's `listing` (SPEC §2.1): `listed`, `unquoted`, or `unlisted`. Every page has one; a page that doesn't set it is `listed`. |
+| `pages.*.markdown` | The address of the page's Markdown version, from the host's root, when the build publishes one (`[consumer] agents = true`). Absent otherwise. |
+| `robots` | What the project says to crawlers. |
+| `robots.lines` | The project's `[crawlers] lines` (content-model contract §21), in order, each path in an `Allow` or `Disallow` line with the base path before it, so that each is from the host's root, and every other line as written. Lines before any `User-agent` line are for every crawler. Empty when the project has none. |
+
+A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
 
 ## 2. What Ascribe owns
 

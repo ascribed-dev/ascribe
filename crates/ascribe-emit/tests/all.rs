@@ -17,6 +17,8 @@ mod agents;
 mod assets;
 #[path = "all/formatted.rs"]
 mod formatted;
+#[path = "all/pages.rs"]
+mod pages;
 #[path = "all/permalinks.rs"]
 mod permalinks;
 #[path = "all/plain.rs"]

@@ -287,7 +287,7 @@ impl Cx<'_> {
         if top && key == "intended" {
             return;
         }
-        if top && matches!(key, "available" | "variant" | "permalink") {
+        if top && matches!(key, "available" | "variant" | "permalink" | "listing") {
             match self.schema.owner {
                 SchemaOwner::Type(_) => {}
                 SchemaOwner::Fragment => {

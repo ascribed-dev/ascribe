@@ -1,0 +1,11 @@
+description: >-
+  Under a base path, a path in `[crawlers] lines` is from the project's own
+  root, and the check reads it from the host's, with the base path before it,
+  as a crawler reads the file a build writes: `Disallow: /drafts/` under
+  `/docs/` disallows `/docs/drafts/`, and `Disallow: /docs/` disallows
+  `/docs/docs/`, not the page at `/docs/guide/`.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics:
+  - {slug: listing-disallowed, file: drafts/a.md, line: 3}

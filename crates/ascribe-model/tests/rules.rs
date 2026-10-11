@@ -660,6 +660,16 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"why this permalink was retired\" } #!\n",
         ),
         case(
+            "model-crawlers-line",
+            None,
+            "spec = \"0.1\"\n[crawlers]\nlines = [\"Disallow: /a/\\nDisallow: /b/\"] #!\n",
+        ),
+        case(
+            "model-empty-text",
+            None,
+            "spec = \"0.1\"\n[crawlers]\nlines = [\" \"] #!\n",
+        ),
+        case(
             "model-checks-vale",
             None,
             "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\nconfig = \".vale.ini\" #!\n",

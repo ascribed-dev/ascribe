@@ -584,6 +584,12 @@ pub const PERMALINK_RETIRED_TARGET_MISSING: DiagnosticSlug =
 /// `ASC182`, error, page level: SPEC §8.2, "`@include` | A page's includes expand it past the processor's limit (page level)".
 pub const INCLUDE_LIMIT: DiagnosticSlug = DiagnosticSlug("include-limit");
 
+/// `ASC183`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CRAWLERS_LINE: DiagnosticSlug = DiagnosticSlug("model-crawlers-line");
+
+/// `ASC184`, advice, file level: a content check (area `outputs`).
+pub const LISTING_DISALLOWED: DiagnosticSlug = DiagnosticSlug("listing-disallowed");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -768,6 +774,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     PERMALINK_NAME_CONFLICT,
     PERMALINK_RETIRED_TARGET_MISSING,
     INCLUDE_LIMIT,
+    MODEL_CRAWLERS_LINE,
+    LISTING_DISALLOWED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -796,6 +804,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     DELIVERY_HOSTING,
     DELIVERY_OUTPUT,
     AVAILABILITY_LEFT_BEHIND,
+    LISTING_DISALLOWED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

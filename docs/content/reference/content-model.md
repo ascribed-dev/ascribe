@@ -6,7 +6,7 @@ permalink: content-model
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
-A file containing only `spec = "0.1"` is valid; every section has a default ([§21](#21-defaults-what-an-absent-section-means)). Example files:
+A file containing only `spec = "0.1"` is valid; every section has a default ([§22](#22-defaults-what-an-absent-section-means)). Example files:
 
 - [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
@@ -36,8 +36,9 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 18. [`[sources.<name>]`](#18-sourcesname)
 19. [`[checks]`](#19-checks)
 20. [`[permalinks]`](#20-permalinks)
-21. [Defaults: what an absent section means](#21-defaults-what-an-absent-section-means)
-22. [Validation](#22-validation)
+21. [`[crawlers]`](#21-crawlers)
+22. [Defaults: what an absent section means](#22-defaults-what-an-absent-section-means)
+23. [Validation](#23-validation)
 
 ---
 
@@ -74,7 +75,7 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 
 **The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11), and code spans (§5.3).
 
-**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), and `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](directives.md#permalinks)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
+**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](directives.md#permalinks)), and `listing` (below) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
 
 @available: ascribe 0.2.0
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
@@ -82,9 +83,36 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 @available: next
 `source` is reserved on page types too: the site output writes each page's path from the content root under it, for a layout's edit link, so a type must not declare it (`model-field-reserved`).
 
+### Listing a page
+@available: next
+
+A page says whether readers that aren't people are offered it with `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), one of three values, from open to closed:
+
+| Value | What it means |
+|---|---|
+| `listed` | The default, when a page doesn't set it. Search engines may list it, and agents are offered it in `llms.txt`. |
+| `unquoted` | Listed, and asks not to be quoted. Accepted, and in the page's record, but nothing else acts on it yet. |
+| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt`, and is to be out of the sitemap. It's still built, at its address, with its Markdown version. |
+
+```yaml
+---
+title: Migrating from 3.x
+listing: unlisted
+---
+```
+
+Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. The page's head, the sitemap, and `robots.txt` in an Astro site are to be written from it too; `@ascribed/astro` doesn't write them yet. The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
+
+What isn't handled yet:
+
+- **The setting is made on a page only,** not for a folder, a type, or the whole site.
+- **`unquoted` isn't acted on.** It's listed, as `listed` is.
+- **A project says nothing to crawlers by purpose,** such as the ones that gather training data. Its own `robots.txt` lines are [`[crawlers]`](#21-crawlers).
+- **The Markdown version of a page that isn't listed can still be indexed,** since only a response header keeps a file that isn't HTML out of a search index, and Ascribe doesn't write one yet.
+
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
-**Reserved keys on fragments.** The spec defines `available`, `variant`, and `permalink` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.
+**Reserved keys on fragments.** The spec defines `available`, `variant`, `permalink`, and `listing` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.
 
 ---
 
@@ -474,12 +502,25 @@ cli-settings = "settings"
 
 ---
 
-## 21. Defaults: what an absent section means
+## 21. `[crawlers]`
+@available: next
+
+@include: ../_fragments/content-model/crawlers.md
+
+`robots.txt` is a request: a crawler may ignore it, and some bots document that they may. A crawler that follows it and is told not to fetch a page never reads that page's head. Keeping a page out of search results is the page's [`listing`](#listing-a-page), not a `Disallow` line: `ascribe check` says so when a page that isn't listed is at an address the project's own lines disallow for every crawler (`listing-disallowed`), since the crawler can't read the rule then, and a search engine can list the address alone.
+
+A project doesn't yet say anything about crawlers by purpose, such as the ones that gather training data, here; `lines` is the whole of what it says.
+
+**Rules.** Each line is one line (`model-crawlers-line`) and not empty (`model-empty-text`). No other key is allowed in `[crawlers]` (`model-unknown-key`).
+
+---
+
+## 22. Defaults: what an absent section means
 
 @include: ../_fragments/content-model/defaults.md
 
 ---
 
-## 22. Validation
+## 23. Validation
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](diagnostics.md#the-content-model), with its code and how to fix it.

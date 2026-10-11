@@ -819,7 +819,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**When:** Reserved key (`available`, `variant`, `permalink`) on a fragment.
+**When:** Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment.
 
 **Message:** `{key}` is reserved for pages, and fragments can't use it
 

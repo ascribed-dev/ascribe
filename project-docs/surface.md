@@ -86,12 +86,13 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 | `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §18 |
 | `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
 | `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink ended on purpose, and a second name for one. | §20 |
+| `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
 
 ## Diagnostics
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-181 in use, and 1 retired. By severity: 23 advice, 136 error, 22 warning. By level: 164 file, 17 page. By kind of next step: 40 choose, 11 fix, 3 outside, 10 review, 117 write.
+183 in use, and 1 retired. By severity: 24 advice, 137 error, 22 warning. By level: 166 file, 17 page. By kind of next step: 40 choose, 12 fix, 3 outside, 10 review, 118 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -277,6 +278,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC180` | `permalink-name-conflict` | error | write | `{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing |
 | `ASC181` | `permalink-retired-target-missing` | error | write | `{name}` is retired to `{to}`, and there's no page `{path}` |
 | `ASC182` | `include-limit` | error | write | including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is |
+| `ASC183` | `model-crawlers-line` | error | write | `{key}` has a line break; each string in `lines` is one line of robots.txt |
+| `ASC184` | `listing-disallowed` | advice | fix | this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone |
 
 ## The VS Code extension
 

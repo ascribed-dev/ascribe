@@ -5,7 +5,7 @@
 //!
 //! | Source | Site output |
 //! |---|---|
-//! | Frontmatter | Passed through; `available` as a list of targets; `inline` fields as plain text, and as HTML under `formatted` |
+//! | Frontmatter | Passed through, but for `listing`, which is in the page's record; `available` as a list of targets; `inline` fields as plain text, and as HTML under `formatted` |
 //! | Heading | An ATX heading ending in a `<ascribe-attributes>` marker with its page id |
 //! | Image with attributes | The image, then a marker with the attributes |
 //! | `@note` | `<ascribe-note type label heading>` wrapping the content |
@@ -26,13 +26,14 @@
 //! Alongside the pages the emitter writes `_ascribe/schema.ts`, the Zod
 //! schema of every content type ([`crate::zod`]), and
 //! `_ascribe/permalinks.json`, the build's permalinks (output-layout
-//! contract §1.2).
+//! contract §1.2), and `_ascribe/pages.json`, its page records (§1.3).
 
 mod anchor;
 mod blocks;
 mod element;
 mod frontmatter;
 mod inline;
+mod pages;
 mod permalinks;
 mod profile;
 
@@ -54,6 +55,9 @@ pub const SCHEMA_PATH: &str = "_ascribe/schema.ts";
 
 /// The path of the list of the build's permalinks in the emitter root.
 pub const PERMALINKS_PATH: &str = "_ascribe/permalinks.json";
+
+/// The path of the build's page records in the emitter root.
+pub const PAGES_PATH: &str = "_ascribe/pages.json";
 
 /// The directory in the emitter root that holds link targets, which the
 /// consumer serves as static files.
@@ -168,6 +172,7 @@ impl Emitter for SiteEmitter {
             })
         };
         Ok(vec![
+            generated(PAGES_PATH, pages::list(cx.model, build))?,
             generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,
             generated(SCHEMA_PATH, crate::zod::generate(cx.model))?,
         ])

@@ -20,3 +20,4 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[sources]` | No sources. Nothing outside the project's folder can be read. |
 | `[checks]` | Every check at its own level. |
 | `[permalinks]` | No retired permalinks and no aliases. |
+| `[crawlers]` | No lines. |

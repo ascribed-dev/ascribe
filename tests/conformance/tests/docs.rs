@@ -308,6 +308,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),
     ("permalinks", "`[permalinks]`"),
+    ("crawlers", "`[crawlers]`"),
     ("checks", "`[checks]`"),
 ];
 

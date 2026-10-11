@@ -1,0 +1,7 @@
+description: >-
+  `listing` is reserved frontmatter (SPEC §2.1): any page may set it to
+  `listed`, `unquoted`, or `unlisted` without its content type declaring it.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics: []

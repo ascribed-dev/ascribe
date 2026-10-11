@@ -71,7 +71,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Router, Slugger, Span};
-use ascribe_model::{Build, Segment};
+use ascribe_model::{Build, Listing, Segment};
 use ascribe_syntax::{Block, BlockKind};
 
 pub(crate) use glossary::Terms;
@@ -296,6 +296,12 @@ impl<'p> BuildResolver<'p> {
             .and_then(|f| f.get("title"))
             .and_then(|t| t.as_str())
             .map(str::to_owned);
+        let listing = frontmatter
+            .as_ref()
+            .and_then(|f| f.get(Listing::KEY))
+            .and_then(|l| l.as_str())
+            .and_then(Listing::from_name)
+            .unwrap_or_default();
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
         // Acknowledgements (SPEC §4.9) are for the checks: no output shows
@@ -313,6 +319,7 @@ impl<'p> BuildResolver<'p> {
             formatted,
             availability: page_availability,
             permalink,
+            listing,
             blocks,
             assets: Vec::new(),
             problems,

@@ -56,7 +56,7 @@ use std::sync::Arc;
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{AvailabilityMode, Build, CheckLevel, VariantMode};
-use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage, llms};
+use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage, llms, pages};
 
 use crate::{Diagnostic, Project, check_files_with};
 
@@ -511,7 +511,7 @@ fn llms_sizes(
         return Vec::new();
     }
     let mut found = Vec::new();
-    for file in llms::llms_files(model, pages) {
+    for file in llms::llms_files(model, &pages::records(model, pages)) {
         let size = file.chars();
         if size <= llms::LLMS_TXT_LIMIT {
             continue;

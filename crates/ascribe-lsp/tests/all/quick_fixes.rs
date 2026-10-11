@@ -1046,7 +1046,9 @@ fn id_rename_rejects_invalid_and_conflicting_ids() {
 #[test]
 fn every_fix_diagnostic_has_a_quick_fix() {
     let widget = "\n[widgets.quill-labspace]\nforms = [\"line\"]\nprimary = \"none\"\nbinding = \"self\"\n\n[widgets.quill-labspace.attributes]\nlab = \"string\"\n";
-    // The slug, what's added to a page, and what's added to the model.
+    // The slug, what's added to a page, and what's added to the model. What's
+    // added to a page goes at its end, or, when it doesn't start with a line
+    // break, at the start of its frontmatter.
     let samples: &[(&str, &str, &str)] = &[
         (
             "attribute-unquoted-reserved",
@@ -1077,6 +1079,11 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         ("directive-extra-text", "\n@steps foo\n1. One.\n", ""),
         ("phrase-double-braces", "\nInstall {{product}}.\n", ""),
         ("heading-level-skipped", "\n#### Too deep\n\nText.\n", ""),
+        (
+            "listing-disallowed",
+            "listing: unlisted\n",
+            "\n[crawlers]\nlines = [\"Disallow: /keys/\"]\n",
+        ),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()
@@ -1102,11 +1109,12 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             "ascribe.toml",
             &format!("{}{model}", read(&f, "ascribe.toml")),
         );
-        write(
-            &f,
-            "docs/keys.md",
-            &format!("{}{page}", read(&f, "docs/keys.md")),
-        );
+        let text = read(&f, "docs/keys.md");
+        let text = match text.strip_prefix("---\n") {
+            Some(rest) if !page.starts_with('\n') => format!("---\n{page}{rest}"),
+            _ => format!("{text}{page}"),
+        };
+        write(&f, "docs/keys.md", &text);
         let mut client = Client::start(&f.root());
         client.settle();
         let diag = diagnostic(&client, &path, slug);
