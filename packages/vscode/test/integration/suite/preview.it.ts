@@ -153,6 +153,28 @@ describe("the preview, with the real language server on examples/quill", () => {
     );
   });
 
+  it("drops a message from the page that it doesn't send, and opens no file outside the project", async () => {
+    const editor = vscode.window.activeTextEditor?.document.uri.fsPath;
+    const before = preview.dropped();
+    const outside = path.join(path.dirname(workspace()), "outside.md");
+    writeFileSync(outside, "# Outside\n");
+    const hostile: unknown[] = [
+      { type: "git", command: "checkout" },
+      { type: "openFile", path: outside },
+      { type: "openPage", path: "../../outside.md" },
+      { type: "openSource", source: "../../outside.md:1-1" },
+      { type: "openThread", threadId: "T", path: "../../outside.md" },
+      { type: "build", name: "no-such-build" },
+      { type: "scrolled", line: "1" },
+      { type: "runCommand", command: "workbench.action.closeAllEditors" },
+    ];
+    for (const message of hostile) await preview.receive(message);
+    await sleep(200);
+    assert.equal(preview.dropped() - before, hostile.length);
+    assert.equal(vscode.window.activeTextEditor?.document.uri.fsPath, editor);
+    assert.equal(preview.build(), "site");
+  });
+
   it("says why a fragment has no preview", async () => {
     await vscode.window.showTextDocument(
       await vscode.workspace.openTextDocument(uriOf("docs", "_fragments", "prerequisites.md")),

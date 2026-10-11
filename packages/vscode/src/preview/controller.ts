@@ -8,6 +8,7 @@ import { samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { ChosenBuilds } from "../ui/chosenBuild.js";
 import { shellHtml } from "./html.js";
+import { checkMessage, GIT_COMMANDS, mayOpen } from "./messages.js";
 import type {
   FromWebview,
   ImageReport,
@@ -77,8 +78,10 @@ export interface PreviewApi {
     predicate: (render: RenderRecord) => boolean,
     timeout?: number,
   ): Promise<RenderRecord>;
-  /** Handles a message as if the webview had posted it. */
-  receive(message: FromWebview): Promise<void>;
+  /** Handles a message as if the webview had posted it: it's checked as the webview's are. */
+  receive(message: unknown): Promise<void>;
+  /** How many of the webview's messages were dropped. */
+  dropped(): number;
   /** Selects a build as the picker does. */
   selectBuild(name: string): void;
   /** Review. */
@@ -161,6 +164,9 @@ export class PreviewController implements vscode.Disposable {
   private siteShownFor: string | undefined;
   private siteLog: ({ url: string } | { problem: string })[] = [];
   private framedLog: string[] = [];
+  /** The webview's messages dropped, and whether that has been logged. */
+  private droppedCount = 0;
+  private droppedLogged = false;
   /** Review: its base, its changed pages, and the pull request's threads. */
   readonly review: ReviewController;
   private readonly sourceComments: SourceComments;
@@ -299,6 +305,7 @@ export class PreviewController implements vscode.Disposable {
       whenDrawn: (description, predicate, timeout = 30_000) =>
         this.waitForDrawn(description, predicate, timeout),
       receive: (message) => this.receive(message),
+      dropped: () => this.droppedCount,
       selectBuild: (name) => this.chooseBuild(name),
       review: this.review.api,
       threadsDrawn: () => this.threadsLog,
@@ -361,7 +368,7 @@ export class PreviewController implements vscode.Disposable {
     this.assetRoots = assetRoots;
     this.setShell();
     this.panelDisposables.push(
-      panel.webview.onDidReceiveMessage((message: FromWebview) => void this.receive(message)),
+      panel.webview.onDidReceiveMessage((message: unknown) => void this.receive(message)),
       panel.onDidDispose(() => this.detach()),
       panel.onDidChangeViewState(() => {
         this.review.update();
@@ -659,7 +666,17 @@ export class PreviewController implements vscode.Disposable {
     return assets;
   }
 
-  private async receive(message: FromWebview): Promise<void> {
+  /**
+   * Handles a message from the webview. The page draws untrusted HTML, so
+   * what it posts is checked first (`messages.ts`), and a file it names is
+   * opened only when the extension gave it or it lies inside the project.
+   */
+  private async receive(value: unknown): Promise<void> {
+    const message = checkMessage(value);
+    if (!message) {
+      this.drop();
+      return;
+    }
     switch (message.type) {
       case "ready": {
         this.ready = true;
@@ -670,7 +687,9 @@ export class PreviewController implements vscode.Disposable {
         return;
       }
       case "build":
-        this.chooseBuild(message.name);
+        if (this.latest?.result.builds.some((b) => b.name === message.name))
+          this.chooseBuild(message.name);
+        else this.drop();
         return;
       case "open":
         await this.openLink(message.href);
@@ -713,9 +732,14 @@ export class PreviewController implements vscode.Disposable {
       case "openSource":
         await this.openSource(message.source);
         return;
-      case "openFile":
-        await this.showFile(vscode.Uri.file(message.path));
+      case "openFile": {
+        // A cause of the page's change, which the render gave the page.
+        const given = this.latest?.message.review?.causes.map((cause) => cause.path);
+        if (mayOpen(message.path, { given, folder: this.server()?.project.folder }))
+          await this.showFile(vscode.Uri.file(message.path));
+        else this.drop();
         return;
+      }
       case "atEnd": {
         const server = this.server();
         const page = this.latest?.result.page;
@@ -726,18 +750,17 @@ export class PreviewController implements vscode.Disposable {
         return;
       }
       case "openPage": {
-        const contentRoot = this.latest?.result.contentRoot;
-        if (contentRoot)
-          await this.showPage(vscode.Uri.file(fromContentPath(contentRoot, message.path)));
+        const file = this.inContentRoot(message.path);
+        if (file) await this.showPage(vscode.Uri.file(file));
         return;
       }
       case "threads":
         await this.threadsRequest(message);
         return;
       case "openThread": {
-        const contentRoot = this.latest?.result.contentRoot;
-        if (!contentRoot) return;
-        const uri = vscode.Uri.file(fromContentPath(contentRoot, message.path));
+        const file = this.inContentRoot(message.path);
+        if (!file) return;
+        const uri = vscode.Uri.file(file);
         if (this.document && uri.fsPath === this.document.uri.fsPath) {
           this.post({ type: "goToThread", threadId: message.threadId });
           return;
@@ -762,7 +785,7 @@ export class PreviewController implements vscode.Disposable {
       }
       case "git": {
         const server = this.server();
-        await vscode.commands.executeCommand(`git.${message.command}`).then(
+        await vscode.commands.executeCommand(GIT_COMMANDS[message.command]).then(
           () => undefined,
           (error: unknown) =>
             void vscode.window.showErrorMessage(
@@ -785,6 +808,34 @@ export class PreviewController implements vscode.Disposable {
         this.wake();
         return;
     }
+  }
+
+  /**
+   * The file a content path from the webview names, from the content root of
+   * the last render; `undefined` when there's no render, or when it lies
+   * outside both the content root and the project, and the message is dropped.
+   */
+  private inContentRoot(contentPath: string): string | undefined {
+    const contentRoot = this.latest?.result.contentRoot;
+    if (!contentRoot) return undefined;
+    const file = fromContentPath(contentRoot, contentPath);
+    if (
+      mayOpen(file, { folder: contentRoot }) ||
+      mayOpen(file, { folder: this.server()?.project.folder })
+    )
+      return file;
+    this.drop();
+    return undefined;
+  }
+
+  /** A message from the webview that the extension doesn't take: counted, and logged once, without its content. */
+  private drop(): void {
+    this.droppedCount += 1;
+    if (this.droppedLogged) return;
+    this.droppedLogged = true;
+    this.server()?.log(
+      "The preview dropped a message from its page that it doesn't take. Later ones aren't logged.",
+    );
   }
 
   /** Answers one of the overlay's requests, for the page the preview shows. */
@@ -956,9 +1007,10 @@ export class PreviewController implements vscode.Disposable {
   /** A click on a mark's label: shows the block's source in the editor, its lines selected. */
   private async openSource(source: string): Promise<void> {
     const parsed = parseSource(source);
-    const contentRoot = this.latest?.result.contentRoot;
-    if (!parsed || !contentRoot) return;
-    const uri = vscode.Uri.file(fromContentPath(contentRoot, parsed.path));
+    if (!parsed) return;
+    const file = this.inContentRoot(parsed.path);
+    if (!file) return;
+    const uri = vscode.Uri.file(file);
     const editor = await this.showFile(uri);
     const last = Math.min(parsed.last, editor.document.lineCount - 1);
     const range = new vscode.Range(parsed.first, 0, last, editor.document.lineAt(last).text.length);
