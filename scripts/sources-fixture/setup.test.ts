@@ -47,7 +47,7 @@ test("the drift guide shows the workflow the fixture runs", () => {
 test("getting started shows the docs repository's check workflow", () => {
   const page = readFileSync(path.join(root, "docs", "content", "getting-started.md"), "utf8");
   expect(page).toContain(
-    '@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow\n',
+    "@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow\n",
   );
   const text = readFileSync(path.join(root, check), "utf8");
   expect(text).toContain("# :snippet-start: workflow\n");
