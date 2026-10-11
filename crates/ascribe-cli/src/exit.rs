@@ -110,6 +110,7 @@ mod tests {
             "a manifest's version is unknown",
         ),
         ("bad_manifest_entry", "a manifest lists a path outside it"),
+        ("output_link", "a link is on the way to the output"),
         (
             "output_conflicts",
             "output files would collide or overwrite",
@@ -257,6 +258,7 @@ mod tests {
                 | StoreError::NotManifest { .. }
                 | StoreError::UnknownVersion { .. }
                 | StoreError::BadEntry { .. }
+                | StoreError::Link { .. }
                 | StoreError::Conflicts(_)
                 | StoreError::Io { .. } => {}
             }
@@ -375,6 +377,7 @@ mod tests {
                     path: text(),
                     entry: text(),
                 },
+                StoreError::Link { path: text() },
                 StoreError::Conflicts(vec![text()]),
                 StoreError::Io {
                     action: "write",

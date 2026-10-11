@@ -9,6 +9,8 @@ use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
+use crate::links;
+
 const MODEL: &str = r#"spec = "0.1"
 
 [project]
@@ -559,4 +561,79 @@ fn several_builds_and_unknown_builds_are_reported_as_check_reports_them() {
         stderr(&out)
     );
     assert!(!dir.path().join(".ascribe").exists());
+}
+
+#[test]
+fn a_committed_link_in_the_output_directory_fails_the_build_and_nothing_outside_changes() {
+    let dir = project(MODEL, &[("index.md", &page("Home.\n"))]);
+    let outside = tempfile::tempdir().expect("a temporary directory");
+    write(&outside.path().join("victim.md"), "keep me");
+    // As a repository could commit them: an emitter root that's a link to a
+    // folder outside, and a manifest listing a file there.
+    let site = dir.path().join(".ascribe").join("build").join("site");
+    fs::create_dir_all(&site).expect("create");
+    links::dir(outside.path(), site.join("plain"));
+    write(
+        &site.join("plain.manifest.json"),
+        r#"{"format":"ascribe-manifest","version":1,"build":"site","emitter":"plain","files":[{"path":"victim.md","kind":"page"}]}"#,
+    );
+    let out = ascribe(dir.path(), &["build"]);
+    assert_eq!(code(&out), 2, "{}", stderr(&out));
+    // The output directory is written as the model has it (`.ascribe/build`),
+    // so on Windows the message mixes separators: compare with one.
+    let slashes = |text: &str| text.replace('\\', "/");
+    let shown = slashes(&site.join("plain").display().to_string());
+    assert!(
+        slashes(&stderr(&out)).contains(&shown) && stderr(&out).contains("is a link"),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(read(&outside.path().join("victim.md")), "keep me");
+    assert!(!outside.path().join("index.md").exists());
+}
+
+#[test]
+fn a_committed_link_above_the_output_directory_fails_the_build() {
+    let dir = project(MODEL, &[("index.md", &page("Home.\n"))]);
+    let outside = tempfile::tempdir().expect("a temporary directory");
+    links::dir(outside.path(), dir.path().join(".ascribe"));
+    let out = ascribe(dir.path(), &["build"]);
+    assert_eq!(code(&out), 2, "{}", stderr(&out));
+    assert!(stderr(&out).contains("is a link"), "{}", stderr(&out));
+    assert_eq!(
+        fs::read_dir(outside.path()).expect("a listing").count(),
+        0,
+        "the build wrote through the link"
+    );
+}
+
+/// With no repository around the project, as in a copy made with `git
+/// archive`, `ascribe build` still reads a source above the project's folder
+/// (decision 3; decision 77 bounds only the editor and `ascribe mcp`).
+#[test]
+fn with_no_repository_a_build_reads_a_source_above_the_project() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        &dir.path().join("src/lib.rs"),
+        "// :snippet-start: api\npub fn api() {}\n// :snippet-end:\n",
+    );
+    let project = dir.path().join("docs");
+    write(
+        &project.join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"content\"\n\n[sources.code]\npath = \"..\"\ninclude = [\"src/**\"]\n",
+    );
+    write(
+        &project.join("content/index.md"),
+        "---\ntitle: Home\n---\n\n@snippet: code:src/lib.rs#api\n",
+    );
+    let out = ascribe(&project, &["build", "--emit", "plain"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let built = project.join(".ascribe").join("build");
+    let build = fs::read_dir(&built)
+        .expect("the output")
+        .map(|e| e.expect("an entry").path())
+        .find(|p| p.is_dir() && !p.ends_with(".staging"))
+        .expect("a build");
+    let page = read(&build.join("plain").join("index.md"));
+    assert!(page.contains("pub fn api() {}"), "{page}");
 }

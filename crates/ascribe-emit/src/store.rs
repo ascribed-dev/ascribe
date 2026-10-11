@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use ascribe_core::RelPath;
 use serde::{Deserialize, Serialize};
@@ -87,6 +87,15 @@ pub enum StoreError {
         /// The entry.
         entry: String,
     },
+    /// A symbolic link, or on Windows a junction, is on the way to where the
+    /// build writes or removes. It isn't followed, replaced, or removed.
+    #[error(
+        "{path} is a link, and the output is never written or removed through one; replace it with a folder, or remove it"
+    )]
+    Link {
+        /// The link.
+        path: String,
+    },
     /// Files that would be overwritten or can't be created, or paths that
     /// collide.
     #[error("the output can't be written:\n{}", .0.iter().map(|c| format!("  - {c}")).collect::<Vec<_>>().join("\n"))]
@@ -110,6 +119,7 @@ impl ascribe_core::Coded for StoreError {
             StoreError::NotManifest { .. } => "not_a_manifest",
             StoreError::UnknownVersion { .. } => "unknown_manifest_version",
             StoreError::BadEntry { .. } => "bad_manifest_entry",
+            StoreError::Link { .. } => "output_link",
             StoreError::Conflicts(_) => "output_conflicts",
             StoreError::Io { .. } => "output_io",
         }
@@ -179,10 +189,13 @@ impl OutputDir {
     ///
     /// # Errors
     ///
-    /// [`StoreError::Locked`] when another build holds it.
+    /// [`StoreError::Locked`] when another build holds it, and
+    /// [`StoreError::Link`] when `root` or its lock file is a link.
     pub fn lock(root: &Path) -> Result<OutputDir, StoreError> {
+        refuse_link(root)?;
         fs::create_dir_all(root).map_err(io_err("can't create", root))?;
         let lock_path = root.join(LOCK_FILE);
+        refuse_link(&lock_path)?;
         let file = OpenOptions::new()
             .create(true)
             .truncate(false)
@@ -199,6 +212,23 @@ impl OutputDir {
             }),
             Err(TryLockError::Error(e)) => Err(io_err("can't lock", &lock_path)(e)),
         }
+    }
+
+    /// [`OutputDir::lock`] on the output directory `output_dir` of the project
+    /// at `project`, after checking that no folder on the way from `project`
+    /// to it is a link. The folders above `project` aren't checked: they're
+    /// where the person running the build put the project.
+    ///
+    /// # Errors
+    ///
+    /// As [`OutputDir::lock`].
+    pub fn lock_in(project: &Path, output_dir: &Path) -> Result<OutputDir, StoreError> {
+        if output_dir.is_relative()
+            && let Some(link) = ascribe_resolve::link_on_the_way(project, output_dir)
+        {
+            return Err(link_error(&link));
+        }
+        OutputDir::lock(&project.join(output_dir))
     }
 
     /// The output directory.
@@ -259,6 +289,13 @@ impl OutputDir {
                 )]));
             }
         }
+        // Nothing on the way to the folders this writes to and removes from is
+        // a link, checked before anything is touched, the cleanup below
+        // included.
+        refuse_links_below(&self.root, &format!("{STAGING_DIR}/{build}/{emitter}"))?;
+        refuse_link(&self.manifest_temp(build, emitter))?;
+        refuse_links_below(&self.root, &format!("{build}/{emitter}"))?;
+        refuse_link(&self.manifest_path(build, emitter))?;
         let staging = self.root.join(STAGING_DIR).join(build).join(emitter);
         let result = self.replace_staged(build, emitter, files, &staging, options);
         // Step 9: clean up, whatever happened. A failure to clean up doesn't
@@ -286,6 +323,19 @@ impl OutputDir {
         // Step 2: the previous manifest.
         let previous = read_manifest(&manifest_path)?;
         let previous_paths: BTreeSet<&str> = previous.iter().map(|f| f.path.as_str()).collect();
+
+        // Nothing between the emitter root and a file this writes or removes
+        // is a link, nor is the file.
+        let mut links = ascribe_resolve::LinkCheck::new(&emitter_root);
+        for path in files
+            .iter()
+            .map(|f| f.path.as_str())
+            .chain(previous_paths.iter().copied())
+        {
+            if let Some(link) = links.link(Path::new(path)) {
+                return Err(link_error(&link));
+            }
+        }
 
         // Step 4, first part: two new files with one path, or paths that differ
         // only in case, would be one file on macOS and Windows.
@@ -459,6 +509,13 @@ impl OutputDir {
         Ok(replaced)
     }
 
+    /// Where a manifest is written before it's renamed into place.
+    fn manifest_temp(&self, build: &str, emitter: &str) -> PathBuf {
+        self.root
+            .join(STAGING_DIR)
+            .join(format!(".manifest-{build}-{emitter}.tmp"))
+    }
+
     /// Writes a manifest by writing a temporary file in `.staging/` and
     /// renaming it into place, so it's never half-written.
     fn write_manifest(
@@ -485,7 +542,7 @@ impl OutputDir {
         text.push('\n');
         let staging = self.root.join(STAGING_DIR);
         fs::create_dir_all(&staging).map_err(io_err("can't create", &staging))?;
-        let temp = staging.join(format!(".manifest-{build}-{emitter}.tmp"));
+        let temp = self.manifest_temp(build, emitter);
         fs::write(&temp, text).map_err(io_err("can't write", &temp))?;
         let dest = self.manifest_path(build, emitter);
         if let Some(parent) = dest.parent() {
@@ -518,11 +575,16 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
             version: manifest.version,
         });
     }
-    // Ascribe deletes what a manifest lists, so an entry that could reach
-    // outside the emitter root is refused, not followed.
+    // Ascribe deletes what a manifest lists, and a manifest is a file in the
+    // project like any other, so an entry that could reach outside the
+    // emitter root is refused, not followed: one with `..`, and one this
+    // system reads as absolute or on a drive (`C:/x`, `C:x` on Windows).
     for entry in &manifest.files {
         let inside = RelPath::parse(&entry.path)
-            .is_ok_and(|p| !p.is_root() && p.up_count() == 0 && p.as_str() == entry.path);
+            .is_ok_and(|p| !p.is_root() && p.up_count() == 0 && p.as_str() == entry.path)
+            && Path::new(&entry.path)
+                .components()
+                .all(|c| matches!(c, Component::Normal(_)));
         if !inside || entry.path.contains('\\') {
             return Err(StoreError::BadEntry {
                 path: shown,
@@ -531,6 +593,29 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
         }
     }
     Ok(manifest.files)
+}
+
+/// Refuses a link at `path`.
+fn refuse_link(path: &Path) -> Result<(), StoreError> {
+    if ascribe_resolve::is_link(path) {
+        return Err(link_error(path));
+    }
+    Ok(())
+}
+
+/// Refuses a link on the way from `root` to the `/`-separated `rel`, `rel`
+/// included.
+fn refuse_links_below(root: &Path, rel: &str) -> Result<(), StoreError> {
+    match ascribe_resolve::link_on_the_way(root, Path::new(rel)) {
+        Some(link) => Err(link_error(&link)),
+        None => Ok(()),
+    }
+}
+
+fn link_error(path: &Path) -> StoreError {
+    StoreError::Link {
+        path: path.display().to_string(),
+    }
 }
 
 /// Whether the file at `dest` exists and holds exactly `bytes`.

@@ -55,6 +55,9 @@ impl Watched {
         core.clock = today;
         let config = normalize(config);
         core.folders = config.parent().map(Path::to_owned).into_iter().collect();
+        // A command runs it, and a command reads a source wherever the
+        // model says.
+        core.bound_sources = false;
         core.config = Some(config);
         core.start();
         Watched { core, sent }

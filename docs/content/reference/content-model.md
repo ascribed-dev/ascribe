@@ -127,7 +127,7 @@ Where the source lives and where builds write.
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `content-root` | string (path) | `"docs"` | The content root ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It must exist and be a directory. |
-| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/`. It need not exist. |
+| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/`. It need not exist. It may be outside the project's folder, with `..`, and a build then writes there. A build never writes or removes through a symbolic link on the way to it, or in it ([output-layout contract](../contracts/output-layout.md#2-what-ascribe-owns)). |
 
 **Rules:** both paths are relative (`model-path-absolute`). The output directory must not be inside the content root, the content root must not be inside the output directory, and they must not be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
@@ -627,7 +627,7 @@ A page names a file through its source as `<source>:<path>`, with the path relat
 
 `<name>` follows the rules for keys (§1.2). A project can declare several sources, of either kind.
 
-**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). A source has `path` or `git`, never both, and `branch` only with `git` (`model-source-remote`).
+**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). With no repository, as in a copy made with `git archive`, `ascribe build` and the other commands read a source wherever `path` leads, but the editor reads one only inside a folder of the workspace it opened, and `ascribe mcp` only inside the folder it was started in: open the folder that contains the source. A source has `path` or `git`, never both, and `branch` only with `git` (`model-source-remote`).
 
 ### A source in another repository
 

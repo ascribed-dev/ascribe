@@ -10,6 +10,7 @@ use ascribe_core::availability::{AvailabilitySpec, Version, parse_availability, 
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Place, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 
+use crate::SourceBound;
 use crate::model::*;
 use crate::names::{self, is_key, is_name_word, list, suggest};
 use crate::toml_util::{V, describe, entries, join, sp};
@@ -18,6 +19,8 @@ pub(crate) struct Loader<'s> {
     pub src: &'s str,
     pub file: FileId,
     pub project_dir: Option<&'s Path>,
+    /// Where a source may be when no repository is around the project.
+    pub bound: SourceBound<'s>,
     /// The checks `[checks]` may name: the registry's configurable ones.
     pub configurable: &'s [DiagnosticSlug],
     /// The checks `[[intended]]` may name, with where each reports its
@@ -35,6 +38,24 @@ pub(crate) fn load(
     load_configurable(src, file, project_dir, diagnostics::CONFIGURABLE)
 }
 
+/// [`load`] in `project_dir`, with a source bounded by `bound` when no
+/// repository is around the project.
+pub(crate) fn load_bounded(
+    src: &str,
+    file: FileId,
+    project_dir: &Path,
+    bound: SourceBound<'_>,
+) -> Result<ContentModel, Vec<Issue>> {
+    load_with(
+        src,
+        file,
+        Some(project_dir),
+        bound,
+        diagnostics::CONFIGURABLE,
+        diagnostics::ACKNOWLEDGEABLE,
+    )
+}
+
 /// [`load`], with `review` as the checks `[[intended]]` may name.
 #[cfg(test)]
 pub(crate) fn load_reviewing(
@@ -42,7 +63,14 @@ pub(crate) fn load_reviewing(
     file: FileId,
     review: &[(DiagnosticSlug, Place)],
 ) -> Result<ContentModel, Vec<Issue>> {
-    load_with(src, file, None, diagnostics::CONFIGURABLE, review)
+    load_with(
+        src,
+        file,
+        None,
+        SourceBound::Anywhere,
+        diagnostics::CONFIGURABLE,
+        review,
+    )
 }
 
 /// [`load`], with `configurable` as the checks `[checks]` may name.
@@ -56,6 +84,7 @@ pub(crate) fn load_configurable(
         src,
         file,
         project_dir,
+        SourceBound::Anywhere,
         configurable,
         diagnostics::ACKNOWLEDGEABLE,
     )
@@ -65,6 +94,7 @@ fn load_with(
     src: &str,
     file: FileId,
     project_dir: Option<&Path>,
+    bound: SourceBound<'_>,
     configurable: &[DiagnosticSlug],
     review: &[(DiagnosticSlug, Place)],
 ) -> Result<ContentModel, Vec<Issue>> {
@@ -72,6 +102,7 @@ fn load_with(
         src,
         file,
         project_dir,
+        bound,
         configurable,
         review,
         issues: Vec::new(),
@@ -632,7 +663,10 @@ impl<'s> Loader<'s> {
     }
 
     /// A source's folder exists, is a directory, and is in the project's git
-    /// repository, when it's in one. Only when the project directory is known.
+    /// repository, when it's in one. With none, it's inside a folder
+    /// [`SourceBound::Within`] names, when the model is loaded with one: the
+    /// editor's workspace, or the folder `ascribe mcp` was started in.
+    /// Only when the project directory is known.
     fn source_folder(&mut self, name: &str, folder: &str, span: Span) {
         // Outside FileSystem: the content model is checked before there's a
         // project. This asks only whether the folder it names is there.
@@ -655,14 +689,37 @@ impl<'s> Loader<'s> {
             );
             return;
         }
-        if let Some(repository) = repository_root(dir)
-            && !self.resolve(folder).starts_with(&repository)
-        {
-            self.push(
-                self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
-                    .with_arg("source", name)
-                    .with_arg("path", folder),
-            );
+        match repository_root(dir) {
+            Some(repository) => {
+                if !self.resolve(folder).starts_with(&repository) {
+                    self.push(
+                        self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
+                            .with_arg("source", name)
+                            .with_arg("path", folder),
+                    );
+                }
+            }
+            None => {
+                if let SourceBound::Within(opened) = self.bound {
+                    let resolved = self.resolve(folder);
+                    // Outside FileSystem: the folders the user opened, compared
+                    // as the source's folder is, with links resolved.
+                    let inside = opened.iter().any(|o| {
+                        let o = o
+                            .canonicalize()
+                            .unwrap_or_else(|_| ascribe_core::path::normalize(o));
+                        resolved.starts_with(o)
+                    });
+                    if !inside {
+                        self.push(
+                            self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
+                                .with_variant("opened")
+                                .with_arg("source", name)
+                                .with_arg("path", folder),
+                        );
+                    }
+                }
+            }
         }
     }
 

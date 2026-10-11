@@ -46,10 +46,12 @@ pub fn prepare(
                 return Err(format!("there's no preset `{name}`"));
             };
             let folder = base.join(preset.name);
+            let rel = format!("{FOLDER}/{}", preset.name);
             for (path, text) in preset_files(preset, &settings.off) {
-                write_if_changed(&folder.join(path), &text).map_err(written)?;
+                write_if_changed(root, &format!("{rel}/{path}"), &text).map_err(written)?;
             }
-            write_if_changed(&folder.join(vocabulary_file()), &words).map_err(written)?;
+            write_if_changed(root, &format!("{rel}/{}", vocabulary_file()), &words)
+                .map_err(written)?;
             Ok(vec![folder.join(".vale.ini")])
         }
         ValeSource::Config(config) => {
@@ -61,9 +63,11 @@ pub fn prepare(
                 return Err(format!("its configuration `{config}` isn't there"));
             }
             let folder = base.join("vocabulary");
+            let rel = format!("{FOLDER}/vocabulary");
             let ini = format!("StylesPath = styles\nVocab = {VOCABULARY}\n");
-            write_if_changed(&folder.join(".vale.ini"), &ini).map_err(written)?;
-            write_if_changed(&folder.join(vocabulary_file()), &words).map_err(written)?;
+            write_if_changed(root, &format!("{rel}/.vale.ini"), &ini).map_err(written)?;
+            write_if_changed(root, &format!("{rel}/{}", vocabulary_file()), &words)
+                .map_err(written)?;
             Ok(vec![own, folder.join(".vale.ini")])
         }
     }
@@ -159,9 +163,20 @@ fn escape_regex(word: &str) -> String {
     out
 }
 
-/// Writes `text` to `path` unless it's there already, through a file beside
-/// it, so a reader never sees half of it.
-pub(super) fn write_if_changed(path: &Path, text: &str) -> io::Result<()> {
+/// Writes `text` to `rel` under `root` unless it's there already, through a
+/// file beside it, so a reader never sees half of it. A folder on the way
+/// that's a link is refused, not written through: a committed one could lead
+/// anywhere. A link at `rel` itself is replaced.
+pub(super) fn write_if_changed(root: &Path, rel: &str, text: &str) -> io::Result<()> {
+    if let Some(folder) = Path::new(rel).parent()
+        && let Some(link) = ascribe_resolve::link_on_the_way(root, folder)
+    {
+        return Err(io::Error::other(format!(
+            "{} is a link; replace it with a folder, or remove it",
+            link.display()
+        )));
+    }
+    let path = &root.join(rel);
     // Outside FileSystem: a file Ascribe writes under `.ascribe/`, read to
     // see whether it needs writing.
     if std::fs::read_to_string(path).is_ok_and(|current| current == text) {
@@ -255,5 +270,30 @@ mod tests {
                 dir.path().join(".ascribe/vale/vocabulary/.vale.ini")
             ]
         );
+    }
+
+    /// A committed `.ascribe` that's a link to a folder elsewhere isn't
+    /// written through. (Unix only, for brevity: the link check itself is
+    /// `ascribe_resolve::link_on_the_way`, held on Windows by the output
+    /// directory's tests.)
+    #[cfg(unix)]
+    #[test]
+    fn nothing_is_written_through_a_linked_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        std::os::unix::fs::symlink(outside.path(), dir.path().join(".ascribe")).unwrap();
+        let model =
+            ascribe_model::load_str("spec = \"0.1\"\n", ascribe_core::FileId::new(0)).unwrap();
+        let settings = ValeSettings {
+            source: ValeSource::Preset("quiet".to_owned()),
+            command: "vale".to_owned(),
+            in_check: false,
+            max_level: ascribe_model::CheckLevel::Error,
+            off: Vec::new(),
+            span: ascribe_core::Span::empty(0),
+        };
+        let error = prepare(dir.path(), &model, &settings).unwrap_err();
+        assert!(error.contains("is a link"), "{error}");
+        assert_eq!(std::fs::read_dir(outside.path()).unwrap().count(), 0);
     }
 }

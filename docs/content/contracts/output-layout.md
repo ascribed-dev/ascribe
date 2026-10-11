@@ -92,6 +92,17 @@ Ascribe owns exactly these, and touches nothing else under `<output-dir>`:
 
 Everything else under `<output-dir>` belongs to the user, even inside an emitter root. A user's file is never deleted, moved, or overwritten, and a build that would need to overwrite one fails instead (§4). A directory is removed only when a build empties it by removing files it owned.
 
+**Links.** {available=next} A build writes and removes only through real folders. It fails, naming the link and touching nothing, when a symbolic link (or, on Windows, a junction) is any of these:
+
+- a folder on the way from the project's folder to `<output-dir>`, or `<output-dir>` itself;
+- `<output-dir>/.lock`, `.staging/`, or a folder in it on the way to a build's staging;
+- `<build>/`, an emitter root, or a manifest;
+- a folder between an emitter root and a file the build writes or removes, or that file.
+
+A link is never followed, replaced, or removed. The folders above the project's folder aren't looked at.
+
+**`output-dir` outside the project.** `output-dir` may lead outside the project's folder with `..` (content-model contract). Ascribe then writes there as it would inside, under the same rules, and the folders on the way out of the project aren't checked for links: whoever set `output-dir` chose that folder.
+
 ## 3. The manifest
 
 Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.manifest.json`, listing every file in the root that Ascribe wrote. It's JSON:
@@ -119,7 +130,7 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 | `build`, `emitter` | Which output this is. |
 | `anchors` {available="ascribe 0.2.0"} | `true` when the site output has source anchors (`ascribe build --anchors`; site-render contract §7). Absent otherwise. |
 | `files` | Every file in the emitter root that Ascribe wrote, sorted by `path`. |
-| `files[].path` | The file's path relative to the emitter root, `/`-separated. |
+| `files[].path` | The file's path relative to the emitter root, `/`-separated. A manifest is read as input, not trusted as Ascribe's own: a path that's absolute, has a `.` or `..` segment, or that the operating system reads as on a drive (`C:/x`, `C:x` on Windows) isn't a manifest's, and fails the build. |
 | `files[].kind` | `"page"`, `"asset"`, or `"generated"` (anything else Ascribe writes, such as a schema). |
 | `files[].source` | For a page or asset, its source path relative to the content root, starting with `..` for a file outside it. Absent for generated files. |
 | `files[].url` | For an asset under `_ascribe/files/` (the site output's, or the plain output's with `agents = true`), the root-relative URL pages use for it, which the consumer must serve it at (asset contract §3.2). Absent otherwise. |
@@ -131,7 +142,7 @@ The manifest lists files only. Directories are implied by their paths.
 A build writes to a staging directory and replaces the previous output only when it has succeeded. Each build-and-emitter pair is replaced separately: building one build, or one emitter, doesn't touch the others.
 
 1. **Lock.** Take an exclusive advisory lock on `<output-dir>/.lock` (creating it if needed), held until the build ends and released by the operating system if the process dies. If another build holds it, fail: "another ascribe build is writing to `<output-dir>`".
-2. **Read the previous manifest**, if there is one. A file at the manifest's path that isn't a manifest (§3) fails the build: Ascribe can't tell what it owns.
+2. **Read the previous manifest**, if there is one. A file at the manifest's path that isn't a manifest (§3) fails the build: Ascribe can't tell what it owns. So does a link on the way to where the build writes or removes (§2, **Links**), before anything is touched.
 3. **Emit into staging:** `<output-dir>/.staging/<build>/<emitter>/`, removing any leftover staging for that pair first. If emitting fails, or the build has errors (SPEC §8.2: "a build MUST fail on errors"), remove the staging directory and stop. The previous output is untouched.
 4. **Check before touching anything.** Fail, naming every problem, and leave the output untouched, if:
    - a file would be written where a file exists that the previous manifest doesn't list (a user's file is in the way);

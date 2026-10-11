@@ -3,10 +3,12 @@
 #![allow(clippy::expect_used, clippy::panic)]
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use ascribe_core::RelPath;
 use ascribe_emit::{Contents, EmittedFile, FileKind, OutputDir, StoreError};
+
+use crate::links;
 
 fn page(path: &str, text: &str) -> EmittedFile {
     EmittedFile {
@@ -317,4 +319,191 @@ fn a_failure_while_staging_leaves_the_previous_output_alone() {
     assert_eq!(read(&out.join("site/plain/a.md")), "A");
     assert_eq!(read(&out.join("site/plain.manifest.json")), manifest_before);
     assert!(!out.join(".staging").exists());
+}
+
+// Links on the way to where a build writes or removes. A link is never
+// followed, replaced, or removed: the build fails naming it, and what it
+// points at is as it was.
+
+/// A manifest for `site`/`plain` listing `paths`.
+fn manifest(paths: &[&str]) -> String {
+    let files: Vec<serde_json::Value> = paths
+        .iter()
+        .map(|p| serde_json::json!({ "path": p, "kind": "page" }))
+        .collect();
+    serde_json::json!({
+        "format": "ascribe-manifest",
+        "version": 1,
+        "build": "site",
+        "emitter": "plain",
+        "files": files,
+    })
+    .to_string()
+}
+
+/// A folder beside the output holding only `precious.md`.
+fn outside(dir: &Path) -> PathBuf {
+    let outside = dir.join("outside");
+    write(&outside.join("precious.md"), "keep me");
+    outside
+}
+
+/// The build failed on the link at `link`, naming it, and `outside` and the
+/// link are as they were.
+fn refused(err: &StoreError, link: &Path, outside: &Path) {
+    assert!(matches!(err, StoreError::Link { .. }), "{err}");
+    assert_eq!(ascribe_core::Coded::code(err), "output_link");
+    assert!(
+        err.to_string().contains(&link.display().to_string()),
+        "{err}"
+    );
+    assert_eq!(read(&outside.join("precious.md")), "keep me");
+    let left: Vec<_> = fs::read_dir(outside)
+        .expect("the folder outside")
+        .map(|e| e.expect("an entry").file_name())
+        .collect();
+    assert_eq!(left, ["precious.md"], "something was written outside");
+    assert!(
+        fs::symlink_metadata(link)
+            .expect("the link")
+            .file_type()
+            .is_symlink(),
+        "the link was replaced or removed"
+    );
+}
+
+#[test]
+fn an_emitter_root_that_is_a_link_is_refused_and_what_it_points_at_is_left_alone() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    fs::create_dir_all(out.join("site")).expect("create");
+    let link = out.join("site").join("plain");
+    links::dir(&outside, &link);
+    write(
+        &out.join("site/plain.manifest.json"),
+        &manifest(&["precious.md"]),
+    );
+    let err = replace(&out, "site", &[page("index.md", "I")]).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn a_build_folder_that_is_a_link_is_refused() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    fs::create_dir_all(&out).expect("create");
+    let link = out.join("site");
+    links::dir(&outside, &link);
+    let err = replace(&out, "site", &[page("index.md", "I")]).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn an_output_directory_that_is_a_link_is_refused() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let outside = outside(dir.path());
+    let link = dir.path().join("out");
+    links::dir(&outside, &link);
+    let err = OutputDir::lock(&link).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn a_staging_folder_that_is_a_link_is_refused() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    fs::create_dir_all(&out).expect("create");
+    let link = out.join(".staging");
+    links::dir(&outside, &link);
+    let err = replace(&out, "site", &[page("index.md", "I")]).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn a_folder_in_an_emitter_root_that_is_a_link_is_refused_for_a_file_removed() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    fs::create_dir_all(out.join("site/plain")).expect("create");
+    let link = out.join("site").join("plain").join("g");
+    links::dir(&outside, &link);
+    write(
+        &out.join("site/plain.manifest.json"),
+        &manifest(&["g/precious.md"]),
+    );
+    let err = replace(&out, "site", &[page("index.md", "I")]).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn a_folder_in_an_emitter_root_that_is_a_link_is_refused_for_a_file_written() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    fs::create_dir_all(out.join("site/plain")).expect("create");
+    let link = out.join("site").join("plain").join("g");
+    links::dir(&outside, &link);
+    write(
+        &out.join("site/plain.manifest.json"),
+        &manifest(&["g/new.md"]),
+    );
+    let err = replace(&out, "site", &[page("g/new.md", "N")]).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn a_file_in_an_emitter_root_that_is_a_link_is_refused() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    fs::create_dir_all(out.join("site/plain")).expect("create");
+    let link = out.join("site").join("plain").join("old.md");
+    if !links::file(outside.join("precious.md"), &link) {
+        return;
+    }
+    write(
+        &out.join("site/plain.manifest.json"),
+        &manifest(&["old.md"]),
+    );
+    let err = replace(&out, "site", &[page("index.md", "I")]).expect_err("a link");
+    refused(&err, &link, &outside);
+}
+
+#[test]
+fn a_manifest_that_lists_an_absolute_path_is_refused() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    let outside = outside(dir.path());
+    replace(&out, "site", &[page("a.md", "A")]).expect("first");
+    // `/…` on Unix, and `C:/…` on Windows, where it's absolute once joined.
+    let absolute = outside
+        .join("precious.md")
+        .to_string_lossy()
+        .replace('\\', "/");
+    write(
+        &out.join("site/plain.manifest.json"),
+        &manifest(&[&absolute]),
+    );
+    let err = replace(&out, "site", &[page("a.md", "A")]).expect_err("a bad entry");
+    assert!(matches!(err, StoreError::BadEntry { .. }), "{err}");
+    assert_eq!(read(&outside.join("precious.md")), "keep me");
+}
+
+/// `C:precious.md` is a path on drive C, outside the root, on Windows. On
+/// Unix it's a file name like any other.
+#[cfg(windows)]
+#[test]
+fn a_manifest_that_lists_a_path_on_a_drive_is_refused() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let out = dir.path().join("out");
+    replace(&out, "site", &[page("a.md", "A")]).expect("first");
+    write(
+        &out.join("site/plain.manifest.json"),
+        &manifest(&["C:precious.md"]),
+    );
+    let err = replace(&out, "site", &[page("a.md", "A")]).expect_err("a bad entry");
+    assert!(matches!(err, StoreError::BadEntry { .. }), "{err}");
 }

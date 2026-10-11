@@ -294,3 +294,24 @@ fn a_copy_cant_be_written_through_a_link_out_of_its_folder() {
     assert!(matches!(error, SourcesError::Write { .. }), "{error}");
     assert!(!outside.path().join("auth.rs").exists());
 }
+
+#[test]
+fn the_lock_isnt_written_through_a_link() {
+    let code = Code::new();
+    code.write("src/auth.rs", AUTH);
+    code.commit("first");
+    let docs = Docs::new(&api(&code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
+    );
+    let outside = tempfile::tempdir().unwrap();
+    // A link to a file that isn't there yet, so nothing is read through it.
+    let victim = outside.path().join("victim.txt");
+    if !links::file(&victim, docs.root().join("ascribe.lock")) {
+        return;
+    }
+    let error = fetch(&docs.workspace(), &[], &docs.options()).unwrap_err();
+    assert!(matches!(error, SourcesError::Write { .. }), "{error}");
+    assert!(!victim.exists(), "the lock was written through the link");
+}

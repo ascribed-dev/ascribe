@@ -5,6 +5,10 @@
 //! `tests/`, where Cargo builds every file as a program of its own. To run
 //! one file's tests: `cargo test -p ascribe-emit --test all zod`.
 
+// `links.rs` panics on a link it can't make, as a test helper may.
+#[allow(clippy::expect_used, clippy::panic)]
+#[path = "../../../tests/support/links.rs"]
+mod links;
 mod support;
 
 #[path = "all/agents.rs"]

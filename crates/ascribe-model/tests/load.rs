@@ -10,8 +10,8 @@ mod links;
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use ascribe_model::{
-    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, TrailingSlash, TypeMatch,
-    VariantMode, load, load_str, load_str_in,
+    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, SourceBound, TrailingSlash,
+    TypeMatch, VariantMode, load, load_str, load_str_bounded, load_str_in,
 };
 
 fn examples() -> PathBuf {
@@ -537,4 +537,55 @@ fn versions_current_is_a_version_in_the_file() {
     let current = m.current_version.unwrap();
     assert_eq!(current.components, [3, 10]);
     assert_eq!(&toml[current.span.range()], "3.10");
+}
+
+/// With no repository around the project, a source is bounded by what was
+/// opened when the loader is given it (the language server, `ascribe mcp`),
+/// and is anywhere the model says when it isn't (the commands): decision
+/// 77.
+#[test]
+fn with_no_repository_a_source_is_bounded_by_what_was_opened() {
+    let outer = scratch("opened");
+    let project = outer.join("archive").join("docs");
+    std::fs::create_dir_all(project.join("content")).unwrap();
+    std::fs::create_dir_all(outer.join("archive").join("code")).unwrap();
+    let text = |path: &str| {
+        format!(
+            "spec = \"0.1\"\n[project]\ncontent-root = \"content\"\n[sources.code]\npath = \"{path}\"\n"
+        )
+    };
+    let load = |path: &str, opened: &[PathBuf]| {
+        load_str_bounded(
+            &text(path),
+            FileId::new(0),
+            &project,
+            SourceBound::Within(opened),
+        )
+    };
+    // The commands: anywhere, as before.
+    assert!(load_str_in(&text("../../.."), FileId::new(0), &project).is_ok());
+    assert!(
+        load_str_bounded(
+            &text("../../.."),
+            FileId::new(0),
+            &project,
+            SourceBound::Anywhere
+        )
+        .is_ok()
+    );
+    // Opened on the project's folder: a source above it is refused.
+    let issues = load("../code", std::slice::from_ref(&project)).unwrap_err();
+    assert_eq!(
+        (issues[0].slug.as_str(), issues[0].variant),
+        ("model-source-outside-repository", Some("opened"))
+    );
+    assert!(load("../../..", std::slice::from_ref(&project)).is_err());
+    // Opened on the folder that contains it: read.
+    assert!(load("../code", &[outer.join("archive")]).is_ok());
+    // Any of several folders will do.
+    assert!(load("../code", &[outer.join("elsewhere"), outer.join("archive")]).is_ok());
+    // With a repository, the repository is the rule, whatever was opened.
+    std::fs::create_dir(outer.join("archive").join(".git")).unwrap();
+    assert!(load("../code", std::slice::from_ref(&project)).is_ok());
+    let _ = std::fs::remove_dir_all(&outer);
 }

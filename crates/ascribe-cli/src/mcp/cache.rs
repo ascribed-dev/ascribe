@@ -19,7 +19,7 @@ use std::time::SystemTime;
 
 use ascribe_check::{LoadError, MODEL_FILE, Project};
 use ascribe_core::path::normalize;
-use ascribe_model::{LOCK_FILE, PERMALINKS_FILE};
+use ascribe_model::{LOCK_FILE, PERMALINKS_FILE, SourceBound};
 
 use crate::answer::{Loaded, Projects};
 
@@ -41,6 +41,29 @@ struct Entry {
 #[derive(Default)]
 pub struct Cache {
     entries: RefCell<HashMap<PathBuf, Entry>>,
+    /// The folder the MCP server was started in, inside which a local
+    /// source must be when no repository is around its project; `None`
+    /// reads a source wherever the model says, as a command does.
+    opened: Option<Vec<PathBuf>>,
+}
+
+impl Cache {
+    /// A cache whose projects read a local source, when there's no
+    /// repository around them, only inside `dir` (decision 77).
+    pub fn opened_at(dir: &Path) -> Cache {
+        Cache {
+            entries: RefCell::default(),
+            opened: Some(vec![dir.to_owned()]),
+        }
+    }
+
+    /// Where a source may be, for [`Project::load_bounded`].
+    pub fn bound(&self) -> SourceBound<'_> {
+        match &self.opened {
+            Some(opened) => SourceBound::Within(opened),
+            None => SourceBound::Anywhere,
+        }
+    }
 }
 
 impl Projects for Cache {
@@ -55,7 +78,8 @@ impl Projects for Cache {
             }
         }
         entries.remove(&key);
-        let project = Project::load(config)?.with_today(crate::clock::today());
+        let project =
+            Project::load_bounded(config, self.bound())?.with_today(crate::clock::today());
         let listing = list(&root, &project);
         let loaded = Rc::new(Loaded::new(project));
         entries.insert(
