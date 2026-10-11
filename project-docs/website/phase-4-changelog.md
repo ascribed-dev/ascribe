@@ -20,7 +20,7 @@ Part of [The website](README.md). Requires phase 2. `site/` only.
 The site renders the file with Astro's own Markdown, on a page in the marketing frame.
 
 - **A link to a file under `docs/content/`** becomes that page's route, with its anchor kept. The route comes from what the docs' build wrote, not from a rule about paths copied into the site.
-- **A link to any other file in the repository** becomes its address on GitHub, on `main`.
+- **A link to any other file in the repository** becomes its address on GitHub, on `main`, built from `repo` in `site/src/site.ts`, where the site already keeps the repository's address. It isn't written a third time.
 - **A link that fits neither,** to a docs file that isn't a published page, fails the site's build with the line it's on.
 - **Each release's heading has an anchor** a release's notes can link to, and the unreleased section is shown as unreleased.
 

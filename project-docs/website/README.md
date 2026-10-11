@@ -36,7 +36,20 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 9. **The site collects nothing.** No analytics, no sign-up, no form.
 10. **Colors and type sizes are written in `design/tokens.toml` only.** What the marketing pages need is added there.
 
-The rest are made in [phase 1](phase-1-decisions.md), because each fixes something phase 2 ships: a published package's options, a folder, and what the first page says.
+The rest were made in [phase 1](phase-1-decisions.md), which has the options each was chosen from. Each fixes something phase 2 ships: a published package's options, a folder, and what the first page says.
+
+11. **One integration takes a list of projects, and each entry has a name.** `ascribe({ projects: [{ name: "docs", project: "../docs", build: "site" }, { name: "home", project: "home", build: "site" }] })`, with `ascribeCollection({ schema, name: "docs" })`. The form with one project stays as it is. The name is what a collection, review, and an error message say, because a path can't be: the [versions proposal](../proposals/versions.md) wants a collection for each release line, and two entries for one project with two builds would share a path. A home page in front of the docs is what most sites look like (decision 7), and one call that owns several projects has one place to settle what they share. With the docs in a subfolder of one project instead, the feature would be built and tested in `examples/astro-site` and used by no real site, and the seam the thread exists to test would go untested.
+12. **The fallback is one project with the docs in a subfolder,** taken if the dev watcher can't follow several projects within phase 2. It's cheap now, since no user holds the docs' addresses. Review may fall short without it: it covers one project, the one `review` names, and the site names the docs. The watcher gets no such exemption, since a landing page that doesn't rebuild in `astro dev` isn't a working thread.
+13. **Two projects are two content models, and the marketing project's copies are held to the docs'.** It declares its own release dimension, `next` feature, and `[versions] current` for its marks, its own `version` phrase, and its own `[sources.code]` for its examples. Each is a second home for a fact in `docs/ascribe.toml`, so `scripts/docs-site/facts.test.ts` holds the two files equal. Phase 2 declares them with the project; phase 3 uses them.
+14. **The marketing project is `site/home/`.** It's where a user's project usually sits, inside the Astro root. Netlify's `ignore`, the workflows' `site/**` patterns, and `site/.gitignore`'s `.ascribe/` line already cover it.
+15. **The landing page asks a visitor to read getting started first,** with the two install commands shown beside the link. That page's first two sections are those two installs. The extension's walkthrough is marked `next`, so leading with it would lead with something no release has, and `npm install` alone reaches only someone who has already decided. The README's "Get started" block shows the same two commands; phase 3 adds the test that ties the copies together.
+16. **The marketing pages follow `main`, with marks.** Production is one nightly build from the `next` tag, and a page pinned to the release would need a second build and deploy. The marks have their test already: when `[versions] current` moves at a release, `availability-left-behind` reports a `next` mark that's still there, provided the marketing project declares the docs' release tables (decision 13).
+17. **"Why Ascribe" describes approaches and links to the comparison, once the comparison is fit to link.** A claim about another tool can be neither checked nor marked, which the plan's rules require of every claim. `examples/comparison/` isn't fit today: its README calls Ascribe "Tessera", cites `BRAINSTORM.md`, and describes gap markers its Ascribe page no longer has; the folder has no `ascribe.toml`, so nothing checks that page. Phase 5 rewrites the Ascribe version under an `ascribe.toml`, kept valid by a test as `examples/monorepo` is, and brings the README current. Until that's done the page links nowhere.
+18. **Addresses.** The docs are at `/docs/`. Permalinks stay at `/go/`, from the site's root. The marketing pages are `/`, `/why/`, and `/changelog/`.
+19. **The marketing project publishes nothing for agents,** and the docs' `llms.txt` moves to `/docs/llms.txt` with them. The site's root has none until [search and answers](../proposals/search-and-answers.md) decides what belongs there. The nightly Report workflow checks the docs' address, not the root (phase 2).
+20. **Search covers the docs only.**
+
+One decision is still to make, and it blocks nothing before it: whether a social card shows its page's title, and with what font ([phase 6](phase-6-images.md#social-cards)).
 
 ## The thread
 
@@ -84,7 +97,7 @@ After phase 2 the landing page is short and true: what Ascribe is, that it's ear
 | [5: Why Ascribe](phase-5-why.md) | `/why/` makes the argument at length and names its limits. |
 | [6: Images](phase-6-images.md) | The editor and review are shown, each page has a social card, and a test says when a screenshot is out of date. |
 
-Phase 1 comes first because phase 2 ships a published package's options. After the thread the order is by risk: phase 3 is the experiment that could change how the other pages are written, phase 4 is the one new mechanism, and phases 5 and 6 are writing and pictures.
+Phase 1 came first because phase 2 ships a published package's options. After the thread the order is by risk: phase 3 is the experiment that could change how the other pages are written, phase 4 is the one new mechanism, and phases 5 and 6 are writing and pictures.
 
 Each phase's result is something a person can open. None builds a layer for a later phase to use.
 
@@ -93,7 +106,7 @@ Each phase's result is something a person can open. None builds a layer for a la
 - **Permalinks** is what lets the docs move. This plan is its first real test: if a link the binary writes breaks in phase 2, that's a bug in that work, fixed there.
 - **Search and answers** ([proposal](../proposals/search-and-answers.md)) owns `robots.txt`, a sitemap, and what a page's head says. This plan writes none of them by hand, so there's nothing to replace later. Phase 2 moves `llms.txt` with the docs and leaves the site's root without one.
 - **Versions** ([proposal](../proposals/versions.md)) needs a base path under Astro's `base` too, for a version published under its number. Phase 2 builds it once.
-- **The surface audit** ([plan](../surface-audit/README.md)) should see the integration's new options before they're released. Phase 1's first decision is the place.
+- **The surface audit** ([findings](../surface-audit/findings.md)) has three neighbors of this plan. Its finding 32 is the site's address written in two files that must agree, which a second project makes three. Finding 43 is the READMEs linking to pages by address: if they link to permalinks first, phase 2's move of them is nothing. And its conventions say where a choice lives: the integration's options are for how a site uses a build.
 
 ## Rules for every phase
 
@@ -124,5 +137,5 @@ Each phase's result is something a person can open. None builds a layer for a la
 - A page per feature. The guides are those pages.
 - Layout constructs in the language.
 - `robots.txt`, a sitemap, and structured data: [search and answers](../proposals/search-and-answers.md).
-- Links from one project into another, checked by Ascribe itself.
+- Links from one project into another, checked by Ascribe itself as it checks a project's own. Until then the site's tests check them, with `ascribe permalinks verify` (phase 2).
 - Navigation in the content model, which the site's `src/nav.ts` stands in for.

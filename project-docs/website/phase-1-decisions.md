@@ -4,7 +4,9 @@ Part of [The website](README.md). Needs nothing. No code: a pull request that re
 
 ## Goal
 
-Five choices are made before anything ships. The first two go into things that can't change quietly afterwards: a published package's options, and a folder that workflows, Netlify, and tests all name. The other three decide what the first page says, and the proposal left them open.
+Five choices were made before anything shipped, and are recorded in the [README](README.md#decisions) as decisions 11 to 20. This file keeps the options each was chosen from.
+
+The first two go into things that can't change quietly afterwards: a published package's options, and a folder that workflows, Netlify, and tests all name. The other three decide what the first page says, and the proposal left them open.
 
 This phase can't be folded into phase 2. A thread may narrow what it handles. It may not ship a shape the plan expects to change.
 
@@ -33,11 +35,7 @@ The recommendation rests on three things. A home page in front of docs is what m
 
 Whichever is taken, accepting a base path under Astro's `base` is built: every option but the third needs it, and so does the versions proposal.
 
-**Decided: the list.** Two reasons beyond the ones above. The [versions proposal](../proposals/versions.md) needs a collection for each release line, each under its own base path, and a list of `{ project, build }` entries is the shape that later takes `{ project: "../docs", build: "3.4" }`; neither using the integration twice nor a subfolder gives it anything. And README decision 7 makes a home page in front of the docs a feature of the integration, while the plan's rules make the site a user's site: with the subfolder option the feature would be built and tested in `examples/astro-site` and used by no real site, and the seam the thread exists to test would go untested.
-
-The subfolder option stays the fallback, and it's cheap now, since no user holds the docs' addresses. It's taken if review or the dev watcher can't follow several projects within phase 2. Phase 2 already lets review cover the first project listed; the watcher gets no such exemption, since a landing page that doesn't rebuild in `astro dev` isn't a working thread.
-
-The cost recorded with it: two projects are two content models. The marketing project declares its own `[versions] current`, release dimension, and `next` feature for its marks, and its own `version` phrase. Each is a second home for a fact in `docs/ascribe.toml`, so `scripts/docs-site/facts.test.ts` holds the two files equal.
+**Decided: the list, with a name on each entry.** README decisions 11, 12, and 13 have the reasons, the fallback, and the cost. The option's table above shows the shape as first proposed, keyed by `project`; a review of the plan found that two entries for one project with two builds, which the versions proposal needs, would share a path, so each entry has a `name` and the collection is keyed by it.
 
 ### 2. Where the marketing project lives
 
@@ -46,7 +44,7 @@ The cost recorded with it: two projects are two content models. The marketing pr
 | **`site/home/`** (recommended) | Inside the Astro site, as a user's own project usually is. Workflows, Netlify's `ignore`, and the site's tests already cover `site/` |
 | `website/` at the repository's root | Beside `docs/`, as its equal. One more folder at the root, and one more path in each workflow and in Netlify's settings |
 
-**Decided: `site/home/`.** It's where a user's project usually sits, inside the Astro root, so the `project` option is a plain `"home"`. Netlify's `ignore`, the workflows' `site/**` patterns, and `site/.gitignore`'s `.ascribe/` line already cover it. A root `website/` adds a path to each of those for nothing.
+**Decided: `site/home/`.** README decision 14.
 
 ### 3. What the landing page asks a visitor to do first
 
@@ -56,7 +54,7 @@ The cost recorded with it: two projects are two content models. The marketing pr
 | Install the editor extension | Writers, with the least setup. It shows nothing until there's a project |
 | Run `npm install` | Developers who own a site already |
 
-**Decided: read getting started.** The page's first two sections are the install command and the extension, so the link lands on the same two commands the landing page shows beside it. The extension's walkthrough is marked `next`, so leading with it would lead with something no release has. Leading with `npm install` reaches only someone who has already decided. The README's "Get started" block shows the same two commands, and nothing ties the copies together today; phase 3, which writes them onto the page, adds the test that does.
+**Decided: read getting started.** README decision 15.
 
 ### 4. Whether the marketing pages follow `main` or the release
 
@@ -65,7 +63,7 @@ The cost recorded with it: two projects are two content models. The marketing pr
 | **`main`, with marks** (recommended) | One build of one site, as the docs are. Decision 4 in the README already requires a mark on anything no release has |
 | The release | The page is never ahead of what someone can install. It needs a second build, pinned, deployed together with a site that follows `main` |
 
-**Decided: `main`, with marks.** Production is Netlify's nightly build from the `next` tag, and a page pinned to the release would need a second build and a second deploy to stay in step. The marks have their test already: when `[versions] current` moves at a release, `availability-left-behind` reports a `next` mark that's still there. That's the test phase 3 asks for, provided the marketing project declares the same release tables as the docs (decision 1).
+**Decided: `main`, with marks.** README decision 16.
 
 ### 5. Whether "Why Ascribe" names other tools
 
@@ -74,22 +72,17 @@ The cost recorded with it: two projects are two content models. The marketing pr
 | **Describe the approaches, and link to the comparison** (recommended) | The page says what kinds of tool do what. `examples/comparison/` holds the same content written for Astro, Docker's docs, and Elastic's, and the page links to it. Nothing on the site goes out of date when another tool ships |
 | Name them on the page | More useful to a reader choosing. Each sentence about another tool has to be kept fair and current |
 
-**Decided: describe the approaches, and link to the comparison, on a condition.** The decisive reason is the plan's own rule: every claim on a marketing page is checked or marked, and a claim about another tool can be neither. The condition is that the comparison isn't fit to link today. Its README calls Ascribe "Tessera", cites `BRAINSTORM.md` sections, and says `tessera.md` carries gap markers it no longer has; the folder has no `ascribe.toml`, so nothing checks that its Ascribe page is valid, and nothing outside this plan references it. Phase 5 rewrites the Ascribe version in current Ascribe under an `ascribe.toml`, kept valid by a test as `examples/monorepo` is, and brings the README current. Until then the page links nowhere.
+**Decided: describe the approaches, and link to the comparison, on a condition.** README decision 17 has the condition, and [phase 5](phase-5-why.md) the work it makes.
 
 ## Also confirmed here
 
-Small choices that ship in phase 2:
-
-- The docs are at `/docs/`, and permalinks stay at `/go/`, from the site's root.
-- The marketing pages' addresses are `/`, `/why/`, and `/changelog/`.
-- The marketing project publishes nothing for agents (`agents = false`). The docs' `llms.txt` moves to `/docs/llms.txt` with them, and the site's root has none until [search and answers](../proposals/search-and-answers.md) decides what belongs there.
-- Search covers the docs only.
+Small choices that ship in phase 2, recorded as README decisions 18 to 20: the addresses, that the marketing project publishes nothing for agents and where `llms.txt` goes, and that search covers the docs only.
 
 ## Tasks
 
-1. The maintainer decides each. The decisions are recorded under each option above.
-2. Record them in this plan's README, as decisions 11 on, with the reason for each.
-3. If decision 1 isn't the recommendation, rewrite [phase 2](phase-2-thread.md)'s design to match before it starts.
+1. The maintainer decides each. Done.
+2. Record them in this plan's README, as decisions 11 on, with the reason for each. Done: 11 to 20.
+3. If decision 1 isn't the recommendation, rewrite [phase 2](phase-2-thread.md)'s design to match before it starts. It is the recommendation, with a name added to each entry, and phase 2's design has it.
 
 ## Out of scope
 

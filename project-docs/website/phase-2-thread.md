@@ -2,7 +2,7 @@
 
 Part of [The website](README.md). Requires phase 1. `@ascribed/astro`, the docs' project, a new project, and `site/`. This is the plan's steel thread: the thinnest path through every layer, shipped and kept.
 
-The design below assumes phase 1 took its recommendations: one integration that takes a list of projects, and the marketing project in `site/home/`. If it didn't, this file was rewritten there.
+The design follows the README's decisions 11 to 20: one integration that takes a list of named projects, and the marketing project in `site/home/`.
 
 ## Goal
 
@@ -35,7 +35,7 @@ One landing page, one widget, one link into the docs. Everything it takes is bui
 - `site/`: `astro.config.mjs`, `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/`, `src/components/Search.astro`, `netlify.toml`, `netlify/edge-functions/markdown.ts`, `public/_redirects`, and `test/`.
 - `docs/ascribe.toml`: `[consumer]`, and the comments that say which files repeat each setting.
 - `scripts/docs-site/facts.test.ts`, and the tests that hold the site's address in the READMEs and the extension's manifest.
-- `.github/workflows/site.yml`, `site-npm.yml`, and `ci.yml`: the path patterns, and how a preview sets its address.
+- `.github/workflows/site.yml`, `site-npm.yml`, and `ci.yml`: the path patterns, and how a preview sets its address. `.github/workflows/report.yml`: the nightly check of the published site.
 - SPEC §6 and `docs/content/reference/content-model.md` §14: declaring a widget.
 - `design/README.md`: adding a token and regenerating the stylesheets.
 
@@ -58,9 +58,10 @@ What follows from it, each to check against the code:
 integrations: [
   ascribe({
     projects: [
-      { project: "home", build: "site" },
-      { project: "../docs", build: "site" },
+      { name: "docs", project: "../docs", build: "site" },
+      { name: "home", project: "home", build: "site" },
     ],
+    review: "docs",
   }),
 ],
 ```
@@ -68,30 +69,33 @@ integrations: [
 ```ts
 // site/src/content.config.ts
 export const collections = {
-  home: defineCollection(ascribeCollection({ schema: homeSchema, project: "home" })),
-  docs: defineCollection(ascribeCollection({ schema: docsSchema, project: "../docs" })),
+  docs: defineCollection(ascribeCollection({ schema: docsSchema, name: "docs" })),
+  home: defineCollection(ascribeCollection({ schema: homeSchema, name: "home" })),
 };
 ```
 
 `ascribe({ build, project })` means what it does today, and `ascribeCollection({ schema })` with one project needs no name.
+
+**Each entry has a name,** and the name is what everything else says: a collection, `review`, a codegen folder, an error message. A path can't be the key. Two entries may share a project and differ by build, which is what the [versions proposal](../proposals/versions.md) needs for a collection per release line (`{ name: "v3-4", project: "../docs", build: "3.4" }`), and `ascribeCollection({ project: "../docs" })` couldn't say which. A name is unique in the list, and has the characters a collection's name may have. This is a published option from the day it ships, so the shape isn't one the next plan has to change.
 
 Rules for what the projects share:
 
 - **Routing.** Each project's `trailing-slash` and `site` must agree with Astro's, as now. No project's base path may be another's, and each is `base` or under it. One project at the root with another beneath it is the case this plan needs, and it's allowed: a page of the first whose route falls under the second's base path is an error that names both.
 - **Permalinks.** One route serves every project's list, and the projects must publish them at one path. A name two projects both declare is an error from the integration, since no build of either can see the other.
 - **Development.** A change rebuilds the project it's in. Each project's folder gets its `.ascribe/dev.json`, with its own address.
-- **Review** follows one project in a session: the one the open page belongs to. If that can't be done without redesigning the review server, review covers the first project listed, the guide says so, and the pull request reports it.
-- **Schemas.** Each project's generated schema is copied to its own folder under the integration's codegen folder.
+- **Review** follows one project in a session: the one the open page belongs to. If that can't be done without redesigning the review server, review covers one project, the entry `review` names (`review: "docs"`), and the first entry when `review` is `true`. The site names the docs, which is the project that gets reviewed. The guide says so, and the pull request reports it.
+- **Schemas.** Each entry's generated schema is copied to a folder named for it under the integration's codegen folder.
 
 **This is the seam.** If any of these can't be made to work in both `astro build` and `astro dev`, stop and report before going on. [The thread](README.md#the-thread) says what each failure would change.
 
 ### The docs move
 
 - `docs/ascribe.toml`: `base-path = "/docs/"`. `permalink-path` stays `/go/`.
-- Every copy of a docs address moves with it, and the test that holds each copy is changed first so it fails until the copy does: the READMEs of the repository, the crates, the packages, the examples, and the plugin; the extension's manifest and walkthrough; `site/README.md`.
-- `site/netlify/edge-functions/markdown.ts` answers for pages under `/docs/`, and `site/test/negotiation.test.ts` follows.
+- Every copy of a docs page's address moves with it, and the test that holds each copy is changed first so it fails until the copy does: the READMEs of the repository, the crates, the packages, the examples, and the plugin; about ten addresses in the crates' READMEs and source comments; the extension's manifest and walkthrough; `site/README.md`. Where a page has a permalink, the copy becomes the permalink's address instead, which doesn't move again (the surface audit's finding 43).
+- `site/netlify/edge-functions/markdown.ts` probably doesn't change: `markdownPath` takes any page's address and adds `.md`, and a page with no Markdown file, such as a marketing page, goes on as it is. `site/test/negotiation.test.ts` gains a docs page under `/docs/` and a marketing page that falls through. Confirm by reading both before touching either.
 - `site/public/_redirects` gains nothing (README decision 8).
-- `llms.txt` is at `/docs/llms.txt`. Check what `ascribe report agents` says about a site whose root has none, and record it in the pull request; don't work around it here.
+- `llms.txt` is at `/docs/llms.txt`, and the site's root has none (README decision 19).
+- **The nightly Report workflow** (`.github/workflows/report.yml`) runs `ascribe report links agents --config docs --site https://ascribed-dev.com --exit-code`, and opens an issue when it fails. Its `--site` becomes the docs' address, `https://ascribed-dev.com/docs/`, in this pull request. Before merging, run `ascribe report agents` against the pull request's preview at `/docs/`: if the checker only looks at a host's root for `llms.txt`, stop and report, since the job would go red the night after the merge and the choice is then between a root `llms.txt` and a checker that takes a path.
 - A pull request's preview is built with its own address in both projects.
 
 ### The marketing project
@@ -99,13 +103,16 @@ Rules for what the projects share:
 `site/home/`, with its own `ascribe.toml`:
 
 - `[consumer]`: the docs' `site` and `trailing-slash`, `base-path = "/"`, `agents = false`, and the docs' `permalink-path`.
+- **The docs' release tables,** which phase 3's marks need (README decision 13): the release dimension, the `next` feature, `[versions] current`, and the `version` phrase. And `[sources.code]`, for the examples phase 3 reads from the repository. Each is a second home for a fact in `docs/ascribe.toml`, so `scripts/docs-site/facts.test.ts` gains a test that the two files agree on every one, written before the copies. The site's address is in a third file now, and the same test holds it (the surface audit's finding 32).
 - One page type, for a marketing page, with a title and a description.
 - One widget, a hero, which wraps a heading and a paragraph and takes a status.
 - One page, `index.md`: what Ascribe is in a sentence, that it's early and open source, the two install commands, and a link to getting started.
 
+**A page has one `h1`.** The hero wraps the page's heading, so the marketing frame prints no title of its own. The frontmatter's title is for the `<title>` and the social card.
+
 The link into the docs is the permalink's address, `/go/getting-started/`. Read how Ascribe treats a link that starts with `/` in a page before relying on it: if `check` reports it, or the site output rewrites it, stop and report.
 
-A test in `site/test/` checks every link from a marketing page into the docs: each `/go/<id>/` it uses is in the docs' `_ascribe/permalinks.json`.
+**Links into the docs are checked twice, by what's there already.** `site/test/links.test.ts` follows every `href` in the built site, and a permalink's address is a built file, so a name that doesn't exist fails it today. What it can't see is a name that was retired, which still gets a page. So the site's tests also run `ascribe permalinks verify` with the names the marketing pages link to, against the docs' `ascribe.permalinks`: it exits 1 for a retired name and gives the reason. That's the site using its own tool, as the proposal had it. No third test is written.
 
 ### The site
 
@@ -124,12 +131,12 @@ A test in `site/test/` checks every link from a marketing page into the docs: ea
 ## Tasks
 
 1. Accept a base path under `base`: the check, the files, and the agents' files, with unit tests, and end-to-end tests in `examples/astro-site` for a home page at `/` with docs under a path.
-2. Several projects: the option, the loader, the permalinks route, the watcher, the dev file, the schemas, and review, each with unit tests. End-to-end: two projects in one built site and under `astro dev`, a permalink from each, and the three refusals (a clashing base path, a page under another project's path, a name declared twice).
+2. Several projects: the option, the loader, the permalinks route, the watcher, the dev file, the schemas, and review, each with unit tests. End-to-end: two projects in one built site and under `astro dev`, a permalink from each, two entries for one project with two builds, and the four refusals (a clashing base path, a page under another project's path, a permalink declared twice, an entry's name used twice).
 3. `docs/content/guides/astro.md`: a home page in front of the docs, and several projects in one site. `packages/astro/README.md`. `CHANGELOG.md`. The decision in `project-docs/decisions.md`.
 4. Move the docs: the setting, then each test and the copies it holds.
-5. `site/home/`: the model, the widget, and the page. The hero's token.
-6. The site: the frame, the routes, the hero's styles, search, the edge function, and the site's tests, including the new one for links into the docs.
-7. Workflows and Netlify: path patterns, the preview's address, and `ignore`, with `scripts/docs-site/facts.test.ts` agreeing.
+5. `site/home/`: the model with the docs' release tables and sources, the facts test that holds them equal, the widget, and the page. The hero's token.
+6. The site: the frame, the routes, the hero's styles, search, and the site's tests: the negotiation test's new cases, and `ascribe permalinks verify` on the marketing pages' names.
+7. Workflows and Netlify: path patterns, the preview's address, `ignore`, and the Report workflow's `--site`, with `scripts/docs-site/facts.test.ts` agreeing.
 
 Tasks 1 to 3 are a feature of the integration and can be their own pull request, merged first. The rest then waits a night for the canary, or is opened against the checkout's build as a preview is.
 
@@ -141,10 +148,11 @@ The demonstration, the claims, and marks for what's unreleased (phase 3). The ch
 
 - In `examples/astro-site`, built and served, a home page at `/` and a docs page under a path both open, a published file downloads, and a permalink lands. The end-to-end tests do exactly this, in a build and under `astro dev`.
 - The pull request's preview shows the landing page at `/`, and its link to getting started opens `/docs/getting-started/`.
-- `ascribe check --help` prints the address it printed before, and no file under `crates/` changed to make that so.
+- `ascribe check --help` prints the address it printed before, and so does every other command's help and every diagnostic's link. Nothing the binary compiles changed to make that so: the changes under `crates/` are to READMEs and comments, which hold page addresses and move with the docs.
 - A project that uses the integration as before, with one project and a base path equal to `base`, builds the same site. `node scripts/compare/outputs.ts --base main` shows no change outside what the docs' base path moves.
 - `git grep "ascribed-dev.com/"` finds no address of a docs page that isn't under `/docs/` or `/go/`.
-- The night after this merges, the first two commands in the goal give what's shown there on the live site. The pull request says when it was checked.
+- `ascribe report agents`, run against the preview's `/docs/`, passes what it passed against the root before.
+- The night after this merges, the first two commands in the goal give what's shown there on the live site, and the Report workflow's run is no redder than the night before. The pull request says when each was checked.
 
 ## Verify
 
