@@ -508,6 +508,20 @@ Project widgets (SPEC §6): directives a documentation set defines. Each declara
 
 The site output's element for a widget (tag name and attributes) is defined by the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md), not here.
 
+**An example: a landing page.** Ascribe's own landing page is a page of Ascribe, laid out with three widgets that [`site/home/ascribe.toml`]({repo}/blob/main/site/home/ascribe.toml) declares and the site's stylesheet draws: `hero-banner`, the opening, with a `status` attribute the site shows as a badge; `claim-example`, a claim with its heading, its sentences, and the example under them, which can carry an [`@available`](directives.md#available) mark like any other block; and `source-and-result`, whose content is a `@snippet` of a page's file and whose `page` attribute names that page, which the site draws beside it. The lists and the install commands needed no widget.
+
+```markdown
+@claim-example:
+### Checked
+
+A broken link is an error, in the editor as you type and in CI.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
+@end
+```
+
+What a widget can't say is the site's to do: Ascribe doesn't know that `page` names a page, so it doesn't check that the page exists, and the site's own test does.
+
 ---
 
 ## 15. `[consumer]`

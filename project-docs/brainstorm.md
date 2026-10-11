@@ -216,6 +216,17 @@ What's missing is the join: an output keyed by permalink, holding each named sec
 
 ---
 
+## 18. Widgets for a page's layout
+
+The landing page (`site/home/content/index.md`) was the experiment of the [website plan](website/README.md): whether a handful of project widgets carry a marketing page without changing the language. **They carried part of it.** Three widgets did: the hero, a claim with its example, and a page's source beside its result. The lists, the install commands, and the status needed none, and an availability mark inside a claim worked as it does on any page.
+
+What didn't fit:
+
+- **A widget can't name a page.** `@source-and-result {page=install}` says which page to draw with a string attribute. Ascribe doesn't know it's a page, so it doesn't check that it exists, follow it when the page is renamed, or count it as a use; the site's own test does. A page-reference attribute type, checked as a link is, would close that gap. It's a change to SPEC §7.2's attribute types.
+- **The site draws another project's page inside a widget by cutting HTML.** The widget's element holds only the source; the route finds the element's end tag in the page's rendered HTML and draws the other page before it (`site/src/demo.ts`). It works because widgets don't nest and the element's name is unique, and it's the one place the site edits Ascribe's HTML rather than styling it.
+- **A widget's title isn't a heading.** A title line becomes the element's `heading` attribute, which a stylesheet can show but which isn't in the page's outline or table of contents. Each claim's name is a `###` heading inside the widget instead.
+- **The drawn page's headings join the page's outline.** The demonstrated page's `##` headings are the landing page's too, inside the demonstration. The stylesheet makes them smaller; nothing makes them a level lower.
+
 # Agents
 
 Agents meet documentation in two ways: they **read** published docs while they code, and they **write** docs in a repository. Ascribe can help with both, and it's unusually well placed for the first, because it already builds a resolved, plain-Markdown version of every page.

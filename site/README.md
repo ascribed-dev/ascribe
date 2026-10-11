@@ -3,26 +3,28 @@
 Ascribe's website: a landing page at the root, from `home/`, and the user docs, `../docs`, under `/docs/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
-astro.config.mjs            ascribe({ projects: [docs, home] }); routing as in each project's [consumer]
-home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the hero widget, the docs' release tables) and content/
+astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]
+home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the landing page's widgets, the docs' release tables) and content/
+demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
 netlify.toml                production's build on Netlify
 netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md
 public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
 src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
-src/content.config.ts       a collection per project, `docs` and `home`, each with the schema ascribe build generates
+src/content.config.ts       a collection per project, `docs`, `home`, and `demo`, each with the schema ascribe build generates
+src/demo.ts                 where the landing page's demonstration draws demo/'s page: inside its widget, after the source
 src/nav.ts                  the docs' sidebar: every page, grouped and in order
 src/site.ts                 the site's name, repository, and the docs' route
-src/pages/[...slug].astro   a route per page of home/, at the root
+src/pages/[...slug].astro   a route per page of home/, at the root, with demo/'s page drawn in each demonstration
 src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
 src/pages/404.astro         the 404 page, in the docs' frame
 src/layouts/                the shell (header; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
 src/components/             search, the sidebar, the table of contents, the page's availability badge
-src/styles/site.css         light and dark, following the system, the element library's theme, and the hero widget; its colors and type are generated from ../design/tokens.toml
+src/styles/site.css         light and dark, following the system, the element library's theme, and the landing page's widgets; its colors and type are generated from ../design/tokens.toml
 src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
-test/                       navigation, links and anchors, redirects, the two projects, content negotiation, and the built site in Chromium
+test/                       navigation, links and anchors, redirects, the projects, the demonstration, content negotiation, and the built site in Chromium
 ```
 
 ## Publishing

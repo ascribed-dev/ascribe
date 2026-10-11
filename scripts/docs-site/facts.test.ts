@@ -3,7 +3,9 @@
 // (rust-toolchain.toml), the glibc floor (`GLIBC` in release-build.yml), and
 // the folders the docs take code examples from (`[sources.code] include` in
 // docs/ascribe.toml), the tables site/home/ascribe.toml copies from
-// docs/ascribe.toml, and the docs' address the Report workflow checks. A copy that can't be generated is compared here, so
+// docs/ascribe.toml, the docs' address the Report workflow checks, and the
+// install commands the landing page and the README repeat from getting
+// started. A copy that can't be generated is compared here, so
 // changing one place and not the others fails. The npm platform packages are
 // checked the same way in scripts/release/manifests.test.ts.
 import { execFileSync } from "node:child_process";
@@ -173,15 +175,19 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
     return glob.replace(/\/\*\*$/, "");
   });
 
+  // A folder inside site/, such as the landing page's demonstration, is
+  // covered by the site's own pattern in both of the next two.
+  const outside = include.filter((glob) => !glob.startsWith("site/"));
+
   // site-npm.yml builds production's site when one of them changes on `main`.
   const npm = read(".github/workflows/site-npm.yml");
   const paths = /^ {4}paths:\n((?: {6}.*\n)+)/m.exec(npm)?.[1] ?? "";
-  expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(["docs/**", "site/**", ...include].sort());
+  expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(["docs/**", "site/**", ...outside].sort());
 
   // Netlify skips a push to `main` when none of them changed.
   const netlify = /^\s*ignore = "git diff .* -- (.*)"$/m.exec(read("site/netlify.toml"))?.[1];
   expect(netlify?.split(" ").sort()).toEqual(
-    [".", "../docs", ...folders.map((folder) => `../${folder}`)].sort(),
+    [".", "../docs", ...outside.map((glob) => `../${glob.replace(/\/\*\*$/, "")}`)].sort(),
   );
 
   // CI's site job runs when a file the docs take an example from changed.
@@ -242,4 +248,38 @@ test("the site's own pages share the docs' release tables, sources, and address,
   expect(preview?.split(" ").sort()).toEqual(
     ["docs/ascribe.toml", "site/astro.config.mjs", "site/home/ascribe.toml"].sort(),
   );
+});
+
+/** The text of a Markdown file's `## heading` section, to the next level-2 heading. */
+function section(markdown: string, heading: string): string {
+  const start = markdown.indexOf(`\n## ${heading}\n`);
+  if (start === -1) throw new Error(`no "## ${heading}"`);
+  const end = markdown.indexOf("\n## ", start + 1);
+  return markdown.slice(start, end === -1 ? undefined : end);
+}
+
+/** The lines of each ```sh block in a text. */
+function shell(text: string): string[][] {
+  return Array.from(text.matchAll(/^```sh\n([\s\S]*?)^```$/gm), ([, block = ""]) =>
+    block.trim().split("\n"),
+  );
+}
+
+test("the landing page and the README install what getting started's first two sections do", () => {
+  // Getting started's home for each: its section's first command, the npm arm's.
+  const gettingStarted = read("docs/content/getting-started.md");
+  const installs = ["Install the command", "Install the editor"].map((heading) => {
+    const command = shell(section(gettingStarted, heading))[0]?.[0];
+    if (command === undefined) throw new Error(`"${heading}" has no command`);
+    return command;
+  });
+  expect(installs[0]).toMatch(/^npm install /);
+
+  // The landing page shows the two, each in a block of its own.
+  const landing = shell(section(read("site/home/content/index.md"), "Start"));
+  expect(landing).toEqual(installs.map((command) => [command]));
+
+  // The README's "Get started" block starts with them, then checks.
+  const readme = shell(section(read("README.md"), "Get started"))[0];
+  expect(readme).toEqual([...installs, "npx ascribe check"]);
 });
