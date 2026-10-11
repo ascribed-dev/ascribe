@@ -23,6 +23,7 @@ New or changed syntax, a directive, a block or inline form, an attribute, or wha
 
 - [ ] The checks, in `crates/ascribe-check/src/checks/`.
 - [ ] Each new or changed diagnostic, in `tests/conformance/diagnostics.toml` only; the diagnostics reference is generated from it.
+- [ ] **What a diagnostic says.** Its message says what's wrong, naming the thing in backticks, starting in lower case, with no full stop: `` `{path}` doesn't exist ``. Its fix text says what to do, in sentences. Its kind of next step is true of every instance: `choose` only when Ascribe lists what to choose from, `fix` only when there's a fix to apply. People and agents are told about a *problem*; *diagnostic* is the kind of problem, with a code, that the reference and `ascribe explain` describe.
 
 **Each output, and its contract**
 
@@ -87,7 +88,18 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
 - [ ] A line in the unreleased section of `CHANGELOG.md`.
 - [ ] The map of the surface, `project-docs/surface.md`, rewritten by `node scripts/surface/inventory.ts` after the fragments above. Its diff is what the change added to the surface: read it against the conventions at the top of this list.
+- [ ] **A tool for it,** if an agent with no shell needs the answer: named `ascribe_` and the command's own word (`ascribe_search` for `ascribe search`), with the command's arguments under the same names, `response_format` with `concise` the default, and nothing that writes a file. A command that changes the project gets no tool (decision 56).
+- [ ] **A path in what it prints, or in a prompt it writes,** is from the folder the command was run in, the form it takes as an argument. A prompt says once which folder its commands are for.
 - [ ] The tools of `ascribe mcp`, whose names and arguments are a contract (decision 56): the tools list in `docs/content/guides/agents.md` and each tool's section in `docs/content/reference/cli.md`.
+
+## A new editor command, action, or setting
+
+- [ ] The manifest, `packages/vscode/package.json`, and for an action, `packages/vscode/src/actions/registry.ts`. The docs' tables are generated from both (`packages/vscode/test/unit/docs.test.ts`), and so is the map of the surface.
+- [ ] **A command's title** is in title case, as VS Code's own are, under the category **Ascribe**: **Open Page Preview**, **Start Review**. It names what happens, not the mechanism.
+- [ ] **An action's label** is a short sentence without a full stop, in the words of the person writing: **Change where the link goes**, **Wrap in a note**. It's what the actions bar and the lightbulb show. Where the palette shows it too, it's the same label, so the palette has two styles on purpose: commands that work the editor, and actions that change the page.
+- [ ] **A setting** is `ascribe.<name>`, or `ascribe.<area>.<name>` once an area has two, in camel case. It's for one person's editor: how it scrolls, when servers start, which binary runs. A choice about the content, which everyone working on the project must share, is in `ascribe.toml`. A choice about how a site uses a build is an option of `@ascribed/astro`. A choice about one run is a flag.
+- [ ] **What the editor says when it isn't looking.** A state in which Ascribe hasn't checked (an untrusted folder, a server that hasn't started, a build other than the editor's) is said in the status bar, never left to read as "no problems".
+- [ ] A tool for agents in VS Code only for what the editor alone has: text that isn't saved, or the review that's open (decision 57). Everything else is the MCP server's.
 
 ## A change to the site output's markup
 

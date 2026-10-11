@@ -187,7 +187,7 @@ Retiring is the step the research found most expensive: GitHub's public runbook 
 
 ### Archive first
 
-`ascribe archive --version "self-managed 3.3"` renders the source as it stands, for that line, into a folder of plain HTML. It's a last render, not a copy of the site that was live: the same source, the same line, drawn by Ascribe alone. That's why it has to run before the clean-up, while the source still holds what 3.3 needs.
+`ascribe versions archive "self-managed 3.3"` renders the source as it stands, for that line, into a folder of plain HTML. It's a last render, not a copy of the site that was live: the same source, the same line, drawn by Ascribe alone. That's why it has to run before the clean-up, while the source still holds what 3.3 needs.
 
 - **It depends on nothing.** No site generator, no theme, no script or request to anywhere else. Several projects in the research say that rebuilding old source years later doesn't work, and that's why they keep output.
 - **It has a way around.** The content model has no navigation, and Ascribe's own renderer draws one page with no layout. So the archive writes a contents page and a sidebar from the folders, the pages' titles, and their headings, in path order. If the content model gains navigation, the archive uses it.
