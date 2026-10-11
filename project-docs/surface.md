@@ -546,6 +546,7 @@ What a site imports:
 | `@ascribed/astro/MissingPermalink.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
+| `ascribe-astro` | A program, from @ascribed/astro |
 
 ## `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli`
 
