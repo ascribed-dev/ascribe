@@ -63,7 +63,7 @@ npx ascribe render docs/install.md --build site
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/platforms-site.txt
 
-In the site output, the arms are tabs, one for each platform. Groups that vary by the same dimension switch together, and the reader's choice holds on every page they open next. The section's mark is a badge under its heading.
+In the Markdown, each arm is a section under a heading that names the platform, after a line saying a reader sees one of them at a time, so an agent reading the page knows they're alternatives. In the site output, the arms are tabs, one for each platform. Groups that vary by the same dimension switch together, and the reader's choice holds on every page they open next. The section's mark is a badge under its heading.
 
 ```sh
 npx ascribe render docs/install.md --build windows
