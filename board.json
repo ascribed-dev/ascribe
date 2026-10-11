@@ -243,6 +243,631 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "`ascribe report links` loses every moved link when a project's lychee.toml turns lychee's cache on"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 2.\n\n## What to do\n\nMake the extension the formatter for a project's pages, so another Markdown formatter doesn't run on them, and say so in getting started.\n\nOut of scope: what Ascribe should do about a phrase written `{ version }`. That's a question for the language, and the finding keeps it apart.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 2: A formatter on save changes what a page builds to, and nothing says so\n\n**Evidence.** From the editor dry run, with `\"editor.formatOnSave\": true` and Prettier as the formatter for Markdown: \"The page was rewritten as it saved: line 93 became line 106.\" Of Prettier's five kinds of change, two were reported (`ASC021`, `ASC016`) and three weren't. One of the three changes the output: \"`version: {version}` became `version: { version }`\", and \"the built page says `version: { version }` where it said `3.4.1`, with nothing reported.\"\n\n**Cost.** A person with a common pair of settings breaks pages by saving them, and for part of the damage no check tells them.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 258,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A Markdown formatter on save changes what a page builds to, and nothing says so",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/258"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VmM",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A Markdown formatter on save changes what a page builds to, and nothing says so"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 3, 6.\n\n## What to do\n\nThe status bar says when the project isn't being checked: in Restricted Mode, and in a trusted folder before a page has been opened. Today both read as \"no problems\".\n\nAlso, from finding 23: the output channel logs `ascribe-lsp: using the project at …/ascribe.toml` at `[error]` when nothing is wrong, and doesn't give the binary's version. Log it at the right level, and add the version.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 3: In Restricted Mode the extension is silent, and the panel says the project is clean\n\n**Evidence.** \"The Problems panel: \"No problems have been detected in the workspace.\" with each page open.\" \"Nothing from Ascribe said it wasn't checking.\" The only notice was VS Code's own banner.\n\n**Cost.** Someone who opens a project for the first time and looks for problems is told there are none.\n\n### Finding 6: The project's problems wait for a page to be opened\n\n**Evidence.** \"The status bar stayed at 0 errors, 0 warnings, and had no \"Review: off\" and no build.\" Then, on opening \"`docs/quickstart.md`, a page with no problem\": \"The status bar went to 1 error, 0 warnings, 1 info\".\n\n**Cost.** A project with errors shows none until any page is opened, and nothing says it's waiting.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 259,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Say in the status bar when Ascribe isn't checking a project",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/259"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vn4",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Say in the status bar when Ascribe isn't checking a project"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 5.\n\n## What to do\n\nAdd a command that checks every build and puts the result in the Problems panel, and have the status bar's build say when the panel covers that build alone.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 5: Nothing in the editor checks every build\n\n**Evidence.** The editor guide: \"before calling a project clean, run `ascribe check`\". The Problems panel shows \"the editor's build only\". From the dry run: \"The Content Model view lists three builds. Didn't find a command that checks the others.\" From the maintainer's walk: \"Project seems clean. Nothing in the problems panel.\"\n\n**Cost.** \"No problems\" means one build of three, and the docs' answer is a terminal. It didn't matter on this task. It will on a page that differs by build.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 260,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Check every build from the editor",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/260"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VoI",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Check every build from the editor"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 1.\n\n## What to do\n\n`ascribe check` carries `ascribe link`'s closest targets as the diagnostic's fixes, marked `unsafe`, so the lightbulb, the JSON, and the MCP tools all offer them. And `closest` looks for the link's heading id on other pages, which finds a renamed page however far its new name is from the old.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 1: `choose`, with nothing to choose from\n\n**Evidence.** The Diagnostics reference defines the next step `choose` as \"You pick among things Ascribe can list: a link's target\". For the broken link, `check`'s JSON has `\"next\":\"choose\"` and `\"fixes\":[]`. The lightbulb's menu had \"one entry: \"Prompt agent: fix this problem\"\". `ascribe link 'keys.md#rotate-keys' --from docs/install-agent.md` printed one line and no `Closest:`; `ascribe_link` answered `\"closest\":[]`. `api-keys.md` was in the same folder, with a heading whose id is `rotate-keys`. Checked afterwards: `link` does list a near spelling (`ascribe link api-key.md` gives `Closest:` `[API keys](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/api-keys.md)`), and `check` gives `\"fixes\":[]` for that link too. One place had it: **Change where the link goes** listed \"Rotate keys  api-keys.md#rotate-keys\".\n\n**Cost.** On all seven walks the walker found the page some other way: `ls docs`, `grep`, the copy's README, or the file name in a different diagnostic. A person in the editor is offered an agent before they're offered the page.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 261,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Offer the page a broken link meant",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/261"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vo4",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Offer the page a broken link meant"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 13, 26, 49.\n\n## What to do\n\n- A command names a page back as it was given, from the folder it was run in (finding 13). This changes a value in `ascribe link`'s JSON; the maintainer agreed to that on 10 October 2026, and the change adds its line to `project-docs/decisions.md`.\n- `ascribe permalinks retire --to`, `--page`, and `--under` accept the path `ascribe check` prints (finding 26). This one is a bug on its own: the right path is refused with a message that says the page has no permalink. What's written into `ascribe.toml` stays from the content root.\n- A prompt says once which folder its commands are for, and every path in it is from there (finding 49).\n\nThe `permalinks` group hasn't released, so its part is free now and costs a changelog entry after the next release.\n\n**Size:** Small, in three parts.\n\n## What the audit found\n\n### Finding 13: One page, two names in one answer\n\n**Evidence.** \"`check` says `docs/install-agent.md:93:90`, and `link`, given `--from docs/install-agent.md`, answers \"doesn't work from install-agent.md\".\" In the MCP session: `\"file\":\"docs/install-agent.md\"` from one tool, and `\"from\":\"install-agent.md\"` from the next, for `\"from\": \"docs/install-agent.md\"` given.\n\nSeen since: the two names are deliberate in one place. `outline`'s JSON has both, and the reference says \"`page` is the path from the content root, as links write it, and `file` is from the project root, as `ascribe check` reports it.\" So `link`'s `from` is a `page` under a name that doesn't say so, answering an input given as a `file`. `permalinks retire --to`, `--page`, and `--under` take the `page` form only (finding 26).\n\n**Cost.** An agent that takes a path from one answer and gives it to the next command is using two bases without being told. Both work as input today, so nothing broke.\n\n### Finding 26: `permalinks retire` names a page from the content root, where other commands take a path from the current folder\n\n**Evidence.** `--page <PAGE>`: \"Retire every permalink this page declares … by its path from the content root\". Tried on 10 October 2026 in a copy of `examples/quill`, whose content root is `docs`, with a permalink on a heading of `docs/keys.md`, from the project's folder. `ascribe render docs/keys.md --build site` and `ascribe render keys.md --build site` both wrote the page. `ascribe permalinks retire --page keys.md --reason test` answered `retired rotate-keys`. `ascribe permalinks retire --page docs/keys.md --reason test` answered `` error: can't retire `docs/keys.md`: it declares no permalinks, and the list has none there ``, exit 2.\n\n**Cost.** The path that every other command takes, and that `check` prints, is refused here with a message that says the page has no permalinks when it has one. Someone would go and look for a missing `permalink=true` that isn't missing.\n\n### Finding 49: A prompt names its paths from the repository's root, to an agent standing in the project\n\n**Evidence.** [Journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md): the prompt ends \"When you're done, run `ascribe check handbook/pages/security/content`\". \"From `handbook/pages/security`, where the agent ran the prompt: `error: handbook/pages/security/content doesn't exist`, exit 2. From the root it works.\" [Journey 5](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/review-a-pull-request.md): \"The prompt names the pages from the project, `content/guides/rollouts.md`, and the project from the repository, `Project: docs/`\", and from the root \"`ascribe render content/guides/rollouts.md --build site --config docs` answers `` error: `content/guides/rollouts.md` isn't a page or fragment of the project ``.\"\n\n**Cost.** A command copied out of a prompt works from one folder and fails from another, and the prompt doesn't say which. Both agents happened to be standing where it worked, or worked round it.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 262,
+        "repository": "ascribed-dev/ascribe",
+        "title": "One base for a page's path: in what commands print, accept, and write into prompts",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/262"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VpU",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "One base for a page's path: in what commands print, accept, and write into prompts"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 4.\n\n## What to do\n\nThe extension puts the binary it runs on the path of the window's terminals, and the prompt **Prompt agent** hands over names the command as that window can run it.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 4: An agent in the editor can't run Ascribe\n\n**Evidence.** The maintainer's editor walk, the agent's answer: \"I fixed the broken link, but I couldn't run `ascribe check`, so the fix is unverified.\" \"The `ascribe` command isn't installed here. It's not on the PATH, and there's no local copy in the project.\" `check --format prompt`, which **Prompt agent** hands over, ends \"When you're done, run `ascribe check` and fix what it reports.\"\n\n**Cost.** The path the maintainer took first ends with an unverified edit and a request to check by hand, in an editor that has the binary.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 263,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Let an agent in the editor's window run the binary the editor runs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/263"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vp4",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Let an agent in the editor's window run the binary the editor runs"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 45.\n\n## What to do\n\nA binary that is neither a release's nor a canary's says so in its version, with its commit, as the canary's does (`0.2.1-next.13 (42f00096ceb0)`).\n\nCheck which tests compare the version string before changing it.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 45: A binary built from `main` says it's the release\n\n**Evidence.** [Journey 6](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/set-up-ci-checks.md): \"A binary built from `main` calls itself `ascribe 0.2.0`, the same as the release on `npm`, while the nightly package built from the same branch says `ascribe 0.2.1-next.13 (42f00096ceb0)`.\" The agent read \"the version you have locally and the current npm `latest`\" as one version and pinned it. That release rejects the project: ``[ASC061] Error: unknown key `role` ``, exit 2: \"The workflow fails for a broken link, and it fails without one\".\n\n**Cost.** Anyone working from a build of `main` is told they have the release, and what they write against it can fail on the release. Here it made a workflow that fails on every pull request.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 264,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A binary built from main says it's the release",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/264"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vqo",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A binary built from main says it's the release"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 48.\n\n## What to do\n\n`ascribe diff PAGE` shows that page's changed blocks as text, and narrows the JSON to it, so `PAGE` means the page the command is about, as it does on `outline` and `render`. Today a page is named \"only with --format prompt\".\n\nIt changes what an argument means on a command, so the change records a decision in `project-docs/decisions.md`.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 48: No form of `ascribe diff` shows what changed on one page, in a terminal\n\n**Evidence.** [Journey 5](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/review-a-pull-request.md): \"The agent wanted one page's changes as a reader sees them, in the terminal, and no form of `ascribe diff` gave it. Three tries: `error: unexpected argument 'content/guides/rollouts.md' found`, `error: unexpected argument '--since' found`, and `error: a PAGE is named only with --format prompt`. The text format lists pages and counts (`guides/rollouts.md: 1 changed, 2 added, 1 removed`)\". \"The agent's first look at the changes was `git diff`.\"\n\n**Cost.** A reviewer at a terminal, person or agent, is told how many blocks changed on a page and has to go to `git diff` or the HTML report to see them. `diff`'s `PAGE` argument reads as \"narrow to this page\", as a path does for `git diff`, and means something else.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 265,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe diff PAGE`: show one page's changes in a terminal",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/265"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VrA",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe diff PAGE`: show one page's changes in a terminal"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 50.\n\n## What to do\n\nA command run above several projects and in none names them in its error. `ascribe agents sync` at such a root writes each project's files.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 50: A repository with several projects has nothing at its root\n\n**Evidence.** [Journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md): \"`cat ascribe.toml` at the root: `No such file or directory`. A repository with three projects has nothing at its root that says so, and the plugin says nothing about which project a request is for.\" \"`ascribe check` there exits 2, `error: no ascribe.toml found in … or any parent directory`\", and `ascribe agents sync` \"exits 2 with `no ascribe.toml found`\" there too, so the preparer ran it in each project. What worked was what `sync` leaves behind: \"The root's block did the routing the other two sessions did by hand.\"\n\n**Cost.** Where an agent starts, at the root, every command's answer is that there's no project. With `sync`'s files an agent opens the right project first; without them it searches.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 266,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Say which projects are there when a command is run above several",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/266"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vrg",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Say which projects are there when a command is run above several"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 36.\n\n## What to do\n\n`permalink-duplicate` compares names without case, as the rule for build names does. With a conformance case.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 36: Permalinks that differ only by case are accepted, and are one address here\n\n**Evidence.** Tried on 10 October 2026 in a scratch project: two headings on one page with `@id {permalink=true}: Setup` and `@id {permalink=true}: setup`, and another page with `permalink: SETUP`. `ascribe check --format concise` answered `checked 2 files: 0 errors, 0 warnings`, and `ascribe build` wrote all three to `_ascribe/permalinks.json`: `\"SETUP\"` to `/b/`, `\"Setup\"` and `\"setup\"` to `/a/`. On the published site every spelling of an address is sent to the lower-case one (finding 35), so there the three would be one address. Build names already have the rule: \"Build names are unique ignoring case (content-model.md, `model-build-name-case`)\", and the output-layout contract refuses \"paths that differ only in case (they'd be one file on macOS and Windows)\". What the host does with two such pages wasn't tried; that both can't be reached is inferred from finding 35.\n\n**Cost.** Two names a product links to, one page answering for both, and nothing reported before or after the deploy. Unlikely, and silent when it happens.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 267,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Permalinks that differ only by case are accepted",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/267"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VsE",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Permalinks that differ only by case are accepted"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 24, 25.\n\n## What to do\n\n- `ascribe permalinks sync --check` exits 1 when the list would change, as `ascribe agents sync --check` does. `ascribe check` goes on reporting `permalinks-list-behind` too.\n- `ascribe permalinks verify --list <PATH>` becomes `--against <PATH>`: `--list` is a switch that lists on `explain` and `agents prompt`.\n\nFree while nothing has released with the group; a changelog entry after.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 24: Two commands named `sync`, and only one can say whether it's current\n\n**Evidence.** `agents sync` has `--check`: \"0 the files are written, or with `--check` up to date; 1 with `--check`, a file is out of date\". `permalinks sync`'s options are `--config`, `--format`, and `--color`, and it \"exits with `0` when the list is up to date, whether or not it changed\". Whether the list is behind is `ascribe check`'s to say (`permalinks-list-behind`). Tried: `ascribe permalinks sync --check` answers `error: unexpected argument '--check' found`, exit 2.\n\n**Cost.** Someone who has learned `agents sync --check` for CI tries it on the other `sync` and gets a usage error. The answer exists, somewhere else.\n\n### Finding 25: `--list` is a path on one command and a switch on two\n\n**Evidence.** `--list <PATH>`: \"The list to check against.\" `--list`: \"List every diagnostic's code and name, one per line, instead.\" and \"List the prompts, with their arguments, instead.\"\n\n**Cost.** One option word, two meanings, and one of them takes a value. Small, and it's in the group that also has a `list` subcommand.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 268,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`permalinks sync --check`, and rename `verify --list`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/268"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vsg",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`permalinks sync --check`, and rename `verify --list`"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 11.\n\n## What to do\n\nThe format that writes Markdown for a CI job is `markdown`, on `ascribe drift`, `ascribe sources update`, and `ascribe report`. `--summary` on `check` stays: it shortens a report and isn't a format.\n\nA published option's rename, so the change adds a line to `project-docs/decisions.md`. The convention is already in `project-docs/checklists.md`, which says `summary` today and `markdown` in a new command; that sentence is updated with the rename.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 11: Five sets of words for `--format`, and `summary` means two things\n\n**Evidence.** From the inventory: \"`text|json` (nine commands); `text|concise|json|prompt` (`check`); `text|json|html|prompt` (`diff`); `text|json|summary` (`drift`, `sources update`); `text|summary|json|prompt` (`report`). `summary` means Markdown for CI in three commands, and `--summary` on `check` means counts.\"\n\n**Cost.** A format learned on one command can't be assumed on the next, and one word names a file format in one place and a shorter report in another.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 269,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Rename `--format summary` to `markdown`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/269"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VtI",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Rename `--format summary` to `markdown`"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 9, 10.\n\n## What to do\n\n- A *problem* is what Ascribe found in your project. A *diagnostic* is the kind of problem, with a code, that the reference and `ascribe explain` describe. Rename what departs; `ascribe report`'s \"findings\" become problems.\n- `ascribe check --format prompt` counts as the summary line does: \"Fix the 1 error\", with advice listed after it as something to look at.\n\nBefore renaming anything in `ascribe report`: if its JSON has a `findings` key, the rename touches the commands' JSON and needs a decision first. Check, and stop if so.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 9: Five words for what Ascribe reports\n\n**Evidence.** From the inventory: \"The registry, `explain`, the JSON, and the plugin's server say *diagnostic*; the docs for `concise`, the Problems panel, the prompts, the MCP tool, and the skill say *problem*; `report` says *finding*; Vale's are *alerts*; the summary line and the hooks count *errors*, *warnings*, *advice*.\" One tool has both: `ascribe_explain` is titled \"Explain a diagnostic\", and `ascribe_check` reports \"every *problem*\".\n\n**Cost.** Someone who reads \"problem\" in the editor and \"diagnostic\" in `--help` has to work out they're one thing. Nobody on the walks was stopped by it.\n\n### Finding 10: What counts as a problem depends on who's told\n\n**Evidence.** For one project: `Fix the 2 problems `ascribe check` reports in this project.`, and `checked 4 files: 1 error, 0 warnings, 1 advice`. The hook after an edit reports \"*errors*, at most 10, errors only\". The skill says \"fix every *error*, and the *warnings* your edit caused\".\n\n**Cost.** An agent handed the prompt is told to fix advice that the hook and the skill tell it to leave alone.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 270,
+        "repository": "ascribed-dev/ascribe",
+        "title": "One word for what Ascribe reports, and one count of them",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/270"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VuA",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "One word for what Ascribe reports, and one count of them"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 14, 15, 19, 56, 62.\n\n## What to do\n\nSix small things, each a line of text output:\n\n- `ascribe check` prints a diagnostic's help when it has no fix to name (14).\n- Its last line names the builds it covered, or says \"every build\", prints all three counts every time, and has one form (15, 23).\n- `ascribe link`'s `Write:` gives the empty form, `[](target)`, too (19).\n- `ascribe render` says, above a switcher's arms, that a reader sees one of them and which dimension chooses (56).\n- `ascribe diff` prints the commit once, and `ascribe explain` with no code says `--list` exists (62).\n- The command reference states the exit codes of `agents rules`, `agents skill`, `agents prompt`, `agents hook`, and `sources status` (20).\n\nThe text output isn't a contract, so none of these needs a decision.\n\n**Size:** Small, six times.\n\n## What the audit found\n\n### Finding 14: `check`'s text gives a next step only when there's a fix to apply\n\n**Evidence.** For `ASC036` the text has the message and the source, and \"No `Help:` line (an `ASC041` in the reference's sample has one, from its fix's title)\". The JSON for the same diagnostic has `\"help\":\"Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.\"`\n\n**Cost.** A person at a terminal gets less than a tool reading JSON, and has to know to run `ascribe explain`.\n\n### Finding 15: `check`'s last line doesn't say which builds it covered\n\n**Evidence.** After `checked 4 files: 0 errors, 0 warnings`, the agent with the plugin ran `for b in site cloud self-managed-3.3; do ascribe check --build $b 2>&1 | tail -1; done`, and reported \"0 errors, 0 warnings, on the default check and on each of the `site`, `cloud` and `self-managed-3.3` builds.\" The JSON has `\"builds_checked\":[\"site\",\"cloud\",\"self-managed-3.3\"]`.\n\nSeen again in phase 3: an agent \"checked one build's render and described three\", with nothing in the line to prompt it ([journey 2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/add-a-platform-section.md)). And the line has two forms: \"`ascribe check content` ends `checked 6 files, reported on 6: 0 errors, 0 warnings`, and `ascribe check` ends `checked 6 files: 0 errors, 0 warnings`\" ([journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md)).\n\n**Cost.** A careful agent checks three more times to learn what one word would have told it.\n- **Seen again in phase 3:** an agent \"checked one build's render and described three\", with nothing in the line to prompt it ([journey 2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/add-a-platform-section.md)). And the line has two forms: \"`ascribe check content` ends `checked 6 files, reported on 6: 0 errors, 0 warnings`, and `ascribe check` ends `checked 6 files: 0 errors, 0 warnings`\" ([journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md)).\n\n### Finding 19: `link` tells the walker to write more than the fix needs\n\n**Evidence.** \"`link` said `Write: [Rotate keys](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/api-keys.md#rotate-keys)`, and the page had `[](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/keys.md#rotate-keys)`, with no text. Wasn't sure whether to put the text in.\"\n\n**Cost.** A moment's doubt, and a diff larger than the fix if it's followed.\n\n### Finding 56: `ascribe render` can't show that readers see one arm of a switcher at a time\n\n**Evidence.** [Journey 2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/add-a-platform-section.md): \"for a switcher it shows every arm in a row under a bold label: `**macOS**`, steps, `**Linux**`, steps, `**Windows**`, steps. The task's point, one system at a time, can't be seen in it. The agent said it was so without seeing it, and the preparer had to build and read `<ascribe-tabs sync=\"os\">` in the `site` output to know.\"\n\n**Cost.** The command the skill gives for \"a page as one build's readers see it\" shows a switcher the same as three sections in a row. An agent reports the difference on trust.\n\n### Finding 62: Smaller things at the command line\n\n**Evidence.** - \"`ascribe diff --base 8254eaf` starts `compared with 8254eaf (8254eaf)`: the revision as given, then the commit, the same thing twice when a commit is given.\" (Journey 5.)\n  - \"`ascribe explain` with no code prints a usage error, and the agent's first search of it found nothing. `--list` was one `--help` away.\" (Journey 3.)\n  - \"To get the builds' names it ran `ascribe model --section builds --format json` and picked the names out with `grep -o '\"name\": *\"[^\"]*\"'`\". (Journey 4.)\n  - \"`refs` after the rename: `phrase:cloud doesn't exist.`, with exit 1. That's the answer the agent wanted, given as a failure.\" (Journey 4.)\n\n**Cost.** Each is a moment.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 271,
+        "repository": "ascribed-dev/ascribe",
+        "title": "What the commands' text output leaves out",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/271"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VuI",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "What the commands' text output leaves out"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 21.\n\n## What to do\n\nRemove `format` (`uint`, `uint32`, `uint8`, `int32`, 121 places in `schemas/`) from the schemas `crates/ascribe-cli/src/shapes.rs` generates, then regenerate with `ASCRIBE_BLESS=1`. `\"type\": \"integer\"` and `\"minimum\": 0` stay.\n\nThe schemas are a contract. The maintainer agreed to the removal on 10 October 2026, and the change records it in `project-docs/decisions.md`.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 21: The MCP tools' schemas make the client print 94 warnings\n\n**Evidence.** On standard error while the tools loaded: `unknown format \"uint32\" ignored in schema at path \"#/$defs/Pos/properties/line\"`, `unknown format \"uint\" ignored in schema at path \"#/$defs/CodeCount/properties/count\"`, and 92 more.\n\n**Cost.** Nothing fails. A person who starts the client in a terminal sees a screen of warnings about Ascribe.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 272,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Remove the integer formats from the generated JSON Schemas",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/272"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vuw",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Remove the integer formats from the generated JSON Schemas"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 32.\n\n## What to do\n\nThe integration gives Astro `site`, `base`, and `trailingSlash` from `ascribe.toml`'s `[consumer]` when the Astro config doesn't set them, so the address has one home.\n\nAn API change to a published package, with a decision. **Do it before or inside the website plan's phase 2**, which rewrites the same check (`consumerMismatches`) for a base path under `base` and several projects.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 32: The site's address is written in two files that must agree\n\n**Evidence.** `site/astro.config.mjs`: \"`site`, `base`, and `trailingSlash` repeat ../docs/ascribe.toml's [consumer]; the integration fails the build if they disagree.\" So a pull request's preview, which has its own address, rewrites both files before it builds, in `.github/workflows/site.yml`: `sed -i \"s|\\\"$site\\\"|\\\"$address\\\"|\" docs/ascribe.toml site/astro.config.mjs`, then two `grep -q` lines to check the rewrite took.\n\n**Cost.** Every site states three settings twice, and any site with previews at their own addresses writes this step. Question 5 asks whether a choice is made in two places; this one is, and the product's answer is to fail when they differ.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 273,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/273"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VvA",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]`"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 31.\n\n## What to do\n\nThe collection entry carries the page's path from the content root, so a layout's edit link doesn't take apart a build path.\n\nA change to the site output's contract, so it needs a decision recorded with it.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 31: A layout can't ask a page where its source is\n\n**Evidence.** For \"Edit this page on GitHub\", `site.ts` takes the source path out of the path the collection loaded the page from: `/\\.ascribe\\/build\\/[^/]+\\/site\\/(.+)$/`, with the comment \"the site output mirrors the content root's paths\", and throws \"not a page of the site output\" otherwise. A built page's frontmatter has its `title` and no path. `_ascribe/permalinks.json` in the same output has one for each permalink: `\"source\": \"a.md\"`.\n\n**Cost.** An edit link, which most docs sites have, depends on where Ascribe's output folder is and how it's laid out, read back out of a file path.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 274,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Give a layout the page's source path",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/274"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VvQ",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Give a layout the page's source path"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 43.\n\n## What to do\n\nThe READMEs of the repository, the packages, the crates, and the plugin link to permalinks (`/go/…`), adding one for each page that needs it. The twelve \"Moved\" stubs under `docs/` go.\n\n**Do it before the website plan's phase 2**, whose step of moving every README address then disappears.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 43: READMEs link to pages by address, and the last move left twelve stubs\n\n**Evidence.** `site/README.md`: \"What links in from outside the docs, the binary's help and diagnostics and the editor's links, uses a permalink instead, such as `/go/ASC036/`\". The READMEs published to npm and the Marketplace are outside the docs too, and none of them does: the READMEs have 27 links to pages by address and none to `/go/`. Nineteen of the 27 are in the root's, the packages', and the plugin's (`https://ascribed-dev.com/guides/review/` four times, `/guides/editor/` four times, `/guides/agents/` three times); the other eight are in the crates'. It has already cost once. `docs/cli.md` and eleven files like it say: \"This page is now [content/reference/cli.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/content/reference/cli.md). Package READMEs published before the move link here, so this file stays until a release republishes them.\" They were added on 5 October 2026. `v0.2.0` was tagged on 6 October, and its `packages/cli/README.md` links to `ascribed-dev.com/reference/cli/`, so the release that republishes them has happened.\n\n**Cost.** A page that moves breaks the READMEs of every version already published, and the only cover is a line in `site/public/_redirects` someone remembers to write. The twelve stubs are files a reader of the repository opens and learns nothing from.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 275,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Link the READMEs to permalinks, and remove the moved-page stubs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/275"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vvg",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Link the READMEs to permalinks, and remove the moved-page stubs"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 60.\n\n## What to do\n\nOne workflow file that getting started shows with `@snippet` and `examples/docs-repository` uses, in place of the two that disagree.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 60: Two recipes for checking in CI, and neither is the one a project gets\n\n**Evidence.** [Journey 6](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/set-up-ci-checks.md): \"The getting-started page: `actions/checkout@v4`, `npm ci`, `npx ascribe check --deny-warnings`, `npx ascribe fmt --check`. `examples/docs-repository/.github/workflows/check.yml`: actions pinned by commit, `npm install --global @ascribed/cli@next`, `ascribe check --deny-warnings`, and no `fmt`.\" \"The agent took half of each.\" It also \"looked for three things Ascribe doesn't have, by name: an action to install it (`setup-ascribe`, `uses: ascribed-dev`), an output format for GitHub's annotations (`--format github`), and `cargo install`.\"\n\n**Cost.** Two of Ascribe's own files disagree about the job most projects set up once and copy. This session weighs less than the others, since it read them from Ascribe's checkout; the two recipes are there whoever reads them.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 276,
+        "repository": "ascribed-dev/ascribe",
+        "title": "One recipe for checking a project in CI",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/276"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VwY",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "One recipe for checking a project in CI"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 46, 47, 59, 17.\n\n## What to do\n\n- Where a project's rules are when there's no `AGENTS.md`: `ascribe agents rules` prints them (46).\n- A line each for `ascribe diff` and `ascribe drift` in the commands, how a source and a dimension are declared in the directive reference, and the two commands a CI job runs (47).\n- The plugin's `new-page` command takes the request, tells the agent to read `ascribe model` for the type, then gives the prompt (59).\n- The plugin's description says what each part is for: the skill for every agent, the tools for one with no shell, the hook for one that doesn't check (17).\n\nThe skill and the plugin are generated from the binary; edit the sources and bless.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 46: The skill sends an agent to two places that aren't there\n\n**Evidence.** [Journey 3](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/show-an-example-from-code.md). The skill: \"A project's own rules … are in the `AGENTS.md` beside its `ascribe.toml`\". \"The agent tried `AGENTS.md` and `docs/AGENTS.md` and got `Exit code 1`. That file is `ascribe agents sync`'s, and a project with the plugin alone has none.\" The directive reference: \"Which note types, dimensions, and sources a project has: `ascribe model`.\" With a source declared, \"`ascribe model` prints page types, dimensions, phrases, and builds, and no sources, and `ascribe model --section sources` answers `error: invalid value 'sources' for '--section <NAME>'`\".\n\n**Cost.** The agent's first two moves on a task about sources were dead ends the skill pointed it at.\n\n### Finding 47: The skill doesn't say how to do five things the sessions needed\n\n**Evidence.** - **Declare a source and mark a region.** \"What taught the agent … was `ascribe explain` on diagnostics it hadn't been given: `ASC127`'s \"declare one with `[sources.<name>]` and the `path` of the folder the code is in\" and `ASC131`'s \"mark one with `:snippet-start: {region}` and `:snippet-end:` comments\". The skill's directive reference has one line on `@snippet`, and it doesn't say either.\" ([Journey 3](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/show-an-example-from-code.md).)\n  - **Add a dimension.** \"Adding a dimension isn't described anywhere the agent looked … The agent copied the shape of `[dimensions.deployment]` from the lines above\". ([Journey 2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/add-a-platform-section.md).)\n  - **Show that a change changed nothing for readers.** \"The agent built its own comparison: eighteen `ascribe render` calls into a scratch folder and `diff -r` … `ascribe diff` answers the same question in one command … The skill's list … has `explain`, `model`, `outline`, `link`, `render`, `refs`, and `check --summary`, and not `diff`.\" ([Journey 4](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/rename-a-phrase.md).)\n  - **Know when an example changed.** \"The agent never ran `ascribe drift`, the command for the task's second half, and the word isn't in the skill.\" (Journey 3.)\n  - **Check in CI.** \"Nothing the agent had says how to check a project in CI. Not the copy, not `ascribe --help`, not the skill: the word isn't in the skill.\" ([Journey 6](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/set-up-ci-checks.md).)\n\n**Cost.** Each agent got there, by copying, by reading error messages, or by building its own tool. The skill is the one thing of the plugin's that agents used (finding 17), and it's silent on five of the seven tasks.\n\n### Finding 59: The plugin's `new-page` command needs the answer before it can ask\n\n**Evidence.** [Journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md): \"it's a wrapper round a command line: \"Run `ascribe agents prompt new-page --arg type=<type> --arg title=<title> [--arg path=<path>]`\". The agent couldn't run it until it knew the type, and to know the type it had to find the project and read its model, which is most of the job. The command's `argument-hint` is `<type> <title> [path]`, and the agent gave it the request's sentence.\" Of the three sessions: \"The session with the most help took the most steps\".\n\n**Cost.** The one plugin command an agent reached for added steps to the task it was for.\n\n### Finding 17: With a shell, an agent uses the plugin's skill, and nothing else of it\n\n**Evidence.** Phase 1, two runs: `ascribe check`, `grep`, `cat`, and `git mv` in Bash, and neither \"loaded the skill, called one of the plugin's tools, or used `LSP`.\" Phase 3, five sessions with the plugin, on harder tasks: four loaded the skill first and worked from it, and one ran the command `ascribe:new-page`. None called one of the plugin's tools or `LSP`: the notes say so of each (\"The plugin's tools and commands weren't used\", \"never called one of the plugin's tools or `LSP`\"). The stop hook ran in all seven and said nothing in each: `\"stdout\": \"\"`, `\"exit_code\": 0`. No diagnostic reached an agent after an edit: \"Both edits were made by a script in the shell\", and the one session that used `Write` and `Edit` got nothing back. In [journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md), the same page was written with the plugin (25 seconds), with `ascribe agents sync`'s files (21), and with nothing (22): \"The help changed the route, not the result or the time.\"\n\n**Cost.** None to these agents. To the project, a plugin whose description promises \"the language server's diagnostics after each edit\" to an agent that edits through its shell and never gets them, and nine tools that an agent with a shell passes over for the commands they wrap.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 277,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The skill: say where the rules are, and how to do five things agents needed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/277"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vw0",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The skill: say where the rules are, and how to do five things agents needed"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 46, 58.\n\n## What to do\n\n- `ascribe model` shows a project's sources, with `--section sources`. The skill already tells agents to look there (46).\n- `ascribe agents sync`'s output says which agents read each file it wrote, and names the target that adds the rest (58).\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 46: The skill sends an agent to two places that aren't there\n\n**Evidence.** [Journey 3](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/show-an-example-from-code.md). The skill: \"A project's own rules … are in the `AGENTS.md` beside its `ascribe.toml`\". \"The agent tried `AGENTS.md` and `docs/AGENTS.md` and got `Exit code 1`. That file is `ascribe agents sync`'s, and a project with the plugin alone has none.\" The directive reference: \"Which note types, dimensions, and sources a project has: `ascribe model`.\" With a source declared, \"`ascribe model` prints page types, dimensions, phrases, and builds, and no sources, and `ascribe model --section sources` answers `error: invalid value 'sources' for '--section <NAME>'`\".\n\n**Cost.** The agent's first two moves on a task about sources were dead ends the skill pointed it at.\n\n### Finding 58: What `ascribe agents sync` writes by default, Claude Code reads half of\n\n**Evidence.** [Journey 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/edit-an-unfamiliar-project.md): \"Of what `ascribe agents sync` wrote, `AGENTS.md` was used and the skill wasn't … the skill in `.agents/skills/ascribe/` isn't in the session's list of skills and was never opened. `ascribe agents sync --help` says of `--target claude`: \"the skill in .claude/skills/ascribe/\". The plain command doesn't write that, and Claude Code didn't find the other.\" And: \"The rules were enough to write the page without one command\".\n\n**Cost.** Slight here, since `AGENTS.md` was enough. Someone who runs the plain command for Claude Code has a skill on disk that their agent doesn't see, and nothing says so.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 278,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe model` shows sources, and `agents sync` says which agents read each file",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/278"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VxU",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe model` shows sources, and `agents sync` says which agents read each file"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 37.\n\n## What to do\n\nEach diagnostic's entry in the reference links to its section of the directive reference or the `ascribe.toml` reference, generated from the registry.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 37: Every diagnostic's entry sends its reader on to the specification\n\n**Evidence.** The entry the binary's address leads to, for the broken link: \"#### ASC036 `link-target-missing`\", then \"Error · file level · next step: choose · [SPEC §5.2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/{repo}/blob/main/SPEC.md#52-links)\", then **When**, **Message**, and **Fix**. All 180 entries have a link to `SPEC.md` on GitHub in that place. Links to a page of the docs are rare beside it: in the three generated files, two lines link to the directive reference, four to the `ascribe.toml` reference (all among the 22 content checks, none among the 72 entries about `ascribe.toml` itself), and three to a guide. The directive reference has the reverse link for each of its sections (\"each section links to its part of the spec\"), with 29 of them.\n\n**Cost.** The one page a person is sent to from an error has, as its only way onward, the normative specification on another site. The page written for them, with the example of a link that works, is two clicks back through the sidebar. Question 6 asks what a problem says to do next; in the docs the answer is \"read the spec\".\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 279,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Link each diagnostic's entry to its section of the references",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/279"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VyA",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Link each diagnostic's entry to its section of the references"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 38.\n\n## What to do\n\nOne guide: one dimension, one variant group, one availability mark, two builds.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 38: No guide covers content that varies\n\n**Evidence.** The seven guides are \"Astro\", \"Editing\", \"Review\", \"Drift\", \"Agents\", \"Prose, through Vale\", and \"The project report\". Counting `@variant`, `[builds.`, and `[dimensions.` in the guides: getting started has 5, the Astro guide 2, the editor guide 2, and the other five none. What getting started says of the feature is one bullet: \"`@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one.\" The rest is `reference/directives.md` (\"### `@variant`\", \"#### Whole-page variants\", \"### `@available`\", \"#### Availability specs\") and `reference/content-model.md` (\"## 6. `[dimensions.<name>]`\", \"## 16. `[builds.<name>]`\"). The docs' own project has one build, so it has no page that shows a second one either.\n\n**Cost.** The proposal's second task, \"Add a section that differs by platform\", has no guide: the reader lands on two references and assembles a dimension, a variant group, and a build from them. It's what the language is for, by getting started's first sentence: \"alternatives by platform or product, availability\".\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 280,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A guide to content that varies",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/280"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VyM",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A guide to content that varies"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 39.\n\n## What to do\n\nPermalinks get a guide of their own.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 39: The guide to permalinks is a section of the Astro guide\n\n**Evidence.** The section is 100 of the page's 287 lines, with \"### Linking from a product\", \"### Checking a product's links\", \"### Moving, aliasing, and retiring\", and \"### A permalink that isn't here\". It's the only guide that names `ascribe permalinks`, seven times. Three of its four parts aren't about Astro: a product's code, a workflow \"in the product's repository\", and `ascribe permalinks retire`. It has a paragraph for everyone else: \"**With another generator,** read `_ascribe/permalinks.json`\". The home page mentions permalinks once, under \"For implementers\", as the format of a file.\n\n**Cost.** Someone who reads `ascribe permalinks --help`, follows it to the reference, and wants the how finds it under a site generator's name, or doesn't. A project on another generator has no reason to open the page.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 281,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A guide to permalinks, out of the Astro guide",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/281"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vyk",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A guide to permalinks, out of the Astro guide"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 42.\n\n## What to do\n\nA page for `@ascribed/elements`: the elements and the CSS properties a site can set, with its list taken from the package. `@ascribed/review` stays without one.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 42: The element library and the review package have no page on the site\n\n**Evidence.** \"Styling\" is one paragraph: the elements are \"themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/{repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states.\" The site that says so needed it: `site/src/styles/site.css` sets `--_color: var(--ascribe-state-preview-color)` for its own lifecycle state. `@ascribed/review` is linked the same way, to `packages/review/README.md`. Neither is a page, so neither is in the sidebar, in `llms.txt`, or in what search indexes.\n\n**Cost.** A site builder theming the elements, the third kind of user the audit names, leaves the docs for a README on GitHub at `main`, which may not be the version they installed. The names are a contract (`packages/elements/CONTRACT.md`) and the docs don't list them.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 282,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A reference page for the element library",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/282"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8VzU",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A reference page for the element library"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 44.\n\n## What to do\n\nOne table, on one page, of every file Ascribe puts in a project. The surface map's \"What nothing declares\" lists them today from a hand-kept table in `scripts/surface/inventory.ts`.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 44: What Ascribe writes into a project is said on seven pages, and listed on none\n\n**Evidence.** Getting started: \"Add the output directory to `.gitignore`\". The Vale guide: \"Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there\". The drift guide: \"Commit `ascribe.lock` and `sources/`.\" The Astro guide: \"It writes where it's running (`url` and `build`) to `.ascribe/dev.json`\", and \"The docs commit their list of permalinks, `ascribe.permalinks`\". The agents guide has a table of three more (`.claude/settings.json` and `.mcp.json`, `.codex/hooks.json`, `.github/hooks/ascribe.json`), and `AGENTS.md` and the skill above it. Two contracts cover the formats of two of them. The proposal's table has this as a surface of its own, \"Files Ascribe puts in a project\", and no page has it as a subject.\n\n**Cost.** Someone who finds a file they didn't write, or is deciding what to commit, has no page that says which files are Ascribe's, which to commit, and which to ignore.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 283,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A table of the files Ascribe writes into a project",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/283"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8Vzc",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A table of the files Ascribe writes into a project"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), findings 40, 54.\n\n## What to do\n\n- The home page names the two guides it leaves out, and has no command list kept by hand (40).\n- Getting started ends with the site open in a browser, or says plainly that the Astro guide is its second half (54).\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 40: The home page and getting started describe fewer pages and commands than there are\n\n**Evidence.** The home page: \"[Command reference](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/reference/cli.md): `ascribe check`, `build`, `diff`, `drift`, `fmt`, and `lsp`, their options, outputs, and exit codes.\" Getting started: \"[Command reference](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/reference/cli.md): `check`, `build`, `fmt`, and `lsp`.\" `ascribe --help` lists eighteen commands, and the reference has a section for each. The home page's list has sixteen of the docs' eighteen other pages; `guides/vale.md` (\"Prose, through Vale\") and `guides/report.md` (\"The project report\") aren't on it. Checked on the published page: its article links to neither `/guides/vale/` nor `/guides/report/`, and the sidebar beside it lists both.\n\n**Cost.** A reader who starts at the home page isn't told about two guides or twelve commands. The sidebar and `llms.txt` are right, so it's the page that's behind.\n\n### Finding 54: Getting started is titled for a published site and stops one step short of one\n\n**Evidence.** [Journey 1](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/start-a-project.md): \"Its last instruction for publishing is \"Define the content collection, a route, and a layout that loads the elements. [Astro] walks through each file.\", and nothing on the page builds, serves, or opens the site\". \"The page's two routes to a site, a new Astro project with Ascribe added or an Ascribe project with Astro added, aren't told apart\". \"`ascribe.toml`'s `[consumer]` `site` and Astro's `site` have to be the same, and the getting-started page shows each … without saying so.\" \"`npx ascribe build`, the page's own step, wasn't needed: `[@ascribed/astro] running ascribe build for \"site\"`.\"\n\n**Cost.** A newcomer needs two pages to do what the first one promises. The agent got there in 97 seconds; it had to choose the last command itself.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 284,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The home page and getting started: what they list, and where getting started ends",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/284"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8V0Y",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The home page and getting started: what they list, and where getting started ends"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 41.\n\n## What to do\n\nThe reference and the contract take what they share from fragments, so the words are written once.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 41: `ascribe.toml` is described twice, in the same words\n\n**Evidence.** Of the reference's 301 lines longer than 40 characters, 123 are in the contract word for word. Both open with \"### 1.1 The file\", \"### 1.2 Names\", \"### 1.3 Paths and patterns\", and \"### 1.4 How this reference describes keys\"; the contract kept the last heading, and says its example files are \"each valid under this reference\". One piece is shared properly: both have `@include: ../_fragments/field-type-grammar.md`, the docs' only fragment written by hand. The sections are numbered one apart (`[builds.<name>]` is §16 in one and §17 in the other). Each page calls the other its counterpart: the contract says \"For a guide to writing one, see the [`ascribe.toml` reference]\".\n\n**Cost.** A change to a table of `ascribe.toml` is made in two pages, by hand, and `AGENTS.md`'s rule is \"One home per fact. Don't copy a list, a name, or a version into a second file.\" A reader who searches for a key gets two pages that say the same thing and doesn't know which to trust.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 285,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Share what's identical between the `ascribe.toml` reference and its contract",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/285"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8V1c",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Share what's identical between the `ascribe.toml` reference and its contract"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 12.\n\n## What to do\n\nDecided by the maintainer: the checklist's rule stands, that a command finds its project from its path arguments, or from the current folder, with `--config` to say otherwise. So `[PATH]` on `ascribe model` and `ascribe agents rules` stays, and only `--project` on `ascribe refs` goes: a target that isn't a path finds its project from the current folder or `--config`.\n\nThe finding's own recommendation, merging everything into `--config`, isn't taken.\n\n**Size:** Small.\n\n## What the audit found\n\n### Finding 12: Three ways to say which project\n\n**Evidence.** From the inventory: \"`--config <PATH>` on every command; `[PATH]` positional on `model` and `agents rules`; `--project <PATH>` on `refs`.\" `--config` takes \"the content model, or a directory holding one\"; the other two take \"a file or folder in the project, to find its `ascribe.toml` from\".\n\n**Cost.** Three spellings for one question, and the one every command has is the only one that can't be given a page.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 286,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Drop `--project` from `ascribe refs`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/286"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8V2A",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Drop `--project` from `ascribe refs`"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 52.\n\n## What to do\n\n`ascribe check --fix` applies the fixes marked `safe`, as `ascribe fmt` rewrites what it can.\n\nScoped to the command line. The MCP tools stay read-only (decision 56); whether they ever get a counterpart that writes is a separate decision that can wait.\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 52: A fix can be listed anywhere and applied only in VS Code\n\n**Evidence.** [The capability table](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/capabilities.md#checking-and-fixing): \"**gap**: `check`'s JSON lists each fix, and no command applies one\", beside \"The lightbulb's quick fixes\". Each fix in the JSON is marked `safe` or `unsafe`, and decision 51 says a fix is `safe` \"only when applying it can't change what the page says and leaves nothing to decide\".\n\n**Cost.** An agent reads a fix as data and makes the edit itself, character by character, for a change Ascribe has already worked out and called safe.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 287,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe check --fix`: apply the safe fixes",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/287"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8V2g",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe check --fix`: apply the safe fixes"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 51.\n\n## What to do\n\nOne command that does what `F2` does in the editor, for a phrase, a dimension's value, a heading's id, and a page that moves. Name it by the conventions in `project-docs/checklists.md`.\n\nScoped to the command line. The MCP tools stay read-only (decision 56).\n\n**Size:** Medium.\n\n## What the audit found\n\n### Finding 51: Nothing at the command line renames across a project\n\n**Evidence.** [The capability table](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/capabilities.md#finding-and-changing-across-the-project): three rows where VS Code renames and the command line and the tools don't. [Journey 4](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/journeys/rename-a-phrase.md): \"Nothing of Ascribe's renames a phrase. The rename was `sed -i '' 's/{cloud}/{hosted}/g'` over two pages and a second `sed` for `ascribe.toml`. Ascribe's part was saying where the phrase is and, afterwards, that it's gone.\" The editor's rename \"reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.\"\n\n**Cost.** The session's `sed` was right for a project of three pages. In one where a phrase is used in a snippet's file or a frontmatter field, `sed` over the pages misses what the editor's rename knows about, and the agent is the kind of user that has only `sed`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 288,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Rename across a project from the command line",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/288"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8V28",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Rename across a project from the command line"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md), [phase 2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-2-thread.md), tasks 1 to 3: the integration feature, merged before the rest of phase 2.\n\n## What to build\n\n`@ascribed/astro` accepts a `[consumer] base-path` under Astro's `base`, and takes a list of named projects: `ascribe({ projects: [{ name, project, build }], review: \"<name>\" })` and `ascribeCollection({ schema, name })`. The one-project form stays as it is. The design is phase 2's \"A base path under Astro's base\" and \"Several projects\", and the README's decisions 11 to 13.\n\nWhere `main` differs from the phase file, take these defaults:\n- `Permalink.astro` and `MissingPermalink.astro` link \"the docs' home\" to the base path of the project whose list they serve, not the site's root. `homeRoute` stays the site's root.\n- The one-project form keeps today's schema path (`.astro/integrations/_ascribed_astro/schema.ts`), so no site's import breaks; the list form writes `…/_ascribed_astro/<name>/schema.ts`.\n- `review` becomes `boolean | string`; that API change is recorded in `project-docs/decisions.md` with the change, along with the website README's decisions 11 to 20 as phase 2 says.\n\n## Done when\n\n- In `examples/astro-site`, built and served, a home page at `/` and a docs page under a path both open, a published file downloads, and a permalink lands, in a build and under `astro dev`. End-to-end tests do exactly this.\n- End-to-end: two projects in one built site and under `astro dev`, a permalink from each, two entries for one project with two builds, and the four refusals (a clashing base path, a page under another project's path, a permalink declared twice, an entry's name used twice).\n- A site using the one-project form with a base path equal to `base` builds the same site: `node scripts/compare/outputs.ts --base main` shows no change.\n- `docs/content/guides/astro.md`, `packages/astro/README.md`, `CHANGELOG.md`, and `project-docs/decisions.md` are updated.\n- If the seam fails in `astro build` or `astro dev`, stop and report (README decision 12 is the fallback).\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 291,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: serve a home page in front of the docs from one Astro site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/291"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XR0",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "Website: serve a home page in front of the docs from one Astro site"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md): [phase 5](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-5-why.md), \"The comparison, made fit to link\" (README decision 17). Needs nothing.\n\n## What to build\n\n`examples/comparison/`: the Ascribe version (`tessera.md`) rewritten in current Ascribe under an `ascribe.toml` in the folder and renamed for what it is; a test that runs `ascribe check` on the folder, in the suite that runs the examples, as `examples/monorepo`'s does; and the README brought current (Ascribe by its name, no pointers to `BRAINSTORM.md` or gap markers that are gone, what it says about each version checked against it). The other three files are other tools' formats and stay as they are.\n\n## Done when\n\n- `ascribe check examples/comparison` passes, and a test runs it.\n- The README names nothing that doesn't exist.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 292,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: make examples/comparison a valid Ascribe project",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/292"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XSI",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Website: make examples/comparison a valid Ascribe project"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md), [phase 2](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-2-thread.md), tasks 4 to 7. Needs #291 merged **and published to npm's `next` tag** by the nightly canary before it merges, since production builds `site/` from npm. It can be opened and reviewed before that, built with `npm run build:checkout`.\n\n## What to build\n\nThe docs move to `/docs/` (`docs/ascribe.toml` `base-path = \"/docs/\"`, every copy of a docs address with the test that holds it), `site/home/` is a second project with the docs' release tables and `[sources.code]` held equal by `scripts/docs-site/facts.test.ts`, one page type, a hero widget, and `index.md`; the site gets a marketing frame, a route per collection, the hero's styles and token, search on the docs only, and the workflow, Netlify, and Report-workflow changes. Phase 2's \"The docs move\", \"The marketing project\", and \"The site\" are the design.\n\n## Done when\n\n- The pull request's preview shows the landing page at `/`, and its link to getting started opens `/docs/getting-started/`.\n- `ascribe check --help` prints the address it printed before; nothing the binary compiles changed.\n- `git grep \"ascribed-dev.com/\"` finds no docs page address that isn't under `/docs/` or `/go/`.\n- `ascribe report agents`, run against the preview's `/docs/`, passes what it passed against the root. If the checker only looks at the host's root for `llms.txt`, stop and report.\n- The site's tests run `ascribe permalinks verify` with the names the marketing pages link to.\n- The night after it merges, the live site answers as phase 2's goal shows, and the Report workflow is no redder; the pull request says when each was checked.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 293,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: move the docs to /docs/ and put a landing page at the root",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/293"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XSY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Website: move the docs to /docs/ and put a landing page at the root"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md): [phase 3](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-3-landing-page.md). Needs #293.\n\n## What to build\n\nThe landing page makes its whole case: what Ascribe is with its status, a real page's source beside its rendered result (a third project in the integration's list), four claims each with its smallest real example, how to start, and where it's going. Then the finding on whether project widgets carried the page, written in the docs or the brainstorm.\n\nWhere `main` differs from the phase file, take this default: README decision 15 says the README's \"Get started\" block shows getting started's two installs, but on `main` it shows `npm install --save-dev @ascribed/cli` and `npx ascribe check`. The landing page shows getting started's two installs (the CLI and the extension); the test that ties the copies together reads `docs/content/getting-started.md` as their home and compares the landing page and `README.md` with it; the README's block gains the extension's install line and keeps `npx ascribe check` after it.\n\n## Done when\n\nThe phase file's acceptance criteria, including Kyle approving the page's text before it merges.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 294,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: the landing page's demonstration, claims, and marks",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/294"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XSg",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Website: the landing page's demonstration, claims, and marks"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md): [phase 4](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-4-changelog.md). Needs #293. Can run alongside the landing page.\n\n## What to build\n\n`/changelog/` renders `CHANGELOG.md` in the marketing frame. Links to `docs/content/` files become their routes from what the docs' build wrote; other repository files become GitHub addresses on `main` built from `site/src/site.ts`'s `repo`; anything else fails the build with its line. The header gains Changelog. `CHANGELOG.md` rebuilds the site: add it to `ci.yml`'s path regex, `site-npm.yml`'s paths, and `site/netlify.toml`'s `ignore`, with `scripts/docs-site/facts.test.ts` keeping them agreeing.\n\n## Done when\n\nThe phase file's acceptance criteria.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 295,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: publish the changelog at /changelog/",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/295"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XSw",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Website: publish the changelog at /changelog/"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md): [phase 5](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-5-why.md), the page. Needs #294 (for the widgets and the finding) and #292 (for the link to the comparison).\n\n## What to build\n\n`/why/`: the problems teams that keep docs as code report, each from a report under `project-docs/reports/`; what Ascribe does about each, with real examples and marks; and what it doesn't do. It describes approaches and names no tool, linking to `examples/comparison/` on GitHub. The header and the landing page link to it.\n\n## Done when\n\nThe phase file's acceptance criteria, including Kyle approving the text before it merges.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 296,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: the Why Ascribe page",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/296"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XTU",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Website: the Why Ascribe page"
+    },
+    {
+      "content": {
+        "body": "Part of [the website plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/README.md): [phase 6](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/website/phase-6-images.md). Needs #294 and #296.\n\n## What to build\n\nScripted screenshots of review (and of the editor, or written steps if a scripted VS Code can't give a clean picture), each with the release it was taken at recorded beside it and a test that fails when it's more than one minor release behind `[versions] current`; and a social card per marketing page.\n\nThe card's title is drawn with **a font file pinned in `design/` for generation only**, never shipped to readers, with its license beside it and its hash a source in the manifest; decision 48 in `project-docs/decisions.md` gains a sentence saying so. (Chosen on the maintainer's behalf from the phase file's recommendation.)\n\n## Done when\n\nThe phase file's acceptance criteria.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 297,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Website: screenshots and a social card per page",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/297"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_8XTk",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Website: screenshots and a social card per page"
     }
   ]
 }
