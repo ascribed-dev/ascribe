@@ -188,7 +188,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/347"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Let `ascribe check` narrow to one diagnostic code, for fixing one rule at a time"
     },
     {
@@ -573,7 +573,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/342"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]`"
     },
     {
@@ -590,7 +590,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Give a layout the page's source path"
     },
     {
@@ -750,7 +750,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/351"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "A reference page for the element library"
     },
     {
@@ -1060,7 +1060,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/352"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`ascribe report links`: don't ask again about an address that answered"
     },
     {
