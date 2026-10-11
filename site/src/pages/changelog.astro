@@ -1,0 +1,38 @@
+---
+// The changelog: ../CHANGELOG.md in the frame of the site's own pages, with
+// its links to docs pages pointed at their routes, here, and its other links
+// into the repository at GitHub. A link that leads nowhere fails the build.
+import { getCollection, getEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+import {
+  anchorReleases,
+  changelogId,
+  firstParagraph,
+  kindUnder,
+  pointLinks,
+} from "../changelog.ts";
+import { contentDir, docsPath, repo, sourceFile } from "../site.ts";
+
+const entry = await getEntry("changelog", changelogId);
+if (entry?.rendered === undefined || entry.body === undefined) {
+  throw new Error("the changelog collection has no rendered entry");
+}
+
+// Each docs page the site publishes, by its source, at the route
+// src/pages/docs/[...slug].astro gives it.
+const base = import.meta.env.BASE_URL;
+const pages = new Map(
+  (await getCollection("docs")).map((page) => [
+    `${contentDir}/${sourceFile(page.filePath ?? "")}`,
+    `${base}${docsPath}${page.id === "index" ? "" : `${page.id}/`}`,
+  ]),
+);
+const kind = kindUnder(entry.data.repository);
+const html = anchorReleases(await pointLinks(entry.rendered.html, entry.body, { pages, repo, kind }));
+---
+
+<Base title="Changelog" description={firstParagraph(html)}>
+  <main id="content" class="page landing changelog">
+    <article set:html={html} />
+  </main>
+</Base>

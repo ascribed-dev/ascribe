@@ -131,7 +131,8 @@ link = "guides/editor.md#site-preview"
 # Code examples come from these files. The same folders are listed in three
 # other places, which need the same change when `include` changes: the paths
 # in .github/workflows/site-npm.yml, the site path pattern in
-# .github/workflows/ci.yml, and `ignore` in site/netlify.toml.
+# .github/workflows/ci.yml, and `ignore` in site/netlify.toml. Those three
+# also name CHANGELOG.md, which the site renders as its changelog.
 # scripts/docs-site/facts.test.ts fails until they agree.
 [sources.code]
 path = ".."                               # relative to the folder ascribe.toml is in

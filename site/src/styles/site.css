@@ -178,12 +178,16 @@ pre {
 }
 
 /* Without search, on a page outside the docs, the links go to the right. */
-.docs-link {
-  margin-left: auto;
+.docs-link,
+.changelog-link {
   padding: 0.375rem 0.25rem;
   color: var(--muted);
   font: var(--type-small) var(--font);
   text-decoration: none;
+}
+
+.docs-link {
+  margin-left: auto;
 }
 
 .search-button + .docs-link {
@@ -191,7 +195,9 @@ pre {
 }
 
 .docs-link:hover,
-.docs-link[aria-current] {
+.docs-link[aria-current],
+.changelog-link:hover,
+.changelog-link[aria-current] {
   color: var(--text);
 }
 
@@ -473,6 +479,18 @@ pre {
   max-width: var(--measure);
 }
 
+/* The changelog: a long path in code wraps rather than widening the page. */
+.changelog :not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+/* What's on `main` and in no release yet says so under its heading. */
+.changelog .unreleased-note {
+  margin-top: -0.25rem;
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+}
+
 /*
  * The hero widget (`[widgets.hero-banner]` in home/ascribe.toml): the page's
  * heading and its first sentence, and how far along Ascribe is.
@@ -552,6 +570,11 @@ hero-banner p {
 
   .search-button kbd,
   .repo-link span {
+    display: none;
+  }
+
+  /* A docs page's header holds the menu and search too, so Changelog is on the site's own pages only. */
+  .search-button ~ .changelog-link {
     display: none;
   }
 

@@ -13,8 +13,8 @@
   # lockfile's exactly.
   command = "npm ci && npm run follow-next && npm run build"
   publish = "dist"
-  # A push to `main` builds only when the site, the docs, or a file the docs
-  # take code examples from changed: the folders `[sources.code] include` in
-  # ../docs/ascribe.toml names. A build hook's build (the canary's) is never
-  # skipped.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/ascribe-cli/tests/output"
+  # A push to `main` builds only when the site, the docs, a file the docs take
+  # code examples from (the folders `[sources.code] include` in
+  # ../docs/ascribe.toml names), or the changelog, which the site renders,
+  # changed. A build hook's build (the canary's) is never skipped.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/ascribe-cli/tests/output ../CHANGELOG.md"
