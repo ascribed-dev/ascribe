@@ -46,6 +46,8 @@ The finished plans, docs and review, were removed from `project-docs/` on 5 Octo
 
     _Why:_ a committed link where the output goes made `ascribe build` delete and write outside the project, and the manifest that says what a build may delete is a file a repository can commit too. With no `.git`, a source could name any folder, and the editor's preview or an agent's tool would show a file from outside what the user opened; bounding every load by the project's folder instead would break the **Site from npm** workflow, which builds the docs (`[sources.code] path = ".."`) in a copy with no `.git`, and decision 3. _From:_ the security review of October 2026; the source rule confirmed by the maintainer.
 
+95. **The JSON Schemas in `schemas/` give an integer no `format`.** An integer is `"type": "integer"`, with `"minimum": 0` when it can't be negative; the `uint`, `uint32`, `uint8`, and `int32` formats `schemars` writes are dropped when the schemas are generated. No document changes, and no `schema_version` moves. _Why:_ JSON Schema defines none of those formats, so a client loading `ascribe mcp`'s tools printed a warning for each, 94 of them. _From:_ [#272](https://github.com/ascribed-dev/ascribe/issues/272), agreed by the maintainer on 10 October 2026.
+
 ## Review
 
 6. **One overlay, several hosts.** The marks for changed blocks and the comment threads are one browser component, `@ascribed/review`. The page preview and the Astro dev server host it, and it gets its data through one interface, so a new host needs no change to it. _From:_ [review, decision 1](https://github.com/ascribed-dev/ascribe/blob/5f5dd4cea86b85cde4d6468951f48290889fe022/project-docs/review/README.md#decisions).

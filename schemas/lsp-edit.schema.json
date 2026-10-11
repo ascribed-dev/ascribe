@@ -5,13 +5,11 @@
       "properties": {
         "character": {
           "description": "The column, from 0, in the negotiated position encoding.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "line": {
           "description": "The line, from 0.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         }
