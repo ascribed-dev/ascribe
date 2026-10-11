@@ -35,13 +35,6 @@ pub struct Args {
     #[arg(long, value_name = "N")]
     pub limit: Option<usize>,
 
-    /// A file or folder in the project, to find its `ascribe.toml` from, for
-    /// a target that isn't a path.
-    ///
-    /// By default, the current directory.
-    #[arg(long, value_name = "PATH")]
-    pub project: Option<std::path::PathBuf>,
-
     /// How to show the answer.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -86,15 +79,14 @@ fn refs(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
 /// No project, or a target that can't be read.
 pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Refs, Stop> {
     let entry = Asked::entry(&args.target);
-    // A path target finds its project from the path; an entry from
-    // `--project`, or the current directory.
+    // A path target finds its project from the path; an entry from the
+    // current directory. `--config` says otherwise for either.
     let (path_part, _) = args
         .target
         .split_once('#')
         .unwrap_or((args.target.as_str(), ""));
-    let near = match (&entry, &args.project) {
-        (_, Some(project)) => Some(project.as_path()),
-        (None, None) if !path_part.is_empty() => Some(Path::new(path_part)),
+    let near = match entry {
+        None if !path_part.is_empty() => Some(Path::new(path_part)),
         _ => None,
     };
     let loaded = answer::load(projects, global, near)?;
@@ -113,9 +105,6 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<R
         let total = refs.total.to_string();
         let mut words = vec!["ascribe".to_owned(), "refs".to_owned(), quote(&args.target)];
         words.extend(["--limit".to_owned(), total]);
-        if let Some(project) = &args.project {
-            words.extend(["--project".to_owned(), quote(&project.to_string_lossy())]);
-        }
         if let Some(config) = &global.config {
             words.extend(["--config".to_owned(), quote(&config.to_string_lossy())]);
         }

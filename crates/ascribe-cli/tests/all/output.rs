@@ -771,7 +771,7 @@ fn answers() {
         "refs.txt",
         &stdout(&run(
             &root,
-            &["refs", "phrase:cloud", "--project", quill, "--limit", "3"],
+            &["refs", "phrase:cloud", "--config", quill, "--limit", "3"],
             0,
         )),
     );
@@ -782,7 +782,7 @@ fn answers() {
             &[
                 "refs",
                 "phrase:cloud",
-                "--project",
+                "--config",
                 quill,
                 "--limit",
                 "3",

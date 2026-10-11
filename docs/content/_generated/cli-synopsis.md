@@ -21,7 +21,7 @@ ascribe permalinks sync   [--format text|json]
 ascribe permalinks list   [--format text|json]
 ascribe permalinks verify [NAME]... [--from <FILE>] [--list <PATH>] [--format text|json]
 ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
-ascribe refs              TARGET [--limit <N>] [--project <PATH>] [--format text|json]
+ascribe refs              TARGET [--limit <N>] [--format text|json]
 ascribe render            PAGE [--build <NAME>] [--frontmatter] [--format text|json]
 ascribe report            [SECTION]... [--format text|summary|json|prompt] [--build <NAME>]... [--site <URL>] [--limit <N>] [--exit-code advice|warning|error]
 ascribe sources fetch     [NAME]...

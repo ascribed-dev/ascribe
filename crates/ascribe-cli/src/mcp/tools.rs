@@ -661,13 +661,13 @@ fn call_link(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
 
 fn call_refs(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let detailed = a.detailed()?;
+    let global = global_at(a.path("project")?.as_deref())?;
     let args = refs::Args {
         target: a.string("target")?.unwrap_or_default(),
         limit: a.count("limit")?,
-        project: a.path("project")?,
         format: if detailed { Format::Json } else { Format::Text },
     };
-    let refs = refs::answer(&server.cache, &global(), &args).map_err(|s| s.message())?;
+    let refs = refs::answer(&server.cache, &global, &args).map_err(|s| s.message())?;
     if detailed {
         return json_result(&refs);
     }
