@@ -209,6 +209,9 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/208"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPs",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/324"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Remove the backwards-compat alias nativeBinaryPath in @ascribed/cli"
@@ -472,7 +475,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Rename `--format summary` to `markdown`"
     },
     {
