@@ -1,20 +1,81 @@
 # Findings
 
-Part of [The surface audit](README.md). These are [phase 1](phase-1-thread.md)'s: what one task, fixing a broken link, turned up, from the [inventory's slice](inventory-slice.md) and the [walks' notes](journeys/fix-a-broken-link.md). [Phase 5](phase-5-findings.md) adds the rest, reorders the whole list, and writes the opening section.
+Part of [The surface audit](README.md). What the audit found, each finding with its evidence quoted, and what it recommends. Nothing here is fixed by this plan: [phase 5](phase-5-findings.md) ends with the maintainer reading this and saying which findings become issues.
 
-Each finding has a number, its kind, where it is, the evidence quoted, what it costs a user, one recommendation, and a size. The first twenty-three are in order of cost to a user. A recommendation is one of rename, merge, remove, add, document, or leave. Nothing here is fixed by this plan.
+Each finding has a number, its kind, where it is, the evidence quoted, what it costs a user, one recommendation, and a size. A recommendation is one of rename, merge, remove, add, document, or leave. A finding keeps the number it was given when it was written, since other files point at it by number, so the numbers aren't the order. [The order](#in-order-of-what-they-cost-a-user) is below.
 
-"The walks" are seven: an agent's dry run in the editor (two copies) and at the command line, the maintainer's in the editor and at the command line, an agent with the plugin (two runs), and an agent with the MCP server and no shell.
+Where they came from:
 
-## The seven questions, on this slice
+| Findings | From |
+|---|---|
+| 1 to 23 | [Phase 1](phase-1-thread.md): one task, fixing a broken link, walked seven times. "The walks" are an agent's dry run in the editor (two copies) and at the command line, the maintainer's in the editor and at the command line, an agent with the plugin (two runs), and an agent with the MCP server and no shell |
+| 24 to 27 | The `ascribe permalinks` commands, against the conventions |
+| 28 to 44 | [Phase 4](phase-4-docs-site.md): [the docs site](docs-site.md) |
+| 45 to 62 | [Phase 3](phase-3-journeys.md): nine agents' sessions; and [the capability table](capabilities.md) |
 
-1. **One word for one thing.** The pattern holds for the parts of a project: a build, a page, a phrase are the same word everywhere looked at. It breaks on what Ascribe reports (finding 9) and on what's counted as one (finding 10).
-2. **The same thing, the same way.** The commands agree on `--build`, on `--color`, on `text` being the default format, and on 2 for a command that couldn't run. They disagree on the format words (finding 11), on how the project is named (finding 12), and on how a page is named back (finding 13). Exit code 1 looks like seven things and is one (finding 20).
-3. **What can be done where.** Three gaps on this task: checking every build from the editor (finding 5), the page a link meant, which only one editor action offers (finding 1), and running Ascribe from an agent in the editor (finding 4). The capability table is phase 2's.
-4. **Whether each thing can be found.** `ascribe check` was: every walker's first move, with or without `--help`. `ascribe link`, `ascribe explain`, and `ascribe refs` were used by the dry run, which had read `--help`, and by no agent with a shell. **Change where the link goes** was found only by scrolling the palette. With a shell, nothing in the plugin was reached for (finding 17).
-5. **Where a choice is made.** One on this task: the editor's build is the project's choice (`[editor] build`), and what the Problems panel covers follows from it with nothing in the editor saying so (finding 5).
-6. **What a problem says to do next.** The same broken link gives five different next steps: nothing in `check`'s text, the fix's sentence in its JSON and in `explain`, **Prompt agent** alone in the lightbulb, an empty `closest` from `link`, and the page itself in the one action that lists it (findings 1 and 14).
-7. **What's left over.** Nothing found on this task.
+## What the audit found
+
+**The surface holds together better than its size suggests.** One command, `ascribe check`, was the first move of every walker and every agent, with or without help, and every one that finished ended on it. The words for a project's parts (a build, a page, a phrase) are the same everywhere looked at. The commands agree on `--build`, on `text` as the default, and on 2 for "couldn't run". The MCP tools are the commands, under nearly the same names. Agents given a task and the skill got eight of nine right, most in under a minute.
+
+**Where it doesn't hold, the cause is usually one of four.**
+
+- **A next step that isn't there.** A problem's kind says "choose" and nothing lists the choices (1). A fix is worked out and can't be applied outside VS Code (52). `check`'s text gives no help where its JSON does (14). The skill points at two places that don't exist (46).
+- **Two bases for a path.** A page is named from the project's folder by one command and from the content root by the next, in what they print (13), in what they accept (26), and in the prompts they write (49). It's the one inconsistency that reached every kind of user.
+- **The editor and the command line are two products.** The writing help is all in VS Code, and renaming too (51). Checking every build, `report`, and `sources` are only at the command line (5). An agent in the editor can't run the binary the editor runs (4). And the editor says "no problems" in three states where it hasn't looked (3, 5, 6).
+- **Things the first site had to build.** Navigation (28), a starter (29), "unreleased" (30), and four smaller ones. Three are already proposals; navigation, the largest, is planned nowhere.
+
+**The agents' help is mostly unused.** Across eleven sessions with a shell, no agent called an MCP tool or the language server, the stop hook never had anything to say, and the same page came out in the same time with the plugin, with `sync`'s files, and with nothing (17). What agents did use was the skill, `AGENTS.md`, and `ascribe explain`. That's where a small amount of work would reach furthest (46, 47).
+
+**Nothing found is left over.** Question 7 turned up one unused field in the docs' own model (34) and twelve stub files (43), and nothing in the product.
+
+### In order of what they cost a user
+
+First, the ones a user meets and is misled or stopped by:
+
+1. **2.** A formatter on save changes what a page builds to, and nothing says so.
+2. **3, 6, 5.** The editor says the project is clean when it hasn't checked: in Restricted Mode, before a page is opened, and for every build but one.
+3. **1.** `choose`, with nothing to choose from.
+4. **13, 26, 49.** One page, two bases for its path.
+5. **4.** An agent in the editor can't run Ascribe.
+6. **45.** A binary built from `main` says it's the release.
+7. **28.** The sidebar is kept by hand, and nothing plans otherwise.
+
+Then the gaps someone works round:
+
+8. **51, 52.** Nothing at the command line renames, or applies a fix.
+9. **48.** No form of `ascribe diff` shows one page's changes in a terminal.
+10. **50.** A repository with several projects has nothing at its root.
+11. **46, 47.** The skill points at two things that aren't there, and is silent on five an agent needed.
+12. **53.** Nothing starts a project, or a page, for a person.
+13. **29, 30, 31, 32.** What the next site will build again.
+14. **36.** Permalinks that differ only by case.
+15. **38, 54, 40, 37.** The docs: no guide to content that varies, getting started stops short, the home page lists a third of the commands, and every diagnostic sends its reader to the specification.
+
+Then naming and agreement, which cost attention more than time:
+
+16. **11, 24, 25.** `--format`'s words; `sync` without `--check`; `--list` meaning two things.
+17. **9, 10.** Five words for a problem, and two counts of them.
+18. **12.** Three ways to say which project.
+19. **14, 15, 56, 19.** What `check`, `render`, and `link` leave out of their text.
+20. **22, 59, 58, 60.** Command titles in two styles; the `new-page` command; what `sync` writes for Claude Code; two CI recipes.
+21. **21, 23, 62, 39, 41, 42, 43, 44.** Smaller things.
+
+And the ones recommended as "leave", each with its reason: **7, 8, 16, 17** (document only), **18, 20** (document only), **27, 33, 35, 55, 57, 61.**
+
+**Two pairs of recommendations pull against each other,** and which way to go is the maintainer's:
+
+- **12 and the checklist's rule for naming a project.** Finding 12 merges `[PATH]` and `--project` into `--config`. The checklist's rule already says a command finds its project from its path arguments, which is what `[PATH]` on `model` is. Keeping the positional path and dropping only `--project` on `refs` is the smaller change, and fits the rule as written.
+- **51, 52, and D1.** A command that renames and one that applies fixes would each want a tool, and the tools change nothing by decision 56. The commands can exist without tools, which keeps the decision and leaves an agent with no shell where it is.
+
+## The seven questions
+
+1. **One word for one thing.** Holds for the parts of a project. Breaks on what Ascribe reports (9, 10), on `sync` (24), on `--list` (25) and `--from` (27), and on two tools' names (61).
+2. **The same thing, the same way.** The commands agree on `--build`, `--color`, `text` as the default, and 2 for "couldn't run". They disagree on the format words (11), on how the project is named (12), and on how a page is named, out (13), in (26), and in prompts (49). Exit code 1 looks like seven things and is one (20). The extension's titles are in two styles (22).
+3. **What can be done where.** [The capability table](capabilities.md). Its gaps are findings 1, 4, 5, 48, 51, 52, and 53; its "no" cells each have a reason.
+4. **Whether each thing can be found.** `ascribe check` was, by everyone. `explain`, `link`, and `refs` were found through `--help` or the skill, never guessed. `diff` and `drift` weren't found by the agents whose tasks they were for (47). **Change where the link goes** was found only by scrolling the palette. On the site, the home page names 6 of 18 commands (40) and no guide covers variants (38).
+5. **Where a choice is made.** The editor's build is the project's choice, and the Problems panel follows it without saying so (5). The site's address is chosen twice, in two files that must agree (32). `ascribe agents sync`'s default writes for some agents and not others (58).
+6. **What a problem says to do next.** The same broken link gives five different next steps (1, 14). Error messages turned out to be the best documentation an agent found (47).
+7. **What's left over.** One field in the docs' own model (34), and twelve stub files (43). Nothing in the product.
 
 ## The findings
 
@@ -151,6 +212,7 @@ Each finding has a number, its kind, where it is, the evidence quoted, what it c
 - **Where:** `ascribe check`, text and `concise`.
 - **Evidence:** After `checked 4 files: 0 errors, 0 warnings`, the agent with the plugin ran `for b in site cloud self-managed-3.3; do ascribe check --build $b 2>&1 | tail -1; done`, and reported "0 errors, 0 warnings, on the default check and on each of the `site`, `cloud` and `self-managed-3.3` builds." The JSON has `"builds_checked":["site","cloud","self-managed-3.3"]`.
 - **Cost:** A careful agent checks three more times to learn what one word would have told it.
+- **Seen again in phase 3:** an agent "checked one build's render and described three", with nothing in the line to prompt it ([journey 2](journeys/add-a-platform-section.md)). And the line has two forms: "`ascribe check content` ends `checked 6 files, reported on 6: 0 errors, 0 warnings`, and `ascribe check` ends `checked 6 files: 0 errors, 0 warnings`" ([journey 7](journeys/edit-an-unfamiliar-project.md)).
 - **Recommendation:** add. The last line names the builds, or says "every build".
 - **Size:** small.
 
@@ -163,14 +225,14 @@ Each finding has a number, its kind, where it is, the evidence quoted, what it c
 - **Recommendation:** leave. The concise form is the default the tools were given, and decision 56 fixes its shape. Phase 3's sessions will show whether agents keep asking for `detailed`.
 - **Size:** small.
 
-### 17. With a shell, an agent uses nothing the plugin adds
+### 17. With a shell, an agent uses the plugin's skill, and nothing else of it
 
 - **Kind:** a duplicate.
 - **Where:** the plugin: nine tools, a skill, three commands, the language server, the stop hook.
-- **Evidence:** Both runs with the plugin were `ascribe check`, `grep`, `cat`, and `git mv` in Bash. Neither "loaded the skill, called one of the plugin's tools, or used `LSP`." The hook ran once: `"stdout": ""`, `"exit_code": 0`.
-- **Cost:** None on this task. It's a question about what the plugin is for when the commands are in reach.
-- **Recommendation:** leave. One easy task is no ground for removing anything, and the hook's worth is the agent that doesn't check. Phase 3's harder tasks decide.
-- **Size:** none yet.
+- **Evidence:** Phase 1, two runs: `ascribe check`, `grep`, `cat`, and `git mv` in Bash, and neither "loaded the skill, called one of the plugin's tools, or used `LSP`." Phase 3, five sessions with the plugin, on harder tasks: four loaded the skill first and worked from it, and one ran the command `ascribe:new-page`. None called one of the plugin's tools or `LSP`: the notes say so of each ("The plugin's tools and commands weren't used", "never called one of the plugin's tools or `LSP`"). The stop hook ran in all seven and said nothing in each: `"stdout": ""`, `"exit_code": 0`. No diagnostic reached an agent after an edit: "Both edits were made by a script in the shell", and the one session that used `Write` and `Edit` got nothing back. In [journey 7](journeys/edit-an-unfamiliar-project.md), the same page was written with the plugin (25 seconds), with `ascribe agents sync`'s files (21), and with nothing (22): "The help changed the route, not the result or the time."
+- **Cost:** None to these agents. To the project, a plugin whose description promises "the language server's diagnostics after each edit" to an agent that edits through its shell and never gets them, and nine tools that an agent with a shell passes over for the commands they wrap.
+- **Recommendation:** document. The plugin's description says what each part is for: the skill for every agent, the tools for one with no shell, the hook for one that doesn't check. Nothing is removed: the one session without a shell used the tools at once, and a hook that's silent when the agent has checked is working. The skill is what was used, so it's where the work goes (findings 46 and 47).
+- **Size:** small.
 
 ### 18. The stop hook lets an agent go from a project that was already broken
 
@@ -427,7 +489,201 @@ The group merged the day the conventions were written, so it was built without t
 - **Recommendation:** document: one table, in the `ascribe.toml` reference or a page of its own, of each file, what writes it, and whether it's committed. Phase 2's inventory has the same list to draw on.
 - **Size:** small.
 
+## The agents' sessions
+
+From [phase 3](phase-3-journeys.md): nine sessions on seven tasks. Each finding names the journey its evidence is in. Two of the nine weigh less than the rest: the session that set up CI left its copy and read Ascribe's own checkout, and the session that started a project used the published release throughout, as getting started told it to.
+
+### 45. A binary built from `main` says it's the release
+
+- **Kind:** a contradiction.
+- **Where:** `ascribe --version`; `@ascribed/cli` on npm.
+- **Evidence:** [Journey 6](journeys/set-up-ci-checks.md): "A binary built from `main` calls itself `ascribe 0.2.0`, the same as the release on `npm`, while the nightly package built from the same branch says `ascribe 0.2.1-next.13 (42f00096ceb0)`." The agent read "the version you have locally and the current npm `latest`" as one version and pinned it. That release rejects the project: ``[ASC061] Error: unknown key `role` ``, exit 2: "The workflow fails for a broken link, and it fails without one".
+- **Cost:** Anyone working from a build of `main` is told they have the release, and what they write against it can fail on the release. Here it made a workflow that fails on every pull request.
+- **Recommendation:** rename. A binary that isn't a release's or a canary's says so in its version, with its commit, as the canary's does.
+- **Size:** small.
+
+### 46. The skill sends an agent to two places that aren't there
+
+- **Kind:** a contradiction.
+- **Where:** the skill (`SKILL.md` and its directive reference); `ascribe model`; a project with the plugin and no `AGENTS.md`.
+- **Evidence:** [Journey 3](journeys/show-an-example-from-code.md). The skill: "A project's own rules … are in the `AGENTS.md` beside its `ascribe.toml`". "The agent tried `AGENTS.md` and `docs/AGENTS.md` and got `Exit code 1`. That file is `ascribe agents sync`'s, and a project with the plugin alone has none." The directive reference: "Which note types, dimensions, and sources a project has: `ascribe model`." With a source declared, "`ascribe model` prints page types, dimensions, phrases, and builds, and no sources, and `ascribe model --section sources` answers `error: invalid value 'sources' for '--section <NAME>'`".
+- **Cost:** The agent's first two moves on a task about sources were dead ends the skill pointed it at.
+- **Recommendation:** add sources to what `ascribe model` shows, and have the skill say where a project's rules are when there's no `AGENTS.md`: `ascribe agents rules` prints them.
+- **Size:** small.
+
+### 47. The skill doesn't say how to do five things the sessions needed
+
+- **Kind:** a gap.
+- **Where:** the skill, its directive reference, and its list "Commands that answer questions".
+- **Evidence:**
+  - **Declare a source and mark a region.** "What taught the agent … was `ascribe explain` on diagnostics it hadn't been given: `ASC127`'s "declare one with `[sources.<name>]` and the `path` of the folder the code is in" and `ASC131`'s "mark one with `:snippet-start: {region}` and `:snippet-end:` comments". The skill's directive reference has one line on `@snippet`, and it doesn't say either." ([Journey 3](journeys/show-an-example-from-code.md).)
+  - **Add a dimension.** "Adding a dimension isn't described anywhere the agent looked … The agent copied the shape of `[dimensions.deployment]` from the lines above". ([Journey 2](journeys/add-a-platform-section.md).)
+  - **Show that a change changed nothing for readers.** "The agent built its own comparison: eighteen `ascribe render` calls into a scratch folder and `diff -r` … `ascribe diff` answers the same question in one command … The skill's list … has `explain`, `model`, `outline`, `link`, `render`, `refs`, and `check --summary`, and not `diff`." ([Journey 4](journeys/rename-a-phrase.md).)
+  - **Know when an example changed.** "The agent never ran `ascribe drift`, the command for the task's second half, and the word isn't in the skill." (Journey 3.)
+  - **Check in CI.** "Nothing the agent had says how to check a project in CI. Not the copy, not `ascribe --help`, not the skill: the word isn't in the skill." ([Journey 6](journeys/set-up-ci-checks.md).)
+- **Cost:** Each agent got there, by copying, by reading error messages, or by building its own tool. The skill is the one thing of the plugin's that agents used (finding 17), and it's silent on five of the seven tasks.
+- **Recommendation:** add each to the skill: a line for `diff` and one for `drift` in the commands, how a source and a dimension are declared in the reference, and the two commands a CI job runs.
+- **Size:** small.
+
+### 48. No form of `ascribe diff` shows what changed on one page, in a terminal
+
+- **Kind:** a gap.
+- **Where:** `ascribe diff`.
+- **Evidence:** [Journey 5](journeys/review-a-pull-request.md): "The agent wanted one page's changes as a reader sees them, in the terminal, and no form of `ascribe diff` gave it. Three tries: `error: unexpected argument 'content/guides/rollouts.md' found`, `error: unexpected argument '--since' found`, and `error: a PAGE is named only with --format prompt`. The text format lists pages and counts (`guides/rollouts.md: 1 changed, 2 added, 1 removed`)". "The agent's first look at the changes was `git diff`."
+- **Cost:** A reviewer at a terminal, person or agent, is told how many blocks changed on a page and has to go to `git diff` or the HTML report to see them. `diff`'s `PAGE` argument reads as "narrow to this page", as a path does for `git diff`, and means something else.
+- **Recommendation:** add. `ascribe diff PAGE` shows that page's changed blocks as text, and narrows the JSON, so `PAGE` means the page the command is about, as it does on `outline` and `render`.
+- **Size:** medium.
+
+### 49. A prompt names its paths from the repository's root, to an agent standing in the project
+
+- **Kind:** a contradiction.
+- **Where:** `ascribe agents prompt new-page`; `ascribe diff --format prompt`.
+- **Evidence:** [Journey 7](journeys/edit-an-unfamiliar-project.md): the prompt ends "When you're done, run `ascribe check handbook/pages/security/content`". "From `handbook/pages/security`, where the agent ran the prompt: `error: handbook/pages/security/content doesn't exist`, exit 2. From the root it works." [Journey 5](journeys/review-a-pull-request.md): "The prompt names the pages from the project, `content/guides/rollouts.md`, and the project from the repository, `Project: docs/`", and from the root "`ascribe render content/guides/rollouts.md --build site --config docs` answers `` error: `content/guides/rollouts.md` isn't a page or fragment of the project ``."
+- **Cost:** A command copied out of a prompt works from one folder and fails from another, and the prompt doesn't say which. Both agents happened to be standing where it worked, or worked round it.
+- **Recommendation:** rename, with findings 13 and 26. A prompt says once which folder its commands are for, and every path in it is from there.
+- **Size:** small.
+
+### 50. A repository with several projects has nothing at its root
+
+- **Kind:** a gap.
+- **Where:** `ascribe check`, `ascribe agents sync`, the stop hook, the plugin; a repository such as `examples/monorepo`.
+- **Evidence:** [Journey 7](journeys/edit-an-unfamiliar-project.md): "`cat ascribe.toml` at the root: `No such file or directory`. A repository with three projects has nothing at its root that says so, and the plugin says nothing about which project a request is for." "`ascribe check` there exits 2, `error: no ascribe.toml found in … or any parent directory`", and `ascribe agents sync` "exits 2 with `no ascribe.toml found`" there too, so the preparer ran it in each project. What worked was what `sync` leaves behind: "The root's block did the routing the other two sessions did by hand."
+- **Cost:** Where an agent starts, at the root, every command's answer is that there's no project. With `sync`'s files an agent opens the right project first; without them it searches.
+- **Recommendation:** add. A command run above several projects and in none names them in its error, and `ascribe agents sync` at such a root writes each project's files.
+- **Size:** medium.
+
+### 51. Nothing at the command line renames across a project
+
+- **Kind:** a gap.
+- **Where:** the command line and the MCP tools, against **Rename this phrase everywhere**, **Rename a dimension value everywhere**, and `F2` in VS Code.
+- **Evidence:** [The capability table](capabilities.md#finding-and-changing-across-the-project): three rows where VS Code renames and the command line and the tools don't. [Journey 4](journeys/rename-a-phrase.md): "Nothing of Ascribe's renames a phrase. The rename was `sed -i '' 's/{cloud}/{hosted}/g'` over two pages and a second `sed` for `ascribe.toml`. Ascribe's part was saying where the phrase is and, afterwards, that it's gone." The editor's rename "reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows."
+- **Cost:** The session's `sed` was right for a project of three pages. In one where a phrase is used in a snippet's file or a frontmatter field, `sed` over the pages misses what the editor's rename knows about, and the agent is the kind of user that has only `sed`.
+- **Recommendation:** add. One command that does what `F2` does, for a phrase, a dimension's value, a heading's id, and a page that moves.
+- **Size:** medium.
+
+### 52. A fix can be listed anywhere and applied only in VS Code
+
+- **Kind:** a gap.
+- **Where:** `fixes` in `ascribe check --format json` and `ascribe_check`; the lightbulb.
+- **Evidence:** [The capability table](capabilities.md#checking-and-fixing): "**gap**: `check`'s JSON lists each fix, and no command applies one", beside "The lightbulb's quick fixes". Each fix in the JSON is marked `safe` or `unsafe`, and decision 51 says a fix is `safe` "only when applying it can't change what the page says and leaves nothing to decide".
+- **Cost:** An agent reads a fix as data and makes the edit itself, character by character, for a change Ascribe has already worked out and called safe.
+- **Recommendation:** add. `ascribe check --fix` applies the safe ones, as `ascribe fmt` rewrites what it can.
+- **Size:** medium.
+
+### 53. Nothing starts a project, or a page, for a person
+
+- **Kind:** a gap.
+- **Where:** the command line, VS Code.
+- **Evidence:** [The capability table](capabilities.md#starting): for a project, "`ascribe.toml` is written by hand, from getting started", and the walkthrough's "Open a project" opens one that exists. For a page, an agent has `ascribe agents prompt new-page` and a person has nothing. In [journey 7](journeys/edit-an-unfamiliar-project.md) the prompt "leaves out `review-by`, which the type lists as optional and both policies there have."
+- **Cost:** Every new project begins by copying a block out of the docs, and every new page by copying a neighbor.
+- **Recommendation:** add, with the [page templates proposal](../proposals/page-templates.md), which gives a type its page to start from. A project's first `ascribe.toml` belongs with it.
+- **Size:** medium.
+
+### 54. Getting started is titled for a published site and stops one step short of one
+
+- **Kind:** friction.
+- **Where:** `docs/content/getting-started.md`, as published.
+- **Evidence:** [Journey 1](journeys/start-a-project.md): "Its last instruction for publishing is "Define the content collection, a route, and a layout that loads the elements. [Astro] walks through each file.", and nothing on the page builds, serves, or opens the site". "The page's two routes to a site, a new Astro project with Ascribe added or an Ascribe project with Astro added, aren't told apart". "`ascribe.toml`'s `[consumer]` `site` and Astro's `site` have to be the same, and the getting-started page shows each … without saying so." "`npx ascribe build`, the page's own step, wasn't needed: `[@ascribed/astro] running ascribe build for "site"`."
+- **Cost:** A newcomer needs two pages to do what the first one promises. The agent got there in 97 seconds; it had to choose the last command itself.
+- **Recommendation:** document. The page ends with the site open in a browser, or says plainly that the Astro guide is the second half. With finding 40.
+- **Size:** small.
+
+### 55. Getting started teaches the check with a link broken on purpose, and a first page has none
+
+- **Kind:** friction.
+- **Where:** `docs/content/getting-started.md`; `examples/getting-started`.
+- **Evidence:** [Journey 1](journeys/start-a-project.md): "An agent writing its own first page doesn't make that link, so it never sees a diagnostic, a code, or `explain`: the first check is `checked 1 file: 0 errors, 0 warnings`."
+- **Cost:** Someone who writes their own first page, as the page invites, finishes without having seen what Ascribe says when something's wrong.
+- **Recommendation:** leave. The page's example is right for a reader following it, and a clean first check is the better first experience. It's here because the walkthrough and the page could both say where to see a diagnostic on purpose.
+- **Size:** none.
+
+### 56. `ascribe render` can't show that readers see one arm of a switcher at a time
+
+- **Kind:** a gap.
+- **Where:** `ascribe render`, for a build with `variants = "switch"`.
+- **Evidence:** [Journey 2](journeys/add-a-platform-section.md): "for a switcher it shows every arm in a row under a bold label: `**macOS**`, steps, `**Linux**`, steps, `**Windows**`, steps. The task's point, one system at a time, can't be seen in it. The agent said it was so without seeing it, and the preparer had to build and read `<ascribe-tabs sync="os">` in the `site` output to know."
+- **Cost:** The command the skill gives for "a page as one build's readers see it" shows a switcher the same as three sections in a row. An agent reports the difference on trust.
+- **Recommendation:** add. The rendered text says, above a switcher's arms, that a reader sees one of them and which dimension chooses.
+- **Size:** small.
+
+### 57. A source with no `include` makes every file in its folder readable, and nothing remarks on it
+
+- **Kind:** friction.
+- **Where:** `[sources.<name>]`; `@snippet`.
+- **Evidence:** [Journey 3](journeys/show-an-example-from-code.md): "The agent declared the source as the whole `agent` folder: `path = "agent"` and no `include`. `ascribe check` took it. Every file under `agent/` is now readable from a page … `@snippet: agent:package.json` on the page checks clean and renders the whole file." Ascribe's own docs declare theirs with `include`, commented "what's readable; everything else isn't".
+- **Cost:** The shortest source that works is the widest. Nothing leaks until a page asks for a file, and then nothing says the file wasn't meant to be shown.
+- **Recommendation:** leave, and tell the security plan, whose finding about sources outside a project is the same question from the other side. A check here would speak on every project that declares a source the simple way.
+- **Size:** none.
+
+### 58. What `ascribe agents sync` writes by default, Claude Code reads half of
+
+- **Kind:** friction.
+- **Where:** `ascribe agents sync`, with no `--target`.
+- **Evidence:** [Journey 7](journeys/edit-an-unfamiliar-project.md): "Of what `ascribe agents sync` wrote, `AGENTS.md` was used and the skill wasn't … the skill in `.agents/skills/ascribe/` isn't in the session's list of skills and was never opened. `ascribe agents sync --help` says of `--target claude`: "the skill in .claude/skills/ascribe/". The plain command doesn't write that, and Claude Code didn't find the other." And: "The rules were enough to write the page without one command".
+- **Cost:** Slight here, since `AGENTS.md` was enough. Someone who runs the plain command for Claude Code has a skill on disk that their agent doesn't see, and nothing says so.
+- **Recommendation:** document. `sync`'s output says which agents read each file it wrote, and names the target that adds the rest.
+- **Size:** small.
+
+### 59. The plugin's `new-page` command needs the answer before it can ask
+
+- **Kind:** friction.
+- **Where:** the plugin's command `ascribe:new-page`; `ascribe agents prompt new-page`.
+- **Evidence:** [Journey 7](journeys/edit-an-unfamiliar-project.md): "it's a wrapper round a command line: "Run `ascribe agents prompt new-page --arg type=<type> --arg title=<title> [--arg path=<path>]`". The agent couldn't run it until it knew the type, and to know the type it had to find the project and read its model, which is most of the job. The command's `argument-hint` is `<type> <title> [path]`, and the agent gave it the request's sentence." Of the three sessions: "The session with the most help took the most steps".
+- **Cost:** The one plugin command an agent reached for added steps to the task it was for.
+- **Recommendation:** rename its arguments to what a user has: the request. The command tells the agent to read `ascribe model` for the type, then gives the prompt.
+- **Size:** small.
+
+### 60. Two recipes for checking in CI, and neither is the one a project gets
+
+- **Kind:** a contradiction.
+- **Where:** `docs/content/getting-started.md`, "Check it in CI"; `examples/docs-repository/.github/workflows/check.yml`.
+- **Evidence:** [Journey 6](journeys/set-up-ci-checks.md): "The getting-started page: `actions/checkout@v4`, `npm ci`, `npx ascribe check --deny-warnings`, `npx ascribe fmt --check`. `examples/docs-repository/.github/workflows/check.yml`: actions pinned by commit, `npm install --global @ascribed/cli@next`, `ascribe check --deny-warnings`, and no `fmt`." "The agent took half of each." It also "looked for three things Ascribe doesn't have, by name: an action to install it (`setup-ascribe`, `uses: ascribed-dev`), an output format for GitHub's annotations (`--format github`), and `cargo install`."
+- **Cost:** Two of Ascribe's own files disagree about the job most projects set up once and copy. This session weighs less than the others, since it read them from Ascribe's checkout; the two recipes are there whoever reads them.
+- **Recommendation:** merge into one recipe, a file the page shows with `@snippet` and the example uses. What the agent looked for and didn't find is listed for the maintainer, not recommended: nothing here shows a project needs them.
+- **Size:** small.
+
+### 61. Two MCP tools aren't named for the command they answer as
+
+- **Kind:** a naming problem.
+- **Where:** `ascribe_format` (`ascribe fmt`), `ascribe_changes` (`ascribe diff`); the other seven tools.
+- **Evidence:** [The map](../surface.md#the-mcp-server): `ascribe_check` is `ascribe check`, `ascribe_explain` is `ascribe explain`, and so for `model`, `outline`, `link`, `refs`, and `render`. Then `ascribe_format` answers as `ascribe fmt`, and `ascribe_changes` as `ascribe diff`.
+- **Cost:** Slight. An agent that knows the command can't spell the tool from it twice in nine.
+- **Recommendation:** leave. Each name says what the agent gets better than the command's does, and the names are a contract (decision 56). The convention for a new tool is the command's own word.
+- **Size:** none.
+
+### 62. Smaller things at the command line
+
+- **Kind:** friction, four times.
+- **Where:** `ascribe diff`, `ascribe explain`, `ascribe model`, `ascribe refs`.
+- **Evidence:**
+  - "`ascribe diff --base 8254eaf` starts `compared with 8254eaf (8254eaf)`: the revision as given, then the commit, the same thing twice when a commit is given." (Journey 5.)
+  - "`ascribe explain` with no code prints a usage error, and the agent's first search of it found nothing. `--list` was one `--help` away." (Journey 3.)
+  - "To get the builds' names it ran `ascribe model --section builds --format json` and picked the names out with `grep -o '"name": *"[^"]*"'`". (Journey 4.)
+  - "`refs` after the rename: `phrase:cloud doesn't exist.`, with exit 1. That's the answer the agent wanted, given as a failure." (Journey 4.)
+- **Cost:** Each is a moment.
+- **Recommendation:** print the commit once; have `explain` with no code say `--list` exists; leave the other two. A list of names is what the JSON is for, and exit 1 for a thing of the project's that isn't there is the convention (finding 20).
+- **Size:** small, each.
+
+## The proposals, against the findings
+
+What each pending proposal or plan would add to the surface, laid against the conventions in [the checklists](../checklists.md#a-new-command-or-option) and the findings above. Where a name or a shape would repeat something the audit found, the proposal is changed, and says so.
+
+| Proposal | What it adds | Against the audit |
+|---|---|---|
+| [Permalinks](../proposals/permalinks.md) (built) | `ascribe permalinks sync`, `list`, `verify`, `retire`; `@id {permalink=true}`; `[permalinks]` | Fits, with four departures already written up: findings 24, 25, 26, and 27. Finding 36 is its too |
+| [Tested examples](../proposals/tested-examples.md) | `ascribe observe`, with `--name` | The name fits: a verb alone, while it's the only command about examples. If a second arrives (listing observations, saying which are stale), both belong to a group, `ascribe examples`, and the proposal now says so. It names no formats or exit codes; the conventions give them: `text` and `json`, and 1 when an example's test fails |
+| [Versions](../proposals/versions.md) | `ascribe versions retire`, `ascribe versions release`, `ascribe archive --version "…"` | Two fit. The third doesn't, twice: it's a second command about versions outside their group, and `--version` already prints Ascribe's. It's `ascribe versions archive "self-managed 3.3"` now, in the proposal |
+| [Page templates](../proposals/page-templates.md) | A command that writes the starter set into a project, left unnamed for the audit | `ascribe templates eject`: a group named for the thing, and the verb `ascribe vale eject` uses for the same job, writing Ascribe's defaults out once as the project's own. A later "what changed upstream" is `ascribe templates status`. In the proposal now. It also answers half of finding 53 |
+| [Search](../proposals/search.md) | `ascribe search`, the tool `ascribe_search`, the request `ascribe/search` | The working name stands: a verb, a tool named for its command (finding 61's convention), `--limit` as `refs` and `report` have it, and exit codes that follow the rule. Its `path` argument should be read with findings 13 and 26: a path from the current folder |
+| [The cache](../proposals/cache.md) | `--recheck` and `--no-history` on `ascribe report links`; files under `.ascribe/` | Nothing to rename. The files are two more for finding 44's table of what Ascribe writes into a project |
+| [Notes](../proposals/notes.md) | `@comment`; note files | Its own open question is finding 9's: "note" already means a callout in `@note`, `[notes.<type>]`, and `note:` targets. One word for one thing says the new thing needs another word, and the proposal's question stands for the maintainer |
+| [Search and answers](../proposals/search-and-answers.md) | A setting for how crawlers treat pages; files a build writes | Its setting belongs in `ascribe.toml`, by the rule for where a choice lives: it's about the content, not one person's editor or one run. Finding 32 applies: it must not be a second place the site's address is written |
+| [The website](../website/README.md) (plan) | `projects` in `@ascribed/astro`'s options | Findings 29 and 32 are its neighbors: a starter, and the address written twice. Its phase 2 moves every page link in the READMEs, which is finding 43; if the READMEs link to permalinks first, that step is nothing |
+
 ## Not findings
 
 - **`explain ASC036`'s example calls `keys.md` right and `api-key.md` wrong.** That's this script's rename meeting Ascribe's own example, not something a user's project would meet.
 - **The agent with the plugin renamed the file back.** The copy's README told it to. The script's, and changed for phase 3.
+- **Claude Code's `WebFetch` summarized the getting-started page and took every command out.** "That's the client's tool, not the site." The page's own pointer to its Markdown is the answer, and the agent found it.
+- **The published docs describe a command the release doesn't have.** `npx ascribe agents --help` on 0.2.0 answers `error: unrecognized subcommand 'agents'`. The page marks that section "in main, not yet released", three times, and the agent read the mark rightly and skipped it. Finding 30 is about how that mark is kept.
+- **The CI session's workflow fails on every pull request.** Partly the setup's: the copy's project uses a key the release doesn't know. What's Ascribe's in it is finding 45.
