@@ -95,7 +95,7 @@ impl Review<'_> {
     /// `ascribe diff` against the same base, from the prompt's base, with
     /// `options` after it.
     fn diff_command(&self, context: &Context, builds: &[&str], options: &[&str]) -> String {
-        let mut words = vec!["ascribe".to_owned(), "diff".to_owned()];
+        let mut words = vec![context.ascribe(), "diff".to_owned()];
         if let Some(folder) = &context.folder {
             words.push("--config".to_owned());
             words.push(shell_word(&format!("{folder}/ascribe.toml")));
@@ -121,9 +121,10 @@ fn short(commit: &str) -> String {
 
 /// `ascribe render` of a page (as the prompt shows it), as `build`'s
 /// reader sees it.
-fn render_command(page: &str, build: &str) -> String {
+fn render_command(context: &Context, page: &str, build: &str) -> String {
     format!(
-        "ascribe render {} --build {}",
+        "{} render {} --build {}",
+        context.ascribe(),
         shell_word(page),
         shell_word(build)
     )
@@ -160,7 +161,10 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
         ));
     }
     if page.status != PageStatus::Removed {
-        known.push(format!("To read it: `{}`", render_command(&path, build)));
+        known.push(format!(
+            "To read it: `{}`",
+            render_command(context, &path, build)
+        ));
     }
     let rest = review.diff_command(context, &[build], &["--format", "json"]);
     if !page.changes.is_empty() {
@@ -275,12 +279,13 @@ pub fn fragment_reach(
             shell_word(&path)
         ),
         format!(
-            "To read a page: `ascribe render <page> --build {}`",
+            "To read a page: `{} render <page> --build {}`",
+            context.ascribe(),
             shell_word(&build.build)
         ),
         "Pages:".to_owned(),
     ];
-    let refs = format!("ascribe refs {}", shell_word(&path));
+    let refs = format!("{} refs {}", context.ascribe(), shell_word(&path));
     known.extend(
         pages
             .iter()
@@ -329,7 +334,10 @@ pub fn pages(context: &Context, review: &Review<'_>, builds: &[BuildDiff]) -> Op
     };
     let mut known = vec![
         review.base_line(),
-        format!("To read a page: `ascribe render <page> --build {build_word}`"),
+        format!(
+            "To read a page: `{} render <page> --build {build_word}`",
+            context.ascribe()
+        ),
     ];
     let mut listed = 0;
     let total: usize = changed.iter().map(|b| b.pages.len()).sum();

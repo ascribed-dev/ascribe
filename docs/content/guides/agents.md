@@ -218,6 +218,7 @@ The [Ascribe extension](editor.md) gives an agent in VS Code, such as GitHub Cop
 - **The MCP server, with nothing to set up.** The extension offers `ascribe mcp` to VS Code's agents itself, named **Ascribe** in VS Code's list of MCP servers, so there's no file to write. Its prompts, `new-page`, `fix`, and `review`, appear as slash commands in the chat.
 - **Tools only the editor has.** `ascribe_editor_problems`, the problems of files as the editor has them, saved or not; and, while review is on, `ascribe_review_threads`, the pull request's open threads, and `ascribe_review_changes`, the changed pages. Name one in chat with `#`, or let the agent pick it.
 - **Prompt agent**, on a problem, a file, a project, or in review, as [Prompt your agent](#prompt-your-agent) says.
+- **The binary the editor runs.** When `ascribe` on the window's path isn't the binary the extension runs, such as the one bundled with it, the extension puts that binary's folder first on the path of the window's terminals, so `ascribe` in a terminal runs it. A terminal that was open before asks to be relaunched. **Prompt agent**'s prompts then name the binary by its path, so an agent that doesn't work in the window's terminals, such as Claude Code's extension, runs the same one.
 
 See [Agents in VS Code](editor.md#agents-in-vs-code).
 
