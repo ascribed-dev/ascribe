@@ -41,6 +41,14 @@ gh workflow run board.yml --ref main -f issue=123 -f status="In review"
 
 Then wait for it as above. A failed run says why in its error, for instance a Status the board doesn't have. An issue or pull request that isn't on the board yet is added. Move only cards your role owns, and only to the next column.
 
+Several cards going to the same Status move in one run, listed with spaces or commas:
+
+```sh
+gh workflow run board.yml --ref main -f issue="123 124 125" -f status="Ready"
+```
+
+A move doesn't read the board, so `board.json` stays as it was; add `-f read=true` to read it in the same run. Every call the workflow makes to the board counts against one token's hourly GraphQL limit, and a read lists the whole board, so use one run for a batch and read only when you need to. When a run fails on the limit, its log says `API rate limit exceeded` or `unknown owner type`: wait for the limit to reset instead of retrying in a loop, since every retry spends the same limit and so do other sessions'.
+
 ## Approve a pull request
 
 Agents post as the maintainer, who also authors their pull requests, and GitHub doesn't let a pull request's author approve it. Approve posts the approval as `github-actions[bot]`, for the commit you reviewed:
