@@ -4,7 +4,8 @@
 //   // astro.config.mjs
 //   import ascribe from "@ascribed/astro";
 //   export default defineConfig({
-//     base: "/docs", trailingSlash: "never",     // as in ascribe.toml's [consumer]
+//     // `site`, `base`, and `trailingSlash` come from ascribe.toml's
+//     // [consumer] when they're left out here; set here, they must agree.
 //     integrations: [ascribe({ build: "site" })],
 //   });
 //
@@ -52,7 +53,13 @@ import {
   folderUnder,
 } from "./files.js";
 import { hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
-import { consumerMismatches, homeRoute, readProject } from "./project.js";
+import {
+  consumerMismatches,
+  homeRoute,
+  readProject,
+  supplyRouting,
+  type AstroRouting,
+} from "./project.js";
 import {
   basePathClashes,
   nameProblems,
@@ -162,13 +169,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
   const named = options.projects !== undefined;
   let entries: Entry[] = [];
   let groups: DevGroup[] = [];
-  let routing:
-    | {
-        base: string;
-        trailingSlash: string;
-        site: string | undefined;
-      }
-    | undefined;
+  let routing: AstroRouting | undefined;
   /** The dev server's sources as its first build read them. */
   const seen = new SeenFiles();
   let binary: string | undefined;
@@ -211,8 +212,15 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           };
         });
 
+        // What astro.config leaves unset comes from [consumer]: `site` and `trailingSlash` from the
+        // first project that has them, and with one project, `base` from its base path. With
+        // `projects`, `base` stays the site's, the root every base path is under.
+        const { routing: astro, supplied } = supplyRouting(
+          entries.map((entry) => entry.project),
+          { base: config.base, trailingSlash: config.trailingSlash, site: config.site },
+          !named,
+        );
         // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
-        const astro = { base: config.base, trailingSlash: config.trailingSlash, site: config.site };
         for (const entry of entries) {
           fail(
             consumerMismatches(entry.project, astro),
@@ -336,7 +344,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           const served = lists.find(hasPermalinks) ?? lists[0];
           if (served !== undefined) {
             injectRoute({
-              pattern: permalinkPattern(served.path, config.base),
+              pattern: permalinkPattern(served.path, astro.base),
               entrypoint: new URL("../src/Permalink.astro", import.meta.url),
               prerender: true,
             });
@@ -344,9 +352,10 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         }
 
         const projectHome = (entry: Entry) =>
-          homeRoute(entry.project.consumer.basePath, config.trailingSlash);
+          homeRoute(entry.project.consumer.basePath, astro.trailingSlash);
         // Dev serving of `_ascribe/files/`, and of the plain output for agents; the build copies them in `astro:build:done`.
         updateConfig({
+          ...supplied,
           ...(options.codeTitles === false
             ? {}
             : { markdown: { shikiConfig: { transformers: [codeTitles] } } }),
@@ -361,7 +370,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                   id === `\0${SITE_MODULE}`
                     ? `export const siteRoot = ${JSON.stringify(entries[0]?.siteRoot ?? "")};\n` +
                       `export const astroRoot = ${JSON.stringify(root)};\n` +
-                      `export const home = ${JSON.stringify(homeRoute(config.base, config.trailingSlash))};\n` +
+                      `export const home = ${JSON.stringify(homeRoute(astro.base, astro.trailingSlash))};\n` +
                       `export const collections = ${JSON.stringify(
                         named ? Object.fromEntries(entries.map((e) => [e.name, e.siteRoot])) : {},
                       )};\n` +

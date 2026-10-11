@@ -95,6 +95,47 @@ export function homeRoute(base: string, trailingSlash: "always" | "never" | "ign
   return trailingSlash === "never" && root !== "/" ? root.slice(0, -1) : root;
 }
 
+/** Astro's routing settings, as the integration reads and supplies them. */
+export interface AstroRouting {
+  base: string;
+  trailingSlash: "always" | "never" | "ignore";
+  site: string | undefined;
+}
+
+/**
+ * Astro's routing with what astro.config leaves unset taken from `[consumer]`,
+ * and the settings taken, for `updateConfig`. Astro gives an integration its
+ * configuration with its defaults filled in, so unset is the default: no
+ * `site`, `trailingSlash: "ignore"`, and `base: "/"`. `site` and
+ * `trailingSlash` come from the first project that has them, since every
+ * project must agree with them anyway. `base` comes from the first project's
+ * `base-path` only with `supplyBase`, as with one project; with several, it
+ * stays the site's, the root every base path is under. A base Astro has is
+ * rewritten to end the way a supplied `trailingSlash` says, as Astro writes
+ * it when the setting is its own.
+ */
+export function supplyRouting(
+  projects: readonly ProjectInfo[],
+  astro: AstroRouting,
+  supplyBase: boolean,
+): { routing: AstroRouting; supplied: Partial<AstroRouting> } {
+  const supplied: Partial<AstroRouting> = {};
+  if (astro.site === undefined) {
+    const site = projects.find((project) => project.consumer.site !== undefined)?.consumer.site;
+    if (site !== undefined) supplied.site = site;
+  }
+  const first = projects[0];
+  if (first === undefined) return { routing: astro, supplied };
+  if (astro.trailingSlash === "ignore") supplied.trailingSlash = first.consumer.trailingSlash;
+  const trailingSlash = supplied.trailingSlash ?? astro.trailingSlash;
+  const base = homeRoute(
+    supplyBase && normalizeBase(astro.base) === "/" ? first.consumer.basePath : astro.base,
+    trailingSlash,
+  );
+  if (base !== astro.base) supplied.base = base;
+  return { routing: { ...astro, ...supplied }, supplied };
+}
+
 /**
  * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
  * as sentences. Ascribe writes every link with its own settings, so a site

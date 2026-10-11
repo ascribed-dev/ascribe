@@ -7,7 +7,9 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-# Must agree with `astro.config.mjs`: `@ascribed/astro` checks that it does.
+# The site's routing: `@ascribed/astro` gives Astro its `site` and
+# `trailingSlash` from here, and checks that Astro's `base` is base-path or a
+# path above it.
 [consumer]
 profile = "astro"
 site = "https://docs.example.com"

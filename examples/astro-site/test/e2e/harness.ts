@@ -12,7 +12,7 @@ import { chromium, type Browser } from "playwright-core";
 /** The example site's directory. */
 export const siteDir = fileURLToPath(new URL("../..", import.meta.url));
 
-/** The site's base path, from astro.config.mjs. */
+/** The site's base path: ascribe.toml's base-path, which Astro's `base` comes from. */
 export const BASE = "/docs";
 
 /** The bundled Chromium in this environment, if there is one; otherwise Playwright's own. */
