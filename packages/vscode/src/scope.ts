@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { Middleware } from "vscode-languageclient/node";
+import { followableScheme } from "./linkSchemes.js";
 
 /**
  * Middleware that keeps a server from seeing files that aren't its project's.
@@ -42,7 +43,12 @@ export function scopeMiddleware(excluded: (uri: vscode.Uri) => boolean): Middlew
       skip(d) ? undefined : next(d, p, ch, o, t),
     provideRenameEdits: (d, p, n, t, next) => (skip(d) ? undefined : next(d, p, n, t)),
     prepareRename: (d, p, t, next) => (skip(d) ? undefined : next(d, p, t)),
-    provideDocumentLinks: (d, t, next) => (skip(d) ? undefined : next(d, t)),
+    // A link with any other scheme from an older server is dropped (`linkSchemes.ts`).
+    provideDocumentLinks: async (d, t, next) => {
+      if (skip(d)) return undefined;
+      const links = await next(d, t);
+      return links?.filter((link) => !link.target || followableScheme(link.target.scheme));
+    },
     provideFoldingRanges: (d, c, t, next) => (skip(d) ? undefined : next(d, c, t)),
     provideSelectionRanges: (d, p, t, next) => (skip(d) ? undefined : next(d, p, t)),
     prepareCallHierarchy: (d, p, t, next) => (skip(d) ? undefined : next(d, p, t)),

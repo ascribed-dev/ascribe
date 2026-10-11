@@ -912,6 +912,39 @@ fn external_document_links_expand_destination_phrases() {
 }
 
 #[test]
+fn only_web_and_email_destinations_are_document_links() {
+    let text = "[a](command:workbench.action.showCommands) [b](vscode:extension/x) \
+                [c](file:///etc/hosts) [d](javascript:alert(1)) [e](HTTPS://example.com/e) \
+                [f](mailto:docs@example.com) [g](http://example.com/g) [h](tel:+1555)\n";
+    let f = Fixture::new(MODEL, &[("docs/page.md", text)]);
+    let page = f.path("docs/page.md");
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, text);
+
+    let links = client
+        .request(
+            "textDocument/documentLink",
+            json!({ "textDocument": text_doc(&page) }),
+        )
+        .response_result
+        .expect("a result");
+    let targets: Vec<&str> = links
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|l| l["target"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        targets,
+        [
+            "HTTPS://example.com/e",
+            "mailto:docs@example.com",
+            "http://example.com/g"
+        ]
+    );
+}
+
+#[test]
 fn a_code_lens_names_the_include_and_opens_it() {
     let f = quill();
     let install = f.path("docs/install-agent.md");
