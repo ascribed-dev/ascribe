@@ -47,7 +47,7 @@ Code blocks are always fenced (the fence is longer than any backtick run in the 
 
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; with `agents = true`, each page opens with `<ascribe-for-agents>` (element contract §8); `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route.
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; with `agents = true`, each page opens with `<ascribe-for-agents>` (element contract §8); `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`, `_ascribe/permalinks.json`, and `_ascribe/pages.json`, the build's page records from `ascribe_resolve::pages` (output-layout contract §1.3). A page's `listing` is in its record and left out of its frontmatter. `prepare` refuses a build whose pages share a route.
 
 | Source | Output |
 |---|---|

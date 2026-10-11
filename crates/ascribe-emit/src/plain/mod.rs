@@ -37,7 +37,7 @@ use ascribe_core::{AssetUse, RelPath};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
     AstroRouter, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedLink,
-    ResolvedPage, llms,
+    ResolvedPage, llms, pages,
 };
 use ascribe_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
@@ -165,7 +165,7 @@ impl Emitter for PlainEmitter {
         if self.agents.is_none() {
             return Ok(Vec::new());
         }
-        llms::llms_files(cx.model, &build.pages)
+        llms::llms_files(cx.model, &pages::records(cx.model, &build.pages))
             .into_iter()
             .map(|file| {
                 let path = RelPath::parse(&file.path).map_err(|e| EmitError::Invalid {

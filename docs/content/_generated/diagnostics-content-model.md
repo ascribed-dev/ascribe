@@ -766,6 +766,19 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[permalinks]`](../reference/content-model.md#20-permalinks) in the `ascribe.toml` reference.
 
+### `[crawlers]`
+
+#### ASC183 `model-crawlers-line`
+@id {permalink=true}: ASC183
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{key}` has a line break; each string in `lines` is one line of robots.txt
+
+**Fix:** Split the string into one string per line: `lines = ["User-agent: *", "Disallow: /drafts/"]`.
+
+**Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
+
 ### `[checks]`
 
 #### ASC142 `model-check-not-configurable`

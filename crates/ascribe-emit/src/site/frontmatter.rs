@@ -21,7 +21,9 @@
 //! ```
 //!
 //! Each entry has the attributes of a `<ascribe-availability-target>` and its
-//! text. `variant` passes through as written.
+//! text. `variant` passes through as written. `listing` is left out: the
+//! page's record in `_ascribe/pages.json` holds it, as every output reads
+//! it.
 //!
 //! A field that sets `inline = "code"` is written as its plain text, for a
 //! layout's `<title>`, search, and sorting, and its formatted form goes under
@@ -42,7 +44,7 @@
 //! source: guides/install.md
 //! ```
 
-use ascribe_model::Segment;
+use ascribe_model::{Listing, Segment};
 use ascribe_resolve::ResolvedPage;
 use serde_yaml_ng::{Mapping, Value};
 
@@ -73,6 +75,7 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
             map.remove(&key);
         }
     }
+    map.remove(Listing::KEY);
     let key = Value::String("formatted".to_owned());
     map.remove(&key);
     if !page.formatted.is_empty() {

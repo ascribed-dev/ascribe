@@ -1,0 +1,14 @@
+What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. Each build writes it into its page records, `_ascribe/pages.json` in the site output ([output-layout contract](../../contracts/output-layout.md) §1.3), for a site to write its `robots.txt` from.
+
+```toml
+[crawlers]
+lines = [
+  "Disallow: /drafts/",
+  "User-agent: ExampleBot",
+  "Disallow: /",
+]
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `lines` | array of strings | `[]` | The project's own `robots.txt` lines, in order. Each is one line, not empty. A path in an `Allow` or `Disallow` line is from the project's own root, and the records hold it from the host's, with `base-path` before it: under `base-path = "/docs/"`, `Disallow: /drafts/` is `Disallow: /docs/drafts/`. Any other line is kept as written. The lines before any `User-agent` line are for every crawler, in the `User-agent: *` group. A `User-agent` line that names a crawler starts a group the project writes whole: a crawler obeys only the most specific group that names it, and not the `*` group as well. |

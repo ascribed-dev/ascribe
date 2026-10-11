@@ -66,6 +66,8 @@ pub struct ContentModel {
     pub intended: Vec<Intended>,
     /// `[permalinks]`: the retired permalinks and the aliases.
     pub permalinks: ModelPermalinks,
+    /// `[crawlers]`: what the project says to crawlers.
+    pub crawlers: Crawlers,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
@@ -209,6 +211,59 @@ pub struct Intended {
     pub span: Span,
     /// The `check` value.
     pub check_span: Span,
+}
+
+/// `[crawlers]`: what the project says to the crawlers that read its site.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Crawlers {
+    /// `lines`: the project's own `robots.txt` lines, in order. A path in an
+    /// `Allow` or `Disallow` line is from the project's base path.
+    pub lines: Vec<CrawlerLine>,
+}
+
+/// One of `[crawlers] lines`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CrawlerLine {
+    /// The line, as written: one line, not empty.
+    pub text: String,
+    /// The string, in `ascribe.toml`.
+    pub span: Span,
+}
+
+/// A page's reserved frontmatter key `listing` (SPEC §2.1): whether a page
+/// is offered to readers that aren't people, from open to closed. A page
+/// that doesn't set it is [`Listing::Listed`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Listing {
+    /// Listed by search engines, and offered to agents.
+    #[default]
+    Listed,
+    /// Listed, and asks not to be quoted.
+    Unquoted,
+    /// Not listed, and not offered: out of the sitemap and `llms.txt`.
+    Unlisted,
+}
+
+impl Listing {
+    /// The frontmatter key.
+    pub const KEY: &'static str = "listing";
+
+    /// Every value, from open to closed.
+    pub const ALL: [Listing; 3] = [Listing::Listed, Listing::Unquoted, Listing::Unlisted];
+
+    /// The value as it's written.
+    pub fn name(self) -> &'static str {
+        match self {
+            Listing::Listed => "listed",
+            Listing::Unquoted => "unquoted",
+            Listing::Unlisted => "unlisted",
+        }
+    }
+
+    /// The value written `name`.
+    pub fn from_name(name: &str) -> Option<Listing> {
+        Listing::ALL.into_iter().find(|l| l.name() == name)
+    }
 }
 
 /// `[permalinks]`: the names `ascribe.toml` gives somewhere to lead that

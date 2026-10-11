@@ -200,6 +200,19 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
 
+#### ASC184 `listing-disallowed`
+@id {permalink=true}: ASC184
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** A page is `unlisted`, and the project's own `[crawlers] lines` disallow its address for every crawler.
+
+**Message:** this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone
+
+**Fix:** Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`.
+
+**Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
+
 ### Prose, through Vale
 
 #### ASC165 `prose`

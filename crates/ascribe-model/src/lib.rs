@@ -33,6 +33,7 @@
 //! returned issues include the warnings found before the failure.
 
 mod checks;
+mod crawlers;
 mod fields;
 pub mod inline;
 mod intended;

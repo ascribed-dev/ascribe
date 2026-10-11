@@ -4,7 +4,8 @@
 //!
 //! An index is an H1 with the site's name, a blockquote summary, and H2
 //! sections of `- [Title](url): description` lines, one per page the build
-//! publishes, each linking to the page's Markdown version
+//! publishes and offers (not one that's `unlisted`), from the build's page
+//! records ([`crate::pages`]), each linking to the page's Markdown version
 //! ([`AstroRouter::markdown_url`]). The name and the summary are the title
 //! and description of the page at the base path; pages in a folder are a
 //! section named after the folder (the title of its index page, when it has
@@ -26,6 +27,7 @@ use ascribe_syntax::{BlockKind, ParseOptions};
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
 use crate::index::heading_text;
+use crate::pages::PageRecords;
 
 /// The version of the delivery spec the outputs for agents follow. Its
 /// checker, `afdocs`, is pinned in `examples/astro-site/package.json`.
@@ -91,31 +93,32 @@ impl Section<'_> {
     }
 }
 
-/// The `llms.txt` files of the pages a build publishes, in `pages` order:
-/// the root file first, then a file per section when the index is split.
-pub fn llms_files<'a>(
-    model: &ContentModel,
-    pages: impl IntoIterator<Item = &'a ResolvedPage>,
-) -> Vec<LlmsFile> {
+/// The `llms.txt` files of a build, from its page records ([`crate::pages::records`]),
+/// in their order: the root file first, then a file per section when the
+/// index is split. A page that isn't offered, being `unlisted`, isn't in
+/// any.
+pub fn llms_files(model: &ContentModel, records: &PageRecords) -> Vec<LlmsFile> {
     let router = AstroRouter::from_consumer(&model.consumer);
     let absolute = |path: &str| absolute_url(model, &router.url_of(path));
-    let entries: Vec<Entry<'a>> = pages
-        .into_iter()
-        .map(|page| {
+    let entries: Vec<Entry<'_>> = records
+        .pages
+        .iter()
+        .filter(|record| record.offered())
+        .map(|record| {
             let id = router
-                .markdown_path(&page.path)
+                .markdown_path(&record.source)
                 .trim_end_matches(".md")
                 .to_owned();
             Entry {
-                page: &page.path,
-                title: page
+                page: &record.source,
+                title: record
                     .title
                     .as_deref()
                     .map(one_line)
                     .filter(|t| !t.is_empty())
                     .unwrap_or_else(|| id.clone()),
-                url: absolute(&router.markdown_path(&page.path)),
-                description: description(model, page),
+                url: absolute(&router.markdown_path(&record.source)),
+                description: record.description.clone(),
                 id,
             }
         })

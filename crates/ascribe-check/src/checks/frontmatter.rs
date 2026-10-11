@@ -7,9 +7,10 @@
 //! key or value that causes it. A problem with no place of its own, such as a
 //! missing field, is reported at the file's first line (SPEC §8.1).
 
+use ascribe_core::Router;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
-use ascribe_model::{FieldRole, FrontmatterSchema, TypeMatch, validate_frontmatter};
-use ascribe_resolve::llms;
+use ascribe_model::{FieldRole, FrontmatterSchema, Listing, TypeMatch, validate_frontmatter};
+use ascribe_resolve::{AstroRouter, llms, pages};
 use ascribe_syntax::Frontmatter;
 use serde_yaml_ng::Value;
 
@@ -203,8 +204,9 @@ impl Ctx<'_> {
     }
 
     /// The reserved keys on a page (SPEC §2.1): `available` holds an
-    /// availability spec, `variant` a mapping of dimensions to values, and
-    /// `permalink` a name with the characters an `@id` has.
+    /// availability spec, `variant` a mapping of dimensions to values,
+    /// `permalink` a name with the characters an `@id` has, and `listing`
+    /// one of its values.
     fn check_reserved_keys(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
         // SPEC §2.1: a value of the wrong shape is a type mismatch.
         let Value::Mapping(map) = value else { return };
@@ -237,6 +239,62 @@ impl Ctx<'_> {
                 other => self.mismatch("permalink", "a name, such as `cli-reference`", other, at),
             }
         }
+        if let Some(v) = map.get(Listing::KEY) {
+            let node = index.get(Listing::KEY);
+            let at = node.map_or(first_line, |n| n.value);
+            match v.as_str().and_then(Listing::from_name) {
+                Some(Listing::Unlisted) => {
+                    if let Some(node) = node {
+                        self.check_listing_fetched(node);
+                    }
+                }
+                Some(_) => {}
+                None => {
+                    let values: Vec<&str> = Listing::ALL.iter().map(|l| l.name()).collect();
+                    self.mismatch(
+                        Listing::KEY,
+                        &format!("one of: {}", values.join(", ")),
+                        v,
+                        at,
+                    );
+                }
+            }
+        }
+    }
+
+    /// A page that's `unlisted` at an address the project's own `[crawlers]
+    /// lines` disallow for every crawler, which then never reads that it
+    /// isn't to be listed (`listing-disallowed`). The fix removes `listing`.
+    fn check_listing_fetched(&mut self, node: &Node) {
+        let lines = pages::robots_lines(self.model);
+        let route = AstroRouter::from_consumer(&self.model.consumer).route(&self.file.path);
+        let Some(at) = pages::disallowing(&lines, &route) else {
+            return;
+        };
+        let Some(line) = self.model.crawlers.lines.get(at) else {
+            return;
+        };
+        let mut issue = Issue::new(
+            diagnostics::LISTING_DISALLOWED,
+            Location::new(self.id, node.value),
+        )
+        .with_arg("line", line.text.clone());
+        if let Some(key) = node.key {
+            // The whole line, its line break included.
+            let text = &self.file.text;
+            let start = text[..key.start()].rfind('\n').map_or(0, |n| n + 1);
+            let end = text[key.start()..]
+                .find('\n')
+                .map_or(text.len(), |n| key.start() + n + 1);
+            issue = issue.with_fix(Fix {
+                title: "Remove `listing: unlisted`".to_owned(),
+                file: self.id,
+                edits: vec![TextEdit::replace(Span::new(start, end), String::new())],
+                // It lists the page, which may not be what was meant.
+                applicability: Applicability::Unsafe,
+            });
+        }
+        self.report(issue);
     }
 
     /// `variant`: a mapping from dimension names to a value or a list of

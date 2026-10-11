@@ -183,3 +183,5 @@
 | [ASC180](../reference/diagnostics.md#ASC180) | `permalink-name-conflict` | Error | File | write |
 | [ASC181](../reference/diagnostics.md#ASC181) | `permalink-retired-target-missing` | Error | File | write |
 | [ASC182](../reference/diagnostics.md#ASC182) | `include-limit` | Error | Page | write |
+| [ASC183](../reference/diagnostics.md#ASC183) | `model-crawlers-line` | Error | File | write |
+| [ASC184](../reference/diagnostics.md#ASC184) | `listing-disallowed` | Advice | File | fix |

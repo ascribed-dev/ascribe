@@ -82,15 +82,23 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves four keys: `available` (§4.4), `variant` (§4.3), `intended` (§4.9), and `permalink` (below).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves five keys: `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, and `listing` (below).
 
-- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, or a name) is a frontmatter value of the wrong type (§8.2).
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, or one of `listing`'s values) is a frontmatter value of the wrong type (§8.2).
 - `permalink` gives a page a **permalink**: a name for the page that something outside the documentation can link to, which a build publishes at an address of its own that leads to the page wherever it is (§9.5). Its value is a name with the characters of an `@id` (§4.1), and it shares one set of names with the headings' permalinks: a build MUST publish each name once, whether on a page or a heading, and names that differ only in case are one name.
 
   ```yaml
   ---
   title: Command reference
   permalink: cli-reference
+  ---
+  ```
+- `listing` says whether a page is offered to readers that aren't people, such as search engines and AI agents. Its value is one of `listed`, `unquoted`, and `unlisted`, in that order from open to closed; a page that doesn't set it is `listed`. A `listed` page is offered: a compiler lists it in `llms.txt` (§9.4). An `unquoted` page is listed and asks not to be quoted. An `unlisted` page asks not to be listed, and isn't offered: a compiler leaves it out of `llms.txt`, and out of anything else it writes that offers pages. It is still built, at its address.
+
+  ```yaml
+  ---
+  title: Migrating from 3.x
+  listing: unlisted
   ---
   ```
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
@@ -104,7 +112,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available`, `variant`, and `permalink`; availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available`, `variant`, `permalink`, and `listing`; availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -807,6 +815,7 @@ A content model declares the following.
 | Builds | Named builds and their modes | §9.3 |
 | Sources | Named sets of files outside the content that pages may take code from: each one's folder or repository, and which of its files are readable | §4.8, §7.3, §7.4 |
 | Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
+| Crawlers | The project's own `robots.txt` lines, with paths from the project's base path | §9.4 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -1005,7 +1014,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
-| Frontmatter | Reserved key (`available`, `variant`, `permalink`) on a fragment | Error |
+| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment | Error |
 | Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |
 | Files | Source file that can't be read, or isn't valid UTF-8 | Error |
@@ -1127,7 +1136,9 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.
 - A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
 
-**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes, by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid.
+**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid.
+
+**Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
 
 **JSON output.** The resolved tree, for custom consumers.
 
@@ -1173,7 +1184,7 @@ Astro is the primary consumer, through its content collections.
 - Compiled pages from the site output are loaded into an Astro content collection.
 - The collection's schema MUST be generated from the content model, as a Zod schema.
 - Page layouts are the project's own.
-- Page-level frontmatter, including `available`, reaches the layout as collection data. A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
+- Page-level frontmatter, including `available`, reaches the layout as collection data, except `listing`, which reaches the site in the page's record (§9.4). A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
 
 An Astro integration SHOULD provide the collection configuration and generated schema, load the element library, and supply the markdown processing needed for explicit heading ids.
 

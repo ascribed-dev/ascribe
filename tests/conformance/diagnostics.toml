@@ -1377,7 +1377,7 @@ next = "write"
 evidence = []
 spec = "2.2"
 reference = "content-model.md#43-fragments"
-row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`) on a fragment"
+row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment"
 message = "`{key}` is reserved for pages, and fragments can't use it"
 messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
 fix = "Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it."
@@ -3396,3 +3396,50 @@ reference = "directives.md#include"
 row = "`@include` | A page's includes expand it past the processor's limit (page level)"
 message = "including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is"
 fix = "Include less on this page. Usually a fragment is included more than once on the way: a few files that each include the next twice double the page at every step. Include each fragment once, or split the page."
+
+[[diagnostic]]
+code = "ASC183"
+slug = "model-crawlers-line"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model.md#21-crawlers"
+group = "crawlers"
+message = "`{key}` has a line break; each string in `lines` is one line of robots.txt"
+fix = "Split the string into one string per line: `lines = [\"User-agent: *\", \"Disallow: /drafts/\"]`."
+
+[[diagnostic]]
+code = "ASC184"
+slug = "listing-disallowed"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "2.1"
+reference = "content-model.md#21-crawlers"
+configurable = true
+area = "outputs"
+when = "A page is `unlisted`, and the project's own `[crawlers] lines` disallow its address for every crawler"
+message = "this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone"
+fix = "Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`."
+example.wrong = '''
+---
+title: Drafts
+listing: unlisted
+---
+
+Work in progress.
+'''
+example.right = '''
+---
+title: Drafts
+---
+
+Work in progress.
+'''
+example.model = '''
+[crawlers]
+lines = ["Disallow: /page/"]
+'''

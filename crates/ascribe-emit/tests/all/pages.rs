@@ -1,0 +1,168 @@
+//! `_ascribe/pages.json`: each build's page records, in the site output
+//! (output-layout contract §1.3), and `llms.txt` read against them.
+
+#![allow(clippy::expect_used, clippy::panic)]
+
+use std::path::Path;
+
+use ascribe_emit::site::PAGES_PATH;
+use ascribe_emit::{PlainEmitter, SiteEmitter};
+use ascribe_resolve::Project;
+use serde_json::{Value, json};
+
+use crate::support::{emit_build, memory_project, site};
+
+const MODEL: &str = "spec = \"0.1\"\n\
+    [types.page]\ndefault = true\n\
+    [types.page.frontmatter]\ntitle = \"string\"\n\
+    description = { type = \"string?\", role = \"description\" }\n\
+    [consumer]\nsite = \"https://docs.example.com\"\nbase-path = \"/docs/\"\nagents = true\n\
+    [crawlers]\nlines = [\"Disallow: /drafts/\", \"User-agent: Bot\", \"Allow: *.md\", \"Sitemap: https://docs.example.com/x.xml\"]\n";
+
+const FILES: &[(&str, &str)] = &[
+    (
+        "index.md",
+        "---\ntitle: Home\ndescription: Every page of [the docs](index.md).\n---\n",
+    ),
+    (
+        "guides/install.md",
+        "---\ntitle: Install the agent\ndescription: Install and connect it.\n---\n",
+    ),
+    (
+        "guides/drafts.md",
+        "---\ntitle: Drafts\nlisting: unlisted\n---\n",
+    ),
+    ("faq.md", "---\ntitle: FAQ\nlisting: unquoted\n---\n"),
+];
+
+fn records(project: &Project) -> Value {
+    let emitter = SiteEmitter::new(project.model());
+    let text = emit_build(Path::new("/nowhere"), project, "site", &emitter)
+        .remove(PAGES_PATH)
+        .expect("the site output has the records");
+    serde_json::from_str(&text).expect("the records are JSON")
+}
+
+#[test]
+fn each_page_has_a_record_keyed_by_its_route() {
+    let project = memory_project(MODEL, FILES);
+    assert_eq!(
+        records(&project),
+        json!({
+            "version": 1,
+            "site": "https://docs.example.com",
+            "pages": {
+                "/docs/": {
+                    "source": "index.md",
+                    "title": "Home",
+                    "description": "Every page of the docs.",
+                    "canonical": "https://docs.example.com/docs/",
+                    "listing": "listed",
+                    "markdown": "/docs/index.md",
+                },
+                "/docs/faq/": {
+                    "source": "faq.md",
+                    "title": "FAQ",
+                    "canonical": "https://docs.example.com/docs/faq/",
+                    "listing": "unquoted",
+                    "markdown": "/docs/faq.md",
+                },
+                "/docs/guides/drafts/": {
+                    "source": "guides/drafts.md",
+                    "title": "Drafts",
+                    "canonical": "https://docs.example.com/docs/guides/drafts/",
+                    "listing": "unlisted",
+                    "markdown": "/docs/guides/drafts.md",
+                },
+                "/docs/guides/install/": {
+                    "source": "guides/install.md",
+                    "title": "Install the agent",
+                    "description": "Install and connect it.",
+                    "canonical": "https://docs.example.com/docs/guides/install/",
+                    "listing": "listed",
+                    "markdown": "/docs/guides/install.md",
+                },
+            },
+            "robots": {
+                "lines": [
+                    "Disallow: /docs/drafts/",
+                    "User-agent: Bot",
+                    "Allow: *.md",
+                    "Sitemap: https://docs.example.com/x.xml",
+                ],
+            },
+        })
+    );
+}
+
+#[test]
+fn without_a_site_or_agents_a_record_has_no_addresses_but_its_route() {
+    let model = "spec = \"0.1\"\n";
+    let project = memory_project(model, &[("a.md", "---\ntitle: A\n---\n")]);
+    assert_eq!(
+        records(&project),
+        json!({
+            "version": 1,
+            "pages": { "/a/": { "source": "a.md", "title": "A", "listing": "listed" } },
+            "robots": { "lines": [] },
+        })
+    );
+}
+
+#[test]
+fn a_build_with_no_pages_has_an_empty_table() {
+    let project = memory_project("spec = \"0.1\"\n", &[]);
+    assert_eq!(
+        records(&project),
+        json!({ "version": 1, "pages": {}, "robots": { "lines": [] } })
+    );
+}
+
+#[test]
+fn listing_is_in_the_record_and_not_the_frontmatter() {
+    let project = memory_project(MODEL, FILES);
+    let page = site(&project, "site", "guides/drafts.md");
+    assert!(!page.contains("listing"), "{page}");
+}
+
+/// The line of `llms.txt` that links to `url`, if any.
+fn line_for<'a>(llms: &'a str, url: &str) -> Option<&'a str> {
+    let link = format!("]({url})");
+    llms.lines().find(|line| line.contains(&link))
+}
+
+#[test]
+fn llms_txt_lists_each_offered_record_as_the_record_says() {
+    let project = memory_project(MODEL, FILES);
+    let records = records(&project);
+    let site = records["site"].as_str().expect("a site");
+    let plain = emit_build(
+        Path::new("/nowhere"),
+        &project,
+        "site",
+        &PlainEmitter::new(project.model()),
+    );
+    let llms = &plain["llms.txt"];
+    let pages = records["pages"].as_object().expect("pages");
+    let mut listed = 0;
+    for (route, record) in pages {
+        let url = format!("{site}{}", record["markdown"].as_str().expect("markdown"));
+        let line = line_for(llms, &url);
+        if record["listing"] == "unlisted" {
+            assert_eq!(
+                line, None,
+                "{route} is unlisted, and llms.txt has it:\n{llms}"
+            );
+            continue;
+        }
+        let line = line.unwrap_or_else(|| panic!("{route} isn't in llms.txt:\n{llms}"));
+        let mut want = format!("- [{}]({url})", record["title"].as_str().expect("a title"));
+        if let Some(description) = record["description"].as_str() {
+            want = format!("{want}: {description}");
+        }
+        assert_eq!(line, want, "{route}");
+        listed += 1;
+    }
+    let lines = llms.lines().filter(|l| l.starts_with("- [")).count();
+    assert_eq!(lines, listed, "llms.txt has a line with no record:\n{llms}");
+}
