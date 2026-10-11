@@ -525,7 +525,7 @@ impl Pages {
     fn load() -> Pages {
         let mut sections = BTreeMap::new();
         for (file, page) in REFERENCES {
-            let text = read(&format!("docs/content/reference/{file}"));
+            let text = expanded(&format!("docs/content/reference/{file}"));
             for (id, heading) in headings(&text) {
                 sections.insert(format!("{file}#{id}"), (heading, page));
             }
@@ -535,6 +535,30 @@ impl Pages {
             sections,
         }
     }
+}
+
+/// A page's text with each `@include` of a whole file, outside fenced code,
+/// replaced by that file, so the headings a fragment brings in are the
+/// page's.
+fn expanded(path: &str) -> String {
+    let dir = std::path::Path::new(path).parent().unwrap();
+    let mut out = String::new();
+    let mut fenced = false;
+    for line in read(path).lines() {
+        let trimmed = line.trim_start();
+        fenced ^= trimmed.starts_with("```") || trimmed.starts_with("~~~");
+        match line.strip_prefix("@include: ") {
+            Some(target) if !fenced && !target.contains('#') => {
+                let target = dir.join(target.trim());
+                out.push_str(&expanded(&target.to_string_lossy().replace('\\', "/")));
+            }
+            _ => {
+                out.push_str(line);
+                out.push('\n');
+            }
+        }
+    }
+    out
 }
 
 /// A page's headings below its title, outside fenced code, as their ids and
