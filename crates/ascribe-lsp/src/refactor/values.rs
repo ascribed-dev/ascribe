@@ -51,6 +51,19 @@ pub(crate) fn in_page(file: &FileIndex, offset: usize) -> Option<DimensionValue>
 
 /// The value in a dimension's `values` at `offset` of `ascribe.toml`.
 pub(crate) fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
+    find_in_model(ctx, |_, span| {
+        span.start() <= offset && offset <= span.end()
+    })
+}
+
+/// The value `value`, where a dimension's `values` in `ascribe.toml` has it.
+pub(crate) fn named(ctx: &Ctx, value: &str) -> Option<DimensionValue> {
+    find_in_model(ctx, |text, _| text == value)
+}
+
+/// The first value in a dimension's `values` that `wanted` takes, given its
+/// text and where it's written, quotes and all.
+fn find_in_model(ctx: &Ctx, wanted: impl Fn(&str, Span) -> bool) -> Option<DimensionValue> {
     let file = ModelFile::parse(&ctx.model_text).ok()?;
     for dimension in &ctx.model.dimensions {
         let values = path(&["dimensions", &dimension.name, "values"]);
@@ -61,7 +74,7 @@ pub(crate) fn in_model(ctx: &Ctx, offset: usize) -> Option<DimensionValue> {
             let (Some(text), Some(span)) = (item.as_str(), item.span()) else {
                 continue;
             };
-            if span.start <= offset && offset <= span.end {
+            if wanted(text, Span::new(span.start, span.end)) {
                 // Inside the quotes, when the text is written as it is.
                 let inner = Span::new(span.start + 1, span.end.saturating_sub(1));
                 let span = if inner.len() == text.len() {

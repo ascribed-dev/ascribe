@@ -1,6 +1,7 @@
-Address this review comment on `docs/guides/install.md`.
+Address this review comment on `site/docs/guides/install.md`.
 
-Where: docs/guides/install.md
+Where: site/docs/guides/install.md
+Paths and commands here are from the repository's root.
 Project: site/
 
 The comment was on text this change removed:

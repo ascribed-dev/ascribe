@@ -381,7 +381,7 @@ fn prompts_about_changes_need_the_base_and_count_unsaved_text() {
     );
     let text = answer["prompt"].as_str().expect("a prompt");
     assert!(
-        text.starts_with("Review what this change does to `docs/install.md`, as a reader of build `site` sees it.\n\nWhere: docs/install.md\nThe file has unsaved changes; save it before you start.\nBuild: `site`\n"),
+        text.starts_with("Review what this change does to `docs/install.md`, as a reader of build `site` sees it.\n\nWhere: docs/install.md\nThe file has unsaved changes; save it before you start.\nPaths and commands here are from the repository's root.\nBuild: `site`\n"),
         "{text}"
     );
     assert!(text.contains("\n- changed: docs/install.md:11\n"), "{text}");

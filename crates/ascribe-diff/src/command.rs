@@ -39,6 +39,9 @@ pub struct ProjectDiff {
     before: BaseProject,
     now: Project,
     root: std::path::PathBuf,
+    /// The folder the prompts are for: where the command was run; the
+    /// repository's root when `None`.
+    here: Option<std::path::PathBuf>,
 }
 
 impl std::fmt::Debug for ProjectDiff {
@@ -50,6 +53,17 @@ impl std::fmt::Debug for ProjectDiff {
 }
 
 impl ProjectDiff {
+    /// Writes the prompts, and the HTML report's, for an agent in `here`,
+    /// the folder the command was run in, as [`Context::seen_from`] has it.
+    pub fn seen_from(&mut self, here: std::path::PathBuf) {
+        self.here = Some(here);
+    }
+
+    /// The context of a prompt about `builds`.
+    fn context(&self, builds: Builds) -> Context {
+        Context::seen_from(&self.root, self.here.as_deref(), builds)
+    }
+
     /// The report as one self-contained HTML file, every changed page
     /// rendered with its changes marked.
     pub fn html(&self) -> String {
@@ -93,7 +107,7 @@ impl ProjectDiff {
     /// The agent prompt about a changed page of `build`, as the report's Copy
     /// prompt button and `ascribe diff --format prompt <PAGE>` give it.
     pub fn page_prompt(&self, build: &str, page: &PageDiff) -> String {
-        let context = Context::of_project(&self.root, Builds::Named(vec![build.to_owned()]));
+        let context = self.context(Builds::Named(vec![build.to_owned()]));
         prompt::page(&context, &self.review(), build, page)
     }
 
@@ -112,7 +126,7 @@ impl ProjectDiff {
             return Some(self.page_prompt(&build.build, page));
         }
         builds.iter().find_map(|build: &BuildDiff| {
-            let context = Context::of_project(&self.root, Builds::Named(vec![build.build.clone()]));
+            let context = self.context(Builds::Named(vec![build.build.clone()]));
             prompt::fragment_reach(&context, &self.review(), build, path)
         })
     }
@@ -120,7 +134,7 @@ impl ProjectDiff {
     /// The agent prompt about every changed page; `builds` are the builds
     /// compared, as the prompt names them. `None` when nothing changed.
     pub fn pages_prompt(&self, builds: Builds) -> Option<String> {
-        let context = Context::of_project(&self.root, builds);
+        let context = self.context(builds);
         prompt::pages(&context, &self.review(), &self.report.builds)
     }
 }
@@ -173,6 +187,7 @@ pub fn diff_project(
         before,
         now,
         root: project.root().to_owned(),
+        here: None,
     })
 }
 

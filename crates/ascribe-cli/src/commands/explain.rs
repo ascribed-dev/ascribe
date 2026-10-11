@@ -15,7 +15,9 @@ use crate::exit;
 #[derive(Debug, ClapArgs)]
 pub struct Args {
     /// The diagnostic's code (`ASC036`) or name (`link-target-missing`).
-    #[arg(value_name = "CODE", required_unless_present = "list")]
+    ///
+    /// Without it or `--list`, a usage error that names `--list`.
+    #[arg(value_name = "CODE")]
     pub code: Option<String>,
 
     /// List every diagnostic's code and name, one per line, instead.
@@ -50,7 +52,15 @@ fn explain(args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
                 .try_for_each(|d| writeln!(out, "{} {}", d.code, d.slug)),
         }
     } else {
-        let given = args.code.as_deref().unwrap_or_default();
+        let Some(given) = args.code.as_deref() else {
+            // Not clap's error for a missing argument, which names only
+            // `<CODE>`: someone who doesn't know a code wants the list.
+            let _ = writeln!(
+                err,
+                "error: name a diagnostic by its code or name, such as `ascribe explain ASC036`; `ascribe explain --list` lists them all"
+            );
+            return exit::FAILURE;
+        };
         let explanation = match ascribe_query::explain(given) {
             Ok(explanation) => explanation,
             Err(e) => return answer::fail(err, &e),

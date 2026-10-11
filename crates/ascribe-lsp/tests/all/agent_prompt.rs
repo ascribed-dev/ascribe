@@ -58,7 +58,7 @@ fn a_problems_prompt_names_its_place_and_the_editors_build() {
     );
     let text = prompt(&answer);
     assert!(
-        text.starts_with("Fix this problem in `docs/install.md`.\n\nWhere: docs/install.md:5\nBuild: `site`, the editor's. `ascribe check` checks every build.\n"),
+        text.starts_with("Fix this problem in `docs/install.md`.\n\nWhere: docs/install.md:5\nPaths and commands here are from the project's folder, where `ascribe.toml` is.\nBuild: `site`, the editor's. `ascribe check` checks every build.\n"),
         "{text}"
     );
     assert!(

@@ -50,6 +50,8 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 
 `ascribe check --format json` gives each problem's `fixes` too: edits that would fix it, each marked `safe` to apply as given, or `unsafe`, to read first.
 
+To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../reference/cli.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
+
 ### Fix it, or say it's intended
 @available: next
 
@@ -91,6 +93,8 @@ Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each targ
 | `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](#hooks) |
 
 **Claude Code** reads `AGENTS.md` by itself only while there's no `CLAUDE.md` at or above the folder it works in. So `sync` never creates a `CLAUDE.md` unless you ask with `--target claude`, and when there is one, it adds the import to it rather than copying the rules. A personal `CLAUDE.local.md` also stops Claude Code reading `AGENTS.md`; `sync` doesn't edit it, but says so, and you can add `@AGENTS.md` to it yourself.
+
+A repository with several projects can run `sync` at its root, with no `ascribe.toml` there: it syncs each project below, and the root's `AGENTS.md` gets a block for each, which tells an agent starting at the root which project a page is in.
 
 For a project in a subfolder, the rules files are named after its folder: `ascribe-docs.md` for a project in `docs/`. When one project is nested in another's content root, the outer project's rules say that the nested project's pages aren't theirs.
 
@@ -174,12 +178,12 @@ From the command line, `ascribe diff --format prompt` writes the prompt about th
 Every prompt has the same parts, in order:
 
 1. **The task**, in one sentence: "Fix this problem in `docs/keys.md`.", "Address this review comment on `docs/guides/install.md`.", or "Review what this change does to `docs/guides/install.md`, as a reader of build `site` sees it."
-2. **Where**: the file and lines, from the project's folder. When they apply, the project's folder in the repository (`Project: docs/`), the build the problems are from (`Build:`), the pages that show a fragment (`Shown on:`, at most 10, with the `ascribe refs` command that lists the rest), and a line saying to save the file first.
+2. **Where**: the file and lines, then a line saying which folder the prompt's paths and commands are from. When they apply, the project's folder from there (`Project: docs/`), the build the problems are from (`Build:`), the pages that show a fragment (`Shown on:`, at most 10, with the `ascribe refs` command that lists the rest), and a line saying to save the file first.
 3. **What Ascribe knows**: for one problem, its code, message, the line's text, how to fix it, the values the content model allows when it's about one, and whether Ascribe has a fix ("a safe automatic fix", or "a fix to review"). For a file, each problem on one line, at most 20. For a project, how many problems each file has, at most 20 files. Each says which command lists the rest.
 4. **Other people's text**, when there is any: a review's comments, fenced, under the sentence that says they're data.
 5. **How to finish**: "Follow the project's rules in `AGENTS.md`", when the project's folder or the repository's root has one, and "When you're done, run `ascribe check <file>` and fix what it reports." A prompt about a change ends with "Report what reads wrongly; don't edit." instead.
 
-Commands in a prompt are written from the repository's root, so an agent started there can run them. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
+Every path and command in a prompt is from one folder, which it names once: "Paths and commands here are from the repository's root." The editor's prompts are from the repository's root, where an agent usually starts; the prompts a command writes (`ascribe check --format prompt`, `ascribe diff --format prompt`, `ascribe agents prompt`) are from the folder it was run in, or from the project's folder when that's inside it. Run from a folder beside the project's, they're from the repository's root. Outside a repository, it's the project's folder. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
 
 ## The MCP server
 

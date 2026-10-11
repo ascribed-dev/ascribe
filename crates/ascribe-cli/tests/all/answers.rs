@@ -175,6 +175,18 @@ fn explain_names_the_closest_for_an_unknown_code() {
 }
 
 #[test]
+fn explain_with_no_code_names_the_list() {
+    let dir = tempfile::tempdir().unwrap();
+    let out = run(dir.path(), &["explain"], 2);
+    assert!(stdout(&out).is_empty());
+    assert!(
+        stderr(&out).contains("`ascribe explain --list`"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
 fn explain_lists_every_diagnostic() {
     let dir = tempfile::tempdir().unwrap();
     let text = stdout(&run(dir.path(), &["explain", "--list"], 0));
@@ -322,6 +334,7 @@ fn link_answers_from_a_page() {
         0,
     );
     assert_eq!(value["exists"], true);
+    assert_eq!(value["from"], from, "the page as it was given");
     assert_eq!(value["kind"], "heading");
     assert_eq!(value["title"], "Rotate keys");
     assert_eq!(value["href"], "keys.md#rotate-keys");
@@ -358,6 +371,12 @@ fn link_answers_from_a_page() {
     );
     assert_eq!(fragment["kind"], "fragment");
     assert_eq!(fragment["closest"][0]["path"], "install.md");
+
+    // A page given from the content root is named back from the folder the
+    // command was run in, as `ascribe check` names it.
+    let site = dir.path().join("site");
+    let value = json(&site, &["link", "keys.md", "--from", "install.md"], 0);
+    assert_eq!(value["from"], "docs/install.md");
 }
 
 #[test]
@@ -454,6 +473,46 @@ fn render_writes_the_page_a_build_publishes() {
         "{other}"
     );
     assert!(other.contains("Upgrade Quill."), "{other}");
+}
+
+#[test]
+fn render_says_a_reader_sees_one_arm_of_a_switcher() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        &MODEL.replace(
+            "[phrases]",
+            "[dimensions.pm]\nvalues = [\"npm\", \"pnpm\"]\nversionless = [\"npm\", \"pnpm\"]\n\n[phrases]",
+        ),
+    );
+    write(
+        &dir.path().join("docs/setup.md"),
+        "---\ntitle: Set up\n---\n\n@variant {pm=npm}:\nRun npm.\n@variant {pm=pnpm}:\nRun pnpm.\n@end\n\n.Docker\n@variant:\nUse the image.\n\n.Binary\n@variant:\nUse the binary.\n@end\n\n@variant {deployment=cloud}:\nSign in.\n@variant {deployment=self-managed}:\nStart it.\n@end\n",
+    );
+    let args = ["render", "docs/setup.md", "--build", "cloud"];
+    let text = stdout(&run(dir.path(), &args, 0));
+    assert!(
+        text.contains(
+            "<!-- A switcher: a reader sees one of the next 2 sections at a time, chosen by `pm`. -->\n\n**npm**"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "<!-- A switcher: a reader sees one of the next 2 sections at a time, chosen by label. -->\n\n**Docker**"
+        ),
+        "{text}"
+    );
+    assert_eq!(
+        text.matches("A switcher").count(),
+        2,
+        "a group the build reduces to one arm isn't one: {text}"
+    );
+    let value = json(dir.path(), &args, 0);
+    assert!(
+        !value["text"].as_str().unwrap().contains("A switcher"),
+        "the JSON is the plain output's text, which has no note: {value}"
+    );
 }
 
 #[test]

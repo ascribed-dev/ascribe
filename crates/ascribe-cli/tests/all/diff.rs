@@ -107,6 +107,24 @@ fn no_changes() {
 }
 
 #[test]
+fn a_commit_given_as_the_base_is_named_once() {
+    let dir = repo();
+    let head = Command::new("git")
+        .current_dir(dir.path())
+        .args(["rev-parse", "--short=9", "HEAD"])
+        .output()
+        .expect("run git");
+    let head = String::from_utf8_lossy(&head.stdout).trim().to_owned();
+    let out = ascribe(&site(&dir), &["diff", "--base", &head]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.starts_with(&format!("compared with {head}\n")),
+        "{text}"
+    );
+}
+
+#[test]
 fn a_change_through_a_fragment_in_text() {
     let dir = repo();
     write(
@@ -488,7 +506,7 @@ fn prompt_output_is_about_every_page_or_the_one_named() {
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     let text = stdout(&out);
     assert!(
-        text.starts_with("Review what this change does to the 2 pages it changes.\n\nProject: site/\nBuild: `site`\n"),
+        text.starts_with("Review what this change does to the 2 pages it changes.\n\nPaths and commands here are from `site` in the repository.\nBuild: `site`\n"),
         "{text}"
     );
     assert!(
@@ -509,7 +527,7 @@ fn prompt_output_is_about_every_page_or_the_one_named() {
             "{text}"
         );
         assert!(
-            text.contains("\nTo read it: `ascribe render site/docs/install.md --build site`\n"),
+            text.contains("\nTo read it: `ascribe render docs/install.md --build site`\n"),
             "{text}"
         );
     }
