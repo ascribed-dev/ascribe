@@ -311,7 +311,7 @@ fn an_address_that_answered_isn_t_asked_about_again() {
     let first = stdout(&links_on(dir.path(), "2026-10-01", &[]));
     assert!(
         first.contains(
-            "Checked 1 address, asking about each: no answer from an earlier run was reused.\n"
+            "Checked 1 address, asking about each. Nothing is remembered from an earlier run, so every failure is reported.\n"
         ),
         "{first}"
     );
@@ -346,6 +346,106 @@ fn an_address_that_answered_isn_t_asked_about_again() {
     // Past every limit, it's asked about again.
     let later = json(&links_on(dir.path(), "2026-11-01", &["--format", "json"]));
     assert_eq!(later["links"]["asked"], 1);
+}
+
+/// What lychee writes: `answer.json` in the project's folder, one line,
+/// which a test changes between runs. Only the shell's own commands run.
+#[cfg(unix)]
+const LYCHEE_ANSWER: &str =
+    "while read -r _; do :; done\nread -r answer < answer.json\nprintf '%s' \"$answer\"";
+
+/// lychee's JSON when every address answers.
+#[cfg(unix)]
+const ANSWERED: &str = r#"{"error_map":{},"success_map":{},"timeout_map":{}}"#;
+
+/// lychee's JSON when the first address answers 503.
+#[cfg(unix)]
+const UNAVAILABLE: &str = r#"{"error_map":{"stdin":[{"url":"https://gone.example/","status":{"text":"Rejected status code: 503 Service Unavailable","code":503},"span":{"line":1,"column":1}}]},"success_map":{},"timeout_map":{}}"#;
+
+#[cfg(unix)]
+#[test]
+fn a_link_that_answered_before_is_held_until_it_keeps_failing() {
+    let dir = project(&format!(
+        "{MODEL}\n[checks.links]\ncommand = \"bin/lychee\"\nreuse-days = 0\n"
+    ));
+    script(&dir.path().join("bin"), "lychee", LYCHEE_ANSWER);
+    let answer = |json: &str| fs::write(dir.path().join("answer.json"), json).unwrap();
+
+    answer(ANSWERED);
+    let first = stdout(&links_on(dir.path(), "2026-10-08", &[]));
+    assert!(
+        first.contains("Checked 1 address, asking about each. Nothing is remembered from an earlier run, so every failure is reported.\n"),
+        "{first}"
+    );
+    assert!(dir.path().join(".ascribe/history/links.json").is_file());
+
+    // It answered on the 8th, so on the 10th it isn't reported yet.
+    answer(UNAVAILABLE);
+    let out = links_on(dir.path(), "2026-10-10", &["--exit-code"]);
+    assert_eq!(code_of(&out), 0, "an unconfirmed link isn't a problem");
+    assert_eq!(
+        stdout(&out),
+        "External links\n  \
+         Checked 1 address, asking about each: no answer from an earlier run was reused.\n  \
+         None is broken or moved.\n  \
+         1 link not confirmed. It answered before and fails now, and is reported if it's still failing on its day:\n    \
+         docs/guides/install.md:6: https://gone.example/ answered 503 Service Unavailable. Last answered 8 October; reported from 13 October\n"
+    );
+    let prompt = stdout(&links_on(dir.path(), "2026-10-10", &["--format", "prompt"]));
+    assert!(!prompt.contains("gone.example"), "{prompt}");
+    let report = json(&links_on(dir.path(), "2026-10-10", &["--format", "json"]));
+    let links = &report["links"];
+    assert_eq!(links["diagnostics"]["total"], 0);
+    assert_eq!(links["previous_run"], "2026-10-10");
+    assert_eq!((&links["new"], &links["resolved"]), (&0.into(), &0.into()));
+    let held = &links["unconfirmed"]["items"][0];
+    assert_eq!(held["file"], "docs/guides/install.md");
+    assert_eq!(held["range"]["start"]["line"], 6);
+    assert_eq!(held["url"], "https://gone.example/");
+    assert_eq!(held["status"], "503 Service Unavailable");
+    assert_eq!(
+        (
+            &held["last_answered"],
+            &held["failing_since"],
+            &held["reported_from"]
+        ),
+        (
+            &"2026-10-08".into(),
+            &"2026-10-10".into(),
+            &"2026-10-13".into()
+        )
+    );
+    assert_eq!(report["summary"]["advice"], 0);
+
+    // Still failing on the 13th: reported, and new since the last run.
+    let text = stdout(&links_on(dir.path(), "2026-10-13", &[]));
+    assert!(
+        text.contains(
+            "  1 link to look at, new since 10 October:\n    docs/guides/install.md:6: [ASC168]"
+        ),
+        "{text}"
+    );
+
+    // It answers again: one link fewer than the last run reported.
+    answer(ANSWERED);
+    let text = stdout(&links_on(dir.path(), "2026-10-14", &[]));
+    assert!(
+        text.ends_with("  None is broken or moved.\n  1 link the last run reported is fine now, or no longer in the pages.\n"),
+        "{text}"
+    );
+
+    // `--no-history` reports it at once, as a first run would.
+    answer(UNAVAILABLE);
+    let report = json(&links_on(
+        dir.path(),
+        "2026-10-15",
+        &["--no-history", "--format", "json"],
+    ));
+    let links = &report["links"];
+    assert_eq!(links["diagnostics"]["total"], 1);
+    assert_eq!(links["unconfirmed"]["total"], 0);
+    assert_eq!(links["previous_run"], serde_json::Value::Null);
+    assert_eq!(links["new"], serde_json::Value::Null);
 }
 
 /// What afdocs writes when content negotiation fails, the caching warns,

@@ -314,6 +314,39 @@
       ],
       "type": "object"
     },
+    "Capped_UnconfirmedEntry": {
+      "description": "A list of at most `--limit` items.",
+      "properties": {
+        "items": {
+          "description": "The items, at most `--limit` of them.",
+          "items": {
+            "$ref": "#/$defs/UnconfirmedEntry"
+          },
+          "type": "array"
+        },
+        "shown": {
+          "description": "How many are listed.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total": {
+          "description": "How many there are.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "truncated": {
+          "description": "Whether some are left out: `shown` is less than `total`. The\nreport's `next_command` lists them all.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "shown",
+        "total",
+        "truncated"
+      ],
+      "type": "object"
+    },
     "CheckCount": {
       "description": "How many diagnostics one check reports.",
       "properties": {
@@ -673,7 +706,7 @@
       "properties": {
         "acknowledged": {
           "$ref": "#/$defs/Capped_AcknowledgedEntry",
-          "description": "The broken links acknowledged as intended."
+          "description": "The broken links acknowledged as intended, confirmed or not."
         },
         "asked": {
           "description": "How many different addresses the link checker was asked about in\nthis run.",
@@ -694,6 +727,14 @@
           "minimum": 0,
           "type": "integer"
         },
+        "new": {
+          "description": "How many of `diagnostics` the previous run didn't report, or `null`\nwhen `previous_run` is.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
         "not_run": {
           "anyOf": [
             {
@@ -712,10 +753,29 @@
             "null"
           ]
         },
+        "previous_run": {
+          "description": "The day of the run the link history is from, `YYYY-MM-DD`, or `null`\non a first run, or with `--no-history`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved": {
+          "description": "How many addresses the previous run reported that this one doesn't,\nfixed or no longer linked to, or `null` when `previous_run` is.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
         "reused": {
           "description": "How many different addresses' answers were reused from an earlier\nrun, within `[checks.links] reuse-days`. None of `diagnostics` is\nfrom a reused answer: only an answer with nothing to report is kept.",
           "minimum": 0,
           "type": "integer"
+        },
+        "unconfirmed": {
+          "$ref": "#/$defs/Capped_UnconfirmedEntry",
+          "description": "The broken links that answered before and aren't reported until\nthey've kept failing for `[checks.links] confirm-days`. They aren't\nin `diagnostics` or the summary, and don't fail `--exit-code`."
         }
       },
       "required": [
@@ -726,7 +786,11 @@
         "oldest_answer",
         "ignored",
         "diagnostics",
-        "acknowledged"
+        "acknowledged",
+        "previous_run",
+        "new",
+        "resolved",
+        "unconfirmed"
       ],
       "type": "object"
     },
@@ -960,6 +1024,49 @@
       "required": [
         "type",
         "pages"
+      ],
+      "type": "object"
+    },
+    "UnconfirmedEntry": {
+      "description": "A broken link that answered before, not reported yet.",
+      "properties": {
+        "failing_since": {
+          "description": "The day it started failing, `YYYY-MM-DD`.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "last_answered": {
+          "description": "The last day it answered, `YYYY-MM-DD`.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/Range",
+          "description": "Where in the file: the link."
+        },
+        "reported_from": {
+          "description": "The day it's reported from if it's still failing, `YYYY-MM-DD`.",
+          "type": "string"
+        },
+        "status": {
+          "description": "What the link checker said: a status, such as `503 Service\nUnavailable`, or why it didn't answer.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The link's address.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "range",
+        "url",
+        "status",
+        "last_answered",
+        "failing_since",
+        "reported_from"
       ],
       "type": "object"
     }

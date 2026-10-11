@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "run": "2026-10-10",
+  "addresses": {
+    "https://down.test/mirror": {
+      "answered": "2026-10-09"
+    },
+    "https://down.test/never": {
+      "failing_since": "2026-10-10",
+      "reported": true
+    },
+    "https://down.test/status": {
+      "answered": "2026-10-09"
+    },
+    "https://gone.test/old": {
+      "answered": "2026-10-10"
+    },
+    "https://slow.test/setup": {
+      "answered": "2026-10-01",
+      "failing_since": "2026-10-05",
+      "reported": true
+    }
+  }
+}

@@ -33,7 +33,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe render` | Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
-| `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--site <URL>] [--limit <N>] [--recheck] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
+| `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
@@ -699,6 +699,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `reference/diagnostics.md` | Diagnostics |  |
 | `reference/directives.md` | Directive reference |  |
 | `reference/elements.md` | Element library reference |  |
+| `reference/project-files.md` | Files Ascribe writes |  |
 
 READMEs published with a package, a crate, or the repository:
 
@@ -729,6 +730,29 @@ READMEs published with a package, a crate, or the repository:
 | `packages/vscode/test/fixtures/monorepo/docs/README.md` |
 | `plugins/ascribe/README.md` |
 
+## Files Ascribe puts in a project
+
+For people and agents. Read from `docs/content/reference/project-files.md`.
+
+| File | What writes it | Commit it |
+|---|---|---|
+| `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere. | No |
+| `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words. | No |
+| `.ascribe/cache/` | `ascribe report links`, which keeps the answers it reuses in `.ascribe/cache/links/`. | No |
+| `.ascribe/dev.json` | `astro dev` with `@ascribed/astro`, for the editor's site preview. It's removed when `astro dev` stops. | No |
+| `ascribe.lock` | `ascribe sources fetch` and `ascribe sources update`: the commit each source in another repository is pinned to. | Yes |
+| `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
+| `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
+| `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
+| `AGENTS.md` | `ascribe agents sync`, between its markers, beside `ascribe.toml`, and at the repository's root when that's another folder. The rest of the file is yours. | Yes |
+| `CLAUDE.md` | `ascribe agents sync`, an import of `AGENTS.md` between its markers, in each `CLAUDE.md` there is; it creates one only with `--target claude`. | Yes |
+| `.agents/skills/ascribe/` and `.claude/skills/ascribe/` | `ascribe agents sync`, at the repository's root: the skill, the second with `--target claude`. | Yes |
+| `.claude/rules/ascribe*.md` and `.github/instructions/ascribe*.instructions.md` | `ascribe agents sync`, at the repository's root, with `--target claude-rules` and `--target copilot`. | Yes |
+| `.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`, and `.github/hooks/ascribe.json` | `ascribe agents sync --with-hook`, at the repository's root: the hooks' entries and the MCP server, beside your own. | Yes |
+| `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
+| `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
+| `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
+
 ## What nothing declares
 
 These are part of the surface, and no file a script can read lists them, so they're typed in `scripts/surface/inventory.ts`. Each is a surface with no single home.
@@ -740,7 +764,5 @@ These are part of the surface, and no file a script can read lists them, so they
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | `ascribe.toml` | Each section's keys | The loader, `crates/ascribe-model/src/`, and the reference's prose |
 | The VS Code extension | The status bar item (the build, and review's state), the preview and its header, the build lens, and review's marks and threads | `packages/vscode/src/`, as code |
-| What `ascribe agents sync` writes | A block in `AGENTS.md`; the skill in `.agents/skills/ascribe/` and `.claude/skills/ascribe/`; rules in `.claude/rules/ascribe-*.md` and `.github/instructions/ascribe-*.instructions.md`; with `--with-hook`, entries in `.claude/settings.json`, `.mcp.json`, and `.codex/hooks.json`; with `--cloud`, a block in the Copilot setup workflow | `crates/ascribe-cli/src/agents/`, and decisions 53, 58, and 59 |
-| Files Ascribe puts in a project | `ascribe.lock`; `ascribe.permalinks`; `sources/`; the output directory, `.ascribe/build/` unless `[project] output-dir` says otherwise; `.ascribe/dev.json` while `astro dev` runs; `.vale.ini` and `.vale/` after `ascribe vale eject` | Each in the crate that writes it |
 | `@ascribed/astro` | The dev toolbar's review app, and what the integration serves: published files, `llms.txt`, each page's Markdown, and a page for each permalink | `packages/astro/src/`, as code |
 | The outputs | The HTML report `ascribe diff --format html` writes, and the layout of each output's folder | `packages/review/`, and `docs/content/contracts/output-layout.md` |

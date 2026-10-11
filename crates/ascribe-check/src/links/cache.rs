@@ -119,7 +119,7 @@ impl Cache {
         };
         text.push('\n');
         let path = self.path(&self.key(url));
-        let _ = self.write(&path, &text);
+        let _ = write_whole(&self.root, &path, &text);
     }
 
     /// Forgets `url`'s answer: it was asked about, and has something to
@@ -147,7 +147,7 @@ impl Cache {
                 let path = file.path();
                 let name = file.file_name().to_string_lossy().into_owned();
                 if name.starts_with("tmp-") {
-                    if self.over_a_day_old(&file) {
+                    if over_a_day_old(&file, self.today) {
                         let _ = std::fs::remove_file(&path);
                     }
                     continue;
@@ -240,45 +240,44 @@ impl Cache {
             None => Read::Unreadable,
         }
     }
+}
 
-    /// Whether `file` was last written before yesterday, by the day it's
-    /// given, not the clock.
-    fn over_a_day_old(&self, file: &std::fs::DirEntry) -> bool {
-        // Outside FileSystem: a file Ascribe wrote under `.ascribe/`, for
-        // when it was written.
-        let Ok(modified) = file.metadata().and_then(|m| m.modified()) else {
-            return false;
-        };
-        let Ok(since) = modified.duration_since(UNIX_EPOCH) else {
-            return false;
-        };
-        self.today
-            .days_since(Date::from_unix_seconds(since.as_secs()))
-            >= 2
-    }
+/// Whether `file` was last written before yesterday, by `today`, not the
+/// clock.
+pub(crate) fn over_a_day_old(file: &std::fs::DirEntry, today: Date) -> bool {
+    // Outside FileSystem: a file Ascribe wrote under `.ascribe/`, for when it
+    // was written.
+    let Ok(modified) = file.metadata().and_then(|m| m.modified()) else {
+        return false;
+    };
+    let Ok(since) = modified.duration_since(UNIX_EPOCH) else {
+        return false;
+    };
+    today.days_since(Date::from_unix_seconds(since.as_secs())) >= 2
+}
 
-    /// Writes `text` to `path` whole or not at all, through a `tmp-` file
-    /// beside it. A folder on the way that's a link is refused, not written
-    /// through: a committed one could lead anywhere.
-    fn write(&self, path: &Path, text: &str) -> std::io::Result<()> {
-        let folder = path.parent().unwrap_or(path);
-        if let Ok(rel) = folder.strip_prefix(&self.root)
-            && ascribe_resolve::link_on_the_way(&self.root, rel).is_some()
-        {
-            return Err(std::io::Error::other("a folder on the way is a link"));
-        }
-        std::fs::create_dir_all(folder)?;
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
-        let temporary = folder.join(format!(
-            "tmp-{}-{}",
-            std::process::id(),
-            name.unwrap_or_default()
-        ));
-        std::fs::write(&temporary, text)?;
-        std::fs::rename(&temporary, path).inspect_err(|_| {
-            let _ = std::fs::remove_file(&temporary);
-        })
+/// Writes `text` to `path`, a file under `root`'s `.ascribe/`, whole or not
+/// at all, through a `tmp-` file beside it. A folder on the way that's a
+/// link is refused, not written through: a committed one could lead
+/// anywhere.
+pub(crate) fn write_whole(root: &Path, path: &Path, text: &str) -> std::io::Result<()> {
+    let folder = path.parent().unwrap_or(path);
+    if let Ok(rel) = folder.strip_prefix(root)
+        && ascribe_resolve::link_on_the_way(root, rel).is_some()
+    {
+        return Err(std::io::Error::other("a folder on the way is a link"));
     }
+    std::fs::create_dir_all(folder)?;
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
+    let temporary = folder.join(format!(
+        "tmp-{}-{}",
+        std::process::id(),
+        name.unwrap_or_default()
+    ));
+    std::fs::write(&temporary, text)?;
+    std::fs::rename(&temporary, path).inspect_err(|_| {
+        let _ = std::fs::remove_file(&temporary);
+    })
 }
 
 /// A file in the store, as cleanup sees it.

@@ -33,6 +33,7 @@ export const nav: NavGroup[] = [
       "reference/directives.md",
       "reference/diagnostics.md",
       "reference/elements.md",
+      "reference/project-files.md",
     ],
   },
   {

@@ -101,6 +101,10 @@ pub struct LinkSettings {
     /// default): each address's own limit falls between half of it and all
     /// of it. `0` asks about every address on every run.
     pub reuse_days: u32,
+    /// How many days a link that answered before and fails now is held as
+    /// unconfirmed before it's reported (`confirm-days`, 3 by default). `0`
+    /// reports every failure at once.
+    pub confirm_days: u32,
 }
 
 impl LinkSettings {
@@ -109,6 +113,9 @@ impl LinkSettings {
 
     /// The days `[checks.links] reuse-days` defaults to.
     pub const REUSE_DAYS: u32 = 14;
+
+    /// The days `[checks.links] confirm-days` defaults to.
+    pub const CONFIRM_DAYS: u32 = 3;
 
     /// Whether `ignore` leaves out links to `host`, ignoring case.
     pub fn ignores(&self, host: &str) -> bool {
@@ -131,6 +138,7 @@ impl Default for LinkSettings {
             command: LinkSettings::COMMAND.to_owned(),
             ignore: Vec::new(),
             reuse_days: LinkSettings::REUSE_DAYS,
+            confirm_days: LinkSettings::CONFIRM_DAYS,
         }
     }
 }

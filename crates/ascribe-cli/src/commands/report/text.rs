@@ -5,7 +5,9 @@
 
 use std::io::{self, Write};
 
+use ascribe_check::links::{Answer, Unconfirmed};
 use ascribe_check::{Acknowledged, Diagnostic, Next};
+use ascribe_core::Date;
 use ascribe_query::report::{Agents, Builds, Inventory, Links, NotRun, Problems, Ran, Report};
 
 use crate::report::{Counts, FileTable};
@@ -343,6 +345,9 @@ impl Writer<'_> {
             line.push('.');
         } else {
             match links.oldest_answer.filter(|_| links.reused > 0) {
+                None if links.previous_run.is_none() => line.push_str(
+                    ", asking about each. Nothing is remembered from an earlier run, so every failure is reported.",
+                ),
                 None => {
                     line.push_str(", asking about each: no answer from an earlier run was reused.")
                 }
@@ -352,10 +357,9 @@ impl Writer<'_> {
                         n => n.to_string(),
                     };
                     line.push_str(&format!(
-                        ": asked about {asked}, and reused {}, the oldest from {} {}.",
+                        ": asked about {asked}, and reused {}, the oldest from {}.",
                         counted(links.reused, "answer", "answers"),
-                        oldest.day(),
-                        oldest.month_name()
+                        day(oldest)
                     ));
                 }
             }
@@ -372,17 +376,66 @@ impl Writer<'_> {
         if links.diagnostics.is_empty() {
             self.line("None is broken or moved.")?;
         } else {
-            self.line(&format!(
-                "{} to look at:",
-                capitalized(&counted(links.diagnostics.len(), "link", "links"))
-            ))?;
+            let total = links.diagnostics.len();
+            let mut line = capitalized(&counted(total, "link", "links"));
+            line.push_str(" to look at");
+            if let (Some(new), Some(since)) = (links.new, links.previous_run) {
+                let since = day(since);
+                line.push_str(&match (total, new) {
+                    (1, 1) => format!(", new since {since}"),
+                    (1, _) => format!(", reported on {since} too"),
+                    (_, 0) => format!(", none of them new since {since}"),
+                    (_, n) => format!(", {n} of them new since {since}"),
+                });
+            }
+            line.push(':');
+            self.line(&line)?;
             self.items(&links.diagnostics, |w, d| w.diagnostic(d))?;
+        }
+        if !links.unconfirmed.is_empty() {
+            let n = links.unconfirmed.len();
+            self.line(&format!(
+                "{} not confirmed. {} answered before and fails now, and is reported if it's still failing on its day:",
+                counted(n, "link", "links"),
+                plural(n, "It", "Each")
+            ))?;
+            self.items(&links.unconfirmed, Self::unconfirmed)?;
+        }
+        if let Some(resolved) = links.resolved.filter(|n| *n > 0) {
+            self.line(&format!(
+                "{} the last run reported {} fine now, or no longer in the pages.",
+                counted(resolved, "link", "links"),
+                plural(resolved, "is", "are")
+            ))?;
         }
         if !links.acknowledged.is_empty() {
             self.line("Acknowledged as intended:")?;
             self.items(&links.acknowledged, Self::acknowledged)?;
         }
         Ok(())
+    }
+
+    /// `file:line: url answered 503 Service Unavailable. Last answered 8
+    /// October; reported from 13 October`
+    fn unconfirmed(&self, u: &Unconfirmed) -> String {
+        let start = self
+            .files
+            .position(u.location.file, u.location.span.start());
+        let at = format!("{}:{}", self.files.path(u.location.file), start.line);
+        let said = match &u.answer {
+            Answer::Broken { status } => format!("answered {status}"),
+            Answer::TimedOut { .. } => "didn't answer in time".to_owned(),
+            Answer::Unreachable { reason } => format!("couldn't be reached: {reason}"),
+            Answer::Fine | Answer::Moved { .. } => "answered".to_owned(),
+        };
+        format!(
+            "{}: {} {}. Last answered {}; reported from {}",
+            self.code(&at),
+            self.code(&u.url),
+            said.trim_end_matches('.'),
+            day(u.last_answered),
+            day(u.reported_from)
+        )
     }
 
     fn agents(&mut self, a: &Ran<Agents>) -> io::Result<()> {
@@ -441,6 +494,11 @@ fn counts_words(counts: Counts) -> String {
         counted(counts.warnings, "warning", "warnings"),
         counts.advice
     )
+}
+
+/// A day as a person reads it in a report: `8 October`.
+fn day(date: Date) -> String {
+    format!("{} {}", date.day(), date.month_name())
 }
 
 fn plural<'a>(n: usize, one: &'a str, many: &'a str) -> &'a str {

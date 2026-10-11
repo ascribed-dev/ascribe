@@ -9,7 +9,7 @@ mod text;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::links::Cache;
+use ascribe_check::links::{Cache, History};
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::Coded;
@@ -68,6 +68,15 @@ pub struct Args {
     /// reuse-days` isn't asked about again.
     #[arg(long)]
     pub recheck: bool,
+
+    /// For `links`: report every failure, as a first run would, and still
+    /// keep what this run sees.
+    ///
+    /// By default, a link that answered before and fails now is listed as
+    /// unconfirmed until it has kept failing for `[checks.links]
+    /// confirm-days`.
+    #[arg(long)]
+    pub no_history: bool,
 
     /// Exit with 1 when a section finds something at this severity or
     /// above, and with 2 when a section asked for couldn't run: for a
@@ -231,12 +240,18 @@ pub(crate) fn report(
         .today()
         .filter(|_| sections.contains(&Section::Links))
         .map(|today| Cache::open(&project, project.root(), today, args.recheck));
+    // What `links` remembers from earlier runs, beside it.
+    let link_history = link_cache.as_ref().and(project.today()).map(|today| {
+        let confirm_days = project.model().checks.links.confirm_days;
+        History::open(project.root(), today, confirm_days, args.no_history)
+    });
     let options = Options {
         sections: &sections,
         builds: &args.build,
         site: args.site.as_deref(),
         tools,
         link_cache: link_cache.as_ref(),
+        link_history: link_history.as_ref(),
     };
     let report = match ascribe_query::report(&project, &options) {
         Ok(report) => report,
@@ -378,6 +393,10 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
     if let Some(site) = &args.site {
         words.push("--site".to_owned());
         words.push(quote(site));
+    }
+    if args.no_history {
+        // Without it, the lists would differ.
+        words.push("--no-history".to_owned());
     }
     words.extend(["--limit".to_owned(), limit.to_string()]);
     match args.format {
