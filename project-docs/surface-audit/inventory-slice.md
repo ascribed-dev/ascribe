@@ -34,7 +34,9 @@ Every command and subcommand, with its arguments, its options, the words `--form
 | `ascribe sources status` | | | `text`, `json` | not stated separately |
 | `ascribe vale eject` | | | none | 0 the preset is the project's own; 2 wrote nothing |
 
-Twenty-three commands; `ascribe --version` besides. `permalinks`, `observe`, `versions`, `archive`, and the page templates' command are proposed and unbuilt, and the conventions are tried against each.
+Twenty-three commands; `ascribe --version` besides. `observe`, `versions`, `archive`, and the page templates' command are proposed and unbuilt, and the conventions are tried against each.
+
+Built since this table was made, and not in it: `ascribe permalinks sync`, `list`, `verify`, and `retire`, merged on 10 October 2026. Each takes `--format text|json`. `verify` exits 0 when the list has every name, 1 when it doesn't, and 2 when it couldn't check; `sync` and `retire` exit 0 or 2. Phase 2's generated inventory has them; [findings 24 to 27](findings.md#24-two-commands-named-sync-and-only-one-can-say-whether-its-current) are what the conventions say about them.
 
 ## 2. Everything that reports or fixes a problem
 
