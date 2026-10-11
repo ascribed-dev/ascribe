@@ -265,6 +265,9 @@ Includes another file, or one heading's section of it, in place.
 - Included headings keep the levels they're written with.
 - An include cycle is an error.
 
+@available: next
+A page's includes can make it only so large: far larger than any real page, but not as large as a few files that each include the next twice make it, doubling the page at every step. The include in the page's own file that takes the page past the limit is an error, `include-limit`, whose message gives the limit, and it and every include after it on the page are left out.
+
 Links target pages, not fragments: link to the page that includes a fragment.
 
 @available: ascribe 0.2.0

@@ -14,6 +14,15 @@
 //! A `@snippet` that resolves becomes a fenced code block holding its code
 //! (SPEC §4.8); one that doesn't stays as its directive, and its problem is
 //! a file-level one.
+//!
+//! A page expands to at most [`MAX_EXPANDED_BLOCKS`] blocks and
+//! [`MAX_EXPANDED_BYTES`] of text. A few files that each include the next
+//! twice double the page at every step, and every copy is a block of its own,
+//! with its own include chain and its own copy of the text, so the size is in
+//! the output itself: reusing an expansion wouldn't make the page smaller.
+//! The include in the page's own file whose expansion passes a limit is kept
+//! as its directive, with `include-limit`, and no include after it is
+//! expanded.
 
 use std::sync::Arc;
 
@@ -55,7 +64,8 @@ pub struct ExpandedPage {
 /// include.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PageProblem {
-    /// The problem: `include-id-missing` or `include-cycle`.
+    /// The problem: `include-id-missing`, `include-cycle`, or
+    /// `include-limit`.
     pub issue: Issue,
     /// The includes between the page and the file the issue is in, outermost
     /// first. Empty when the issue is in the page's own file.
@@ -206,13 +216,35 @@ impl ExpandedPage {
             let Some(index) = project.file_by_id(block.file) else {
                 return;
             };
-            if let Some(heading) = index.headings.iter().find(|h| h.span == block.span) {
+            if let Some(heading) = index.heading_at(block.span) {
                 out.push((index.path.clone(), heading));
             }
         });
         out
     }
 }
+
+/// The most blocks one page may expand to, counting every block at every
+/// depth (SPEC §4.2).
+///
+/// Chosen by measuring, in October 2026: the expanded page of Ascribe's own
+/// docs with the most blocks, `reference/diagnostics.md`, has 1,073, and the
+/// examples' (`examples/quill`'s `install-agent.md`) 44. The limit is about a
+/// hundred times the docs' page, and a page of that size takes a fraction of
+/// a second to expand.
+pub const MAX_EXPANDED_BLOCKS: usize = 100_000;
+
+/// The most text one page may expand to, in bytes: the source text of every
+/// block that isn't a container, and the code of every snippet (SPEC §4.2).
+/// Without it, a fragment of one long paragraph included the most times
+/// [`MAX_EXPANDED_BLOCKS`] allows is that many copies of the paragraph.
+///
+/// Chosen by measuring, in October 2026: the expanded page of Ascribe's own
+/// docs with the most text, `contracts/json-reports.md` with its schemas, has
+/// 128,227 bytes, and the examples' (`examples/monorepo`'s
+/// `getting-started.md`) 2,062. The limit, 16 MiB, is about a hundred and
+/// thirty times the docs' page.
+pub const MAX_EXPANDED_BYTES: usize = 16 << 20;
 
 /// A file, and which of its sections is being expanded: the whole file, or the
 /// section of the heading that starts at this offset.
@@ -224,6 +256,30 @@ pub(crate) struct Expander<'p> {
     project: &'p Project,
     stack: Vec<Key>,
     problems: Vec<PageProblem>,
+    /// The blocks expanded so far.
+    count: usize,
+    /// The bytes of text expanded so far.
+    bytes: usize,
+    /// The limit the page passed, if it did: no include is expanded after
+    /// that.
+    full: Option<Limit>,
+}
+
+/// The limits on a page's expansion.
+#[derive(Clone, Copy, Debug)]
+enum Limit {
+    Blocks,
+    Bytes,
+}
+
+impl Limit {
+    /// The limit, as `include-limit`'s message gives it.
+    fn describe(self) -> String {
+        match self {
+            Limit::Blocks => format!("{MAX_EXPANDED_BLOCKS} blocks"),
+            Limit::Bytes => format!("{} MiB of text", MAX_EXPANDED_BYTES >> 20),
+        }
+    }
 }
 
 impl<'p> Expander<'p> {
@@ -232,6 +288,9 @@ impl<'p> Expander<'p> {
             project,
             stack: Vec::new(),
             problems: Vec::new(),
+            count: 0,
+            bytes: 0,
+            full: None,
         }
     }
 
@@ -262,12 +321,36 @@ impl<'p> Expander<'p> {
                     self.include(file, block, line, via, &mut out);
                 }
                 BlockKind::Directive(line) if line.name == "snippet" => {
-                    out.push(self.snippet(file, block, line, via));
+                    let code = self.snippet(file, block, line, via);
+                    self.measure(&code);
+                    out.push(code);
                 }
-                _ => out.push(self.block(file, block, via)),
+                _ => {
+                    let expanded = self.block(file, block, via);
+                    self.measure(&expanded);
+                    out.push(expanded);
+                }
             }
         }
         out
+    }
+
+    /// Counts a block toward the limits; the blocks inside it are counted
+    /// as they're expanded.
+    fn measure(&mut self, block: &ExpandedBlock) {
+        self.count += 1;
+        self.bytes += match (&block.snippet, &block.kind) {
+            (Some(snippet), _) => snippet.code.len(),
+            (None, ExpandedKind::Leaf(_)) => block.span.len(),
+            (None, _) => 0,
+        };
+        if self.full.is_none() {
+            if self.count > MAX_EXPANDED_BLOCKS {
+                self.full = Some(Limit::Blocks);
+            } else if self.bytes > MAX_EXPANDED_BYTES {
+                self.full = Some(Limit::Bytes);
+            }
+        }
     }
 
     fn block(
@@ -390,6 +473,15 @@ impl<'p> Expander<'p> {
         let Some(include) = file.include_at(line.span) else {
             return keep(out);
         };
+        // Past the limit, nothing more is expanded. An include in the page's
+        // own file says so, once; one in included content is dropped with
+        // the page's include it's in.
+        if let Some(limit) = self.full {
+            if via.is_empty() && !self.limit_reported() {
+                self.report_limit(file, include, limit);
+            }
+            return keep(out);
+        }
         let Some(target) = include.target.as_ref().and_then(|t| self.project.file(t)) else {
             // A missing file is a file-level problem (`Project::problems`).
             return keep(out);
@@ -435,10 +527,40 @@ impl<'p> Expander<'p> {
         } else {
             blocks
         };
+        let problems = self.problems.len();
         self.stack.push(key);
         let expanded = self.blocks(target, blocks, &chain);
         self.stack.pop();
+        if let Some(limit) = self.full
+            && via.is_empty()
+        {
+            // The page's include whose content passed the limit: none of
+            // that content is kept, nor the problems found in it.
+            self.problems.truncate(problems);
+            if !self.limit_reported() {
+                self.report_limit(file, include, limit);
+            }
+            return keep(out);
+        }
         out.extend(expanded);
+    }
+
+    fn limit_reported(&self) -> bool {
+        self.problems
+            .iter()
+            .any(|p| p.issue.slug == diagnostics::INCLUDE_LIMIT)
+    }
+
+    /// An include in the page's own file whose content takes the page past a
+    /// limit, or that comes after the page passed it.
+    fn report_limit(&mut self, file: &FileIndex, include: &Include, limit: Limit) {
+        let issue = Issue::new(
+            diagnostics::INCLUDE_LIMIT,
+            Location::new(file.file, include.primary.unwrap_or(include.span)),
+        )
+        .with_arg("path", include.written.clone())
+        .with_arg("limit", limit.describe());
+        self.push(issue, &Arc::from(Vec::new()));
     }
 
     fn report_id_missing(

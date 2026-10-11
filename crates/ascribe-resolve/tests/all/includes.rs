@@ -320,6 +320,106 @@ fn an_include_cycle_is_reported_where_it_closes() {
     assert_eq!(texts(&p, &page), ["A.", "B."]);
 }
 
+/// A page whose fragments each include the next twice, `depth` deep, and
+/// then a note.
+fn doubling(depth: usize) -> Project {
+    let mut files: Vec<(String, String)> = vec![(
+        "docs/index.md".to_owned(),
+        format!("{PAGE}Before.\n\n@include: _f0.md\n\n@include: _note.md\n"),
+    )];
+    for i in 0..depth {
+        let next = i + 1;
+        files.push((
+            format!("docs/_f{i}.md"),
+            format!("Text {i}.\n\n@include: _f{next}.md\n\n@include: _f{next}.md\n"),
+        ));
+    }
+    files.push((format!("docs/_f{depth}.md"), "Leaf.\n".to_owned()));
+    files.push(("docs/_note.md".to_owned(), "A note.\n".to_owned()));
+    let files: Vec<(&str, &str)> = files
+        .iter()
+        .map(|(p, t)| (p.as_str(), t.as_str()))
+        .collect();
+    project(&files)
+}
+
+fn block_count(page: &ExpandedPage) -> usize {
+    let mut n = 0;
+    page.visit(&mut |_| n += 1);
+    n
+}
+
+/// Expands `page` on another thread, and fails if that takes more than a
+/// minute, so a test of a hang fails instead of hanging. The limit is far
+/// above what the expansion takes: it isn't a measure of speed.
+fn expand_in_time(project: Project, page: &'static str) -> (Project, ExpandedPage) {
+    let (send, receive) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let expanded = expand(&project, page);
+        let _ = send.send((project, expanded));
+    });
+    receive
+        .recv_timeout(std::time::Duration::from_secs(60))
+        .expect("the expansion finishes within a minute")
+}
+
+#[test]
+fn a_page_under_the_include_limit_is_expanded_whole() {
+    let p = doubling(10);
+    let page = expand(&p, "index.md");
+    assert!(page.problems.is_empty(), "{:?}", page.problems);
+    // `Before.`, the note, and the fragments' 2^11 - 1 blocks.
+    assert_eq!(block_count(&page), 2 + (1 << 11) - 1);
+}
+
+#[test]
+fn includes_that_each_include_the_next_twice_stop_at_the_limit() {
+    // Twenty levels would be two million blocks.
+    let (p, page) = expand_in_time(doubling(20), "index.md");
+    assert_eq!(page.problems.len(), 1, "{:?}", page.problems);
+    let problem = &page.problems[0];
+    assert_eq!(problem.issue.slug.as_str(), "include-limit");
+    assert_eq!(problem.issue.arg("path"), Some("_f0.md"));
+    // At the page's own include, which is kept as its directive with none of
+    // its content; the include after it isn't expanded either.
+    assert!(problem.via.is_empty());
+    assert_eq!(
+        slugs(&p, "index.md", std::slice::from_ref(&problem.issue)),
+        [("include-limit".to_owned(), 7)]
+    );
+    assert_eq!(texts(&p, &page), ["Before."]);
+    assert!(block_count(&page) <= ascribe_resolve::MAX_EXPANDED_BLOCKS);
+}
+
+#[test]
+fn a_long_paragraph_included_many_times_stops_at_the_text_limit() {
+    // 128 copies of a 256 KiB paragraph would be 32 MiB, in 255 blocks.
+    let long = format!("{}\n", "word ".repeat(256 * 1024 / 5));
+    let mut files: Vec<(String, String)> = vec![
+        (
+            "docs/index.md".to_owned(),
+            format!("{PAGE}Before.\n\n@include: _f0.md\n"),
+        ),
+        ("docs/_f7.md".to_owned(), long),
+    ];
+    for i in 0..7 {
+        let next = i + 1;
+        files.push((
+            format!("docs/_f{i}.md"),
+            format!("@include: _f{next}.md\n\n@include: _f{next}.md\n"),
+        ));
+    }
+    let files: Vec<(&str, &str)> = files
+        .iter()
+        .map(|(p, t)| (p.as_str(), t.as_str()))
+        .collect();
+    let (p, page) = expand_in_time(project(&files), "index.md");
+    assert_eq!(page.problems.len(), 1, "{:?}", page.problems);
+    assert_eq!(page.problems[0].issue.slug.as_str(), "include-limit");
+    assert_eq!(page.problems[0].issue.arg("limit"), Some("16 MiB of text"));
+    assert_eq!(texts(&p, &page), ["Before."]);
+}
+
 #[test]
 fn a_file_that_includes_itself_is_a_cycle() {
     let p = project(&[

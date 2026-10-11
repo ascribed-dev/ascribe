@@ -182,3 +182,4 @@
 | [ASC179](../reference/diagnostics.md#ASC179) | `permalink-alias-target-missing` | Error | File | write |
 | [ASC180](../reference/diagnostics.md#ASC180) | `permalink-name-conflict` | Error | File | write |
 | [ASC181](../reference/diagnostics.md#ASC181) | `permalink-retired-target-missing` | Error | File | write |
+| [ASC182](../reference/diagnostics.md#ASC182) | `include-limit` | Error | Page | write |
