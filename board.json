@@ -406,7 +406,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Say which projects are there when a command is run above several"
     },
     {
@@ -744,6 +744,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzg_8V2A",
       "labels": [
         "enhancement"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/311"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
