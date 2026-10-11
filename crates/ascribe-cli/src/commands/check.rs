@@ -31,7 +31,7 @@ pub struct Args {
     /// directory.
     ///
     /// The whole project is still checked, since links, includes, and ids
-    /// need it, and only the diagnostics that count for these paths are
+    /// need it, and only the problems that count for these paths are
     /// shown: those in a file under one of them, or with a related place in
     /// one (a problem a fragment causes on the page that includes it). Such a
     /// problem in a fragment is shown once, at its first include. Without
@@ -44,7 +44,7 @@ pub struct Args {
     /// Check standard input as the text of the file `--path` names.
     ///
     /// The text is laid over the project on disk, which isn't changed; the
-    /// file doesn't have to exist. Only the diagnostics that count for it are
+    /// file doesn't have to exist. Only the problems that count for it are
     /// shown.
     #[arg(long, requires = "path")]
     pub stdin: bool,
@@ -71,7 +71,7 @@ pub struct Args {
     #[arg(long, conflicts_with = "build")]
     pub editor_build: bool,
 
-    /// Show how many diagnostics each code and each file has, most first,
+    /// Show how many problems each code and each file has, most first,
     /// instead of listing them.
     #[arg(long)]
     pub summary: bool,
@@ -135,9 +135,9 @@ pub enum ValeRuns {
 /// The output format.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
-    /// Diagnostics with source snippets, for people.
+    /// Problems with source snippets, for people.
     Text,
-    /// One line per diagnostic, `file:line: [code] message`, grouped by file:
+    /// One line per problem, `file:line: [code] message`, grouped by file:
     /// for an agent. At most 50, then how many more and the command that
     /// narrows the check.
     Concise,

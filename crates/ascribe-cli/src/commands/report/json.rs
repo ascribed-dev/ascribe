@@ -41,10 +41,10 @@ pub(crate) struct ReportJson {
     /// The sections asked for that couldn't run. Each says why in its own
     /// `not_run`. With `--exit-code`, any is exit code 2.
     not_run: Vec<&'static str>,
-    /// How many findings of each severity the sections that ran have, and
+    /// How many problems of each severity the sections that ran have, and
     /// of each kind of next step: the diagnostics of `problems`, `links`,
     /// and `agents`.
-    findings: Findings,
+    summary: Summary,
     /// The command that lists everything a list here leaves out, when one
     /// does; `null` otherwise.
     next_command: Option<String>,
@@ -81,10 +81,10 @@ pub(crate) struct Capped<T> {
     truncated: bool,
 }
 
-/// How many findings of each severity, and of each kind of next step.
+/// How many problems of each severity, and of each kind of next step.
 #[derive(Serialize, Default)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Findings {
+struct Summary {
     /// How many errors.
     errors: usize,
     /// How many warnings.
@@ -96,7 +96,7 @@ struct Findings {
     by_next: Vec<NextCount>,
 }
 
-/// How many findings have one kind of next step.
+/// How many problems have one kind of next step.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct NextCount {
@@ -113,7 +113,7 @@ struct NextCount {
 struct ProblemsJson {
     /// How many errors, warnings, and advice, and of each kind of next
     /// step.
-    findings: Findings,
+    summary: Summary,
     /// How many diagnostics each check reports, most first.
     by_check: Capped<CheckCount>,
     /// How many diagnostics each file has, most first.
@@ -333,13 +333,13 @@ impl<T> Capped<T> {
     }
 }
 
-fn findings<'a>(diagnostics: impl Iterator<Item = &'a Diagnostic>) -> Findings {
+fn summary<'a>(diagnostics: impl Iterator<Item = &'a Diagnostic>) -> Summary {
     let diagnostics: Vec<&Diagnostic> = diagnostics.collect();
     let mut counts = Counts::default();
     for d in &diagnostics {
         counts.add(d.severity);
     }
-    Findings {
+    Summary {
         errors: counts.errors,
         warnings: counts.warnings,
         advice: counts.advice,
@@ -372,7 +372,7 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
         sections: about.sections.iter().map(|s| s.as_str()).collect(),
         builds_checked: report.builds_checked.clone(),
         not_run: report.not_run().iter().map(|(s, _)| s.as_str()).collect(),
-        findings: findings(report.findings()),
+        summary: summary(report.all_problems()),
         next_command: about.next_command.clone(),
         problems: report
             .problems
@@ -427,7 +427,7 @@ pub(crate) fn failed(error: &str, sections: &[Section]) -> ReportJson {
         sections: sections.iter().map(|s| s.as_str()).collect(),
         builds_checked: Vec::new(),
         not_run: Vec::new(),
-        findings: Findings::default(),
+        summary: Summary::default(),
         next_command: None,
         problems: None,
         inventory: None,
@@ -441,7 +441,7 @@ fn problems(p: &Problems, files: &FileTable, limit: usize, list_command: &str) -
     let by_check = by_check(&p.diagnostics);
     let by_file = by_file(files, &p.diagnostics);
     ProblemsJson {
-        findings: findings(p.diagnostics.iter()),
+        summary: summary(p.diagnostics.iter()),
         by_check: Capped::of(by_check.iter(), limit, |(d, count)| CheckCount {
             code: d.code,
             slug: d.slug.to_string(),

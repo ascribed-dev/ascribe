@@ -525,40 +525,6 @@
       ],
       "type": "object"
     },
-    "Findings": {
-      "description": "How many findings of each severity, and of each kind of next step.",
-      "properties": {
-        "advice": {
-          "description": "How many advice.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "by_next": {
-          "description": "How many of each kind of next step, in the order `fix`, `choose`,\n`write`, `review`, `outside`; a kind with none is left out.",
-          "items": {
-            "$ref": "#/$defs/NextCount"
-          },
-          "type": "array"
-        },
-        "errors": {
-          "description": "How many errors.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "warnings": {
-          "description": "How many warnings.",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "errors",
-        "warnings",
-        "advice",
-        "by_next"
-      ],
-      "type": "object"
-    },
     "Fix": {
       "description": "Edits that would fix a diagnostic.",
       "properties": {
@@ -745,7 +711,7 @@
       "type": "object"
     },
     "NextCount": {
-      "description": "How many findings have one kind of next step.",
+      "description": "How many problems have one kind of next step.",
       "properties": {
         "count": {
           "description": "How many.",
@@ -862,17 +828,17 @@
           "$ref": "#/$defs/Capped_FileCount",
           "description": "How many diagnostics each file has, most first."
         },
-        "findings": {
-          "$ref": "#/$defs/Findings",
-          "description": "How many errors, warnings, and advice, and of each kind of next\nstep."
-        },
         "list_command": {
           "description": "The command that lists each problem: `ascribe check`, as JSON.",
           "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary",
+          "description": "How many errors, warnings, and advice, and of each kind of next\nstep."
         }
       },
       "required": [
-        "findings",
+        "summary",
         "by_check",
         "by_file",
         "acknowledged",
@@ -918,6 +884,40 @@
         "file",
         "range",
         "message"
+      ],
+      "type": "object"
+    },
+    "Summary": {
+      "description": "How many problems of each severity, and of each kind of next step.",
+      "properties": {
+        "advice": {
+          "description": "How many advice.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "by_next": {
+          "description": "How many of each kind of next step, in the order `fix`, `choose`,\n`write`, `review`, `outside`; a kind with none is left out.",
+          "items": {
+            "$ref": "#/$defs/NextCount"
+          },
+          "type": "array"
+        },
+        "errors": {
+          "description": "How many errors.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "warnings": {
+          "description": "How many warnings.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "errors",
+        "warnings",
+        "advice",
+        "by_next"
       ],
       "type": "object"
     },
@@ -986,10 +986,6 @@
         "null"
       ]
     },
-    "findings": {
-      "$ref": "#/$defs/Findings",
-      "description": "How many findings of each severity the sections that ran have, and\nof each kind of next step: the diagnostics of `problems`, `links`,\nand `agents`."
-    },
     "inventory": {
       "anyOf": [
         {
@@ -1048,6 +1044,10 @@
         "type": "string"
       },
       "type": "array"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary",
+      "description": "How many problems of each severity the sections that ran have, and\nof each kind of next step: the diagnostics of `problems`, `links`,\nand `agents`."
     }
   },
   "required": [
@@ -1057,7 +1057,7 @@
     "sections",
     "builds_checked",
     "not_run",
-    "findings",
+    "summary",
     "next_command"
   ],
   "title": "ReportReport",

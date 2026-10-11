@@ -1257,7 +1257,7 @@ fn prompt_format_writes_a_files_prompt_and_keeps_the_exit_code() {
     let text = stdout(&out);
     assert!(
         text.starts_with(
-            "Fix the problem `ascribe check` reports in `docs/index.md`.\n\nWhere: docs/index.md\n"
+            "Fix the 1 error `ascribe check` reports in `docs/index.md`.\n\nWhere: docs/index.md\n"
         ),
         "{text}"
     );
@@ -1280,7 +1280,9 @@ fn prompt_format_without_paths_writes_the_projects_prompt() {
     assert_eq!(code(&out), 1);
     let text = stdout(&out);
     assert!(
-        text.starts_with("Fix the 2 problems `ascribe check` reports in this project.\n"),
+        text.starts_with(
+            "Fix the 1 error and 1 warning `ascribe check` reports in this project.\n"
+        ),
         "{text}"
     );
     assert!(

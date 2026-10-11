@@ -246,7 +246,7 @@ fn links_are_reported_at_their_place_and_fail_with_exit_code() {
     let out = ascribe(dir.path(), &["report", "links", "--exit-code"]);
     assert_eq!(code_of(&out), 1);
     let out = ascribe(dir.path(), &["report", "links", "--exit-code=warning"]);
-    assert_eq!(code_of(&out), 0, "the finding is advice");
+    assert_eq!(code_of(&out), 0, "the problem is advice");
 
     let out = ascribe(dir.path(), &["report", "links", "--format", "markdown"]);
     let summary = stdout(&out);
@@ -275,7 +275,7 @@ fn links_are_reported_at_their_place_and_fail_with_exit_code() {
     assert_eq!(entry["slug"], "link-external-broken");
     assert_eq!(entry["next"], "review");
     assert_eq!(entry["file"], "docs/guides/install.md");
-    assert_eq!(report["findings"]["by_next"][0]["next"], "review");
+    assert_eq!(report["summary"]["by_next"][0]["next"], "review");
 }
 
 /// What afdocs writes when content negotiation fails, the caching warns,
