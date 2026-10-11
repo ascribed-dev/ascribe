@@ -7,13 +7,14 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use ascribe_check::{LocateError, MODEL_FILE, Project};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 
 use crate::agents::sync::{self, Plan};
 use crate::agents::{checker, copilot, hook, prompts, skill};
 use crate::answer::{self, FromDisk};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::Failure;
 use crate::exit;
 
 /// Arguments of `ascribe agents`.
@@ -235,9 +236,20 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match load_project(global) {
-        Ok(project) => project,
-        Err(failure) => return answer::report_failure(err, &failure),
+    let configs = match crate::context::locate(global) {
+        Ok(config) => vec![config],
+        // Above several projects and in none: each project's files.
+        Err(LocateError::NotFound { dir, below }) if !below.is_empty() => {
+            let below = Project::find_below(&dir, usize::MAX);
+            let names: Vec<String> = below.iter().map(|d| shown(d)).collect();
+            let _ = writeln!(
+                err,
+                "note: there's no {MODEL_FILE} here, so this syncs each project below: {}",
+                names.join(", ")
+            );
+            below.iter().map(|d| d.join(MODEL_FILE)).collect()
+        }
+        Err(e) => return answer::report_failure(err, &Failure::Config(e)),
     };
     let targets: Vec<sync::Target> = args.target.iter().map(|t| t.sync()).collect();
     let options = sync::Options {
@@ -245,34 +257,84 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         cloud: args.cloud,
         agent: args.agent,
     };
-    let plan = match sync::plan(&project, &targets, options) {
-        Ok(plan) => plan,
-        Err(e) => return exit::fail(err, &e),
-    };
-    for note in &plan.notes {
-        let _ = writeln!(err, "note: {note}");
+    let mut projects = Vec::new();
+    for config in &configs {
+        match Project::load(config) {
+            Ok(project) => projects.push(project.with_today(crate::clock::today())),
+            Err(e) => return answer::report_failure(err, &Failure::Load(e)),
+        }
+    }
+    // Every project's plan first, so a damaged file stops the command
+    // before any file changes.
+    let mut plans = Vec::new();
+    for project in &projects {
+        match sync::plan(project, &targets, options) {
+            Ok(plan) => plans.push(plan),
+            Err(e) => return exit::fail(err, &e),
+        }
+    }
+    let mut notes: Vec<&String> = Vec::new();
+    for note in plans.iter().flat_map(|plan| &plan.notes) {
+        if !notes.contains(&note) {
+            let _ = writeln!(err, "note: {note}");
+            notes.push(note);
+        }
     }
     if args.check {
-        return check(&plan, out, err);
+        return check(&plans, out, err);
     }
-    if let Err(e) = plan.write() {
-        return exit::fail(err, &e);
+    // Several projects share files at the root, so each is planned again
+    // once the one before it is written.
+    let mut written: Vec<(PathBuf, bool)> = Vec::new();
+    let mut mcp_settings: Vec<String> = Vec::new();
+    for (i, project) in projects.iter().enumerate() {
+        let plan = if i == 0 {
+            plans.swap_remove(0)
+        } else {
+            match sync::plan(project, &targets, options) {
+                Ok(plan) => plan,
+                Err(e) => return exit::fail(err, &e),
+            }
+        };
+        if let Err(e) = plan.write() {
+            return exit::fail(err, &e);
+        }
+        record(&mut written, &plan);
+        if let Some(json) = plan.mcp_settings
+            && !mcp_settings.contains(&json)
+        {
+            mcp_settings.push(json);
+        }
     }
-    let result = plan.files.iter().try_for_each(|file| {
-        let done = if file.changes() { "wrote" } else { "unchanged" };
-        writeln!(out, "{done:<9} {}", shown(&file.path))
+    let result = written.iter().try_for_each(|(path, changed)| {
+        let done = if *changed { "wrote" } else { "unchanged" };
+        writeln!(out, "{done:<9} {}", shown(path))
     });
-    let result = result.and_then(|()| match &plan.mcp_settings {
-        Some(json) => write!(
+    let result = result.and_then(|()| {
+        if mcp_settings.is_empty() {
+            return Ok(());
+        }
+        write!(
             out,
             "\nCopilot's cloud agent reads its MCP servers from the repository's settings, \
              not from a file. Paste this into {}, beside any servers already there, or run \
-             with --agent to write a custom agent that carries it:\n\n{json}",
-            copilot::MCP_SETTINGS_PLACE
-        ),
-        None => Ok(()),
+             with --agent to write a custom agent that carries it:\n\n{}",
+            copilot::MCP_SETTINGS_PLACE,
+            mcp_settings.join("\n")
+        )
     });
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+/// Adds `plan`'s files to `files`, each once, in the order they're first
+/// planned: changed when any plan changes it.
+fn record(files: &mut Vec<(PathBuf, bool)>, plan: &Plan) {
+    for file in &plan.files {
+        match files.iter_mut().find(|(path, _)| *path == file.path) {
+            Some((_, changed)) => *changed |= file.changes(),
+            None => files.push((file.path.clone(), file.changes())),
+        }
+    }
 }
 
 fn rules(global: &Global, args: &RulesArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
@@ -325,19 +387,19 @@ fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     }
 }
 
-fn check(plan: &Plan, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let result = plan.files.iter().try_for_each(|file| {
-        let state = if file.changes() {
-            "stale"
-        } else {
-            "up to date"
-        };
-        writeln!(out, "{state:<10} {}", shown(&file.path))
+fn check(plans: &[Plan], out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let mut files = Vec::new();
+    for plan in plans {
+        record(&mut files, plan);
+    }
+    let result = files.iter().try_for_each(|(path, changed)| {
+        let state = if *changed { "stale" } else { "up to date" };
+        writeln!(out, "{state:<10} {}", shown(path))
     });
     if let Some(code) = answer::written(result, err) {
         return code;
     }
-    let stale = plan.files.iter().filter(|f| f.changes()).count();
+    let stale = files.iter().filter(|(_, changed)| *changed).count();
     if stale == 0 {
         return exit::OK;
     }

@@ -42,7 +42,7 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     };
     let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
     let start = normalize(&cwd.join(path));
-    Project::find_config(&start).ok_or(LocateError::NotFound { dir: start })
+    Project::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
 /// A loaded project, and its source index once something asks for it.

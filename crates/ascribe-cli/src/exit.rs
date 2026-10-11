@@ -400,7 +400,10 @@ mod tests {
         };
         let mut all: Vec<Box<dyn Coded>> = vec![
             Box::new(LocateError::CurrentDir(io_error())),
-            Box::new(LocateError::NotFound { dir: path() }),
+            Box::new(LocateError::NotFound {
+                dir: path(),
+                below: Vec::new(),
+            }),
             Box::new(LocateError::NotAFile { path: path() }),
             Box::new(LoadError::Read {
                 path: text(),
@@ -467,7 +470,10 @@ mod tests {
             Box::new(ServeError::Params(
                 serde_json::from_str::<u8>("x").unwrap_err(),
             )),
-            Box::new(ScopeError::Locate(LocateError::NotFound { dir: path() })),
+            Box::new(ScopeError::Locate(LocateError::NotFound {
+                dir: path(),
+                below: Vec::new(),
+            })),
             Box::new(ScopeError::Missing { path: path() }),
             Box::new(ScopeError::NoProject { path: path() }),
             Box::new(ScopeError::OtherProject {
@@ -495,7 +501,10 @@ mod tests {
                 reason: text(),
             }),
             Box::new(EjectError::Model(text())),
-            Box::new(Failure::Config(LocateError::NotFound { dir: path() })),
+            Box::new(Failure::Config(LocateError::NotFound {
+                dir: path(),
+                below: Vec::new(),
+            })),
             Box::new(Failure::Load(model_invalid())),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),
             Box::new(FmtError::Model {
