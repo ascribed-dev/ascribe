@@ -155,9 +155,13 @@ fn nothing_changed() {
         "{}",
         stdout(&out)
     );
-    let out = ascribe(&site(&dir), &["drift", "--format", "summary"]);
+    let out = ascribe(&site(&dir), &["drift", "--format", "markdown"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(stdout(&out), "");
+    // `markdown` was `summary`, which is gone, with no alias (decision 104).
+    let out = ascribe(&site(&dir), &["drift", "--format", "summary"]);
+    assert_eq!(code_of(&out), 2, "{}", stderr(&out));
+    assert!(stderr(&out).contains("markdown"), "{}", stderr(&out));
 }
 
 #[test]
@@ -214,7 +218,7 @@ fn json_output() {
 fn summary_output() {
     let dir = repo();
     change(&dir);
-    let out = ascribe(&site(&dir), &["drift", "--format", "summary"]);
+    let out = ascribe(&site(&dir), &["drift", "--format", "markdown"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let text = stdout(&out);
     assert!(
@@ -336,7 +340,7 @@ fn an_example_that_no_longer_resolves() {
     );
     let out = ascribe(&site(&dir), &["drift", "--exit-code"]);
     assert_eq!(code_of(&out), 1, "{}", stderr(&out));
-    let out = ascribe(&site(&dir), &["drift", "--format", "summary"]);
+    let out = ascribe(&site(&dir), &["drift", "--format", "markdown"]);
     assert!(
         stdout(&out).contains(
             "\n\nExamples that no longer resolve:\n\n- [deploy.md](https://docs.example.com/deploy/)\n  - `code:service/app.py#main`: the file has no region `main`\n"

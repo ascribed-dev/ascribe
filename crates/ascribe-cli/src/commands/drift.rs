@@ -56,7 +56,7 @@ pub enum Format {
     Json,
     /// Markdown for a CI job's summary, each page linked to the site; nothing
     /// when no example changed.
-    Summary,
+    Markdown,
 }
 
 /// Runs the command. Exit codes: 0 whatever it finds (1 with `--exit-code`
@@ -94,7 +94,7 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         Format::Json => serde_json::to_writer_pretty(&mut *out, &report)
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out)),
-        Format::Summary => write_summary(out, &report, site),
+        Format::Markdown => write_summary(out, &report, site),
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe

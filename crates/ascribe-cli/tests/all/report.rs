@@ -248,7 +248,7 @@ fn links_are_reported_at_their_place_and_fail_with_exit_code() {
     let out = ascribe(dir.path(), &["report", "links", "--exit-code=warning"]);
     assert_eq!(code_of(&out), 0, "the finding is advice");
 
-    let out = ascribe(dir.path(), &["report", "links", "--format", "summary"]);
+    let out = ascribe(dir.path(), &["report", "links", "--format", "markdown"]);
     let summary = stdout(&out);
     assert!(
         summary.starts_with(
