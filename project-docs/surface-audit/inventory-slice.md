@@ -1,42 +1,42 @@
 # The inventory, one slice
 
-Part of [The surface audit](README.md), [phase 1](phase-1-thread.md). Two tables, built by hand once from the generated option lists (`docs/content/_generated/cli-*-options.md`), the command reference (`docs/content/reference/cli.md`), the diagnostics registry, the plugin, and the MCP server's tool list, all at `main` on 10 October 2026. Phase 2 replaces both with the generated inventory.
+Part of [The surface audit](README.md), [phase 1](phase-1-thread.md). Two tables were built by hand once from the generated option lists (`docs/content/_generated/cli-*-options.md`), the command reference (`docs/content/reference/cli.md`), the diagnostics registry, the plugin, and the MCP server's tool list, all at `main` on 10 October 2026. Phase 2 replaced the first with the generated [map of the surface](../surface.md); the second is still here, since it's quotations from one project and not something a script can read.
 
 They lay things side by side so the seven questions can be asked of them. They don't answer the questions: what was noticed while building them is listed at the end, as candidates for findings, with the walks still to come.
 
 ## 1. Every command
 
-Every command and subcommand, with its arguments, its options, the words `--format` takes (the default first), and what its exit codes mean. Every command also takes `--config <PATH>` (the content model, or a directory holding one; by default the nearest `ascribe.toml` at or above the current directory) and `--color auto|always|never`, except `lsp` and `mcp`, which refuse `--config`. An option marked † is in no release yet.
+The commands, their arguments, their options, and the words `--format` takes are in the generated map now: [The command line](../surface.md#the-command-line). It has the four `ascribe permalinks` commands, which merged after this table was made.
 
-| Command | Arguments | Options | `--format` | Exit codes |
-|---|---|---|---|---|
-| `ascribe agents sync` | | `--check`; `--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex`…; `--with-hook`; `--cloud`; `--agent` | none | 0 the files are written, or with `--check` up to date; 1 with `--check`, a file is out of date; 2 couldn't run (nothing is written) |
-| `ascribe agents rules` | `[PATH]`: a file or folder in the project, to find its `ascribe.toml` from | | none | not stated separately from `sync`'s |
-| `ascribe agents skill` | `[FILE]`: `SKILL.md` or `references/directives.md` | | none | not stated separately |
-| `ascribe agents prompt` | `[NAME]`: the prompt's name | `--arg <KEY=VALUE>`…; `--list` | none | not stated separately |
-| `ascribe agents hook` | `HARNESS`: `claude-code`, `codex`, `copilot` | `--event edit\|stop` | none (its answer is in the harness's form) | not stated separately |
-| `ascribe build` | | `--build <NAME>`…; `--emit site,plain,json`; `--anchors` | `text`, `json` ("as for `ascribe check`") | 0 built; 1 the checks found errors, nothing written; 2 couldn't run |
-| `ascribe check` | `[PATHS]...`†: files and directories to report on | `--stdin`†; `--path <PATH>`†; `--build <NAME>`…; `--editor-build`†; `--summary`†; `--deny-warnings`; `--vale`† | `text`, `concise`, `json`, `prompt` | 0 no errors; 1 errors, or warnings with `--deny-warnings`; 2 couldn't check |
-| `ascribe diff` | `[PAGE]`†: with `--format prompt`, the page the prompt is about | `--base <REV>`; `--base-exact`; `--build <NAME>`…; `--exit-code`; `--pages-only`† | `text`, `json`, `html`, `prompt` | 0 compared; 1 with `--exit-code`, something changed; 2 couldn't run |
-| `ascribe drift` | | `--base <REV>`; `--build <NAME>`…; `--exit-code` | `text`, `json`, `summary` | 0 compared; 1 with `--exit-code`, an example broke or changed alone; 2 couldn't run |
-| `ascribe explain`† | `[CODE]`: a diagnostic's code (`ASC036`) or name (`link-target-missing`) | `--list` | `text`, `json` | 0 explained or listed; 2 no such diagnostic, or a usage error |
-| `ascribe fmt` | `[PATHS]...`: files and directories to format | `--check` | `text`, `json`† | 0 formatted, or with `--check` nothing to format; 1 with `--check`, a file would change; 2 a problem |
-| `ascribe link`† | `TARGET`: the destination as the page writes it | `--from <PAGE>` (required): the page the link is on | `text`, `json` | 0 the target exists; 1 it doesn't; 2 couldn't run |
-| `ascribe lsp` | | none; refuses `--config` | none | 2 on `--config` |
-| `ascribe mcp` | | none; refuses `--config` | none | 0 when standard input ends; 2 on `--config` |
-| `ascribe model` | `[PATH]`: a file or folder in the project, to find its `ascribe.toml` from | `--section types\|dimensions\|phrases\|features\|glossary\|widgets\|builds` | `text`, `json` | 0 showed the model; 2 no `ascribe.toml`, or one with errors |
-| `ascribe outline` | `PAGE`: the page or fragment | `--build <NAME>` | `text`, `json` | 0 showed the outline; 1 with `--build`, the build doesn't publish the page; 2 couldn't run |
-| `ascribe refs` | `TARGET`: a page, a heading, or `phrase:`, `feature:`, `term:`, `dimension:`, `note:`, `widget:` and a name | `--limit <N>`; `--project <PATH>`: a file or folder in the project, for a target that isn't a path | `text`, `json` | 0 the target exists, used or not; 1 it doesn't; 2 couldn't run |
-| `ascribe render` | `PAGE`: the page | `--build <NAME>`; `--frontmatter` | `text`, `json` | 0 wrote the page; 1 the build doesn't publish it; 2 couldn't run |
-| `ascribe report` | `[SECTION]...`: `problems`, `inventory`, `builds`, `links`, `agents` | `--build <NAME>`…; `--site <URL>`; `--limit <N>`; `--exit-code[=advice\|warning\|error]` | `text`, `summary`, `json`, `prompt` | 0 ran, whatever it found; 1 with `--exit-code`, a finding at that level or above; 2 with `--exit-code`, a section asked for couldn't run, or a usage error |
-| `ascribe sources fetch` | `[NAME]...`: the sources | | none | 0 the copies match the lock; 1 a file a snippet names couldn't be copied; 2 couldn't run |
-| `ascribe sources update` | `[NAME]...`: the sources | `--to <REV>` | `text`, `json`, `summary` | 0 ran, whether or not a pin moved; 2 couldn't |
-| `ascribe sources status` | | | `text`, `json` | not stated separately |
-| `ascribe vale eject` | | | none | 0 the preset is the project's own; 2 wrote nothing |
+What the map can't read is what each command's exit codes mean, since only the reference's prose says. That column is kept here, as it was on 10 October 2026, because [findings 11, 12, and 20](findings.md) quote it:
 
-Twenty-three commands; `ascribe --version` besides. `observe`, `versions`, `archive`, and the page templates' command are proposed and unbuilt, and the conventions are tried against each.
+| Command | Exit codes |
+|---|---|
+| `ascribe agents sync` | 0 the files are written, or with `--check` up to date; 1 with `--check`, a file is out of date; 2 couldn't run (nothing is written) |
+| `ascribe agents rules` | not stated separately from `sync`'s |
+| `ascribe agents skill` | not stated separately |
+| `ascribe agents prompt` | not stated separately |
+| `ascribe agents hook` | not stated separately |
+| `ascribe build` | 0 built; 1 the checks found errors, nothing written; 2 couldn't run |
+| `ascribe check` | 0 no errors; 1 errors, or warnings with `--deny-warnings`; 2 couldn't check |
+| `ascribe diff` | 0 compared; 1 with `--exit-code`, something changed; 2 couldn't run |
+| `ascribe drift` | 0 compared; 1 with `--exit-code`, an example broke or changed alone; 2 couldn't run |
+| `ascribe explain`† | 0 explained or listed; 2 no such diagnostic, or a usage error |
+| `ascribe fmt` | 0 formatted, or with `--check` nothing to format; 1 with `--check`, a file would change; 2 a problem |
+| `ascribe link`† | 0 the target exists; 1 it doesn't; 2 couldn't run |
+| `ascribe lsp` | 2 on `--config` |
+| `ascribe mcp` | 0 when standard input ends; 2 on `--config` |
+| `ascribe model` | 0 showed the model; 2 no `ascribe.toml`, or one with errors |
+| `ascribe outline` | 0 showed the outline; 1 with `--build`, the build doesn't publish the page; 2 couldn't run |
+| `ascribe refs` | 0 the target exists, used or not; 1 it doesn't; 2 couldn't run |
+| `ascribe render` | 0 wrote the page; 1 the build doesn't publish it; 2 couldn't run |
+| `ascribe report` | 0 ran, whatever it found; 1 with `--exit-code`, a finding at that level or above; 2 with `--exit-code`, a section asked for couldn't run, or a usage error |
+| `ascribe sources fetch` | 0 the copies match the lock; 1 a file a snippet names couldn't be copied; 2 couldn't run |
+| `ascribe sources update` | 0 ran, whether or not a pin moved; 2 couldn't |
+| `ascribe sources status` | not stated separately |
+| `ascribe vale eject` | 0 the preset is the project's own; 2 wrote nothing |
 
-Built since this table was made, and not in it: `ascribe permalinks sync`, `list`, `verify`, and `retire`, merged on 10 October 2026. Each takes `--format text|json`. `verify` exits 0 when the list has every name, 1 when it doesn't, and 2 when it couldn't check; `sync` and `retire` exit 0 or 2. Phase 2's generated inventory has them; [findings 24 to 27](findings.md#24-two-commands-named-sync-and-only-one-can-say-whether-its-current) are what the conventions say about them.
+`ascribe permalinks verify` exits 0 when the list has every name, 1 when it doesn't, and 2 when it couldn't check; `sync` and `retire` exit 0 or 2. An option marked † in a quotation from the old table was in no release yet.
 
 ## 2. Everything that reports or fixes a problem
 
