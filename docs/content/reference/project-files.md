@@ -21,6 +21,7 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 | `.ascribe/build/` | [`ascribe build`](cli.md#cli-build), and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere ([output layout](../contracts/output-layout.md)). | No |
 | `.ascribe/vale/` {available=next} | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words ([Prose, through Vale](../guides/vale.md#the-projects-own-words)). | No |
 | `.ascribe/cache/` {available=next} | [`ascribe report links`](cli.md#cli-report), which keeps the answers it reuses in `.ascribe/cache/links/` ([Answers it reuses](../guides/report.md#answers-it-reuses)). | No |
+| `.ascribe/history/` {available=next} | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported ([Links that answered before](../guides/report.md#links-that-answered-before)). | No |
 | `.ascribe/dev.json` | `astro dev` with `@ascribed/astro`, for the editor's site preview. It's removed when `astro dev` stops ([In `astro dev`](../guides/astro.md#in-astro-dev)). | No |
 | `ascribe.lock` | [`ascribe sources fetch`](cli.md#cli-sources-fetch) and [`ascribe sources update`](cli.md#cli-sources-update): the commit each source in another repository is pinned to ([Drift](../guides/drift.md)). | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
@@ -37,7 +38,7 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 
 ## What deleting them costs
 
-Everything under `.ascribe/` is written again when it's needed: deleting it costs the next build, check, or report time, and nothing else.
+Everything under `.ascribe/` is written again when it's needed: deleting it costs the next build, check, or report time, and nothing else, apart from `.ascribe/history/`. Without it, the next `ascribe report links` reports every failing link, as a first run does, including one that would have been held as unconfirmed: one noisier report, and never a missed problem.
 
 A file you commit is a record, not a cache. Without `ascribe.lock` and `sources/`, `ascribe check` reports each snippet from another repository until `ascribe sources fetch` writes both again. Without `ascribe.permalinks`, a product's `ascribe permalinks verify` has no list to check against, and `ascribe check` in the docs can't warn when one is removed.
 
