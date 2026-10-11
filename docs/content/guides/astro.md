@@ -1,6 +1,7 @@
 ---
 title: Astro
 description: Publishing a site with @ascribed/astro.
+permalink: astro-guide
 ---
 
 `@ascribed/astro` publishes an Ascribe project as an [Astro](https://astro.build) site. It runs `ascribe build --emit site` before Astro loads content, gives you a content collection of the built pages with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro's table of contents and image processing still work), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
@@ -118,6 +119,7 @@ npx astro build
   It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops. The `url` is the project's base path on the dev server.
 
 ## A home page in front of the docs
+@id {permalink=true}: a-home-page-in-front-of-the-docs
 @available: next
 
 `[consumer] base-path` can be a path under Astro's `base`, which leaves the rest of the site to your own pages: a home page at `/` with the docs at `/docs/`, in one Astro site. Set Astro's `base` to the site's root and `base-path` to the docs' path:
@@ -146,6 +148,7 @@ A page's route is then `base-path` less Astro's `base`, plus its entry id, so th
 Everything Ascribe publishes for the docs is at their base path: the files pages link to (`/docs/_ascribe/files/`), `llms.txt` and each page's Markdown, and, by default, the permalinks (`/docs/go/`). [`permalink-path`](../reference/content-model.md#15-consumer) can put the permalinks anywhere under Astro's `base`, such as `/go/`. A base path outside Astro's `base` still fails the build, since an Astro site serves nothing outside it.
 
 ## Several projects in one site
+@id {permalink=true}: several-projects-in-one-site
 @available: next
 
 One integration can build several Ascribe projects into one site, each under its own base path, such as a home page written in Ascribe at `/` and the docs at `/docs/`. List them in `projects`, each entry with a name:
@@ -319,6 +322,7 @@ On an address under the permalinks' path, it says the link came from a product t
 ```
 
 ## Review in the site preview
+@id {permalink=true}: review-in-the-site-preview
 @available: ascribe 0.2.0
 
 In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same marks and threads as the editor's [page preview](editor.md#review-in-the-preview), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. Nothing runs until you open the app: opening it starts review, and after **Stop Review**, the panel offers **Start Review**. [Review](review.md) walks through reviewing a pull request with it; this section is the reference for the site's side.
