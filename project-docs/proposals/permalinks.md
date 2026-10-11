@@ -1,6 +1,6 @@
 # Proposal: permalinks
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. The plan that builds it is in [permalinks/](../permalinks/README.md).
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. The plan that builds it is in [permalinks/](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/permalinks/README.md).
 
 ## The goal
 
@@ -94,7 +94,7 @@ legacy-sync = { reason = "The sync agent was removed in 4.0" }
 
 Where the friction is:
 
-- **A reason is required,** as it is for an acknowledgement in the [content checks plan](../content-checks/README.md). One sentence, written by someone who had to stop and think about who links here.
+- **A reason is required,** as it is for an acknowledgement in the [content checks plan](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/README.md). One sentence, written by someone who had to stop and think about who links here.
 - **The message says what can't be seen.** "`rotate-keys` is a permalink. Links to it from outside these docs, such as from the product, aren't found by this check."
 - **The editor offers the fix,** which writes the entry and leaves the cursor in the reason.
 
@@ -153,7 +153,7 @@ A test checks that every id the binary can produce is in the docs' list. Then th
 
 ## Decided
 
-The questions this proposal left open were settled in the plan's [phase 1](../permalinks/README.md#decisions):
+The questions this proposal left open were settled in the plan's [phase 1](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/permalinks/README.md#decisions):
 
 - **One flat set of names,** with a convention such as `agent-settings` and `cli-settings`, not a namespace per product. A name uses the characters `@id` allows, so it never has a `/`. A prefix can be treated as a namespace later.
 - **A permalink is unique within what one build publishes,** so two pages no build publishes together may share one. Whether versions use that in place of `replaces` is left to the [versions proposal](versions.md).

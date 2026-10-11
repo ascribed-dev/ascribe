@@ -22,8 +22,16 @@
  * - `frame-src`: the site preview's dev server, once it's shown, and nothing
  *   before. The frame is that server's own page, from its own origin, so the
  *   preview's policy doesn't apply inside it.
- * - `connect-src`, `form-action` and the rest fall to `default-src`, so the
- *   page can't reach the network.
+ * - `form-action 'none'`, `base-uri 'none'`: a form in a page's raw HTML
+ *   can't be submitted, and a `<base>` can't change where its relative URLs
+ *   go (the preview also takes a `<base>` out of the page before it's
+ *   shown). Neither falls to `default-src`, so each is set.
+ * - `connect-src`, `media-src`, `object-src`, `worker-src`, `manifest-src`
+ *   and the other fetch directives fall to `default-src`, so the page can't
+ *   reach the network.
+ * - Not set: `frame-ancestors` and `sandbox`, which don't fall to
+ *   `default-src` either, are ignored in a `<meta>` policy, which this is.
+ *   VS Code frames the webview itself, in a sandboxed frame of its own.
  */
 // Stricter than the site, which passes raw HTML through.
 export function contentSecurityPolicy(cspSource: string, frameOrigin?: string): string {
@@ -33,6 +41,8 @@ export function contentSecurityPolicy(cspSource: string, frameOrigin?: string): 
     `style-src ${cspSource}`,
     `img-src ${cspSource}`,
     `font-src ${cspSource}`,
+    "form-action 'none'",
+    "base-uri 'none'",
   ];
   if (frameOrigin !== undefined) directives.push(`frame-src ${frameOrigin}`);
   return directives.join("; ");

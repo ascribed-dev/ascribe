@@ -267,6 +267,35 @@ describe("the preview webview", () => {
     await preview.page.close();
   });
 
+  it("doesn't let a page's raw HTML submit a form", async () => {
+    const preview = await open();
+    const requests: string[] = [];
+    preview.page.on("request", (request) => requests.push(request.url()));
+    await preview.send(
+      render(
+        1,
+        `<form action="https://elsewhere.test/collect" method="post">
+<input name="secret" value="1"><button type="submit">Send</button>
+</form>`,
+      ),
+    );
+    await preview.next("rendered");
+    // As a click on its button would; a click waits for the navigation it starts.
+    await preview.page
+      .locator("main form")
+      .evaluate((form: HTMLFormElement) => form.requestSubmit());
+    await preview.page.waitForTimeout(200);
+    expect(requests.filter((url) => url.startsWith("https://elsewhere.test/"))).toEqual([]);
+    expect(preview.page.url()).toBe(`${ORIGIN}/`);
+    const seen = preview.posted.length;
+    await preview.send(render(2, ""));
+    const second = await preview.next("rendered", seen);
+    if (second.type !== "rendered") throw new Error();
+    const directives = second.report.violations.map((v) => v.split(" ")[0]);
+    expect(directives).toContain("form-action");
+    await preview.page.close();
+  });
+
   it("posts a click on a link to the extension, and follows a fragment itself", async () => {
     const preview = await open();
     await preview.send(
@@ -946,6 +975,32 @@ describe("the Page | Site switch", () => {
     expect(count()).toBe(1);
     await preview.send({ type: "surface", surface: "site", url: `${SITE}/b` });
     await expect.poll(count).toBe(2);
+    await preview.page.close();
+  });
+
+  it("ignores what the site's page posts to it", async () => {
+    const preview = await open({ frameOrigin: SITE });
+    await preview.send(render(1, "<p>Hello</p>"));
+    await preview.next("rendered");
+    await preview.send({ type: "surface", surface: "site", url: `${SITE}/docs/install` });
+    await preview.next("siteShown");
+    const site = preview.page.frames().find((f) => f.url().startsWith(SITE));
+    if (!site) throw new Error("the site's frame isn't there");
+    // The site's page is another origin's, running its own scripts, and its
+    // parent is the preview.
+    await site.evaluate(
+      ([page, surface]) => {
+        parent.postMessage(page, "*");
+        parent.postMessage(surface, "*");
+      },
+      [render(7, "<p>Not from the extension</p>"), { type: "surface", surface: "page" }] as const,
+    );
+    const from = preview.posted.length;
+    await preview.send(render(2, "<p>Hello again</p>"));
+    await expect(preview.next("rendered", from)).resolves.toMatchObject({ seq: 2 });
+    expect(preview.posted.filter((m) => m.type === "rendered").map((m) => m.seq)).toEqual([1, 2]);
+    // The site still shows.
+    await expect(frame(preview).isVisible()).resolves.toBe(true);
     await preview.page.close();
   });
 

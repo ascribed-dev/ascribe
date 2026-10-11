@@ -132,7 +132,7 @@ By default an older live line can still be indexed, with its canonical links poi
 
 `@ascribed/astro` would supply the switcher, banner, and links. A site using another generator gets the file.
 
-**For agents,** the claim is narrower than it sounds. Ascribe has no `llms.txt` yet; the [content checks plan](../content-checks/phase-6-agent-output.md) adds it. And the plain output names a version only on a page that has an availability line. Each line's Markdown pages saying which version they're for is new output, to be added with this.
+**For agents,** the claim is narrower than it sounds. Ascribe has no `llms.txt` yet; the [content checks plan](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/phase-6-agent-output.md) adds it. And the plain output names a version only on a page that has an availability line. Each line's Markdown pages saying which version they're for is new output, to be added with this.
 
 ### Links to a page that isn't in a line
 

@@ -309,7 +309,7 @@ One mechanism for both would be a mistake. The rule that makes a cache safe (del
 
 Ascribe stores nothing between runs today. `ascribe check` doesn't need to: it takes 0.8 to 2 seconds at 3,000 pages, and the language server answers in about 3 ms. What's slow is other tools and the network, and that's where a cache pays:
 
-- **External link results,** kept with an expiry, so a report rechecks only links that are new or stale. The [content checks plan](content-checks/phase-7-report.md) leaves this out; it's the difference between minutes and seconds.
+- **External link results,** kept with an expiry, so a report rechecks only links that are new or stale. The [content checks plan](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/phase-7-report.md) leaves this out; it's the difference between minutes and seconds.
 - **Vale results by the hash of a page's prose,** so a hook or `ascribe check --vale` lints only what changed.
 - **The delivery spec's results** for pages that didn't change.
 - **Differences between runs:** "3 dead links since the last report", which needs the last report's findings and nothing more.
