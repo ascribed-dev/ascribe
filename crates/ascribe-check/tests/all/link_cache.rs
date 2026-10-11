@@ -1,6 +1,6 @@
-//! The answers `ascribe report links` reuses (`ascribe_check::links::cache`):
-//! what a second run asks about, and that only the report's code opens the
-//! store.
+//! The answers `ascribe report links` reuses (`ascribe_check::links::cache`)
+//! and what it remembers (`ascribe_check::links::history`): what a second
+//! run asks about and holds, and that only the report's code opens either.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -81,7 +81,7 @@ fn day(s: &str) -> Date {
 
 fn run(project: &Project, checker: &StandIn, today: &str, recheck: bool) -> links::Checked {
     let cache = Cache::open(project, project.root(), day(today), recheck);
-    links::check(project, checker, Duration::from_secs(5), Some(&cache)).expect("it runs")
+    links::check(project, checker, Duration::from_secs(5), Some(&cache), None).expect("it runs")
 }
 
 #[test]
@@ -176,15 +176,20 @@ fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// What opens the store.
+/// What opens the store or the history.
 const OPENS: &[&str] = &[
     ".ascribe/cache",
     "links::cache",
     "links::Cache",
     "Cache::open(",
+    ".ascribe/history",
+    "links::history",
+    "links::History",
+    "History::open(",
 ];
 
-/// The report's code: the only code that opens `.ascribe/cache/`. `check`,
+/// The report's code: the only code that opens `.ascribe/cache/` or
+/// `.ascribe/history/`. `check`,
 /// `build`, `diff`, `drift`, `fmt`, the language server, and the hook never
 /// read or write it, so their outputs stay a function of the sources.
 const REPORT: &[&str] = &[
@@ -195,7 +200,7 @@ const REPORT: &[&str] = &[
 ];
 
 #[test]
-fn only_the_report_opens_the_cache() {
+fn only_the_report_opens_the_cache_or_the_history() {
     let root = workspace();
     let mut files = Vec::new();
     for entry in fs::read_dir(root.join("crates")).expect("crates/") {
@@ -226,7 +231,7 @@ fn only_the_report_opens_the_cache() {
     }
     assert!(
         found.is_empty(),
-        "Only `ascribe report`'s code opens `.ascribe/cache/`: these do too:\n{}",
+        "Only `ascribe report`'s code opens `.ascribe/cache/` or `.ascribe/history/`: these do too:\n{}",
         found.join("\n")
     );
 }

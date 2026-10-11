@@ -432,12 +432,15 @@ ignore = ["localhost", "*.internal.example.com"]
 | `command` | string | `"lychee"` | The command that runs lychee. A path with a separator is from the project root; a bare name is looked up as the shell would. |
 | `ignore` | array of strings | `[]` | The hosts whose links aren't checked: a host name, such as `example.com`, or `*.` and a host name, which covers every host under it but not the name itself. Case doesn't matter. |
 | `reuse-days` | whole number | `14` | How many days an address that answered isn't asked about again. Each address's own limit falls between half of this and all of it, so addresses first checked together don't all come due on one day. `0` asks about every address on every run. |
+| `confirm-days` | whole number | `3` | How many days a link that answered before and fails now is listed as unconfirmed, and not reported, before it's reported. A 404 or a 410 is reported at once. `0` reports every failure at once. |
 
 An answer is reused only when it had nothing to report: a link that moved, failed, or timed out is asked about on every run, so every problem in a report was found in that run. The answers are kept in `.ascribe/cache/links/`; deleting it costs the next run time, and nothing else. `ascribe report links --recheck` asks about every address.
 
+A link is held as unconfirmed only when an earlier run got an answer from its address: what each address last did is kept in `.ascribe/history/links.json`. Deleting it costs one noisier report, which reports every failure as a first run does, and never a missed problem. `ascribe report links --no-history` reports every failure too.
+
 A broken link is `link-external-broken` and a moved one `link-external-moved`; both are configurable in `[checks]`, and a broken one is acknowledged with `@intended` above its block.
 
-**Rules.** `ignore` names hosts, without a scheme, path, or port, and `reuse-days` is a whole number, 0 or more (`model-wrong-type`).
+**Rules.** `ignore` names hosts, without a scheme, path, or port, and `reuse-days` and `confirm-days` are whole numbers, 0 or more (`model-wrong-type`).
 
 ---
 

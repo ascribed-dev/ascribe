@@ -18,7 +18,7 @@ Ascribe gives Vale your prose and nothing else. Frontmatter, directive lines, at
    preset = "quiet"
    ```
 
-3. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and the files are written again whenever they're needed. Deleting `.ascribe/` costs time and nothing else: the next build writes its output again, and the next `ascribe report links` asks about every address.
+3. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and the files are written again whenever they're needed. Deleting `.ascribe/` costs time, and one noisier link report: the next build writes its output again, and the next `ascribe report links` asks about every address and reports every failure, as a first run does.
 
 That's all: no `.vale.ini` to write, and no `vale sync`. Open a page in VS Code, or save one, and Vale's alerts appear in the Problems panel. In a terminal, `ascribe check --vale` checks every page.
 

@@ -7,9 +7,10 @@
 # report finds something, or a section can't run, it opens one issue, or
 # updates the one that's open, and the run fails. It installs `next`, the
 # canary of `main`, over the release, since these docs follow `main`. It
-# keeps the answers `report links` reuses with actions/cache: each run saves
-# under its own key, and restores the newest by the prefix. It saves right
-# after the report, so a run that finds something and fails still saves.
+# keeps the answers `report links` reuses, and what it remembers of each
+# link, with actions/cache: each run saves under its own key, and restores
+# the newest by the prefix. It saves right after the report, so a run that
+# finds something and fails still saves.
 # :snippet-start: job
 name: Report
 
@@ -48,7 +49,9 @@ jobs:
           echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: docs/.ascribe/cache
+          path: |
+            docs/.ascribe/cache
+            docs/.ascribe/history
           key: ascribe-links-${{ github.run_id }}
           restore-keys: ascribe-links-
       - name: Report
@@ -60,7 +63,9 @@ jobs:
           > report.md
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: docs/.ascribe/cache
+          path: |
+            docs/.ascribe/cache
+            docs/.ascribe/history
           key: ascribe-links-${{ github.run_id }}
       - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Open or update the issue

@@ -18,7 +18,7 @@
 //! still run. The answer is typed; `ascribe report` writes it as text,
 //! Markdown, JSON, or a prompt.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
 use ascribe_check::links::{self, LinkChecker};
@@ -113,6 +113,9 @@ pub struct Options<'a> {
     /// The answers `links` reuses, and where it keeps those it gets; none
     /// to ask about every address and keep nothing.
     pub link_cache: Option<&'a links::Cache>,
+    /// What `links` remembers from earlier runs, and where it keeps what
+    /// this run sees; none to hold nothing and keep nothing.
+    pub link_history: Option<&'a links::History>,
 }
 
 /// Why a section didn't run, and what would let it.
@@ -245,9 +248,21 @@ pub struct Links {
     pub ignored: usize,
     /// A diagnostic for each link that moved or is broken, at its place, at
     /// its `[checks]` level, and the acknowledgements that cover nothing.
+    /// None is unconfirmed.
     pub diagnostics: Vec<Diagnostic>,
-    /// The broken links acknowledged as intended.
+    /// The broken links acknowledged as intended, confirmed or not.
     pub acknowledged: Vec<Acknowledged>,
+    /// The broken links that answered before and aren't reported until
+    /// they've kept failing, in file order and source order.
+    pub unconfirmed: Vec<links::Unconfirmed>,
+    /// The day of the run the history is from, when there's one to go by.
+    pub previous_run: Option<ascribe_core::Date>,
+    /// How many of `diagnostics` the previous run didn't report, when
+    /// there's one to go by.
+    pub new: Option<usize>,
+    /// How many addresses the previous run reported that this one doesn't,
+    /// when there's one to go by.
+    pub resolved: Option<usize>,
 }
 
 /// `agents`: the delivery spec's checks on a built site.
@@ -339,7 +354,7 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
         out.builds = Some(builds(project, &out.builds_checked));
     }
     if asked(Section::Links) {
-        out.links = Some(links(project, options.tools, options.link_cache));
+        out.links = Some(links(project, options));
     }
     if asked(Section::Agents) {
         out.agents = Some(agents(project, options.site, options.tools));
@@ -492,29 +507,78 @@ fn builds(project: &Project, names: &[String]) -> Builds {
 
 /// `links`: runs the link checker, and applies `[checks]` levels and the
 /// acknowledgements, reporting those of `link-external-broken` that cover
-/// nothing.
-fn links(project: &Project, tools: &Tools<'_>, cache: Option<&links::Cache>) -> Ran<Links> {
-    match links::check(project, tools.links, tools.links_timeout, cache) {
-        Ok(found) => {
-            let model = project.model();
-            let leveled = apply_levels(&model.checks, found.diagnostics);
-            let applied = Acknowledgements::of(project).apply_ran(
-                model,
-                leveled,
-                &[diagnostics::LINK_EXTERNAL_BROKEN],
-            );
-            Ran::Done(Links {
-                checked: found.checked,
-                asked: found.asked,
-                reused: found.reused,
-                oldest_answer: found.oldest_answer,
-                ignored: found.ignored,
-                diagnostics: applied.diagnostics,
-                acknowledged: applied.acknowledged,
-            })
+/// nothing. A broken link the history holds is listed as unconfirmed, not
+/// reported, and what this run reported is kept in the history.
+fn links(project: &Project, options: &Options<'_>) -> Ran<Links> {
+    let tools = options.tools;
+    let history = options.link_history;
+    let found = match links::check(
+        project,
+        tools.links,
+        tools.links_timeout,
+        options.link_cache,
+        history,
+    ) {
+        Ok(found) => found,
+        Err(e) => return Ran::NotRun(not_run(&e, LYCHEE_HOW)),
+    };
+    let model = project.model();
+    let leveled = apply_levels(&model.checks, found.diagnostics);
+    let applied = Acknowledgements::of(project).apply_ran(
+        model,
+        leveled,
+        &[diagnostics::LINK_EXTERNAL_BROKEN],
+    );
+    let held: BTreeMap<ascribe_core::Location, &links::Unconfirmed> =
+        found.held.iter().map(|u| (u.location, u)).collect();
+    let mut unconfirmed = Vec::new();
+    let mut reported = Vec::new();
+    for d in applied.diagnostics {
+        match held.get(&d.location) {
+            Some(u) if d.slug == diagnostics::LINK_EXTERNAL_BROKEN => {
+                unconfirmed.push((*u).clone());
+            }
+            _ => reported.push(d),
         }
-        Err(e) => Ran::NotRun(not_run(&e, LYCHEE_HOW)),
     }
+    let urls: BTreeSet<&str> = reported
+        .iter()
+        .filter_map(|d| found.urls.get(&d.location).map(String::as_str))
+        .collect();
+    let (mut previous_run, mut new, mut resolved) = (None, None, None);
+    if let (Some(history), Some(mut observed)) = (history, found.observed) {
+        if let Some(run) = history.previous_run() {
+            let before = history.reported_before();
+            previous_run = Some(run);
+            new = Some(
+                reported
+                    .iter()
+                    .filter_map(|d| found.urls.get(&d.location))
+                    .filter(|url| !before.contains(url.as_str()))
+                    .count(),
+            );
+            resolved = Some(before.iter().filter(|url| !urls.contains(*url)).count());
+        }
+        for url in &urls {
+            if let Some(record) = observed.get_mut(*url) {
+                record.reported = true;
+            }
+        }
+        history.save(observed);
+    }
+    Ran::Done(Links {
+        checked: found.checked,
+        asked: found.asked,
+        reused: found.reused,
+        oldest_answer: found.oldest_answer,
+        ignored: found.ignored,
+        diagnostics: reported,
+        acknowledged: applied.acknowledged,
+        unconfirmed,
+        previous_run,
+        new,
+        resolved,
+    })
 }
 
 /// What gets the link checker: installing it, or saying where it is.

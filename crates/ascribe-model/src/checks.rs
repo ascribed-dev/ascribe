@@ -212,7 +212,11 @@ impl Loader<'_> {
         let Some(t) = self.as_table(PATH, v) else {
             return links;
         };
-        self.check_keys(PATH, t, &["command", "ignore", "reuse-days"]);
+        self.check_keys(
+            PATH,
+            t,
+            &["command", "ignore", "reuse-days", "confirm-days"],
+        );
         if let Some(command) = t
             .get("command")
             .and_then(|c| self.string(&join(PATH, "command"), c, true))
@@ -234,16 +238,22 @@ impl Loader<'_> {
                 }
             }
         }
-        if let Some(days) = t.get("reuse-days") {
-            let n = match days.get_ref() {
-                DeValue::Integer(_) => to_yaml(days.get_ref())
+        for (key, days) in [
+            ("reuse-days", &mut links.reuse_days),
+            ("confirm-days", &mut links.confirm_days),
+        ] {
+            let Some(value) = t.get(key) else {
+                continue;
+            };
+            let n = match value.get_ref() {
+                DeValue::Integer(_) => to_yaml(value.get_ref())
                     .as_u64()
                     .and_then(|n| u32::try_from(n).ok()),
                 _ => None,
             };
             match n {
-                Some(n) => links.reuse_days = n,
-                None => self.wrong_type(&join(PATH, "reuse-days"), days, "a whole number of days"),
+                Some(n) => *days = n,
+                None => self.wrong_type(&join(PATH, key), value, "a whole number of days"),
             }
         }
         links
@@ -530,6 +540,13 @@ mod tests {
         assert!(!checks.links.ignores("notinternal.example"));
         assert_eq!(load("").unwrap().links.command, "lychee");
         assert_eq!(load("").unwrap().links.reuse_days, 14);
+        assert_eq!(load("").unwrap().links.confirm_days, 3);
+        let checks = load("[checks.links]\nconfirm-days = 0\n").unwrap();
+        assert_eq!(checks.links.confirm_days, 0);
+        assert_eq!(
+            load("[checks.links]\nconfirm-days = \"3\"\n").unwrap_err(),
+            [(diagnostics::MODEL_WRONG_TYPE, "\"3\"".to_owned())]
+        );
         let checks = load("[checks.links]\nreuse-days = 0\n").unwrap();
         assert_eq!(checks.links.reuse_days, 0);
         assert_eq!(
