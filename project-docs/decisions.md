@@ -106,6 +106,8 @@ The optimization plan's proposed decisions that held, carried over when it finis
 
 42. **A type a package's published declarations import from a package it doesn't depend on is an optional peer dependency.** `@ascribed/astro` declares `@types/hast` (for `@ascribed/astro/rehype`) and `satteri` (for `@ascribed/astro/satteri`) as peer dependencies with `peerDependenciesMeta` marking each optional, so a consumer type-checking with `skipLibCheck: false` is told what the declarations need, and nobody installs either for the subpath they don't use. _Why:_ the declarations imported both while the package listed them only as devDependencies, which a consumer never gets. _From:_ the maintainer, on [#139](https://github.com/ascribed-dev/ascribe/issues/139), 8 October 2026.
 
+74. **A GitHub sign-in goes only to the host it was issued for.** In VS Code, review uses VS Code's `github` sign-in for `github.com`, its `github-enterprise` sign-in for the host of the `github-enterprise.uri` setting (compared by host name, without case or port), and none for any other host a remote names, which is never asked about. `@ascribed/review/github`'s `tokenTransport` may be given a `HostToken`, `{ token, host }`, and then refuses a token for another host before sending anything; it never follows a redirect. The addition to the package's API is additive: a bare string still works. _Why:_ any host that wasn't `github.com` got the GitHub Enterprise sign-in, so a remote on another host was sent the token. _From:_ the security review of October 2026.
+
 ## The look
 
 The mark, the colors, the type, and the images made from them. [design/README.md](../design/README.md) says how to use them.

@@ -193,11 +193,24 @@ export interface TokenTransportOptions {
 }
 
 /**
+ * A token, and the host it was issued for. A transport refuses to send it
+ * to any other host.
+ */
+export interface HostToken {
+  token: string;
+  /** The host the sign-in is for: `github.com`, or a GitHub Enterprise Server host. */
+  host: string;
+}
+
+/**
  * A transport that posts to the GraphQL API with `fetch`, using a token from
  * `getToken`, which is called for each request so the host can refresh it.
+ *
+ * When `getToken` says which host its token is for, a token for another host
+ * is refused before anything is sent.
  */
 export function tokenTransport(
-  getToken: () => Promise<string | undefined> | string | undefined,
+  getToken: () => Promise<string | HostToken | undefined> | string | HostToken | undefined,
   options: TokenTransportOptions = {},
 ): GitHubTransport {
   const host = options.host ?? "github.com";
@@ -205,9 +218,16 @@ export function tokenTransport(
   return {
     async graphql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
       const doFetch = options.fetch ?? globalThis.fetch;
-      const token = await getToken();
+      const answer = await getToken();
+      const token = typeof answer === "object" ? answer.token : answer;
       if (token === undefined || token === "") {
         throw new ReviewError("not-signed-in", `There's no GitHub sign-in for ${host}.`);
+      }
+      if (typeof answer === "object" && answer.host.toLowerCase() !== host.toLowerCase()) {
+        throw new ReviewError(
+          "not-signed-in",
+          `The GitHub sign-in is for ${answer.host}, not ${host}, so it isn't sent there.`,
+        );
       }
       let response: Response;
       try {
@@ -220,6 +240,8 @@ export function tokenTransport(
             "user-agent": "ascribe-review",
           },
           body: JSON.stringify({ query, variables }),
+          // A redirect could take the token to another host.
+          redirect: "error",
         });
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);

@@ -153,6 +153,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 - `@ascribed/astro` declares `satteri` and `@types/hast` as optional peer dependencies. Its `@ascribed/astro/satteri` and `@ascribed/astro/rehype` declarations import types from them, so a project that type-checks those declarations (`skipLibCheck: false`) needs the one it imports, which a Sätteri or `unified()` processor already brings.
 - **The VS Code extension has an icon:** the Ascribe mark, in the Extensions view and on its Marketplace page, whose header takes the icon's dark tile color.
 - **Fixed:** in a high-contrast dark theme, the page preview's **Page | Site** switch shows which side is on, with the theme's active border, and the preview's buttons are in the theme's text color. They took a button background the theme doesn't set.
+- **Fixed:** in VS Code, review uses a GitHub sign-in only for its own host: VS Code's GitHub sign-in for `github.com`, and its GitHub Enterprise sign-in for the server `github-enterprise.uri` names. A remote on any other host gets no sign-in, and the page preview says why. `@ascribed/review/github`'s `tokenTransport` accepts a token with the host it's for (`HostToken`), and refuses to send it to another host or follow a redirect. See [What you need for each part](docs/content/guides/review.md#what-you-need-for-each-part).
 
 ## 0.2.0 (2026-10-06)
 
