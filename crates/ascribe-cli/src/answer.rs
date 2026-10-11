@@ -221,6 +221,15 @@ pub fn source_path(project: &Project, given: &Path) -> Result<RelPath, QueryErro
 /// from the current directory into the content root, then the path itself.
 /// The file needn't exist: a page `ascribe diff` reports as removed doesn't.
 pub fn content_paths(project: &Project, given: &Path) -> Vec<RelPath> {
+    content_path_readings(project, given)
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+/// The two readings of [`content_paths`], in its order, each `None` where
+/// it reads nothing: so a second path can be read the way a first was.
+pub fn content_path_readings(project: &Project, given: &Path) -> [Option<RelPath>; 2] {
     let content = normalize(&project.root().join(project.content_root().as_str()));
     let from_cwd = std::env::current_dir()
         .ok()
@@ -230,7 +239,7 @@ pub fn content_paths(project: &Project, given: &Path) -> Vec<RelPath> {
         .to_str()
         .map(|s| s.replace('\\', "/"))
         .and_then(|s| RelPath::parse(s.trim_start_matches("./")).ok());
-    [from_cwd, as_content].into_iter().flatten().collect()
+    [from_cwd, as_content]
 }
 
 /// Writes an answer as one JSON document and a newline.

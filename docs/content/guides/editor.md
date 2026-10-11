@@ -103,6 +103,7 @@ The review tools answer while [review](#review-in-the-preview) is on, and say so
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
+- From the command line, [`ascribe rename`](../reference/cli.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.
 
 ### Formatting
 

@@ -694,6 +694,33 @@ With `--format json`, the document is:
 
 `total` is how many places use the target, and `shown` how many are listed. When the list was cut, `truncated` is true and `next_command` is the command that lists them all; otherwise it's null.
 
+## `ascribe rename`
+@id {permalink=true}: cli-rename
+@available: next
+
+Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. A text search and replace finds a phrase in the pages, but misses what a rename knows about: frontmatter fields with `phrases = true`, code blocks with `phrases=true`, the code a `@snippet {phrases=true}` shows, and a link whose path changes when the page it's on moves.
+
+@include: ../_generated/cli-rename-options.md
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/rename.txt
+
+What it renames, written as `ascribe refs` writes a target:
+
+| Target | What changes |
+|---|---|
+| `phrase:cloud` (or `phrase:{cloud}`) | Its key under `[phrases]`, and each `{cloud}` that uses it. |
+| `value:self-managed` | A dimension's value: in `ascribe.toml` (its `values`, `labels`, and `versionless`, features' `available`, and builds' `variants` and `filter`), and in pages (`@variant` attributes, `variant` and `available` frontmatter, `@available` lines, and table rows' `available`). |
+| `keys.md#rotate-keys` | A heading's id, and each link and include that names it. A heading with an `@id` has it changed. One whose id is made from its text gets an `@id` line under it, so its text stays, and links to the headings after it that were numbered after it follow. |
+| `keys.md` | The page or fragment moves to the new path, and each link and include to it, or in it, whose path changes is changed. The new path is read as the target was: from the current folder, or from the content root. |
+
+A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder, or from `--config`. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. A permalink's id isn't renamed, since links from outside the docs use it; retire it with [`ascribe permalinks retire`](#cli-permalinks-retire) instead. A phrase used in the code of a source in another repository isn't renamed either, since that code is a copy.
+
+| Code | Meaning |
+|---|---|
+| `0` | It renamed |
+| `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
+| `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, or a file it can't write |
+
 ## `ascribe render`
 @id {permalink=true}: cli-render
 @available: next

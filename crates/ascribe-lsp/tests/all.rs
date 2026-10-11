@@ -40,6 +40,8 @@ mod prose;
 mod quick_fixes;
 #[path = "all/references.rs"]
 mod references;
+#[path = "all/rename.rs"]
+mod rename;
 #[path = "all/review.rs"]
 mod review;
 #[path = "all/scenarios.rs"]

@@ -955,6 +955,71 @@ fn a_dimension_value_is_renamed_everywhere_from_a_page_or_the_model() {
     }
 }
 
+/// What `ascribe rename` writes, as [`Done`]'s files: each file's text
+/// after, by path.
+fn renamed_by_name(f: &Fixture, renaming: &ascribe_lsp::Renaming) -> BTreeMap<String, String> {
+    let renamed = ascribe_lsp::rename(&f.path("ascribe.toml"), renaming).expect("renamed");
+    renamed
+        .files
+        .into_iter()
+        .map(|file| (file.path.to_string_lossy().to_lowercase(), file.text))
+        .collect()
+}
+
+/// The same, from the editor's rename.
+fn renamed_by_editor(done: &Done) -> BTreeMap<String, String> {
+    done.files
+        .iter()
+        .map(|(path, text, _)| (path.to_string_lossy().to_lowercase(), text.clone()))
+        .collect()
+}
+
+#[test]
+fn renaming_by_name_makes_the_editors_edits() {
+    let f = rename_fixture();
+    let mut client = Client::start(&f.root());
+    let page = f.path("docs/index.md");
+    client.open(&page, 1, RENAME_PAGE);
+    let phrase = rename(
+        &mut client,
+        &page,
+        RENAME_PAGE,
+        at(RENAME_PAGE, "{product}", 1, 2),
+        "name",
+    )
+    .expect("renamed");
+    let value = rename(
+        &mut client,
+        &page,
+        RENAME_PAGE,
+        at(RENAME_PAGE, "self-managed}", 0, 3),
+        "on-prem",
+    )
+    .expect("renamed");
+    assert_eq!(
+        renamed_by_name(
+            &f,
+            &ascribe_lsp::Renaming::Phrase {
+                key: "product".to_owned(),
+                new: "name".to_owned(),
+            }
+        ),
+        renamed_by_editor(&phrase),
+        "a phrase"
+    );
+    assert_eq!(
+        renamed_by_name(
+            &f,
+            &ascribe_lsp::Renaming::Value {
+                value: "self-managed".to_owned(),
+                new: "on-prem".to_owned(),
+            }
+        ),
+        renamed_by_editor(&value),
+        "a dimension's value"
+    );
+}
+
 /// Renames at `find` in `page` of an example, and checks that nothing new
 /// is wrong after.
 fn rename_in_example(root: &Path, page: &str, find: &str, into: usize, new: &str) -> Done {

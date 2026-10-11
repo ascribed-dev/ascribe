@@ -43,6 +43,7 @@ Examples:
   ascribe link keys.md --from guides/install.md
                                          Whether a link works, and what to write
   ascribe refs phrase:product            Where a phrase is used
+  ascribe rename phrase:product brand    Rename a phrase, and every use of it
   ascribe render guides/install.md --build cloud
                                          A page as one build's readers see it
 
@@ -150,6 +151,10 @@ pub enum Command {
     /// another content model entry is used.
     #[command(after_help = docs_link!("cli-refs"))]
     Refs(commands::refs::Args),
+    /// Rename a phrase, a dimension's value, a heading's id, or a page, and
+    /// change everything that uses it, as the editor's rename does.
+    #[command(after_help = docs_link!("cli-rename"))]
+    Rename(commands::rename::Args),
     /// Show a page as a reader of one build sees it, as plain Markdown.
     #[command(after_help = docs_link!("cli-render"))]
     Render(commands::render::Args),
@@ -184,6 +189,7 @@ impl Command {
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Permalinks(args) => commands::permalinks::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
+            Command::Rename(args) => commands::rename::run(global, args),
             Command::Render(args) => commands::render::run(global, args),
             Command::Report(args) => commands::report::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),

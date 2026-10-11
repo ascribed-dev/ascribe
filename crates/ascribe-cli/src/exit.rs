@@ -46,7 +46,7 @@ mod tests {
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::ServeError;
+    use ascribe_lsp::{RenameError, ServeError};
     use ascribe_query::QueryError;
     use ascribe_sources::SourcesError;
 
@@ -55,6 +55,7 @@ mod tests {
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::permalinks::PermalinksError;
+    use crate::commands::rename::RenameCommandError;
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
     use crate::context::Failure;
@@ -206,6 +207,16 @@ mod tests {
             "ascribe.toml can't be changed in place",
         ),
         ("model_unwritable", "ascribe.toml can't be written"),
+        (
+            "rename_target_missing",
+            "rename names something not in the project",
+        ),
+        ("rename_refused", "rename can't give it the new name"),
+        ("rename_bad_target", "rename can't read the target"),
+        (
+            "rename_unwritable",
+            "a file rename changes can't be written",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -360,9 +371,34 @@ mod tests {
                 | PermalinksError::ModelUnwritable { .. } => {}
             }
         }
+        fn rename(e: &RenameError) {
+            match e {
+                RenameError::Missing(_) | RenameError::Refused(_) => {}
+            }
+        }
+        fn rename_command(e: &RenameCommandError) {
+            match e {
+                RenameCommandError::BadTarget { .. } | RenameCommandError::Unwritable { .. } => {}
+            }
+        }
         let _ = (
-            locate, load, scope, check, report, eject, format, emit, store, diff, sources, serve,
-            query, agents, permalinks,
+            locate,
+            load,
+            scope,
+            check,
+            report,
+            eject,
+            format,
+            emit,
+            store,
+            diff,
+            sources,
+            serve,
+            query,
+            agents,
+            permalinks,
+            rename,
+            rename_command,
         );
 
         let store_errors = || {
@@ -540,6 +576,16 @@ mod tests {
             Box::new(PermalinksError::NoReason),
             Box::new(PermalinksError::ModelUnchanged(text())),
             Box::new(PermalinksError::ModelUnwritable {
+                path: path(),
+                message: text(),
+            }),
+            Box::new(RenameError::Missing(text())),
+            Box::new(RenameError::Refused(text())),
+            Box::new(RenameCommandError::BadTarget {
+                given: text(),
+                reason: text(),
+            }),
+            Box::new(RenameCommandError::Unwritable {
                 path: path(),
                 message: text(),
             }),

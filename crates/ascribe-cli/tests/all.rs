@@ -45,6 +45,8 @@ mod output;
 mod permalinks;
 #[path = "../../ascribe-diff/tests/planted/mod.rs"]
 mod planted;
+#[path = "all/rename.rs"]
+mod rename;
 #[path = "all/report.rs"]
 mod report;
 #[path = "all/sources.rs"]
