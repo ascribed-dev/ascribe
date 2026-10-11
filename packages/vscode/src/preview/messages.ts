@@ -23,7 +23,7 @@ type Check<T> = (value: unknown) => value is T;
 export const MAX_TEXT = 8 * 1024;
 
 /** The most items in a list or a record: a page's images or elements, a report's blocks. */
-export const MAX_ITEMS = 10_000;
+const MAX_ITEMS = 10_000;
 
 const text: Check<string> = (value): value is string =>
   typeof value === "string" && value.length <= MAX_TEXT;
