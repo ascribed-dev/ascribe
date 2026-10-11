@@ -361,6 +361,41 @@ describe("review in the site preview", () => {
       }
     });
 
+    it("draws one card for a thread on a one-line note", async () => {
+      const guide = "content/Guides/My Setup.md";
+      const { root, github } = await pullRequest(
+        "review-threads-note",
+        [guide],
+        (root) =>
+          edit(path.join(root, GUIDE), (text) =>
+            text.replace("## Install", "@note {type=tip}: Loom needs a license key.\n\n## Install"),
+          ),
+        async (root) => [
+          {
+            id: "PRRT_0",
+            path: guide,
+            line: await lineOf(root, guide, "@note"),
+            comments: [{ id: "PRRC_0", body: "Where is the key?", state: "SUBMITTED", login: "maya" }],
+          },
+        ],
+      );
+      const server = await serveDev(root, { PATH: github.path });
+      try {
+        const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
+        const card = page.locator('[data-ascribe-overlay] .thread[data-thread="PRRT_0"]');
+        await expect.poll(() => card.count(), { timeout: 30_000 }).toBeGreaterThan(0);
+        // Both cards drew at once, so the first count is the count.
+        expect(await card.count()).toBe(1);
+        // Beside the note.
+        const note = page.locator("ascribe-note", { hasText: "Loom needs a license key." });
+        const [noteBox, cardBox] = await Promise.all([note.boundingBox(), card.boundingBox()]);
+        expect(Math.abs((cardBox?.y ?? 0) - (noteBox?.y ?? -100))).toBeLessThan(2);
+        await page.close();
+      } finally {
+        await server.stop();
+      }
+    });
+
     it("lists the threads on a page's fragments when a layout drops the anchors", async () => {
       const guide = "content/Guides/My Setup.md";
       const fragment = "content/_fragments/requirements.md";

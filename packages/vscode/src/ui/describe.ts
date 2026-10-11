@@ -47,14 +47,48 @@ export interface ActiveFile {
   languageId: string;
 }
 
-/** What the status bar item shows. */
-export interface StatusText {
-  /** The project it's about. */
-  project: ProjectInfo;
+/** What the status bar item shows when it isn't about the active file's project. */
+export interface Notice {
   text: string;
   tooltip: string;
   /** What a screen reader says. */
   label: string;
+}
+
+/** What the status bar item shows. */
+export interface StatusText extends Notice {
+  /** The project it's about. */
+  project: ProjectInfo;
+}
+
+/**
+ * The status bar item in Restricted Mode, where the extension runs nothing:
+ * without it, the Problems panel's "No problems" reads as a clean project.
+ */
+export const RESTRICTED_NOTICE: Notice = {
+  text: "$(shield) Ascribe: not checking",
+  tooltip:
+    "This folder is in Restricted Mode, so Ascribe doesn't run or check its projects. Trust the folder to check them.",
+  label: "Ascribe isn't checking this folder: it's in Restricted Mode",
+};
+
+/**
+ * The status bar item while no page of a project is active and some project's
+ * server hasn't started: a server starts when one of its project's pages
+ * opens, so until then nothing has checked that project.
+ */
+export function waitingNotice(projects: readonly ProjectInfo[]): Notice | undefined {
+  const waiting = projects.filter((p) => p.state === "stopped").map((p) => p.name);
+  if (waiting.length === 0) return undefined;
+  const what = waiting.length === 1 ? waiting[0] : `${waiting.length} projects`;
+  return {
+    text: `$(circle-slash) ${what}: not checked yet`,
+    tooltip: [
+      `Not checked yet: ${waiting.join(", ")}`,
+      "Ascribe checks a project once one of its pages is open.",
+    ].join("\n"),
+    label: `Ascribe hasn't checked ${waiting.join(", ")} yet: it checks a project once one of its pages is open`,
+  };
 }
 
 /**

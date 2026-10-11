@@ -193,8 +193,9 @@ export function placeOnPage(page: PageRef, threads: readonly LocatedThread[]): P
       continue;
     }
     const into = left ? onRemoved : onBlocks;
-    for (const match of matches) {
-      const key = anchorKey(match.anchor);
+    // A block and the element around it can share an anchor, as a one-line
+    // note and its paragraph do: the thread goes on the anchor once.
+    for (const key of new Set(matches.map((match) => anchorKey(match.anchor)))) {
       const list = into.get(key) ?? [];
       list.push(thread);
       into.set(key, list);

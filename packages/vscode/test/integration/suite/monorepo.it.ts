@@ -203,11 +203,19 @@ describe("with several projects, one nested in another", () => {
   });
 
   describe("servers", () => {
-    it("finds every project and starts no server until one of its files is opened", () => {
+    it("finds every project and starts no server until one of its files is opened", async () => {
       assertRunning([]);
       // Nothing is running, so nothing has diagnostics, problems or not.
       assert.deepEqual(vscode.languages.getDiagnostics(docsPage), []);
       assert.deepEqual(vscode.languages.getDiagnostics(nestedPage), []);
+      // And the status bar says so, rather than leaving "No problems" to read as clean.
+      await statusText("that nothing is checked", (text) =>
+        text.endsWith("3 projects: not checked yet"),
+      );
+      assert.match(
+        api.ui.statusBar.shown()?.tooltip ?? "",
+        /^Not checked yet: docs, handbook, handbook\/pages\/nested$/m,
+      );
     });
 
     it("lists every project in the Projects view, and showing or refreshing it starts none", async () => {

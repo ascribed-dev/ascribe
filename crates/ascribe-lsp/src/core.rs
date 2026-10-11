@@ -21,8 +21,8 @@ use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
 use lsp_types::{
     DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent, FileSystemWatcher,
-    GlobPattern, PublishDiagnosticsParams, Registration, RegistrationParams,
-    TextDocumentContentChangeEvent, Uri,
+    GlobPattern, LogMessageParams, MessageType, PublishDiagnosticsParams, Registration,
+    RegistrationParams, TextDocumentContentChangeEvent, Uri,
 };
 
 use crate::compute::{Across, to_lsp};
@@ -205,6 +205,23 @@ impl Core {
         crate::log::line(format_args!("{text}"));
     }
 
+    /// Tells the client which project the server uses, with the server's
+    /// version. It isn't a problem, so it's `window/logMessage` at Info, not
+    /// the log on standard error, which a client shows as errors.
+    fn log_start(&self, config: Option<&Path>) {
+        self.send(Notification::new(
+            "window/logMessage".to_owned(),
+            LogMessageParams {
+                typ: MessageType::INFO,
+                message: format!(
+                    "ascribe-lsp {}: {}",
+                    env!("CARGO_PKG_VERSION"),
+                    start_message(config, &self.folders)
+                ),
+            },
+        ));
+    }
+
     // -- Startup ------------------------------------------------------------
 
     /// Finds the project's `ascribe.toml` at or above the workspace folders
@@ -213,7 +230,7 @@ impl Core {
         if self.config.is_none() {
             self.config = find_config(&self.folders).map(|p| normalize(&p));
         }
-        self.log(&start_message(self.config.as_deref(), &self.folders));
+        self.log_start(self.config.as_deref());
         if self.config.is_some() {
             self.sync_model();
         }
@@ -517,7 +534,7 @@ impl Core {
                     .any(|f| path.parent() == Some(f.as_path()))
             {
                 self.config = Some(path.clone());
-                self.log(&start_message(Some(&path), &self.folders));
+                self.log_start(Some(&path));
                 sync_model = true;
                 continue;
             }

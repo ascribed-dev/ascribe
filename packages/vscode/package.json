@@ -409,6 +409,12 @@
     "viewsWelcome": [
       {
         "view": "ascribe.projects",
+        "contents": "This folder is in Restricted Mode, so Ascribe doesn't run or check its projects.\n[Manage Workspace Trust](command:workbench.trust.manage)",
+        "when": "!isWorkspaceTrusted"
+      },
+      {
+        "view": "ascribe.projects",
+        "when": "isWorkspaceTrusted",
         "contents": "This workspace has no Ascribe project yet. A project is a folder with an ascribe.toml, which describes its pages and builds.\n[Get started with Ascribe](https://ascribed-dev.com/go/getting-started/)"
       }
     ],
@@ -1350,8 +1356,8 @@
   },
   "capabilities": {
     "untrustedWorkspaces": {
-      "supported": false,
-      "description": "Ascribe runs the project own ascribe binary (node_modules/.bin/ascribe or the ascribe.path setting), which is code the workspace supplies."
+      "supported": "limited",
+      "description": "Ascribe runs the project's own ascribe binary (node_modules/.bin/ascribe or the ascribe.path setting), which is code the workspace supplies. In Restricted Mode it runs nothing and says in the status bar that it isn't checking."
     }
   }
 }
