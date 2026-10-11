@@ -1,0 +1,15 @@
+---
+source: crates/ascribe-check/tests/all/prompt.rs
+assertion_line: 277
+expression: text
+---
+Fix the 1 error `ascribe check` reports in `docs/install.md`.
+
+Where: docs/install.md
+Paths and commands here are from the repository's root.
+
+- 9: [ASC036] `overview.md` doesn't exist
+Then look at the advice. It never fails the check: change what helps, and leave the rest.
+- 5: [ASC152] this code block has no language; write it after the opening fence, or `text` for output
+
+When you're done, run `ascribe check docs/install.md` and fix what it reports.

@@ -4,7 +4,7 @@ description: Reading ascribe report and acting on each section, from the problem
 available: next
 ---
 
-`ascribe check` answers "is this change fine?", quickly, on every edit and every pull request. `ascribe report` answers "what state is this project in?": it counts what the checks find across the whole project, lists what each build leaves out, and runs what's too slow or too networked for a check, such as following every external link. Every finding in it says what kind of next step it needs, as the editor does.
+`ascribe check` answers "is this change fine?", quickly, on every edit and every pull request. `ascribe report` answers "what state is this project in?": it counts what the checks find across the whole project, lists what each build leaves out, and runs what's too slow or too networked for a check, such as following every external link. Every problem in it says what kind of next step it needs, as the editor does.
 
 ```sh
 ascribe report                       # problems, inventory, and builds
@@ -16,7 +16,7 @@ Without a section named, it runs the three that need nothing outside the project
 
 ## Problems
 
-The same findings as `ascribe check`, counted three ways: by check, by file, and by kind of next step. The kind is what tells you how to spend the time:
+The same problems as `ascribe check`, counted three ways: by check, by file, and by kind of next step. The kind is what tells you how to spend the time:
 
 | Next step | What it means |
 |---|---|
@@ -75,13 +75,13 @@ Install lychee from [its releases](https://github.com/lycheeverse/lychee/release
 
 A check that fails or warns is reported by who changes what it checks, and none of it asks you to edit a page:
 
-- **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The finding names the setting; [what your host does](astro.md#what-your-host-does) says how on the hosts the Astro guide covers. A check the checker added after the version Ascribe knows is counted here until Ascribe lists it.
-- **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with `[consumer] agents = true`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the finding says where to report it.
+- **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The problem names the setting; [what your host does](astro.md#what-your-host-does) says how on the hosts the Astro guide covers. A check the checker added after the version Ascribe knows is counted here until Ascribe lists it.
+- **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with `[consumer] agents = true`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the problem says where to report it.
 - **The pages**, such as a page too long for an agent to read in one fetch, as Markdown or as HTML: `ascribe check` reports these on the page itself, so the report names the check and doesn't repeat it. The checker's `page-size-html` measures the whole page, navigation included, so a page over its limit that `ascribe check` doesn't report as too long is over it because of what the site's page template adds around the content.
 
 ## Handing a section to an agent
 
-`--format prompt` writes one prompt about one section's findings, `problems`, `links`, or `agents`, for an agent to work through: each finding with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
+`--format prompt` writes one prompt about one section's problems, `problems`, `links`, or `agents`, for an agent to work through: each problem with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
 
 ```sh
 ascribe report links --format prompt
@@ -94,7 +94,7 @@ External links break and sites change without a commit in your repository, and c
 @snippet {lang=yaml}: code:.github/workflows/report.yml#job
 
 - **`--format markdown`** writes Markdown, for the run's summary and the issue's body.
-- **`--exit-code`** fails on any finding; `--exit-code=warning` only on warnings and errors. A section that couldn't run fails it too, with exit code 2: a report that didn't check the links isn't a pass.
+- **`--exit-code`** fails on any problem; `--exit-code=warning` only on warnings and errors. A section that couldn't run fails it too, with exit code 2: a report that didn't check the links isn't a pass.
 - **The issue** is found by its title, so one stays open until someone closes it, and each run replaces its body with the latest report.
 
 This repository runs this job on these docs, in [`.github/workflows/report.yml`]({repo}/blob/main/.github/workflows/report.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.

@@ -17,7 +17,7 @@ fn broken_link() -> Diagnostic {
 }
 
 #[test]
-fn findings_fail_only_at_the_level_asked_for() {
+fn problems_fail_only_at_the_level_asked_for() {
     let report = Report {
         links: Some(Ran::Done(Links {
             diagnostics: vec![broken_link()],
