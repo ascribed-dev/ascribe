@@ -28,4 +28,8 @@ describe("formatterOffer", () => {
       "Prettier - Code formatter formats Markdown here",
     );
   });
+
+  it("says it writes the folder's settings", () => {
+    expect(formatterOffer("Prettier")).toContain(".vscode/settings.json");
+  });
 });

@@ -17,7 +17,7 @@ export function otherFormatter(configured: unknown, own: string): string | undef
   return id;
 }
 
-/** The offer to make Ascribe the formatter, naming the one that's set. */
+/** The offer to make Ascribe the formatter, naming the one that's set and the file it writes. */
 export function formatterOffer(name: string): string {
-  return `Ascribe: ${name} formats Markdown here, and can change what a page builds to. Make Ascribe the Markdown formatter for this folder?`;
+  return `Ascribe: ${name} formats Markdown here, and can change what a page builds to. Make Ascribe the Markdown formatter for this folder? This sets editor.defaultFormatter in .vscode/settings.json.`;
 }
