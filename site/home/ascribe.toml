@@ -23,6 +23,26 @@ description = "The page's opening: its heading and a sentence, with how far alon
 forms = ["container"]
 attributes = { status = "enum(early, stable)" }
 
+# A page's source beside what a reader sees. Its content is the source, a
+# `@snippet` of the page's file; `page` names that page in ../demo, and the
+# site draws its rendered content beside the source (../src/demo.ts).
+# test/demo.test.ts fails if the two aren't the same file.
+[widgets.source-and-result]
+description = "A page's source, as a snippet of its file, beside the page as the site draws it."
+forms = ["container"]
+attributes = { page = "string" }
+
+# One of the page's claims: its heading and a sentence or two, then the
+# smallest example that shows it, which the site sets below them.
+[widgets.claim-example]
+description = "A claim about Ascribe, then the smallest example that shows it."
+forms = ["container"]
+
+# Commands that differ by package manager, as in the docs.
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm"]
+
 # What follows are copies of ../../docs/ascribe.toml's, so a claim here is
 # marked as the docs mark it. scripts/docs-site/facts.test.ts fails until
 # each agrees with the docs': the release dimension, the versions, the
@@ -57,6 +77,7 @@ include = [
   ".github/workflows/**",
   "crates/ascribe-cli/tests/output/**",
   "examples/**",
+  "site/demo/**",
 ]
 ignore = ["**/node_modules/**"]
 

@@ -112,6 +112,8 @@ The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access t
 
 The changelog's section for the release lists what it ships, and nothing in it is unfinished.
 
+Reread the landing page's "Where it's going" (`site/home/content/index.md`): an item the release ships, or a plan that was dropped, comes off the list, and nothing checks it but you. Its claims' availability marks are checked: `ascribe check` on `site/home` reports `availability-left-behind` once the docs' release tables move past them.
+
 ### 2. Set the version
 
 ```sh

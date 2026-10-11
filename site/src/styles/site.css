@@ -475,7 +475,7 @@ pre {
   max-width: none;
 }
 
-.landing article > :not(hero-banner) {
+.landing article > :not(hero-banner, source-and-result, claim-example) {
   max-width: var(--measure);
 }
 
@@ -533,6 +533,62 @@ hero-banner p {
   margin: 0;
   color: var(--muted);
   font: var(--type-lead) var(--font);
+}
+
+/*
+ * The demonstration (`[widgets.source-and-result]` in home/ascribe.toml): a
+ * page's source, and beside it the page as the site draws it, which the route
+ * adds inside the element (src/demo.ts). One above the other when narrow.
+ */
+source-and-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin: 1.5rem 0 2.5rem;
+}
+
+source-and-result > :is(figure, pre) {
+  margin: 0;
+}
+
+source-and-result .result {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+source-and-result .result > :first-child {
+  margin-top: 0;
+}
+
+source-and-result .result-title {
+  margin: 0 0 1rem;
+  font: var(--type-h1) var(--font);
+}
+
+.page source-and-result .result h2 {
+  margin: 1.5rem 0 0.75rem;
+  font: var(--type-h3) var(--font);
+}
+
+/*
+ * A claim (`[widgets.claim-example]` in home/ascribe.toml): its heading and
+ * its sentences at the page's measure, then its example, which can be wider.
+ */
+claim-example {
+  display: block;
+  padding-top: 0.25rem;
+  margin: 2rem 0;
+  border-top: 1px solid var(--border);
+}
+
+claim-example > :not(pre, figure, ascribe-tabs) {
+  max-width: var(--measure);
+}
+
+.page claim-example h3 {
+  margin-top: 1.25rem;
 }
 
 .page-footer {
@@ -606,5 +662,9 @@ hero-banner p {
 
   .page hero-banner h1 {
     font: var(--type-h1) var(--font);
+  }
+
+  source-and-result {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

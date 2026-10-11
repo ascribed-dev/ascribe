@@ -1,7 +1,8 @@
 // The site's two projects: the docs, under their base path, and the site's own
 // pages, from home/, at the root. What the pages outside the docs take from
-// the docs is checked here: the docs' route, the permalinks they link to,
-// and the install commands they repeat from getting started.
+// the docs is checked here: the docs' route and the permalinks they link to.
+// The install commands they repeat from getting started are checked in
+// scripts/docs-site/facts.test.ts, with the README's.
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -82,19 +83,4 @@ test("each permalink the pages outside the docs link to is one the docs publish"
     );
   expect(() => run([...names])).not.toThrow();
   expect(() => run(["no-such-permalink"])).toThrow();
-});
-
-test("the landing page's install commands are getting started's", async () => {
-  const gettingStarted = await readFile(
-    path.join(docsDir, "content", "getting-started.md"),
-    "utf8",
-  );
-  const index = await readFile(path.join(homeDir, "content", "index.md"), "utf8");
-  const commands = Array.from(index.matchAll(/^```sh\n([\s\S]*?)^```$/gm), ([, block = ""]) =>
-    block.trim(),
-  );
-  expect(commands.length).toBe(2);
-  for (const command of commands) {
-    expect(gettingStarted, command).toMatch(new RegExp(`^${RegExp.escape(command)}$`, "m"));
-  }
 });

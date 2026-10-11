@@ -5,11 +5,13 @@ import { ascribeCollection } from "@ascribed/astro/content";
 // finds `astro/zod`: a folder for each of astro.config.mjs's entries.
 import { schema as docsSchema } from "../.astro/integrations/_ascribed_astro/docs/schema.ts";
 import { schema as homeSchema } from "../.astro/integrations/_ascribed_astro/home/schema.ts";
+import { schema as demoSchema } from "../.astro/integrations/_ascribed_astro/demo/schema.ts";
 import { changelogLoader } from "./changelog.ts";
 
 export const collections = {
   docs: defineCollection(ascribeCollection({ schema: docsSchema, name: "docs" })),
   home: defineCollection(ascribeCollection({ schema: homeSchema, name: "home" })),
+  demo: defineCollection(ascribeCollection({ schema: demoSchema, name: "demo" })),
   // ../CHANGELOG.md, which isn't an Ascribe page: src/pages/changelog.astro.
   changelog: defineCollection({ loader: changelogLoader() }),
 };
