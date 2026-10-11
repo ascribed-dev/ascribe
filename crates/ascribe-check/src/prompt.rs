@@ -20,7 +20,7 @@
 
 use std::path::{Path, PathBuf};
 
-use ascribe_core::path::relative_path;
+use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Applicability, FileId, LineIndex, Location, RelPath};
 
 use crate::evidence;
@@ -53,17 +53,19 @@ pub enum Builds {
     Editor(String),
 }
 
-/// What a prompt says besides its problems: where the project is, which
-/// builds were checked, and which files have unsaved changes.
+/// What a prompt says besides its problems: which folder its paths and
+/// commands are from, where the project is, which builds were checked, and
+/// which files have unsaved changes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Context {
-    /// The project's folder in its repository, `/`-separated, when it isn't
-    /// the repository's root: `docs`. Commands in the prompt are written
-    /// from the repository's root.
+    /// The folder every path and command in the prompt is from, which the
+    /// prompt names once.
+    pub base: Base,
+    /// The project's folder from the base, `/`-separated, when it isn't the
+    /// base: `docs`.
     pub folder: Option<String>,
-    /// The `AGENTS.md` the agent follows, from the repository's root: the
-    /// project folder's, or else the repository's. `None` when neither has
-    /// one.
+    /// The `AGENTS.md` the agent follows, from the base: the project
+    /// folder's, or else the repository's. `None` when neither has one.
     pub agents: Option<String>,
     /// The builds checked.
     pub builds: Builds,
@@ -72,27 +74,82 @@ pub struct Context {
     pub unsaved: Vec<String>,
 }
 
+/// The folder a prompt's paths and commands are from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Base {
+    /// The root of the repository the project is in.
+    Repository,
+    /// A folder in the repository, from its root, `/`-separated: where a
+    /// command that wrote the prompt was run.
+    InRepository(String),
+    /// The project's folder, when there's no repository around it.
+    Project,
+}
+
+impl Base {
+    /// The line that names it.
+    fn line(&self) -> String {
+        let folder = match self {
+            Base::Repository => "the repository's root".to_owned(),
+            Base::InRepository(folder) => format!("`{folder}` in the repository"),
+            Base::Project => "the project's folder, where `ascribe.toml` is".to_owned(),
+        };
+        format!("Paths and commands here are from {folder}.")
+    }
+}
+
 impl Context {
     /// The context of a project whose folder (the directory of
-    /// `ascribe.toml`) is `root`: its repository is the nearest folder at or
-    /// above it with a `.git`, and its `AGENTS.md` is looked for in the
-    /// project's folder, then the repository's.
+    /// `ascribe.toml`) is `root`, for an agent started at the root of its
+    /// repository: the nearest folder at or above it with a `.git`. With no
+    /// repository, it's for an agent in the project's folder. Its
+    /// `AGENTS.md` is looked for in the project's folder, then the
+    /// repository's.
     pub fn of_project(root: &Path, builds: Builds) -> Context {
-        let root = std::path::absolute(root).unwrap_or_else(|_| root.to_owned());
+        Context::seen_from(root, None, builds)
+    }
+
+    /// The context of a project whose folder is `root`, for an agent in
+    /// `here`, the folder the command that writes the prompt was run in.
+    /// When `here` is inside the project's folder, the prompt is from the
+    /// project's folder; when it isn't in the repository, or there's none,
+    /// it's as [`Context::of_project`] has it.
+    pub fn seen_from(root: &Path, here: Option<&Path>, builds: Builds) -> Context {
+        let absolute =
+            |p: &Path| normalize(&std::path::absolute(p).unwrap_or_else(|_| p.to_owned()));
+        let root = absolute(root);
         let repository = repository_of(&root);
-        let folder = repository
-            .as_deref()
-            .and_then(|repo| relative_path(repo, &root))
+        let top = repository.clone().unwrap_or_else(|| root.clone());
+        let inside = |from: &Path, to: &Path| relative_path(from, to).filter(RelPath::is_inside);
+        let base_dir = here
+            .map(absolute)
+            .filter(|here| inside(&top, here).is_some())
+            .map(|here| match inside(&root, &here) {
+                Some(rel) if !rel.is_root() => root.clone(),
+                _ => here,
+            })
+            .unwrap_or_else(|| top.clone());
+        let base = match inside(&top, &base_dir) {
+            Some(rel) if !rel.is_root() => Base::InRepository(rel.to_string()),
+            _ if repository.is_some() => Base::Repository,
+            _ => Base::Project,
+        };
+        let folder = inside(&base_dir, &root)
             .filter(|rel| !rel.is_root())
             .map(|rel| rel.to_string());
         let agents = if has_agents_md(&root) {
             Some(within(folder.as_deref(), "AGENTS.md"))
         } else if repository.as_deref().is_some_and(has_agents_md) {
-            Some("AGENTS.md".to_owned())
+            let up = match &base {
+                Base::InRepository(folder) => "../".repeat(folder.split('/').count()),
+                _ => String::new(),
+            };
+            Some(format!("{up}AGENTS.md"))
         } else {
             None
         };
         Context {
+            base,
             folder,
             agents,
             builds,
@@ -107,13 +164,15 @@ impl Context {
         self
     }
 
-    /// A path relative to the project root, from the repository's root.
-    pub fn in_repository(&self, path: &str) -> String {
+    /// A path relative to the project root, as the prompt writes it: from
+    /// its base.
+    pub fn shown(&self, path: &str) -> String {
         within(self.folder.as_deref(), path)
     }
 
-    /// The `Project:` and `Build:` lines.
+    /// The line that names the base, then the `Project:` and `Build:` lines.
     pub fn project_lines(&self, lines: &mut Vec<String>) {
+        lines.push(self.base.line());
         if let Some(folder) = &self.folder {
             lines.push(format!("Project: {folder}/"));
         }
@@ -131,7 +190,7 @@ impl Context {
     }
 
     /// The two lines that end every prompt: the agent's instructions, and
-    /// checking `targets` (relative to the repository's root).
+    /// checking `targets` (from the base).
     fn finish(&self, targets: &[String]) -> Vec<String> {
         let mut lines = Vec::new();
         if let Some(agents) = &self.agents {
@@ -145,7 +204,7 @@ impl Context {
     }
 
     /// The lines that end a prompt whose work `command` verifies, from the
-    /// repository's root.
+    /// base.
     fn finish_with(&self, command: &str) -> Vec<String> {
         let mut lines = Vec::new();
         if let Some(agents) = &self.agents {
@@ -194,7 +253,7 @@ fn has_agents_md(dir: &Path) -> bool {
     dir.join("AGENTS.md").is_file()
 }
 
-/// `ascribe check` on `targets` (relative to the repository's root), with
+/// `ascribe check` on `targets` (from the base), with
 /// `options` after them.
 fn check_command(targets: &[String], options: &[&str]) -> String {
     let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
@@ -228,11 +287,12 @@ pub fn problem(
     shown_on: &dyn Fn(&RelPath) -> Vec<RelPath>,
 ) -> String {
     let d = &reported.diagnostic;
-    let file = path_of(project, d.location.file);
+    let in_project = path_of(project, d.location.file);
+    let file = context.shown(&in_project);
     let lines = lines_of(project, d.location);
 
     let mut place = vec![format!("Where: {file}:{}", line_range(lines.as_ref()))];
-    unsaved_line(context, &file, &mut place);
+    unsaved_line(context, &in_project, &mut place);
     context.project_lines(&mut place);
     shown_on_line(project, context, d.location.file, shown_on, &mut place);
 
@@ -291,7 +351,7 @@ pub fn problem(
         });
     }
     for related in d.related.iter().take(MAX_RELATED) {
-        let at = path_of(project, related.location.file);
+        let at = context.shown(&path_of(project, related.location.file));
         let line = lines_of(project, related.location).map_or(1, |l| l.first);
         known.push(format!("Related: {at}:{line}: {}", related.message));
     }
@@ -302,7 +362,7 @@ pub fn problem(
         known.push(quoted(lines, &file));
     }
 
-    let target = context.in_repository(&file);
+    let target = file.clone();
     assemble(
         &format!("Fix this problem in `{file}`."),
         &place,
@@ -325,13 +385,14 @@ pub fn file(
     if reported.is_empty() {
         return None;
     }
-    let path = path_of(project, file);
+    let in_project = path_of(project, file);
+    let path = context.shown(&in_project);
     let mut place = vec![format!("Where: {path}")];
-    unsaved_line(context, &path, &mut place);
+    unsaved_line(context, &in_project, &mut place);
     context.project_lines(&mut place);
     shown_on_line(project, context, file, shown_on, &mut place);
 
-    let target = context.in_repository(&path);
+    let target = path.clone();
     let rest = check_command(std::slice::from_ref(&target), &["--format", "concise"]);
     let order = in_order(reported);
     let mut listed: Vec<String> = order
@@ -343,7 +404,10 @@ pub fn file(
             let at = if d.location.file == file {
                 line.to_string()
             } else {
-                format!("{}:{line}", path_of(project, d.location.file))
+                format!(
+                    "{}:{line}",
+                    context.shown(&path_of(project, d.location.file))
+                )
             };
             format!("- {at}: [{}] {}", d.code, d.message)
         })
@@ -379,15 +443,12 @@ pub fn project(
     let targets: Vec<String> = if paths.is_empty() {
         context.folder.iter().cloned().collect()
     } else {
-        paths
-            .iter()
-            .map(|p| context.in_repository(p.as_str()))
-            .collect()
+        paths.iter().map(|p| context.shown(p.as_str())).collect()
     };
     let where_ = if paths.is_empty() {
         "this project".to_owned()
     } else {
-        code_list(&paths.iter().map(ToString::to_string).collect::<Vec<_>>())
+        code_list(&targets)
     };
 
     let mut place = Vec::new();
@@ -395,6 +456,7 @@ pub fn project(
         .iter()
         .map(|(path, _)| path.clone())
         .filter(|p| context.unsaved.contains(p))
+        .map(|p| context.shown(&p))
         .collect();
     if !unsaved.is_empty() {
         place.push(format!(
@@ -411,7 +473,7 @@ pub fn project(
         files
             .iter()
             .take(MAX_LISTED)
-            .map(|(path, counts)| format!("- {path}: {}", counts.words())),
+            .map(|(path, counts)| format!("- {}: {}", context.shown(path), counts.words())),
     );
     if files.len() > MAX_LISTED {
         listed.push(format!("and {} more files.", files.len() - MAX_LISTED));
@@ -434,8 +496,7 @@ pub fn project(
 /// `ascribe agents prompt`: `task`; then `place`, followed by the
 /// `Project:` and `Build:` lines; then what Ascribe knows, `known`, cut from
 /// the end with the line `cut` when the prompt would be too long; then the
-/// two lines that end every prompt, checking `targets` (relative to the
-/// repository's root).
+/// two lines that end every prompt, checking `targets` (from the base).
 pub fn compose(
     context: &Context,
     task: &str,
@@ -474,7 +535,7 @@ pub fn batch(
         let at = if d.location.file == FileId::new(0) && d.location.span.is_empty() {
             String::new()
         } else {
-            let file = context.in_repository(&path_of(project, d.location.file));
+            let file = context.shown(&path_of(project, d.location.file));
             let line = lines_of(project, d.location).map_or(1, |l| l.first);
             format!("{file}:{line}: ")
         };
@@ -563,10 +624,11 @@ fn shown_on_line(
         .into_iter()
         .filter(|p| !project.model().is_fragment(p.as_str()))
         .map(|p| {
-            project
+            let in_project = project
                 .content_root()
                 .join(p.as_str())
-                .map_or_else(|_| p.to_string(), |p| p.to_string())
+                .map_or_else(|_| p.to_string(), |p| p.to_string());
+            context.shown(&in_project)
         })
         .collect();
     pages.sort();
@@ -580,7 +642,7 @@ fn shown_on_line(
     if more > 0 {
         let refs = format!(
             "ascribe refs {}",
-            shell_word(&context.in_repository(&path_of(project, file)))
+            shell_word(&context.shown(&path_of(project, file)))
         );
         line.push_str(&format!(", and {more} more: `{refs}`"));
     }

@@ -27,7 +27,8 @@ pub struct LinkAnswer {
     pub schema_version: u32,
     /// The version of Ascribe that wrote it.
     pub ascribe_version: &'static str,
-    /// The page the link is written on, as a path from the content root.
+    /// The page the link is written on, as the command was given it: a path
+    /// from the folder it was run in, as `ascribe check` names a file.
     pub from: String,
     /// The target, as given.
     pub target: String,
@@ -88,7 +89,8 @@ pub struct LinkSuggestion {
 
 /// Whether `target`, written on the source file at content path `from`,
 /// names something that exists; `fs` is the project's file system, which
-/// files that aren't sources are found in.
+/// files that aren't sources are found in. `named` is the page as the
+/// caller names it back, in [`LinkAnswer::from`].
 ///
 /// # Errors
 ///
@@ -97,6 +99,7 @@ pub fn link(
     project: &Project,
     fs: &dyn FileSystem,
     from: &RelPath,
+    named: &str,
     target: &str,
 ) -> Result<LinkAnswer, QueryError> {
     if project.file(from).is_none() {
@@ -118,7 +121,7 @@ pub fn link(
     let mut answer = LinkAnswer {
         schema_version: SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
-        from: from.to_string(),
+        from: named.to_owned(),
         target: target.to_owned(),
         exists: false,
         kind: LinkKind::Missing,

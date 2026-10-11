@@ -131,10 +131,14 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     if args.page.is_some() && args.format != Format::Prompt {
         return fail(err, "a PAGE is named only with --format prompt");
     }
-    let (loaded, diff) = match answer(&FromDisk, global, args) {
+    let (loaded, mut diff) = match answer(&FromDisk, global, args) {
         Ok(answer) => answer,
         Err(message) => return fail(err, &message),
     };
+    // Its prompts, in the HTML report too, are for an agent here.
+    if let Ok(here) = std::env::current_dir() {
+        diff.seen_from(here);
+    }
     let project = &loaded.project;
     let report = &diff.report;
     if report.working_tree_errors > 0 {

@@ -232,7 +232,7 @@ A report renders at most 300 changed pages; the rest are listed by name, and the
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
 
-The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its commands (`ascribe render`, `git diff`, `ascribe diff`) are written from the repository's root, with the base, the build, and `--config` as this run had them. The review report's **Copy prompt** and the editor's **Prompt agent** give the same prompt.
+The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe render`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML report's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
 
 ### Diff JSON
 
@@ -556,7 +556,7 @@ ascribe permalinks retire --page guides/legacy.md --reason "The sync agent was r
 ascribe permalinks retire --under guides/legacy/ --reason "The sync agent was removed in 4.0"
 ```
 
-It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. It refuses a name still declared anywhere else, an alias, or one already retired, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. It lists each name it retired.
+It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. `--page`, `--under`, and `--to` take a path from the current folder, as `ascribe check` prints it, or from the content root; what it writes in `ascribe.toml` is from the content root, as links there are. It refuses a name still declared anywhere else, an alias, or one already retired, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. It lists each name it retired.
 
 @include: ../_generated/cli-permalinks-retire-options.md
 
@@ -668,7 +668,7 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/link.json
 
-`kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
+`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root. `kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs

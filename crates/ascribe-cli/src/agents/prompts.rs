@@ -142,6 +142,12 @@ fn global() -> Global {
     }
 }
 
+/// The folder the prompt is for: where the command, or the MCP server, was
+/// run.
+fn here() -> Option<PathBuf> {
+    std::env::current_dir().ok()
+}
+
 fn path_of(arguments: &Arguments) -> Option<PathBuf> {
     arguments.get("path").map(PathBuf::from)
 }
@@ -172,9 +178,9 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
                 .join(", ")
         ));
     };
-    let context = Context::of_project(project.root(), Builds::All);
+    let context = Context::seen_from(project.root(), here().as_deref(), Builds::All);
     let content = project.content_root().as_str();
-    let content_dir = context.in_repository(content);
+    let content_dir = context.shown(content);
     let content_dir = if content_dir.is_empty() {
         ".".to_owned()
     } else {
@@ -317,9 +323,8 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
     // what's wrong when it's run.
     let loaded = answer::load(projects, &global, given.as_deref())
         .map_err(|f| answer::Stop::Load(f).message())?;
-    let context = Context::of_project(loaded.project.root(), Builds::All);
-    // The path as seen from the repository's root, where the prompt's
-    // commands run.
+    let context = Context::seen_from(loaded.project.root(), here().as_deref(), Builds::All);
+    // The path as seen from the prompt's base, where its commands run.
     let in_project = given.as_deref().and_then(|path| {
         let absolute = |p: &std::path::Path| normalize(&std::path::absolute(p).unwrap_or_default());
         relative_path(&absolute(loaded.project.root()), &absolute(path))
@@ -327,7 +332,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
             .filter(|rel| !rel.is_root())
     });
     let targets: Vec<String> = match in_project {
-        Some(rel) => vec![context.in_repository(rel.as_str())],
+        Some(rel) => vec![context.shown(rel.as_str())],
         None => context.folder.iter().cloned().collect(),
     };
     let concise = {
@@ -366,7 +371,10 @@ fn review(projects: &dyn Projects, arguments: &Arguments) -> Result<String, Stri
     if let Some(path) = path_of(arguments) {
         global.config = Some(answer::locate(&global, Some(&path)).map_err(|e| e.to_string())?);
     }
-    let (loaded, compared) = diff::answer(projects, &global, &args)?;
+    let (loaded, mut compared) = diff::answer(projects, &global, &args)?;
+    if let Some(here) = here() {
+        compared.seen_from(here);
+    }
     Ok(
         diff::prompt(&loaded.project, &compared, &args)?.unwrap_or_else(|| {
             format!(

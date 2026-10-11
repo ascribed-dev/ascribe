@@ -31,10 +31,10 @@ pub struct Review<'a> {
 }
 
 impl Review<'_> {
-    /// A content path, or another name `because` gives, as a prompt shows
-    /// it: a content path relative to the project root; a snippet's address
-    /// and `ascribe.toml` as they are.
-    fn shown(&self, name: &str) -> String {
+    /// A content path, or another name `because` gives, relative to the
+    /// project root, as unsaved files are named; a snippet's address as it
+    /// is.
+    fn in_project(&self, name: &str) -> String {
         if name == crate::compare::MODEL_FILE || name.starts_with("code:") {
             return name.to_owned();
         }
@@ -44,18 +44,27 @@ impl Review<'_> {
         }
     }
 
-    /// A block's place: `guides/install.md:12-14`, and the include that
-    /// shows it on the page when it's written in another file.
-    fn place(&self, anchor: &Anchor) -> String {
-        let mut text = self.source(&anchor.source);
+    /// The same name as a prompt shows it: a path from the prompt's base; a
+    /// snippet's address as it is.
+    fn shown(&self, context: &Context, name: &str) -> String {
+        if name.starts_with("code:") {
+            return name.to_owned();
+        }
+        context.shown(&self.in_project(name))
+    }
+
+    /// A block's place: `docs/guides/install.md:12-14`, and the include
+    /// that shows it on the page when it's written in another file.
+    fn place(&self, context: &Context, anchor: &Anchor) -> String {
+        let mut text = self.source(context, &anchor.source);
         if let Some(outer) = anchor.via.first() {
-            text.push_str(&format!(", shown through {}", self.source(outer)));
+            text.push_str(&format!(", shown through {}", self.source(context, outer)));
         }
         text
     }
 
     /// `<path>:<lines>` with its path decoded and shown.
-    fn source(&self, source: &str) -> String {
+    fn source(&self, context: &Context, source: &str) -> String {
         match source.rsplit_once(':') {
             Some((path, lines)) => {
                 // One line is written as one number, as the problem prompts
@@ -64,9 +73,9 @@ impl Review<'_> {
                     Some((first, last)) if first == last => first,
                     _ => lines,
                 };
-                format!("{}:{lines}", self.shown(&percent_decode(path)))
+                format!("{}:{lines}", self.shown(context, &percent_decode(path)))
             }
-            None => self.shown(&percent_decode(source)),
+            None => self.shown(context, &percent_decode(source)),
         }
     }
 
@@ -83,8 +92,8 @@ impl Review<'_> {
         }
     }
 
-    /// `ascribe diff` against the same base, from the repository's root,
-    /// with `options` after it.
+    /// `ascribe diff` against the same base, from the prompt's base, with
+    /// `options` after it.
     fn diff_command(&self, context: &Context, builds: &[&str], options: &[&str]) -> String {
         let mut words = vec!["ascribe".to_owned(), "diff".to_owned()];
         if let Some(folder) = &context.folder {
@@ -110,12 +119,12 @@ fn short(commit: &str) -> String {
     commit.chars().take(7).collect()
 }
 
-/// `ascribe render` of a page (shown from the project root), as `build`'s
-/// reader sees it, from the repository's root.
-fn render_command(context: &Context, page: &str, build: &str) -> String {
+/// `ascribe render` of a page (as the prompt shows it), as `build`'s
+/// reader sees it.
+fn render_command(page: &str, build: &str) -> String {
     format!(
         "ascribe render {} --build {}",
-        shell_word(&context.in_repository(page)),
+        shell_word(page),
         shell_word(build)
     )
 }
@@ -123,7 +132,7 @@ fn render_command(context: &Context, page: &str, build: &str) -> String {
 /// The prompt about one changed page of `build`: "Review what this change
 /// does to `<page>`, as a reader of build `<build>` sees it."
 pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff) -> String {
-    let path = review.shown(&page.path);
+    let path = review.shown(context, &page.path);
     let mut place = vec![format!("Where: {path}")];
     unsaved_lines(context, review, page, &mut place);
     context.project_lines(&mut place);
@@ -135,7 +144,11 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
         PageStatus::Changed => format!("What changed: {}", page.summary()),
     });
     if !page.because.is_empty() {
-        let causes: Vec<String> = page.because.iter().map(|c| review.shown(c)).collect();
+        let causes: Vec<String> = page
+            .because
+            .iter()
+            .map(|c| review.shown(context, c))
+            .collect();
         known.push(format!(
             "{}: {}",
             if page.own_file_changed {
@@ -147,10 +160,7 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
         ));
     }
     if page.status != PageStatus::Removed {
-        known.push(format!(
-            "To read it: `{}`",
-            render_command(context, &path, build)
-        ));
+        known.push(format!("To read it: `{}`", render_command(&path, build)));
     }
     let rest = review.diff_command(context, &[build], &["--format", "json"]);
     if !page.changes.is_empty() {
@@ -159,7 +169,7 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
             page.changes
                 .iter()
                 .take(MAX_LISTED)
-                .map(|c| change_line(review, c)),
+                .map(|c| change_line(context, review, c)),
         );
         if page.changes.len() > MAX_LISTED {
             known.push(format!(
@@ -181,8 +191,8 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
 }
 
 /// One change, in a line: its kind and where it is.
-fn change_line(review: &Review<'_>, change: &Change) -> String {
-    let at = |anchor: &Option<Anchor>| anchor.as_ref().map(|a| review.place(a));
+fn change_line(context: &Context, review: &Review<'_>, change: &Change) -> String {
+    let at = |anchor: &Option<Anchor>| anchor.as_ref().map(|a| review.place(context, a));
     match (change.kind, at(&change.now), at(&change.was)) {
         (ChangeKind::Moved, Some(now), Some(was)) => {
             format!("- moved: {now}, from {was} in the base")
@@ -206,9 +216,9 @@ fn kind_word(kind: ChangeKind) -> &'static str {
 /// The lines that say the page, or a file its change comes through, has
 /// unsaved changes: the agent reads the files on disk.
 fn unsaved_lines(context: &Context, review: &Review<'_>, page: &PageDiff, lines: &mut Vec<String>) {
-    let path = review.shown(&page.path);
+    let path = review.in_project(&page.path);
     let unsaved: Vec<String> = std::iter::once(path.clone())
-        .chain(page.because.iter().map(|c| review.shown(c)))
+        .chain(page.because.iter().map(|c| review.in_project(c)))
         .filter(|p| context.unsaved.contains(p))
         .collect();
     match unsaved.as_slice() {
@@ -218,7 +228,7 @@ fn unsaved_lines(context: &Context, review: &Review<'_>, page: &PageDiff, lines:
         }
         _ => lines.push(format!(
             "Some files have unsaved changes; save them before you start: {}",
-            code_list(&unsaved)
+            code_list(&unsaved.iter().map(|p| context.shown(p)).collect::<Vec<_>>())
         )),
     }
 }
@@ -241,14 +251,16 @@ pub fn fragment_reach(
     if pages.is_empty() {
         return None;
     }
-    let path = review.shown(fragment.as_str());
+    let path = review.shown(context, fragment.as_str());
     let mut place = vec![format!("Where: {path}")];
-    if context.unsaved.contains(&path) {
+    if context
+        .unsaved
+        .contains(&review.in_project(fragment.as_str()))
+    {
         place.push("The file has unsaved changes; save it before you start.".to_owned());
     }
     context.project_lines(&mut place);
 
-    let in_repository = context.in_repository(&path);
     let mut known = vec![
         review.base_line(),
         format!(
@@ -260,7 +272,7 @@ pub fn fragment_reach(
                     .as_ref()
                     .unwrap_or(&review.base.commit)
             ),
-            shell_word(&in_repository)
+            shell_word(&path)
         ),
         format!(
             "To read a page: `ascribe render <page> --build {}`",
@@ -268,12 +280,12 @@ pub fn fragment_reach(
         ),
         "Pages:".to_owned(),
     ];
-    let refs = format!("ascribe refs {}", shell_word(&in_repository));
+    let refs = format!("ascribe refs {}", shell_word(&path));
     known.extend(
         pages
             .iter()
             .take(MAX_LISTED)
-            .map(|p| format!("- {}", review.shown(&p.path))),
+            .map(|p| format!("- {}", review.shown(context, &p.path))),
     );
     if pages.len() > MAX_LISTED {
         known.push(format!("and {} more: `{refs}`", pages.len() - MAX_LISTED));
@@ -333,8 +345,8 @@ pub fn pages(context: &Context, review: &Review<'_>, builds: &[BuildDiff]) -> Op
         for page in build.pages.iter().take(MAX_LISTED - listed) {
             known.push(format!(
                 "- {}: {}",
-                review.shown(&page.path),
-                page.describe(|c| review.shown(c))
+                review.shown(context, &page.path),
+                page.describe(|c| review.shown(context, c))
             ));
             listed += 1;
         }

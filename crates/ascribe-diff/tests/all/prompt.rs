@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use ascribe_check::prompt::{Builds, Context, LIMIT};
+use ascribe_check::prompt::{Base, Builds, Context, LIMIT};
 use ascribe_core::{FileId, RelPath};
 use ascribe_diff::prompt::{self, Review};
 use ascribe_diff::{BaseInfo, BuildDiff, PageDiff, Side, compare_builds};
@@ -63,6 +63,7 @@ fn base() -> BaseInfo {
 /// A project in `site/` of its repository, with an `AGENTS.md`.
 fn context() -> Context {
     Context {
+        base: Base::Repository,
         folder: Some("site".to_owned()),
         agents: Some("AGENTS.md".to_owned()),
         builds: Builds::Named(vec!["site".to_owned()]),
@@ -121,11 +122,11 @@ fn a_page_changed_through_a_phrase_names_the_content_model() {
     let builds = diff(&before, &after);
     let text = page_prompt(&context(), find(&builds, "install.md"));
     assert!(
-        text.contains("\nChanged through: `ascribe.toml`\n"),
+        text.contains("\nChanged through: `site/ascribe.toml`\n"),
         "{text}"
     );
     assert!(
-        text.contains("\n- changed: content/install.md:7\n"),
+        text.contains("\n- changed: site/content/install.md:7\n"),
         "{text}"
     );
 }
@@ -153,7 +154,7 @@ fn a_prompt_about_unsaved_text_says_to_save_it() {
     context.unsaved = vec!["content/about.md".to_owned()];
     let text = page_prompt(&context, find(&builds, "about.md"));
     assert!(
-        text.starts_with("Review what this change does to `content/about.md`, as a reader of build `site` sees it.\n\nWhere: content/about.md\nThe file has unsaved changes; save it before you start.\nProject: site/\n"),
+        text.starts_with("Review what this change does to `site/content/about.md`, as a reader of build `site` sees it.\n\nWhere: site/content/about.md\nThe file has unsaved changes; save it before you start.\nPaths and commands here are from the repository's root.\nProject: site/\n"),
         "{text}"
     );
 }

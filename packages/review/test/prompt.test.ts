@@ -288,7 +288,9 @@ describe("the list of open threads for an agent", () => {
       threads: [thread({ resolved: true })],
       shownOn: () => [],
     });
-    expect(text).toBe("Pull request #128 has no open review threads.\nProject: site/\n");
+    expect(text).toBe(
+      "Pull request #128 has no open review threads.\nPaths and commands here are from the repository's root.\nProject: site/\n",
+    );
   });
 });
 
@@ -364,7 +366,7 @@ describe("gathering a thread prompt on the host's side", () => {
     };
     const text = (await buildThreadsPrompt(context, { kind: "thread", threadId: "F" })) ?? "";
     expect(text).toContain(
-      "Where: docs/_fragments/prereqs.md:3\nThe file has unsaved changes; save it before you start.\nProject: site/\nShown on: docs/guides/install.md, docs/guides/upgrade.md\n",
+      "Where: site/docs/_fragments/prereqs.md:3\nThe file has unsaved changes; save it before you start.\nPaths and commands here are from the repository's root.\nProject: site/\nShown on: site/docs/guides/install.md, site/docs/guides/upgrade.md\n",
     );
     expect(text).toContain("Line 3:\n```markdown\n- Lantern agent 2.4 or later\n```\n");
     const open = await buildThreadsPrompt(context, { kind: "open-threads" });
