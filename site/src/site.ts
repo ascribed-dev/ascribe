@@ -10,7 +10,7 @@ export const contentDir = "docs/content";
 
 /**
  * The docs' route: `[consumer] base-path` in ../docs/ascribe.toml less Astro's
- * `base`, and the folder of their route in src/pages/. test/routes.test.ts
+ * `base`, and the folder of their route in src/pages/. test/projects.test.ts
  * checks it against the base path.
  */
 export const docsPath = "docs/";
