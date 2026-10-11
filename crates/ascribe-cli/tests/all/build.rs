@@ -579,9 +579,12 @@ fn a_committed_link_in_the_output_directory_fails_the_build_and_nothing_outside_
     );
     let out = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&out), 2, "{}", stderr(&out));
-    let shown = site.join("plain").display().to_string();
+    // The output directory is written as the model has it (`.ascribe/build`),
+    // so on Windows the message mixes separators: compare with one.
+    let slashes = |text: &str| text.replace('\\', "/");
+    let shown = slashes(&site.join("plain").display().to_string());
     assert!(
-        stderr(&out).contains(&shown) && stderr(&out).contains("is a link"),
+        slashes(&stderr(&out)).contains(&shown) && stderr(&out).contains("is a link"),
         "{}",
         stderr(&out)
     );
