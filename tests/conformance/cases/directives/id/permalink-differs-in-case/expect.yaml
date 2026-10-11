@@ -1,0 +1,12 @@
+description: >-
+  Permalinks that differ only in case are one name, since a site may serve
+  every spelling of an address at one: two headings on one page, and a
+  page's own, are reported after the first, naming it.
+spec: ["2.1", "4.1", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: permalink-duplicate, file: a.md, line: 9}
+      - {slug: permalink-duplicate, file: b.md, line: 3}
