@@ -21,6 +21,7 @@
     "repo-docs/**/*.ts",
     "compare/**/*.ts",
     "project-docs/**/*.ts",
-    "design/**/*.ts"
+    "design/**/*.ts",
+    "surface/**/*.ts"
   ]
 }

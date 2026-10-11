@@ -10,7 +10,7 @@ What the audit was for: a report of where the surface doesn't hold together, wha
 
 - Everything the earlier phases wrote: the inventory and the capability table, the sessions' notes and transcripts, the docs site's two lists, and phase 1's first findings and conventions.
 - The [proposal](../proposals/surface-audit.md): the seven questions, and the five kinds of finding.
-- The proposals and plans about to add to the surface: [permalinks](../permalinks/README.md), [tested examples](../proposals/tested-examples.md), [versions](../proposals/versions.md), [page templates](../proposals/page-templates.md), and the [website](../proposals/website.md). Each names commands, settings, or files that don't exist yet. Content checks has landed, so its commands are in the inventory.
+- The proposals and plans about to add to the surface: [permalinks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/permalinks/README.md), [tested examples](../proposals/tested-examples.md), [versions](../proposals/versions.md), [page templates](../proposals/page-templates.md), and the [website](../proposals/website.md). Each names commands, settings, or files that don't exist yet. Content checks has landed, so its commands are in the inventory.
 - `project-docs/checklists.md`: where conventions go.
 
 ## Design
