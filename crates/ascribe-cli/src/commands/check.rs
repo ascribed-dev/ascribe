@@ -71,8 +71,19 @@ pub struct Args {
     #[arg(long, conflicts_with = "build")]
     pub editor_build: bool,
 
+    /// Show only the problems with this code (`ASC036`) or name
+    /// (`link-target-missing`), as `ascribe explain` takes it.
+    ///
+    /// Repeat it for several. The whole project is still checked, and the
+    /// rest is left out of the report, as with paths: the counts, the exit
+    /// code, a prompt, and the fixes `--fix` applies are about what's left.
+    /// An unknown code is a usage error, and the message names the closest.
+    #[arg(long, value_name = "CODE")]
+    pub code: Vec<String>,
+
     /// Show how many problems each code and each file has, most first,
-    /// instead of listing them.
+    /// instead of listing them, then the command that lists the first code's
+    /// problems.
     #[arg(long)]
     pub summary: bool,
 
@@ -164,6 +175,9 @@ pub enum CheckError {
     /// `--fix` couldn't write a file it fixed.
     #[error(transparent)]
     Fix(#[from] fix::FixError),
+    /// `--code` names no diagnostic.
+    #[error("--code: {0}")]
+    Code(ascribe_query::QueryError),
 }
 
 impl Coded for CheckError {
@@ -173,6 +187,7 @@ impl Coded for CheckError {
             CheckError::Stdin(_) => "stdin_unreadable",
             CheckError::NoVale => "vale_not_set_up",
             CheckError::Fix(e) => e.code(),
+            CheckError::Code(e) => e.code(),
         }
     }
 }
@@ -211,6 +226,9 @@ pub struct Outcome {
     /// The problems acknowledged as intended in the files reported on.
     acknowledged: Vec<Acknowledged>,
     files: FileTable,
+    /// The codes `--code` names, as the registry writes them, in the order
+    /// given; empty for every code.
+    codes: Vec<String>,
     /// With `--fix`, the safe fixes applied before this check.
     fixed: Vec<json::FixedEntry>,
     /// How many errors, warnings, and advice are reported.
@@ -293,20 +311,21 @@ fn exit_code(counts: Counts, deny_warnings: bool) -> u8 {
     }
 }
 
-/// Checks the project, and keeps what counts for the paths named: what
-/// `ascribe check` reports, before it's written. `stdin` is read with
-/// `--stdin`.
+/// Checks the project, and keeps what counts for the paths named and has
+/// the codes named: what `ascribe check` reports, before it's written.
+/// `stdin` is read with `--stdin`.
 ///
 /// # Errors
 ///
-/// The project can't be found or loaded, the paths can't be checked, or a
-/// build named isn't the content model's.
+/// A code named isn't a diagnostic's, the project can't be found or loaded,
+/// the paths can't be checked, or a build named isn't the content model's.
 pub fn run_check(
     projects: &dyn Projects,
     global: &Global,
     args: &Args,
     stdin: &mut dyn Read,
 ) -> Result<Outcome, Stopped> {
+    let codes = codes(&args.code).map_err(Stopped::Failure)?;
     let Checked {
         loaded,
         config,
@@ -345,6 +364,11 @@ pub fn run_check(
     if let Some(scope) = &scope {
         acknowledged.retain(|a| scope.contains_file(project, a.problem.location.file));
     }
+    if !codes.is_empty() {
+        let named = |code: &str| codes.iter().any(|c| c == code);
+        reported.retain(|r| named(r.diagnostic.code));
+        acknowledged.retain(|a| named(a.problem.code));
+    }
     // Advice after errors and warnings; stable, so each keeps its order.
     reported.sort_by_key(|r| r.diagnostic.severity == Severity::Advice);
     let files = FileTable::of_project(project);
@@ -357,9 +381,24 @@ pub fn run_check(
         builds_checked,
         acknowledged,
         files,
+        codes,
         fixed: Vec::new(),
         counts,
     })
+}
+
+/// The codes `given` names, by code or name, as the registry writes them,
+/// each once, in the order given.
+fn codes(given: &[String]) -> Result<Vec<String>, Failure> {
+    let mut codes: Vec<String> = Vec::new();
+    for code_or_slug in given {
+        let code = ascribe_query::code_of(code_or_slug)
+            .map_err(|e| Failure::Check(CheckError::Code(e)))?;
+        if !codes.iter().any(|c| c == code) {
+            codes.push(code.to_owned());
+        }
+    }
+    Ok(codes)
 }
 
 /// `diagnostics` with Vale's, when `--vale` or `[checks.vale] in-check` asks
@@ -430,6 +469,7 @@ pub fn write(
         builds_checked,
         acknowledged,
         files,
+        codes,
         fixed,
         counts,
     } = outcome;
@@ -446,8 +486,9 @@ pub fn write(
         checked,
         &covered,
         files_reported.unwrap_or(checked),
+        codes,
     ) + &text::acknowledged(acknowledged.len());
-    let command = Command::new(global, args);
+    let command = Command::new(global, args, codes);
     if matches!(args.format, Format::Text | Format::Concise) {
         write_fixed(out, fixed)?;
     }
@@ -466,10 +507,11 @@ pub fn write(
                 fixed,
             },
         ),
-        (Format::Prompt, _) => write_prompt(out, project, args, scope.as_ref(), reported),
+        (Format::Prompt, _) => write_prompt(out, project, args, codes, scope.as_ref(), reported),
         (Format::Text | Format::Concise, true) => {
-            let (codes, by_file) = tally(files, reported);
-            text::write_tally(out, &codes, &by_file, &command.tally())
+            let (by_code, by_file) = tally(files, reported);
+            let first = by_code.first().map(|c| command.of_code(c.code));
+            text::write_tally(out, &by_code, &by_file, &command.tally(), first.as_deref())
                 .and_then(|()| writeln!(out, "{summary}"))
         }
         (Format::Text, false) => text::write_reported(out, files, reported, &summary, color),
@@ -506,6 +548,7 @@ fn write_prompt(
     out: &mut dyn Write,
     project: &Project,
     args: &Args,
+    codes: &[String],
     scope: Option<&Scope>,
     reported: &[Reported],
 ) -> io::Result<()> {
@@ -520,7 +563,8 @@ fn write_prompt(
         project.root(),
         std::env::current_dir().ok().as_deref(),
         builds,
-    );
+    )
+    .with_codes(codes.to_vec());
     let named = scope.and_then(|s| s.named_sources(project));
     let one = named.as_deref().and_then(|files| match files {
         [file] => project.source_at(file),
@@ -615,16 +659,33 @@ fn load(
 struct Command<'a> {
     global: &'a Global,
     args: &'a Args,
+    /// The codes `--code` names, as the registry writes them.
+    codes: &'a [String],
 }
 
 impl<'a> Command<'a> {
-    fn new(global: &'a Global, args: &'a Args) -> Command<'a> {
-        Command { global, args }
+    fn new(global: &'a Global, args: &'a Args, codes: &'a [String]) -> Command<'a> {
+        Command {
+            global,
+            args,
+            codes,
+        }
+    }
+
+    /// The options that choose what's checked and shown: `--config`,
+    /// `--build`, `--editor-build`, and `--code`, as given.
+    fn options(&self) -> Vec<String> {
+        let mut words = self.checked();
+        for code in self.codes {
+            words.push("--code".to_owned());
+            words.push(quote(code));
+        }
+        words
     }
 
     /// The options that choose what's checked: `--config`, `--build`, and
     /// `--editor-build`, as given.
-    fn options(&self) -> Vec<String> {
+    fn checked(&self) -> Vec<String> {
         let mut words = Vec::new();
         if let Some(config) = &self.global.config {
             words.push("--config".to_owned());
@@ -654,6 +715,17 @@ impl<'a> Command<'a> {
 
     /// This command writing JSON, with `--summary` or without.
     fn with_format(&self, summary: bool) -> String {
+        let mut words = self.on_paths();
+        words.extend(self.options());
+        if summary {
+            words.push("--summary".to_owned());
+        }
+        words.extend(["--format".to_owned(), "json".to_owned()]);
+        words.join(" ")
+    }
+
+    /// `ascribe check` and the paths, or standard input, as given.
+    fn on_paths(&self) -> Vec<String> {
         let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
         match &self.args.path {
             Some(path) if self.args.stdin => {
@@ -663,11 +735,19 @@ impl<'a> Command<'a> {
             }
             _ => words.extend(self.args.paths.iter().map(|p| quote(&p.to_string_lossy()))),
         }
-        words.extend(self.options());
-        if summary {
-            words.push("--summary".to_owned());
+        words
+    }
+
+    /// This command narrowed to the one code `code` instead of the codes
+    /// named, without `--summary`, in the same format: what lists the
+    /// problems a summary counts for that code.
+    fn of_code(&self, code: &str) -> String {
+        let mut words = self.on_paths();
+        words.extend(self.checked());
+        words.extend(["--code".to_owned(), quote(code)]);
+        if self.args.format == Format::Concise {
+            words.extend(["--format".to_owned(), "concise".to_owned()]);
         }
-        words.extend(["--format".to_owned(), "json".to_owned()]);
         words.join(" ")
     }
 
@@ -802,17 +882,23 @@ mod tests {
         let reported = reported();
         let counts = Counts::of_reported(&reported);
         assert_eq!(
-            text::check_summary(counts, 1, &text::Covered::Every, 1),
+            text::check_summary(counts, 1, &text::Covered::Every, 1, &[]),
             "checked 1 file for every build, reported on 1: 0 errors, 1 warning, 1 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1),
+            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1, &[]),
             "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice",
             "the summary counts advice even when there is none"
         );
         let builds = ["cloud".to_owned(), "site".to_owned(), "v2".to_owned()];
         let named = |n: usize| {
-            text::check_summary(Counts::default(), 3, &text::Covered::Named(&builds[..n]), 1)
+            text::check_summary(
+                Counts::default(),
+                3,
+                &text::Covered::Named(&builds[..n]),
+                1,
+                &[],
+            )
         };
         assert_eq!(
             named(1),
@@ -823,7 +909,7 @@ mod tests {
             "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1),
+            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1, &[]),
             "checked 3 files with the page-level checks of build `site` only, reported on 1: 0 errors, 0 warnings, 0 advice"
         );
 

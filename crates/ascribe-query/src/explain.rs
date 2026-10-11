@@ -131,14 +131,7 @@ pub struct ListedDiagnostic {
 ///
 /// No diagnostic has that code or slug; the error names the closest.
 pub fn explain(code_or_slug: &str) -> Result<Explanation, QueryError> {
-    let registry = Registry::global();
-    let given = code_or_slug.trim();
-    let Some(entry) = registry.find(given) else {
-        return Err(QueryError::UnknownDiagnostic {
-            given: given.to_owned(),
-            closest: closest(registry, given),
-        });
-    };
+    let entry = entry(code_or_slug)?;
     let mut variants: Vec<MessageVariant> = entry
         .messages
         .iter()
@@ -165,6 +158,28 @@ pub fn explain(code_or_slug: &str) -> Result<Explanation, QueryError> {
         docs: entry.docs(),
         example: entry.example.as_ref().map(|e| example_text(entry, e)),
     })
+}
+
+/// The code of the diagnostic with this code (`ASC036`, in any case) or
+/// slug: `ASC036`.
+///
+/// # Errors
+///
+/// No diagnostic has that code or slug; the error names the closest.
+pub fn code_of(code_or_slug: &str) -> Result<&'static str, QueryError> {
+    entry(code_or_slug).map(|e| e.code.as_str())
+}
+
+/// The registry's entry with this code or slug.
+fn entry(code_or_slug: &str) -> Result<&'static Entry, QueryError> {
+    let registry = Registry::global();
+    let given = code_or_slug.trim();
+    registry
+        .find(given)
+        .ok_or_else(|| QueryError::UnknownDiagnostic {
+            given: given.to_owned(),
+            closest: closest(registry, given),
+        })
 }
 
 /// Every diagnostic, in code order.

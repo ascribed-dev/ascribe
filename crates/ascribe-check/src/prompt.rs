@@ -77,6 +77,9 @@ pub struct Context {
     /// sends when `ascribe` on its path is another binary or none. `None`:
     /// `ascribe`.
     pub program: Option<String>,
+    /// The diagnostic codes the check was narrowed to, which every
+    /// `ascribe check` the prompt names keeps: `ASC036`. Empty: every code.
+    pub codes: Vec<String>,
 }
 
 /// The folder a prompt's paths and commands are from.
@@ -170,6 +173,7 @@ impl Context {
             builds,
             unsaved: Vec::new(),
             program: None,
+            codes: Vec::new(),
         }
     }
 
@@ -185,6 +189,13 @@ impl Context {
     #[must_use]
     pub fn with_program(mut self, program: Option<String>) -> Context {
         self.program = program;
+        self
+    }
+
+    /// The same context, for a check narrowed to `codes`.
+    #[must_use]
+    pub fn with_codes(mut self, codes: Vec<String>) -> Context {
+        self.codes = codes;
         self
     }
 
@@ -249,11 +260,15 @@ impl Context {
         lines
     }
 
-    /// `ascribe check` on `targets` (from the base),
-    /// with `options` after them.
+    /// `ascribe check` on `targets` (from the base), narrowed to the
+    /// context's codes, with `options` after them.
     fn check_command(&self, targets: &[String], options: &[&str]) -> String {
         let mut words = vec![self.ascribe(), "check".to_owned()];
         words.extend(targets.iter().map(|t| shell_word(t)));
+        for code in &self.codes {
+            words.push("--code".to_owned());
+            words.push(shell_word(code));
+        }
         words.extend(options.iter().map(|o| (*o).to_owned()));
         words.join(" ")
     }

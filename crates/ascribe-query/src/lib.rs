@@ -32,7 +32,9 @@ pub mod report;
 pub mod rules;
 
 pub use error::QueryError;
-pub use explain::{DiagnosticList, ExampleText, Explanation, ListedDiagnostic, explain, list};
+pub use explain::{
+    DiagnosticList, ExampleText, Explanation, ListedDiagnostic, code_of, explain, list,
+};
 pub use link::{LinkAnswer, LinkKind, LinkSuggestion, link};
 pub use model::{ModelReport, Section, model, summary};
 pub use outline::{Outline, OutlineHeading, outline};

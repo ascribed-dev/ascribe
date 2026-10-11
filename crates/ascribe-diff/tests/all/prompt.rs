@@ -69,6 +69,7 @@ fn context() -> Context {
         builds: Builds::Named(vec!["site".to_owned()]),
         unsaved: Vec::new(),
         program: None,
+        codes: Vec::new(),
     }
 }
 

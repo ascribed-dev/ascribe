@@ -323,7 +323,8 @@ mod tests {
                 CheckError::Scope(_)
                 | CheckError::Stdin(_)
                 | CheckError::NoVale
-                | CheckError::Fix(_) => {}
+                | CheckError::Fix(_)
+                | CheckError::Code(_) => {}
             }
         }
         fn report(e: &ReportError) {
@@ -539,6 +540,10 @@ mod tests {
             Box::new(CheckError::Fix(ascribe_check::fix::FixError {
                 path: path(),
                 source: io_error(),
+            })),
+            Box::new(CheckError::Code(QueryError::UnknownDiagnostic {
+                given: text(),
+                closest: Vec::new(),
             })),
             Box::new(ReportError::PromptSection),
             Box::new(EjectError::NoPreset { config: None }),

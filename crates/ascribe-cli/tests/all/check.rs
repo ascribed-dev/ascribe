@@ -1037,6 +1037,7 @@ fn summary_counts_by_code_and_by_file_instead_of_listing() {
             "  2  docs/guides/b.md (1 error, 1 warning)\n",
             "  2  docs/index.md (2 errors, 0 warnings)\n",
             "  1  docs/guides/a.md (1 error, 0 warnings)\n",
+            "To work through the first code: ascribe check --code ASC037\n",
             "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
         )
     );
@@ -1064,6 +1065,166 @@ fn summary_counts_by_code_and_by_file_instead_of_listing() {
     assert_eq!(listed["total"], 5);
     assert!(listed["next_command"].is_null());
     assert!(listed["summary"].get("by_code").is_none());
+}
+
+#[test]
+fn code_shows_only_the_problems_with_that_code() {
+    let dir = paths_project();
+    // By name or by code, in any case, and once however often it's named.
+    let by_name = ascribe(
+        dir.path(),
+        &[
+            "check",
+            "--code",
+            "phrase-undeclared",
+            "--format",
+            "concise",
+        ],
+    );
+    assert_eq!(
+        stdout(&by_name),
+        concat!(
+            "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
+            "checked 4 files for every build, reported on 4 for code `ASC044`: 0 errors, 1 warning, 0 advice\n",
+        )
+    );
+    // The exit code is about what's shown: a warning alone doesn't fail.
+    assert_eq!(code(&by_name), 0);
+    let by_code = ascribe(
+        dir.path(),
+        &[
+            "check", "--code", "asc044", "--code", "ASC044", "--format", "concise",
+        ],
+    );
+    assert_eq!(stdout(&by_code), stdout(&by_name));
+
+    let report = json_of(&ascribe(
+        dir.path(),
+        &[
+            "check",
+            "docs/guides",
+            "--code",
+            "ASC037",
+            "--code",
+            "link-target-missing",
+            "--format",
+            "json",
+        ],
+    ));
+    assert_eq!(
+        places(&report),
+        [
+            ("docs/guides/a.md".to_owned(), "link-id-missing".to_owned()),
+            ("docs/guides/b.md".to_owned(), "link-id-missing".to_owned()),
+        ]
+    );
+    assert_eq!(report["summary"]["errors"], 2);
+    assert_eq!(report["summary"]["warnings"], 0);
+
+    // With an error among what's shown, the check fails.
+    assert_eq!(
+        code(&ascribe(dir.path(), &["check", "--code", "ASC036"])),
+        1
+    );
+}
+
+#[test]
+fn an_unknown_code_is_a_usage_error_naming_the_closest() {
+    let dir = paths_project();
+    let out = ascribe(dir.path(), &["check", "--code", "link-targt"]);
+    assert_eq!(code(&out), 2);
+    assert_eq!(
+        stderr(&out),
+        "error: --code: no diagnostic is `link-targt`; did you mean ASC036 link-target-missing?\n"
+    );
+    assert_eq!(stdout(&out), "");
+}
+
+#[test]
+fn the_commands_a_narrowed_check_names_keep_its_codes() {
+    // More than 50 of one code, and one of another.
+    let many: String = (0..60).map(|i| format!("See {{nope{i}}}.\n\n")).collect();
+    let page = format!("---\ntitle: Many\n---\n\n{many}[Gone](gone.md)\n");
+    let dir = project(&[("a.md", &page), ("b.md", &page)]);
+    let text = stdout(&ascribe(
+        dir.path(),
+        &[
+            "check",
+            "--code",
+            "phrase-undeclared",
+            "--format",
+            "concise",
+        ],
+    ));
+    assert!(
+        text.contains("\nand 70 more: ascribe check docs/a.md --code ASC044 --format concise\n"),
+        "{text}"
+    );
+    assert!(!text.contains("ASC036"), "{text}");
+
+    let summary = stdout(&ascribe(
+        dir.path(),
+        &["check", "--code", "ASC044", "--summary", "--format", "json"],
+    ));
+    let report: serde_json::Value = serde_json::from_str(&summary).unwrap();
+    assert_eq!(
+        report["next_command"],
+        "ascribe check --code ASC044 --format json"
+    );
+
+    let prompt = stdout(&ascribe(
+        dir.path(),
+        &[
+            "check",
+            "docs/a.md",
+            "--code",
+            "ASC036",
+            "--format",
+            "prompt",
+        ],
+    ));
+    assert!(
+        prompt.starts_with("Fix the 1 error `ascribe check` reports in `docs/a.md`."),
+        "{prompt}"
+    );
+    assert!(!prompt.contains("ASC044"), "{prompt}");
+    assert!(
+        prompt.contains("run `ascribe check docs/a.md --code ASC036`"),
+        "{prompt}"
+    );
+}
+
+#[test]
+fn summary_ends_with_the_command_for_the_first_code() {
+    let dir = paths_project();
+    let text = stdout(&ascribe(
+        dir.path(),
+        &["check", "docs/guides", "--summary", "--format", "concise"],
+    ));
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(
+        lines[lines.len() - 2],
+        "To work through the first code: ascribe check docs/guides --code ASC037 --format concise",
+        "{text}"
+    );
+    // The command lists that code's problems, and only those.
+    let listed = stdout(&ascribe(
+        dir.path(),
+        &[
+            "check",
+            "docs/guides",
+            "--code",
+            "ASC037",
+            "--format",
+            "concise",
+        ],
+    ));
+    assert_eq!(listed.lines().filter(|l| l.contains("[ASC037]")).count(), 2);
+    assert_eq!(listed.lines().count(), 3, "{listed}");
+    // Nothing to work through, nothing named.
+    let clean = project(&[("index.md", "---\ntitle: Home\n---\n\nHello.\n")]);
+    let text = stdout(&ascribe(clean.path(), &["check", "--summary"]));
+    assert!(!text.contains("To work through"), "{text}");
 }
 
 #[test]
