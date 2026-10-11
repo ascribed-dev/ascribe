@@ -10,7 +10,9 @@
 - @available: next
   `--editor-build`: Run the page-level checks of the editor's build only, as the editor does as you type. The editor's build is `[editor] build` in `ascribe.toml`, or the first build. With paths that name files, only those files and the pages that include them are checked, which is quick: for a check after every edit. A full `ascribe check` still covers every build.
 - @available: next
-  `--summary`: Show how many diagnostics each code and each file has, most first, instead of listing them.
+  `--code <CODE>`: Show only the diagnostics with this code (`ASC036`) or name (`link-target-missing`), as `ascribe explain` takes it. Repeat it for several. The whole project is still checked, and the rest is left out of the report, as with paths: the counts, the exit code, a prompt, and the fixes `--fix` applies are about what's left. An unknown code is a usage error, and the message names the closest.
+- @available: next
+  `--summary`: Show how many diagnostics each code and each file has, most first, instead of listing them, then the command that lists the first code's diagnostics.
 - `--format <FORMAT>`: How to show the results.
   - `text` (the default): Diagnostics with source snippets, for people.
   - `concise`: One line per diagnostic, `file:line: [code] message`, grouped by file: for an agent. At most 50, then how many more and the command that narrows the check.

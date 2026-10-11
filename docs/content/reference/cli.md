@@ -78,7 +78,16 @@ With `--vale`, or with `in-check = true` in [`[checks.vale]`](content-model.md#c
 `--format prompt` writes a prompt for an agent that fixes the problems: about the file, when the paths name one file, and otherwise about the paths or the whole project. It lists at most 20 problems, or 20 files, then names the command that lists the rest, and ends with how to check the result. It writes nothing when there are no problems, and the exit codes are the same. With `--stdin`, it says the file has unsaved changes. See [Prompt your agent](../guides/agents.md#prompt-your-agent).
 
 @available: next
-`--summary` replaces the list with how many diagnostics each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first. The text lists at most 20 files, then the command whose JSON lists them all.
+`--summary` replaces the list with how many diagnostics each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first. The text lists at most 20 files, then the command whose JSON lists them all, and ends, before the summary line, with the command that lists the first code's diagnostics: `To work through the first code: ascribe check --code ASC037`.
+
+### Checking one rule at a time
+
+@available: next
+`--code ASC037` shows only the diagnostics with that code, or with that name (`--code link-id-missing`), as [`ascribe explain`](#cli-explain) takes it. Repeat it for several. The whole project is still checked, and the rest is left out afterwards, as paths leave out what doesn't count for them, so an agent, or a person, can fix one rule across the project instead of working file by file. Everything after is about what's left: the counts, and the summary line, which names the codes (``reported on 12 for code `ASC037` ``); the exit code, `1` only when a diagnostic shown is an error; `--format prompt`, about the problems left; and `--fix`, which applies only their fixes. The commands a report names keep the codes: the concise list's `and N more:`, and the JSON's `next_command`. A code no diagnostic has is exit code `2`, with the closest named, as on `explain`.
+
+```sh
+npx ascribe check --code link-id-missing --format concise
+```
 
 ### Applying the safe fixes
 
@@ -98,7 +107,7 @@ Only the fixes of the diagnostics reported are applied, so `ascribe check docs/g
 |---|---|
 | `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
 | `1` | There are errors, or warnings with `--deny-warnings`. |
-| `2` | The project couldn't be checked: a usage error, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
+| `2` | The project couldn't be checked: a usage error, a `--code` no diagnostic has, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
 
@@ -457,7 +466,7 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 
 | Tool | The command it runs |
 |---|---|
-| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
+| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names, narrowed to the diagnostics in `code` (`--code`) when it's given. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
 | `ascribe_explain` | `ascribe explain` |
 | `ascribe_model` | `ascribe model` |
 | `ascribe_outline` | `ascribe outline` |

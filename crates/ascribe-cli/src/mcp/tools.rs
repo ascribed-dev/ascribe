@@ -71,6 +71,14 @@ pub const TOOLS: &[Spec] = &[
                         "description": "Check only the editor's build, which is quicker; a \
                             full check covers every build.",
                     },
+                    "code": {
+                        "type": "array",
+                        "items": { "type": "string" },
+                        "description": "Only the problems with these diagnostic codes \
+                            (`ASC037`) or names (`link-id-missing`), to fix one rule across \
+                            the project. The whole project is still checked. By default, every \
+                            code.",
+                    },
                     "response_format": response_format(),
                 },
                 "additionalProperties": false,
@@ -576,6 +584,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         path,
         build: a.strings("build")?,
         editor_build: a.boolean("editor_build")?,
+        code: a.strings("code")?,
         summary: false,
         format: if detailed {
             check::Format::Json

@@ -31,7 +31,8 @@ pub fn write(
             Counts::of(diagnostics),
             files_checked,
             covered,
-            files_checked
+            files_checked,
+            &[]
         ),
         self::acknowledged(acknowledged)
     )
@@ -83,13 +84,15 @@ pub fn write_reported(
 pub const TALLY_FILES: usize = 20;
 
 /// Writes the counts by code and by file, most first, for `--summary`: at
-/// most [`TALLY_FILES`] files, then `and N more files: <more>`. The summary
-/// line follows.
+/// most [`TALLY_FILES`] files, then `and N more files: <more>`, then
+/// `first`, the command that lists the first code's diagnostics. The
+/// summary line follows.
 pub fn write_tally(
     out: &mut dyn Write,
     codes: &[ByCode],
     by_file: &[ByFile],
     more: &str,
+    first: Option<&str>,
 ) -> io::Result<()> {
     if codes.is_empty() {
         return Ok(());
@@ -129,6 +132,9 @@ pub fn write_tally(
             "  and {} more files: {more}",
             by_file.len() - TALLY_FILES
         )?;
+    }
+    if let Some(first) = first {
+        writeln!(out, "To work through the first code: {first}")?;
     }
     Ok(())
 }
@@ -174,14 +180,16 @@ pub enum Covered<'a> {
 }
 
 /// The summary line of `ascribe check`, in one form whatever was asked: the
-/// files checked, the builds covered, the files reported on, and all three
-/// counts, as `checked 12 files for every build, reported on 1: 1 error,
-/// 0 warnings, 0 advice`.
+/// files checked, the builds covered, the files reported on, the codes
+/// `--code` narrowed it to (`for code `ASC036``), and all three counts, as
+/// `checked 12 files for every build, reported on 1: 1 error, 0 warnings,
+/// 0 advice`.
 pub fn check_summary(
     counts: Counts,
     files_checked: usize,
     covered: &Covered<'_>,
     files_reported: usize,
+    codes: &[String],
 ) -> String {
     let builds = match covered {
         Covered::Every => "for every build".to_owned(),
@@ -189,8 +197,13 @@ pub fn check_summary(
         Covered::Named(names) => format!("for builds {}", listed(names)),
         Covered::Editor(build) => format!("with the page-level checks of build `{build}` only"),
     };
+    let only = match codes {
+        [] => String::new(),
+        [one] => format!(" for code `{one}`"),
+        codes => format!(" for codes {}", listed(codes)),
+    };
     format!(
-        "checked {} {builds}, reported on {files_reported}: {}, {}, {} advice",
+        "checked {} {builds}, reported on {files_reported}{only}: {}, {}, {} advice",
         plural(files_checked, "file"),
         plural(counts.errors, "error"),
         plural(counts.warnings, "warning"),

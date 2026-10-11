@@ -50,7 +50,7 @@ Each changes nothing, and each takes `--format json`.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
 - `ascribe render <page> --build <name>`: a page as one build's readers see it.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
-- `ascribe check --summary`: the problems counted by code and by file, for a project with many.
+- `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
 
 Use the commands when you have a shell. Without one, use the `ascribe_*` tools of Ascribe's MCP server if you have them: they return the same JSON.
 

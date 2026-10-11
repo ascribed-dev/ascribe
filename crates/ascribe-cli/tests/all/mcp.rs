@@ -490,6 +490,34 @@ fn unsaved_text_is_checked_as_the_file_it_names() {
 }
 
 #[test]
+fn code_narrows_the_check_as_the_command_does() {
+    let repo = repository();
+    let root = repo.path();
+    let mut server = Server::start(root);
+    let (text, _) = server.call_ok(
+        "ascribe_check",
+        json!({ "paths": ["site"], "code": ["link-id-missing"] }),
+    );
+    let expected = stdout(
+        root,
+        &[
+            "check",
+            "site",
+            "--code",
+            "link-id-missing",
+            "--format",
+            "concise",
+        ],
+    );
+    assert_eq!(text, expected);
+    assert!(text.contains("[ASC037]"), "{text}");
+    assert!(text.contains("for code `ASC037`"), "{text}");
+
+    let message = server.call_error("ascribe_check", json!({ "code": ["link-targt"] }));
+    assert!(message.contains("ASC036 link-target-missing"), "{message}");
+}
+
+#[test]
 fn the_commands_json_has_what_the_tools_need() {
     let repo = repository();
     let root = repo.path();

@@ -69,6 +69,7 @@ fn plain() -> Context {
         builds: Builds::All,
         unsaved: Vec::new(),
         program: None,
+        codes: Vec::new(),
     }
 }
 

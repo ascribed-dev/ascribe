@@ -302,6 +302,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         path: None,
         build: Vec::new(),
         editor_build: false,
+        code: Vec::new(),
         summary: false,
         format: check::Format::Prompt,
         deny_warnings: false,

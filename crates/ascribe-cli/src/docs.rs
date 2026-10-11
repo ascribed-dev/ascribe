@@ -32,6 +32,7 @@ const AVAILABLE: &[(&str, &str, &str)] = &[
     ("check", "stdin", "next"),
     ("check", "path", "next"),
     ("check", "editor_build", "next"),
+    ("check", "code", "next"),
     ("check", "summary", "next"),
     ("check", "vale", "next"),
     ("check", "fix", "next"),
