@@ -36,7 +36,7 @@ const sets: Record<string, string> = {
     "The weight of a note's heading line, a step's number, a tab's label when the script isn't running, and the selected tab.",
   "--ascribe-border-width": "The width of the line joining steps and of the line under the tabs.",
   "--ascribe-space":
-    "The space above and below notes, steps, and tabs, beside a note's content, between steps and beside their numbers, and either side of a tab's label.",
+    "The space above and below notes, steps, and tabs, beside a note's content, between steps and beside their numbers, either side of a tab's label, and above a tab's label when the script isn't running.",
   "--ascribe-space-small":
     "The smaller space: above and below a note's content and under its heading line, between tabs, above and below a tab's label and under the tabs, and above and below a line of availability badges.",
   "--ascribe-border-color": "The line joining steps and the line under the tabs.",
