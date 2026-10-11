@@ -95,15 +95,32 @@ impl FileIndex {
         self.headings.iter().find(|h| h.source_id == id)
     }
 
+    /// The heading with this span.
+    pub fn heading_at(&self, span: Span) -> Option<&Heading> {
+        at_span(&self.headings, span, |h| h.span)
+    }
+
     /// The include whose directive has this span.
     pub(crate) fn include_at(&self, span: Span) -> Option<&Include> {
-        self.includes.iter().find(|i| i.span == span)
+        at_span(&self.includes, span, |i| i.span)
     }
 
     /// The `@snippet` whose directive has this span.
     pub fn snippet_at(&self, span: Span) -> Option<&SnippetUse> {
-        self.snippets.iter().find(|s| s.span == span)
+        at_span(&self.snippets, span, |s| s.span)
     }
+}
+
+/// The item of a list in document order whose span is `span`, found by where
+/// it starts, so that looking up every heading of a page with many headings
+/// isn't quadratic.
+fn at_span<T>(items: &[T], span: Span, span_of: impl Fn(&T) -> Span) -> Option<&T> {
+    let first = items.partition_point(|item| span_of(item).start() < span.start());
+    items
+        .get(first..)?
+        .iter()
+        .take_while(|item| span_of(item).start() == span.start())
+        .find(|item| span_of(item) == span)
 }
 
 /// An `@include` directive (SPEC §4.2).

@@ -8,6 +8,10 @@
 //! This file is a crate root, so it looks for its modules beside itself;
 //! each test file names its own.
 
+// `links.rs` panics on a link it can't make, as a test helper may.
+#[allow(clippy::panic)]
+#[path = "../../../tests/support/links.rs"]
+mod links;
 mod support;
 
 #[path = "all/across.rs"]

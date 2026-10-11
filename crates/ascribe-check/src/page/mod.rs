@@ -8,7 +8,7 @@
 //! |---|---|
 //! | `id-duplicate`, `heading-duplicate-without-id` | the page's resolved headings |
 //! | `link-id-missing` | the source index, for the links the build publishes |
-//! | `include-id-missing`, `include-cycle` | include expansion |
+//! | `include-id-missing`, `include-cycle`, `include-limit` | include expansion |
 //! | `variant-no-arm-survives`, `available-exceeds-scope` | build modes and the availability scope check |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |

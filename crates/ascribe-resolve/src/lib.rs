@@ -98,7 +98,8 @@ pub use build::{
     permalinks,
 };
 pub use expand::{
-    ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,
+    ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
+    MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,
 };
 pub use fs::{
     DiskFs, FileSystem, LinkCheck, MemoryFs, Probe, Sources, in_nested_project, is_link,

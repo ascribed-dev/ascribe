@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 
 use ascribe_check::Diagnostic;
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{FileId, LineIndex, RelPath};
+use ascribe_core::{FileId, LineIndex, RelPath, Visited};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{
     Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
@@ -503,6 +503,7 @@ impl Core {
         let mut sync_model = false;
         let mut changes: Vec<Change> = Vec::new();
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
+        let mut visited = Visited::default();
         for event in events {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
@@ -538,7 +539,7 @@ impl Core {
             if event.typ == FileChangeType::DELETED {
                 self.collect_deleted(&path, &mut changes, &mut mirror);
             } else {
-                self.collect_present(&path, &mut changes, &mut mirror);
+                self.collect_present(&path, &mut visited, &mut changes, &mut mirror);
             }
         }
         if !changes.is_empty() {
@@ -567,9 +568,13 @@ impl Core {
     }
 
     /// A file or directory exists on disk: its files are created or changed.
+    /// A directory is walked as the source index walks the content root,
+    /// going into each folder once, by its real path, so a link back to one
+    /// already walked isn't followed.
     fn collect_present(
         &self,
         path: &Path,
+        visited: &mut Visited,
         changes: &mut Vec<Change>,
         mirror: &mut Vec<(RelPath, bool)>,
     ) {
@@ -583,11 +588,14 @@ impl Core {
             return self.collect_deleted(path, changes, mirror);
         };
         if meta.is_dir() {
+            if !matches!(visited.enter(path), Ok(Some(_))) {
+                return;
+            }
             let Ok(entries) = std::fs::read_dir(path) else {
                 return;
             };
             for entry in entries.flatten() {
-                self.collect_present(&entry.path(), changes, mirror);
+                self.collect_present(&entry.path(), visited, changes, mirror);
             }
             return;
         }
@@ -715,7 +723,7 @@ impl Core {
         // Outside FileSystem: whether the file whose buffer closed is still
         // there; `collect_present` reads it through DiskFs.
         if path.is_file() {
-            self.collect_present(path, &mut changes, &mut mirror);
+            self.collect_present(path, &mut Visited::default(), &mut changes, &mut mirror);
         } else {
             self.collect_deleted(path, &mut changes, &mut mirror);
         }

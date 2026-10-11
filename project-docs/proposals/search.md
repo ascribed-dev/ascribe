@@ -61,7 +61,7 @@ So the first version stores nothing and adds no dependency. [When an index would
 
 ## A query
 
-The command's name, `ascribe search` below, is a working name: the [surface audit](../surface-audit/README.md) is settling how commands are named.
+The command's name is `ascribe search`. The [surface audit](../surface-audit/findings.md#the-proposals-against-the-findings) checked it against the conventions for naming a command, and it stands.
 
 ```sh
 ascribe search rate limit                 # both words, in one block
@@ -288,7 +288,7 @@ For a later plan, by the repository's [steel threads](../../.claude/skills/steel
 
 ## Waiting on the audit
 
-**What the command is called.** The [surface audit](../surface-audit/README.md)'s first phase writes the conventions for naming a command, and `ascribe search` is checked against them with the others. The MCP tool and the request take whatever name the command gets.
+**What the command is called.** `ascribe search`, with the tool `ascribe_search` and the request `ascribe/search`. The [surface audit](../surface-audit/findings.md#the-proposals-against-the-findings) checked the names against its conventions: a verb alone, and a tool named for its command. A path given to it is a path from the current folder, as the audit's findings 13 and 26 ask of every command.
 
 ## Open questions
 

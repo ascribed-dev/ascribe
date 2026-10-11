@@ -15,7 +15,7 @@ It's the largest of our crates, and the one the others reach the file system thr
 | `src/uses.rs` | `Usable`, `Use`, `Project::uses`, `Project::use_counts` | Where each page, fragment, heading, and content model entry is used. The language server's Find All References and its inventory both ask it, so a count is the length of the list. |
 | `src/references.rs` | `reference_target`, `include_target`, `resolve_reference` | The one implementation of the rules for links, images, and includes: what a destination names, whether it's inside the boundary, and whether it's there. The index and `ascribe-check`'s file-level checks both call it. |
 | `src/snippet/` | `Address`, `resolve_snippet`, `snippet_issues`, `CodeFiles` | The one implementation of the rules for `@snippet` (SPEC §4.8): reading an address, finding its file through a source, and taking a region out by its tags (`src/snippet/tags.rs`). |
-| `src/expand.rs` | `Project::expand`, `ExpandedPage` | Includes replaced by their targets, and snippets by their code, recursively. Every block keeps the file and span it was written in, and the includes it came through. |
+| `src/expand.rs` | `Project::expand`, `ExpandedPage`, `MAX_EXPANDED_BLOCKS`, `MAX_EXPANDED_BYTES` | Includes replaced by their targets, and snippets by their code, recursively, up to `MAX_EXPANDED_BLOCKS` blocks and `MAX_EXPANDED_BYTES` of text a page. Every block keeps the file and span it was written in, and the includes it came through. |
 | `src/build/` | `BuildResolver`, `ResolvedPage`, `ResolvedBuild`, `DefaultRouter` | Resolving a page for one build, in SPEC §9.2's order: availability, build modes, phrases, page ids, links and assets, glossary. Each pass is its own module; `src/build/mod.rs` lists them. |
 | `src/incremental/` | `IncrementalProject`, `Change`, `Affected`, `Snapshot`, `Version` | Keeping a project current as files change, redoing only what each change affects. The language server runs on it. `src/incremental/mod.rs` says what each change invalidates and how file ids are kept. |
 | `src/slug/` | `GithubSlugger`, `slugger_by_name` | Heading slugs: a port of `github-slugger`, with a table and fixtures generated from the npm package by `src/slug/generate.mjs`. |
@@ -45,7 +45,8 @@ It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crat
 ## Tests
 
 - `tests/all/headings.rs`: source ids, titles, and the rest of the per-file index.
-- `tests/all/includes.rs`: include expansion.
+- `tests/all/includes.rs`: include expansion, and its limit.
+- `tests/all/include_graphs.rs`: include expansion over random include graphs, against a model written from the spec (proptest).
 - `tests/all/uses.rs`: where pages, headings, and the content model's entries are used.
 - `tests/all/references.rs`: links, images, and assets: what each names, from which file, and what's wrong with it.
 - `tests/all/snippets.rs`: the code block a `@snippet` becomes, and which problem `snippet_issues` reports.

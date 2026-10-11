@@ -64,7 +64,8 @@ Everything the audit writes is in this folder:
 | `inventory-slice.md` | Phase 1's table of everything that reports or fixes a problem, with what was noticed while building it. Its table of commands is the map's now |
 | `journeys/<name>.md` | A journey's script, then each walk's notes |
 | `journeys/transcripts/` | The agents' sessions, as recorded |
-| `findings.md` | The findings, numbered, in order of what they cost a user |
+| `findings.md` | The report: what the audit found, the findings in the order they were written, with the order of what they cost a user at the top |
+| `docs-site.md` | Phase 4's notes on the docs site |
 | `capabilities.md` | What can be done where |
 
 The generated inventory is the exception. It outlives the audit, so it's [`project-docs/surface.md`](../surface.md), beside the checklists and the decisions, written by `scripts/surface/inventory.ts` and kept current by its test.
