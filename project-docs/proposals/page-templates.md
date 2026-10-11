@@ -102,6 +102,13 @@ A template's instructions to its author ("this section is optional; delete it if
 
 That's the need the [brainstorm](../brainstorm.md)'s notes found: text in a page that no output carries. It's one construct, and a template's instructions are its first use. This proposal depends on it and doesn't design it; the [notes proposal](notes.md) does, as `@comment`. A leftover instruction is reported the same way as a leftover placeholder.
 
+### What else starts from a copy
+
+The [surface audit](../surface-audit/findings.md) found two more things every project begins by copying out of the docs, and they belong with the starter set, by the same command or beside it:
+
+- **A project's first `ascribe.toml`** (the audit's finding 53). Nothing starts a project today: "`ascribe.toml` is written by hand, from getting started". A project that takes the starter set has no model to add its types to, so the command writes a first one when there's none, small and commented.
+- **A site's starter files** (finding 29). The docs site has four files the next Astro site will write again, the same in every one: the collection, the route, a layout that loads the elements, and the sidebar's list. They'd be written by `@ascribed/astro`, not the binary, as the site's own from then on. Whether that's this proposal's command or one of the integration's is for the plan to settle.
+
 ## What ships
 
 **The Core pack, less the README:** concept, how-to, tutorial, reference, troubleshooting, and release notes. Six templates, six guides, six short notes of Ascribe's, and a content model that declares the six types.
