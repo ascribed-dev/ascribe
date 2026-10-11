@@ -241,7 +241,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe report links` loses every moved link when a project's lychee.toml turns lychee's cache on"
     },
     {
