@@ -117,8 +117,9 @@ impl Context {
     /// The context of a project whose folder is `root`, for an agent in
     /// `here`, the folder the command that writes the prompt was run in.
     /// When `here` is inside the project's folder, the prompt is from the
-    /// project's folder; when it isn't in the repository, or there's none,
-    /// it's as [`Context::of_project`] has it.
+    /// project's folder; when it's a folder beside the project's, outside
+    /// the repository, or there's no repository, it's as
+    /// [`Context::of_project`] has it.
     pub fn seen_from(root: &Path, here: Option<&Path>, builds: Builds) -> Context {
         let absolute =
             |p: &Path| normalize(&std::path::absolute(p).unwrap_or_else(|_| p.to_owned()));
@@ -129,9 +130,18 @@ impl Context {
         let base_dir = here
             .map(absolute)
             .filter(|here| inside(&top, here).is_some())
-            .map(|here| match inside(&root, &here) {
-                Some(rel) if !rel.is_root() => root.clone(),
-                _ => here,
+            .and_then(|here| {
+                if inside(&root, &here).is_some() {
+                    Some(root.clone())
+                } else if inside(&here, &root).is_some() {
+                    Some(here)
+                } else {
+                    // A folder beside the project, such as `repo/other`
+                    // for a project in `repo/docs`: its paths would climb
+                    // out of it, so they're written from the repository's
+                    // root instead.
+                    None
+                }
             })
             .unwrap_or_else(|| top.clone());
         let base = match inside(&top, &base_dir) {

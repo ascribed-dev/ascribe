@@ -398,6 +398,12 @@ fn a_context_seen_from_a_folder_writes_its_paths_from_there() {
     fs::create_dir(&content).unwrap();
     assert_eq!(seen_from(&content), in_project);
 
+    // From a folder beside the project's, whose paths to it would climb
+    // out, the repository's root.
+    let other = dir.path().join("other");
+    fs::create_dir(&other).unwrap();
+    assert_eq!(seen_from(&other), context_of(&docs));
+
     // From outside the repository, its root.
     let elsewhere = tempfile::tempdir().expect("a temporary folder");
     assert_eq!(seen_from(elsewhere.path()), context_of(&docs));
