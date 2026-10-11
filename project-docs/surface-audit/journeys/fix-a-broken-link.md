@@ -22,7 +22,7 @@ That sentence is all the walker is told. Not which page, not which link, not wha
 
 A fresh copy of `examples/quill`, a git repository with one commit, in which one link's target was renamed. Each walk gets its own copy, prepared by someone other than the walker as "Preparing a copy" says. The copy holds the project and nothing else, except what the walk's row below adds.
 
-The binary is the release build of `main` (`cargo build --release -p ascribe-cli`), and its version is noted with each walk.
+The binary is the release build of `main` (`cargo build --release -p ascribe-cli`), and its version is noted with each walk. The build of 10 October 2026 is from the audit's branch, which differs from `main` in `project-docs/` only: the same binary.
 
 ## The four walks
 
@@ -35,7 +35,7 @@ The binary is the release build of `main` (`cargo build --release -p ascribe-cli
 
 ### In the editor
 
-Open the copy's folder in VS Code and start from there. VS Code opens a folder it hasn't seen in Restricted Mode, where the extension reports nothing: trust the folder (**Manage** in the banner, then **Trust**) and note what you saw before you did. The extension's settings stay at their defaults, so the project's server starts when you open one of its pages; whether the problem is found before that is part of the walk. **Prompt agent** may be opened to see what it builds, and nothing is sent. Done when you believe the project has no problems left: say how you know.
+Open the copy's folder in VS Code and start from there. VS Code opens a folder it hasn't seen in Restricted Mode, where the extension reports nothing: trust the folder (**Manage** in the banner, then **Trust**) and note what you saw before you did. The extension's settings stay at their defaults, so the project's server starts when you open one of its pages; whether the problem is found before that is part of the walk. **Prompt agent** may be opened to see what it builds, and nothing is sent. Your own editor settings stay as they are: the walk is your real editor, and if saving does more than save, note it and stop. Done when you believe the project has no problems left: say how you know, and which builds that covers.
 
 ### At the command line
 
@@ -130,14 +130,28 @@ The first two sections are a dry run of the maintainer's walks, done by an agent
 - **Seen on the way:**
   - In Restricted Mode the extension is silent and the panel says the project is clean: "No problems have been detected in the workspace." with the broken page open, and the only notice is VS Code's own banner.
   - Trusted, with no page open, the status bar says 0 errors; opening `quickstart.md` brought `install-agent.md`'s error. The project's problems wait for a page to be opened, and nothing says so.
-  - Saving with VS Code's format on save and Prettier as the Markdown formatter broke a page that checked clean apart from the link: `@include: _fragments/prerequisites.md` became `@include: \_fragments/prerequisites.md` (ASC021, an error), a blank line went in after `@steps` (ASC016), and `version: {version}` in a `yaml phrases=true` block became `version: { version }`. The pages' language is "Markdown", so the editor's Markdown formatter applies to them, and the extension didn't stop it or say anything.
+  - Saving with VS Code's format on save and Prettier as the Markdown formatter broke a page that checked clean apart from the link, and half of what it changed was reported by nothing. The detail is under "What the save changed", below.
   - The lightbulb's only entry for ASC036 was "Prompt agent: fix this problem", while **Change where the link goes**, two commands away, listed "Rotate keys  api-keys.md#rotate-keys". More evidence for "`choose` with nothing to choose from" in the inventory's list, not a new one.
-  - The actions bar, opened on the broken link, started with "Wrap in a note" and had no "Prompt agent: fix this problem". The inventory's row for it says "the fixes for problems at the cursor first, then the actions". The link was selected, not just under the cursor, which may be why.
+  - The actions bar, opened on the broken link, started with "Wrap in a note" and had no "Prompt agent: fix this problem". The inventory's row for it says "the fixes for problems at the cursor first, then the actions". Checked afterwards by the preparer, outside the walk: the bar lists only the fixes that edit the text, and that entry only runs a command, so it's as designed. What's loose is the row's wording.
   - The error went as the link changed; the advice ASC154, which the same change answers, stayed until the file was saved.
   - Command titles are in two styles in one list: "Ascribe: Actions for the Cursor", "Ascribe: Changed Pages", "Ascribe: Dim What the Build Leaves Out", "Ascribe: Prompt Agent to Fix This File"; and "Ascribe: Change where the link goes", "Ascribe: Add a variant", "Ascribe: Give the heading a stable id". "Ascribe: Focus on Content model View" names the view the side bar calls "Content Model".
   - The output channel logs `ascribe-lsp: using the project at …/ascribe.toml` at `[error]`, when nothing is wrong, and doesn't give the binary's version.
   - "Prompt agent: fix this problem" replaced what was on the clipboard, and said so only in the status bar.
   - Nothing in the editor checks every build: the inventory's item, seen again. Here it didn't matter, since `ascribe check` agreed.
+
+- **What the save changed:** the first copy's `git diff` of `docs/install-agent.md` after **File: Save**: 16 lines added and 3 removed, of which one changed line is the link. The rest is Prettier's, formatting the page as Markdown:
+
+  | Prettier's change | Where | What reported it |
+  |---|---|---|
+  | `@include: _fragments/prerequisites.md` became `@include: \_fragments/prerequisites.md` | line 17 | `` [ASC021] Error: the included file `\_fragments/prerequisites.md` doesn't exist ``; and, since the fragment is no longer included, `[ASC155] Advice: no file includes this fragment, so nothing publishes it` at `docs/_fragments/prerequisites.md:1:1` |
+  | A blank line after `@steps` | line 23 | `` [ASC016] Warning: a blank line separates `@steps` from the block it applies to; remove it so the directive touches its block `` |
+  | A blank line between a heading and its `@id:` line | five headings: Prerequisites, Install the agent, Connect to {product}, Streaming sync, Troubleshooting | Nothing |
+  | A blank line after `@variant {pm=npm}:`, `@variant {pm=pnpm}:`, and `@variant {pm=yarn}:`, and between each one's code block and the next `@variant` or `@end` | in the first step, and before the `@end` that closes the deployment variants | Nothing |
+  | `version: {version}` became `version: { version }` | inside a `` ```yaml phrases=true `` block | Nothing |
+
+  It isn't particular to this task or this copy. The pages are `.md` files and VS Code's language for them is "Markdown", so whatever formats Markdown formats them: the walker's settings were `"editor.formatOnSave": true` and `"editor.defaultFormatter": "esbenp.prettier-vscode"` under `"[markdown]"`, a common pair. Any page with an underscore in a directive's path, an `@steps`, an `@id:` under a heading, an `@variant`, or a phrase in a code block would change the same way. This repository's own Prettier run leaves Markdown out, so it doesn't happen here; a user's project has nothing that does that for it.
+
+  Checked afterwards by the preparer, outside the walk, by rendering the page for the `site` build before and after Prettier (`ascribe render docs/install-agent.md --build site`), with the repository's Prettier at its defaults: the blank lines after `@id:` and around `@variant` change nothing in the output; `{ version }` does, and the built page says `version: { version }` where it said `3.4.1`, with nothing reported. With that Prettier the `_fragments` path wasn't escaped, so that change depends on the user's Prettier settings. What the extension does about another formatter wasn't looked at: the finding is written from the walk, and what to do about it is phase 5's.
 
 ### Dry run by an agent, at the command line
 
@@ -183,13 +197,13 @@ The setup worked: both copies gave the one error and the one advice "Preparing a
 - **The notes' "When, with what"** asked for `ascribe --version` from the output channel, which doesn't print it. It now asks for the binary's path from there, and the version from the preparer.
 - **Preparing a copy** now says the extension runs the binary it bundles, and to compare that with the release build; and what a clean `ascribe check` prints.
 
-For the maintainer to decide:
+Decided by the maintainer on 10 October 2026, and written into the script:
 
-1. **Format on save.** The maintainer's VS Code has `editor.formatOnSave` on and Prettier as the Markdown formatter, so `Cmd+S` in the editor walk rewrites `install-agent.md` and leaves an error and a warning that aren't the task's. Either that's the walk, since an author with those settings meets it, and the notes say so; or the walk is about the link, and format on save goes off for it, or the save is **File: Save without Formatting** (`Cmd+K S`). The script says the extension's settings stay at their defaults and nothing about the editor's. As written, the walk can't end clean on this machine.
-2. **Which binary.** "Starting point" says the release build of `main`. The one built on 10 October 2026 is from this branch, which differs from `main` in `project-docs/` only, and the extension's bundled one is the same file. Say so in the script, or rebuild from `main`.
-3. **The break and the help's examples.** `ascribe --help` has `ascribe explain ASC036` and `ascribe link keys.md --from guides/install.md` among its examples: this task's code, and this task's file name. The command-line walk is handed its two commands by the first thing it reads, which another broken link wouldn't be. The preparer's choice stands unless a different rename is wanted.
-4. **What "the published docs" are.** Both addresses the commands print are "Page not found" today. The rules allow the published docs; a walker who follows the printed link gets nothing and has to search the site. Worth knowing before the walk, and worth a line in the notes when it happens.
-5. **The editor walk's end.** "Done when you believe the project has no problems left" was easy to meet for the `site` build and impossible for the other two without a terminal. If the maintainer's answer is going to be "the Problems panel is empty", the script could ask which builds that covers.
+1. **Format on save stays as the maintainer has it.** The walk is the maintainer's real editor. If the save does more than save, the walker notes it in a line and stops, as the rules say; the dry run has the detail. The walk ends on the preparer's `ascribe check`, not on a clean panel.
+2. **The binary** built on 10 October 2026 is from the audit's branch, which differs from `main` in `project-docs/` only. The script says so.
+3. **The help's examples give the command-line walk its commands.** `ascribe --help` shows `ascribe explain ASC036` and `ascribe link keys.md --from guides/install.md`, this task's code and file name, because the walk's project is Ascribe's own example. The rename stands, and the notes say when the help handed the commands over.
+4. **The printed addresses were 404** because the published site is built from the nightly canary, and the canary of 10 October 2026 predates the permalinks. "Preparing a copy" says to check one address before a walk.
+5. **The editor walk's end** now asks which builds "no problems" covers.
 
 ### In the editor
 
@@ -271,6 +285,8 @@ Before handing a copy over, run `ascribe check` in it. With the release build of
 checked 4 files: 1 error, 0 warnings, 1 advice
 ```
 
-The fix that clears both is `[](api-keys.md#rotate-keys)`. A walker who renames the file back also clears both; note which they chose. Fixed, `ascribe check` exits 0 and prints one line, `checked 4 files: 0 errors, 0 warnings`.
+The fix that clears both is `[](api-keys.md#rotate-keys)`. A walker who renames the file back also clears both; note which they chose. The walk's project is Ascribe's own example, so `ascribe --help`'s examples name this task's code and file (`ascribe explain ASC036`, `ascribe link keys.md --from guides/install.md`); the rename stands, and the notes say when the help handed the commands over. Fixed, `ascribe check` exits 0 and prints one line, `checked 4 files: 0 errors, 0 warnings`.
+
+The addresses the binary prints, `https://ascribed-dev.com/go/…`, are served once the published site has been rebuilt with a canary that has permalinks: the site builds from the nightly canary, and the canary of 10 October 2026 predates them, so every one was "Page not found" that day. Before a walk, open one (`https://ascribed-dev.com/go/ASC036/`). If it's still 404, run the canary by hand (Actions → **Canary** → Run workflow, from `main`) and wait for the site, or expect the walker to search the site and note it.
 
 For the editor walk, the extension runs the binary it bundles (`~/.vscode/extensions/ascribe.ascribe-vscode-<version>/bin/<platform>/ascribe`) unless the project installs its own or `ascribe.path` is set, not the one on the path. Before the walk, compare it with the release build (`shasum -a 256` on both).
