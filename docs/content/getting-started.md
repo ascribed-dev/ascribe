@@ -114,7 +114,7 @@ rewrites directives and attribute blocks into their canonical spelling, and chan
 
 ## Publish it with Astro
 
-Publishing the site is this guide's second half, on its own page: [Astro](guides/astro.md) adds Ascribe to an [Astro](https://astro.build) project file by file, and ends with the site open in your browser. For a new site:
+Publishing the site is this guide's second half, on its own page: [Astro](guides/astro.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
 
 @steps
 1. Create an Astro project: `npm create astro@latest`.

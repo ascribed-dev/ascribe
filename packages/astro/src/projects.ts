@@ -5,7 +5,7 @@
 // one project to these rules, since they share its `ascribe.toml`.
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { slug } from "github-slugger";
+import { entryId } from "./nav.js";
 import { hasPermalinks, type PermalinkList } from "./permalinks.js";
 import { normalizeBase, type ProjectInfo } from "./project.js";
 
@@ -70,20 +70,6 @@ export function basePathClashes(entries: readonly ResolvedEntry[]): string[] {
     }
   }
   return problems;
-}
-
-/**
- * A page's entry id, as Astro's `glob` loader computes it from the page's
- * path in the site output: each segment slugged, without the extension, and
- * without a final `/index`.
- */
-export function entryId(pagePath: string): string {
-  return pagePath
-    .replace(/\.md$/, "")
-    .split("/")
-    .map((segment) => slug(segment))
-    .join("/")
-    .replace(/\/index$/, "");
 }
 
 /** The pages of a build's site output, by their paths in it, from its manifest. */
