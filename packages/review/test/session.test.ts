@@ -877,6 +877,23 @@ describe("pages that use one fragment twice", () => {
   });
 });
 
+describe("a block inside an element with the same anchor", () => {
+  test("gets the thread once", async () => {
+    // A one-line note and its paragraph both carry the note's line.
+    const page: PageRef = {
+      build: "site",
+      path: "guides/install.md",
+      anchors: [
+        { source: "guides/install.md:7-7", via: [] },
+        { source: "guides/install.md:7-7", via: [] },
+      ],
+    };
+    const fake = github({ threads: [thread({ id: "note", path: INSTALL, line: 5 })] });
+    const placed = await session(fake).threads(page);
+    expect(threadIds(placed.blocks)).toEqual({ "guides/install.md:7-7": ["note"] });
+  });
+});
+
 describe("before commenting", () => {
   test("says where a comment on a block would go", async () => {
     const s = session(github());

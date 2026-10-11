@@ -517,6 +517,8 @@ fn check_project_of(job: &Job) -> Project {
         &[],
     )
     .with_today(job.today)
+    // The snapshot's index is of the same files, with the same ids.
+    .with_link_index(job.snapshot.shared_project())
 }
 
 /// The checked project of `snapshot`, with each of `replaced`'s files holding

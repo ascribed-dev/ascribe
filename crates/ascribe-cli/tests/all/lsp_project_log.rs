@@ -1,6 +1,6 @@
-//! `ascribe lsp` names the project it loaded on standard error: the nearest
-//! `ascribe.toml` at or above its workspace folder, even when that folder is
-//! a project nested inside another.
+//! `ascribe lsp` names the project it loaded, with its version, in a
+//! `window/logMessage` at Info: the nearest `ascribe.toml` at or above its
+//! workspace folder, even when that folder is a project nested inside another.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
@@ -25,6 +25,29 @@ fn file_uri(path: &Path) -> String {
     } else {
         format!("file:///{text}")
     }
+}
+
+/// One message from the server's standard output.
+fn read_frame(reader: &mut impl BufRead) -> Option<Value> {
+    let mut length = None;
+    loop {
+        let mut line = String::new();
+        if reader.read_line(&mut line).ok()? == 0 {
+            return None;
+        }
+        let line = line.trim_end();
+        if line.is_empty() {
+            break;
+        }
+        length = Some(
+            line.strip_prefix("Content-Length: ")?
+                .parse::<usize>()
+                .ok()?,
+        );
+    }
+    let mut body = vec![0; length?];
+    reader.read_exact(&mut body).ok()?;
+    serde_json::from_slice(&body).ok()
 }
 
 fn send(stdin: &mut impl Write, message: &Value) {
@@ -57,17 +80,15 @@ fn the_server_logs_the_nearest_project() {
         .spawn()
         .expect("start ascribe lsp");
     let mut stdin = child.stdin.take().expect("stdin");
-    // The protocol's side isn't read here; drain it so the server never blocks.
-    let mut stdout = child.stdout.take().expect("stdout");
+    // Read every message, so the server never blocks, and pass on its log.
+    let stdout = child.stdout.take().expect("stdout");
+    let (tx, logged) = mpsc::channel();
     thread::spawn(move || {
-        let _ = std::io::copy(&mut stdout, &mut std::io::sink());
-    });
-    let (tx, lines) = mpsc::channel();
-    let stderr = child.stderr.take().expect("stderr");
-    thread::spawn(move || {
-        for line in BufReader::new(stderr).lines() {
-            let Ok(line) = line else { break };
-            if tx.send(line).is_err() {
+        let mut reader = BufReader::new(stdout);
+        while let Some(message) = read_frame(&mut reader) {
+            if message["method"] == "window/logMessage"
+                && tx.send(message["params"].clone()).is_err()
+            {
                 break;
             }
         }
@@ -90,10 +111,17 @@ fn the_server_logs_the_nearest_project() {
     );
 
     let logged = loop {
-        let line = lines
+        let params = logged
             .recv_timeout(TIMEOUT)
             .expect("the server logs the project it uses");
-        if let Some((_, path)) = line.split_once("using the project at ") {
+        let message = params["message"].as_str().unwrap_or_default();
+        if let Some((_, path)) = message.split_once("using the project at ") {
+            // Info, since nothing is wrong, and with the server's version.
+            assert_eq!(params["type"], 3, "{params}");
+            assert!(
+                message.starts_with(&format!("ascribe-lsp {}: ", env!("CARGO_PKG_VERSION"))),
+                "{message}"
+            );
             break path.to_owned();
         }
     };

@@ -366,7 +366,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             &[
                 "refs",
                 "phrase:product",
-                "--project",
+                "--config",
                 "site",
                 "--format",
                 "json",
@@ -442,7 +442,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             &[
                 "refs",
                 "phrase:product",
-                "--project",
+                "--config",
                 "site",
                 "--limit",
                 "50",

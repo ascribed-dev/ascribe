@@ -12,8 +12,8 @@
 use ascribe_core::{Issue, Location, Span, diagnostics};
 use ascribe_model::short_commit;
 use ascribe_resolve::{
-    RefKind, SnippetUse, destination_phrases, destination_span, include_issue, include_target,
-    reference_issue, reference_target, resolve_reference, snippet_issues,
+    RefKind, SnippetUse, closest_fixes, destination_phrases, destination_span, include_issue,
+    include_target, reference_issue, reference_target, resolve_reference, snippet_issues,
 };
 use ascribe_syntax::{DirectiveLine, Image, Inline, Link, LinkForm, Phrase};
 
@@ -127,7 +127,7 @@ impl Ctx<'_> {
             r.alt,
             r.destination,
         );
-        if let Some(issue) = reference_issue(
+        if let Some(mut issue) = reference_issue(
             r.kind,
             &target,
             r.destination,
@@ -135,6 +135,23 @@ impl Ctx<'_> {
             at,
             destination_at,
         ) {
+            // A broken link is offered the targets `ascribe link` lists as
+            // closest. Looking for them takes the source index, so it's only
+            // made for a link that's broken.
+            let broken = [
+                diagnostics::LINK_TARGET_MISSING,
+                diagnostics::LINK_TO_FRAGMENT,
+            ];
+            if broken.contains(&issue.slug) && destination_at.is_some() {
+                issue.fixes = closest_fixes(
+                    self.project.link_index(),
+                    &self.file.path,
+                    &target,
+                    &resolution,
+                    self.id,
+                    destination_at,
+                );
+            }
             self.report(issue);
         }
     }

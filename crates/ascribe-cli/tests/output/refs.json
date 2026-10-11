@@ -27,5 +27,5 @@
   "total": 5,
   "shown": 3,
   "truncated": true,
-  "next_command": "ascribe refs phrase:cloud --limit 5 --project examples/quill --format json"
+  "next_command": "ascribe refs phrase:cloud --limit 5 --config examples/quill --format json"
 }

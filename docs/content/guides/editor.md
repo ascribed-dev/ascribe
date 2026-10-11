@@ -182,7 +182,9 @@ Pages and Content model update when you save a file of the project, when a page 
 ### The status bar
 @available: ascribe 0.2.0
 
-While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. A file that isn't in a project shows nothing.
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. A project's language server starts when one of its pages opens, so until then nothing has checked it: while no page of a project is active, the status bar says so, such as **docs: not checked yet**, or **2 projects: not checked yet**, and its tooltip names them. Otherwise a file that isn't in a project shows nothing.
+
+In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The status bar shows **Ascribe: not checking**, and the Problems panel's "No problems" doesn't mean the project is clean. Click it to manage the folder's trust; once you trust it, Ascribe starts.
 
 Click it for a menu of the project: **Switch build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
 
@@ -264,7 +266,7 @@ Each project's server logs to its own output channel, `Ascribe (<project>)`. The
 
 A channel's name is set when the channel is first needed, usually when its project's server first starts. So if a workspace with one project gains a second, the first project's channel keeps the name `Ascribe`, beside `Ascribe (<other project>)`, until you reload the window.
 
-When it starts, a server logs the `ascribe.toml` it uses: `using the project at <path>`.
+When it starts, a server logs its version and the `ascribe.toml` it uses: `ascribe-lsp <version>: using the project at <path>`.
 
 ## Settings
 
@@ -280,7 +282,7 @@ Any editor with a Language Server Protocol client can run `ascribe lsp` from a p
 
 A server serves one project: the nearest `ascribe.toml` at or above the workspace folder the editor gives it. It never looks below that folder, so a server started at the root of a repository whose projects are all in subfolders has no project. For a workspace with several projects, start one `ascribe lsp` per project, rooted at the folder that holds its `ascribe.toml`, and give each file to the server of the nearest `ascribe.toml` above it. In Neovim, for example, `root_markers = { "ascribe.toml" }` in the server's `vim.lsp.config` does both.
 
-When it starts, the server logs to standard error which project it uses: `using the project at <path>`, or, when it finds none, `no ascribe.toml at or above <folder>`. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
+When it starts, the server sends a `window/logMessage` at Info with its version and the project it uses: `ascribe-lsp <version>: using the project at <path>`, or, when it finds none, `ascribe-lsp <version>: no ascribe.toml at or above <folder>`. Its other log lines go to standard error. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
 
 When one project is nested in another's content root, the outer project's server leaves the nested project's files alone, open or not, so each file gets diagnostics from one server only. A nested project's `ascribe.toml` created or deleted while the server runs changes which files it checks, when the editor supports watching files for the server.
 

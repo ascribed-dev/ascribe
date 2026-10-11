@@ -14,7 +14,7 @@ import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
 import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
-import { StatusBar, type StatusBarApi } from "./ui/statusBar.js";
+import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { Walkthrough } from "./ui/walkthrough.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
@@ -55,6 +55,16 @@ export interface AscribeApi {
 let registry: ProjectRegistry | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
+  // In Restricted Mode the extension runs nothing, since it would run the
+  // project's own binary; it only says so, and starts once the folder is trusted.
+  if (!vscode.workspace.isTrusted) {
+    const notice = showRestricted();
+    context.subscriptions.push(notice);
+    await new Promise<void>((resolve) => {
+      context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(resolve));
+    });
+    notice.dispose();
+  }
   const projects = new ProjectRegistry(context);
   registry = projects;
 

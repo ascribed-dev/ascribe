@@ -324,13 +324,23 @@ fn sentence_around(project: &Project, at: Location) -> String {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Lychee;
 
+/// lychee's arguments. `--cache=false` overrides a project's `lychee.toml`:
+/// lychee's cache keeps a status and not a redirect, so a cached answer
+/// would hide every moved link, and it writes `.lycheecache` into the
+/// project.
+const LYCHEE_ARGS: [&str; 6] = [
+    "--format",
+    "json",
+    "--verbose",
+    "--no-progress",
+    "--cache=false",
+    "-",
+];
+
 impl LinkChecker for Lychee {
     fn check(&self, request: &Request) -> Result<BTreeMap<String, Answer>, ToolError> {
         let program = tool::program(&request.command, &request.root);
-        let args: Vec<String> = ["--format", "json", "--verbose", "--no-progress", "-"]
-            .iter()
-            .map(|a| (*a).to_owned())
-            .collect();
+        let args: Vec<String> = LYCHEE_ARGS.iter().map(|a| (*a).to_owned()).collect();
         let mut input = request.urls.join("\n");
         input.push('\n');
         let output = tool::run(
@@ -504,6 +514,12 @@ mod tests {
             destination("https://a.example/b_(c)"),
             "<https://a.example/b_(c)>"
         );
+    }
+
+    #[test]
+    fn lychee_s_cache_is_off() {
+        assert!(LYCHEE_ARGS.contains(&"--cache=false"));
+        assert_eq!(LYCHEE_ARGS.last(), Some(&"-"));
     }
 
     #[test]
