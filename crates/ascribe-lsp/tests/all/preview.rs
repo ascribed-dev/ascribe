@@ -478,3 +478,31 @@ fn each_edit_is_previewed_at_its_version() {
     );
     client.shutdown();
 }
+
+/// With no repository around the project, the editor reads a source only
+/// inside a folder it opened (decision 77): a source above it is refused on
+/// `ascribe.toml`, and no preview shows a file from there.
+#[test]
+fn with_no_repository_a_source_above_the_opened_folder_isnt_read() {
+    let f = Fixture::new("", &[]);
+    f.write(
+        "secret.rs",
+        "// :snippet-start: key\nconst KEY: &str = \"hunter2\";\n// :snippet-end:\n",
+    );
+    let model = format!("{MODEL}\n[sources.code]\npath = \"../../..\"\ninclude = [\"**/*.rs\"]\n");
+    f.write("a/b/project/ascribe.toml", &model);
+    f.write(
+        "a/b/project/docs/index.md",
+        "---\ntitle: Home\n---\n\n@snippet: code:secret.rs#key\n",
+    );
+    let mut client = Client::start(&f.path("a/b/project"));
+    client.settle();
+    let result = preview(&mut client, &f.path("a/b/project/docs/index.md"), None);
+    assert!(!result.to_string().contains("hunter2"), "{result}");
+    let model_codes = client.codes(&f.path("a/b/project/ascribe.toml"));
+    assert!(
+        model_codes.contains(&"model-source-outside-repository".to_owned()),
+        "{model_codes:?}"
+    );
+    client.shutdown();
+}

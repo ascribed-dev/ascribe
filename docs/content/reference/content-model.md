@@ -627,7 +627,7 @@ A page names a file through its source as `<source>:<path>`, with the path relat
 
 `<name>` follows the rules for keys (§1.2). A project can declare several sources, of either kind.
 
-**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). A source has `path` or `git`, never both, and `branch` only with `git` (`model-source-remote`).
+**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). With no repository, as in a copy made with `git archive`, `ascribe build` and the other commands read a source wherever `path` leads, but the editor reads one only inside a folder of the workspace it opened, and `ascribe mcp` only inside the folder it was started in: open the folder that contains the source. A source has `path` or `git`, never both, and `branch` only with `git` (`model-source-remote`).
 
 ### A source in another repository
 

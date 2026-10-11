@@ -7,7 +7,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath};
-use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList};
+use ascribe_model::{
+    ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList, SourceBound,
+};
 use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
@@ -244,7 +246,17 @@ impl Project {
     /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
     /// `check_files` reports it and checks the rest.
     pub fn load(config: &Path) -> Result<Project, LoadError> {
-        let ModelFile { root, text, model } = Project::load_model(config)?;
+        Project::load_bounded(config, SourceBound::Anywhere)
+    }
+
+    /// [`Project::load`], with a local source bounded by `bound` when no git
+    /// repository is around the project ([`SourceBound`]).
+    ///
+    /// # Errors
+    ///
+    /// As [`Project::load`].
+    pub fn load_bounded(config: &Path, bound: SourceBound<'_>) -> Result<Project, LoadError> {
+        let ModelFile { root, text, model } = Project::load_model_bounded(config, bound)?;
         let content_root =
             RelPath::parse(&model.project.content_root).map_err(|e| LoadError::Read {
                 path: config.display().to_string(),
@@ -269,6 +281,19 @@ impl Project {
     /// The file can't be read or isn't valid UTF-8 ([`LoadError::Read`]), or
     /// the content model has errors ([`LoadError::Model`]).
     pub fn load_model(config: &Path) -> Result<ModelFile, LoadError> {
+        Project::load_model_bounded(config, SourceBound::Anywhere)
+    }
+
+    /// [`Project::load_model`], with a local source bounded by `bound` when
+    /// no git repository is around the project ([`SourceBound`]).
+    ///
+    /// # Errors
+    ///
+    /// As [`Project::load_model`].
+    pub fn load_model_bounded(
+        config: &Path,
+        bound: SourceBound<'_>,
+    ) -> Result<ModelFile, LoadError> {
         // Outside FileSystem: the content model says where the content root is,
         // so it's read before there's a FileSystem to read through.
         let text = fs::read(config)
@@ -283,7 +308,7 @@ impl Project {
             Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
             _ => PathBuf::from("."),
         };
-        match ascribe_model::load_str_in(&text, FileId::new(0), &root) {
+        match ascribe_model::load_str_bounded(&text, FileId::new(0), &root, bound) {
             Ok(model) => Ok(ModelFile { root, text, model }),
             Err(issues) => Err(LoadError::Model {
                 text,

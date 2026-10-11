@@ -82,7 +82,7 @@ impl Server {
     /// A server working in `cwd`.
     pub fn new(cwd: PathBuf) -> Server {
         Server {
-            cache: Cache::default(),
+            cache: Cache::opened_at(&cwd),
             cwd,
         }
     }
@@ -134,7 +134,7 @@ impl Server {
     fn model_summary(&self, project: &str) -> Result<String, String> {
         let config =
             answer::locate(&self.global(), Some(Path::new(project))).map_err(|e| e.to_string())?;
-        let file = Project::load_model(&config)
+        let file = Project::load_model_bounded(&config, self.cache.bound())
             .map_err(|e| answer::Stop::Load(crate::context::Failure::Load(e)).message())?;
         Ok(ascribe_query::summary(&file.model, None, SUMMARY_BUDGET))
     }

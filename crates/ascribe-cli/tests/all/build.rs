@@ -603,3 +603,34 @@ fn a_committed_link_above_the_output_directory_fails_the_build() {
         "the build wrote through the link"
     );
 }
+
+/// With no repository around the project, as in a copy made with `git
+/// archive`, `ascribe build` still reads a source above the project's folder
+/// (decision 3; decision 77 bounds only the editor and `ascribe mcp`).
+#[test]
+fn with_no_repository_a_build_reads_a_source_above_the_project() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        &dir.path().join("src/lib.rs"),
+        "// :snippet-start: api\npub fn api() {}\n// :snippet-end:\n",
+    );
+    let project = dir.path().join("docs");
+    write(
+        &project.join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"content\"\n\n[sources.code]\npath = \"..\"\ninclude = [\"src/**\"]\n",
+    );
+    write(
+        &project.join("content/index.md"),
+        "---\ntitle: Home\n---\n\n@snippet: code:src/lib.rs#api\n",
+    );
+    let out = ascribe(&project, &["build", "--emit", "plain"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let built = project.join(".ascribe").join("build");
+    let build = fs::read_dir(&built)
+        .expect("the output")
+        .map(|e| e.expect("an entry").path())
+        .find(|p| p.is_dir() && !p.ends_with(".staging"))
+        .expect("a build");
+    let page = read(&build.join("plain").join("index.md"));
+    assert!(page.contains("pub fn api() {}"), "{page}");
+}

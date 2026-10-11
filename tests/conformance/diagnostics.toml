@@ -2500,7 +2500,8 @@ evidence = []
 spec = "7.3"
 group = "sources"
 message = "the folder of source `{source}`, `{path}`, is outside the git repository the project is in"
-fix = "Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead."
+messages.opened = "the folder of source `{source}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a source isn't read from outside it; open the folder that contains it"
+fix = "Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source."
 
 [[diagnostic]]
 code = "ASC135"
