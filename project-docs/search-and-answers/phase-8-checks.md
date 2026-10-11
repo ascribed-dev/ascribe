@@ -32,7 +32,7 @@ Each is advice, configurable, with its kind of next step, a conformance case, an
 
 - two pages of a build with the same title, or the same description (`review`: they may be two versions of one page);
 - a title that's only the site's name;
-- a title that disagrees with the page's first heading, where the type doesn't say that's intended.
+- a title that disagrees with the page's own top heading, for a page that has one. Which heading: the `h1` in the page's content. Most docs pages have none, since the layout draws the title from the frontmatter, and they aren't looked at. A page that writes its own, as a landing page does inside its hero, is.
 
 **The record against itself,** which are errors where the project can't be right and advice where it may be:
 

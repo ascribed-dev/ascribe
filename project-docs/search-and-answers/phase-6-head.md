@@ -9,7 +9,7 @@ A layout includes one component for everything a page's head says about the page
 ```astro
 <head>
   <meta charset="utf-8" />
-  <Head entry={entry} title={(page) => `${page} · Ascribe`} card={card} />
+  <Head entry={entry} title={(page, record) => (record.route === "/" ? "Ascribe" : `${page} · Ascribe`)} card={card} />
   <Elements />
 </head>
 ```
@@ -36,7 +36,7 @@ From the record, and nothing a site has to pass:
 - a link to the Markdown version, `rel="alternate" type="text/markdown"`, when the build publishes one and the page is offered;
 - breadcrumbs, as structured data.
 
-From the site, by property, since Ascribe doesn't know them: the site's name (for `og:site_name` and the site-name structured data), how a title reads, and the page's social card with its text. A site that passes no card gets no image tags.
+From the site, by property, since Ascribe doesn't know them: the site's name (for `og:site_name` and the site-name structured data), how a title reads, and the page's social card with its text. The title function has had the page's record as its second argument since phase 2 (README decision 22), with the route it's keyed by beside its fields. That's how Ascribe's site titles its home page with its name alone, and every other page with the name after it. A site that passes no card gets no image tags.
 
 What stays in the layout, and the guide lists it: the character set, the viewport, icons, theme colors, styles, and the elements.
 

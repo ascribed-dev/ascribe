@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail.
 
+The plan for building it is in [page-templates/](../page-templates/README.md).
+
 ## The goal
 
 Someone starting a page of a known kind (a how-to, a concept, a troubleshooting page) starts from the right shape, with guidance on what belongs in it. So does an agent asked to write one.
