@@ -207,19 +207,36 @@ Decided by the maintainer on 10 October 2026, and written into the script:
 
 ### In the editor
 
-*Not yet walked.*
+- **When, with what:** 10 October 2026, 7:26 to 7:34 PM. The maintainer's VS Code, with the extension built from this branch and installed from a `.vsix` the same day; its bundled binary is byte for byte the release build (`ascribe 0.2.0`, SHA-256 `c43672e1…`). The copy `~/ascribe-walks/fix-a-broken-link-editor`, prepared by the agent.
 
-- **When, with what:** date; VS Code and extension versions; the binary the extension ran (its path, from the **Ascribe** output channel, which **Ascribe: Show Server Output** opens; the channel doesn't give the version, so the preparer runs `--version` on that path afterwards).
-- **Steps:**
+- **Steps, as the walker noted them:**
 
-  | # | Did | Saw |
-  |---|---|---|
-  | 1 | | |
+   1. start at 7:26 PM
+   2. see a `docs/` directory, `ascribe.toml`, and `README.md`. VS Code indicates error in `docs/` directory with color and `1` next to it.
+   3. open `docs/install-agent.md` to look for error. Doesn't show directly in the file at first glance.
+   4. open VS Code problems panel to look for details. See ``keys.md` doesn't exist` and click on it. Realize it was shown in the editor, I just didn't notice it because the link's underline sits above the squiggles.
+   5. use quick fix: prompt agent with a Sonnet 5.5 agent in Claude Code VS Code extension. It's reponse:
+   ```
+   I fixed the broken link, but I couldn't run `ascribe check`, so the fix is unverified.
 
-- **Doubts:** for each, what was expected, what happened, how it was resolved.
-- **Time:** from opening the folder to done.
-- **Result:** fixed or not; how the walker knew; what the preparer's `ascribe check` said afterwards.
-- **Seen on the way:** one line per thing that looks like a finding, to move to `findings.md`.
+   On line 93 of [docs/install-agent.md](docs/install-agent.md#L93), the link pointed at `keys.md`, which doesn't exist. The file is `docs/api-keys.md`, and it has the `rotate-keys` anchor (`## Rotate keys`, `@id: rotate-keys`). The link now reads `[](api-keys.md#rotate-keys)`.
+
+   The `ascribe` command isn't installed here. It's not on the PATH, and there's no local copy in the project. Please run `ascribe check docs/install-agent.md` on your machine to confirm the ASC036 error is gone.
+   ```
+   6. project seems clean. Nothing in the problems panel.
+   7. end at 7:34 PM
+
+- **Doubts:** the walker's notes have one, in step 3 and 4: the error wasn't seen in the page at first, because the link's underline sits over the squiggle, and the Problems panel found it.
+
+- **Time:** 8 minutes.
+
+- **Result:** fixed. The walker knew from "Nothing in the problems panel", which is the `site` build's; the agent that made the edit said the fix was unverified. The preparer's `ascribe check` afterwards exited 0, `checked 4 files: 0 errors, 0 warnings`, and `git diff` was the one line, `keys.md` to `api-keys.md` on line 93. No agent files were left in the copy.
+
+- **Seen on the way:**
+  - The error was reported where the link is, and the walker didn't see it: "the link's underline sits above the squiggles". The Explorer's red `1` on `docs/` and the Problems panel are what led to it.
+  - The first thing the walker did on the problem was the lightbulb's **Prompt agent**, and sent the prompt to Claude Code's VS Code extension, though the script said nothing is sent and the walk had "any agent" under *Without*. The script's constraint didn't match how the maintainer works in the editor. The fix was the agent's, so the walk didn't try **Change where the link goes**, the click path the dry run found.
+  - The agent in the same window had no `ascribe`: "It's not on the PATH, and there's no local copy in the project." The extension bundles a binary the editor runs, and an agent beside it can't reach it or any check, so it fixed the link blind and asked the person to verify. The extension's MCP server is offered to VS Code's own agents, not to Claude Code's extension.
+  - "Project seems clean. Nothing in the problems panel." The panel covers the editor's build, `site`; nothing in the editor checked the other two. Here `ascribe check` agreed. The inventory's item, seen a third time.
 
 ### At the command line
 
