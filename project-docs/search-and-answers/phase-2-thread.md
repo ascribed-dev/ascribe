@@ -2,7 +2,7 @@
 
 Part of [Search and answers](README.md). Requires phase 1. Rust, `@ascribed/astro`, and the docs site. This is the plan's steel thread: the thinnest path through every layer, shipped and kept.
 
-The names below are phase 1's recommendations. If it decided otherwise, this file was brought in line there.
+The names below are the README's decisions 14 to 26.
 
 ## Goal
 
@@ -80,7 +80,7 @@ For each page a build publishes: its route, its source path, its title, its desc
 
 ### In an Astro site
 
-- **`@ascribed/astro/Head.astro`,** given a page's entry: `<title>`, the description, the canonical link, and `<meta name="robots">` when the record asks for one (`noindex` for `unlisted`). A site says how its titles read with one property. A page with no record, such as a site's own Astro page, gets nothing from it, and the guide says how such a page writes its own.
+- **`@ascribed/astro/Head.astro`,** given a page's entry: `<title>`, the description, the canonical link, and `<meta name="robots">` when the record asks for one (`noindex` for `unlisted`). A site says how its titles read with one property, `title`, a function from the page's title to the whole one (README decision 22). A page with no record, such as a site's own Astro page, gets nothing from it, and the guide says how such a page writes its own.
 - **One sitemap,** at the site's root, `sitemap.xml`: every listed page of every project that has routes, by absolute address, and nothing else. No dates. A site with no `site` gets no sitemap and a build warning that says why.
 - **One `robots.txt`,** at the site's root: each project's `lines`, once each, then the sitemap's address. A site that has its own `robots.txt` in `public/` keeps it: the integration says so and writes none, and the guide says how to take Ascribe's lines into a file the site owns.
 - **Both are served in `astro dev`** and written by `astro build`, at the host's root whatever a project's base path is.

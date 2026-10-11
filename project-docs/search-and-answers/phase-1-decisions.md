@@ -4,13 +4,15 @@ Part of [Search and answers](README.md). Needs nothing. No code: a pull request 
 
 ## Goal
 
-Five choices are made before anything ships, because phase 2 puts each into a contract: a frontmatter key in the language, a table in `ascribe.toml`, a file in the site output, and a component of a published package. None can change afterwards without breaking what was promised.
+Five choices were made before anything shipped, and are recorded in the [README](README.md#decisions) as decisions 14 to 26. This file keeps the options each was chosen from.
+
+Phase 2 puts each into a contract: a frontmatter key in the language, a table in `ascribe.toml`, a file in the site output, and a component of a published package. None can change afterwards without breaking what was promised.
 
 This phase can't be folded into phase 2. A thread may narrow what it handles. It may not ship a shape the plan expects to change.
 
 ## Context
 
-- The [proposal](../proposals/search-and-answers.md): "Managing how crawlers treat pages", and "The principle".
+- The [proposal](https://github.com/ascribed-dev/ascribe/blob/097cc3d496fa2f3b08a69958ccacc50c76849126/project-docs/proposals/search-and-answers.md): "Managing how crawlers treat pages", and "The principle".
 - `SPEC.md` §2.1: the reserved frontmatter keys, and what each one's value is.
 - `docs/content/reference/content-model.md` §15, `[consumer]`: `agents`, and what it publishes.
 - `docs/content/contracts/output-layout.md`: `_ascribe/permalinks.json`, the one list a build writes for a site today, with its `version` and its entries as objects.
@@ -19,7 +21,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 
 ## The decisions
 
-Each has a recommendation. The maintainer may take it, change it, or ask for more.
+On 11 October 2026 the maintainer asked for each to be answered, and to be asked only where the answer was truly uncertain. None was, so each recommendation is taken as written.
 
 ### 1. What the setting is called, and its values
 
@@ -41,6 +43,8 @@ What each value means, whichever name is taken:
 
 A page that isn't listed is still built, still has its address, and still has a Markdown version. It isn't offered: nothing Ascribe writes points a crawler at it.
 
+**Decided: `listing`, with `listed`, `unquoted`, and `unlisted`.** README decisions 14 and 15.
+
 ### 2. Where a project's words to crawlers live
 
 `robots.txt` needs a home in `ascribe.toml` from phase 2, for a project's own lines, and from phase 4 for its choices by purpose.
@@ -51,6 +55,8 @@ A page that isn't listed is still built, still has its address, and still has a 
 | Under `[consumer]` | `[consumer] robots = […]` |
 
 The recommendation rests on what `[consumer]` is: how the site output fits one site generator. What a project says to crawlers is about the content, whoever builds the site.
+
+**Decided: `[crawlers]`.** README decision 16.
 
 ### 3. The record's file, and its shape
 
@@ -63,6 +69,8 @@ The recommendation rests on what `[consumer]` is: how the site output fits one s
 
 `canonical` is the page's own address, absolute, when `[consumer] site` is set, and absent when it isn't. It becomes something else only with versions.
 
+**Decided: `_ascribe/pages.json`, shaped as the permalinks list is.** README decisions 17, 18, and 19.
+
 ### 4. One site, several projects
 
 Ascribe's own site holds three projects. A host has one `robots.txt` and, for this plan, one sitemap.
@@ -74,6 +82,8 @@ Ascribe's own site holds three projects. A host has one `robots.txt` and, for th
 
 A project whose pages a site draws itself and gives no route, as the site's `demo` is, has records and is in no sitemap. How an entry says so is the integration's to settle in phase 2, from what the list already knows.
 
+**Decided: one of each for the site, from every project's records.** README decision 20.
+
 ### 5. What a layout includes
 
 | Option | Means |
@@ -83,18 +93,17 @@ A project whose pages a site draws itself and gives no route, as the site's `dem
 
 The title is the page's own. A site that wants "Page · Site" passes how: a property, named in phase 2 and kept.
 
+**Decided: `Head.astro`, with a `title` property for how a site's titles read.** README decisions 21 and 22.
+
 ## Also confirmed here
 
-- A fragment can't use the key, as it can't use `available` or `permalink`, and a type can't declare a field of that name.
-- With `agents = false`, a build publishes no `llms.txt`, and the setting still governs the head and the sitemap.
-- The sitemap has addresses and no dates (README, "Carved out").
-- The check phase 2 adds is advice, configurable, with the next step `fix`.
+Four smaller choices, recorded as README decisions 23 to 26: a fragment and a type can't use the key; `listing` governs the head and the sitemap when a build publishes nothing for agents; the sitemap has no dates; and phase 2's check is advice.
 
 ## Tasks
 
-1. The maintainer decides each, on a card or in the pull request.
-2. Record them in this plan's README, as decisions 14 on, with the reason for each. One home: this file keeps the options, and the README has the decisions.
-3. If decision 1 or 3 isn't the recommendation, bring [phase 2](phase-2-thread.md)'s design in line before it starts.
+1. The maintainer decides each. Done: each recommendation is taken.
+2. Record them in this plan's README, as decisions 14 on, with the reason for each. Done: 14 to 26.
+3. If decision 1 or 3 isn't the recommendation, bring [phase 2](phase-2-thread.md)'s design in line before it starts. Not needed: phase 2 was written to the recommendations.
 
 ## Out of scope
 

@@ -1,6 +1,6 @@
 # Search and answers
 
-A site built with Ascribe says one true thing about each page to every reader that isn't a person: a search engine, an AI assistant, a coding agent. The team that runs it sees and controls how each page is treated, from the source, before anything is deployed. The idea, and the research behind it, are in the [proposal](../proposals/search-and-answers.md). This is the plan for building it.
+A site built with Ascribe says one true thing about each page to every reader that isn't a person: a search engine, an AI assistant, a coding agent. The team that runs it sees and controls how each page is treated, from the source, before anything is deployed. The idea, and the research behind it, are in the [proposal](https://github.com/ascribed-dev/ascribe/blob/097cc3d496fa2f3b08a69958ccacc50c76849126/project-docs/proposals/search-and-answers.md). This is the plan for building it.
 
 ## Who it's for
 
@@ -37,7 +37,21 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 12. **Left out, on the evidence:** a docs server for agents, `llms-full.txt`, content shown only to agents or only to people, structured data beyond breadcrumbs and the site's name, and rules for content style.
 13. **No work is done for released versions.** Ascribe is before 1.0.
 
-The rest are made in [phase 1](phase-1-decisions.md), because each fixes a name or a shape phase 2 ships.
+The rest were made in [phase 1](phase-1-decisions.md), which keeps the options each was chosen from. Each fixes a name or a shape phase 2 ships.
+
+14. **The setting is `listing`, with three values in one order: `listed`, `unquoted`, `unlisted`.** Absent means `listed`. `unquoted` is listed, in the sitemap and `llms.txt`, and asks not to be quoted (`nosnippet`). `unlisted` asks not to be listed (`noindex`) and is out of the sitemap and `llms.txt`. The name says what happens in a reader's terms, where `robots` would name one output of several. The values are an order from open to closed, which is what "restrict and never loosen" needs; the crawler's own words (`noindex`, `nosnippet`) are a set with no order, and a boolean with a second key could contradict itself.
+15. **A page that isn't listed is still built.** It has its address and its Markdown version. It isn't offered: nothing Ascribe writes points a crawler or an agent at it. So one setting governs search engines and agents together, which is the proposal's claim: the outputs can't disagree. What a kind of crawler may fetch is a separate choice, in `[crawlers]`.
+16. **A project's words to crawlers are in a table of their own, `[crawlers]`.** Phase 2 gives it `lines`, a project's own `robots.txt` lines, and phase 4 adds its choices by purpose beside them. Not under `[consumer]`, which is how the site output fits one site generator: what a project says to crawlers is about the content, whoever builds the site.
+17. **The records are `_ascribe/pages.json`, in the site output, shaped as the permalinks list is:** a `version`, then `pages`, keyed by route, each entry an object, so later phases add keys and change none. Phase 2's entries have `route`, `source`, `title`, `description`, `canonical`, `listing`, and `markdown`.
+18. **`source` is the page's path from the content root, with `/`,** and it's the name [#274](https://github.com/ascribed-dev/ascribe/issues/274) uses for the same thing on a collection entry. One name in both places, whichever lands first.
+19. **`canonical` is the page's own address, absolute.** It's absent, with `site`, when `[consumer] site` isn't set, and a site without it gets no canonical links and no sitemap. It becomes another page's address only with versions.
+20. **One sitemap and one `robots.txt` for a site, written by the integration from every project's records,** at the host's root. A `robots.txt` under a path does nothing, which is one of the mistakes the plan sets out to catch. The sitemap holds every listed page of every project that has routes. `robots.txt` holds each project's lines once, then the sitemap's address. Two projects that say contradictory things about one purpose are an error that names both.
+21. **A layout includes a component, `@ascribed/astro/Head.astro`, given the page's entry.** Phase 2: the title, the description, the canonical link, and the robots rule. Phase 6 adds to it. A function that returned the record would leave every site writing its own tags, and able to leave one out.
+22. **The title is the page's own, and a site says how its titles read with one property, `title`:** a function from the page's title to the whole one, such as `(page) => `${page} · Ascribe``. Decided now because it's a property of a published component from phase 2 on.
+23. **A fragment can't use `listing`, and a type can't declare a field of that name,** as with `available` and `permalink`.
+24. **With `agents = false` a build publishes no `llms.txt`, and `listing` still governs the head and the sitemap.**
+25. **The sitemap has addresses and no dates,** until the record of what was published exists.
+26. **Phase 2's check is advice, configurable, with the next step `fix`.**
 
 ## The thread
 
@@ -74,7 +88,7 @@ Until phase 5, the Markdown version of a page that isn't listed can still be ind
 
 | Phase | Result |
 |---|---|
-| [1: Decisions](phase-1-decisions.md) | The maintainer settles the setting's name and values, the record's shape, and where a project's words to crawlers live. |
+| [1: Decisions](phase-1-decisions.md) | Done. The setting's name and values, the record's shape, and where a project's words to crawlers live are decisions 14 to 26. |
 | [2: The thread](phase-2-thread.md) | A page can be marked as not listed, and its head, the sitemap, and `llms.txt` all follow. An Astro site gets a head, a sitemap, and a `robots.txt` from Ascribe. |
 | [3: Levels](phase-3-levels.md) | The setting can be made for a folder, a type, or the site, and nothing narrower can loosen it. A page can be listed and not quoted. |
 | [4: Crawlers by purpose](phase-4-crawlers.md) | A project says what training, search, and on-request bots may do, and `robots.txt` has the rules for each bot Ascribe knows. |
@@ -83,7 +97,7 @@ Until phase 5, the Markdown version of a page that isn't listed can still be ind
 | [7: For agents](phase-7-agents.md) | The Markdown version has every variant, labeled, and a product can ship a compact index of its docs. |
 | [8: Checks, and the table](phase-8-checks.md) | `ascribe check` reports what would disagree before a deploy, and `ascribe report` lists every page's record. |
 
-Phase 1 comes first because phase 2 ships a frontmatter key, a table in `ascribe.toml`, and a file in the output. After the thread the order is by risk: phases 3 and 4 settle what the setting can say, phase 5 is the one new seam (the host), and phases 6 to 8 widen what's already joined.
+Phase 1 came first because phase 2 ships a frontmatter key, a table in `ascribe.toml`, and a file in the output. After the thread the order is by risk: phases 3 and 4 settle what the setting can say, phase 5 is the one new seam (the host), and phases 6 to 8 widen what's already joined.
 
 Each phase's result is something a person can run or open. None builds a layer for a later phase to use.
 
