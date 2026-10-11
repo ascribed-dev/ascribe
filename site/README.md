@@ -79,7 +79,7 @@ npm test              # after a build
 
 ## Addresses
 
-A docs page's address is `/docs/` and its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. What links in from outside the docs, the binary's help and diagnostics and the editor's links, uses a [permalink](https://ascribed-dev.com/docs/reference/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
+A docs page's address is `/docs/` and its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. What links in from outside the docs, the binary's help and diagnostics, the editor's links, and the published READMEs, uses a [permalink](https://ascribed-dev.com/docs/reference/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
 
 ## Navigation
 
