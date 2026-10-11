@@ -171,7 +171,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/343"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Name palette steps the same way in chosen.toml and tokens.toml"
     },
     {
@@ -185,7 +185,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPQ",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Let `ascribe check` narrow to one diagnostic code, for fixing one rule at a time"
     },
     {
@@ -490,7 +490,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/329"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Rename `--format summary` to `markdown`"
     },
     {
@@ -507,7 +507,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "One word for what Ascribe reports, and one count of them"
     },
     {
@@ -640,8 +640,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/345"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "The skill: say where the rules are, and how to do five things agents needed"
     },
     {
@@ -717,8 +720,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/346"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "A guide to permalinks, out of the Astro guide"
     },
     {
@@ -1022,7 +1028,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "`agents sync --cloud` prints several MCP JSON blocks that can't be pasted as one"
     },
     {
@@ -1058,6 +1064,23 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "`ascribe report links`: hold a link that answered before until it keeps failing"
+    },
+    {
+      "content": {
+        "body": "From the [surface audit](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/surface-audit/findings.md), finding 29, carved out of the [page templates plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/README.md) (\"Carved out, and waiting\").\n\n## What to do\n\nA command of `@ascribed/astro`'s writes into an Astro project, once, the files every site built with Ascribe writes again: the content collection (`src/content.config.ts`), the route (`src/pages/[...slug].astro`), a layout that loads the elements, and the sidebar's list. From then on the files are the site's own, as `ascribe templates eject` leaves a project's templates. The Astro guide's steps 4 to 6 become that command.\n\nIt's the integration's, not the binary's: a different package and a different seam from the page templates plan, whose command is named `ascribe templates eject` so that a second thing to eject fits beside it.\n\n**Waits on a design for navigation.** The sidebar's list is one of the four files, and what it holds depends on whether the content model ever gives a site its navigation (finding 28, which has no proposal; `site/README.md`'s \"Navigation\" says what it would take). Until that's decided, the starter can write the list as `site/src/nav.ts` has it today, kept complete by a test, and say so.\n\n**Size:** Small for the starter itself.\n\n## What the audit found\n\n### Finding 29: Six more things the next site will write again\n\n**Evidence.** Getting started ends its Astro steps with \"Define the content collection, a route, and a layout that loads the elements. [Astro] walks through each file.\" `examples/astro-site/src` has the same `content.config.ts`, `pages/[...slug].astro`, `pages/404.astro`, and `layouts/Docs.astro` the site has. Of the rest: the search proposal says \"Search for readers, and anything a site serves. That's Pagefind's job, or the site's choice.\"; the search and answers proposal says \"What the host owns: status codes, headers, content negotiation, bot protection, logs.\", and plans redirects while carving out \"everything that needs to know what was published before\". `site/public/_redirects` has no rule yet, and a 41-line test for the rules it will have. `links.test.ts` checks \"Every link and anchor inside the built site\", which no command of Ascribe's does for a site's own built pages.\n\n**Cost.** A site builder copies four files from a guide before a page shows, then writes search, redirects, and a check of the built links themselves. Each is small; together they're 361 lines of this site.\n\n**Recommendation.** Leave search, the table of contents, the not-found page, and the request for Markdown: each is decided, or already as small as it gets. Add a starter with the four files, so the guide's steps 4 to 6 are a command. Whether Ascribe checks a built site's own links, and notices a page whose address moved, is for the search and answers proposal's carved-out part, and should be said there.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+        "number": 344,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A starter for an Astro site: the four files every site writes again",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/344"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhACmD0",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A starter for an Astro site: the four files every site writes again"
     }
   ]
 }
