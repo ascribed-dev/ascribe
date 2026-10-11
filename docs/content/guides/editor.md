@@ -60,6 +60,7 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 On a problem, the lightbulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](agents.md#prompt-your-agent).
 
 ### Agents in VS Code
+@id {permalink=true}: agents-in-vs-code
 
 @available: next
 An agent in VS Code, such as GitHub Copilot in agent mode, gets Ascribe's tools with nothing to set up. In a workspace with an Ascribe project, the extension offers [`ascribe mcp`](agents.md#the-mcp-server) as an MCP server, named **Ascribe** in VS Code's list of MCP servers. It runs the binary the first project uses (see [Which `ascribe` it runs](#which-ascribe-it-runs)), in the workspace folder, and VS Code starts it when an agent first needs it. When the workspace's projects use different binaries, the project's output says which one the server runs.
@@ -105,6 +106,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
+- From the command line, [`ascribe rename`](../reference/cli.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.
 
 ### Formatting
 
@@ -233,6 +235,7 @@ The comments are read when review starts, on **Ascribe: Refresh Comments** (the 
 Review runs `git` once you start it. Before that, only the offer does: once you've used review in a workspace, opening a page runs `git` to find its branch, and asks GitHub whether the branch has an open pull request, to offer review ([Review](review.md) describes the offer). A project that isn't in a git repository, a revision that doesn't exist, or `git` missing from the path stops it from starting, with a message that says which; the preview works as before. Starting review reads the project as it was at the base, which takes about as much memory again as the project; stopping review frees it.
 
 ## Workspaces with several projects
+@id {permalink=true}: workspaces-with-several-projects
 
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
 
@@ -278,6 +281,7 @@ A channel's name is set when the channel is first needed, usually when its proje
 When it starts, a server logs its version and the `ascribe.toml` it uses: `ascribe-lsp <version>: using the project at <path>`.
 
 ## Settings
+@id {permalink=true}: editor-settings
 
 @include: ../_generated/editor-settings.md
 

@@ -42,13 +42,15 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 | Command | What it answers |
 |---|---|
 | [`ascribe explain <code>`](../reference/cli.md#cli-explain) | What a diagnostic means, how to fix it, and a page with the problem and without it |
-| [`ascribe model`](../reference/cli.md#cli-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds |
+| [`ascribe model`](../reference/cli.md#cli-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources |
 | [`ascribe outline <page>`](../reference/cli.md#cli-outline) | A page's title and type, and the headings a link can name, with their ids |
 | [`ascribe link <target> --from <page>`](../reference/cli.md#cli-link) | Whether a link works from a page, and what to write when it doesn't |
 | [`ascribe render <page> --build <name>`](../reference/cli.md#cli-render) | The page as one build's readers see it, as plain Markdown |
 | [`ascribe refs <target>`](../reference/cli.md#cli-refs) | Every place that uses a page, a heading, a phrase, or another entry of the content model, such as the links to fix after renaming a heading |
 
 `ascribe check --format json` gives each problem's `fixes` too: edits that would fix it, each marked `safe` to apply as given, or `unsafe`, to read first.
+
+To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../reference/cli.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
 
 ### Fix it, or say it's intended
 @available: next
@@ -68,6 +70,10 @@ It writes:
 - **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types and their frontmatter, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
+
+Beside each file it writes, `sync` says which agents read it, and when an agent doesn't read one, the target that writes it where that agent does. Claude Code doesn't read the skill in `.agents/skills/`, so without the `claude` target, `sync` says so:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
 Here's what it writes for the Quill example:
 

@@ -30,7 +30,7 @@ When `ascribe` isn't on the path, the project may pin it in a `package.json`: ru
 Each changes nothing, and each takes `--format json`.
 
 - `ascribe explain <code>`: what a diagnostic means, how to fix it, and an example.
-- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds.
+- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
 - `ascribe render <page> --build <name>`: a page as one build's readers see it.
@@ -38,6 +38,10 @@ Each changes nothing, and each takes `--format json`.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many.
 
 Use the commands when you have a shell. Without one, use the `ascribe_*` tools of Ascribe's MCP server if you have them: they return the same JSON.
+
+## Renaming
+
+`ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
 
 ## Fixes
 

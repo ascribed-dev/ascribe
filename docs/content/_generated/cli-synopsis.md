@@ -15,13 +15,14 @@ ascribe fmt               [--check] [PATHS]... [--format text|json]
 ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe lsp
 ascribe mcp
-ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|builds] [--format text|json]
+ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|builds|sources] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe permalinks sync   [--format text|json]
 ascribe permalinks list   [--format text|json]
 ascribe permalinks verify [NAME]... [--from <FILE>] [--list <PATH>] [--format text|json]
 ascribe permalinks retire [NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--format text|json]
 ascribe refs              TARGET [--limit <N>] [--format text|json]
+ascribe rename            TARGET NEW
 ascribe render            PAGE [--build <NAME>] [--frontmatter] [--format text|json]
 ascribe report            [SECTION]... [--format text|summary|json|prompt] [--build <NAME>]... [--site <URL>] [--limit <N>] [--exit-code advice|warning|error]
 ascribe sources fetch     [NAME]...

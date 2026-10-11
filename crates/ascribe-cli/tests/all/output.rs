@@ -717,6 +717,21 @@ fn sources_update() {
     );
 }
 
+/// `ascribe rename` on a copy of `examples/quill`, run from its root: the
+/// command reference's example.
+#[test]
+fn rename() {
+    let dir = tempfile::tempdir().unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        dir.path(),
+    );
+    expect(
+        "rename.txt",
+        &stdout(&run(dir.path(), &["rename", "phrase:cloud", "hosted"], 0)),
+    );
+}
+
 /// The commands that answer questions, on `examples/quill`, run from the
 /// repository's root with paths into it: the command reference's examples.
 #[test]
@@ -795,5 +810,20 @@ fn answers() {
     expect(
         "render.txt",
         &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
+    );
+}
+
+/// `ascribe agents sync` on `examples/quill` in a repository of its own:
+/// the agents guide's list of what it writes, and who reads each file.
+#[test]
+fn agents_sync() {
+    let dir = repository();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        dir.path(),
+    );
+    expect(
+        "agents-sync.txt",
+        &stdout(&run(dir.path(), &["agents", "sync"], 0)),
     );
 }

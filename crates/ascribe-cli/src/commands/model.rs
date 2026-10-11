@@ -53,6 +53,8 @@ pub enum Section {
     Widgets,
     /// Builds, with their variant and availability modes.
     Builds,
+    /// Sources, with their folders and the files they make readable.
+    Sources,
 }
 
 impl Section {
@@ -65,6 +67,7 @@ impl Section {
             Section::Glossary => QuerySection::Glossary,
             Section::Widgets => QuerySection::Widgets,
             Section::Builds => QuerySection::Builds,
+            Section::Sources => QuerySection::Sources,
         }
     }
 }
