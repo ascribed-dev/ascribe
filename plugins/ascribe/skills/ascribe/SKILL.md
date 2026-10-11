@@ -30,7 +30,7 @@ When `ascribe` isn't on the path, the project may pin it in a `package.json`: ru
 Each changes nothing, and each takes `--format json`.
 
 - `ascribe explain <code>`: what a diagnostic means, how to fix it, and an example.
-- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds.
+- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
 - `ascribe render <page> --build <name>`: a page as one build's readers see it.

@@ -212,6 +212,73 @@
       ],
       "type": "object"
     },
+    "ModelRemote": {
+      "description": "The repository a source is in.",
+      "properties": {
+        "branch": {
+          "description": "The branch an update follows; `null` for the repository's default.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "description": "Its URL.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "branch"
+      ],
+      "type": "object"
+    },
+    "ModelSource": {
+      "description": "A source: a folder of files, such as code, that pages can show.",
+      "properties": {
+        "git": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelRemote"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The repository it's in, for a source in another repository."
+        },
+        "ignore": {
+          "description": "The patterns of the files it doesn't make readable, though `include`\nmatches them.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "include": {
+          "description": "The patterns of the files it makes readable, relative to its folder;\nempty for every file.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name, as addresses write it: `code:` for a source named `code`.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its folder, relative to the project's folder: the `path` written,\nor, for a source in another repository, the folder of its copies.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "include",
+        "ignore",
+        "git"
+      ],
+      "type": "object"
+    },
     "ModelTerm": {
       "description": "A glossary term.",
       "properties": {
@@ -383,6 +450,16 @@
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
       "type": "integer"
+    },
+    "sources": {
+      "description": "Sources, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelSource"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
     },
     "types": {
       "description": "Page types, in declaration order: the implicit `page` type when none\nis declared.",

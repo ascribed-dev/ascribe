@@ -15,7 +15,7 @@ ascribe fmt               [--check] [PATHS]... [--format text|json]
 ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe lsp
 ascribe mcp
-ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|builds] [--format text|json]
+ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|builds|sources] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe permalinks sync   [--format text|json]
 ascribe permalinks list   [--format text|json]
