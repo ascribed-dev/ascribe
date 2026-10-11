@@ -128,3 +128,20 @@ fn what_isnt_there_exits_1_and_what_cant_be_renamed_exits_2_changing_nothing() {
     assert_eq!(read(dir.path(), "docs/keys.md"), KEYS);
     assert_eq!(read(dir.path(), "docs/install.md"), INSTALL);
 }
+
+#[test]
+fn a_page_isnt_moved_through_a_folder_that_is_a_link() {
+    let dir = project();
+    let outside = tempfile::tempdir().unwrap();
+    crate::links::dir(outside.path(), dir.path().join("docs").join("guides"));
+    let output = ascribe(
+        dir.path(),
+        &["rename", "docs/keys.md", "docs/guides/keys.md"],
+    );
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(stderr(&output).contains("link"), "{}", stderr(&output));
+    assert_eq!(stdout(&output), "");
+    assert_eq!(read(dir.path(), "docs/keys.md"), KEYS);
+    assert_eq!(read(dir.path(), "docs/install.md"), INSTALL);
+    assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 0);
+}

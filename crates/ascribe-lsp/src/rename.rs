@@ -234,7 +234,7 @@ fn heading_id(
     };
     if explicit.permalink {
         return Err(RenameError::Refused(format!(
-            "`#{id}` is a permalink, which links from outside the docs use. Keep it, or retire it with `ascribe permalinks retire` once nothing declares it."
+            "`#{id}` is a permalink, which links from outside the docs use. To end it, change the `@id` by hand, then retire the old name with `ascribe permalinks retire`."
         )));
     }
     // The id is the end of its `@id` line.
@@ -290,6 +290,21 @@ fn file_move(
     // anything at all, as the editor's move asks.
     if new.exists() {
         return Err(RenameError::Refused(format!("`{to}` is there already.")));
+    }
+    // Nothing Ascribe writes goes through a link a repository commits
+    // (decision 77): not a folder on the way to where the file moves, nor
+    // what's there.
+    let root = ctx.config.parent().unwrap_or(Path::new("."));
+    if let Some(rel) = std::path::absolute(&new)
+        .ok()
+        .and_then(|new| new.strip_prefix(root).ok().map(Path::to_owned))
+        && let Some(link) = ascribe_resolve::LinkCheck::new(root).link(&rel)
+    {
+        let link = relative_path(root, &link)
+            .map_or_else(|| link.display().to_string(), |l| l.to_string());
+        return Err(RenameError::Refused(format!(
+            "`{to}` is through `{link}`, a link, which a rename doesn't write through. Move the page to a folder that isn't a link."
+        )));
     }
     let params = RenameFilesParams {
         files: vec![FileRename {
