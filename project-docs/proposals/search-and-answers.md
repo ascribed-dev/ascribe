@@ -114,7 +114,7 @@ So Ascribe names one format, not four, and the neutral list is what keeps that f
 
 ## Checks before deploy
 
-Under the [content checks](../content-checks/README.md) contract: advisory, able to be raised or turned off, and acknowledged with `@intended` where a finding may be right as it is.
+Under the [content checks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/README.md) contract: advisory, able to be raised or turned off, and acknowledged with `@intended` where a finding may be right as it is.
 
 - **Titles and descriptions:** two pages with the same one; a title that's only the site's name; a title that disagrees with the page's heading.
 - **Addresses:** a page no page links to; a link that goes through a redirect; a chain or loop of redirects; a redirect to nothing.
