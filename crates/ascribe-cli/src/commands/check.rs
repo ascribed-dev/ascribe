@@ -389,13 +389,16 @@ pub fn write(
     let project = &loaded.project;
     let checked = project.sources().len();
     let files_reported = scope.as_ref().map(|s| s.sources(project).len());
+    let covered = match builds_checked.first() {
+        Some(build) if args.editor_build => text::Covered::Editor(build),
+        _ if args.build.is_empty() => text::Covered::Every,
+        _ => text::Covered::Named(builds_checked),
+    };
     let summary = text::check_summary(
         *counts,
         checked,
-        files_reported,
-        args.editor_build
-            .then(|| builds_checked.first().map(String::as_str))
-            .flatten(),
+        &covered,
+        files_reported.unwrap_or(checked),
     ) + &text::acknowledged(acknowledged.len());
     let command = Command::new(global, args);
     match (args.format, args.summary) {
@@ -729,13 +732,29 @@ mod tests {
         let reported = reported();
         let counts = Counts::of_reported(&reported);
         assert_eq!(
-            text::check_summary(counts, 1, None, None),
-            "checked 1 file: 0 errors, 1 warning, 1 advice"
+            text::check_summary(counts, 1, &text::Covered::Every, 1),
+            "checked 1 file for every build, reported on 1: 0 errors, 1 warning, 1 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 1, None, None),
-            "checked 1 file: 0 errors, 0 warnings",
-            "the summary names advice only when there is some"
+            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1),
+            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice",
+            "the summary counts advice even when there is none"
+        );
+        let builds = ["cloud".to_owned(), "site".to_owned(), "v2".to_owned()];
+        let named = |n: usize| {
+            text::check_summary(Counts::default(), 3, &text::Covered::Named(&builds[..n]), 1)
+        };
+        assert_eq!(
+            named(1),
+            "checked 3 files for build `cloud`, reported on 1: 0 errors, 0 warnings, 0 advice"
+        );
+        assert_eq!(
+            named(3),
+            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1: 0 errors, 0 warnings, 0 advice"
+        );
+        assert_eq!(
+            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1),
+            "checked 3 files with the page-level checks of build `site` only, reported on 1: 0 errors, 0 warnings, 0 advice"
         );
 
         let order = concise::order(&files, &reported);

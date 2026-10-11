@@ -222,25 +222,33 @@ fn errors_line(errors: usize, names: &[String]) -> String {
 
 fn write_text(out: &mut dyn Write, report: &Report) -> io::Result<()> {
     let short = |commit: &str| commit.chars().take(7).collect::<String>();
+    let base = named_base(&report.base.requested, &report.base.commit);
     match &report.base.merge_base {
         Some(merge_base) if *merge_base != report.base.commit => writeln!(
             out,
-            "compared with {} ({}), from its merge base with HEAD ({})",
-            report.base.requested,
-            short(&report.base.commit),
+            "compared with {base}, from its merge base with HEAD ({})",
             short(merge_base)
         )?,
-        _ => writeln!(
-            out,
-            "compared with {} ({})",
-            report.base.requested,
-            short(&report.base.commit)
-        )?,
+        _ => writeln!(out, "compared with {base}")?,
     }
     for build in &report.builds {
         write_build(out, build)?;
     }
     Ok(())
+}
+
+/// The base as given, with its commit after it unless what was given is
+/// the commit: `main (1a2b3c4)`, and `1a2b3c4` alone.
+fn named_base(requested: &str, commit: &str) -> String {
+    let short: String = commit.chars().take(7).collect();
+    let is_commit = requested.len() >= 4
+        && requested.chars().all(|c| c.is_ascii_hexdigit())
+        && commit.starts_with(&requested.to_ascii_lowercase());
+    if is_commit {
+        requested.to_owned()
+    } else {
+        format!("{requested} ({short})")
+    }
 }
 
 fn write_build(out: &mut dyn Write, build: &BuildDiff) -> io::Result<()> {

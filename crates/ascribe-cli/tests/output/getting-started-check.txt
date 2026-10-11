@@ -4,5 +4,7 @@
  29 │ Next, [configure it](configure.md).
     │                      ──────┬─────
     │                            ╰─────── link-target-missing
+    │
+    │ Help: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
 ────╯
-checked 1 file: 1 error, 0 warnings
+checked 1 file for every build, reported on 1: 1 error, 0 warnings, 0 advice
