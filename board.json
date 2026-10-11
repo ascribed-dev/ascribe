@@ -168,7 +168,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPM",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Name palette steps the same way in chosen.toml and tokens.toml"
     },
     {
@@ -182,7 +182,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPQ",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Let `ascribe check` narrow to one diagnostic code, for fixing one rule at a time"
     },
     {
@@ -210,7 +210,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPs",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Remove the backwards-compat alias nativeBinaryPath in @ascribed/cli"
     },
     {
@@ -260,8 +260,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/317"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A Markdown formatter on save changes what a page builds to, and nothing says so"
     },
     {
@@ -297,8 +300,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/322"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Check every build from the editor"
     },
     {
@@ -318,7 +324,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/312"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Offer the page a broken link meant"
     },
     {
@@ -338,7 +344,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/310"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One base for a page's path: in what commands print, accept, and write into prompts"
     },
     {
@@ -354,8 +360,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/314"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Let an agent in the editor's window run the binary the editor runs"
     },
     {
@@ -375,7 +384,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/307"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "A binary built from main says it's the release"
     },
     {
@@ -392,7 +401,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe diff PAGE`: show one page's changes in a terminal"
     },
     {
@@ -408,8 +417,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/318"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Say which projects are there when a command is run above several"
     },
     {
@@ -460,7 +472,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Rename `--format summary` to `markdown`"
     },
     {
@@ -477,7 +489,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "One word for what Ascribe reports, and one count of them"
     },
     {
@@ -493,8 +505,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/321"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "What the commands' text output leaves out"
     },
     {
@@ -510,8 +525,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/316"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Remove the integer formats from the generated JSON Schemas"
     },
     {
@@ -528,7 +546,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]`"
     },
     {
@@ -545,7 +563,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Give a layout the page's source path"
     },
     {
@@ -579,7 +597,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "One recipe for checking a project in CI"
     },
     {
@@ -630,7 +648,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Link each diagnostic's entry to its section of the references"
     },
     {
@@ -647,7 +665,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A guide to content that varies"
     },
     {
@@ -681,7 +699,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A reference page for the element library"
     },
     {
@@ -698,7 +716,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "A table of the files Ascribe writes into a project"
     },
     {
@@ -732,7 +750,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Share what's identical between the `ascribe.toml` reference and its contract"
     },
     {
@@ -752,7 +770,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/311"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Drop `--project` from `ascribe refs`"
     },
     {
@@ -785,8 +803,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/320"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Rename across a project from the command line"
     },
     {
@@ -935,8 +956,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/313"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhABUx4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/315"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs: update or acknowledge the four links the report says moved"
     }
   ]
