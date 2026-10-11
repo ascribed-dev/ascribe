@@ -1150,8 +1150,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/357"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD95E",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/373"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Search and answers: give an Astro site its head, sitemap, and robots.txt from the records"
     },
     {
@@ -1234,8 +1237,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/363"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD990",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/374"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Search and answers: write every variant, labeled, in a page's Markdown version"
     },
     {
@@ -1248,8 +1254,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/364"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD9-A",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/375"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Search and answers: a compact index of the docs for a product's agents"
     },
     {
@@ -1290,8 +1299,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/370"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAEMeM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/372"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Compare the project files page with the lists that write them"
     }
   ]
