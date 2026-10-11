@@ -1,7 +1,8 @@
 // The update pull request's recipe is one file,
 // examples/docs-repository/.github/workflows/update-sources.yml: the drift
-// guide shows it, and the sources fixture runs it. These tests check that
-// both use that file, and, when asked, run the fixture's pass on this machine:
+// guide shows it, and the sources fixture runs it. The check's recipe is
+// check.yml beside it, which getting started shows. These tests check that
+// each uses its file, and, when asked, run the fixture's pass on this machine:
 // with ASCRIBE_BIN naming the binary, or ASCRIBE_SOURCES_FIXTURE=1 for this
 // repository's debug build. A plain `pnpm test` skips the pass, whether or not
 // that build exists: it takes ten seconds, and rust.yml runs it after its
@@ -21,6 +22,7 @@ const workflow = path.join(
   "workflows",
   "update-sources.yml",
 );
+const check = path.join("examples", "docs-repository", ".github", "workflows", "check.yml");
 const built = path.join(
   root,
   "target",
@@ -38,6 +40,16 @@ test("the drift guide shows the workflow the fixture runs", () => {
     "@snippet {lang=yaml}: code:examples/docs-repository/.github/workflows/update-sources.yml#workflow\n",
   );
   const text = readFileSync(path.join(root, workflow), "utf8");
+  expect(text).toContain("# :snippet-start: workflow\n");
+  expect(text).toContain("# :snippet-end:\n");
+});
+
+test("getting started shows the docs repository's check workflow", () => {
+  const page = readFileSync(path.join(root, "docs", "content", "getting-started.md"), "utf8");
+  expect(page).toContain(
+    "@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow\n",
+  );
+  const text = readFileSync(path.join(root, check), "utf8");
   expect(text).toContain("# :snippet-start: workflow\n");
   expect(text).toContain("# :snippet-end:\n");
 });

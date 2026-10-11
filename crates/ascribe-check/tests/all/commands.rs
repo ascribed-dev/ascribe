@@ -146,3 +146,44 @@ fn count_errors_counts_what_diagnose_reports_as_errors() {
     assert_eq!(errors("error", "advice"), 3);
     assert_eq!(errors("advice", "error"), 4);
 }
+
+#[test]
+fn find_below_lists_the_projects_in_the_folders_below() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    for folder in [
+        "b",
+        "a",
+        "a/nested",
+        "node_modules/c",
+        ".hidden",
+        "none/deeper",
+    ] {
+        fs::create_dir_all(dir.path().join(folder)).expect("create a folder");
+    }
+    for folder in ["b", "a", "a/nested", "node_modules/c", ".hidden"] {
+        fs::write(dir.path().join(folder).join(MODEL_FILE), MODEL).expect("write the model");
+    }
+    let found = Project::find_below(dir.path(), usize::MAX);
+    let a = dir.path().join("a");
+    assert_eq!(found, [a.clone(), a.join("nested"), dir.path().join("b")]);
+    assert_eq!(
+        Project::find_below(dir.path(), 2),
+        [a.clone(), a.join("nested")]
+    );
+
+    // The error names them; with none, it says what it said before.
+    let err = LocateError::not_found(dir.path().to_owned());
+    assert!(
+        matches!(&err, LocateError::NotFound { below, .. } if *below == found),
+        "{err:?}"
+    );
+    let empty = dir.path().join("none");
+    assert_eq!(
+        LocateError::not_found(empty.clone()).to_string(),
+        format!(
+            "no {MODEL_FILE} found in {} or any parent directory; run ascribe from a project, \
+             or pass --config",
+            empty.display()
+        )
+    );
+}

@@ -389,8 +389,10 @@ function localHost(): Host {
         fileUrl(remote(DOCS_NAME)),
         checkout,
       ]);
-      const result = spawnSync(ascribe, ["check", "--deny-warnings"], { cwd: checkout });
-      return result.status === 0;
+      return [
+        ["check", "--deny-warnings"],
+        ["fmt", "--check"],
+      ].every((args) => spawnSync(ascribe, args, { cwd: checkout }).status === 0);
     },
     edit: () => pushEdit(),
     merge() {

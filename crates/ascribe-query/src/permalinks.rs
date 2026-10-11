@@ -403,6 +403,9 @@ pub struct Retire<'a> {
     pub page: Option<&'a str>,
     /// A folder, by its content path, whose pages' permalinks are retired.
     pub under: Option<&'a str>,
+    /// The page or folder as the caller was given it, which an error names;
+    /// its content path when `None`.
+    pub named: Option<&'a str>,
 }
 
 /// The names [`Retire`] asks for, in order, each once: each name given,
@@ -476,10 +479,16 @@ pub fn retiring(
         }
     }
     let (held, shown) = match (retire.page, retire.under) {
-        (Some(page), _) => (page.trim_start_matches('/').to_owned(), page),
+        (Some(page), _) => (
+            page.trim_start_matches('/').to_owned(),
+            retire.named.unwrap_or(page),
+        ),
         (None, Some(folder)) => {
             let folder = folder.trim_start_matches('/').trim_end_matches('/');
-            (format!("{folder}/"), retire.under.unwrap_or_default())
+            (
+                format!("{folder}/"),
+                retire.named.or(retire.under).unwrap_or_default(),
+            )
         }
         (None, None) => return Ok(out),
     };

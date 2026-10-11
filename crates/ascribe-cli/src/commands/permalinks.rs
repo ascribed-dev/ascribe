@@ -101,19 +101,20 @@ pub struct RetireArgs {
     #[arg(long, value_name = "TEXT")]
     pub reason: String,
 
-    /// Where their addresses lead now: a page, by its path from the content
-    /// root, and `#` and a heading's id. Without it, an address shows the
-    /// reason.
+    /// Where their addresses lead now: a page, by its path from the current
+    /// folder or from the content root, and `#` and a heading's id. Without
+    /// it, an address shows the reason.
     #[arg(long, value_name = "PAGE")]
     pub to: Option<String>,
 
     /// Retire every permalink this page declares, or that ascribe.permalinks
-    /// has on it, by its path from the content root.
+    /// has on it: a path from the current folder, or from the content root.
     #[arg(long, value_name = "PAGE", conflicts_with = "under")]
     pub page: Option<String>,
 
     /// Retire every permalink declared in a file under this folder, or that
-    /// ascribe.permalinks has there, by its path from the content root.
+    /// ascribe.permalinks has there: a path from the current folder, or from
+    /// the content root.
     #[arg(long, value_name = "FOLDER")]
     pub under: Option<String>,
 
@@ -426,21 +427,48 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let index = project.index();
-    let retire = Retire {
-        names: &args.names,
-        page: args.page.as_deref(),
-        under: args.under.as_deref(),
+    // A page or folder is a path from the current folder, or from the
+    // content root; the first reading that names something is the one meant.
+    let given = args.page.as_deref().or(args.under.as_deref());
+    let places: Vec<Option<String>> = match given {
+        Some(given) => content_paths(&project, given)
+            .into_iter()
+            .map(Some)
+            .collect(),
+        None => vec![None],
     };
-    let names = match ascribe_query::permalinks::retiring(&index, project.permalinks(), &retire) {
-        Ok(names) => names,
-        Err(e) => return answer::fail(err, &e),
+    let mut found = None;
+    for place in &places {
+        let retire = Retire {
+            names: &args.names,
+            page: place.as_deref().filter(|_| args.page.is_some()),
+            under: place.as_deref().filter(|_| args.under.is_some()),
+            named: given,
+        };
+        match ascribe_query::permalinks::retiring(&index, project.permalinks(), &retire) {
+            Ok(names) => {
+                found = Some(Ok(names));
+                break;
+            }
+            Err(e) => {
+                found.get_or_insert(Err(e));
+            }
+        }
+    }
+    let names = match found {
+        Some(Ok(names)) => names,
+        Some(Err(e)) => return answer::fail(err, &e),
+        None => Vec::new(),
     };
+    // What's written into ascribe.toml is from the content root, as links
+    // there are.
+    let to = args.to.as_deref().map(|to| target_in_content(&project, to));
     let entries: Vec<ascribe_lsp::Retirement<'_>> = names
         .iter()
         .map(|name| ascribe_lsp::Retirement {
             name,
             reason,
-            to: args.to.as_deref(),
+            to: to.as_deref(),
         })
         .collect();
     let retired = match ascribe_lsp::retire(project.model_text(), &entries) {
@@ -490,7 +518,44 @@ fn write_retire(out: &mut dyn Write, r: &RetireAnswer, has_list: bool) -> io::Re
     Ok(())
 }
 
-/// A file named on the command line, or why it can't be read.
+/// A page or folder named on the command line, as the content paths it can
+/// be: from the current folder, then from the content root. The path as
+/// given when it can be neither.
+fn content_paths(project: &ascribe_check::Project, given: &str) -> Vec<String> {
+    let paths: Vec<String> = answer::content_paths(project, Path::new(given))
+        .iter()
+        .map(ToString::to_string)
+        .collect();
+    if paths.is_empty() {
+        vec![given.to_owned()]
+    } else {
+        paths
+    }
+}
+
+/// `--to`, a page and `#` and a heading's id, with the page as a path from
+/// the content root: the first of [`content_paths`] that's a page or
+/// fragment of the project, else as given, which `ascribe check` reports.
+fn target_in_content(project: &ascribe_check::Project, to: &str) -> String {
+    let (page, id) = match to.split_once('#') {
+        Some((page, id)) => (page, Some(id)),
+        None => (to, None),
+    };
+    if page.is_empty() {
+        return to.to_owned();
+    }
+    let Some(page) = answer::content_paths(project, Path::new(page))
+        .into_iter()
+        .find(|path| project.source_at(path).is_some())
+    else {
+        return to.to_owned();
+    };
+    match id {
+        Some(id) => format!("{page}#{id}"),
+        None => page.to_string(),
+    }
+}
+
 /// Writes the project's `ascribe.permalinks`, but never through a link,
 /// which could lead anywhere a repository chose.
 fn write_permalinks(root: &Path, text: &str) -> Result<(), PermalinksError> {
@@ -506,6 +571,7 @@ fn write_permalinks(root: &Path, text: &str) -> Result<(), PermalinksError> {
     })
 }
 
+/// A file named on the command line, or why it can't be read.
 fn read(path: &Path) -> Result<String, (PermalinksError, io::ErrorKind)> {
     // Outside FileSystem: a file named on the command line, such as a copy
     // of a list in a product's repository, which `verify` reads with no

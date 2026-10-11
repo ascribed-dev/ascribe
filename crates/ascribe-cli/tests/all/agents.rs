@@ -244,6 +244,47 @@ fn monorepo_with_every_target() {
 }
 
 #[test]
+fn at_a_root_with_several_projects_each_is_synced() {
+    // Where there's no project, the error names those below.
+    let repo = repository("monorepo");
+    let out = run(repo.path(), &["check"], 2);
+    assert!(
+        stderr(&out).contains(
+            "the projects below it are in docs, handbook, handbook/pages/security: run ascribe \
+             in one of them, or pass --config with its folder"
+        ),
+        "{}",
+        stderr(&out)
+    );
+
+    // `sync` writes what syncing each in turn writes, and lists each file
+    // once.
+    let out = run(repo.path(), &["agents", "sync", "--check"], 1);
+    assert!(
+        stdout(&out).contains("stale      AGENTS.md\n"),
+        "{}",
+        stdout(&out)
+    );
+    let mut args = vec!["agents", "sync"];
+    args.extend_from_slice(EVERY_TARGET);
+    let out = run(repo.path(), &args, 0);
+    assert!(
+        stderr(&out).contains("syncs each project below: docs, handbook, handbook/pages/security"),
+        "{}",
+        stderr(&out)
+    );
+    let text = stdout(&out);
+    assert_eq!(text.matches(" AGENTS.md\n").count(), 1, "{text}");
+    assert!(
+        text.contains("wrote     handbook/pages/security/AGENTS.md"),
+        "{text}"
+    );
+    expect_written("monorepo", repo.path());
+    let out = run(repo.path(), &["agents", "sync", "--check"], 0);
+    assert!(!stdout(&out).contains("stale"), "{}", stdout(&out));
+}
+
+#[test]
 fn a_second_sync_changes_nothing() {
     let repo = repository("quill");
     sync(repo.path(), ".", EVERY_TARGET);

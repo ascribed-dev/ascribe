@@ -2,6 +2,7 @@ Address this review comment on `docs/guides/install.md`.
 
 Where: docs/guides/install.md:12-13
 The file has unsaved changes; save it before you start.
+Paths and commands here are from the repository's root.
 
 Outdated: the text has changed since the comment. It was:
 ```markdown

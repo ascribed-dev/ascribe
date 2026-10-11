@@ -1,6 +1,7 @@
 ---
 title: Ascribe documentation
 description: Guides and references for writing documentation with Ascribe, and the contracts for implementers.
+permalink: docs
 ---
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.

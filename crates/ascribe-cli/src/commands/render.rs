@@ -57,6 +57,17 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// No project, a path that isn't one of its pages, or no build named where
 /// one is needed.
 pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Rendered, Stop> {
+    rendered(projects, global, args, false)
+}
+
+/// The page as the command shows it; with `note_switchers`, as its text
+/// does, saying above each switcher's arms that a reader sees one at a time.
+fn rendered(
+    projects: &dyn Projects,
+    global: &Global,
+    args: &Args,
+    note_switchers: bool,
+) -> Result<Rendered, Stop> {
     let loaded = answer::load(projects, global, Some(&args.page))?;
     let project = &loaded.project;
     let path = answer::source_path(project, &args.page)?;
@@ -67,11 +78,12 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<R
         &path,
         build,
         args.frontmatter,
+        note_switchers,
     )?)
 }
 
 fn render(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let rendered = match answer(&FromDisk, global, args) {
+    let rendered = match rendered(&FromDisk, global, args, args.format == Format::Text) {
         Ok(rendered) => rendered,
         Err(stop) => return stop.report(err),
     };

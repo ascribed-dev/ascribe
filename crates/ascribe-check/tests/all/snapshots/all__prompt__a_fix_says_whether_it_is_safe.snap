@@ -1,11 +1,12 @@
 ---
 source: crates/ascribe-check/tests/all/prompt.rs
-assertion_line: 139
+assertion_line: 140
 expression: text
 ---
 Fix this problem in `docs/install.md`.
 
 Where: docs/install.md:5
+Paths and commands here are from the repository's root.
 
 Problem: ASC041 `link-route`, a warning
 Message: this looks like the published route of `guide.md`; link to the file instead: `/guide.md`

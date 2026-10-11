@@ -52,14 +52,3 @@ export function resolveBinary(options: BinaryPlatform = {}): string {
     );
   }
 }
-
-/** Backwards-compatible name for resolveBinary. */
-export const nativeBinaryPath = (currentPlatform?: string, currentArch?: string): string =>
-  resolveBinary(
-    currentPlatform === undefined && currentArch === undefined
-      ? {}
-      : {
-          ...(currentPlatform === undefined ? {} : { platform: currentPlatform }),
-          ...(currentArch === undefined ? {} : { arch: currentArch }),
-        },
-  );
