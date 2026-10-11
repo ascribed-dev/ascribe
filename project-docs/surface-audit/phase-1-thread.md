@@ -5,7 +5,7 @@ Part of [The surface audit](README.md). Needs nothing. This is the plan's thread
 ## Goal
 
 - **Findings from one task:** fixing a broken link, walked four ways.
-- **The first conventions for the command line,** which the [permalinks plan](../permalinks/README.md) needs before it adds a command group.
+- **The first conventions for the command line,** which the [permalinks plan](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/permalinks/README.md) needs before it adds a command group.
 - **A method that's been tried,** with the script, the notes page, and the finding's form adjusted to what the first use showed.
 
 ## Context
