@@ -807,7 +807,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/341"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Share what's identical between the `ascribe.toml` reference and its contract"
     },
     {
@@ -1040,7 +1040,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/348"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`agents sync --cloud` prints several MCP JSON blocks that can't be pasted as one"
     },
     {
@@ -1055,6 +1055,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzhACZro",
       "labels": [
         "enhancement"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/352"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
@@ -1091,7 +1094,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "A starter for an Astro site: the four files every site writes again"
     },
     {
