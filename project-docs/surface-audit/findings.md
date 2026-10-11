@@ -57,10 +57,10 @@ Then naming and agreement, which cost attention more than time:
 17. **9, 10.** Five words for a problem, and two counts of them.
 18. **12.** Three ways to say which project.
 19. **14, 15, 56, 19.** What `check`, `render`, and `link` leave out of their text.
-20. **22, 59, 58, 60.** Command titles in two styles; the `new-page` command; what `sync` writes for Claude Code; two CI recipes.
+20. **59, 58, 60.** The `new-page` command; what `sync` writes for Claude Code; two CI recipes.
 21. **21, 23, 62, 39, 41, 42, 43, 44.** Smaller things.
 
-And the ones recommended as "leave", each with its reason: **7, 8, 16, 17** (document only), **18, 20** (document only), **27, 33, 35, 55, 57, 61.**
+And the ones recommended as "leave" or as only saying what's already so, each with its reason: **7, 8, 16, 17, 18, 20, 22, 27, 33, 35, 55, 57, 61.**
 
 **Two pairs of recommendations pull against each other,** and which way to go is the maintainer's:
 
@@ -276,7 +276,7 @@ And the ones recommended as "leave", each with its reason: **7, 8, 16, 17** (doc
 - **Where:** the extension's commands.
 - **Evidence:** "`Ascribe: Actions for the Cursor`, `Ascribe: Changed Pages`, `Ascribe: Dim What the Build Leaves Out`, `Ascribe: Prompt Agent to Fix This File`; and `Ascribe: Change where the link goes`, `Ascribe: Add a variant`, `Ascribe: Give the heading a stable id`. `Ascribe: Focus on Content model View` names the view the side bar calls "Content Model"."
 - **Cost:** The list reads as two products. Nobody was slowed by it.
-- **Recommendation:** rename to one style. Which one is phase 5's, with the whole manifest in front of it.
+- **Recommendation:** leave the two styles, and say why. With the whole manifest read ([the map](../surface.md#the-vs-code-extension)): the 28 in title case are commands that work the editor, and the 35 in sentence form are actions, whose label is also what the actions bar and the lightbulb show. One label in two cases would be two strings for one thing. The rule is in the [checklist](../checklists.md#a-new-editor-command-action-or-setting) now. Rename one thing: the view is "Content model" in the manifest and "Content Model" in the side bar's command.
 - **Size:** small.
 
 ### 23. Smaller things in the editor
