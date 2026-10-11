@@ -5,6 +5,7 @@
 
 use std::io::{self, Write};
 
+use ascribe_check::links::Answer;
 use ascribe_check::{Diagnostic, Next};
 use ascribe_query::report::{
     Agents, Builds, LeftContent, LeftPage, Links, NotRun, Problems, Ran, Report, Section,
@@ -275,8 +276,42 @@ struct LinksJson {
     /// A diagnostic for each link that moved or is broken, at its place,
     /// and for each acknowledgement of a broken link that covers nothing.
     diagnostics: Capped<Entry>,
-    /// The broken links acknowledged as intended.
+    /// The broken links acknowledged as intended, confirmed or not.
     acknowledged: Capped<AcknowledgedEntry>,
+    /// The day of the run the link history is from, `YYYY-MM-DD`, or `null`
+    /// on a first run, or with `--no-history`.
+    previous_run: Option<String>,
+    /// How many of `diagnostics` the previous run didn't report, or `null`
+    /// when `previous_run` is.
+    new: Option<usize>,
+    /// How many addresses the previous run reported that this one doesn't,
+    /// fixed or no longer linked to, or `null` when `previous_run` is.
+    resolved: Option<usize>,
+    /// The broken links that answered before and aren't reported until
+    /// they've kept failing for `[checks.links] confirm-days`. They aren't
+    /// in `diagnostics` or the summary, and don't fail `--exit-code`.
+    unconfirmed: Capped<UnconfirmedEntry>,
+}
+
+/// A broken link that answered before, not reported yet.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct UnconfirmedEntry {
+    /// The file, as a diagnostic's `file` is.
+    file: String,
+    /// Where in the file: the link.
+    range: Range,
+    /// The link's address.
+    url: String,
+    /// What the link checker said: a status, such as `503 Service
+    /// Unavailable`, or why it didn't answer.
+    status: String,
+    /// The last day it answered, `YYYY-MM-DD`.
+    last_answered: String,
+    /// The day it started failing, `YYYY-MM-DD`.
+    failing_since: String,
+    /// The day it's reported from if it's still failing, `YYYY-MM-DD`.
+    reported_from: String,
 }
 
 /// `agents`: the delivery spec's checks on a built site.
@@ -511,6 +546,23 @@ fn links_json(links: &Links, files: &FileTable, limit: usize) -> LinksJson {
         ignored: links.ignored,
         diagnostics: Capped::of(links.diagnostics.iter(), limit, |d| entry(files, d, 0)),
         acknowledged: Capped::of(links.acknowledged.iter(), limit, |a| acknowledged(files, a)),
+        previous_run: links.previous_run.map(|d| d.to_string()),
+        new: links.new,
+        resolved: links.resolved,
+        unconfirmed: Capped::of(links.unconfirmed.iter(), limit, |u| UnconfirmedEntry {
+            file: files.path(u.location.file),
+            range: range(files, u.location),
+            url: u.url.clone(),
+            status: match &u.answer {
+                Answer::Broken { status } => status.clone(),
+                Answer::TimedOut { said } => said.clone(),
+                Answer::Unreachable { reason } => reason.clone(),
+                Answer::Fine | Answer::Moved { .. } => String::new(),
+            },
+            last_answered: u.last_answered.to_string(),
+            failing_since: u.failing_since.to_string(),
+            reported_from: u.reported_from.to_string(),
+        }),
     }
 }
 
@@ -570,6 +622,7 @@ pub(crate) fn longest(report: &Report) -> usize {
     if let Some(Ran::Done(l)) = &report.links {
         see(l.diagnostics.len());
         see(l.acknowledged.len());
+        see(l.unconfirmed.len());
     }
     if let Some(Ran::Done(a)) = &report.agents {
         see(a.diagnostics.len());

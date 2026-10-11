@@ -21,6 +21,11 @@
 //! so the case's own files are never written, and the store is read as on
 //! the case's `today`.
 //!
+//! A case with a `link-history.json` has what the report remembers from an
+//! earlier run: it's copied to a temporary project's
+//! `.ascribe/history/links.json`, and read as on the case's `today`. A link
+//! the history holds as unconfirmed isn't one of the case's diagnostics.
+//!
 //! The site checker's stand-in checks `[consumer] site`: on a host
 //! `failing.test`, three checks fail, one each that Ascribe, the hosting,
 //! and the pages own (`llms-txt-exists`, `content-negotiation`,
@@ -99,12 +104,29 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
         }
         _ => None,
     };
+    let remembered = case.dir.join("link-history.json");
+    let history = match project.today() {
+        Some(today) if remembered.is_file() => {
+            let dir = tempfile::tempdir().map_err(|e| AdapterError(e.to_string()))?;
+            let to = dir.path().join(links::history::FILE);
+            let failed = |e: std::io::Error| {
+                AdapterError(format!("couldn't copy {}: {e}", remembered.display()))
+            };
+            std::fs::create_dir_all(to.parent().unwrap_or(dir.path())).map_err(failed)?;
+            std::fs::copy(&remembered, &to).map_err(failed)?;
+            let confirm_days = project.model().checks.links.confirm_days;
+            let history = links::History::open(dir.path(), today, confirm_days, false);
+            Some((dir, history))
+        }
+        _ => None,
+    };
     let options = Options {
         sections: &[section],
         builds: &[],
         site: site.as_deref(),
         tools: &tools,
         link_cache: store.as_ref().map(|(_, cache)| cache),
+        link_history: history.as_ref().map(|(_, history)| history),
     };
     let report =
         ascribe_query::report(&project, &options).map_err(|e| AdapterError(e.to_string()))?;

@@ -72,6 +72,13 @@ impl Date {
         self.day_number() - earlier.day_number()
     }
 
+    /// The date `days` days after this one. Before the Unix epoch, which
+    /// no date Ascribe is given is, it's 1970-01-01.
+    pub fn plus_days(self, days: u32) -> Date {
+        let number = self.day_number() + i64::from(days);
+        Date::from_unix_seconds(u64::try_from(number).unwrap_or_default() * 86_400)
+    }
+
     /// Its month's name in English, `September`, for a person to read.
     pub fn month_name(self) -> &'static str {
         const NAMES: [&str; 12] = [
@@ -150,6 +157,9 @@ mod tests {
         assert_eq!(day("1970-01-01").day_number(), 0);
         assert_eq!(day("2026-10-10").day_number(), 1_791_604_315 / 86_400);
         assert_eq!(day("2026-09-28").month_name(), "September");
+        assert_eq!(day("2026-10-10").plus_days(3), day("2026-10-13"));
+        assert_eq!(day("2026-12-30").plus_days(3), day("2027-01-02"));
+        assert_eq!(day("2024-02-28").plus_days(0), day("2024-02-28"));
     }
 
     #[test]

@@ -12,9 +12,12 @@
 //! The binary itself makes no request.
 //!
 //! An address that answered a few days ago isn't asked about again: its
-//! answer is reused from the project's store ([`cache`]).
+//! answer is reused from the project's store ([`cache`]). A link that
+//! answered before and fails now is held as unconfirmed until it has kept
+//! failing for a few days ([`history`]).
 
 pub mod cache;
+pub mod history;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -29,6 +32,8 @@ use crate::tool::{self, ToolError};
 use crate::{Diagnostic, Project};
 
 pub use cache::Cache;
+pub use history::History;
+use history::Seen;
 
 /// How long the link checker may take, in all.
 pub const TIMEOUT: Duration = Duration::from_secs(30 * 60);
@@ -123,6 +128,33 @@ pub struct Checked {
     pub oldest_answer: Option<Date>,
     /// How many different addresses `[checks.links] ignore` left out.
     pub ignored: usize,
+    /// Each link in `diagnostics` that's broken, but answered before, and
+    /// isn't to be reported until it has kept failing.
+    pub held: Vec<Unconfirmed>,
+    /// The address of each link in `diagnostics`, by its place.
+    pub urls: BTreeMap<Location, String>,
+    /// What the history is to keep of each address the pages link to, with
+    /// none reported yet; `None` when there's no history, or the checker
+    /// wasn't run because `[checks]` turns both link checks off.
+    pub observed: Option<BTreeMap<String, history::Record>>,
+}
+
+/// A link that answered before and fails now, not reported until it has
+/// kept failing for `[checks.links] confirm-days`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Unconfirmed {
+    /// The link.
+    pub location: Location,
+    /// Its address.
+    pub url: String,
+    /// What the checker said: broken, timed out, or unreachable.
+    pub answer: Answer,
+    /// The last day it answered.
+    pub last_answered: Date,
+    /// The day it started failing.
+    pub failing_since: Date,
+    /// The day it's reported from, if it's still failing.
+    pub reported_from: Date,
 }
 
 /// Every external link in the project's pages and fragments (an `http` or
@@ -153,9 +185,10 @@ pub fn external_links(project: &Project) -> Vec<Link> {
 }
 
 /// Checks the project's external links with `checker`, leaving out the
-/// hosts `[checks.links] ignore` names, and reusing the answers `cache`
-/// holds when there is one. The checker isn't run when there's nothing to
-/// ask about, or when `[checks]` turns both link checks off.
+/// hosts `[checks.links] ignore` names, reusing the answers `cache` holds
+/// when there is one, and holding the failures `history` says answered
+/// before. The checker isn't run when there's nothing to ask about, or when
+/// `[checks]` turns both link checks off.
 ///
 /// # Errors
 ///
@@ -165,6 +198,7 @@ pub fn check(
     checker: &dyn LinkChecker,
     timeout: Duration,
     cache: Option<&Cache>,
+    history: Option<&History>,
 ) -> Result<Checked, ToolError> {
     let checks = &project.model().checks;
     let links = external_links(project);
@@ -186,9 +220,12 @@ pub fn check(
         ignored: ignored.len(),
         ..Checked::default()
     };
-    if checked.is_empty()
-        || (off(diagnostics::LINK_EXTERNAL_BROKEN) && off(diagnostics::LINK_EXTERNAL_MOVED))
-    {
+    if off(diagnostics::LINK_EXTERNAL_BROKEN) && off(diagnostics::LINK_EXTERNAL_MOVED) {
+        return Ok(out);
+    }
+    let mut observed = BTreeMap::new();
+    if checked.is_empty() {
+        out.observed = history.map(|_| observed);
         return Ok(out);
     }
     let mut ask = Vec::new();
@@ -197,6 +234,10 @@ pub fn check(
             Some(day) => {
                 out.reused += 1;
                 out.oldest_answer = Some(out.oldest_answer.map_or(day, |d| d.min(day)));
+                if let Some(history) = history {
+                    let record = history.observe(&url, Seen::Answered(day));
+                    observed.insert(url, record);
+                }
             }
             None => ask.push(url),
         }
@@ -221,13 +262,35 @@ pub fn check(
         }
         cache.clean();
     }
+    if let Some(history) = history {
+        for url in &ask {
+            let seen = match answers.get(url) {
+                None | Some(Answer::Fine | Answer::Moved { .. }) => Seen::Answered(history.today()),
+                Some(_) => Seen::Failed,
+            };
+            observed.insert(url.clone(), history.observe(url, seen));
+        }
+        out.observed = Some(observed);
+    }
     for link in &links {
         let Some(answer) = answers.get(&link.url) else {
             continue;
         };
-        if let Some(d) = diagnostic(project, link, answer) {
-            out.diagnostics.push(d);
+        let Some(d) = diagnostic(project, link, answer) else {
+            continue;
+        };
+        if let Some(held) = history.and_then(|h| h.held(&link.url, answer)) {
+            out.held.push(Unconfirmed {
+                location: link.location,
+                url: link.url.clone(),
+                answer: answer.clone(),
+                last_answered: held.answered,
+                failing_since: held.failing_since,
+                reported_from: held.reported_from,
+            });
         }
+        out.urls.insert(d.location, link.url.clone());
+        out.diagnostics.push(d);
     }
     Ok(out)
 }

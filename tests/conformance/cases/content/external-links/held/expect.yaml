@@ -1,0 +1,16 @@
+description: >-
+  `ascribe report links` holds a link that answered before and fails now as
+  unconfirmed, and doesn't report it, until it has kept failing for
+  `[checks.links] confirm-days`, 3 days unless set. A link the history has
+  never seen answer is reported, as is one that has kept failing that long,
+  and a 404 or a 410 is reported at once. An acknowledged link stays
+  acknowledged, confirmed or not. The history is in `link-history.json`,
+  which stands in for the project's `.ascribe/history/links.json`.
+spec: ["5.2"]
+tags: [links]
+today: "2026-10-11"
+
+diagnostics:
+  - {slug: link-external-broken, file: input.md, line: 8, column: 5, severity: advice}
+  - {slug: link-external-broken, file: input.md, line: 11, column: 5, severity: advice}
+  - {slug: link-external-broken, file: input.md, line: 14, column: 5, severity: advice}
