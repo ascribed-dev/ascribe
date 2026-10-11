@@ -486,3 +486,42 @@ fn a_subset_of_builds_merges_what_they_share() {
     // One build is `check_project`.
     assert_eq!(check_builds(&p, &builds[..1]), check_project(&p, builds[0]));
 }
+
+#[test]
+fn a_permalink_that_differs_only_in_case_names_both_spellings() {
+    // The conformance case `directives/id/permalink-differs-in-case` holds
+    // the rule; this holds the messages, directly and through an include.
+    let p = project(&[
+        ("_f.md", "## Keys\n@id {permalink=true}: KEYS\n"),
+        (
+            "a.md",
+            &page("## Setup\n@id {permalink=true}: Setup\n\n## Keys\n@id {permalink=true}: keys"),
+        ),
+        (
+            "b.md",
+            "---\ntitle: B\npermalink: setup\n---\n\n@include: _f.md\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(
+        at(&p, &found),
+        [
+            row("permalink-duplicate", "b.md", 3),
+            row("permalink-duplicate", "b.md", 6),
+        ]
+    );
+    let messages: Vec<_> = found.iter().map(|d| d.message.as_str()).collect();
+    assert!(
+        messages[0].contains("`setup` differs only in case from `Setup` on `a.md`"),
+        "{messages:#?}"
+    );
+    assert!(
+        messages[1].contains("including `_f.md`") && messages[1].contains("`keys`, which differs"),
+        "{messages:#?}"
+    );
+    assert!(
+        found[0].related[0].message.contains("`Setup` on `a.md`"),
+        "{:#?}",
+        found[0].related
+    );
+}

@@ -717,6 +717,21 @@ fn sources_update() {
     );
 }
 
+/// `ascribe rename` on a copy of `examples/quill`, run from its root: the
+/// command reference's example.
+#[test]
+fn rename() {
+    let dir = tempfile::tempdir().unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        dir.path(),
+    );
+    expect(
+        "rename.txt",
+        &stdout(&run(dir.path(), &["rename", "phrase:cloud", "hosted"], 0)),
+    );
+}
+
 /// The commands that answer questions, on `examples/quill`, run from the
 /// repository's root with paths into it: the command reference's examples.
 #[test]

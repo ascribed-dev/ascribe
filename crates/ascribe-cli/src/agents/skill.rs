@@ -54,6 +54,10 @@ Each changes nothing, and each takes `--format json`.
 
 Use the commands when you have a shell. Without one, use the `ascribe_*` tools of Ascribe's MCP server if you have them: they return the same JSON.
 
+## Renaming
+
+`ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
+
 ## Fixes
 
 In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given. Read an `unsafe` one and decide before applying it.
