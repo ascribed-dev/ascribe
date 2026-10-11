@@ -18,7 +18,7 @@ Triage owns one move: **Backlog → Ready**. It reads every card in Backlog, mov
    - it says what done looks like: the behavior, the output, or the page that changes;
    - nothing it needs is waiting on another open issue or pull request;
    - it doesn't ask for a decision only the maintainer can make: a change to a contract (see AGENTS.md's "Contracts don't move"), a new dependency outside the repository, or anything in `project-docs/outside.md`.
-4. **Move each ready card to Ready.** Run Board once per card.
+4. **Move the ready cards to Ready,** all in one run of Board.
 5. **Comment on each card that isn't ready,** once, with the one thing that would make it ready, phrased as a question the maintainer can answer in a line. Leave it in Backlog.
 6. **Report, in the thread:** the cards moved to Ready, oldest first, each as `#N title`, then the cards left with a question. The coordinator starts implementors from that list, so put nothing else in it.
 
