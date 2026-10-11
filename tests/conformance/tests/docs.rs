@@ -38,15 +38,17 @@ fn evidence_names() -> Vec<&'static str> {
 const CHECK_TOOLS: &[&str] = &["vale", "links"];
 
 /// No check ships without its next step: every diagnostic that isn't retired
-/// has a kind of next step, a `fix` paragraph, an entry in the reference, and
-/// the list of what its prompt carries. A `review` diagnostic can be
+/// has a kind of next step, a `fix` paragraph, an entry in the reference, a
+/// section of the directive or `ascribe.toml` reference to send its reader on
+/// to, and the list of what its prompt carries. A `review` diagnostic can be
 /// acknowledged and set in `[checks]`, so it's configurable. That every `fix`
 /// diagnostic has a fix in the code is tested with the quick fixes, in
 /// `crates/ascribe-lsp/tests/all/quick_fixes.rs`.
 #[test]
 fn every_diagnostic_has_its_next_step() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
-    let reference = render(&registry, &BTreeMap::new())
+    let pages = Pages::load();
+    let reference = render(&registry, &pages)
         .into_iter()
         .map(|(_, text)| text)
         .collect::<String>();
@@ -56,13 +58,22 @@ fn every_diagnostic_has_its_next_step() {
             wrong.push(format!("{}: `[checks.{}]` is for a tool", e.code, e.slug));
         }
         if e.retired.is_some() {
-            if e.next.is_some() || e.evidence.is_some() || e.configurable {
+            if e.next.is_some() || e.evidence.is_some() || e.configurable || e.reference.is_some() {
                 wrong.push(format!(
-                    "{}: a retired entry has no `next`, `evidence`, or `configurable`",
+                    "{}: a retired entry has no `next`, `evidence`, `configurable`, or `reference`",
                     e.code
                 ));
             }
             continue;
+        }
+        match &e.reference {
+            None => wrong.push(format!("{}: no `reference`", e.code)),
+            Some(section) if !pages.sections.contains_key(section) => wrong.push(format!(
+                "{}: `reference` is `{section}`, which isn't a heading of {}",
+                e.code,
+                REFERENCES.map(|(file, _)| file).join(" or ")
+            )),
+            Some(_) => {}
         }
         if e.fix.as_deref().is_none_or(str::is_empty) {
             wrong.push(format!("{}: no `fix`", e.code));
@@ -122,8 +133,7 @@ fn every_diagnostic_has_its_next_step() {
 #[test]
 fn the_diagnostics_reference_is_current() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
-    let spec = std::fs::read_to_string(repo().join("SPEC.md")).unwrap();
-    let fragments = render(&registry, &spec_anchors(&spec));
+    let fragments = render(&registry, &Pages::load());
     check_fragments("diagnostics-", &fragments);
     let page =
         std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
@@ -280,10 +290,7 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
 /// source-file diagnostics, the content model's, the content checks, and the
 /// retired ones (empty when there are none). The index links to entries in the other fragments
 /// through the page that includes them all (SPEC §4.2).
-fn render(
-    registry: &DiagnosticsRegistry,
-    anchors: &BTreeMap<String, String>,
-) -> Vec<(String, String)> {
+fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry
         .entries
         .iter()
@@ -306,7 +313,7 @@ fn render(
     for (construct, entries) in constructs {
         let _ = write!(source_files, "\n### {construct}\n");
         for (entry, condition) in entries {
-            write_entry(&mut source_files, entry, Some(condition), anchors);
+            write_entry(&mut source_files, entry, Some(condition), pages);
         }
     }
 
@@ -317,7 +324,7 @@ fn render(
             .iter()
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
-            write_entry(&mut content_model, entry, None, anchors);
+            write_entry(&mut content_model, entry, None, pages);
         }
     }
 
@@ -325,7 +332,7 @@ fn render(
     for (area, title) in AREAS {
         let _ = write!(content_checks, "\n### {title}\n");
         for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
-            write_entry(&mut content_checks, entry, entry.when.as_deref(), anchors);
+            write_entry(&mut content_checks, entry, entry.when.as_deref(), pages);
         }
     }
     let unlisted: Vec<&str> = active
@@ -397,13 +404,8 @@ fn model_group(entry: &Entry) -> &str {
     entry.group.as_deref().unwrap_or("names")
 }
 
-fn write_entry(
-    out: &mut String,
-    entry: &Entry,
-    condition: Option<&str>,
-    anchors: &BTreeMap<String, String>,
-) {
-    let section = match anchors.get(&entry.spec) {
+fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
+    let section = match pages.spec.get(&entry.spec) {
         Some(anchor) => format!(
             "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
             entry.spec
@@ -448,6 +450,96 @@ fn write_entry(
         "**Fix:** {}",
         escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
     );
+    let section = entry
+        .reference
+        .as_ref()
+        .and_then(|r| Some((r, pages.sections.get(r)?)));
+    if let Some((target, (heading, page))) = section {
+        let _ = write!(
+            out,
+            "\n**Read more:** [{}](../reference/{target}) in the {page}.\n",
+            escape_braces(heading)
+        );
+    }
+}
+
+/// The reference pages a diagnostic's entry can send its reader on to, and
+/// what the entry calls each.
+const REFERENCES: [(&str, &str); 2] = [
+    ("directives.md", "directive reference"),
+    ("content-model.md", "`ascribe.toml` reference"),
+];
+
+/// What an entry links to: SPEC.md's numbered sections, and the reference
+/// pages' headings.
+struct Pages {
+    /// SPEC.md's section anchors, by number.
+    spec: BTreeMap<String, String>,
+    /// Each heading of the reference pages, by `<file>#<id>`: its text,
+    /// without a section number, and the page's name.
+    sections: BTreeMap<String, (String, &'static str)>,
+}
+
+impl Pages {
+    fn load() -> Pages {
+        let mut sections = BTreeMap::new();
+        for (file, page) in REFERENCES {
+            let text = read(&format!("docs/content/reference/{file}"));
+            for (id, heading) in headings(&text) {
+                sections.insert(format!("{file}#{id}"), (heading, page));
+            }
+        }
+        Pages {
+            spec: spec_anchors(&read("SPEC.md")),
+            sections,
+        }
+    }
+}
+
+/// A page's headings below its title, outside fenced code, as their ids and
+/// their text without a section number. A heading's id is the `@id` on the
+/// line below it, or else its slug.
+fn headings(page: &str) -> Vec<(String, String)> {
+    let lines: Vec<&str> = page.lines().collect();
+    let mut out = Vec::new();
+    let mut fence: Option<String> = None;
+    for (i, line) in lines.iter().enumerate() {
+        let marker: String = line
+            .chars()
+            .take_while(|c| matches!(c, '`' | '~'))
+            .collect();
+        if marker.len() >= 3 {
+            match &fence {
+                None => fence = Some(marker),
+                Some(open) if line.trim_end() == marker && marker.starts_with(open.as_str()) => {
+                    fence = None;
+                }
+                Some(_) => {}
+            }
+            continue;
+        }
+        if fence.is_some() {
+            continue;
+        }
+        let hashes = line.chars().take_while(|c| *c == '#').count();
+        let Some(text) = line.get(hashes..).and_then(|t| t.strip_prefix(' ')) else {
+            continue;
+        };
+        if hashes < 2 {
+            continue;
+        }
+        let id = lines
+            .get(i + 1)
+            .and_then(|next| next.strip_prefix("@id"))
+            .and_then(|rest| rest.rsplit_once(": "))
+            .map_or_else(|| slug(text), |(_, id)| id.trim().to_owned());
+        let unnumbered = match text.split_once(' ') {
+            Some((number, rest)) if number.chars().all(|c| c.is_ascii_digit() || c == '.') => rest,
+            _ => text,
+        };
+        out.push((id, unnumbered.to_owned()));
+    }
+    out
 }
 
 /// Where a `review` diagnostic's problem is acknowledged, for its entry in

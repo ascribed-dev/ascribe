@@ -115,6 +115,11 @@ pub struct Entry {
     pub place: Option<String>,
     /// The SPEC.md section the rule comes from.
     pub spec: String,
+    /// The section of the directive or `ascribe.toml` reference about the
+    /// problem, as `directives.md#links`; every entry that isn't retired has
+    /// one.
+    #[serde(default)]
+    pub reference: Option<String>,
     /// The main message template.
     pub message: String,
     /// Alternative message templates, by name.

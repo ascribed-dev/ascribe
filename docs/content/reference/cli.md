@@ -533,11 +533,16 @@ Keeps the project's list of [permalinks](directives.md#permalinks), `ascribe.per
 ### `ascribe permalinks sync`
 @id {permalink=true}: cli-permalinks-sync
 
-Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. It never drops a name the project no longer has: that stays in the list, and `ascribe check` reports it until it's back or retired, so running `sync` can't hide a removal. It lists what it added, moved, and recorded, and warns about each name it kept.
+Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. It never drops a name the project no longer has: that stays in the list, and `ascribe check` reports it until it's back or retired, so running `sync` can't hide a removal. It lists what it added, moved, and recorded, and warns about each name it kept. With `--check`, it writes nothing, says what it would change, and exits with `1` when the list would change, so CI can fail on a list that wasn't committed with the change; `ascribe check` reports the same thing as `permalinks-list-behind`.
 
 @include: ../_generated/cli-permalinks-sync-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `changed` (whether the file was written), `created`, `added` (names), `moved` (each with `name`, `from`, and `to`), `aliased` and `retired` (the aliases and retired permalinks recorded, new or changed), and `removed` (the names kept that the project no longer has). It exits with `0` when the list is up to date, whether or not it changed, and `2` when the project doesn't load or the list can't be read or written.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `changed` (whether the file was written, or with `--check` would be), `created`, `added` (names), `moved` (each with `name`, `from`, and `to`), `aliased` and `retired` (the aliases and retired permalinks recorded, new or changed), and `removed` (the names kept that the project no longer has). 
+| Code | Meaning |
+|---|---|
+| `0` | The list is up to date, whether or not it changed; with `--check`, it was already |
+| `1` | With `--check`, the list would change: it's behind the content, or there's none |
+| `2` | It couldn't run: the project doesn't load, or the list can't be read or written |
 
 ### `ascribe permalinks list`
 @id {permalink=true}: cli-permalinks-list
@@ -555,7 +560,7 @@ Checks that each name is a permalink or an alias in a list, and names each one t
 
 ```sh
 ascribe permalinks verify cli-check ASC036
-ascribe permalinks verify --list docs/ascribe.permalinks --from permalinks.txt
+ascribe permalinks verify --against docs/ascribe.permalinks --from permalinks.txt
 ```
 
 @include: ../_generated/cli-permalinks-verify-options.md
