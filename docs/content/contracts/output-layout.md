@@ -33,13 +33,13 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
-**With `[consumer] agents = true`** {available=next} (content-model.md §16), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
+**With `[consumer] agents = true`** {available=next} (content-model.md §15), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
 
 | Emitter | Page `Guides/My Setup.md` is written to |
 |---|---|
 | `plain` | `guides/my-setup.md`: the page's Astro entry id with `.md` (the root `index.md` stays `index.md`) |
 
-Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §16); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
+Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §15); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 

@@ -5,7 +5,8 @@
 //! them.
 //!
 //! It also checks the docs' phrases whose values come from another file, such
-//! as the version, against that file.
+//! as the version, against that file, and that the `ascribe.toml` reference
+//! and its contract share their text only through fragments.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -186,6 +187,46 @@ fn the_docs_phrases_match_their_sources() {
     );
 
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+/// The `ascribe.toml` reference and its contract take what they say alike
+/// from the fragments in `docs/content/_fragments/content-model/`, so no
+/// paragraph, list, table, or example is written in both. Headings, rules,
+/// and the includes themselves are the pages' shape, and alike on purpose.
+#[test]
+fn the_content_model_pages_share_text_only_through_fragments() {
+    // The blocks between blank lines, keeping a code block whole.
+    let blocks = |path: &str| -> Vec<String> {
+        let mut blocks = vec![String::new()];
+        let mut fenced = false;
+        for line in read(path).lines() {
+            fenced ^= line.trim_start().starts_with("```");
+            if line.trim().is_empty() && !fenced {
+                blocks.push(String::new());
+            } else if let Some(block) = blocks.last_mut() {
+                block.push_str(line);
+                block.push('\n');
+            }
+        }
+        blocks.retain(|block| {
+            !(block.is_empty()
+                || block == "---\n"
+                || block.starts_with('#')
+                || block.starts_with("@include: "))
+        });
+        blocks
+    };
+    let contract = blocks("docs/content/contracts/content-model.md");
+    let twice: Vec<String> = blocks("docs/content/reference/content-model.md")
+        .into_iter()
+        .filter(|block| contract.contains(block))
+        .collect();
+    assert!(
+        twice.is_empty(),
+        "move what both pages say into a fragment in docs/content/_fragments/content-model/, \
+         and include it from each:\n\n{}",
+        twice.join("\n\n")
+    );
 }
 
 fn read(path: &str) -> String {
