@@ -96,7 +96,7 @@ Nothing moves a pin unless something runs `ascribe sources update`. This GitHub 
 
 Until a release has `ascribe sources`, install `@ascribed/cli@next` in it instead.
 
-The pull request's title names each source and its new pin. Its description is what `ascribe sources update --format summary` writes: the commits that came in, linked to the comparison on GitHub, the copies that changed, and the pages to reread, as `ascribe drift` groups them. When an example no longer resolves, because its region was renamed or its file moved, the description says so, with `ascribe check`'s errors, and the pull request fails your docs' checks like any other.
+The pull request's title names each source and its new pin. Its description is what `ascribe sources update --format markdown` writes: the commits that came in, linked to the comparison on GitHub, the copies that changed, and the pages to reread, as `ascribe drift` groups them. When an example no longer resolves, because its region was renamed or its file moved, the description says so, with `ascribe check`'s errors, and the pull request fails your docs' checks like any other.
 
 Because the copies are in its diff, the pull request is reviewed like any change to the docs: your checks, the [review report](review.md), and your site's preview all show the pages with the new code.
 
@@ -137,7 +137,7 @@ This GitHub Actions job writes the report to the run's summary on each pull requ
 @snippet {lang=yaml}: code:.github/workflows/drift.yml#job
 
 - **History.** Like `ascribe diff`, `ascribe drift` compares with the merge base of the pull request's base branch and its head, so the checkout needs `fetch-depth: 0`. With less, it stops and says to fetch more.
-- **The summary.** `--format summary` writes the groups as Markdown, each page linked to its route on `[consumer] site`, and nothing when no example changed, so the summary stays empty on most pull requests.
+- **The summary.** `--format markdown` writes the groups as Markdown, each page linked to its route on `[consumer] site`, and nothing when no example changed, so the summary stays empty on most pull requests.
 - **When it runs.** Run it on every pull request, not only on those that change your docs' folder: an example changes when its code does, so a filter on the docs' paths skips exactly the changes the report is for.
 - **Failing the check.** To fail the job when an example broke, or changed while its page didn't, add `--exit-code`. Start without it, and see how often the report is right for your docs first.
 

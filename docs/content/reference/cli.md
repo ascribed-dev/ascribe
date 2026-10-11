@@ -301,7 +301,7 @@ It reads little: one `git diff` listing of the change, and at the base only the 
 
 ### The summary
 
-`--format summary` writes Markdown for a CI job's summary: the same groups, each page linked to its route on `[consumer] site` (plain text when there's no `site`), and nothing at all when no example changed, so it can be appended to `$GITHUB_STEP_SUMMARY` on every run.
+`--format markdown` writes Markdown for a CI job's summary: the same groups, each page linked to its route on `[consumer] site` (plain text when there's no `site`), and nothing at all when no example changed, so it can be appended to `$GITHUB_STEP_SUMMARY` on every run.
 
 ### Exit codes
 @id: drift-exit-codes
@@ -370,7 +370,7 @@ With no section named, it runs the first three. Each section is independent: one
 
 ### The summary and the prompt
 
-`--format summary` writes the same sections as Markdown, for a CI job's summary or an issue's body. `--format prompt` writes one prompt for an agent about the findings of one section, `problems`, `links`, or `agents`, with what each kind carries (the sentence around a link, the setting to change) and the command that checks the work; nothing when the section finds nothing. Each list holds at most `--limit` items; what's left out is counted, with the command that lists it.
+`--format markdown` writes the same sections as Markdown, for a CI job's summary or an issue's body. `--format prompt` writes one prompt for an agent about the findings of one section, `problems`, `links`, or `agents`, with what each kind carries (the sentence around a link, the setting to change) and the command that checks the work; nothing when the section finds nothing. Each list holds at most `--limit` items; what's left out is counted, with the command that lists it.
 
 ### Exit codes
 @id: report-exit-codes
@@ -485,7 +485,7 @@ Moves each source's pin to the head of its `branch` (or to `--to`), copies the f
 
 The pages are found as `ascribe drift` finds them, comparing the working tree, with the new copies, against `HEAD`, so run it in a clean checkout. A snippet whose region is gone at the new commit is listed among the examples that no longer resolve, and the update still completes: `ascribe check` then fails on it, which is the signal to fix the page. When the project isn't in a git repository, or has no commit yet, the pages aren't listed, and it says why: commit the docs once before the first update.
 
-`--format summary` writes Markdown for a pull request's description: each source that moved, with its commits and copies, then the pages, each linked to its route on `[consumer] site`. For a repository on github.com, the old and new pins link to GitHub's comparison of them. Commit subjects are code spans, so a subject like `Fixes #12 @someone` in the code's repository can't close an issue or notify anyone from the docs' pull request. It writes nothing when nothing moved. `--format json` writes one document: `schema_version` (`1`), `ascribe_version`, `changed`, `sources`, `pages` (as in the [drift JSON](#drift-json), or null), and `pages_unavailable` (why there are no pages, or null). Each source has `name`, `git`, `followed` (the branch, `HEAD`, or `--to`'s revision), `from` and `to` (the pins, `from` null for a first pin), `moved`, `back` (true when the new pin isn't after the old one: it moved back, or to another line of history, and no commits are counted), `commits` (`count` and `newest`, each with `commit` and `subject`, or null), `files` (each with `path` and `change`: `added`, `changed`, or `removed`), `failed` (each with `path` and `reason`), and `first_copy`.
+`--format markdown` writes Markdown for a pull request's description: each source that moved, with its commits and copies, then the pages, each linked to its route on `[consumer] site`. For a repository on github.com, the old and new pins link to GitHub's comparison of them. Commit subjects are code spans, so a subject like `Fixes #12 @someone` in the code's repository can't close an issue or notify anyone from the docs' pull request. It writes nothing when nothing moved. `--format json` writes one document: `schema_version` (`1`), `ascribe_version`, `changed`, `sources`, `pages` (as in the [drift JSON](#drift-json), or null), and `pages_unavailable` (why there are no pages, or null). Each source has `name`, `git`, `followed` (the branch, `HEAD`, or `--to`'s revision), `from` and `to` (the pins, `from` null for a first pin), `moved`, `back` (true when the new pin isn't after the old one: it moved back, or to another line of history, and no commits are counted), `commits` (`count` and `newest`, each with `commit` and `subject`, or null), `files` (each with `path` and `change`: `added`, `changed`, or `removed`), `failed` (each with `path` and `reason`), and `first_copy`.
 
 | Code | Meaning |
 |---|---|

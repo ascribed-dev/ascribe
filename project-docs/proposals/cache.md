@@ -174,7 +174,7 @@ External links
 
 A first run says so: `Checked 1786 addresses, asking about each. Nothing is remembered from an earlier run, so every failure is reported.`
 
-`--format summary` says the same in Markdown. The JSON's `links` gains fields and changes none, and stays at `schema_version` 1:
+`--format markdown` says the same in Markdown. The JSON's `links` gains fields and changes none, and stays at `schema_version` 1:
 
 | Field | What it is |
 |---|---|

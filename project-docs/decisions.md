@@ -48,6 +48,8 @@ The finished plans, docs and review, were removed from `project-docs/` on 5 Octo
 
 95. **The JSON Schemas in `schemas/` give an integer no `format`.** An integer is `"type": "integer"`, with `"minimum": 0` when it can't be negative; the `uint`, `uint32`, `uint8`, and `int32` formats `schemars` writes are dropped when the schemas are generated. No document changes, and no `schema_version` moves. _Why:_ JSON Schema defines none of those formats, so a client loading `ascribe mcp`'s tools printed a warning for each, 94 of them. _From:_ [#272](https://github.com/ascribed-dev/ascribe/issues/272), agreed by the maintainer on 10 October 2026.
 
+104. **The format that writes Markdown is `markdown`, on `ascribe drift`, `ascribe sources update`, and `ascribe report`, and `summary` stops working, with no alias.** `--summary` on `ascribe check` stays: it shortens a report and isn't a format. _Why:_ one word named a file format on three commands and a shorter report on a fourth, and a format learned on one command should hold on the next; Ascribe is before 1.0 with no users, so nothing is kept for a release (decision 30). _From:_ [#269](https://github.com/ascribed-dev/ascribe/issues/269), from the surface audit's finding 11.
+
 ## Review
 
 6. **One overlay, several hosts.** The marks for changed blocks and the comment threads are one browser component, `@ascribed/review`. The page preview and the Astro dev server host it, and it gets its data through one interface, so a new host needs no change to it. _From:_ [review, decision 1](https://github.com/ascribed-dev/ascribe/blob/5f5dd4cea86b85cde4d6468951f48290889fe022/project-docs/review/README.md#decisions).

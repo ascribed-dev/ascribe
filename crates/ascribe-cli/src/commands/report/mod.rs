@@ -114,7 +114,7 @@ pub enum Format {
     /// Each section, for people.
     Text,
     /// Markdown, for a CI job's summary or an issue's body.
-    Summary,
+    Markdown,
     /// One JSON document, for tools.
     Json,
     /// A prompt for an agent that acts on one section's findings: only
@@ -299,7 +299,7 @@ fn write(
     let files = FileTable::of_project(project);
     let limit = args.limit.unwrap_or(match args.format {
         Format::Json => JSON_LIMIT,
-        Format::Text | Format::Summary | Format::Prompt => TEXT_LIMIT,
+        Format::Text | Format::Markdown | Format::Prompt => TEXT_LIMIT,
     });
     let longest = json::longest(report);
     let next_command = (longest > limit).then(|| command(global, args, sections, longest));
@@ -318,12 +318,12 @@ fn write(
                 },
             ),
         ),
-        Format::Text | Format::Summary => text::write(
+        Format::Text | Format::Markdown => text::write(
             out,
             &files,
             report,
             text::Style {
-                markdown: args.format == Format::Summary,
+                markdown: args.format == Format::Markdown,
                 limit,
             },
             &text::About {
@@ -363,7 +363,7 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
     words.extend(["--limit".to_owned(), limit.to_string()]);
     match args.format {
         Format::Json => words.extend(["--format".to_owned(), "json".to_owned()]),
-        Format::Summary => words.extend(["--format".to_owned(), "summary".to_owned()]),
+        Format::Markdown => words.extend(["--format".to_owned(), "markdown".to_owned()]),
         Format::Text | Format::Prompt => {}
     }
     words.join(" ")

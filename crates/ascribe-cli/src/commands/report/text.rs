@@ -1,5 +1,5 @@
 //! `ascribe report` as text, for people, and as Markdown (`--format
-//! summary`), for a CI job's summary or an issue's body. Both say the same
+//! markdown`), for a CI job's summary or an issue's body. Both say the same
 //! things in the same order; a section that couldn't run says why and what
 //! would let it, first.
 
@@ -13,7 +13,7 @@ use crate::report::{Counts, FileTable};
 /// How the report is written.
 #[derive(Clone, Copy)]
 pub(crate) struct Style {
-    /// Markdown, for `--format summary`; plain text otherwise.
+    /// Markdown, for `--format markdown`; plain text otherwise.
     pub markdown: bool,
     /// The most items a list shows.
     pub limit: usize,

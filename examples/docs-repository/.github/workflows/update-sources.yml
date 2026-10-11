@@ -60,7 +60,7 @@ jobs:
           GIT_CONFIG_VALUE_0: https://github.com/
         run: |
           ascribe sources status --format json > "$RUNNER_TEMP/before.json"
-          ascribe sources update --format summary > "$RUNNER_TEMP/update.md"
+          ascribe sources update --format markdown > "$RUNNER_TEMP/update.md"
       - name: Open or update the pull request
         env:
           GH_TOKEN: ${{ steps.docs.outputs.token }}

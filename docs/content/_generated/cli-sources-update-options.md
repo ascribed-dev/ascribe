@@ -5,4 +5,4 @@
 - `--format <FORMAT>`: How to show what changed.
   - `text` (the default): Each source's commits and copies, then the pages, for people.
   - `json`: One JSON document, for tools.
-  - `summary`: Markdown for a pull request's description.
+  - `markdown`: Markdown for a pull request's description.
