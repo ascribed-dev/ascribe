@@ -67,7 +67,22 @@ To leave a whole host out, name it in `ascribe.toml`. A name with `*.` before it
 ignore = ["localhost", "*.internal.example.com"]
 ```
 
-Install lychee from [its releases](https://github.com/lycheeverse/lychee/releases), or with `cargo install lychee`. When it isn't on the path, `[checks.links] command` names where it is, relative to the project root. lychee runs in the project's folder, the one with `ascribe.toml`, and reads its own `lychee.toml` there, for headers, timeouts, or how often to retry. Results aren't kept between runs: Ascribe turns lychee's cache off, whatever `lychee.toml` says, because lychee keeps a link's status and not where it moved to, so a cached answer would hide every moved link.
+Install lychee from [its releases](https://github.com/lycheeverse/lychee/releases), or with `cargo install lychee`. When it isn't on the path, `[checks.links] command` names where it is, relative to the project root. lychee runs in the project's folder, the one with `ascribe.toml`, and reads its own `lychee.toml` there, for headers, timeouts, or how often to retry. Ascribe turns lychee's own cache off, whatever `lychee.toml` says, because lychee keeps a link's status and not where it moved to, so a cached answer would hide every moved link.
+
+### Answers it reuses
+
+An address that answered with nothing to report isn't asked about again for a while: Ascribe keeps the answer in `.ascribe/cache/links/`, with the day, and reuses it for up to `[checks.links] reuse-days`, 14 days unless you set it. Each address comes due on its own day, between half of that and all of it, so a project's links aren't all asked about again at once. The report says what it did:
+
+```text
+External links
+  Checked 1786 addresses: asked about 64, and reused 1722 answers, the oldest from 28 September.
+```
+
+A link that moved, failed, or didn't answer in time is never kept, so it's asked about on every run, and every problem in a report was found in that run. The one thing reuse changes is when a link that has died since it last answered is reported: when its answer runs out, not before. Changing `lychee.toml` starts every address fresh.
+
+- **`--recheck`** asks about every address, and keeps what this run gets.
+- **`reuse-days = 0`** asks about every address on every run, and keeps nothing.
+- **Deleting `.ascribe/`** costs the next run time, and nothing else.
 
 ## The site and agents
 
@@ -89,10 +104,11 @@ ascribe report links --format prompt
 
 ## On a schedule
 
-External links break and sites change without a commit in your repository, and checking them takes minutes and the network, so run those sections on a schedule, not on every pull request. This GitHub Actions job runs them every Monday and writes the report to the run's summary. When it finds something, or a section can't run, it opens an issue, or updates the one that's open, and fails. Change `--config docs` to your project's folder, or drop it when that's the repository's root, and `--site` to your site.
+External links break and sites change without a commit in your repository, and checking them takes minutes and the network, so run those sections on a schedule, not on every pull request. This GitHub Actions job runs them every day and writes the report to the run's summary. When it finds something, or a section can't run, it opens an issue, or updates the one that's open, and fails. Change `--config docs` to your project's folder, or drop it when that's the repository's root, and `--site` to your site.
 
 @snippet {lang=yaml}: code:.github/workflows/report.yml#job
 
+- **`actions/cache`** keeps the answers `links` reuses from one run to the next, so a daily run asks about roughly a tenth of the addresses. A saved cache can't be replaced, so each run saves under its own key and restores the newest by the prefix; GitHub removes a cache nobody has read for seven days. A run that restores nothing asks about every address, as a first run does. Its `path` is `.ascribe/cache` in the project's folder, so change `docs` there too.
 - **`--format markdown`** writes Markdown, for the run's summary and the issue's body.
 - **`--exit-code`** fails on any problem; `--exit-code=warning` only on warnings and errors. A section that couldn't run fails it too, with exit code 2: a report that didn't check the links isn't a pass.
 - **The issue** is found by its title, so one stays open until someone closes it, and each run replaces its body with the latest report.

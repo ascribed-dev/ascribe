@@ -15,6 +15,8 @@ mod commands;
 mod file_system;
 #[path = "all/ids.rs"]
 mod ids;
+#[path = "all/link_cache.rs"]
+mod link_cache;
 #[path = "all/page.rs"]
 mod page;
 #[path = "all/page_index.rs"]

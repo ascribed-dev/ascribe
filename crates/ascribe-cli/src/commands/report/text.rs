@@ -331,13 +331,40 @@ impl Writer<'_> {
             Ran::Done(links) => links,
         };
         let mut line = format!("Checked {}", counted(links.checked, "address", "addresses"));
-        if links.ignored > 0 {
-            line.push_str(&format!(
-                ", and left out {} `[checks.links] ignore` names",
-                counted(links.ignored, "address", "addresses")
-            ));
+        let ignored = counted(links.ignored, "address", "addresses");
+        if links.asked == 0 && links.reused == 0 {
+            // Nothing was asked about: there was nothing to check, or
+            // `[checks]` turns both link checks off.
+            if links.ignored > 0 {
+                line.push_str(&format!(
+                    ", and left out {ignored} `[checks.links] ignore` names"
+                ));
+            }
+            line.push('.');
+        } else {
+            match links.oldest_answer.filter(|_| links.reused > 0) {
+                None => {
+                    line.push_str(", asking about each: no answer from an earlier run was reused.")
+                }
+                Some(oldest) => {
+                    let asked = match links.asked {
+                        0 => "none".to_owned(),
+                        n => n.to_string(),
+                    };
+                    line.push_str(&format!(
+                        ": asked about {asked}, and reused {}, the oldest from {} {}.",
+                        counted(links.reused, "answer", "answers"),
+                        oldest.day(),
+                        oldest.month_name()
+                    ));
+                }
+            }
+            if links.ignored > 0 {
+                line.push_str(&format!(
+                    " Left out {ignored} `[checks.links] ignore` names."
+                ));
+            }
         }
-        line.push('.');
         if !self.style.markdown {
             line = line.replace('`', "");
         }

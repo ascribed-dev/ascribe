@@ -66,6 +66,52 @@ impl Date {
             day: day as u32,
         }
     }
+    /// The days from `earlier` to this date: negative when `earlier` is
+    /// later.
+    pub fn days_since(self, earlier: Date) -> i64 {
+        self.day_number() - earlier.day_number()
+    }
+
+    /// Its month's name in English, `September`, for a person to read.
+    pub fn month_name(self) -> &'static str {
+        const NAMES: [&str; 12] = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ];
+        NAMES[(self.month as usize - 1) % 12]
+    }
+
+    /// Its year.
+    pub fn year(self) -> u32 {
+        self.year
+    }
+
+    /// Its day of the month.
+    pub fn day(self) -> u32 {
+        self.day
+    }
+
+    /// Days since 1970-01-01: Howard Hinnant's `days_from_civil`.
+    fn day_number(self) -> i64 {
+        let (month, day) = (i64::from(self.month), i64::from(self.day));
+        let year = i64::from(self.year) - i64::from(month <= 2);
+        let era = year.div_euclid(400);
+        let yoe = year - era * 400;
+        let mp = (month + 9) % 12;
+        let doy = (153 * mp + 2) / 5 + day - 1;
+        let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+        era * 146_097 + doe - 719_468
+    }
 }
 
 impl fmt::Display for Date {
@@ -93,6 +139,17 @@ mod tests {
         let a = Date::parse("2025-12-31");
         let b = Date::parse("2026-01-01");
         assert!(a < b);
+    }
+
+    #[test]
+    fn days_between_dates() {
+        let day = |s| Date::parse(s).unwrap_or(Date::from_unix_seconds(0));
+        assert_eq!(day("2026-10-11").days_since(day("2026-09-28")), 13);
+        assert_eq!(day("2024-03-01").days_since(day("2024-02-28")), 2);
+        assert_eq!(day("2026-01-01").days_since(day("2026-01-02")), -1);
+        assert_eq!(day("1970-01-01").day_number(), 0);
+        assert_eq!(day("2026-10-10").day_number(), 1_791_604_315 / 86_400);
+        assert_eq!(day("2026-09-28").month_name(), "September");
     }
 
     #[test]

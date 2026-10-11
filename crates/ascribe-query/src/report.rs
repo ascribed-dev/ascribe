@@ -110,6 +110,9 @@ pub struct Options<'a> {
     pub site: Option<&'a str>,
     /// The programs to run.
     pub tools: &'a Tools<'a>,
+    /// The answers `links` reuses, and where it keeps those it gets; none
+    /// to ask about every address and keep nothing.
+    pub link_cache: Option<&'a links::Cache>,
 }
 
 /// Why a section didn't run, and what would let it.
@@ -229,8 +232,15 @@ pub struct LeftContent {
 /// `links`: what the link checker said about the external links.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Links {
-    /// How many different addresses were checked.
+    /// How many different addresses were checked: `asked` and `reused`.
     pub checked: usize,
+    /// How many different addresses the link checker was asked about.
+    pub asked: usize,
+    /// How many different addresses' answers were reused from an earlier
+    /// run.
+    pub reused: usize,
+    /// The day of the oldest answer reused, when one was.
+    pub oldest_answer: Option<ascribe_core::Date>,
     /// How many `[checks.links] ignore` left out.
     pub ignored: usize,
     /// A diagnostic for each link that moved or is broken, at its place, at
@@ -329,7 +339,7 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
         out.builds = Some(builds(project, &out.builds_checked));
     }
     if asked(Section::Links) {
-        out.links = Some(links(project, options.tools));
+        out.links = Some(links(project, options.tools, options.link_cache));
     }
     if asked(Section::Agents) {
         out.agents = Some(agents(project, options.site, options.tools));
@@ -483,8 +493,8 @@ fn builds(project: &Project, names: &[String]) -> Builds {
 /// `links`: runs the link checker, and applies `[checks]` levels and the
 /// acknowledgements, reporting those of `link-external-broken` that cover
 /// nothing.
-fn links(project: &Project, tools: &Tools<'_>) -> Ran<Links> {
-    match links::check(project, tools.links, tools.links_timeout) {
+fn links(project: &Project, tools: &Tools<'_>, cache: Option<&links::Cache>) -> Ran<Links> {
+    match links::check(project, tools.links, tools.links_timeout, cache) {
         Ok(found) => {
             let model = project.model();
             let leveled = apply_levels(&model.checks, found.diagnostics);
@@ -495,6 +505,9 @@ fn links(project: &Project, tools: &Tools<'_>) -> Ran<Links> {
             );
             Ran::Done(Links {
                 checked: found.checked,
+                asked: found.asked,
+                reused: found.reused,
+                oldest_answer: found.oldest_answer,
                 ignored: found.ignored,
                 diagnostics: applied.diagnostics,
                 acknowledged: applied.acknowledged,

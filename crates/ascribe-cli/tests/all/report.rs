@@ -278,6 +278,76 @@ fn links_are_reported_at_their_place_and_fail_with_exit_code() {
     assert_eq!(report["summary"]["by_next"][0]["next"], "review");
 }
 
+/// What lychee writes when every address answers, counting its runs in
+/// `runs`.
+#[cfg(unix)]
+const LYCHEE_FINE: &str = r#"cat > /dev/null
+echo run >> runs
+printf '%s' '{"total":1,"successful":1,"errors":0,"error_map":{},"success_map":{},"timeout_map":{},"redirect_map":{}}'"#;
+
+/// `ascribe report links` on `today`, with the arguments after.
+#[cfg(unix)]
+fn links_on(dir: &Path, today: &str, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(["report", "links"])
+        .args(args)
+        .env("NO_COLOR", "1")
+        .env("PATH", dir.join("no-tools"))
+        .env("ASCRIBE_TODAY", today)
+        .output()
+        .expect("run ascribe")
+}
+
+#[cfg(unix)]
+#[test]
+fn an_address_that_answered_isn_t_asked_about_again() {
+    let dir = project(&format!(
+        "{MODEL}\n[checks.links]\ncommand = \"bin/lychee\"\n"
+    ));
+    script(&dir.path().join("bin"), "lychee", LYCHEE_FINE);
+    let runs = || fs::read_to_string(dir.path().join("runs")).map_or(0, |r| r.lines().count());
+
+    let first = stdout(&links_on(dir.path(), "2026-10-01", &[]));
+    assert!(
+        first.contains(
+            "Checked 1 address, asking about each: no answer from an earlier run was reused.\n"
+        ),
+        "{first}"
+    );
+    assert!(dir.path().join(".ascribe/cache/links").is_dir());
+
+    let second = stdout(&links_on(dir.path(), "2026-10-03", &[]));
+    assert!(
+        second.contains(
+            "Checked 1 address: asked about none, and reused 1 answer, the oldest from 1 October.\n"
+        ),
+        "{second}"
+    );
+    assert_eq!(runs(), 1, "nothing was left to ask about");
+
+    let report = json(&links_on(dir.path(), "2026-10-03", &["--format", "json"]));
+    let links = &report["links"];
+    assert_eq!(
+        (&links["checked"], &links["asked"], &links["reused"]),
+        (&1.into(), &0.into(), &1.into())
+    );
+    assert_eq!(links["oldest_answer"], "2026-10-01");
+
+    let rechecked = json(&links_on(
+        dir.path(),
+        "2026-10-03",
+        &["--recheck", "--format", "json"],
+    ));
+    assert_eq!(rechecked["links"]["asked"], 1);
+    assert_eq!(rechecked["links"]["oldest_answer"], serde_json::Value::Null);
+    assert_eq!(runs(), 2);
+
+    // Past every limit, it's asked about again.
+    let later = json(&links_on(dir.path(), "2026-11-01", &["--format", "json"]));
+    assert_eq!(later["links"]["asked"], 1);
+}
+
 /// What afdocs writes when content negotiation fails, the caching warns,
 /// and the rest passes.
 #[cfg(unix)]

@@ -1,0 +1,14 @@
+description: >-
+  `ascribe report links` doesn't ask again about an address that answered
+  within `[checks.links] reuse-days`: its answer is reused, so a link that
+  has died since is reported once that answer runs out, not before. An
+  answer older than its limit, or an entry that doesn't parse, is asked
+  about again. The answers are in `link-cache/`, which stands in for the
+  project's `.ascribe/cache/links/`.
+spec: ["5.2"]
+tags: [links]
+today: "2026-10-11"
+
+diagnostics:
+  - {slug: link-external-broken, file: input.md, line: 8, column: 5, severity: advice}
+  - {slug: link-external-broken, file: input.md, line: 11, column: 5, severity: advice}

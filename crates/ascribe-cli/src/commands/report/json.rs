@@ -258,8 +258,18 @@ struct LinksJson {
     /// Why it couldn't run, or `null` when it ran. When it isn't `null`,
     /// the rest is empty.
     not_run: Option<NotRunJson>,
-    /// How many different addresses were checked.
+    /// How many different addresses were checked: `asked` and `reused`.
     checked: usize,
+    /// How many different addresses the link checker was asked about in
+    /// this run.
+    asked: usize,
+    /// How many different addresses' answers were reused from an earlier
+    /// run, within `[checks.links] reuse-days`. None of `diagnostics` is
+    /// from a reused answer: only an answer with nothing to report is kept.
+    reused: usize,
+    /// The day of the oldest answer reused, `YYYY-MM-DD`, or `null` when
+    /// none was.
+    oldest_answer: Option<String>,
     /// How many `[checks.links] ignore` left out.
     ignored: usize,
     /// A diagnostic for each link that moved or is broken, at its place,
@@ -495,6 +505,9 @@ fn links_json(links: &Links, files: &FileTable, limit: usize) -> LinksJson {
     LinksJson {
         not_run: None,
         checked: links.checked,
+        asked: links.asked,
+        reused: links.reused,
+        oldest_answer: links.oldest_answer.map(|d| d.to_string()),
         ignored: links.ignored,
         diagnostics: Capped::of(links.diagnostics.iter(), limit, |d| entry(files, d, 0)),
         acknowledged: Capped::of(links.acknowledged.iter(), limit, |a| acknowledged(files, a)),

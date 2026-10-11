@@ -675,8 +675,13 @@
           "$ref": "#/$defs/Capped_AcknowledgedEntry",
           "description": "The broken links acknowledged as intended."
         },
+        "asked": {
+          "description": "How many different addresses the link checker was asked about in\nthis run.",
+          "minimum": 0,
+          "type": "integer"
+        },
         "checked": {
-          "description": "How many different addresses were checked.",
+          "description": "How many different addresses were checked: `asked` and `reused`.",
           "minimum": 0,
           "type": "integer"
         },
@@ -699,11 +704,26 @@
             }
           ],
           "description": "Why it couldn't run, or `null` when it ran. When it isn't `null`,\nthe rest is empty."
+        },
+        "oldest_answer": {
+          "description": "The day of the oldest answer reused, `YYYY-MM-DD`, or `null` when\nnone was.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reused": {
+          "description": "How many different addresses' answers were reused from an earlier\nrun, within `[checks.links] reuse-days`. None of `diagnostics` is\nfrom a reused answer: only an answer with nothing to report is kept.",
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "required": [
         "not_run",
         "checked",
+        "asked",
+        "reused",
+        "oldest_answer",
         "ignored",
         "diagnostics",
         "acknowledged"
