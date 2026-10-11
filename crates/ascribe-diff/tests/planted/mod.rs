@@ -93,6 +93,13 @@ fn git(dir: &Path, args: &[&str]) {
             "commit.gpgsign=false",
             "-c",
             "core.autocrlf=false",
+            // A commit can start maintenance in the background, which
+            // writes a lock in the planted repository while the next
+            // command lists the files beside it.
+            "-c",
+            "maintenance.auto=false",
+            "-c",
+            "gc.auto=0",
         ])
         .args(args)
         .output()
