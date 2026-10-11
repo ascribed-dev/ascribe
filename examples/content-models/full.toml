@@ -199,6 +199,7 @@ trailing-slash = "never"
 slugger = "github"
 html = true
 
+# :snippet-start: builds
 [builds.site]
 variants = "switch"
 availability = "badge"
@@ -210,6 +211,7 @@ availability = { filter = "cloud" }
 [builds."self-managed-3.5"]
 variants = { deployment = "self-managed", pm = ["npm", "pnpm"] }
 availability = { filter = "self-managed 3.5" }
+# :snippet-end:
 
 # :snippet-start: editor
 [editor]
