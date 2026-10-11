@@ -1089,3 +1089,52 @@ fn no_tool_starts_a_program_the_project_names() {
         assert!(!project.join(".ascribe").exists(), "{command}");
     }
 }
+
+/// A project with no repository around it, three folders below the code its
+/// source reads: `path = "../../.."`, and a page with a snippet from there.
+fn project_below_its_source() -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("secret.rs"),
+        "// :snippet-start: key\nconst KEY: &str = \"hunter2\";\n// :snippet-end:\n",
+    );
+    write(
+        &dir.path().join("a/b/project/ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\npath = \"../../..\"\ninclude = [\"**/*.rs\"]\n",
+    );
+    write(
+        &dir.path().join("a/b/project/docs/index.md"),
+        "---\ntitle: Home\n---\n\n@snippet: code:secret.rs#key\n",
+    );
+    dir
+}
+
+/// With no repository, `ascribe mcp` reads a source only inside the folder
+/// it was started in (decision 77); the commands read it wherever the model
+/// says.
+#[test]
+fn with_no_repository_a_source_outside_the_servers_folder_isnt_read() {
+    let dir = project_below_its_source();
+    let project = dir.path().join("a/b/project");
+
+    let mut server = Server::start(&project);
+    let error = server.call_error(
+        "ascribe_render",
+        json!({ "page": "docs/index.md", "build": "site" }),
+    );
+    assert!(error.contains("ascribe.toml has errors"), "{error}");
+    assert!(!error.contains("hunter2"), "{error}");
+
+    // Started in the folder that holds the source, it's read.
+    let mut server = Server::start(dir.path());
+    let (text, _) = server.call_ok(
+        "ascribe_render",
+        json!({ "page": "a/b/project/docs/index.md", "build": "site" }),
+    );
+    assert!(text.contains("hunter2"), "{text}");
+
+    // And a command reads it, as before.
+    let out = ascribe(&project, &["render", "docs/index.md", "--build", "site"]);
+    assert!(out.status.success(), "{out:?}");
+    assert!(String::from_utf8_lossy(&out.stdout).contains("hunter2"));
+}

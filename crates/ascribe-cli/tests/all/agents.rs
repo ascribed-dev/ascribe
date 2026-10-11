@@ -17,6 +17,8 @@ use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
+use crate::links;
+
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-cli --test all agents::";
 
 const EVERY_TARGET: &[&str] = &[
@@ -923,4 +925,22 @@ fn each_yarn_is_installed_its_own_way() {
         stderr(&out)
     );
     assert!(!repo.path().join("AGENTS.md").exists());
+}
+
+#[test]
+fn a_committed_link_on_the_way_stops_everything() {
+    let repo = repository("quill");
+    let outside = tempfile::tempdir().unwrap();
+    links::dir(outside.path(), repo.path().join(".claude"));
+    let out = run(repo.path(), &["agents", "sync", "--target", "claude"], 2);
+    assert!(stderr(&out).contains("is a link"), "{}", stderr(&out));
+    assert_eq!(
+        fs::read_dir(outside.path()).unwrap().count(),
+        0,
+        "sync wrote through the link"
+    );
+    assert!(
+        !repo.path().join("AGENTS.md").exists(),
+        "it wrote AGENTS.md"
+    );
 }

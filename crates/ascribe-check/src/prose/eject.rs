@@ -135,14 +135,14 @@ pub fn eject(root: &Path, model: &ContentModel, model_text: &str) -> Result<Ejec
     let new_model = switched(model_text)?;
     let mut written = Vec::new();
     for (path, text) in ejected_files(preset, off) {
-        write_if_changed(&root.join(&path), &text).map_err(|e| EjectError::Write {
+        write_if_changed(root, &path, &text).map_err(|e| EjectError::Write {
             path: path.clone(),
             reason: e.to_string(),
         })?;
         written.push(path);
     }
     let model_file = crate::MODEL_FILE;
-    write_if_changed(&root.join(model_file), &new_model).map_err(|e| EjectError::Write {
+    write_if_changed(root, model_file, &new_model).map_err(|e| EjectError::Write {
         path: model_file.to_owned(),
         reason: e.to_string(),
     })?;

@@ -121,7 +121,7 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Message:** the folder of source `{source}`, `{path}`, is outside the git repository the project is in
 
-**Fix:** Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead.
+**Fix:** Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source.
 
 #### ASC135 `model-source-remote`
 @id {permalink=true}: ASC135

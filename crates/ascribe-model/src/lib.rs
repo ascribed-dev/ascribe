@@ -48,7 +48,7 @@ mod toml_util;
 pub mod types;
 pub mod vale;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub use ascribe_core::Issue;
 pub use inline::{InlineMarkup, Segment};
@@ -127,6 +127,33 @@ pub fn load_str_in(
     project_dir: &Path,
 ) -> Result<ContentModel, Vec<Issue>> {
     loader::load(text, file, Some(project_dir))
+}
+
+/// Where a source's `path` may lead when no git repository is around the
+/// project. With a repository, a source is inside it, whoever loads the
+/// model (`model-source-outside-repository`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SourceBound<'a> {
+    /// Anywhere the model says: the commands a person runs, who chose the
+    /// project.
+    #[default]
+    Anywhere,
+    /// Inside one of these folders: what the user opened, for the language
+    /// server its workspace folders, and for `ascribe mcp` the folder it was
+    /// started in.
+    Within(&'a [PathBuf]),
+}
+
+/// [`load_str_in`], with a local source bounded by `bound` when no git
+/// repository is around the project. A source outside it is
+/// `model-source-outside-repository`, with the variant `opened`.
+pub fn load_str_bounded(
+    text: &str,
+    file: FileId,
+    project_dir: &Path,
+    bound: SourceBound<'_>,
+) -> Result<ContentModel, Vec<Issue>> {
+    loader::load_bounded(text, file, project_dir, bound)
 }
 
 fn syntax_issue(file: FileId, detail: String) -> Issue {

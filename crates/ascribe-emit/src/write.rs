@@ -83,7 +83,7 @@ pub fn write_outputs(
     on_event: &mut dyn FnMut(&WriteEvent),
 ) -> Result<Vec<Written>, EmitError> {
     let model = index.model();
-    let output = OutputDir::lock(&root.join(&model.project.output_dir))?;
+    let output = OutputDir::lock_in(root, Path::new(&model.project.output_dir))?;
     let router = AstroRouter::from_consumer(&model.consumer);
 
     let plain = PlainEmitter::new(model);

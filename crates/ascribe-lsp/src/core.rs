@@ -131,6 +131,10 @@ pub(crate) struct Core {
     pub out: Sender<Message>,
     pub encoding: Encoding,
     pub folders: Vec<PathBuf>,
+    /// Whether, with no repository around the project, a source is read
+    /// only inside `folders`: what an editor opened. Off for the hook's
+    /// headless server, which a command runs (decision 77).
+    pub bound_sources: bool,
     pub docs: HashMap<PathBuf, Doc>,
     /// The project's `ascribe.toml`, once found.
     pub config: Option<PathBuf>,
@@ -167,6 +171,7 @@ impl Core {
             out,
             encoding: Encoding::Utf16,
             folders: Vec::new(),
+            bound_sources: true,
             docs: HashMap::new(),
             config: None,
             loaded: None,
@@ -265,7 +270,14 @@ impl Core {
         let root = config
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-        match ascribe_model::load_str_in(&text, FileId::new(0), &root) {
+        // With no repository around the project, a source is read only
+        // inside a folder the editor opened (decision 77).
+        let bound = if self.bound_sources {
+            ascribe_model::SourceBound::Within(&self.folders)
+        } else {
+            ascribe_model::SourceBound::Anywhere
+        };
+        match ascribe_model::load_str_bounded(&text, FileId::new(0), &root, bound) {
             Err(issues) => {
                 // The project keeps the last model that
                 // loaded, and the problems go on `ascribe.toml`.

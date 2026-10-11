@@ -2,11 +2,10 @@
 
 #![allow(clippy::expect_used, clippy::panic)]
 
-#[path = "../../../../tests/support/links.rs"]
-mod links;
-
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+
+use crate::links;
 
 const MESSY: &str = "@note{ type = tip }:Text.\n";
 const CLEAN: &str = "@note {type=tip}: Text.\n";

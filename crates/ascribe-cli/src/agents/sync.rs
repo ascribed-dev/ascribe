@@ -160,6 +160,10 @@ pub struct Plan {
     /// the person to paste there, when the cloud agent's setup is asked
     /// for without a custom agent.
     pub mcp_settings: Option<String>,
+    /// The repository's root, or the project's folder when there's no
+    /// repository: what's written is under it, and no link on the way
+    /// from it is written through.
+    pub root: PathBuf,
 }
 
 /// What's asked for beyond the targets' files.
@@ -174,8 +178,26 @@ pub struct Options {
 }
 
 impl Plan {
-    /// Writes each file that changes.
+    /// Writes each file that changes. Nothing is written when a link is on
+    /// the way to one of them from the root, or is where one goes: a
+    /// committed link could lead anywhere.
     pub fn write(&self) -> Result<(), SyncError> {
+        let mut links = ascribe_resolve::LinkCheck::new(&self.root);
+        for file in self.files.iter().filter(|f| f.changes()) {
+            let link = match file.path.strip_prefix(&self.root) {
+                Ok(rel) => links.link(rel),
+                Err(_) => ascribe_resolve::is_link(&file.path).then(|| file.path.clone()),
+            };
+            if let Some(link) = link {
+                return Err(SyncError::Write {
+                    path: file.path.display().to_string(),
+                    source: io::Error::other(format!(
+                        "{} is a link; replace it with a folder or a file, or remove it",
+                        link.display()
+                    )),
+                });
+            }
+        }
         for file in self.files.iter().filter(|f| f.changes()) {
             let failed = |source| SyncError::Write {
                 path: file.path.display().to_string(),
@@ -412,6 +434,7 @@ pub fn plan(project: &Project, asked: &[Target], options: Options) -> Result<Pla
         files,
         notes,
         mcp_settings,
+        root,
     })
 }
 

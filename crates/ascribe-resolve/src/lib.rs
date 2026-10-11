@@ -101,7 +101,10 @@ pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
     MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,
 };
-pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources, in_nested_project, is_source_path};
+pub use fs::{
+    DiskFs, FileSystem, LinkCheck, MemoryFs, Probe, Sources, in_nested_project, is_link,
+    is_source_path, link_on_the_way,
+};
 pub use incremental::{
     Affected, ApplyError, Change, FileIds, IncrementalProject, ModelImpact, ResolvedCache,
     Snapshot, Stats, Version,
