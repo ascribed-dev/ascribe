@@ -48,19 +48,16 @@
       "properties": {
         "column": {
           "description": "The column, from 1, in Unicode characters (not bytes or UTF-16\nunits).",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "line": {
           "description": "The line, from 1.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "offset": {
           "description": "The byte offset from the start of the file.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -132,7 +129,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },

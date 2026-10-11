@@ -28,14 +28,12 @@
         },
         "level": {
           "description": "1 to 6.",
-          "format": "uint8",
           "maximum": 255,
           "minimum": 0,
           "type": "integer"
         },
         "line": {
           "description": "Its line in that file, from 1.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
@@ -98,7 +96,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },

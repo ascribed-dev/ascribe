@@ -177,25 +177,21 @@
       "properties": {
         "added": {
           "description": "Blocks only in the new version.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "changed": {
           "description": "Blocks whose content changed.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "moved": {
           "description": "Blocks in both, somewhere else.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "removed": {
           "description": "Blocks only in the old version.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -310,7 +306,6 @@
           "description": "Ranges in `now_text`: words added or replacing others.",
           "items": {
             "items": {
-              "format": "uint",
               "minimum": 0,
               "type": "integer"
             },
@@ -328,7 +323,6 @@
           "description": "Ranges in `was_text`: words removed or replaced.",
           "items": {
             "items": {
-              "format": "uint",
               "minimum": 0,
               "type": "integer"
             },
@@ -380,13 +374,11 @@
     },
     "schema_version": {
       "description": "`SCHEMA_VERSION`.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },
     "working_tree_errors": {
       "description": "How many errors `ascribe check` finds in the working tree, for the\nbuilds compared. The comparison runs regardless, but a page with an\nerror may not render as it will once it's fixed, so a reviewer should\nknow. `diff_project` sets it; `Report::new` leaves it zero.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     }
