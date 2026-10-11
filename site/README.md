@@ -1,10 +1,10 @@
 # site/
 
-Ascribe's website: a landing page at the root, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md`, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+Ascribe's website: a landing page at the root and Why Ascribe at `/why/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md`, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
 astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]
-home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the landing page's widgets, the docs' release tables) and content/
+home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the pages' widgets, the docs' release tables) and content/
 demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
 netlify.toml                production's build on Netlify
 netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md
@@ -72,7 +72,7 @@ npm test              # after a build
 - `test/changelog.test.ts`: the changelog's rules for links and anchors, on Markdown made in the test, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the header's link to the changelog, and the changelog's link to a docs page; the favicons, touch icon, and social card resolve, and the card's address is absolute; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the header's link to the changelog, and the changelog's link to a docs page; and Why Ascribe, from the header and the landing page, with its examples, its marks, and its link to the comparison.
 
 ## Addresses
 
@@ -91,7 +91,7 @@ For the content model to give a site its navigation, it would need:
 
 ## The site's own pages
 
-`home/` is a second Ascribe project, at the site's root: one page type, a hero widget (`@hero-banner {status=early}:` around the page's heading and first paragraph, drawn by `src/styles/site.css` with no script), and `content/index.md`, the landing page. It copies the docs' release tables and `[sources.code]`, so a claim there can be marked as the docs mark one; `scripts/docs-site/facts.test.ts` fails until the copies agree. It publishes nothing for agents.
+`home/` is a second Ascribe project, at the site's root: one page type, a hero widget (`@hero-banner {status=early}:` around the page's heading and first paragraph, drawn by `src/styles/site.css` with no script), `content/index.md`, the landing page, and `content/why.md`, Why Ascribe, whose hero has no status. It copies the docs' release tables and `[sources.code]`, so a claim there can be marked as the docs mark one; `scripts/docs-site/facts.test.ts` fails until the copies agree. It publishes nothing for agents.
 
 A link into the docs is to a permalink, written `{site}/go/<name>/` with the `site` phrase: a link that starts with `/` names a file of `home/` itself, which `ascribe check` would report. `test/links.test.ts` follows it in the built site, and `test/projects.test.ts` runs `ascribe permalinks verify` on its name.
 
@@ -107,7 +107,7 @@ Anything else, a docs file that isn't a published page, or a file that isn't in 
 
 Each release's heading is anchored by `v` and its version, its tag (`/changelog/#v0.2.0`), so a release's notes can link to it; a heading inside a release is anchored by both (`#v0.2.0-the-language`). The unreleased section, `## Unreleased` or a version marked `(unreleased)`, is `#unreleased`, and says under its heading that it's in `main` and not yet released.
 
-The header links to it. On a docs page at phone width, where the menu and search fill the header, the link is on the site's own pages only.
+The header links to it. On a docs page at phone width, where the menu and search fill the header, the link is on the site's own pages only; and below 26rem, those pages' header leaves out GitHub to fit Docs, Why Ascribe, and Changelog beside the mark.
 
 ## Search
 
