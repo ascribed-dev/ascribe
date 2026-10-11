@@ -99,6 +99,27 @@ pub struct Args {
     /// they wait. `None` is the time a check of the whole project has.
     #[arg(skip)]
     pub vale_timeout: Option<std::time::Duration>,
+
+    /// Which Vale the check may start, when it checks the prose: any, for
+    /// `ascribe check`; less for the agents, which no person approves
+    /// (decision 76).
+    #[arg(skip)]
+    pub vale_runs: ValeRuns,
+}
+
+/// Which Vale a check may start.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ValeRuns {
+    /// Whatever `[checks.vale] command` names: `ascribe check`, which a
+    /// person runs.
+    #[default]
+    Any,
+    /// Only a bare name found on the `PATH`, never a program in the
+    /// project: the agents' hook, which can't ask anyone.
+    OnPath,
+    /// None: the MCP server's tools, which say they only read, and the
+    /// agents' prompts.
+    Never,
 }
 
 /// The output format.
@@ -177,6 +198,11 @@ pub struct Outcome {
 }
 
 impl Outcome {
+    /// The project checked.
+    pub fn project(&self) -> &Project {
+        &self.loaded.project
+    }
+
     /// What's reported, the files it's in, and the first build checked.
     pub fn parts(&self) -> (&[Reported], &FileTable, Option<&str>) {
         (
@@ -315,10 +341,22 @@ fn with_prose(
     }
     let files: Option<Vec<ascribe_core::FileId>> =
         scope.map(|s| s.sources(project).iter().map(|f| f.id).collect());
+    let program = prose::Program;
+    let on_path = prose::OnPath {
+        inner: &program,
+        who: "the agents' hook",
+    };
+    let never =
+        prose::NotStarted("Ascribe's tools and prompts for agents don't start Vale".to_owned());
+    let linter: &dyn prose::Linter = match args.vale_runs {
+        ValeRuns::Any => &program,
+        ValeRuns::OnPath => &on_path,
+        ValeRuns::Never => &never,
+    };
     let found = prose::lint(
         project,
         files.as_deref(),
-        &prose::Program,
+        linter,
         args.vale_timeout.unwrap_or(prose::PROJECT_TIMEOUT),
     );
     let (about_vale, found): (Vec<Diagnostic>, Vec<Diagnostic>) = found

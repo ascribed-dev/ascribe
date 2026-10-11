@@ -192,6 +192,11 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
     core.folders = workspace_folders(&params);
+    core.prose.can_ask = params
+        .capabilities
+        .window
+        .as_ref()
+        .is_some_and(|w| w.show_message.is_some());
     core.clock = options.today.clone();
     let idle = options.idle.clone().unwrap_or_default();
     let show_document = params
@@ -275,7 +280,11 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 shared.wake.notify_all();
                 shared.prose_wake.notify_all();
             }
-            Message::Response(_) => {}
+            Message::Response(response) => {
+                // The answer about running a program in the project.
+                shared.lock().answered(&response);
+                shared.prose_wake.notify_all();
+            }
         }
     };
     shared.lock().shutdown = true;

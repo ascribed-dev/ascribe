@@ -592,3 +592,87 @@ fn the_check_server_stops_when_its_binary_is_replaced() {
     }
     panic!("the check server didn't stop");
 }
+
+/// With `[checks.vale] in-check`, the hook never starts a `command` that's
+/// a program in the project, which nobody approved, and tells the agent the
+/// prose wasn't checked and what checks it; a bare name found on the
+/// `PATH` still runs. Vale's stand-ins are shell scripts, so not on Windows.
+#[cfg(unix)]
+#[test]
+fn the_hook_starts_vale_from_the_path_but_never_a_program_in_the_project() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = project();
+    let root = dir.path();
+    let marks = tempfile::tempdir().unwrap();
+    for (script, mark) in [("bin/vale", "project"), ("path/vale", "path")] {
+        let file = root.join(script);
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        let mark = marks.path().join(mark).display().to_string();
+        fs::write(&file, format!("#!/bin/sh\ntouch '{mark}'\n")).unwrap();
+        fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let mut search = vec![root.join("path")];
+    search.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    let search = std::env::join_paths(search).unwrap();
+    fs::write(
+        root.join("docs/index.md"),
+        format!("{CLEAN}\nAnd [more](gone.md).\n"),
+    )
+    .unwrap();
+    let stop = |command: &str| {
+        fs::write(
+            root.join("ascribe.toml"),
+            format!(
+                "{MODEL}\n[checks.vale]\npreset = \"quiet\"\nin-check = true\ncommand = \"{command}\"\n"
+            ),
+        )
+        .unwrap();
+        let mut child = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+            .args(["agents", "hook", "claude-code", "--event", "stop"])
+            .env("ASCRIBE_HOOK_SERVER", "off")
+            .env("PATH", &search)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(stop_input("claude-code", root, false).as_bytes())
+            .unwrap();
+        let out = child.wait_with_output().unwrap();
+        let value: Value = serde_json::from_str(&stdout(&out)).unwrap();
+        value["reason"].as_str().unwrap_or_default().to_owned()
+    };
+
+    let reason = stop("bin/vale");
+    assert!(!marks.path().join("project").exists(), "{reason}");
+    assert!(
+        reason.contains(
+            "the prose wasn't checked: the agents' hook doesn't start `bin/vale`, a program in \
+             the project. `ascribe check --vale` checks it"
+        ),
+        "{reason}"
+    );
+
+    let reason = stop("vale");
+    assert!(marks.path().join("path").exists(), "{reason}");
+    assert!(!reason.contains("doesn't start"), "{reason}");
+}
+
+#[test]
+fn a_stop_runs_no_command_a_committed_folder_shaped_like_a_repository_names() {
+    let planted =
+        crate::planted::Planted::new(&[("ascribe.toml", MODEL), ("docs/index.md", ERROR)]);
+    for harness in HARNESSES {
+        let _ = hook(
+            &[harness, "--event", "stop"],
+            &stop_input(harness, &planted.project(), false),
+            None,
+        );
+    }
+    assert!(!planted.ran(), "the hook ran the planted command");
+}

@@ -12,15 +12,26 @@
 //! closed, or the project or `[checks.vale]` changed. An edit drops what's
 //! kept below the place it starts, which would now be in the wrong place, and
 //! keeps what's above it; the next save checks the file again.
+//!
+//! A `command` that's a program in the project, rather than a name found on
+//! the `PATH`, runs only once the person says so: the server asks once a
+//! session, with `window/showMessageRequest`, and keeps the answer. Until
+//! it's answered, nothing runs; when it's no, or the client can't ask, the
+//! advice on `[checks.vale]` says why (decision 76).
 
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use ascribe_check::prose::{self, FILE_TIMEOUT, Linter, Page};
 use ascribe_core::{FileId, LineIndex, diagnostics};
 use ascribe_model::{ContentModel, ValeSettings};
-use lsp_types::{Position, TextDocumentContentChangeEvent};
+use lsp_server::{Request, RequestId, Response};
+use lsp_types::{
+    MessageActionItem, MessageType, Position, ShowMessageRequestParams,
+    TextDocumentContentChangeEvent,
+};
 
 use crate::compute::to_lsp;
 use crate::core::Core;
@@ -36,12 +47,46 @@ pub(crate) struct State {
     /// What Vale found, by file: a source's alerts, or, under `ascribe.toml`,
     /// the advice that it couldn't run.
     found: HashMap<PathBuf, Vec<lsp_types::Diagnostic>>,
+    /// Whether the client can be asked before a program in the project
+    /// runs: whether it says it handles `window/showMessageRequest`.
+    pub(crate) can_ask: bool,
+    /// Each `[checks.vale] command` that's a program in the project, and
+    /// what the person said about running it, for the session.
+    answers: HashMap<String, Answer>,
+}
+
+/// What the person said about running a program in the project.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Answer {
+    /// Asked, with this request; not answered yet.
+    Asking(RequestId),
+    /// Run it.
+    Run,
+    /// Don't, or the question was dismissed.
+    DontRun,
+}
+
+/// The answer that runs the program.
+const RUN: &str = "Run it";
+
+/// Whether Vale may run, for one check.
+enum Permission {
+    Run,
+    /// No: the advice says why.
+    Refused(String),
+    /// Not until the person answers.
+    Wait,
 }
 
 impl State {
-    /// Whether a check is queued or running.
+    /// Whether a check is queued or running, or waits on an answer.
     pub(crate) fn has_work(&self) -> bool {
-        self.running || !self.queue.is_empty()
+        self.running
+            || !self.queue.is_empty()
+            || self
+                .answers
+                .values()
+                .any(|a| matches!(a, Answer::Asking(_)))
     }
 
     /// What Vale found in a file, when it found anything.
@@ -64,6 +109,9 @@ pub(crate) struct Job {
     version: i32,
     text: String,
     encoding: Encoding,
+    /// Why Vale isn't run, when the person didn't let it or couldn't be
+    /// asked.
+    refused: Option<String>,
 }
 
 impl Job {
@@ -74,6 +122,11 @@ impl Job {
             id: self.id,
             path: &self.display,
             text: &self.text,
+        };
+        let refused = self.refused.clone().map(prose::NotStarted);
+        let linter: &dyn Linter = match &refused {
+            Some(refused) => refused,
+            None => linter,
         };
         let found = prose::lint_pages(&self.root, &self.model, &[page], linter, FILE_TIMEOUT);
         let page_index = LineIndex::new(&self.text);
@@ -124,6 +177,17 @@ impl Core {
     /// Takes the next check to run, if there is one.
     pub(crate) fn take_prose(&mut self) -> Option<Job> {
         while let Some(path) = self.prose.queue.pop_front() {
+            let Some(loaded) = self.loaded.as_ref() else {
+                continue;
+            };
+            let root = loaded.root.clone();
+            let command = loaded.model.checks.vale.as_ref().map(|v| v.command.clone());
+            let refused = match self.permission(&root, command.as_deref()) {
+                Permission::Run => None,
+                Permission::Refused(why) => Some(why),
+                // Every open document is checked again once it's answered.
+                Permission::Wait => continue,
+            };
             let (Some(loaded), Some(config), Some(doc)) = (
                 self.loaded.as_ref(),
                 self.config.as_ref(),
@@ -152,9 +216,84 @@ impl Core {
                 version: doc.version,
                 text: doc.text.clone(),
                 encoding: self.encoding,
+                refused,
             });
         }
         None
+    }
+
+    /// Whether Vale may run: a `command` found on the `PATH` runs; one
+    /// that's a program in the project runs once the person says so, asked
+    /// once a session (decision 76), and never when the client can't ask.
+    fn permission(&mut self, root: &Path, command: Option<&str>) -> Permission {
+        let Some(command) = command.filter(|c| prose::in_project(c, root)) else {
+            return Permission::Run;
+        };
+        match self.prose.answers.get(command) {
+            Some(Answer::Run) => Permission::Run,
+            Some(Answer::DontRun) => Permission::Refused(format!(
+                "running `{command}`, a program in the project, wasn't allowed"
+            )),
+            Some(Answer::Asking(_)) => Permission::Wait,
+            None if !self.prose.can_ask => Permission::Refused(format!(
+                "the editor can't ask whether to run `{command}`, a program in the project"
+            )),
+            None => {
+                static NEXT: AtomicU64 = AtomicU64::new(0);
+                let next = NEXT.fetch_add(1, Ordering::Relaxed);
+                let id = RequestId::from(format!("ascribe-vale-{next}"));
+                self.send(Request::new(
+                    id.clone(),
+                    "window/showMessageRequest".to_owned(),
+                    ShowMessageRequestParams {
+                        typ: MessageType::WARNING,
+                        message: format!(
+                            "This project's ascribe.toml checks the prose by running \
+                             `{command}`, a program in the project. Run it?"
+                        ),
+                        actions: Some(vec![
+                            MessageActionItem {
+                                title: RUN.to_owned(),
+                                properties: HashMap::new(),
+                            },
+                            MessageActionItem {
+                                title: "Don't run it".to_owned(),
+                                properties: HashMap::new(),
+                            },
+                        ]),
+                    },
+                ));
+                self.prose
+                    .answers
+                    .insert(command.to_owned(), Answer::Asking(id));
+                Permission::Wait
+            }
+        }
+    }
+
+    /// The client answered a request of the server's: when it's the
+    /// question about running a program in the project, the answer is kept
+    /// for the session, and every open document is checked again.
+    pub(crate) fn answered(&mut self, response: &Response) {
+        let Some(command) = self
+            .prose
+            .answers
+            .iter()
+            .find(|(_, a)| **a == Answer::Asking(response.id.clone()))
+            .map(|(c, _)| c.clone())
+        else {
+            return;
+        };
+        let run = response
+            .response_result
+            .as_ref()
+            .ok()
+            .and_then(|r| r.get("title"))
+            .and_then(serde_json::Value::as_str)
+            == Some(RUN);
+        let answer = if run { Answer::Run } else { Answer::DontRun };
+        self.prose.answers.insert(command, answer);
+        self.queue_all_prose();
     }
 
     /// Keeps and publishes what a check found, when it's still current.

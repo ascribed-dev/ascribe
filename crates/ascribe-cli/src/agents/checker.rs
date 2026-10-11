@@ -23,9 +23,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use ascribe_check::{Project, Reported, Severity};
-use ascribe_core::RelPath;
+use ascribe_check::{Project, Reported, Severity, prose};
 use ascribe_core::path::{normalize, relative_path};
+use ascribe_core::{RelPath, diagnostics};
 use ascribe_resolve::is_source_path;
 use serde::{Deserialize, Serialize};
 
@@ -55,6 +55,11 @@ pub struct Found {
     pub lines: Vec<String>,
     /// The build a quick check covered; `None` for every build.
     pub build: Option<String>,
+    /// The `prose-not-checked` advice's line, as `--format concise` writes
+    /// it, when the check would have run Vale and the hook didn't start
+    /// it: `[checks.vale] command` is a program in the project.
+    #[serde(default)]
+    pub prose: Option<String>,
 }
 
 /// What a hook asks.
@@ -138,6 +143,9 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         deny_warnings: false,
         vale: false,
         vale_timeout: Some(vale_timeout),
+        // Nobody approves what a hook runs: Vale from the `PATH` only,
+        // never a program in the project (decision 76).
+        vale_runs: check::ValeRuns::OnPath,
     };
     let outcome = match check::run_check(projects, &global, &args, &mut Cursor::new("")) {
         Ok(outcome) => outcome,
@@ -155,17 +163,36 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         .map(|i| &reported[i])
         .filter(|r| r.diagnostic.severity == Severity::Error)
         .collect();
-    let mut lines = Vec::new();
-    for r in errors.iter().take(LIMIT) {
+    let line_of = |r: &Reported| -> Result<String, String> {
         let mut line = Vec::new();
         concise::write_line(&mut line, files, r).map_err(|e| e.to_string())?;
-        lines.push(String::from_utf8_lossy(&line).trim_end().to_owned());
+        Ok(String::from_utf8_lossy(&line).trim_end().to_owned())
+    };
+    let mut lines = Vec::new();
+    for r in errors.iter().take(LIMIT) {
+        lines.push(line_of(r)?);
     }
+    // Vale the hook didn't start: the agent hears so, and what runs it.
+    let project = outcome.project();
+    let refused = project
+        .model()
+        .checks
+        .vale
+        .as_ref()
+        .is_some_and(|v| v.in_check && prose::in_project(&v.command, project.root()));
+    let prose = match reported
+        .iter()
+        .find(|r| r.diagnostic.slug == diagnostics::PROSE_NOT_CHECKED)
+    {
+        Some(r) if refused => Some(line_of(r)?),
+        _ => None,
+    };
     Ok(Found {
         errors: outcome.counts.errors,
         warnings: outcome.counts.warnings,
         lines,
         build: editor_build.then(|| build.map(str::to_owned)).flatten(),
+        prose,
     })
 }
 
