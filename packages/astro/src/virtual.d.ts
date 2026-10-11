@@ -3,6 +3,8 @@
 declare module "virtual:ascribe/site" {
   /** The absolute path of the first entry's site output root. */
   export const siteRoot: string;
+  /** The Astro root, which a collection entry's `filePath` is relative to. */
+  export const astroRoot: string;
   /** The route of the site's root: Astro's `base`, ending as the site's routes do. */
   export const home: string;
   /** Each entry's site output root, by its name. Empty with one project and no name. */

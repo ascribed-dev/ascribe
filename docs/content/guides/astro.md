@@ -102,7 +102,7 @@ Ascribe's content model doesn't order or group pages yet, so the site lists them
 
 @snippet {title=src/nav.ts}: code:examples/astro-site/src/nav.ts
 
-`init` writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(nav, await getCollection("docs"))`, from `@ascribed/astro/content`, gives each page its entry and its address, the one Ascribe's links use, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, `sidebar(nav, entries, { name: "docs" })` says which, as `ascribeCollection` does.
+`init` writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(nav, await getCollection("docs"))`, from `@ascribed/astro/content`, gives each page its entry and its address, the one Ascribe's links use, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(nav, entries, { name: "docs" })` names it, as `ascribeCollection` does.
 
 ### 5. Build
 

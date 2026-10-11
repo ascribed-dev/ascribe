@@ -21,7 +21,7 @@
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { glob } from "astro/loaders";
-import { collections, routes, siteRoot } from "virtual:ascribe/site";
+import { astroRoot, collections, routes, siteRoot } from "virtual:ascribe/site";
 import {
   pageRoute,
   sidebarGroups,
@@ -56,7 +56,8 @@ export function ascribeCollection<S>(options: { schema: S; name?: string }): {
  * A layout's sidebar: `nav`'s groups, each page with its collection entry and
  * its address, which is the one Ascribe's links use. `entries` is the
  * collection (`await getCollection("docs")`), and `name` says which project's,
- * as for `ascribeCollection`. Throws, naming each, when `nav` leaves out a page
+ * as for `ascribeCollection`; with several projects and no `name`, it's the one
+ * the entries were loaded from. Throws, naming each, when `nav` leaves out a page
  * of the collection, names a file that isn't one, or names a page twice, so the
  * build fails until the list is complete.
  */
@@ -65,7 +66,7 @@ export function sidebar<E extends NavEntry>(
   entries: readonly E[],
   options: { name?: string } = {},
 ): SidebarGroup<E>[] {
-  const root = rootFor(options.name);
+  const root = sidebarRoot(entries, options.name);
   const at = routes.find((route) => route.siteRoot === root);
   const basePath = at?.basePath ?? "/";
   const trailingSlash = at?.trailingSlash ?? "always";
@@ -77,13 +78,31 @@ export function sidebar<E extends NavEntry>(
   );
 }
 
+/**
+ * The site output root of the collection a sidebar lists: the entry `name`
+ * names, or, with several and no name, the one the entries were loaded from.
+ */
+function sidebarRoot(entries: readonly NavEntry[], name: string | undefined): string {
+  const file = entries[0]?.filePath;
+  if (name === undefined && Object.keys(collections).length > 1 && file !== undefined) {
+    const from = Object.values(collections).find((root) => inside(root, file));
+    if (from !== undefined) return from;
+  }
+  return rootFor(name);
+}
+
+/** Whether `file`, from the Astro root as an entry's `filePath` is, is under `root`. */
+function inside(root: string, file: string): boolean {
+  const relative = path.relative(root, path.resolve(astroRoot, file));
+  return !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
 /** An entry's source file, by its path in the site output, which mirrors the content root. */
 function sourceFile(root: string, entry: NavEntry): string {
   if (entry.filePath === undefined) return `the page ${entry.id}`;
-  const relative = path.relative(root, path.resolve(entry.filePath));
-  return relative.startsWith("..") || path.isAbsolute(relative)
-    ? entry.filePath
-    : relative.split(path.sep).join("/");
+  return inside(root, entry.filePath)
+    ? path.relative(root, path.resolve(astroRoot, entry.filePath)).split(path.sep).join("/")
+    : entry.filePath;
 }
 
 /** The site output root of the entry `name` names. */

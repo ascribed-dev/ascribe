@@ -360,6 +360,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                 load: (id) =>
                   id === `\0${SITE_MODULE}`
                     ? `export const siteRoot = ${JSON.stringify(entries[0]?.siteRoot ?? "")};\n` +
+                      `export const astroRoot = ${JSON.stringify(root)};\n` +
                       `export const home = ${JSON.stringify(homeRoute(config.base, config.trailingSlash))};\n` +
                       `export const collections = ${JSON.stringify(
                         named ? Object.fromEntries(entries.map((e) => [e.name, e.siteRoot])) : {},
