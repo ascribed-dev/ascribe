@@ -140,24 +140,11 @@ In an [Astro](https://astro.build) project (`npm create astro@latest` makes one)
 
 ## Check it in CI
 
-Run the same command the editor runs:
+Run the same command the editor runs, and the formatting check, on every pull request:
 
-```yaml phrases=true
-# .github/workflows/docs.yml
-name: Docs
-on: [pull_request]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: {node}
-      - run: npm ci
-      - run: npx ascribe check --deny-warnings
-      - run: npx ascribe fmt --check
-```
+@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow
+
+It installs the latest release. To run the version your `package.json` pins instead, replace that step with `npm ci`, and run each command with `npx`.
 
 ## Work with an AI agent
 
