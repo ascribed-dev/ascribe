@@ -1,6 +1,6 @@
 # Phase 3: Levels
 
-Part of [Search and answers](README.md). Requires phase 2. Rust, with a small part in `@ascribed/astro`.
+Part of [Search and answers](README.md). Requires phase 2. Rust, with a small part in `@ascribed/astro`, and the first work in the language server and the extension: completion, hover, and a quick fix.
 
 ## Goal
 
@@ -27,6 +27,7 @@ The table's name and keys above are a sketch. Phase 1 decided the key and its va
 - How the content model already says something for many pages: `[types.<name>]` with its `files`, and `[checks]`. Use what's there before inventing a way to name a set of pages.
 - `crates/ascribe-model`: where a project-wide rule is loaded and validated, and how a rule that can't hold is reported (`model-` diagnostics).
 - The record, as phase 2 built it, and the three outputs that read it.
+- `crates/ascribe-lsp/`: completion and hover for a reserved frontmatter key, as `available` and `variant` have them, and how a diagnostic carries a fix. `project-docs/checklists.md`, "A change to the language": the list of what the server and the extension owe a new key.
 - The [versions proposal](../proposals/versions.md): a version's rule will sit between the site and a type. Leave the place, and build nothing for it.
 
 ## Design

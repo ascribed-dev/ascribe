@@ -23,11 +23,11 @@ Two things the research found evidence for, and one question left by the website
 
 ### Variants, in the Markdown version
 
-For a build that shows a switcher, the Markdown version writes each arm under a heading-level label that says the dimension and the value, and one line above the group that says a reader chooses one: "Shown one at a time, by operating system." That line is finding 56's fix too, since `ascribe render` writes the same text.
+For a build that shows a switcher, the Markdown version writes each arm under a heading-level label that says the dimension and the value, and one line above the group that says a reader chooses one: "Shown one at a time, by operating system." `ascribe render` prints the plain output's text, so it gains the line too. That's what the surface audit's finding 56 asks of `render`, in [#271](https://github.com/ascribed-dev/ascribe/issues/271): that part of the issue closes with this change, or is already closed by the same line if #271 landed first, and then this phase takes the wording it chose.
 
 For a build that filters to one value, nothing changes: the page has only that arm.
 
-This changes the plain output for every page with a switcher. It's an output change by a recorded decision, named file by file for the comparison.
+This changes the plain output for every page with a switcher, and what `ascribe render` prints for one. It's an output change by a recorded decision: the pull request carries the `outputs changed` label, and names each file for the comparison.
 
 ### The compact index
 
@@ -40,7 +40,7 @@ A command that writes, for one build, a block of Markdown small enough to paste 
 
 ### The root
 
-A site whose docs are under `/docs/` has its `llms.txt` at `/docs/llms.txt`, and nothing at the root. Decide here, by a recorded decision, with what `ascribe report agents` says about each:
+A site whose docs are under `/docs/` has its `llms.txt` at `/docs/llms.txt`, and nothing at the root. The weekly Report workflow was pointed at `/docs/` when the docs moved there, so the delivery spec's checker has been judging the docs' own index and has said nothing about the root. Run `ascribe report agents --site` once against the root, to see what it says there, before deciding. Then decide, by a recorded decision, with that in hand:
 
 | Option | Means |
 |---|---|
@@ -53,9 +53,9 @@ The proposal's own finding weighs on this: `llms.txt` isn't how AI search finds 
 ## Tasks
 
 1. The variants' labels and the line above them, in the plain emitter, with the outputs comparison's accepted files listed and the decision recorded.
-2. `ascribe render`'s text follows, and finding 56's issue is closed by it or left open, whichever is true.
+2. `ascribe render`'s text follows, with its test, and #271's line about `render` is closed by it.
 3. The command: its arguments, its size rule, `--pages`, the block between markers, its JSON, and its tests. The command reference, generated.
-4. The root's `llms.txt`: the decision, then what it decides.
+4. The root's `llms.txt`: the checker run against the root, the decision, then what it decides, including whether the Report workflow checks the root as well as `/docs/`.
 5. `guides/agents.md`: a section for a product's team, saying what the evidence is and that it's one vendor's. `CHANGELOG.md`. The map of the surface.
 6. Ascribe's own use: the index for `ascribe`, in the README the CLI's package ships, or a line saying why not.
 

@@ -18,7 +18,7 @@ On a host that reads `_headers`, a build makes that so. On any other, the same r
 - README decision 9, and the proposal's "Reaching the host": three layers, and why Ascribe names one format.
 - The record, with each page's listing and its Markdown version's address.
 - `packages/astro/src/files.ts`: how the integration copies the plain output to a project's base path, and serves it in `astro dev`.
-- `site/netlify.toml`, `site/public/_redirects`, and `site/netlify/edge-functions/markdown.ts`: what Ascribe's own host is already told, and by which file.
+- `site/netlify.toml`, `site/public/_redirects`, and `site/netlify/edge-functions/markdown.ts`: what Ascribe's own host is already told, and by which file. The edge function answers a page's own address with its Markdown when a request asks for `text/markdown`, by fetching the `.md` and returning its body.
 - Netlify's documentation for `_headers`: its syntax, where the file must be, and what it does with a site that has one in `public/` already. Read it; don't work from memory.
 - Whether search engines index the Markdown versions at all today: search for a page of Ascribe's docs by its `.md` address before deciding how much this phase is worth saying about.
 
@@ -40,6 +40,12 @@ With `[consumer] headers = "netlify"` (the key and its value decided here, by a 
 
 Without the setting, nothing is written for a host, and the guide says how to read the neutral list from a deploy script.
 
+### A page asked for as Markdown
+
+There's a second way to get a page's Markdown: its own address, with `Accept: text/markdown`, where a host negotiates. That response has no head, and a rule in `_headers` is on the `.md` path, not the page's. So an agent that fetches a page that isn't listed this way gets it with no rule at all.
+
+Whatever answers such a request passes the Markdown version's headers on. For Ascribe's site that's the edge function: it copies `x-robots-tag`, and the canonical `Link` if this phase adds one, from the `.md` response to its own. The guide's section on content negotiation says the same of any host's rewrite or function, since the delivery spec asks sites to negotiate and this is the part that's easy to miss.
+
 ### In development
 
 `astro dev` answers a Markdown version with the header it would have, so the end-to-end test needs no host.
@@ -58,8 +64,9 @@ Content negotiation, status codes, bot protection, logs. The guide's section on 
 2. The decision on the setting and on canonical headers, recorded.
 3. `_headers` in `@ascribed/astro`: writing one, and the build's refusal with the lines to add. Unit tests for both.
 4. The header in `astro dev`, and an end-to-end test.
-5. Ascribe's site: the setting, and a test of the built `_headers` against the record.
-6. The content model reference; `guides/astro.md`'s section on the host, with the glue for a host that isn't Netlify; `CHANGELOG.md`; the map of the surface.
+5. The edge function passing the headers on, with `site/test/negotiation.test.ts` covering a page that isn't listed.
+6. Ascribe's site: the setting, and a test of the built `_headers` against the record.
+7. The content model reference; `guides/astro.md`'s section on the host, with the glue for a host that isn't Netlify; `CHANGELOG.md`; the map of the surface.
 
 ## Out of scope
 
@@ -68,6 +75,7 @@ Redirects. Any second host format. Headers for anything but how a page is listed
 ## Acceptance criteria
 
 - On the pull request's preview, the Markdown version of a page that isn't listed answers with `x-robots-tag: noindex`, and one of a listed page doesn't.
+- The same page's own address, asked for with `Accept: text/markdown`, answers with the same header. Tried with `curl` on the preview, and said in the pull request.
 - A test reads `_ascribe/headers.json` against the record: every page that isn't `listed` and has a Markdown version has a rule, and no other page does.
 - A site with its own `_headers` that lacks the lines fails its build, and the message is the lines.
 - The reference no longer says a Markdown version of an unlisted page can be indexed, for a site with the setting, and says it still can without.

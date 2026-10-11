@@ -1,14 +1,11 @@
 ---
-description: "Write a new page of a type: the frontmatter the type requires, and where its file goes."
-argument-hint: "<type> <title> [path]"
+description: "Write a new page from a request: the page type that fits it, the frontmatter the type requires, and where its file goes."
+argument-hint: "<what the page is for>"
 ---
 
-Run `ascribe agents prompt new-page --arg type=<type> --arg title=<title> [--arg path=<path>]`, and do what the prompt it prints asks.
+The page to write: $ARGUMENTS
 
-Take the arguments from this, in this order, and leave out an optional one that isn't given: $ARGUMENTS
+1. Run `ascribe model --section types`, and choose the page type that fits the request. Choose the page's title, and, when the request says where the page goes, a file or folder for it.
+2. Run `ascribe agents prompt new-page --arg type=<type> --arg title=<title> [--arg path=<path>]`, and do what the prompt it prints asks.
 
-- `type`: The page type, as `ascribe model` lists them.
-- `title`: The page's title.
-- `path`: A file or folder in the project; by default, the current directory.
-
-Without a shell, use the prompt `new-page` of Ascribe's MCP server instead.
+Without a shell, call the MCP server's tool `ascribe_model` for the page types, then use its prompt `new-page`.

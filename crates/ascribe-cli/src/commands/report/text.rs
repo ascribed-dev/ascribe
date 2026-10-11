@@ -110,13 +110,13 @@ impl Writer<'_> {
         if !self.style.markdown {
             return Ok(());
         }
-        let mut findings = Counts::default();
-        for d in report.findings() {
-            findings.add(d.severity);
+        let mut problems = Counts::default();
+        for d in report.all_problems() {
+            problems.add(d.severity);
         }
         writeln!(self.out, "## Ascribe report")?;
         writeln!(self.out)?;
-        let mut line = counts_words(findings);
+        let mut line = counts_words(problems);
         let not_run = report.not_run();
         if !not_run.is_empty() {
             let names: Vec<String> = not_run.iter().map(|(s, _)| self.code(s.as_str())).collect();
@@ -185,7 +185,7 @@ impl Writer<'_> {
         self.line(&format!("{}.", why.how))
     }
 
-    /// `file:line: [code] message`, or `[code] message` for a finding about
+    /// `file:line: [code] message`, or `[code] message` for a problem about
     /// the published site, which has no place in the source.
     fn diagnostic(&self, d: &Diagnostic) -> String {
         let code = format!("[{}]", d.code);

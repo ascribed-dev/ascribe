@@ -64,7 +64,7 @@ pub struct Args {
     /// above, and with 2 when a section asked for couldn't run: for a
     /// scheduled job that opens an issue.
     ///
-    /// `--exit-code` alone is `--exit-code=advice`: any finding fails.
+    /// `--exit-code` alone is `--exit-code=advice`: any problem fails.
     /// Without it, the report exits with 0 whenever it ran.
     #[arg(
         long,
@@ -117,7 +117,7 @@ pub enum Format {
     Markdown,
     /// One JSON document, for tools.
     Json,
-    /// A prompt for an agent that acts on one section's findings: only
+    /// A prompt for an agent that acts on one section's problems: only
     /// with one section, `problems`, `links`, or `agents`. Nothing when it
     /// finds nothing.
     Prompt,
@@ -126,7 +126,7 @@ pub enum Format {
 /// The least severity `--exit-code` fails on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Level {
-    /// Any finding.
+    /// Any problem.
     Advice,
     /// Warnings and errors.
     Warning,
@@ -273,7 +273,7 @@ fn failure_message(failure: Failure) -> String {
 }
 
 /// The exit code for what the report found: with `--exit-code`, 2 when a
-/// section couldn't run, else 1 with a finding at its level or above; 0
+/// section couldn't run, else 1 with a problem at its level or above; 0
 /// otherwise.
 fn exit_code(report: &Report, level: Option<Level>) -> u8 {
     let Some(level) = level else {
@@ -281,7 +281,10 @@ fn exit_code(report: &Report, level: Option<Level>) -> u8 {
     };
     if !report.not_run().is_empty() {
         exit::FAILURE
-    } else if report.findings().any(|d| d.severity >= level.severity()) {
+    } else if report
+        .all_problems()
+        .any(|d| d.severity >= level.severity())
+    {
         exit::PROBLEMS
     } else {
         exit::OK
@@ -425,20 +428,20 @@ fn write_prompt(
         }),
         [Section::Links] => match &report.links {
             Some(Ran::Done(links)) => {
-                let findings: Vec<&Diagnostic> = links.diagnostics.iter().collect();
+                let problems: Vec<&Diagnostic> = links.diagnostics.iter().collect();
                 prompt::batch(
                     project,
                     &context,
                     &format!(
                         "Fix the {} `ascribe report links` finds broken or moved.",
-                        if findings.len() == 1 {
+                        if problems.len() == 1 {
                             "external link".to_owned()
                         } else {
-                            format!("{} external links", findings.len())
+                            format!("{} external links", problems.len())
                         }
                     ),
                     Vec::new(),
-                    &findings,
+                    &problems,
                     &verify(Section::Links),
                 )
             }
@@ -446,13 +449,13 @@ fn write_prompt(
         },
         [Section::Agents] => match &report.agents {
             Some(Ran::Done(agents)) => {
-                let findings: Vec<&Diagnostic> = agents.diagnostics.iter().collect();
+                let problems: Vec<&Diagnostic> = agents.diagnostics.iter().collect();
                 prompt::batch(
                     project,
                     &context,
                     "Change what the delivery spec's checks find on the published site. None of it is in the pages: it's the hosting's settings, or a bug to report in Ascribe.",
                     vec![format!("Site: {}", agents.site)],
-                    &findings,
+                    &problems,
                     &verify(Section::Agents),
                 )
             }

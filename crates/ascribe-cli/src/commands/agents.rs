@@ -287,7 +287,9 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     // once the one before it is written.
     let mut written: Vec<Recorded> = Vec::new();
     let mut unread: Vec<&str> = Vec::new();
-    let mut mcp_settings: Vec<String> = Vec::new();
+    // The last project's settings: it's planned once every block of the
+    // setup steps is written, so its settings carry every server.
+    let mut mcp_settings: Option<String> = None;
     for (i, project) in projects.iter().enumerate() {
         let plan = if i == 0 {
             plans.swap_remove(0)
@@ -306,10 +308,8 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
                 unread.push(line);
             }
         }
-        if let Some(json) = plan.mcp_settings
-            && !mcp_settings.contains(&json)
-        {
-            mcp_settings.push(json);
+        if plan.mcp_settings.is_some() {
+            mcp_settings = plan.mcp_settings;
         }
     }
     let paths: Vec<String> = written.iter().map(|(path, ..)| shown(path)).collect();
@@ -327,16 +327,16 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
             .try_for_each(|line| write!(out, "\n{line}.\n"))
     });
     let result = result.and_then(|()| {
-        if mcp_settings.is_empty() {
+        let Some(json) = &mcp_settings else {
             return Ok(());
-        }
+        };
         write!(
             out,
             "\nCopilot's cloud agent reads its MCP servers from the repository's settings, \
              not from a file. Paste this into {}, beside any servers already there, or run \
              with --agent to write a custom agent that carries it:\n\n{}",
             copilot::MCP_SETTINGS_PLACE,
-            mcp_settings.join("\n")
+            json
         )
     });
     answer::written(result, err).unwrap_or(exit::OK)

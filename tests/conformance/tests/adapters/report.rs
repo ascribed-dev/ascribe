@@ -6,7 +6,7 @@
 //! report's `links` or `agents` section gives, through
 //! `ascribe_query::report`, the call `ascribe report` makes. Neither lychee
 //! nor afdocs is run, and nothing reaches the network: stand-ins answer from
-//! the address alone, so a case shows where a finding lands and what's
+//! the address alone, so a case shows where a problem lands and what's
 //! acknowledged, on every platform.
 //!
 //! The link checker's stand-in answers by host: `gone.test` and its subdomains are a 404,
@@ -33,7 +33,7 @@ use ascribe_conformance::{
 };
 use ascribe_query::report::{Options, Ran, Section, Tools};
 
-/// Handles the cases that expect the report's findings.
+/// Handles the cases that expect the report's problems.
 pub struct ReportAdapter;
 
 impl ConformanceAdapter for ReportAdapter {
