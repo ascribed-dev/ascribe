@@ -101,10 +101,9 @@ pub fn in_project(command: &str, root: &Path) -> bool {
     if path.is_relative() {
         return true;
     }
-    // Outside FileSystem: where a program is, which may be outside the
-    // project; through links, so a link can't hide that it's inside.
-    let real =
-        |p: &Path| std::fs::canonicalize(p).unwrap_or_else(|_| ascribe_core::path::normalize(p));
+    // Through links, so a link can't hide that it's inside, and as far as
+    // the path exists, so a program not there yet compares like its folder.
+    let real = crate::scope::real;
     real(path).starts_with(real(root))
 }
 
