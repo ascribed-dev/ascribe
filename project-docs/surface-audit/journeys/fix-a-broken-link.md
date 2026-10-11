@@ -44,33 +44,49 @@ Open the copy's folder in VS Code and start from there. VS Code opens a folder i
 
 ### Through the hook
 
-Claude Code, in a terminal, in the copy, with a clean profile so nothing of the user's reaches the session, and the plugin loaded from this checkout. The task sentence is the whole prompt, and the run is recorded whole:
+Claude Code, in a terminal, in the copy, with the plugin loaded from this checkout and only the project's own settings read. The task sentence is the whole prompt, and the run is recorded whole, hook events included:
 
 ```shell
-export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 claude -p "The project has a broken link. Find it and fix it, so the project checks clean." \
+  --setting-sources project \
   --plugin-dir <checkout>/plugins/ascribe \
-  --allowedTools Read,Edit,Write,Glob,Grep,Bash \
+  --allowedTools "Read,Edit,Write,Glob,Grep,Bash,mcp__plugin_ascribe_ascribe__*" \
+  --no-session-persistence --include-hook-events \
   --output-format stream-json --verbose \
   > <checkout>/project-docs/surface-audit/journeys/transcripts/fix-a-broken-link-hook.jsonl
 ```
 
-The agent has a shell, so it may run `ascribe check` itself; what the hook adds is what it hears after each edit and at the stop. When it stops, the preparer runs `ascribe check` in the copy and notes the exit code and the diff.
+The agent has a shell, so it may run `ascribe check` itself; what the plugin adds is its skill, its MCP server, the language server's diagnostics after an edit, and the check at the stop. When it stops, the preparer runs `ascribe check` in the copy and notes the exit code and the diff.
 
 ### Through MCP
 
-Claude Code, in a terminal, in the copy, with a clean profile, no plugin, and the copy's `.mcp.json` as the agents guide shows it (`"command": "ascribe", "args": ["mcp"]`, with `ascribe` on the path). Bash is left out, so the agent has no shell: the MCP server exists for "an agent with no shell", and in the agents plan's runs an agent with a shell never called a tool. The run is recorded as the hook's is:
+Claude Code, in a terminal, in the copy, with no plugin, and the copy's `.mcp.json` as the agents guide shows it (`"command": "ascribe", "args": ["mcp"]`, with `ascribe` on the path). Bash is left out, so the agent has no shell: the MCP server exists for "an agent with no shell", and in the agents plan's runs an agent with a shell never called a tool. The run is recorded as the hook's is:
 
 ```shell
-export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 claude -p "The project has a broken link. Find it and fix it, so the project checks clean." \
+  --setting-sources project \
+  --strict-mcp-config --mcp-config .mcp.json \
   --allowedTools "Read,Edit,Write,Glob,Grep,mcp__ascribe__*" \
   --disallowedTools Bash \
+  --no-session-persistence \
   --output-format stream-json --verbose \
   > <checkout>/project-docs/surface-audit/journeys/transcripts/fix-a-broken-link-mcp.jsonl
 ```
 
 When it stops, the preparer runs `ascribe check` in the copy and notes the exit code and the diff.
+
+### What changed in these two commands, and why
+
+The script first gave both walks a clean profile, `export CLAUDE_CONFIG_DIR="$(mktemp -d)"`. Tried on 10 October 2026 with a one-word prompt, it answered `Not logged in · Please run /login`: a new profile has no sign-in. So the walks use the normal profile, narrowed:
+
+- **`--setting-sources project`** reads the copy's settings and not the user's, so no user settings, hooks, or plugins reach the session. No memory did either: the session's memory folder is named for the copy's path, and was new.
+- **What still reaches it,** from the account and not from settings: the user's synced skills (`deep-research`, `design`, `slides`, `design-sync` were listed beside Claude Code's own), and, without `--strict-mcp-config`, the account's connectors (`claude.ai Claude Docs` connected, three more waiting for a sign-in). Neither session used any of them.
+- **The hook walk can't use `--strict-mcp-config`.** With it, the plugin's own MCP server isn't loaded (`mcp_servers: []`), and the plugin isn't what a user installs. Without it, the plugin's server is `plugin:ascribe:ascribe`, and the account's connectors come too.
+- **The hook walk allows the plugin's tools** (`mcp__plugin_ascribe_ascribe__*`). The script first left them out, and `claude -p` refuses a tool that isn't allowed, which a person with the plugin would have been asked about and could approve.
+- **The MCP walk needs `--mcp-config .mcp.json`.** With `--strict-mcp-config` alone the copy's `.mcp.json` isn't read (`mcp_servers: []`); a project's servers wait for an approval nobody is there to give.
+- **`mcp__ascribe__*` is accepted as written.** A trial session called `mcp__ascribe__ascribe_model` with no refusal.
+- **`--include-hook-events`** puts each hook's start and answer in the transcript. Without it the first hook walk's transcript couldn't show whether the hook ran.
+- **`--no-session-persistence`** keeps the session out of the user's history.
 
 ## Notes
 
@@ -197,7 +213,7 @@ The first two sections are a dry run of the maintainer's walks, done by an agent
   - `link` listed no `Closest:` for `keys.md` with `api-keys.md` beside it, and `check`'s text had no `Help:` line: the inventory's items, seen again.
   - `explain ASC036`'s example calls `keys.md` right and `api-key.md` wrong, close to this copy's names with the sense turned round.
 
-### What to change in the script before the maintainer walks it
+### What the dry run changed in the script
 
 The setup worked: both copies gave the one error and the one advice "Preparing a copy" shows, at exit 1. Neither walk ran long. Changed in the script already:
 
@@ -278,19 +294,86 @@ Decided by the maintainer on 10 October 2026, and written into the script:
 
 ### Through the hook
 
-*Not yet walked.*
+Run twice, each in its own copy. The first recording was made without `--include-hook-events`, so it couldn't show what the hook said; the second is the same command with that flag, in a fresh copy. It wasn't run again to see if it would go better, and it went the same way.
 
-The same parts, and:
+- **When, with what:** 10 October 2026, 9:17 PM and 9:19 PM. Claude Code 2.1.296, model `claude-opus-5-5`, started from zsh on macOS with `target/release` first on the path (`ascribe 0.2.0`). The plugin from this checkout, `ascribe@inline` version 0.2.0. Copies `fix-a-broken-link-hook` and `fix-a-broken-link-hook-2`, in a scratch folder, prepared by the agent that ran them. `https://ascribed-dev.com/go/ASC036/` answered 404 just before; neither session opened an address.
 
-- **Transcript:** `transcripts/fix-a-broken-link-hook.jsonl`.
-- **Tried first:** what the agent did before the thing that worked, in order: the commands it guessed, what it read, where it went wrong.
-- **What the hook said:** each hook message the agent received, quoted.
+- **Transcript:** [`transcripts/fix-a-broken-link-hook.jsonl`](transcripts/fix-a-broken-link-hook.jsonl) and [`transcripts/fix-a-broken-link-hook-2.jsonl`](transcripts/fix-a-broken-link-hook-2.jsonl).
+
+- **What the session had:** the tools listed `mcp__plugin_ascribe_ascribe__ascribe_check` and the plugin's eight others, and `LSP`; the skills listed `ascribe:ascribe`; the commands listed `ascribe:check`, `ascribe:new-page`, `ascribe:review`.
+
+- **Steps, first run:**
+
+  1. Bash: `ascribe check 2>&1 | head -50; ls -la; git ls-files | head -100`. Came back: `` [ASC036] Error: `keys.md` doesn't exist `` at `docs/install-agent.md:93:90`, the `ASC154` advice at `docs/api-keys.md:2:8`, `checked 4 files: 1 error, 0 warnings, 1 advice`, and the file list.
+  2. Bash: `cat docs/api-keys.md; grep -rn "keys" docs/*.md README.md ascribe.toml | grep -v "^docs/api-keys.md"`. Came back: the page, with `## Rotate keys` and `@id: rotate-keys`; the broken link; and `README.md:10:  keys.md                          has the `rotate-keys` id the page links to`.
+  3. Bash: `cat README.md; sed -i '' 's/\[\](keys.md#rotate-keys)/[](api-keys.md#rotate-keys)/' docs/install-agent.md && ascribe check; git diff --stat`. Came back: the README, which says `docs/install-agent.md` "is byte for byte the page in the specification"; then `checked 4 files: 0 errors, 0 warnings`.
+  4. Bash: `git checkout docs/install-agent.md && git mv docs/api-keys.md docs/keys.md && ascribe check; git status --short`. Came back: `Updated 1 path from the index`, `checked 4 files: 0 errors, 0 warnings`, `R  docs/api-keys.md -> docs/keys.md`.
+  5. Answered: "I fixed it by renaming `docs/api-keys.md` to `docs/keys.md` rather than editing the link, because the README lists the file as `keys.md` and says `install-agent.md` is byte for byte the page in the spec."
+
+- **Steps, second run:**
+
+  1. Bash: `ascribe check 2>&1 | head -50; git ls-files | head -100`. The same two reports.
+  2. Bash: `grep -n -i "rotat\|^#\|{#" docs/api-keys.md; grep -rn "keys" docs/*.md README.md | grep -v "^docs/api-keys.md"`. The heading, its `@id`, the link, and the README's line.
+  3. Bash: `cat README.md ascribe.toml; git log --stat | head -30`. Then said: "The README says `docs/install-agent.md` must stay byte-for-byte the spec page and lists the target as `keys.md`, so the misnamed file is the thing to fix, not the link."
+  4. Bash: `git mv docs/api-keys.md docs/keys.md && ascribe check 2>&1 | tail -5; for b in site cloud self-managed-3.3; do ascribe check --build $b 2>&1 | tail -1; done; git status --short`. Came back: `checked 4 files: 0 errors, 0 warnings`, four times.
+  5. The Stop hook ran: `"hook_name": "Stop"`, `"stdout": ""`, `"stderr": ""`, `"exit_code": 0`, `"outcome": "success"`.
+
+- **Tried first:** `ascribe check`, in the first command of both runs, with no `--help` before it. Nothing was guessed wrong. Neither run called `ascribe explain`, `ascribe link`, or `ascribe refs`, loaded the skill, called one of the plugin's tools, or used `LSP`. Both found the page the link meant with `grep` and `cat`.
+
+- **What the hook said:** nothing, in both. The plugin's `hooks.json` has one hook, at the stop, and there the project was already clean. Nothing was said after an edit either: the first run edited with `sed` in Bash and the second edited no page, so no edit went through a tool the language server's diagnostics follow.
+
+- **Doubts:**
+  - The first run fixed the link, saw the check pass, then read the README and undid it for the rename. The second read the README first. The agent's doubt was which of the two was wrong, the link or the file's name, and the copy's own README answered it.
+  - The second run checked each build by name after `ascribe check` had passed. `checked 4 files: 0 errors, 0 warnings` doesn't say which builds that covers.
+
+- **Time:** 16 seconds and 18 seconds by the clock; the sessions report 14.3 and 13.7 seconds, five turns each.
+
+- **Result:** fixed, both times, by renaming the file back, which "Preparing a copy" allows for. The agent knew from `ascribe check`. The preparer's `ascribe check` exited 0 with `checked 4 files: 0 errors, 0 warnings`; `git status --short` said `R  docs/api-keys.md -> docs/keys.md`, staged, and `git diff` was empty.
+
+- **Seen on the way:**
+  - With a shell, the agent used nothing the plugin gave it. Nine tools, a skill, three commands, and the language server were there, and both runs were `ascribe check`, `grep`, `cat`, and `git mv`. The agents plan's runs found the same.
+  - The hook had nothing to say, because the agent had already checked. Its worth is for the agent that doesn't, and this task doesn't show that.
+  - Checked afterwards by the preparer, outside the walk: `ascribe agents hook claude-code --event stop`, run in a copy with the broken link still committed and nothing changed, printed nothing and exited 0. The agents guide says it "checks every build of each project whose pages or `ascribe.toml` the working tree changes". An agent that did nothing in this copy would have been let go with the link broken.
+  - `ascribe check`'s last line doesn't name the builds it covered, and the agent checked `site`, `cloud`, and `self-managed-3.3` one at a time to be sure. The JSON has `builds_checked`; the text has no word for it.
+  - The copy's README told the agent which way to fix it: "`keys.md`  has the `rotate-keys` id the page links to". That's the script's, not Ascribe's. See "Preparing a copy".
+  - Nothing offered `api-keys.md` here either. `grep` found it.
 
 ### Through MCP
 
-*Not yet walked.*
+- **When, with what:** 10 October 2026, 9:18 PM. Claude Code 2.1.296, model `claude-opus-5-5`, with one MCP server, `ascribe`, from the copy's `.mcp.json` (`ascribe 0.2.0` on the path), no plugin, and no Bash. Copy `fix-a-broken-link-mcp`, prepared by the agent that ran it.
 
-The same parts as the hook's, with the tools it called in place of what the hook said.
+- **Transcript:** [`transcripts/fix-a-broken-link-mcp.jsonl`](transcripts/fix-a-broken-link-mcp.jsonl).
+
+- **Steps:**
+
+  1. `ToolSearch`, `select:mcp__ascribe__ascribe_check,mcp__ascribe__ascribe_link,mcp__ascribe__ascribe_refs`. Claude Code's own step: it loads a tool's definition before the first call.
+  2. `ascribe_check` with `{"response_format": "detailed"}`. Came back: `"builds_checked":["site","cloud","self-managed-3.3"]`, and two diagnostics. For `ASC036`: `"file":"docs/install-agent.md"`, `"fixes":[]`, `"help":"Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."`, `` "message":"`keys.md` doesn't exist" ``, `"next":"choose"`. For `ASC154`: `"file":"docs/api-keys.md"`, `"next":"review"`.
+  3. `Read`, `docs/install-agent.md`, lines 88 to 97. The note, with `See [](keys.md#rotate-keys).` on line 93.
+  4. `ascribe_link` with `{"target": "keys.md#rotate-a-key", "from": "docs/install-agent.md"}`. Came back: `"closest":[]`, `"exists":false`, `"from":"install-agent.md"`, `"kind":"missing"`, `` "problem":"`keys.md` doesn't exist" ``.
+  5. `Grep`, `^#|^title` in `docs/api-keys.md`. Came back: `title: API keys`, `## Create a key`, `## Rotate keys`.
+  6. `Edit`, `[](keys.md#rotate-keys)` to `[](api-keys.md#rotate-keys)`.
+  7. `ascribe_check` with `{}`. Came back: `{"concise":"checked 4 files: 0 errors, 0 warnings\n"}`.
+  8. Answered: "The broken link is fixed and the project now checks clean: 4 files, 0 errors, 0 warnings." and "That fix also cleared the one advice-level hint, that no page linked to `api-keys.md`."
+
+- **Tried first:** `ascribe_check`, asking for the detailed form at once. Then `ascribe_link`, with an id that wasn't the link's (`rotate-a-key` for `rotate-keys`), which answered with nothing to go on. It never called `ascribe_explain` or `ascribe_refs`, though it had loaded `ascribe_refs`.
+
+- **The tools it called:** `ascribe_check` twice and `ascribe_link` once, of nine. `Read`, `Grep`, and `Edit` did the rest.
+
+- **Doubts:**
+  - Which page the link meant. `ascribe_link` gave `"closest":[]`. The agent went to `docs/api-keys.md` next, and the only place that name had appeared was the second diagnostic, the advice about an orphan page. It didn't read the README.
+  - It wrote `api-keys.md#rotate-keys` from the heading's text, `## Rotate keys`, and didn't ask `ascribe_link` whether that target exists before or after the edit. The second `ascribe_check` was its proof.
+
+- **Time:** 15 seconds by the clock; the session reports 13.2 seconds, eight turns.
+
+- **Result:** fixed, by changing the link. The agent knew from `ascribe_check`. The preparer's `ascribe check` exited 0 with `checked 4 files: 0 errors, 0 warnings`; `git status --short` said ` M docs/install-agent.md`, and `git diff` was the one line the editor's and the command line's walks made.
+
+- **Seen on the way:**
+  - `ascribe_link` on the missing page gave `"closest":[]`, with `api-keys.md` beside it. The inventory's "`choose` with nothing to choose from", seen a fourth time.
+  - What led the agent to the right page was a different diagnostic: `ASC154`'s `"file":"docs/api-keys.md"`. The orphan advice did the work `closest` is for.
+  - One page, two names in one session: `ascribe_check` says `"file":"docs/install-agent.md"`, and `ascribe_link`, given `"from": "docs/install-agent.md"`, answers `"from":"install-agent.md"`. The command-line dry run saw the same in the text.
+  - The second `ascribe_check` answered `{"concise":"checked 4 files: 0 errors, 0 warnings\n"}`: a line of text for a terminal, inside JSON, where the first call's detailed form had `builds_checked` and counts as fields. The agent asked for `detailed` first without being told to.
+  - Claude Code wrote 94 lines to standard error while loading the tools, of the form `unknown format "uint32" ignored in schema at path "#/$defs/Pos/properties/line"` and `unknown format "uint" ignored in schema at path "#/$defs/CodeCount/properties/count"`. The tools' output schemas name number formats the client's validator doesn't know. Nothing failed, and a person running the client would see it.
+  - Without a shell, the agent used the tools at once, and for the same two steps a shell gives: check, then check again.
 
 ## What the walks had in common
 
@@ -298,7 +381,16 @@ The same parts as the hook's, with the tools it called in place of what the hook
 
 Where the paths met: every one of the four found the problem with its first look at the project's problems (the Explorer's red `1` and the Problems panel; `ascribe check`), and every finished one made the same one-line change. Where they didn't: nothing on any surface offered `api-keys.md` as the page the link meant, so each walker worked that out from the folder listing, and the editor's one click path to it (**Change where the link goes**) was found by the dry run and not by the maintainer, who went to the agent first.
 
-*After the agents' two walks:* what they tried first, and whether the hook and the MCP server changed what the agent did.
+**The agents' two,** 10 October 2026. Three sessions, each about 15 seconds. Every one ran the check first and got it right at the first try: `ascribe check` in a shell with no `--help` before it, and `ascribe_check` where there was no shell. None was stuck.
+
+What they tried first, and whether the plugin and the MCP server changed what the agent did:
+
+- **With a shell, nothing of the plugin's was used.** Its tools, its skill, its commands, and the language server were all offered, and the agent ran `ascribe check`, `grep`, `cat`, and `git mv`. The stop hook ran and said nothing, since the project was already clean.
+- **Without a shell, the tools were used at once,** for the two steps a shell gives: check, then check again. One call to `ascribe_link` between them returned nothing to act on.
+- **No surface named the page the link meant,** on any of the seven walks and runs. A person used the folder listing, the agents used `grep`, the README, and the orphan advice's file name. The editor's **Change where the link goes** lists it, and only the dry run found that.
+- **The two agents fixed it two ways.** With the copy's README in reach, the one with a shell renamed the file back, twice. The one without changed the link. Both check clean. Only the second is what the task meant, and nothing in Ascribe could have said so: the README was the script's.
+
+The command line turned out to be the surface the walks agree on: every walker's first move was the check, and every one who finished ended on it.
 
 ## Preparing a copy
 
@@ -338,7 +430,7 @@ Before handing a copy over, run `ascribe check` in it. With the release build of
 checked 4 files: 1 error, 0 warnings, 1 advice
 ```
 
-The fix that clears both is `[](api-keys.md#rotate-keys)`. A walker who renames the file back also clears both; note which they chose. The walk's project is Ascribe's own example, so `ascribe --help`'s examples name this task's code and file (`ascribe explain ASC036`, `ascribe link keys.md --from guides/install.md`); the rename stands, and the notes say when the help handed the commands over. Fixed, `ascribe check` exits 0 and prints one line, `checked 4 files: 0 errors, 0 warnings`.
+The fix that clears both is `[](api-keys.md#rotate-keys)`. A walker who renames the file back also clears both; note which they chose. `examples/quill`'s `README.md` comes with the copy, and it lists the file as `keys.md` and says `install-agent.md` is byte for byte the specification's page; both of the hook's runs read it and renamed the file back. For a later journey, leave an example's README out of the copy: it describes the example to someone reading the repository, and it isn't part of the project. The walk's project is Ascribe's own example, so `ascribe --help`'s examples name this task's code and file (`ascribe explain ASC036`, `ascribe link keys.md --from guides/install.md`); the rename stands, and the notes say when the help handed the commands over. Fixed, `ascribe check` exits 0 and prints one line, `checked 4 files: 0 errors, 0 warnings`.
 
 The addresses the binary prints, `https://ascribed-dev.com/go/…`, are served once the published site has been rebuilt with a canary that has permalinks: the site builds from the nightly canary, and the canary of 10 October 2026 predates them, so every one was "Page not found" that day. Before a walk, open one (`https://ascribed-dev.com/go/ASC036/`). If it's still 404, run the canary by hand (Actions → **Canary** → Run workflow, from `main`) and wait for the site, or expect the walker to search the site and note it.
 
