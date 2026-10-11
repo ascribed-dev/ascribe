@@ -35,6 +35,7 @@ function project(folder: string, name: string, extra: Partial<ProjectInfo> = {})
     builds: [],
     build: undefined,
     lens: false,
+    everyBuild: false,
     ...extra,
   };
 }
@@ -58,14 +59,45 @@ const file = (relative: string, languageId = "markdown"): ActiveFile => ({
 
 describe("the status bar item", () => {
   it("names the project that owns the active page, and the build you're looking at", () => {
-    expect(statusFor(file("docs/docs/index.md"), registry())?.text).toBe("$(book) docs · cloud");
+    expect(statusFor(file("docs/docs/index.md"), registry())?.text).toBe(
+      "$(book) docs · cloud · problems: site only",
+    );
     expect(statusFor(file("handbook/pages/index.md"), registry())?.text).toBe(
-      "$(book) handbook · site",
+      "$(book) handbook · site · problems: this build only",
     );
   });
 
+  it("says when the Problems panel holds the editor build's problems alone", () => {
+    // One build: the panel covers every build.
+    const one = [project("docs", "docs", { ...running, builds: [{ name: "site", editor: true }] })];
+    const single = statusFor(file("docs/docs/index.md"), one);
+    expect(single?.text).toBe("$(book) docs · site");
+    expect(single?.tooltip).not.toContain("Problems:");
+    // A check of every build that's current: the panel covers them all.
+    const checked = [project("docs", "docs", { ...running, build: "cloud", everyBuild: true })];
+    const all = statusFor(file("docs/docs/index.md"), checked);
+    expect(all?.text).toBe("$(book) docs · cloud");
+    expect(all?.label).toBe("Ascribe project docs, server running, build cloud");
+    expect(all?.tooltip.split("\n").at(-1)).toBe(
+      "Problems: every build, from Ascribe: Check Every Build",
+    );
+    // Otherwise, the editor build's alone.
+    const alone = statusFor(file("docs/docs/index.md"), registry());
+    expect(alone?.label).toBe(
+      "Ascribe project docs, server running, build cloud, problems for site only",
+    );
+    expect(alone?.tooltip.split("\n").at(-1)).toBe(
+      "Problems: site only. Ascribe: Check Every Build adds the problems of the others.",
+    );
+    // A server that isn't running has no problems to cover.
+    const stopped = [project("docs", "docs", { builds, build: "cloud" })];
+    expect(statusFor(file("docs/docs/index.md"), stopped)?.text).toBe("$(book) docs");
+  });
+
   it("shows an eye while the build lens dims by the build", () => {
-    const projects = [project("docs", "docs", { ...running, build: "cloud", lens: true })];
+    const projects = [
+      project("docs", "docs", { ...running, build: "cloud", lens: true, everyBuild: true }),
+    ];
     const status = statusFor(file("docs/docs/index.md"), projects);
     expect(status?.text).toBe("$(eye) docs · cloud");
     expect(status?.tooltip).toContain("Dimming what cloud leaves out");
@@ -131,10 +163,10 @@ describe("the status bar item", () => {
       "Binary: /usr/local/bin/ascribe (setting, 0.2.0)",
       "Server: running",
       "Build: cloud (the editor build is site)",
+      "Problems: site only. Ascribe: Check Every Build adds the problems of the others.",
     ]);
-    expect(docs?.label).toBe("Ascribe project docs, server running, build cloud");
     const handbook = statusFor(file("handbook/pages/index.md"), registry());
-    expect(handbook?.tooltip.split("\n").at(-1)).toBe("Build: site (the editor build)");
+    expect(handbook?.tooltip.split("\n").at(-2)).toBe("Build: site (the editor build)");
   });
 });
 
