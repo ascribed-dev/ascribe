@@ -206,17 +206,22 @@ export function readCandidate(id: string, text: string): Candidate {
   const doc = parse(text);
   const meta = table(doc.candidate, `${file} [candidate]`);
 
+  // [ramp] is more of the palette: the steps no color uses, which chosen.toml
+  // keeps apart from the steps generated from design/tokens.toml.
   const palette = new Map<string, Map<string, string>>();
-  for (const [hue, steps] of Object.entries(table(doc.palette, `${file} [palette]`))) {
-    const ramp = new Map<string, string>();
-    for (const [step, hex] of Object.entries(table(steps, `${file} palette.${hue}`))) {
-      const value = string(hex, `${file} palette.${hue}.${step}`);
-      if (!HEX.test(value)) {
-        throw new Error(`${file} palette.${hue}.${step}: "${value}" isn't a lowercase #rrggbb`);
+  for (const section of ["palette", "ramp"] as const) {
+    if (section === "ramp" && doc.ramp === undefined) continue;
+    for (const [hue, steps] of Object.entries(table(doc[section], `${file} [${section}]`))) {
+      const ramp = palette.get(hue) ?? new Map<string, string>();
+      for (const [step, hex] of Object.entries(table(steps, `${file} ${section}.${hue}`))) {
+        const where = `${file} ${section}.${hue}.${step}`;
+        const value = string(hex, where);
+        if (!HEX.test(value)) throw new Error(`${where}: "${value}" isn't a lowercase #rrggbb`);
+        if (ramp.has(step)) throw new Error(`${where}: already in [palette]`);
+        ramp.set(step, value);
       }
-      ramp.set(step, value);
+      palette.set(hue, new Map([...ramp].sort(([a], [b]) => Number(a) - Number(b))));
     }
-    palette.set(hue, ramp);
   }
 
   const colorTable = table(doc.color, `${file} [color]`);

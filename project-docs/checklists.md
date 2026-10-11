@@ -123,8 +123,8 @@ An element, an attribute, a class, or the order of what the `site` output writes
 
 A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML report, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
 
-- [ ] The value is in `design/tokens.toml`, and a stylesheet takes it through its `[emit]` block; no stylesheet writes a color of its own. A changed shared color is changed in `design/candidates/chosen.toml` too.
-- [ ] The generated blocks rewritten (`ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts`), and the diff read.
+- [ ] The value is in `design/tokens.toml`, and a stylesheet takes it through its `[emit]` block; no stylesheet writes a color of its own.
+- [ ] The generated blocks, and `design/candidates/chosen.toml`'s shared colors, rewritten (`ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts`), and the diff read.
 - [ ] The report's embedded stylesheet rebuilt (`pnpm --filter @ascribed/review embed`).
 - [ ] The mark's images rewritten (`node scripts/design/assets.ts`) if a shared color or a source SVG changed, and looked at.
 - [ ] Contrast: a new text or meaningful graphic color has its pairings in `design/candidates/pairs.toml`, and `pnpm exec vitest run scripts/design` passes.
