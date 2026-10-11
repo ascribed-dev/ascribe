@@ -582,6 +582,9 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/325"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Link the READMEs to permalinks, and remove the moved-page stubs"
@@ -603,7 +606,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/323"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One recipe for checking a project in CI"
     },
     {
