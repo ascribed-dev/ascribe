@@ -92,6 +92,42 @@ export function homeRoute(base: string, trailingSlash: "always" | "never" | "ign
   return trailingSlash === "never" && root !== "/" ? root.slice(0, -1) : root;
 }
 
+/** Astro's routing settings, as the integration reads and supplies them. */
+export interface AstroRouting {
+  base: string;
+  trailingSlash: "always" | "never" | "ignore";
+  site: string | undefined;
+}
+
+/**
+ * Astro's routing with `site` and `trailingSlash` taken from `[consumer]` when
+ * astro.config leaves them unset, and the settings taken, for `updateConfig`.
+ * Astro gives an integration its configuration with its defaults filled in, so
+ * unset is the default: no `site`, and `trailingSlash: "ignore"`. Each comes
+ * from the first project that has it, since every project must agree with it
+ * anyway. `base` stays the site's: Astro's default, `/`, agrees with any base
+ * path, so it's set only to put the whole site under a path. When
+ * `trailingSlash` is supplied, `base` is rewritten to end the way it says, as
+ * Astro writes it when the setting is its own.
+ */
+export function supplyRouting(
+  projects: readonly ProjectInfo[],
+  astro: AstroRouting,
+): { routing: AstroRouting; supplied: Partial<AstroRouting> } {
+  const supplied: Partial<AstroRouting> = {};
+  if (astro.site === undefined) {
+    const site = projects.find((project) => project.consumer.site !== undefined)?.consumer.site;
+    if (site !== undefined) supplied.site = site;
+  }
+  const first = projects[0];
+  if (astro.trailingSlash === "ignore" && first !== undefined) {
+    supplied.trailingSlash = first.consumer.trailingSlash;
+    const base = homeRoute(astro.base, supplied.trailingSlash);
+    if (base !== astro.base) supplied.base = base;
+  }
+  return { routing: { ...astro, ...supplied }, supplied };
+}
+
 /**
  * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
  * as sentences. Ascribe writes every link with its own settings, so a site

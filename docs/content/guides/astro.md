@@ -28,7 +28,7 @@ It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascrib
 
 ### 2. Write `ascribe.toml`
 
-Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings must agree with Astro's `site`, `base`, and `trailingSlash`, because Ascribe writes every link ([a home page in front of the docs](#a-home-page-in-front-of-the-docs) says how `base-path` can differ from `base`):
+Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings are the site's routing, because Ascribe writes every link: from the next release, the integration gives Astro its `site` and `trailingSlash` from them, so `astro.config.mjs` can leave both out, and Astro's `base` must be `base-path` or a path above it ([a home page in front of the docs](#a-home-page-in-front-of-the-docs) says how they can differ):
 
 @snippet: code:examples/astro-site/ascribe.toml#site
 
@@ -97,7 +97,9 @@ npx astro build
 
 ## What the integration does
 
-- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. Astro's `trailingSlash: "ignore"` agrees with either value. `base-path` agrees with Astro's `base` when it's that path or, from the next release, a path under it ([A home page in front of the docs](#a-home-page-in-front-of-the-docs)).
+- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. In ascribe 0.2.0, Astro's `trailingSlash: "ignore"` agrees with either value; from the next release, the integration replaces it, as below. `base-path` agrees with Astro's `base` when it's that path or, from the next release, a path under it ([A home page in front of the docs](#a-home-page-in-front-of-the-docs)).
+- @available: next
+  **Gives Astro its `site` and `trailingSlash`** from `[consumer]` when `astro.config.mjs` leaves them out, so the site's address is written once. A setting `astro.config.mjs` does give must still agree. Astro's `base` stays yours: its default, `/`, agrees with any `base-path`, so set it only to put the whole site under a path. Astro can't tell an integration a setting left out from one set to its default, so `trailingSlash: "ignore"` is replaced by `[consumer]`'s value.
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself. Their types come from `satteri` and `@types/hast`, optional peer dependencies: a Sätteri processor already has the first, and a `unified()` one the second.
 - **Serves the files pages link to** (other than pages and images) at `<base-path>_ascribe/files/`, in `astro dev` and in the built site.
 - @available: next
@@ -122,14 +124,11 @@ npx astro build
 @id {permalink=true}: a-home-page-in-front-of-the-docs
 @available: next
 
-`[consumer] base-path` can be a path under Astro's `base`, which leaves the rest of the site to your own pages: a home page at `/` with the docs at `/docs/`, in one Astro site. Set Astro's `base` to the site's root and `base-path` to the docs' path:
+`[consumer] base-path` can be a path under Astro's `base`, which leaves the rest of the site to your own pages: a home page at `/` with the docs at `/docs/`, in one Astro site. Leave Astro's `base` at the site's root, its default, and set `base-path` to the docs' path:
 
 ```js
-// astro.config.mjs
+// astro.config.mjs: `site` and `trailingSlash` come from [consumer].
 export default defineConfig({
-  site: "https://docs.example.com",
-  base: "/",
-  trailingSlash: "never",
   integrations: [ascribe({ build: "site" })],
 });
 ```
@@ -180,6 +179,8 @@ export const collections = {
   home: defineCollection(ascribeCollection({ schema: homeSchema, name: "home" })),
 };
 ```
+
+Astro's `site` and `trailingSlash`, when `astro.config.mjs` leaves them out, come from the first entry whose project sets them; every project must agree with them anyway, and the build fails, naming the entry, when one doesn't. Astro's `base` is the site's, the root every base path is under.
 
 Each collection gets its own route, under its project's base path: here `src/pages/[...slug].astro` for `home` and `src/pages/docs/[...slug].astro` for `docs`.
 

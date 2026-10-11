@@ -16,12 +16,12 @@ import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
 
 export default defineConfig({
-  site: "https://docs.example.com", // as in ascribe.toml's [consumer]
-  base: "/docs",
-  trailingSlash: "never",
+  base: "/docs", // [consumer] base-path is this path or one under it
   integrations: [ascribe({ build: "site" })],
 });
 ```
+
+Astro's `site` and `trailingSlash` come from `ascribe.toml`'s `[consumer]` when the Astro config leaves them out; with several projects, from the first entry whose project sets them. Set there, they must agree with `[consumer]`, or the build fails.
 
 ```ts
 // src/content.config.ts

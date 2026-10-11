@@ -1,11 +1,10 @@
 import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
 
-// `site`, `base`, and `trailingSlash` repeat ascribe.toml's [consumer]; the
-// integration fails the build if they disagree.
+// The integration takes `site` and `trailingSlash` from ascribe.toml's
+// [consumer]. `base` is the site's: [consumer] base-path is this path or one
+// under it, and the integration fails the build if it isn't.
 export default defineConfig({
-  site: "https://docs.example.com",
   base: "/docs",
-  trailingSlash: "never",
   integrations: [ascribe({ build: "site" })],
 });

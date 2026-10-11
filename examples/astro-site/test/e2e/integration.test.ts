@@ -38,9 +38,7 @@ describe("the integration", () => {
   it("fails the Astro build when ascribe.toml and astro.config disagree on routing", async () => {
     const root = await copySite("routing");
     await edit(path.join(root, "astro.config.mjs"), (text) =>
-      text
-        .replace('trailingSlash: "never"', 'trailingSlash: "always"')
-        .replace('base: "/docs"', 'base: "/manual"'),
+      text.replace('base: "/docs"', 'base: "/manual",\n  trailingSlash: "always"'),
     );
     const failure = await buildSite(root).then(
       () => undefined,
@@ -85,10 +83,9 @@ describe("the integration", () => {
         .replace('base-path = "/docs/"', 'base-path = "/"')
         .replace('trailing-slash = "never"', 'trailing-slash = "always"'),
     );
+    // Astro's `trailingSlash` comes from [consumer].
     await edit(path.join(root, "astro.config.mjs"), (text) =>
-      text
-        .replace('base: "/docs"', 'base: "/"')
-        .replace('trailingSlash: "never"', 'trailingSlash: "always"'),
+      text.replace('base: "/docs"', 'base: "/"'),
     );
     await buildSite(root);
     const server = await servePreview(root);
