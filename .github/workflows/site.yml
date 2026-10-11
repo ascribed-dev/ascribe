@@ -1,8 +1,8 @@
 name: Site
 
-# The user docs in docs/, checked and format-checked by this pull request's
-# own `ascribe`, so a change to Ascribe and the docs that describe it are
-# checked together. Then the docs site in site/, built with this pull request's Ascribe (its binary
+# The user docs in docs/, and the site's own pages in site/home/, checked and
+# format-checked by this pull request's own `ascribe`, so a change to Ascribe
+# and the docs that describe it are checked together. Then the docs site in site/, built with this pull request's Ascribe (its binary
 # and its packages, by `npm run build:checkout`), then tested in Chromium: a
 # change to Ascribe and the docs that use it are built together. A pull
 # request from a branch of this repository then deploys it to Netlify as its
@@ -44,13 +44,16 @@ jobs:
       - run: cargo build -p ascribe-cli --locked
       - run: target/debug/ascribe check --deny-warnings --config docs
       - run: target/debug/ascribe fmt --check --config docs
+      - run: target/debug/ascribe check --deny-warnings --config site/home
+      - run: target/debug/ascribe fmt --check --config site/home
       - run: npm ci
         working-directory: site
       - run: npx playwright-core install --with-deps chromium
         timeout-minutes: 5
         working-directory: site
       # The preview is built for its own address, so its links are right: as
-      # `site` in [consumer] and in astro.config.mjs, which have to agree.
+      # `site` in each project's [consumer] and in astro.config.mjs, which
+      # have to agree, and as the site's pages' `site` phrase.
       - id: preview
         name: Use the preview's address
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -66,9 +69,10 @@ jobs:
             exit 1
           fi
           address="https://pr-$PR--$NETLIFY_SITE_NAME.netlify.app"
-          sed -i "s|\"$site\"|\"$address\"|" docs/ascribe.toml site/astro.config.mjs
+          sed -i "s|\"$site\"|\"$address\"|" docs/ascribe.toml site/astro.config.mjs site/home/ascribe.toml
           grep -q "\"$address\"" docs/ascribe.toml
           grep -q "\"$address\"" site/astro.config.mjs
+          [ "$(grep -c "\"$address\"" site/home/ascribe.toml)" = 2 ]
           echo "Building for $address"
           echo "address=$address" >> "$GITHUB_OUTPUT"
           echo "alias=pr-$PR" >> "$GITHUB_OUTPUT"
@@ -127,6 +131,6 @@ jobs:
             elif [ "$PRESENT" != true ]; then
               echo "No preview: the repository has no NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID secret."
             else
-              echo "[$ADDRESS]($ADDRESS): the docs site, built with this pull request's Ascribe."
+              echo "[$ADDRESS]($ADDRESS): the site, built with this pull request's Ascribe, with the docs at [$ADDRESS/docs/]($ADDRESS/docs/)."
             fi
           } >> "$GITHUB_STEP_SUMMARY"

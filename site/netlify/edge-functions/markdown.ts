@@ -12,11 +12,16 @@ function isPage(pathname: string): boolean {
   return pathname.endsWith("/");
 }
 
-/** The address of a page's Markdown: its entry id with `.md`, `index.md` for the home page. */
-export function markdownPath(pathname: string): string | undefined {
-  if (!isPage(pathname)) return undefined;
-  const route = pathname.slice(1, -1);
-  return `/${route === "" ? "index" : route}.md`;
+/**
+ * Where a page's Markdown can be, in the order to try: its address with
+ * `.md`, or, for the root page of a project or a folder (entry id `index`),
+ * `index.md` under its address. The docs' root page, `/docs/`, is
+ * `/docs/index.md`.
+ */
+export function markdownPaths(pathname: string): string[] {
+  if (!isPage(pathname)) return [];
+  const route = pathname.slice(0, -1);
+  return route === "" ? ["/index.md"] : [`${route}.md`, `${route}/index.md`];
 }
 
 /** The weight an `Accept` header gives the first of `types` it names, 0 if none. */
@@ -49,9 +54,9 @@ interface Context {
 
 export default async function markdown(request: Request, context: Context): Promise<Response> {
   const pathname = new URL(request.url).pathname;
-  const target = markdownPath(pathname);
+  const targets = markdownPaths(pathname);
   const read = request.method === "GET" || request.method === "HEAD";
-  if (!read || target === undefined) return context.next();
+  if (!read || targets.length === 0) return context.next();
   if (!prefersMarkdown(request.headers.get("accept"))) {
     // The page, marked as one of two answers, so a cache past Netlify's
     // doesn't hand its HTML to an agent that asked for Markdown.
@@ -60,11 +65,17 @@ export default async function markdown(request: Request, context: Context): Prom
     headers.append("vary", "Accept");
     return new Response(page.body, { status: page.status, statusText: page.statusText, headers });
   }
-  const source = await fetch(new URL(target, request.url));
-  if (!source.ok) {
+  let found: { target: string; source: Response } | undefined;
+  for (const target of targets) {
+    const source = await fetch(new URL(target, request.url));
+    if (source.ok) {
+      found = { target, source };
+      break;
+    }
     await source.body?.cancel();
-    return context.next();
   }
+  if (found === undefined) return context.next();
+  const { target, source } = found;
   const headers = new Headers({
     "content-type": "text/markdown; charset=utf-8",
     vary: "Accept",

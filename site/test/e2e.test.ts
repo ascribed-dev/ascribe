@@ -1,6 +1,6 @@
-// The built site in Chromium: the head and the header's mark, variants,
-// availability, code titles, links between pages, search, the edit link, the
-// 404 page, and the narrow layout.
+// The built site in Chromium: the landing page, the head and the header,
+// variants, availability, code titles, links between pages, search, the edit
+// link, the 404 page, and the narrow layout.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { launchChromium, requireBuild, serve, siteAddress } from "./built.ts";
@@ -32,7 +32,7 @@ async function open(path: string, width = 1280): Promise<Page> {
 }
 
 test("the head names the icons, the social card, and a theme color per scheme", async () => {
-  const page = await open("/getting-started/");
+  const page = await open("/docs/getting-started/");
   const icons = await page
     .locator('link[rel="icon"], link[rel="apple-touch-icon"]')
     .evaluateAll((links) => links.map((link) => (link as HTMLLinkElement).href));
@@ -75,16 +75,51 @@ test("the head names the icons, the social card, and a theme color per scheme", 
   await page.close();
 });
 
-test("the header's mark links home and is named", async () => {
-  const page = await open("/guides/astro/");
+test("the header's mark links home and is named, and Docs links to the docs", async () => {
+  const page = await open("/docs/guides/astro/");
   const home = page.getByRole("link", { name: "Ascribe", exact: true });
   expect(await home.getAttribute("href")).toBe("/");
   expect(await home.getByRole("img", { name: "Ascribe" }).isVisible()).toBe(true);
+  const docs = page.getByRole("link", { name: "Docs", exact: true });
+  expect(await docs.getAttribute("href")).toBe("/docs/");
+  expect(await docs.getAttribute("aria-current")).toBe("true");
+  await page.close();
+});
+
+test("the landing page is at the root, with one heading in its hero and no docs furniture", async () => {
+  const page = await open("/");
+  expect(await page.title()).toBe("Ascribe");
+  expect(await page.locator("hero-banner").count()).toBe(1);
+  const heading = page.locator("h1");
+  expect(await heading.count()).toBe(1);
+  expect(await page.locator("hero-banner h1").isVisible()).toBe(true);
+  // The hero is drawn by the stylesheet: its heading takes the hero's size.
+  const size = await heading.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  expect(size).toBeGreaterThan(36);
+  for (const docsOnly of ["#sidebar", ".search-button", ".menu-button", ".toc"]) {
+    expect(await page.locator(docsOnly).count(), docsOnly).toBe(0);
+  }
+  expect(
+    await page.getByRole("link", { name: "Docs", exact: true }).getAttribute("aria-current"),
+  ).toBeNull();
+  await page.close();
+});
+
+test("the landing page's link to getting started opens it under /docs/", async () => {
+  const page = await open("/");
+  const link = page.getByRole("link", { name: "read getting started" });
+  // The permalink's address on the site the build was for.
+  const href = new URL((await link.getAttribute("href")) ?? "");
+  expect(href.origin).toBe(await siteAddress());
+  expect(href.pathname).toBe("/go/getting-started/");
+  await page.goto(server.url + href.pathname);
+  await page.waitForURL(`${server.url}/docs/getting-started/`);
+  expect(await page.locator("h1").textContent()).toBe("Getting started");
   await page.close();
 });
 
 test("a variant group is a switcher, and the reader's choice holds on the next page", async () => {
-  const page = await open("/getting-started/");
+  const page = await open("/docs/getting-started/");
   const tabs = page.locator("ascribe-tabs").first();
   await expect.poll(() => tabs.getByRole("tab").allTextContents()).toEqual(["npm", "pnpm"]);
   expect(await tabs.getByText("npm install --save-dev @ascribed/cli").isVisible()).toBe(true);
@@ -93,7 +128,7 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
   await tabs.getByRole("tab", { name: "pnpm" }).click();
   expect(await tabs.getByText("pnpm add --save-dev @ascribed/cli").isVisible()).toBe(true);
 
-  await page.goto(`${server.url}/guides/astro/`);
+  await page.goto(`${server.url}/docs/guides/astro/`);
   const next = page.locator("ascribe-tabs").first();
   await expect
     .poll(() => next.getByRole("tab", { name: "pnpm" }).getAttribute("aria-selected"))
@@ -103,7 +138,7 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
 });
 
 test("a page marked with an availability shows its badge", async () => {
-  const page = await open("/guides/review/");
+  const page = await open("/docs/guides/review/");
   const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
   // "unreleased" until a release ships the page's feature, then the release.
   expect(await badge.getAttribute("target")).toBe("ascribe");
@@ -115,26 +150,26 @@ test("a page marked with an availability shows its badge", async () => {
 });
 
 test("notes and steps render as elements", async () => {
-  const page = await open("/getting-started/");
+  const page = await open("/docs/getting-started/");
   expect(await page.locator('ascribe-note[type="tip"]').isVisible()).toBe(true);
   expect(await page.locator("ascribe-steps ol > li").count()).toBe(3);
   await page.close();
 });
 
 test("a code example taken from a file shows its title", async () => {
-  const page = await open("/guides/astro/");
+  const page = await open("/docs/guides/astro/");
   const figure = page.locator("figure.code-title", { hasText: "export default defineConfig" });
   await expect.poll(() => figure.locator("figcaption").textContent()).toBe("astro.config.mjs");
   await page.close();
 });
 
 test("a link between pages lands on the page, and a glossary link on its heading", async () => {
-  const page = await open("/getting-started/");
-  await page.locator('article a[href="/guides/astro/"]').first().click();
-  await page.waitForURL(`${server.url}/guides/astro/`);
+  const page = await open("/docs/getting-started/");
+  await page.locator('article a[href="/docs/guides/astro/"]').first().click();
+  await page.waitForURL(`${server.url}/docs/guides/astro/`);
   expect(await page.locator("h1").textContent()).toBe("Astro");
 
-  await page.goto(`${server.url}/reference/diagnostics/`);
+  await page.goto(`${server.url}/docs/reference/diagnostics/`);
   // A glossary link to a heading (the first one on this page links to a page).
   const term = page.locator('article a[data-ascribe-term][href*="#"]').first();
   const href = await term.getAttribute("href");
@@ -146,7 +181,7 @@ test("a link between pages lands on the page, and a glossary link on its heading
 });
 
 test("the sidebar lists the pages and marks the current one", async () => {
-  const page = await open("/reference/cli/");
+  const page = await open("/docs/reference/cli/");
   const current = page.locator('#sidebar a[aria-current="page"]');
   expect(await current.textContent()).toContain("Command reference");
   expect(await page.locator("#sidebar a").count()).toBeGreaterThanOrEqual(13);
@@ -154,7 +189,7 @@ test("the sidebar lists the pages and marks the current one", async () => {
 });
 
 test("search finds a known word, with no network", async () => {
-  const page = await open("/");
+  const page = await open("/docs/");
   await page.route(/^(?!http:\/\/127\.0\.0\.1)/, (route) => route.abort());
   await page.keyboard.press("/");
   const input = page.locator("#search input");
@@ -163,12 +198,12 @@ test("search finds a known word, with no network", async () => {
   await result.waitFor();
   expect(await result.textContent()).toBeTruthy();
   await result.click();
-  await page.waitForURL(/\/reference\/content-model\//);
+  await page.waitForURL(/\/docs\/reference\/content-model\//);
   await page.close();
 });
 
 test("each page links to its source on GitHub", async () => {
-  const page = await open("/guides/astro/");
+  const page = await open("/docs/guides/astro/");
   const edit = page.getByRole("link", { name: "Edit this page on GitHub" });
   expect(await edit.getAttribute("href")).toBe(
     "https://github.com/ascribed-dev/ascribe/edit/main/docs/content/guides/astro.md",
@@ -182,6 +217,9 @@ test("an unknown address gets the 404 page", async () => {
   expect(response?.status()).toBe(404);
   expect(await page.locator("h1").textContent()).toBe("Page not found");
   expect(await page.getByText("This address is a permalink").isVisible()).toBe(false);
+  expect(await page.getByRole("link", { name: "docs' start page" }).getAttribute("href")).toBe(
+    "/docs/",
+  );
   await page.close();
 });
 
@@ -196,7 +234,7 @@ test("a permalink the docs don't have gets the 404 page, which says so", async (
 });
 
 test("at phone width, the sidebar opens from the menu and nothing scrolls sideways", async () => {
-  const page = await open("/reference/content-model/", 390);
+  const page = await open("/docs/reference/content-model/", 390);
   const sidebar = page.locator("#sidebar");
   expect(await sidebar.isVisible()).toBe(false);
   await page.getByRole("button", { name: "Menu" }).click();

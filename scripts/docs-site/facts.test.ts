@@ -2,13 +2,15 @@
 // Node version (`engines.node` in package.json), the Rust version
 // (rust-toolchain.toml), the glibc floor (`GLIBC` in release-build.yml), and
 // the folders the docs take code examples from (`[sources.code] include` in
-// docs/ascribe.toml). A copy that can't be generated is compared here, so
+// docs/ascribe.toml), the tables site/home/ascribe.toml copies from
+// docs/ascribe.toml, and the docs' address the Report workflow checks. A copy that can't be generated is compared here, so
 // changing one place and not the others fails. The npm platform packages are
 // checked the same way in scripts/release/manifests.test.ts.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "smol-toml";
 import { expect, test } from "vitest";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
@@ -196,4 +198,48 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
     expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
   }
   expect(site.test("docs/content/index.md")).toBe(true);
+});
+
+test("the site's own pages share the docs' release tables, sources, and address, and the report checks the docs", () => {
+  type Toml = Record<string, unknown>;
+  const docs = parse(read("docs/ascribe.toml")) as Toml;
+  const home = parse(read("site/home/ascribe.toml")) as Toml;
+  const at = (toml: Toml, ...keys: string[]): unknown =>
+    keys.reduce<unknown>((value, key) => (value as Toml | undefined)?.[key], toml);
+
+  // What the pages' availability marks need, to mark a claim as the docs do.
+  for (const keys of [
+    ["dimensions", "release"],
+    ["versions"],
+    ["lifecycle", "unreleased"],
+    ["features", "next"],
+    ["phrases", "version"],
+    ["consumer", "site"],
+    ["consumer", "trailing-slash"],
+    ["consumer", "permalink-path"],
+  ]) {
+    expect(at(home, ...keys), keys.join(".")).toEqual(at(docs, ...keys));
+    expect(at(docs, ...keys), keys.join(".")).toBeDefined();
+  }
+  // The `site` phrase, which links into the docs start with.
+  expect(at(home, "phrases", "site")).toBe(at(docs, "consumer", "site"));
+
+  // The same files for code examples, from each project's own folder.
+  const sources = (toml: Toml, folder: string) => {
+    const code = at(toml, "sources", "code") as Toml;
+    return { ...code, path: path.resolve(root, folder, String(code["path"])) };
+  };
+  expect(sources(home, "site/home")).toEqual(sources(docs, "docs"));
+
+  // The nightly report checks the published docs, at their address and base path.
+  const report = /--site (\S+)/.exec(read(".github/workflows/report.yml"))?.[1];
+  expect(report).toBe(
+    `${String(at(docs, "consumer", "site"))}${String(at(docs, "consumer", "base-path"))}`,
+  );
+
+  // A preview is built with its own address in each file that names the site's.
+  const preview = /^\s*sed -i ".*" (.+)$/m.exec(read(".github/workflows/site.yml"))?.[1];
+  expect(preview?.split(" ").sort()).toEqual(
+    ["docs/ascribe.toml", "site/astro.config.mjs", "site/home/ascribe.toml"].sort(),
+  );
 });

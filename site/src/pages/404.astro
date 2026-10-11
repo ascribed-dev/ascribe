@@ -1,17 +1,21 @@
 ---
 import MissingPermalink from "@ascribed/astro/MissingPermalink.astro";
 import Base from "../layouts/Base.astro";
+import { docsPath } from "../site.ts";
 
-const base = import.meta.env.BASE_URL;
+// Most addresses the site doesn't have are the docs' (a page that moved, or
+// one from before the docs were under /docs/), so the 404 page is in their
+// frame and offers their start page.
+const docs = `${import.meta.env.BASE_URL}${docsPath}`;
 ---
 
-<Base title="Page not found">
+<Base title="Page not found" docs>
   <main id="content" class="page">
     <article>
       <h1>Page not found</h1>
       <p>
         There's no page at this address. It may have moved: try the navigation, search, or the <a
-          href={base}>start page</a
+          href={docs}>docs' start page</a
         >.
       </p>
       {/* The paragraph above already offers the start page and search, so the
