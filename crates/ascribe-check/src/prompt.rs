@@ -70,6 +70,11 @@ pub struct Context {
     /// The files with unsaved changes, relative to the project root, as a
     /// diagnostic's file is shown.
     pub unsaved: Vec<String>,
+    /// The command that runs Ascribe where the agent is, when `ascribe`
+    /// isn't it: the path of the binary the editor runs, which the editor
+    /// sends when `ascribe` on its path is another binary or none. `None`:
+    /// `ascribe`.
+    pub program: Option<String>,
 }
 
 impl Context {
@@ -97,6 +102,7 @@ impl Context {
             agents,
             builds,
             unsaved: Vec::new(),
+            program: None,
         }
     }
 
@@ -105,6 +111,22 @@ impl Context {
     pub fn with_unsaved(mut self, unsaved: Vec<String>) -> Context {
         self.unsaved = unsaved;
         self
+    }
+
+    /// The same context, with Ascribe run as `program`; `None` for
+    /// `ascribe`.
+    #[must_use]
+    pub fn with_program(mut self, program: Option<String>) -> Context {
+        self.program = program;
+        self
+    }
+
+    /// The first word of every command in the prompt: `ascribe`, or the
+    /// program as a shell reads it.
+    pub fn ascribe(&self) -> String {
+        self.program
+            .as_deref()
+            .map_or_else(|| "ascribe".to_owned(), shell_word)
     }
 
     /// A path relative to the project root, from the repository's root.
@@ -125,7 +147,8 @@ impl Context {
                 code_list(names)
             )),
             Builds::Editor(name) => lines.push(format!(
-                "Build: `{name}`, the editor's. `ascribe check` checks every build."
+                "Build: `{name}`, the editor's. `{} check` checks every build.",
+                self.ascribe()
             )),
         }
     }
@@ -139,7 +162,7 @@ impl Context {
         }
         lines.push(format!(
             "When you're done, run `{}` and fix what it reports.",
-            check_command(targets, &[])
+            self.check_command(targets, &[])
         ));
         lines
     }
@@ -155,6 +178,15 @@ impl Context {
             "When you're done, run `{command}` and fix what it reports."
         ));
         lines
+    }
+
+    /// `ascribe check` on `targets` (relative to the repository's root),
+    /// with `options` after them.
+    fn check_command(&self, targets: &[String], options: &[&str]) -> String {
+        let mut words = vec![self.ascribe(), "check".to_owned()];
+        words.extend(targets.iter().map(|t| shell_word(t)));
+        words.extend(options.iter().map(|o| (*o).to_owned()));
+        words.join(" ")
     }
 
     /// The lines that end a prompt that asks for a report, not edits: the
@@ -192,15 +224,6 @@ fn has_agents_md(dir: &Path) -> bool {
     // Outside FileSystem: the agents' instructions file sits beside the
     // project or at the repository's root, not among the project's sources.
     dir.join("AGENTS.md").is_file()
-}
-
-/// `ascribe check` on `targets` (relative to the repository's root), with
-/// `options` after them.
-fn check_command(targets: &[String], options: &[&str]) -> String {
-    let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
-    words.extend(targets.iter().map(|t| shell_word(t)));
-    words.extend(options.iter().map(|o| (*o).to_owned()));
-    words.join(" ")
 }
 
 /// A word as a POSIX shell reads it: as it is when it's plain, else in single
@@ -332,7 +355,7 @@ pub fn file(
     shown_on_line(project, context, file, shown_on, &mut place);
 
     let target = context.in_repository(&path);
-    let rest = check_command(std::slice::from_ref(&target), &["--format", "concise"]);
+    let rest = context.check_command(std::slice::from_ref(&target), &["--format", "concise"]);
     let order = in_order(reported);
     let mut listed: Vec<String> = order
         .iter()
@@ -404,7 +427,7 @@ pub fn project(
     }
     context.project_lines(&mut place);
 
-    let concise = check_command(&targets, &["--format", "concise"]);
+    let concise = context.check_command(&targets, &["--format", "concise"]);
     let files = files_of(project, reported);
     let mut listed = vec!["Problems by file:".to_owned()];
     listed.extend(
@@ -579,7 +602,8 @@ fn shown_on_line(
     let mut line = format!("Shown on: {}", pages.join(", "));
     if more > 0 {
         let refs = format!(
-            "ascribe refs {}",
+            "{} refs {}",
+            context.ascribe(),
             shell_word(&context.in_repository(&path_of(project, file)))
         );
         line.push_str(&format!(", and {more} more: `{refs}`"));
