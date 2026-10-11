@@ -24,7 +24,7 @@ All in `crates/`. Each depends only on the crates listed for it in [How the crat
 | [`ascribe-query`](crates/ascribe-query) | Answers about a project that change nothing: a diagnostic explained, the content model, a page's outline, a link, a page rendered for one build, where something is used, the project's rules for an agent, and the report on what state a project is in (`report`). |
 | [`ascribe-lsp`](crates/ascribe-lsp) | The language server, run as `ascribe lsp`. |
 | [`ascribe-mcp`](crates/ascribe-mcp) | The Model Context Protocol over standard input and output, for `ascribe mcp`: messages, revisions, and errors. What the server offers is the binary's (`crates/ascribe-cli/src/mcp/`), since each tool returns what its command writes. |
-| [`ascribe-cli`](crates/ascribe-cli) | The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`, `mcp`, `agents`, `report`, and the commands that answer questions (`explain`, `model`, `outline`, `link`, `refs`, `render`). |
+| [`ascribe-cli`](crates/ascribe-cli) | The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`, `mcp`, `agents`, `report`, `rename`, and the commands that answer questions (`explain`, `model`, `outline`, `link`, `refs`, `render`). |
 | [`comrak-ascribe`](crates/comrak-ascribe) | A fork of the comrak CommonMark parser, with Ascribe's block-level changes. Each change is marked `// ASCRIBE:` and listed in [FORK.md](crates/comrak-ascribe/FORK.md). It doesn't use the workspace lints. |
 
 ### npm packages
@@ -135,6 +135,7 @@ Each command is one call into a library, after the project is loaded. The call t
 | `outline` | `ascribe_query::outline` | Over `Project::index`, as the rest below. |
 | `link` | `ascribe_query::link` | |
 | `refs` | `ascribe_query::refs` | The CLI adds `next_command` when the list is cut. |
+| `rename` | `ascribe_lsp::rename` | Loads the project as the language server does and makes the edits of its rename and of a file's move (`crates/ascribe-lsp/src/refactor.rs`), asked by name instead of at a position. Returns each file's text after, and the CLI writes them and moves the page. |
 | `render` | `ascribe_query::render` | |
 | `report` | `ascribe_query::report` | Takes the programs it runs as `report::Tools`, `Tools::installed()` in the binary and stand-ins in tests. The CLI writes the JSON (`crates/ascribe-cli/src/commands/report/json.rs`), whose findings are `check`'s diagnostics, and builds `--format prompt` with `ascribe_check::prompt::batch`. |
 | `agents sync` | `ascribe_query::rules` | The files each agent reads, and the skill, are the binary's: `crates/ascribe-cli/src/agents/`, the one place that knows about particular agents. It finds the repository's root with `ascribe_diff::Repository`. |
