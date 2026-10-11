@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [SEO and AEO for technical docs](../reports/SEO%20and%20AEO%20for%20technical%20docs.md).
 
+The plan for building it is in [search-and-answers/](../search-and-answers/README.md).
+
 ## The goal
 
 A site built with Ascribe is found by search engines, read correctly by AI assistants and coding agents, and tells a consistent story to both. The team that runs it can see and control how each page is treated, from the source, before anything is deployed.
