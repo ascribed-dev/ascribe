@@ -80,13 +80,25 @@ With `--vale`, or with `in-check = true` in [`[checks.vale]`](content-model.md#c
 @available: next
 `--summary` replaces the list with how many diagnostics each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first. The text lists at most 20 files, then the command whose JSON lists them all.
 
+### Applying the safe fixes
+
+@available: next
+`--fix` applies every fix marked `safe`, then reports what's left, as `ascribe fmt` rewrites what it can. A fix is safe only when applying it can't change what the page says and leaves nothing to decide, such as linking to a page's file instead of its route, or removing an acknowledgement that covers nothing. An `unsafe` fix, such as the nearest spelling of a misspelled name, is never applied: it stays in the report for you to decide.
+
+```sh
+npx ascribe check --fix
+```
+
+@available: next
+Only the fixes of the diagnostics reported are applied, so `ascribe check docs/guides/install.md --fix` changes nothing outside what counts for that file. The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`), and the rest of the report, and the exit code, are those of the check after the fixes. Two fixes that would edit the same text are one too many: the first is applied, and the other's problem is reported again, for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
+
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
 | `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
 | `1` | There are errors, or warnings with `--deny-warnings`. |
-| `2` | The project couldn't be checked: a usage error, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), or a path that doesn't exist or isn't in the project. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
+| `2` | The project couldn't be checked: a usage error, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
 
@@ -119,6 +131,7 @@ A problem [acknowledged as intended](directives.md#intended) isn't listed, and d
 | `total` | number | How many there are |
 | `next_command` | string or null | When `truncated`, the command that lists the rest |
 | `acknowledged` | array | The problems [acknowledged as intended](directives.md#intended), which `diagnostics` leaves out, in file order: `{code, slug, message, file, range, builds, reason, at}`, where `reason` is the acknowledgement's and `at` (`{file, range}`) is where it's written. With paths, those in the files named. Left out when there are none, and with `--summary`. |
+| `fixed` | array | With `--fix`, the safe fixes it applied, in file order: `{code, slug, title, file}`, where `code` and `slug` are the fixed diagnostic's and `title` is the fix's. The rest of the report is the check after them. Left out when none was applied. |
 | `summary` | object | `errors`, `warnings`, and `advice`: how many of each, and `acknowledged`, how many problems are acknowledged, when there are some. With `--summary`, also `by_code` (`{code, slug, severity, count}`) and `by_file` (`{file, errors, warnings, advice}`), most first. |
 
 Each diagnostic:
@@ -618,7 +631,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-model
 @available: next
 
-Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, and builds. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
+Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
 
 @include: ../_generated/cli-model-options.md
 
@@ -631,7 +644,7 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, and `builds`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports.md#ascribe-model) lists each section's fields.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports.md#ascribe-model) lists each section's fields.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
@@ -779,7 +792,7 @@ With `--cloud`, it also writes what [Copilot's cloud agent](../guides/agents.md#
 
 @include: ../_generated/cli-agents-sync-options.md
 
-It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
+It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
 
 | Code | Meaning |
 |---|---|

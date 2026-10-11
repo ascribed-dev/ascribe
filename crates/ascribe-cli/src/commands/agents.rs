@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use ascribe_check::{LocateError, MODEL_FILE, Project};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 
-use crate::agents::sync::{self, Plan};
+use crate::agents::sync::{self, Agent, Plan};
 use crate::agents::{checker, copilot, hook, prompts, skill};
 use crate::answer::{self, FromDisk};
 use crate::cli::Global;
@@ -285,7 +285,8 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     }
     // Several projects share files at the root, so each is planned again
     // once the one before it is written.
-    let mut written: Vec<(PathBuf, bool)> = Vec::new();
+    let mut written: Vec<Recorded> = Vec::new();
+    let mut unread: Vec<&str> = Vec::new();
     let mut mcp_settings: Vec<String> = Vec::new();
     for (i, project) in projects.iter().enumerate() {
         let plan = if i == 0 {
@@ -300,15 +301,30 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
             return exit::fail(err, &e);
         }
         record(&mut written, &plan);
+        for line in &plan.unread {
+            if !unread.contains(line) {
+                unread.push(line);
+            }
+        }
         if let Some(json) = plan.mcp_settings
             && !mcp_settings.contains(&json)
         {
             mcp_settings.push(json);
         }
     }
-    let result = written.iter().try_for_each(|(path, changed)| {
-        let done = if *changed { "wrote" } else { "unchanged" };
-        writeln!(out, "{done:<9} {}", shown(path))
+    let paths: Vec<String> = written.iter().map(|(path, ..)| shown(path)).collect();
+    let width = paths.iter().map(|p| p.chars().count()).max().unwrap_or(0);
+    let result = written
+        .iter()
+        .zip(&paths)
+        .try_for_each(|((_, changed, readers), path)| {
+            let done = if *changed { "wrote" } else { "unchanged" };
+            writeln!(out, "{done:<9} {path:<width$}  read by {}", list(readers))
+        });
+    let result = result.and_then(|()| {
+        unread
+            .iter()
+            .try_for_each(|line| write!(out, "\n{line}.\n"))
     });
     let result = result.and_then(|()| {
         if mcp_settings.is_empty() {
@@ -326,14 +342,28 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
+/// A file `sync` writes: where, whether it changes, and who reads it.
+type Recorded = (PathBuf, bool, &'static [Agent]);
+
 /// Adds `plan`'s files to `files`, each once, in the order they're first
 /// planned: changed when any plan changes it.
-fn record(files: &mut Vec<(PathBuf, bool)>, plan: &Plan) {
+fn record(files: &mut Vec<Recorded>, plan: &Plan) {
     for file in &plan.files {
-        match files.iter_mut().find(|(path, _)| *path == file.path) {
-            Some((_, changed)) => *changed |= file.changes(),
-            None => files.push((file.path.clone(), file.changes())),
+        match files.iter_mut().find(|(path, ..)| *path == file.path) {
+            Some((_, changed, _)) => *changed |= file.changes(),
+            None => files.push((file.path.clone(), file.changes(), file.readers)),
         }
+    }
+}
+
+/// Agents' names as a list in a sentence: `Codex, Copilot, and Cursor`.
+fn list(agents: &[Agent]) -> String {
+    let names: Vec<&str> = agents.iter().map(|a| a.name()).collect();
+    match names.as_slice() {
+        [] => String::new(),
+        [one] => (*one).to_owned(),
+        [first, second] => format!("{first} and {second}"),
+        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
     }
 }
 
@@ -392,14 +422,14 @@ fn check(plans: &[Plan], out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     for plan in plans {
         record(&mut files, plan);
     }
-    let result = files.iter().try_for_each(|(path, changed)| {
+    let result = files.iter().try_for_each(|(path, changed, _)| {
         let state = if *changed { "stale" } else { "up to date" };
         writeln!(out, "{state:<10} {}", shown(path))
     });
     if let Some(code) = answer::written(result, err) {
         return code;
     }
-    let stale = files.iter().filter(|(_, changed)| *changed).count();
+    let stale = files.iter().filter(|(_, changed, _)| *changed).count();
     if stale == 0 {
         return exit::OK;
     }

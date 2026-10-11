@@ -38,6 +38,7 @@ mod builds;
 mod checks;
 mod diagnostic;
 mod evidence;
+pub mod fix;
 pub mod intended;
 mod levels;
 pub mod links;

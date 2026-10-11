@@ -9,6 +9,7 @@
   - `glossary`: Glossary terms.
   - `widgets`: Project widgets, with their attributes.
   - `builds`: Builds, with their variant and availability modes.
+  - `sources`: Sources, with their folders and the files they make readable.
 - `--format <FORMAT>`: How to show the answer.
   - `text` (the default): Short text, for people and agents to read.
   - `json`: One JSON document, for tools.

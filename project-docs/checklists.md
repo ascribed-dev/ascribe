@@ -22,7 +22,7 @@ New or changed syntax, a directive, a block or inline form, an attribute, or wha
 **Checking it**
 
 - [ ] The checks, in `crates/ascribe-check/src/checks/`.
-- [ ] Each new or changed diagnostic, in `tests/conformance/diagnostics.toml` only; the diagnostics reference is generated from it.
+- [ ] Each new or changed diagnostic, in `tests/conformance/diagnostics.toml` only; the diagnostics reference is generated from it. Its `reference` names the section of the directive or `ascribe.toml` reference its entry sends a reader on to.
 - [ ] **What a diagnostic says.** Its message says what's wrong, naming the thing in backticks, starting in lower case, with no full stop: `` `{path}` doesn't exist ``. Its fix text says what to do, in sentences. Its kind of next step is true of every instance: `choose` only when Ascribe lists what to choose from, `fix` only when there's a fix to apply. People and agents are told about a *problem*; *diagnostic* is the kind of problem, with a code, that the reference and `ascribe explain` describe.
 
 **Each output, and its contract**

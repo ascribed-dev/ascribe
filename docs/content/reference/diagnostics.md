@@ -11,6 +11,8 @@ Every problem Ascribe reports, with its code, its name, and how to fix it. `ascr
 - A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops everything else when it's an error: every other check depends on the content model.
 - In the messages below, `{name}` stands for a value filled in from your source.
 
+Each entry ends with the section of the [directive reference](directives.md) or the [`ascribe.toml` reference](content-model.md) about what it checks, which has examples, and links to its part of the specification.
+
 In the editor, many diagnostics offer a quick fix. See [Editing](../guides/editor.md).
 
 ## What to do next

@@ -109,9 +109,10 @@ pub struct Fix {
     pub applicability: Applicability,
 }
 
-/// Whether a [`Fix`] can be applied as it is. Nothing applies fixes on its
-/// own; the label lets a reader, such as an agent, tell a fix that only
-/// rewrites what's already meant from one that guesses.
+/// Whether a [`Fix`] can be applied as it is. The label lets a reader, such
+/// as an agent, tell a fix that only rewrites what's already meant from one
+/// that guesses; `ascribe check --fix` applies the safe ones, and nothing
+/// applies an unsafe one without a person choosing it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Applicability {

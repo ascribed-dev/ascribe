@@ -274,7 +274,11 @@ fn at_a_root_with_several_projects_each_is_synced() {
         stderr(&out)
     );
     let text = stdout(&out);
-    assert_eq!(text.matches(" AGENTS.md\n").count(), 1, "{text}");
+    let root_agents_md = text
+        .lines()
+        .filter(|l| l.split_whitespace().nth(1) == Some("AGENTS.md"))
+        .count();
+    assert_eq!(root_agents_md, 1, "{text}");
     assert!(
         text.contains("wrote     handbook/pages/security/AGENTS.md"),
         "{text}"
@@ -306,6 +310,44 @@ fn a_second_sync_changes_nothing() {
         .collect();
     assert_eq!(before, after);
     run(repo.path(), &["agents", "sync", "--check"], 0);
+}
+
+#[test]
+fn each_file_says_who_reads_it() {
+    let repo = repository("quill");
+    let root = repo.path();
+    let text = stdout(&sync(root, ".", &[]));
+    let line = |path: &str| line_of(&text, path);
+    assert!(
+        line("AGENTS.md").ends_with("  read by Claude Code, Codex, Copilot, and Cursor"),
+        "{text}"
+    );
+    assert!(
+        line(".agents/skills/ascribe/SKILL.md")
+            .ends_with("  read by Codex, Copilot, Cursor, and Gemini CLI"),
+        "{text}"
+    );
+    // The skill Claude Code doesn't read, and the target that writes the
+    // one it does.
+    let missing = "Claude Code doesn't read the skill in .agents/skills/; `--target claude`";
+    assert!(text.contains(missing), "{text}");
+    let text = stdout(&sync(root, ".", &["--target", "claude"]));
+    assert!(
+        line_of(&text, ".claude/skills/ascribe/SKILL.md").ends_with("  read by Claude Code"),
+        "{text}"
+    );
+    assert!(!text.contains(missing), "{text}");
+    // `--check` says only whether each file is current.
+    let check = stdout(&run(root, &["agents", "sync", "--check"], 0));
+    assert!(!check.contains("read by"), "{check}");
+}
+
+/// The line `sync` printed about `path`.
+fn line_of(text: &str, path: &str) -> String {
+    text.lines()
+        .find(|l| l.split_whitespace().nth(1) == Some(path))
+        .unwrap_or_else(|| panic!("no {path}: {text}"))
+        .to_owned()
 }
 
 #[test]

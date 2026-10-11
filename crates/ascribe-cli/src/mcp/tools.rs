@@ -113,7 +113,7 @@ pub const TOOLS: &[Spec] = &[
         command: "ascribe model",
         description: "Read what a project's content model allows before writing frontmatter, \
             a directive's attributes, or a phrase: page types and their fields, dimensions, \
-            phrases, features, glossary terms, widgets, and builds. Example: {\"path\": \
+            phrases, features, glossary terms, widgets, builds, and sources. Example: {\"path\": \
             \"docs\", \"section\": \"phrases\"} returns `phrases` such as `{\"key\": \
             \"product\", \"value\": \"Quill\"}`.",
         input: || {
@@ -127,8 +127,7 @@ pub const TOOLS: &[Spec] = &[
                     },
                     "section": {
                         "type": "string",
-                        "enum": ["types", "dimensions", "phrases", "features", "glossary",
-                            "widgets", "builds"],
+                        "enum": model_sections(),
                         "description": "Only this section.",
                     },
                 },
@@ -584,6 +583,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         deny_warnings: false,
+        fix: false,
         vale: false,
         vale_timeout: None,
         // The tool says it only reads: it starts no program the project
@@ -623,6 +623,15 @@ fn call_explain(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, Strin
         format!("{e}\n`ascribe explain --list` lists every diagnostic's code and name")
     })?;
     json_result(&explanation)
+}
+
+/// The names `ascribe model --section` takes.
+fn model_sections() -> Vec<String> {
+    <model::Section as clap::ValueEnum>::value_variants()
+        .iter()
+        .filter_map(clap::ValueEnum::to_possible_value)
+        .map(|value| value.get_name().to_owned())
+        .collect()
 }
 
 fn call_model(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {

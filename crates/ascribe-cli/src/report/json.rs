@@ -57,8 +57,44 @@ pub(crate) struct Report<'a> {
     /// there are none, and with `--summary`.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     acknowledged: Vec<AcknowledgedEntry>,
+    /// With `--fix`, the safe fixes it applied, in file order and, within a
+    /// file, in the order of their diagnostics; the rest of the report is
+    /// the check after them. Left out when none was applied.
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    fixed: &'a [FixedEntry],
     /// How many errors, warnings, and advice.
     summary: Summary,
+}
+
+/// A safe fix `--fix` applied.
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub struct FixedEntry {
+    /// The code of the diagnostic it fixed, such as `ASC036`.
+    pub code: &'static str,
+    /// The diagnostic's name.
+    pub slug: String,
+    /// What the fix did.
+    pub title: String,
+    /// The file it changed, as a diagnostic's `file` is.
+    pub file: String,
+}
+
+impl FixedEntry {
+    /// The fixes applied to each file, in the files' order.
+    pub fn of(files: &[ascribe_check::fix::FixedFile]) -> Vec<FixedEntry> {
+        files
+            .iter()
+            .flat_map(|f| {
+                f.applied.iter().map(|a| FixedEntry {
+                    code: a.code,
+                    slug: a.slug.clone(),
+                    title: a.title.clone(),
+                    file: f.display_path.clone(),
+                })
+            })
+            .collect()
+    }
 }
 
 /// How many diagnostics of each severity.
@@ -376,6 +412,8 @@ pub struct About<'a> {
     /// With `--summary`, the command that lists the diagnostics: the list is
     /// left out, and counted instead.
     pub summary_only: Option<String>,
+    /// With `--fix`, the safe fixes applied before the check reported.
+    pub fixed: &'a [FixedEntry],
 }
 
 impl About<'_> {
@@ -388,6 +426,7 @@ impl About<'_> {
             builds_checked: Vec::new(),
             acknowledged: &[],
             summary_only: None,
+            fixed: &[],
         }
     }
 }
@@ -452,6 +491,7 @@ pub fn write(
                 .map(|a| acknowledged(files, a))
                 .collect()
         },
+        fixed: about.fixed,
         summary: Summary {
             errors: counts.errors,
             warnings: counts.warnings,
