@@ -819,7 +819,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/300"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Website: move the docs to /docs/ and put a landing page at the root"
     },
     {
@@ -833,7 +833,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XSg",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Website: the landing page's demonstration, claims, and marks"
     },
     {
