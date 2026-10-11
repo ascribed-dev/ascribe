@@ -22,15 +22,41 @@
 //
 //   // src/pages/404.astro
 //   import MissingPermalink from "@ascribed/astro/MissingPermalink.astro"; // a permalink that isn't here
+//
+// Several projects in one site, each entry named, and each collection naming its entry:
+//
+//   ascribe({
+//     projects: [
+//       { name: "docs", project: "../docs", build: "site" },
+//       { name: "home", project: "home", build: "site" },
+//     ],
+//     review: "docs",
+//   })
+//   ascribeCollection({ schema, name: "docs" })
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
 import { codeTitles } from "./code-titles.js";
-import { SeenFiles, watchDev } from "./dev.js";
-import { agentsMiddleware, copyAgentFiles, copyPublishedFiles, filesMiddleware } from "./files.js";
-import { permalinkPattern, readPermalinks } from "./permalinks.js";
+import { SeenFiles, watchDev, type DevBuilds } from "./dev.js";
+import {
+  agentsMiddleware,
+  copyAgentFiles,
+  copyPublishedFiles,
+  filesMiddleware,
+  folderUnder,
+} from "./files.js";
+import { hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import { consumerMismatches, homeRoute, readProject } from "./project.js";
+import {
+  basePathClashes,
+  nameProblems,
+  pagesUnderOtherPaths,
+  permalinkProblems,
+  type ProjectEntry,
+  type ResolvedEntry,
+} from "./projects.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
 import { runDiff, runPrompt } from "./review/diff.js";
@@ -43,16 +69,13 @@ import { copySchema } from "./schema.js";
 
 export { default as rehypeAscribeAttributes } from "./rehype.js";
 export { satteriAscribeAttributes } from "./satteri.js";
+export type { ProjectEntry } from "./projects.js";
 
-/** The virtual module `content.ts` reads the resolved site output root from. */
+/** The virtual module `content.ts` reads the resolved site output roots from. */
 const SITE_MODULE = "virtual:ascribe/site";
 
-/** Options of the integration. */
-export interface AscribeOptions {
-  /** The build whose site output is the collection (a name in `ascribe.toml`). */
-  build: string;
-  /** The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. */
-  project?: string;
+/** Options every form of the integration takes. */
+interface SharedOptions {
   /**
    * The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then
    * the platform binary installed with `@ascribed/cli`.
@@ -68,9 +91,10 @@ export interface AscribeOptions {
    * Review in the site preview: an **Ascribe review** app in `astro dev`'s
    * toolbar, which marks the page's changes and shows the pull request's
    * comments, with source anchors in `astro dev`. Default `true`; `false`
-   * removes the app. `astro build` never has it.
+   * removes the app. `astro build` never has it. With several projects, it
+   * reviews one: the entry a name names, or the first for `true`.
    */
-  review?: boolean;
+  review?: boolean | string;
   /**
    * Show a code block's title (`title="…"` in its info string, as `@snippet`
    * writes it) above it, with a Shiki transformer that puts the block in a
@@ -79,32 +103,73 @@ export interface AscribeOptions {
   codeTitles?: boolean;
 }
 
+/** Options of the integration with one project. */
+export interface OneProjectOptions extends SharedOptions {
+  /** The build whose site output is the collection (a name in `ascribe.toml`). */
+  build: string;
+  /** The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. */
+  project?: string;
+  projects?: never;
+}
+
+/** Options of the integration with several projects, each entry named. */
+export interface ProjectsOptions extends SharedOptions {
+  /** The projects, each a named build of a project; two entries may share a project. */
+  projects: ProjectEntry[];
+  build?: never;
+  project?: never;
+}
+
+/** Options of the integration. */
+export type AscribeOptions = OneProjectOptions | ProjectsOptions;
+
 /** The toolbar app's icon: a speech bubble over a page. */
 const ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v6"/><path d="M14 3v4h4"/><path d="M6 3v15"/><path d="M11 14h10v6h-6l-3 2v-2h-1z"/></svg>';
 
+/** An entry as the hooks use it. */
+interface Entry extends ResolvedEntry {
+  siteRoot: string;
+  /** The plain output's root, when the project publishes it for agents. */
+  agentsRoot: string | undefined;
+  /** Where the generated schema's copy goes, inside the Astro root. */
+  schemaDir: string;
+}
+
+/** A project with the entries that build it, which a dev watcher follows together. */
+interface DevGroup {
+  project: ResolvedEntry["project"];
+  entries: Entry[];
+  rebuild: () => Promise<void>;
+  builds?: DevBuilds;
+}
+
+function fail(problems: string[], what: string): void {
+  if (problems.length > 0) throw new Error(`@ascribed/astro: ${what}:\n- ${problems.join("\n- ")}`);
+}
+
 /**
- * Runs `ascribe build`, checks the site's routing, adds the markdown plugin, adds a page for each
- * permalink's address, and serves published files, and, with `[consumer] agents = true`, `llms.txt`
- * and each page's Markdown.
+ * Runs `ascribe build` for each project, checks the site's routing, adds the markdown plugin, adds a
+ * page for each permalink's address, and serves published files, and, with `[consumer] agents = true`,
+ * `llms.txt` and each page's Markdown, each at its project's base path.
  */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
-  let siteRoot = "";
-  /** The plain output's root, when the project publishes it for agents. */
-  let agentsRoot: string | undefined;
-  let devProject: ReturnType<typeof readProject> | undefined;
-  let devConfig:
+  /** With `projects`; otherwise the one entry has no name a collection gives. */
+  const named = options.projects !== undefined;
+  let entries: Entry[] = [];
+  let groups: DevGroup[] = [];
+  let routing:
     | {
         base: string;
         trailingSlash: string;
         site: string | undefined;
       }
     | undefined;
-  let rebuild: (() => Promise<void>) | undefined;
   /** The dev server's sources as its first build read them. */
   const seen = new SeenFiles();
   let binary: string | undefined;
-  let reviewing = false;
+  let reviewed: Entry | undefined;
+  let devCommand = false;
   let devHttps = false;
   let review: ReviewServer | undefined;
   return {
@@ -120,21 +185,50 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         injectRoute,
       }) => {
         const root = fileURLToPath(config.root);
-        const project = readProject(path.resolve(root, options.project ?? "."));
-        // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build.
-        siteRoot = project.siteRoot(options.build);
-        if (project.consumer.agents) agentsRoot = project.plainRoot(options.build);
+        const list: ProjectEntry[] = options.projects ?? [
+          {
+            name: "",
+            build: options.build,
+            ...(options.project === undefined ? {} : { project: options.project }),
+          },
+        ];
+        if (named) fail(nameProblems(list), "the `projects` option is wrong");
+        const codegen = command === "preview" ? "" : fileURLToPath(createCodegenDir());
+        entries = list.map((entry) => {
+          const project = readProject(path.resolve(root, entry.project ?? "."));
+          return {
+            name: entry.name,
+            build: entry.build,
+            project,
+            // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build.
+            siteRoot: project.siteRoot(entry.build),
+            agentsRoot: project.consumer.agents ? project.plainRoot(entry.build) : undefined,
+            schemaDir: named ? path.join(codegen, entry.name) : codegen,
+          };
+        });
 
         // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
-        const problems = consumerMismatches(project, {
-          base: config.base,
-          trailingSlash: config.trailingSlash,
-          site: config.site,
-        });
-        if (problems.length > 0) {
-          throw new Error(
-            `@ascribed/astro: ascribe.toml and astro.config disagree:\n- ${problems.join("\n- ")}`,
+        const astro = { base: config.base, trailingSlash: config.trailingSlash, site: config.site };
+        for (const entry of entries) {
+          fail(
+            consumerMismatches(entry.project, astro),
+            named
+              ? `"${entry.name}"'s ascribe.toml and astro.config disagree`
+              : "ascribe.toml and astro.config disagree",
           );
+        }
+        fail(basePathClashes(entries), "two projects share a base path");
+
+        if (typeof options.review === "string" && !entries.some((e) => e.name === options.review)) {
+          throw new Error(
+            `@ascribed/astro: \`review\` names "${options.review}", and no entry of \`projects\` has that name.`,
+          );
+        }
+        if (reviewFor(options.review, command)) {
+          reviewed =
+            typeof options.review === "string"
+              ? entries.find((e) => e.name === options.review)
+              : entries[0];
         }
 
         // Where a markdown plugin goes depends on the processor Astro 7.3 runs.
@@ -154,14 +248,9 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           );
         }
 
-        devConfig = {
-          base: config.base,
-          trailingSlash: config.trailingSlash,
-          site: config.site,
-        };
+        routing = astro;
 
-        reviewing = reviewFor(options.review, command);
-        if (reviewing) {
+        if (reviewed !== undefined) {
           addDevToolbarApp({
             id: APP_ID,
             name: "Ascribe review",
@@ -173,45 +262,85 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         if (command !== "preview") {
           const found = findBinary({ binary: options.binary, root });
           binary = found;
-          // The schema's copy inside the Astro root, for content.config.ts to import.
-          const codegen = fileURLToPath(createCodegenDir());
-          rebuild = async () => {
-            logger.info(`running ${path.basename(found)} build for "${options.build}"`);
+          const buildEntry = async (entry: Entry) => {
+            logger.info(
+              `running ${path.basename(found)} build for "${entry.build}"${named ? ` (${entry.name})` : ""}`,
+            );
             const result = await runBuild({
               binary: found,
-              configPath: project.configPath,
-              build: options.build,
-              cwd: project.dir,
-              anchors: anchorsFor(options.anchors, command, reviewing),
+              configPath: entry.project.configPath,
+              build: entry.build,
+              cwd: entry.project.dir,
+              anchors: anchorsFor(options.anchors, command, entry === reviewed),
               outputs: [
                 "site",
                 // `llms.txt` and each page's Markdown, which agents read.
-                ...(agentsRoot === undefined ? [] : (["plain"] as const)),
+                ...(entry.agentsRoot === undefined ? [] : (["plain"] as const)),
                 // While review is on, the JSON output says which page is at each route.
-                ...(review?.active ? (["json"] as const) : []),
+                ...(entry === reviewed && review?.active ? (["json"] as const) : []),
               ],
             });
             if (hasWarnings(result.diagnostics)) logger.warn(result.diagnostics);
             else if (result.diagnostics !== "") logger.info(result.diagnostics);
             if (result.summary !== "") logger.info(result.summary);
-            copySchema(siteRoot, codegen);
+            // The schema's copy inside the Astro root, for content.config.ts to import.
+            mkdirSync(entry.schemaDir, { recursive: true });
+            copySchema(entry.siteRoot, entry.schemaDir);
           };
+          // What the projects share, which no one project's build can see.
+          const checkShared = () => {
+            if (entries.length < 2) return;
+            const current = entries.map((entry) => ({
+              ...entry,
+              project: readProject(entry.project.dir),
+            }));
+            fail(basePathClashes(current), "two projects share a base path");
+            fail(pagesUnderOtherPaths(current), "a page is under another project's base path");
+            fail(
+              permalinkProblems(
+                current,
+                current.map((entry) => readPermalinks(entry.siteRoot)),
+              ),
+              "the projects' permalinks can't share one route",
+            );
+          };
+          // One group for each project: a change rebuilds the project it's in.
+          const byDir = new Map<string, Entry[]>();
+          for (const entry of entries) {
+            byDir.set(entry.project.dir, [...(byDir.get(entry.project.dir) ?? []), entry]);
+          }
+          groups = [...byDir.values()].map((group) => ({
+            project: (group[0] as Entry).project,
+            entries: group,
+            rebuild: async () => {
+              for (const entry of group) await buildEntry(entry);
+              checkShared();
+            },
+          }));
           // The sources as the first build reads them: the watcher may report their edits late.
-          if (command === "dev") seen.prime([project.contentRoot, project.configPath]);
-          await rebuild();
-          if (command === "dev") devProject = project;
+          if (command === "dev") {
+            for (const group of groups)
+              seen.prime([group.project.contentRoot, group.project.configPath]);
+          }
+          for (const entry of entries) await buildEntry(entry);
+          checkShared();
+          devCommand = command === "dev";
 
-          // Each permalink's address, a page that forwards to its heading.
-          const permalinks = readPermalinks(siteRoot);
-          if (permalinks !== undefined) {
+          // Each permalink's address, a page that forwards to its heading. One route serves every
+          // list, at the path of the first that names anything.
+          const lists = entries.flatMap((entry) => readPermalinks(entry.siteRoot) ?? []);
+          const served = lists.find(hasPermalinks) ?? lists[0];
+          if (served !== undefined) {
             injectRoute({
-              pattern: permalinkPattern(permalinks.path, config.base),
+              pattern: permalinkPattern(served.path, config.base),
               entrypoint: new URL("../src/Permalink.astro", import.meta.url),
               prerender: true,
             });
           }
         }
 
+        const projectHome = (entry: Entry) =>
+          homeRoute(entry.project.consumer.basePath, config.trailingSlash);
         // Dev serving of `_ascribe/files/`, and of the plain output for agents; the build copies them in `astro:build:done`.
         updateConfig({
           ...(options.codeTitles === false
@@ -226,17 +355,25 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                 resolveId: (id) => (id === SITE_MODULE ? `\0${SITE_MODULE}` : undefined),
                 load: (id) =>
                   id === `\0${SITE_MODULE}`
-                    ? `export const siteRoot = ${JSON.stringify(siteRoot)};\n` +
-                      `export const home = ${JSON.stringify(homeRoute(config.base, config.trailingSlash))};`
+                    ? `export const siteRoot = ${JSON.stringify(entries[0]?.siteRoot ?? "")};\n` +
+                      `export const home = ${JSON.stringify(homeRoute(config.base, config.trailingSlash))};\n` +
+                      `export const collections = ${JSON.stringify(
+                        named ? Object.fromEntries(entries.map((e) => [e.name, e.siteRoot])) : {},
+                      )};\n` +
+                      `export const permalinks = ${JSON.stringify(
+                        entries.map((e) => ({ siteRoot: e.siteRoot, home: projectHome(e) })),
+                      )};`
                     : undefined,
               },
               {
                 name: "@ascribed/astro:files",
                 configureServer(server) {
-                  const base = config.base.endsWith("/") ? config.base : `${config.base}/`;
-                  server.middlewares.use(filesMiddleware(siteRoot, base));
-                  if (agentsRoot !== undefined)
-                    server.middlewares.use(agentsMiddleware(agentsRoot, base));
+                  for (const entry of entries) {
+                    const base = entry.project.consumer.basePath;
+                    server.middlewares.use(filesMiddleware(entry.siteRoot, base));
+                    if (entry.agentsRoot !== undefined)
+                      server.middlewares.use(agentsMiddleware(entry.agentsRoot, base));
+                  }
                 },
               },
             ],
@@ -244,72 +381,90 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         });
       },
       "astro:server:setup": ({ server, refreshContent, logger, toolbar }) => {
-        if (devProject && rebuild && devConfig) {
-          if (!refreshContent)
-            throw new Error("@ascribed/astro: this Astro version does not support refreshContent.");
-          const project = devProject;
-          devHttps = Boolean(server.config.server.https);
-          const builds = watchDev({
+        if (!devCommand || !routing) return;
+        if (!refreshContent)
+          throw new Error("@ascribed/astro: this Astro version does not support refreshContent.");
+        devHttps = Boolean(server.config.server.https);
+        for (const group of groups) {
+          group.builds = watchDev({
             server,
             seen,
             refreshContent: () => refreshContent({}),
             logger,
-            project,
-            astro: devConfig,
-            build: options.build,
-            rebuild,
-            onBuilt: () => review?.rebuilt(),
+            project: group.project,
+            astro: routing,
+            builds: group.entries.map((entry) => entry.build),
+            rebuild: group.rebuild,
+            onBuilt: () => {
+              if (reviewed !== undefined && group.entries.includes(reviewed)) review?.rebuilt();
+            },
           });
-          if (reviewing && binary !== undefined) {
-            const found = binary;
-            const run = { binary: found, configPath: project.configPath, cwd: project.dir };
-            const jsonRoot = path.join(path.dirname(siteRoot), "json");
-            review = new ReviewServer({
-              channel: toolbar as ToolbarChannel,
-              logger,
-              build: options.build,
-              contentRoot: project.contentRoot,
-              channelProblem: channelProblem(server.config),
-              diff: (base) => runDiff({ ...run, build: options.build, base }),
-              prompt: (page, base) => runPrompt({ ...run, build: options.build, base, path: page }),
-              projectDir: project.dir,
-              connect: async () => (await import("./review/github.js")).connect(project.dir),
-              writeRoutes: () =>
-                builds.inTurn(async () => {
-                  await runBuild({ ...run, build: options.build, outputs: ["json"] });
-                }),
-              readRoutes: () => readRoutes(jsonRoot),
-            });
-          }
+        }
+        const group = groups.find((g) => reviewed !== undefined && g.entries.includes(reviewed));
+        if (reviewed !== undefined && group?.builds !== undefined && binary !== undefined) {
+          const entry = reviewed;
+          const builds = group.builds;
+          const run = { binary, configPath: entry.project.configPath, cwd: entry.project.dir };
+          const jsonRoot = path.join(path.dirname(entry.siteRoot), "json");
+          review = new ReviewServer({
+            channel: toolbar as ToolbarChannel,
+            logger,
+            build: entry.build,
+            contentRoot: entry.project.contentRoot,
+            channelProblem: channelProblem(server.config),
+            diff: (base) => runDiff({ ...run, build: entry.build, base }),
+            prompt: (page, base) => runPrompt({ ...run, build: entry.build, base, path: page }),
+            projectDir: entry.project.dir,
+            connect: async () => (await import("./review/github.js")).connect(entry.project.dir),
+            writeRoutes: () =>
+              builds.inTurn(async () => {
+                await runBuild({ ...run, build: entry.build, outputs: ["json"] });
+              }),
+            readRoutes: () => readRoutes(jsonRoot),
+          });
         }
       },
       "astro:server:start": ({ address, logger }) => {
         review?.listening(address.address);
-        if (!devProject || !devConfig) return;
-        const dir = devProject.dir;
-        try {
-          writeDevFile(dir, {
-            url: siteUrl(address, { https: devHttps, base: devConfig.base }),
-            build: options.build,
-            pid: process.pid,
-          });
-          // Vite exits on a signal before `astro:server:done` runs.
-          process.once("exit", () => removeDevFile(dir, process.pid));
-        } catch (error) {
-          logger.warn(
-            `couldn't write .ascribe/dev.json, which the editor's Open Site Preview reads: ${error instanceof Error ? error.message : String(error)}`,
-          );
+        if (!devCommand) return;
+        // Each project's folder gets its own file, with its own address: its base path.
+        for (const group of groups) {
+          const entry = group.entries[0] as Entry;
+          const dir = group.project.dir;
+          try {
+            writeDevFile(dir, {
+              url: siteUrl(address, { https: devHttps, base: entry.project.consumer.basePath }),
+              build: entry.build,
+              pid: process.pid,
+            });
+            // Vite exits on a signal before `astro:server:done` runs.
+            process.once("exit", () => removeDevFile(dir, process.pid));
+          } catch (error) {
+            logger.warn(
+              `couldn't write ${groups.length > 1 ? path.join(dir, ".ascribe", "dev.json") : ".ascribe/dev.json"}, which the editor's Open Site Preview reads: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
         }
       },
       "astro:server:done": () => {
         review?.dispose();
         review = undefined;
-        if (devProject) removeDevFile(devProject.dir, process.pid);
+        if (devCommand) for (const group of groups) removeDevFile(group.project.dir, process.pid);
       },
       "astro:build:done": async ({ dir, logger }) => {
-        if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _ascribe/files/");
-        if (agentsRoot !== undefined && (await copyAgentFiles(agentsRoot, dir)))
-          logger.info("copied llms.txt and each page's Markdown");
+        const base = routing?.base ?? "/";
+        // Entries of one project publish at one base path: the first entry's copies go last, so they win.
+        for (const entry of [...entries].reverse()) {
+          const folder = folderUnder(entry.project.consumer.basePath, base);
+          const where = folder === "" ? "" : ` to ${folder}`;
+          if (await copyPublishedFiles(entry.siteRoot, dir, folder))
+            logger.info(`copied _ascribe/files/${where}`);
+          if (
+            entry.agentsRoot !== undefined &&
+            (await copyAgentFiles(entry.agentsRoot, dir, folder))
+          )
+            logger.info(`copied llms.txt and each page's Markdown${where}`);
+        }
       },
     },
   };

@@ -8,17 +8,20 @@
 //   import MissingPermalink from "@ascribed/astro/MissingPermalink.astro";
 //   <MissingPermalink />
 //
-// `home` is where it sends the reader, the site's root by default. Children
-// replace its last paragraph, which offers the home page and searching.
-import { home as root, siteRoot } from "virtual:ascribe/site";
-import { readPermalinks } from "@ascribed/astro/permalinks";
+// `home` is where it sends the reader: by default the root of the project whose
+// permalinks it explains, which with several projects is the first that has
+// any. Children replace its last paragraph, which offers the home page and
+// searching.
+import { home as root, permalinks } from "virtual:ascribe/site";
+import { servedList } from "@ascribed/astro/permalinks";
 
 interface Props {
   home?: string;
 }
 
-const { home = root } = Astro.props;
-const path = readPermalinks(siteRoot)?.path;
+const served = servedList(permalinks);
+const { home = served?.home ?? root } = Astro.props;
+const path = served?.path;
 ---
 
 {

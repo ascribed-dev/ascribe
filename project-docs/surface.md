@@ -524,11 +524,12 @@ The integration's options:
 
 | Option | Type | Required | What it's for |
 |---|---|---|---|
-| `build` | `string` | Yes | The build whose site output is the collection (a name in `ascribe.toml`). |
+| `build` | `string` | In its form | The build whose site output is the collection (a name in `ascribe.toml`). |
 | `project` | `string` | No | The directory holding `ascribe.toml`, relative to the Astro root. |
+| `projects` | `ProjectEntry[]` | In its form | The projects, each a named build of a project; two entries may share a project. |
 | `binary` | `string` | No | The `ascribe` binary, relative to the Astro root. |
 | `anchors` | `boolean \| "dev"` | No | Mark each block of the site output with the source lines it came from (source anchors), for review: `"dev"` in `astro dev` only, `true` always. |
-| `review` | `boolean` | No | Review in the site preview: an **Ascribe review** app in `astro dev`'s toolbar, which marks the page's changes and shows the pull request's comments, with source anchors in `astro dev`. |
+| `review` | `boolean \| string` | No | Review in the site preview: an **Ascribe review** app in `astro dev`'s toolbar, which marks the page's changes and shows the pull request's comments, with source anchors in `astro dev`. |
 | `codeTitles` | `boolean` | No | Show a code block's title (`title="…"` in its info string, as `@snippet` writes it) above it, with a Shiki transformer that puts the block in a `<figure class="code-title">` with a `<figcaption>`. |
 
 What a site imports:

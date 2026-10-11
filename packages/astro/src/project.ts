@@ -82,8 +82,9 @@ export function normalizeBase(base: string): string {
 }
 
 /**
- * The route of the site's root, Astro's `base`, ending the way `trailingSlash`
- * says the site's routes do. (`import.meta.env.BASE_URL` isn't replaced in a
+ * The route of a base path, ending the way `trailingSlash` says the site's
+ * routes do: the site's root for Astro's `base`, a project's root for its
+ * `[consumer] base-path`. (`import.meta.env.BASE_URL` isn't replaced in a
  * package's components.)
  */
 export function homeRoute(base: string, trailingSlash: "always" | "never" | "ignore"): string {
@@ -102,9 +103,10 @@ export function consumerMismatches(
 ): string[] {
   const problems: string[] = [];
   const { basePath, trailingSlash, site } = project.consumer;
-  if (normalizeBase(astro.base) !== basePath) {
+  // A base path under Astro's `base` leaves the rest of the site to other pages, such as a home page.
+  if (!basePath.startsWith(normalizeBase(astro.base))) {
     problems.push(
-      `[consumer] base-path is "${basePath}", but Astro's \`base\` is "${astro.base}". Set them to the same path.`,
+      `[consumer] base-path is "${basePath}", but Astro's \`base\` is "${astro.base}". Set base-path to that path or a path under it.`,
     );
   }
   // Astro's "ignore" serves both forms, so Ascribe's links work either way.

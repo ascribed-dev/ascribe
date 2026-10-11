@@ -35,6 +35,18 @@ export const collections = { docs: defineCollection(ascribeCollection({ schema }
 
 If the Ascribe project is outside the Astro root (`project: "../docs"`), import `../.astro/integrations/_ascribed_astro/schema.ts` instead: the integration copies the schema there after each build, so TypeScript finds `astro/zod` from it.
 
+`[consumer] base-path` can be Astro's `base` or a path under it, so a home page can sit at `/` in front of docs at `/docs/`. Several projects can share one site, each under its own base path:
+
+```js
+ascribe({
+  projects: [
+    { name: "docs", project: "../docs", build: "site" },
+    { name: "home", project: "home", build: "site" },
+  ],
+  review: "docs",
+});
+```
+
 ```astro
 ---
 // A layout
@@ -48,17 +60,18 @@ const { entry } = Astro.props;
 <h1 set:html={entry.data.formatted.title} />
 ```
 
-The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/guides/review/) walks through reviewing a pull request on your site.
+The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, [a home page in front of the docs](https://ascribed-dev.com/guides/astro/#a-home-page-in-front-of-the-docs), [several projects in one site](https://ascribed-dev.com/guides/astro/#several-projects-in-one-site), what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/guides/review/) walks through reviewing a pull request on your site.
 
 ## Options
 
 | Option | Meaning |
 |---|---|
-| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
+| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required, unless `projects` is given. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
+| `projects` | Several projects in one site, in place of `build` and `project`: a list of entries, each `{ name, build, project }`. Each collection names its entry, `ascribeCollection({ schema, name })`, and each entry's schema is copied to `.astro/integrations/_ascribed_astro/<name>/schema.ts`. |
 | `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
 | `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`, though `review` turns them on in `astro dev`. |
-| `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. |
+| `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. With `projects`, an entry's name reviews that entry, and `true` the first. |
 | `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it) above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`. `false` leaves it out. By default, `true`. |
 
 ## Development
@@ -76,6 +89,7 @@ The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: 
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |
 | `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
+| `src/projects.ts` | Several projects in one site: the entries' names, and what the projects can't share |
 | `src/review/` | Review in the site preview, on the dev server's side: `ascribe diff`, the pull request (through `@ascribed/review/github` and `gh`), the routes, `.ascribe/dev.json`, and the toolbar channel's requests (`server.ts`, `protocol.ts`) |
 | `src/toolbar/` | The **Ascribe review** toolbar app, in the page: the panel, and the `@ascribed/review` overlay on the page's blocks |
 
