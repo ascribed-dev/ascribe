@@ -13,9 +13,12 @@ content/
 src/content.config.ts             the collection
 src/pages/[...slug].astro         the route: base + entry id, and `index` at the base
 src/pages/404.astro               the not-found page, which explains a permalink that isn't here
-src/layouts/Docs.astro            the page, its availability badge, and a table of contents
+src/layouts/Docs.astro            the page, the sidebar, its availability badge, and a table of contents
+src/nav.ts                        the sidebar's list
 test/e2e/                         the end-to-end tests
 ```
+
+`src/content.config.ts`, the route, the layout, and `src/nav.ts` are what `npx @ascribed/astro init` writes for this project, from `packages/astro/starter/`: `packages/astro/test/init.test.ts` fails when they differ, and rewrites them with `ASCRIBE_BLESS=1`. Change the starter, not these.
 
 | Risk | Where |
 |---|---|

@@ -24,6 +24,8 @@ export interface ProjectInfo {
     /** Whether builds publish what agents read: `llms.txt` and each page's Markdown, in the plain output. */
     agents: boolean;
   };
+  /** The names of `[builds]`'s tables, in order: empty when there are none, and the one build is `site`. */
+  builds: string[];
   /** The site output's root for a build: `<output-dir>/<build>/site`. */
   siteRoot(build: string): string;
   /** The plain output's root for a build: `<output-dir>/<build>/plain`. */
@@ -61,6 +63,7 @@ export function readProject(dir: string): ProjectInfo {
       trailingSlash,
       agents: consumer["agents"] === true,
     },
+    builds: Object.keys(section(table, "builds")),
     siteRoot: (build) => path.resolve(dir, outputDir, build, "site"),
     plainRoot: (build) => path.resolve(dir, outputDir, build, "plain"),
   };
