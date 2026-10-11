@@ -667,6 +667,62 @@ impl FileSystem for MemoryFs {
     }
 }
 
+/// Whether there's a link at `path`: a symbolic link, or on Windows a
+/// junction too, since [`std::fs::FileType::is_symlink`] is true there of
+/// every reparse point that's a name surrogate, junctions included.
+pub fn is_link(path: &Path) -> bool {
+    fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_symlink())
+}
+
+/// Looks for links on the way to files Ascribe writes or removes under a
+/// folder, so that what it writes lands where the path says and nowhere a
+/// committed link leads. The folder itself and those above it aren't looked
+/// at: they're where the person put the project.
+#[derive(Debug)]
+pub struct LinkCheck {
+    root: PathBuf,
+    /// Folders already found to be folders.
+    real: BTreeSet<PathBuf>,
+}
+
+impl LinkCheck {
+    /// Looks under `root`.
+    pub fn new(root: &Path) -> LinkCheck {
+        LinkCheck {
+            root: root.to_owned(),
+            real: BTreeSet::new(),
+        }
+    }
+
+    /// The first link on the way from the root to `rel`, `rel` included: a
+    /// folder on the way, or what's at `rel`. The way ends at the first part
+    /// that's missing or is a file, since nothing under it is there yet.
+    /// `rel` is relative; a `..` in it is followed and isn't itself looked
+    /// at.
+    pub fn link(&mut self, rel: &Path) -> Option<PathBuf> {
+        let mut at = self.root.clone();
+        for part in rel.components() {
+            at.push(part);
+            if !matches!(part, std::path::Component::Normal(_)) || self.real.contains(&at) {
+                continue;
+            }
+            match fs::symlink_metadata(&at) {
+                Ok(meta) if meta.file_type().is_symlink() => return Some(at),
+                Ok(meta) if meta.is_dir() => {
+                    self.real.insert(at.clone());
+                }
+                Ok(_) | Err(_) => return None,
+            }
+        }
+        None
+    }
+}
+
+/// [`LinkCheck::link`], once.
+pub fn link_on_the_way(root: &Path, rel: &Path) -> Option<PathBuf> {
+    LinkCheck::new(root).link(rel)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

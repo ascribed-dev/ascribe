@@ -1,7 +1,7 @@
 // `.ascribe/dev.json`: where the dev server is, for the editor's Open Site
 // Preview. Written when the server starts, removed when it stops. A server
 // that crashed leaves it behind, so a reader checks the URL answers first.
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 
@@ -29,9 +29,19 @@ export function siteUrl(address: AddressInfo, options: { https: boolean; base: s
   return `${options.https ? "https" : "http"}://${host}:${address.port}${base.startsWith("/") ? base : `/${base}`}`;
 }
 
-/** Writes `dev.json`. A failure is the caller's to log: it only costs the editor its link. */
+/**
+ * Writes `dev.json`. A failure is the caller's to log: it only costs the editor its link.
+ * `.ascribe` or `dev.json` that's a link (a symbolic link, or a junction on Windows, which
+ * Node's `lstat` reports as one) is refused, not written through: a committed link could
+ * lead anywhere.
+ */
 export function writeDevFile(projectDir: string, file: DevFile): void {
   const target = devFilePath(projectDir);
+  for (const at of [path.dirname(target), target]) {
+    if (lstatSync(at, { throwIfNoEntry: false })?.isSymbolicLink()) {
+      throw new Error(`${at} is a link; replace it with a folder or a file, or remove it`);
+    }
+  }
   mkdirSync(path.dirname(target), { recursive: true });
   writeFileSync(target, `${JSON.stringify(file, null, 2)}\n`);
 }

@@ -1,6 +1,14 @@
 // The files review reads and writes: `ascribe diff`'s JSON, the JSON
 // output's routes, and `.ascribe/dev.json`.
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -146,5 +154,16 @@ describe("dev.json", () => {
     expect(existsSync(devFilePath(project))).toBe(false);
     // Nothing to remove: nothing happens.
     removeDevFile(project, 1);
+  });
+
+  it("isn't written through a link", () => {
+    const project = temp();
+    const outside = temp();
+    // A junction on Windows, which needs no privilege.
+    symlinkSync(outside, path.join(project, ".ascribe"), "junction");
+    expect(() =>
+      writeDevFile(project, { url: "http://localhost:4321/", build: "site", pid: 1 }),
+    ).toThrow(/is a link/);
+    expect(readdirSync(outside)).toEqual([]);
   });
 });

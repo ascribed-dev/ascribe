@@ -206,15 +206,10 @@ fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn
         Ok(synced) => synced,
         Err(e) => return answer::fail(err, &e),
     };
-    if synced.changed {
-        let path = project.root().join(PERMALINKS_FILE);
-        if let Err(e) = std::fs::write(&path, &synced.text) {
-            let error = PermalinksError::Unwritable {
-                path: PathBuf::from(PERMALINKS_FILE),
-                message: e.to_string(),
-            };
-            return answer::fail(err, &error);
-        }
+    if synced.changed
+        && let Err(error) = write_permalinks(project.root(), &synced.text)
+    {
+        return answer::fail(err, &error);
     }
     let result = match args.format {
         Format::Json => answer::write_json(out, &synced),
@@ -464,12 +459,8 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         _ => None,
     };
     if let Some(text) = &list
-        && let Err(e) = std::fs::write(project.root().join(PERMALINKS_FILE), text)
+        && let Err(error) = write_permalinks(project.root(), text)
     {
-        let error = PermalinksError::Unwritable {
-            path: PathBuf::from(PERMALINKS_FILE),
-            message: e.to_string(),
-        };
         return answer::fail(err, &error);
     }
     let done = RetireAnswer::new(names, reason, args.to.as_deref(), list.is_some());
@@ -500,6 +491,21 @@ fn write_retire(out: &mut dyn Write, r: &RetireAnswer, has_list: bool) -> io::Re
 }
 
 /// A file named on the command line, or why it can't be read.
+/// Writes the project's `ascribe.permalinks`, but never through a link,
+/// which could lead anywhere a repository chose.
+fn write_permalinks(root: &Path, text: &str) -> Result<(), PermalinksError> {
+    let path = root.join(PERMALINKS_FILE);
+    let written = if ascribe_resolve::is_link(&path) {
+        Err("it's a link; replace it with a file, or remove it".to_owned())
+    } else {
+        std::fs::write(&path, text).map_err(|e| e.to_string())
+    };
+    written.map_err(|message| PermalinksError::Unwritable {
+        path: PathBuf::from(PERMALINKS_FILE),
+        message,
+    })
+}
+
 fn read(path: &Path) -> Result<String, (PermalinksError, io::ErrorKind)> {
     // Outside FileSystem: a file named on the command line, such as a copy
     // of a list in a product's repository, which `verify` reads with no

@@ -336,6 +336,13 @@ impl Workspace {
             return Ok(false);
         }
         let path = self.root.join(LOCK_FILE);
+        // A link where the lock goes is neither written through nor replaced.
+        if ascribe_resolve::is_link(&path) {
+            return Err(SourcesError::Write {
+                path: LOCK_FILE.into(),
+                message: "it's a link; replace it with a file, or remove it".into(),
+            });
+        }
         std::fs::write(&path, text).map_err(|e| SourcesError::Write {
             path: LOCK_FILE.into(),
             message: e.to_string(),

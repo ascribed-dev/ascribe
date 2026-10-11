@@ -14,6 +14,8 @@ use std::process::{Command, Output};
 use serde_json::Value;
 use tempfile::TempDir;
 
+use crate::links;
+
 const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n";
 
 const KEYS: &str =
@@ -430,4 +432,19 @@ fn an_alias_is_listed_and_verified_as_found() {
     assert_eq!(reported(dir.path()), []);
     let verify = ascribe(dir.path(), &["permalinks", "verify", "key-rotation"]);
     assert_eq!(code_of(&verify), 0, "{}", stderr(&verify));
+}
+
+#[test]
+fn sync_doesnt_write_the_list_through_a_link() {
+    let dir = project();
+    let outside = tempfile::tempdir().unwrap();
+    // A link to a file that isn't there yet, so nothing is read through it.
+    let target = outside.path().join("written.txt");
+    if !links::file(&target, dir.path().join("ascribe.permalinks")) {
+        return;
+    }
+    let output = ascribe(dir.path(), &["permalinks", "sync"]);
+    assert_eq!(code_of(&output), 2, "{}", stderr(&output));
+    assert!(stderr(&output).contains("link"), "{}", stderr(&output));
+    assert!(!target.exists(), "the list was written through the link");
 }
