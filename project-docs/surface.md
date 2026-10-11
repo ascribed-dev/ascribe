@@ -702,6 +702,7 @@ READMEs published with a package, a crate, or the repository:
 | File |
 |---|
 | `README.md` |
+| `changes/README.md` |
 | `crates/ascribe-check/README.md` |
 | `crates/ascribe-cli/README.md` |
 | `crates/ascribe-core/README.md` |
