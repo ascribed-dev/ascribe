@@ -256,4 +256,35 @@ impl Report {
     pub fn has_changes(&self) -> bool {
         self.builds.iter().any(|b| !b.pages.is_empty())
     }
+
+    /// Whether any build's change is about the file at `path`, a content
+    /// path: the page there changed, or a page changed through it.
+    pub fn reaches(&self, path: &ascribe_core::RelPath) -> bool {
+        self.builds
+            .iter()
+            .flat_map(|b| &b.pages)
+            .any(|p| p.path == path.as_str() || p.because.iter().any(|c| c == path.as_str()))
+    }
+
+    /// Keeps only what's about the file at `path`, a content path, as
+    /// `ascribe diff <PAGE>` shows it: the page there, in each build it
+    /// changed in; or, when it's no changed page, such as a fragment, the
+    /// pages that changed through it. A build with none keeps no pages.
+    pub fn narrow_to(&mut self, path: &ascribe_core::RelPath) {
+        let path = path.as_str();
+        let is_page = self
+            .builds
+            .iter()
+            .flat_map(|b| &b.pages)
+            .any(|p| p.path == path);
+        for build in &mut self.builds {
+            build.pages.retain(|p| {
+                if is_page {
+                    p.path == path
+                } else {
+                    p.because.iter().any(|c| c == path)
+                }
+            });
+        }
+    }
 }

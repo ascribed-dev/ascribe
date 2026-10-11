@@ -362,6 +362,24 @@ fn diff_text() {
     );
 }
 
+/// `ascribe diff <PAGE>`: one page's changes, block by block.
+#[test]
+fn diff_page() {
+    let dir = lantern();
+    let root = dir.path();
+    write(root, "docs/docs/guides/rollouts.md", ROLLOUTS_NOW);
+    commit(root, "Rework the rollout");
+    let docs = root.join("docs");
+    expect(
+        "diff-page.txt",
+        &stdout(&run(
+            &docs,
+            &["diff", "docs/guides/rollouts.md", "--base", "main"],
+            0,
+        )),
+    );
+}
+
 /// `ascribe diff --format json`, for a change that reaches a page through a
 /// fragment.
 #[test]

@@ -3,7 +3,7 @@
 //! finished report.
 
 use ascribe_check::{count_errors, select_builds};
-use ascribe_core::RelPath;
+use ascribe_core::{RelPath, percent_decode};
 use ascribe_resolve::Project;
 
 use crate::drift::{BaseProject, drift_with, read_base};
@@ -11,8 +11,8 @@ use crate::html::{
     AssetFiles, DiskAssets, GitAssets, MAX_PAGES, ReportOptions, Version, write_report,
 };
 use crate::prompt::{self, Review};
+use crate::{Anchor, BuildDiff, PageDiff};
 use crate::{Base, DiffError, DriftReport, Report, Repository, Side, compare_builds};
-use crate::{BuildDiff, PageDiff};
 use ascribe_check::prompt::{Builds, Context};
 
 /// What [`diff_project`] compares.
@@ -129,6 +129,29 @@ impl ProjectDiff {
             let context = self.context(Builds::Named(vec![build.build.clone()]));
             prompt::fragment_reach(&context, &self.review(), build, path)
         })
+    }
+
+    /// A block's lines as they're written, in the base when `base` is true
+    /// and in the working tree when it isn't. `None` when the file isn't in
+    /// that version, or doesn't have those lines.
+    pub fn written(&self, anchor: &Anchor, base: bool) -> Option<Vec<&str>> {
+        let (path, lines) = anchor.source.rsplit_once(':')?;
+        let (first, last) = lines.split_once('-').unwrap_or((lines, lines));
+        let first: usize = first.parse().ok()?;
+        let last: usize = last.parse().ok()?;
+        let path = RelPath::parse(&percent_decode(path)).ok()?;
+        let project = if base {
+            &self.before.as_ref()?.1
+        } else {
+            &self.now
+        };
+        let source = &project.file(&path)?.source;
+        let lines: Vec<&str> = source
+            .lines()
+            .skip(first.checked_sub(1)?)
+            .take((last + 1).checked_sub(first)?)
+            .collect();
+        (!lines.is_empty()).then_some(lines)
     }
 
     /// The agent prompt about every changed page; `builds` are the builds
