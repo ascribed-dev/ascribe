@@ -815,8 +815,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/293"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XSY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/300"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Website: move the docs to /docs/ and put a landing page at the root"
     },
     {
