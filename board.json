@@ -154,7 +154,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "`ascribe fmt` follows a linked folder that loops back into the content root"
     },
     {
@@ -240,8 +240,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/308"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "`ascribe report links` loses every moved link when a project's lychee.toml turns lychee's cache on"
     },
     {
@@ -274,8 +277,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/309"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Say in the status bar when Ascribe isn't checking a project"
     },
     {
@@ -325,8 +331,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/310"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "One base for a page's path: in what commands print, accept, and write into prompts"
     },
     {
@@ -359,8 +368,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/307"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "A binary built from main says it's the release"
     },
     {
@@ -900,8 +912,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/305"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAAvzQ",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/306"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Review in the site preview: a thread on a one-line note draws its card twice"
     }
   ]
