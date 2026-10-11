@@ -1,0 +1,5 @@
+wrote     AGENTS.md                                        read by Claude Code, Codex, Copilot, and Cursor
+wrote     .agents/skills/ascribe/SKILL.md                  read by Codex, Copilot, Cursor, and Gemini CLI
+wrote     .agents/skills/ascribe/references/directives.md  read by Codex, Copilot, Cursor, and Gemini CLI
+
+Claude Code doesn't read the skill in .agents/skills/; `--target claude` writes it to .claude/skills/ too, where it does.

@@ -613,7 +613,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-model
 @available: next
 
-Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, and builds. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
+Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
 
 @include: ../_generated/cli-model-options.md
 
@@ -626,7 +626,7 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, and `builds`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports.md#ascribe-model) lists each section's fields.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports.md#ascribe-model) lists each section's fields.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
@@ -747,7 +747,7 @@ With `--cloud`, it also writes what [Copilot's cloud agent](../guides/agents.md#
 
 @include: ../_generated/cli-agents-sync-options.md
 
-It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
+It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
 
 | Code | Meaning |
 |---|---|
