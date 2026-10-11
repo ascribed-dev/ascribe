@@ -8,7 +8,7 @@ metadata:
 
 # Ascribe
 
-Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are in the `AGENTS.md` beside its `ascribe.toml`, and `ascribe model` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
+Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are what `ascribe agents rules` prints, from anywhere in the project; a project that ran `ascribe agents sync` also has them in the `AGENTS.md` beside its `ascribe.toml`, and one that didn't has no such file. `ascribe model` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
 
 ## The loop
 
@@ -36,12 +36,18 @@ Each changes nothing, and each takes `--format json`.
 - `ascribe render <page> --build <name>`: a page as one build's readers see it.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many.
+- `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.
+- `ascribe drift`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.
 
 Use the commands when you have a shell. Without one, use the `ascribe_*` tools of Ascribe's MCP server if you have them: they return the same JSON.
 
 ## Renaming
 
 `ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
+
+## Checking in CI
+
+A CI job runs two commands: `ascribe check --deny-warnings`, which fails on an error or a warning in any build, and `ascribe fmt --check`, which fails on a page `ascribe fmt` would change. Run them where `ascribe.toml` is, or give each `--config <folder>`.
 
 ## Fixes
 
@@ -57,5 +63,5 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 - Where the content model has a phrase for a name or a value, write the phrase (`{product}`), not the text.
 - Link to the source file with a relative path (`../guides/install.md#configure`), not to the site's address.
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
-- Each directive's syntax: [references/directives.md](references/directives.md).
+- Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.

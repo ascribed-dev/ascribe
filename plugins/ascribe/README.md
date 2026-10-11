@@ -5,8 +5,8 @@ Checks [Ascribe](https://github.com/ascribed-dev/ascribe) docs as an AI agent ed
 - **The language server** (`.lsp.json`): `ascribe lsp` for `.md` files. Claude Code starts it the first time it edits a page, and reads its diagnostics after each edit, so Claude hears about a broken link as soon as it writes one. It reports the editor's build only (`[editor] build` in `ascribe.toml`).
 - **The stop hook** (`hooks/hooks.json`): `ascribe agents hook claude-code --event stop`. Before Claude finishes, it checks every build of each project whose pages changed, and keeps Claude working while there are errors. It asks once per stop.
 - **The MCP server** (`.mcp.json`): `ascribe mcp`.
-- **The skill** (`skills/ascribe/`): how to use Ascribe, the same for every project.
-- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run `ascribe agents prompt fix`, `new-page`, and `review`.
+- **The skill** (`skills/ascribe/`): how to use Ascribe, the same for every project. It's the part every agent uses; the MCP server's tools are for an agent with no shell, and the language server and the stop hook for one that doesn't check its own work.
+- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run `ascribe agents prompt fix`, `new-page`, and `review`. `/ascribe:new-page` takes what the page is for, and has Claude choose the page type from `ascribe model` first.
 
 It has no edit hook: the language server already reports each edit, and a hook would report it twice.
 
