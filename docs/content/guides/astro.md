@@ -85,6 +85,9 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
 
+@available: next
+`<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes what the page's head says about it to search engines and other crawlers: its `<title>`, its description, its canonical link, and a robots rule for a page that isn't listed, from the page's record ([search engines and crawlers](#search-engines-and-crawlers)).
+
 @available: ascribe 0.2.0
 The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../reference/content-model.md#53-code-in-a-field).
 
@@ -127,6 +130,7 @@ npx astro build
 | `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` {available="ascribe 0.2.0"} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
 | `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
+| `sitemap` {available=next} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](#search-engines-and-crawlers), such as `["/drafts"]`. |
 
 ## What the integration does
 
@@ -139,6 +143,8 @@ npx astro build
   **Publishes the outputs for agents** with `[consumer] agents = true`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](#publish-for-ai-agents)).
 - @available: next
   **Gives each permalink an address** that forwards to its page or heading, in `astro dev` and in the built site ([Permalinks](#permalinks)).
+- @available: next
+  **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([search engines and crawlers](#search-engines-and-crawlers)), in `astro dev` and in the built site.
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
 - @available: ascribe 0.2.0
@@ -252,6 +258,61 @@ The files are static, so any host serves them. A few things the spec asks are th
 - **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer. On Netlify, an edge function does it: this site's is [`markdown.ts`]({repo}/blob/main/site/netlify/edge-functions/markdown.ts).
 - **Status codes and caching.** A missing page should answer 404, not 200 with a page saying so, and the `.md` files and `llms.txt` should be cached no longer than the pages.
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
+
+## Search engines and crawlers
+@available: next
+
+Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../reference/content-model.md#listing-a-page), and the project's own `robots.txt` lines from [`[crawlers]`](../reference/content-model.md#21-crawlers). The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
+
+### The head
+
+A layout includes `Head.astro` in `<head>`, given the page's collection entry:
+
+```astro
+---
+import Head from "@ascribed/astro/Head.astro";
+const { entry } = Astro.props;
+---
+<head>
+  <Head entry={entry} title={(title, record) => (record.route === "/docs" ? "Loom" : `${title} · Loom`)} />
+</head>
+```
+
+It writes the page's `<title>`, `<meta name="description">`, `<link rel="canonical">` when `[consumer] site` is set, and `<meta name="robots" content="noindex">` for a page that's `unlisted`. `title` is a function from the page's title and its record to the whole title; the record has the page's `route`, so a site can title its home page differently. Without `title`, the title is the page's own. A page whose title is missing gets no `<title>` from it.
+
+A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro`, and writes its own `<title>`, description, and canonical link. A page that isn't an Ascribe page and shouldn't be listed writes its own `<meta name="robots" content="noindex">`, and goes in the `sitemap` option's `exclude`, since the integration reads no HTML and can't see the rule.
+
+`pageRecord(entry)`, from `@ascribed/astro/content`, gives a layout the record itself, for anything else it writes from it.
+
+### The sitemap
+
+`astro build` writes one sitemap for the site, `sitemap.xml` at Astro's `base`, and `astro dev` serves it there. It lists by absolute address, with no dates:
+
+- every page of every project that isn't `unlisted`, when the site has a route that shows it: a project whose collection the site only quotes from adds nothing;
+- every other page Astro built, such as a changelog page of the site's own, except a permalink's forwarding page, the not-found page, and the routes in the `sitemap` option's `exclude`.
+
+`astro dev` knows only the routes of the site's own that have no parameters, so a page of the site's own that a route's `getStaticPaths` lists is in the built sitemap only.
+
+A sitemap needs absolute addresses, so a site with no `site` (`[consumer] site`, or Astro's) gets none, and the build warns.
+
+### `robots.txt`
+
+At the host's root, the integration writes one `robots.txt` for the site, and `astro dev` serves it:
+
+```text
+User-agent: *
+Disallow: /docs/drafts/
+
+User-agent: ExampleBot
+Disallow: /
+
+Sitemap: https://docs.example.com/sitemap.xml
+```
+
+It opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file.
+
+- **A site with its own `robots.txt`** in `public/` keeps it, and the integration writes none. The build says so, with the lines Ascribe would have written; copy them into your file.
+- **A site whose Astro `base` isn't `/`** has no host root to write to, and a crawler reads `robots.txt` only there. The sitemap goes under the base, no `robots.txt` is written, and the build prints the lines the host's own `robots.txt` needs, the sitemap's address among them.
 
 ## Permalinks
 @available: next

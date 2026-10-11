@@ -21,7 +21,8 @@
     "src/Elements.astro",
     "src/Availability.astro",
     "src/Permalink.astro",
-    "src/MissingPermalink.astro"
+    "src/MissingPermalink.astro",
+    "src/Head.astro"
   ],
   "exports": {
     ".": {
@@ -39,6 +40,7 @@
     "./Elements.astro": "./src/Elements.astro",
     "./Availability.astro": "./src/Availability.astro",
     "./MissingPermalink.astro": "./src/MissingPermalink.astro",
+    "./Head.astro": "./src/Head.astro",
     "./content": {
       "types": "./dist/content.d.ts",
       "default": "./dist/content.js"
