@@ -42,7 +42,7 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 | Command | What it answers |
 |---|---|
 | [`ascribe explain <code>`](../reference/cli.md#cli-explain) | What a diagnostic means, how to fix it, and a page with the problem and without it |
-| [`ascribe model`](../reference/cli.md#cli-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds |
+| [`ascribe model`](../reference/cli.md#cli-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources |
 | [`ascribe outline <page>`](../reference/cli.md#cli-outline) | A page's title and type, and the headings a link can name, with their ids |
 | [`ascribe link <target> --from <page>`](../reference/cli.md#cli-link) | Whether a link works from a page, and what to write when it doesn't |
 | [`ascribe render <page> --build <name>`](../reference/cli.md#cli-render) | The page as one build's readers see it, as plain Markdown |
@@ -70,6 +70,10 @@ It writes:
 - **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types and their frontmatter, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
+
+Beside each file it writes, `sync` says which agents read it, and when an agent doesn't read one, the target that writes it where that agent does. Claude Code doesn't read the skill in `.agents/skills/`, so without the `claude` target, `sync` says so:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
 Here's what it writes for the Quill example:
 
@@ -260,11 +264,10 @@ For Claude Code, use the plugin or the project's entries, not both: with both, i
 
 The Ascribe plugin, in `plugins/ascribe/` in Ascribe's repository, gives Claude Code everything in one install:
 
-- **The language server**, which Claude Code starts for `.md` files and whose diagnostics it reads after each edit: the check after each edit, with no hook. It reports the editor's build, as the edit hook does.
-- **The stop hook.**
-- **The MCP server.**
-- **The skill.**
-- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#cli-agents-prompt).
+- **The skill**, for every agent: how to write, check, and fix pages.
+- **The MCP server**, whose tools are for an agent with no shell; one with a shell does as well with the commands.
+- **The stop hook**, and **the language server**, which Claude Code starts for `.md` files and whose diagnostics it reads after each edit: they check for an agent that doesn't check its own work. The language server reports the editor's build, as the edit hook does, and only for edits Claude Code makes with its own tools, not through its shell.
+- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#cli-agents-prompt). `/ascribe:new-page` takes what the page is for: the agent chooses the page type from `ascribe model`, then runs the prompt.
 
 Add it from a copy of the repository, in Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`):
 

@@ -270,6 +270,12 @@ export interface CheckReport {
    * there are none, and with `--summary`.
    */
   acknowledged?: AcknowledgedEntry[];
+  /**
+   * With `--fix`, the safe fixes it applied, in file order and, within a
+   * file, in the order of their diagnostics; the rest of the report is
+   * the check after them. Left out when none was applied.
+   */
+  fixed?: FixedEntry[];
 }
 
 /** How many diagnostics have one code. */
@@ -713,6 +719,18 @@ export interface Fix {
    * says and leaves nothing to decide; `unsafe` otherwise.
    */
   applicability: string;
+}
+
+/** A safe fix `--fix` applied. */
+export interface FixedEntry {
+  /** The code of the diagnostic it fixed, such as `ASC036`. */
+  code: string;
+  /** The diagnostic's name. */
+  slug: string;
+  /** What the fix did. */
+  title: string;
+  /** The file it changed, as a diagnostic's `file` is. */
+  file: string;
 }
 
 /** How a directive is written (SPEC §3.5, §3.6). */

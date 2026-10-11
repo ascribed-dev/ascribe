@@ -43,7 +43,7 @@ jobs:
         continue-on-error: true # :remove:
         run: >
           ascribe drift --config docs --base "origin/$GITHUB_BASE_REF"
-          --format summary >> "$GITHUB_STEP_SUMMARY"
+          --format markdown >> "$GITHUB_STEP_SUMMARY"
       # :remove-start:
       - name: Fail, unless it waits for a canary
         if: steps.report.outcome != 'success'

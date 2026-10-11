@@ -56,7 +56,7 @@ Journey 1's session (phase 3), an agent given the getting-started page and an em
 
 ## Out of scope
 
-Restructuring the docs; the landing page and the rest of the [website proposal](../proposals/website.md); how the site looks.
+Restructuring the docs; the landing page and the rest of the [website proposal](https://github.com/ascribed-dev/ascribe/blob/e80d764ef544f7fb617dec8084248a3e161a6d23/project-docs/proposals/website.md); how the site looks.
 
 ## Acceptance criteria
 

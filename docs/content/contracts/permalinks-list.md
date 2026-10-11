@@ -42,7 +42,7 @@ An entry's value is where the name is **declared**: the path of the file it's wr
 
 A name is in one of the three tables, never two. The two tables were added to version 1: a list without them is a list with none, and a version of Ascribe that predates them reports a list with them as invalid rather than misread it.
 
-A place is where the name is written in the source, not the address a reader goes to: that's the site's address, the permalinks' path, and the name, the same in every build ([Permalinks](../guides/astro.md#permalinks)).
+A place is where the name is written in the source, not the address a reader goes to: that's the site's address, the permalinks' path, and the name, the same in every build ([Permalinks](../guides/permalinks.md)).
 
 ## 2. What it lists
 
@@ -73,7 +73,7 @@ The text is the same for the same list on every platform: the comment, `version`
 
 ## 5. Reading a copy
 
-A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]` or `[aliases]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason or leads elsewhere, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../reference/cli.md#cli-permalinks-verify) does this, and [Checking a product's links](../guides/astro.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
+A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]` or `[aliases]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason or leads elsewhere, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../reference/cli.md#cli-permalinks-verify) does this, and [Checking a product's links](../guides/permalinks.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
 
 - should fail on a `version` it doesn't know, rather than read it as version 1;
 - should fail on a name in `[retired]`, saying why it was retired;

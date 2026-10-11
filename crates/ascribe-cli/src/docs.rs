@@ -34,6 +34,7 @@ const AVAILABLE: &[(&str, &str, &str)] = &[
     ("check", "editor_build", "next"),
     ("check", "summary", "next"),
     ("check", "vale", "next"),
+    ("check", "fix", "next"),
     ("diff", "page", "next"),
     ("diff", "pages_only", "next"),
     ("fmt", "format", "next"),

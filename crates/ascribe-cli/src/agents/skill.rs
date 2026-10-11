@@ -1,7 +1,7 @@
 //! The Ascribe skill, in the Agent Skills format: a folder named `ascribe`
 //! with a `SKILL.md` and a reference loaded only when needed. It teaches
-//! the tool, the same for every project, and sends an agent to `AGENTS.md`
-//! and `ascribe model` for the project's own rules.
+//! the tool, the same for every project, and sends an agent to
+//! `ascribe agents rules` and `ascribe model` for the project's own rules.
 
 use ascribe_query::rules::{builtin_lines, directive_reference_url};
 
@@ -23,7 +23,7 @@ pub const DIRECTIVES: &str = "references/directives.md";
 
 const BODY: &str = r#"# Ascribe
 
-Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are in the `AGENTS.md` beside its `ascribe.toml`, and `ascribe model` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
+Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against a content model, `ascribe.toml`. A project's own rules (its page types, phrases, and the directives its pages use) are what `ascribe agents rules` prints, from anywhere in the project; a project that ran `ascribe agents sync` also has them in the `AGENTS.md` beside its `ascribe.toml`, and one that didn't has no such file. `ascribe model` shows everything the content model allows. Read them before writing frontmatter, a directive, or a phrase.
 
 ## The loop
 
@@ -45,12 +45,14 @@ When `ascribe` isn't on the path, the project may pin it in a `package.json`: ru
 Each changes nothing, and each takes `--format json`.
 
 - `ascribe explain <code>`: what a diagnostic means, how to fix it, and an example.
-- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds.
+- `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
 - `ascribe render <page> --build <name>`: a page as one build's readers see it.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many.
+- `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.
+- `ascribe drift`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.
 
 Use the commands when you have a shell. Without one, use the `ascribe_*` tools of Ascribe's MCP server if you have them: they return the same JSON.
 
@@ -58,9 +60,13 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 `ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
 
+## Checking in CI
+
+A CI job runs two commands: `ascribe check --deny-warnings`, which fails on an error or a warning in any build, and `ascribe fmt --check`, which fails on a page `ascribe fmt` would change. Run them where `ascribe.toml` is, or give each `--config <folder>`.
+
 ## Fixes
 
-In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given. Read an `unsafe` one and decide before applying it.
+In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given: `ascribe check <file> --fix` applies every safe fix, then reports what's left. Read an `unsafe` one and decide before applying it.
 
 ## Other people's text
 
@@ -72,7 +78,7 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 - Where the content model has a phrase for a name or a value, write the phrase (`{product}`), not the text.
 - Link to the source file with a relative path (`../guides/install.md#configure`), not to the site's address.
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
-- Each directive's syntax: [references/directives.md](references/directives.md).
+- Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.
 "#;
 
@@ -118,8 +124,45 @@ pub fn directives_md() -> String {
          The full reference, with examples: {}\n",
         directive_reference_url()
     ));
+    out.push_str(DECLARING);
     out
 }
+
+/// How to declare what `@snippet` and `@variant` use, in `ascribe.toml`.
+const DECLARING: &str = r#"
+## Declaring a source
+
+A `@snippet` reads a file through a source. Declare one in `ascribe.toml` with the folder the code is in, relative to the folder `ascribe.toml` is in:
+
+```toml
+[sources.code]
+path = ".."
+include = ["src/**", "examples/**"]
+```
+
+Mark a region in the code file with two line comments, in its own comment syntax: `:snippet-start: <region>` on the line above, and `:snippet-end:` on the line below.
+
+```ts
+// :snippet-start: connect
+const client = connect(url);
+// :snippet-end:
+```
+
+Then `@snippet: code:src/client.ts#connect` shows it, and `@snippet: code:src/client.ts` shows the whole file. `ascribe model --section sources` lists the sources a project has.
+
+## Declaring a dimension
+
+`@variant` and `@available` name a dimension's values. Declare a dimension in `ascribe.toml` with its values, and optionally the labels readers see:
+
+```toml
+[dimensions.platform]
+label = "Platform"
+values = ["linux", "macos", "windows"]
+labels = { macos = "macOS" }
+```
+
+A value belongs to one dimension only. `ascribe model --section dimensions` lists the dimensions a project has.
+"#;
 
 /// A YAML double-quoted string.
 fn yaml_string(text: &str) -> String {

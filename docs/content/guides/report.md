@@ -93,7 +93,7 @@ External links break and sites change without a commit in your repository, and c
 
 @snippet {lang=yaml}: code:.github/workflows/report.yml#job
 
-- **`--format summary`** writes Markdown, for the run's summary and the issue's body.
+- **`--format markdown`** writes Markdown, for the run's summary and the issue's body.
 - **`--exit-code`** fails on any finding; `--exit-code=warning` only on warnings and errors. A section that couldn't run fails it too, with exit code 2: a report that didn't check the links isn't a pass.
 - **The issue** is found by its title, so one stays open until someone closes it, and each run replaces its body with the latest report.
 

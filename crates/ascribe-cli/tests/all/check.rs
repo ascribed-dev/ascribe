@@ -1146,6 +1146,106 @@ title: Keys
     );
 }
 
+const ROUTE_LINKS: &str =
+    "---\ntitle: Home\n---\n\n[Keys](/keys/) and [again](/keys/)\n\n@notte: Hi.\n";
+const KEYS: &str = "---\ntitle: Keys\n---\n";
+
+#[test]
+fn fix_applies_the_safe_fixes_and_reports_whats_left() {
+    let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
+    let out = ascribe(dir.path(), &["check", "--fix", "--deny-warnings"]);
+    let text = stdout(&out);
+    assert!(
+        text.starts_with("fixed 2 problems in docs/index.md\n"),
+        "{text}"
+    );
+    assert!(
+        text.ends_with("0 errors, 1 warning, 0 advice\n"),
+        "what's left is the unsafe fix's problem: {text}"
+    );
+    assert_eq!(code(&out), 1, "the exit code is the check after the fixes");
+    assert_eq!(
+        fs::read_to_string(dir.path().join("docs/index.md")).expect("the page"),
+        "---\ntitle: Home\n---\n\n[Keys](/keys.md) and [again](/keys.md)\n\n@notte: Hi.\n",
+        "the unsafe fix isn't applied"
+    );
+
+    let again = ascribe(dir.path(), &["check", "--fix", "--format", "concise"]);
+    assert!(
+        !stdout(&again).contains("fixed"),
+        "nothing is left to fix: {}",
+        stdout(&again)
+    );
+}
+
+#[test]
+fn fix_lists_what_it_applied_in_the_json() {
+    let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
+    let report = json_of(&ascribe(
+        dir.path(),
+        &["check", "--fix", "--format", "json"],
+    ));
+    let fixed = report["fixed"].as_array().expect("a list");
+    assert_eq!(fixed.len(), 2);
+    assert_eq!(fixed[0]["code"], "ASC041");
+    assert_eq!(fixed[0]["slug"], "link-route");
+    assert_eq!(fixed[0]["file"], "docs/index.md");
+    assert_eq!(
+        places(&report),
+        [place("docs/index.md", "directive-unknown")]
+    );
+
+    let report = json_of(&ascribe(dir.path(), &["check", "--format", "json"]));
+    assert!(report.get("fixed").is_none(), "left out without --fix");
+}
+
+#[test]
+fn fix_with_paths_fixes_only_what_counts_for_them() {
+    let dir = project(&[
+        ("index.md", ROUTE_LINKS),
+        ("other.md", ROUTE_LINKS),
+        ("keys.md", KEYS),
+    ]);
+    let out = ascribe(dir.path(), &["check", "docs/other.md", "--fix"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    assert!(stdout(&out).starts_with("fixed 2 problems in docs/other.md\n"));
+    let page = |name: &str| fs::read_to_string(dir.path().join("docs").join(name)).expect("a page");
+    assert!(page("other.md").contains("[Keys](/keys.md)"));
+    assert_eq!(page("index.md"), ROUTE_LINKS);
+}
+
+#[test]
+fn fix_removes_an_unused_acknowledgement_from_the_content_model_it_was_given() {
+    let dir = project(&[("index.md", CLEAN)]);
+    let model = format!(
+        "{}\n[[intended]]\ncheck = \"phrase-unused\"\nphrase = \"product\"\nreason = \"Kept.\"\n",
+        MODEL.replace("phrase-unused = \"off\"\n", "")
+    );
+    fs::remove_file(dir.path().join("ascribe.toml")).expect("remove the model");
+    let config = dir.path().join("site.toml");
+    write(&config, &model);
+    let out = ascribe(dir.path(), &["check", "--config", "site.toml", "--fix"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    assert!(
+        stdout(&out).starts_with("fixed 1 problem in ascribe.toml\n"),
+        "{}",
+        stdout(&out)
+    );
+    let fixed = fs::read_to_string(&config).expect("the model");
+    assert!(!fixed.contains("[[intended]]"), "{fixed}");
+    assert!(!dir.path().join("ascribe.toml").exists());
+}
+
+#[test]
+fn fix_cannot_be_used_with_standard_input() {
+    let dir = project(&[("index.md", CLEAN)]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "--fix", "--stdin", "--path", "docs/index.md"],
+    );
+    assert_eq!(code(&out), 2);
+}
+
 #[test]
 fn prompt_format_writes_a_files_prompt_and_keeps_the_exit_code() {
     let dir = project(&[("index.md", WITH_ERROR), ("other.md", WITH_WARNING)]);

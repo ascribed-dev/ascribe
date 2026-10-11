@@ -85,7 +85,7 @@ const COMMANDS = [
   ["diff", "--base", "HEAD", "--format", "html"],
   ["drift", "--base", "HEAD"],
   ["drift", "--base", "HEAD", "--format", "json"],
-  ["drift", "--base", "HEAD", "--format", "summary"],
+  ["drift", "--base", "HEAD", "--format", "markdown"],
   ["build"],
   ["build", "--emit", "site", "--anchors"],
 ];

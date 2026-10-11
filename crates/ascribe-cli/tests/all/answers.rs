@@ -232,6 +232,7 @@ fn model_reads_every_example_content_model() {
             "glossary",
             "widgets",
             "builds",
+            "sources",
         ] {
             assert!(value[section].is_array(), "{config}: no {section}");
         }
@@ -257,6 +258,31 @@ fn model_cuts_a_long_list_and_names_the_section() {
     assert!(full.contains("phrase-399"), "{full}");
     let one = json(dir.path(), &["model", "--section", "phrases"], 0);
     assert_eq!(one["phrases"].as_array().unwrap().len(), 400);
+    assert!(one.get("types").is_none(), "{one}");
+}
+
+#[test]
+fn model_shows_sources() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[sources.code]\npath = \"..\"\ninclude = [\"src/**\"]\nignore = [\"**/target/**\"]\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let text = stdout(&run(dir.path(), &["model"], 0));
+    assert!(
+        text.contains(
+            "## Sources\n\n- `code:` (folder `..`; files `src/**`; not `**/target/**`)\n"
+        ),
+        "{text}"
+    );
+    let one = json(dir.path(), &["model", "--section", "sources"], 0);
+    let source = &one["sources"][0];
+    assert_eq!(source["name"], "code");
+    assert_eq!(source["path"], "..");
+    assert_eq!(source["include"][0], "src/**");
+    assert_eq!(source["ignore"][0], "**/target/**");
+    assert!(source["git"].is_null(), "{one}");
     assert!(one.get("types").is_none(), "{one}");
 }
 
