@@ -661,7 +661,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/332"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`ascribe model` shows sources, and `agents sync` says which agents read each file"
     },
     {
@@ -701,7 +701,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/327"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "A guide to content that varies"
     },
     {
@@ -772,7 +772,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/335"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "The home page and getting started: what they list, and where getting started ends"
     },
     {
@@ -832,7 +832,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/334"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`ascribe check --fix`: apply the safe fixes"
     },
     {
