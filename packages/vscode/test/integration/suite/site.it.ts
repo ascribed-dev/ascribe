@@ -5,7 +5,7 @@ import type { AddressInfo } from "node:net";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { PreviewApi } from "../../../src/preview/controller.js";
-import { activated, uriOf, waitFor, workspace } from "./helpers.js";
+import { activated, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
 // The site preview, with the real `ascribe lsp` on a copy of examples/quill
 // and a fake dev server: an HTTP server that answers every page and records
@@ -75,6 +75,18 @@ describe("the site preview, against a fake dev server", () => {
     await vscode.commands.executeCommand("ascribe.openSitePreview");
     assert.match(preview.site.messages().at(-1) ?? "", /Start its dev server/);
     assert.deepEqual(preview.site.opened(), []);
+  });
+
+  it("sends nothing to the address dev.json names until the site preview is asked for", async () => {
+    const before = requests.length;
+    // The file watcher sees it, and the page preview draws the page.
+    writeDevFile(`${origin}/`);
+    await routeOf(install);
+    await sleep(500);
+    assert.equal(requests.length, before, "something called the dev server before it was asked");
+    await vscode.commands.executeCommand("ascribe.openSitePreview");
+    assert.ok(requests.length > before, "Open Site Preview checked the dev server answers");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
   it("opens the active page on the dev server, at the heading the editor shows", async () => {

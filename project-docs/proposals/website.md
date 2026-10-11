@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what would be built and what it would take, so the idea can be judged before anything is designed in detail.
 
+The plan for building it is in [website/](../website/README.md).
+
 ## The goal
 
 Someone who lands on <https://ascribed-dev.com> learns what Ascribe is and why it exists before they're handed a reference manual.

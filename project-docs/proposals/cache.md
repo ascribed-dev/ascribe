@@ -1,6 +1,6 @@
 # Proposal: a cache for slow outside checks
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from "Derived: a cache" in the [brainstorm](../brainstorm.md#15-a-cache-a-search-index-and-notes), and starts where the [report's plan](../content-checks/phase-7-report.md) stopped: "Results aren't cached in this phase."
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from "Derived: a cache" in the [brainstorm](../brainstorm.md#15-a-cache-a-search-index-and-notes), and starts where the [report's plan](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/phase-7-report.md) stopped: "Results aren't cached in this phase."
 
 ## The goal
 
