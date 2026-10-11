@@ -691,8 +691,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/variants.md` | Content that varies |  |
 | `index.md` | Ascribe documentation |  |
 | `reference/cli.md` | Command reference |  |
-| `reference/cli.md` | Command reference |  |
-| `reference/cli.md` | Command reference |  |
 | `reference/content-model.md` | `ascribe.toml` reference |  |
 | `reference/diagnostics.md` | Diagnostics |  |
 | `reference/directives.md` | Directive reference |  |
