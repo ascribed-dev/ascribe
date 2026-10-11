@@ -1,24 +1,30 @@
 ---
-// The page shell: the header, the sidebar, and a slot for the page. Every
-// page, the 404 included, uses it.
+// The page shell: the header and a slot for the page. Every page, the 404
+// included, uses it. A docs page's frame (`docs`) adds the sidebar, the menu
+// that opens it at narrow widths, and search, which covers the docs only.
 import Elements from "@ascribed/astro/Elements.astro";
 import Search from "../components/Search.astro";
 import Sidebar from "../components/Sidebar.astro";
 import Logo from "../assets/logo.svg";
-import { name, repo } from "../site.ts";
+import { docsPath, name, repo } from "../site.ts";
 import { themeColor } from "../theme.ts";
 import "../styles/site.css";
 
 interface Props {
   title: string;
   description?: string | undefined;
-  /** The current page's entry id, to mark it in the sidebar. */
+  /** The current docs page's entry id, to mark it in the sidebar. */
   current?: string | undefined;
+  /** The docs' frame: the sidebar, its menu, and search. */
+  docs?: boolean;
+  /** The site's landing page, whose title is the site's name alone. */
+  home?: boolean;
 }
 
-const { title, description, current } = Astro.props;
+const { title, description, current, docs = false, home = false } = Astro.props;
 const base = import.meta.env.BASE_URL;
-const pageTitle = current === "index" ? name : `${title} · ${name}`;
+const docsHome = `${base}${docsPath}`;
+const pageTitle = home ? name : `${title} · ${name}`;
 // Shared links need absolute addresses: the site's, which a preview's build changes.
 const site = Astro.site ?? Astro.url;
 const card = new URL(`${base}social-card.png`, site).href;
@@ -53,21 +59,26 @@ const canonical = new URL(Astro.url.pathname, site).href;
   <body>
     <a class="skip" href="#content">Skip to content</a>
     <header class="site-header">
-      <button
-        class="menu-button"
-        type="button"
-        aria-controls="sidebar"
-        aria-expanded="false"
-        aria-label="Menu"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true"
-          ><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2"></path></svg
-        >
-      </button>
+      {
+        docs && (
+          <button
+            class="menu-button"
+            type="button"
+            aria-controls="sidebar"
+            aria-expanded="false"
+            aria-label="Menu"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+        )
+      }
       <a class="site-name" href={base}>
         <Logo role="img" aria-label={name} />
       </a>
-      <Search />
+      {docs && <Search />}
+      <a class="docs-link" href={docsHome} aria-current={docs ? "true" : undefined}>Docs</a>
       <a class="repo-link" href={repo} aria-label="Ascribe on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true"
           ><path
@@ -78,10 +89,16 @@ const canonical = new URL(Astro.url.pathname, site).href;
         <span>GitHub</span>
       </a>
     </header>
-    <div class="site-body">
-      <Sidebar current={current} />
-      <slot />
-    </div>
+    {
+      docs ? (
+        <div class="site-body">
+          <Sidebar current={current} />
+          <slot />
+        </div>
+      ) : (
+        <slot />
+      )
+    }
     <script>
       // The sidebar is a drawer at narrow widths.
       const button = document.querySelector<HTMLButtonElement>(".menu-button");

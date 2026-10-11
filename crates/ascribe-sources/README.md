@@ -1,6 +1,6 @@
 # ascribe-sources
 
-Sources in another repository (SPEC §7.4): copying the code files a project's snippets use into it, and moving a source's pin. `ascribe sources fetch`, `update`, and `status` are its command line; how to use them is in the [command reference](https://ascribed-dev.com/reference/cli/). This README is about the code.
+Sources in another repository (SPEC §7.4): copying the code files a project's snippets use into it, and moving a source's pin. `ascribe sources fetch`, `update`, and `status` are its command line; how to use them is in the [command reference](https://ascribed-dev.com/go/cli-reference/). This README is about the code.
 
 A project reads a source in another repository through copies kept in `sources/<name>/` and pinned to a commit by `ascribe.lock`, so checking and building need no network. This crate makes and moves the copies; `ascribe-check` reports on them.
 

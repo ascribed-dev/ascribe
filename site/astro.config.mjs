@@ -1,8 +1,10 @@
 import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
 
-// `site`, `base`, and `trailingSlash` repeat ../docs/ascribe.toml's [consumer];
-// the integration fails the build if they disagree.
+// Two Ascribe projects in one site: the site's own pages (home/, at the root)
+// and the docs (../docs, under /docs/). `site` and `trailingSlash` repeat each
+// project's [consumer], and `base`, Astro's default `/`, is the root of both
+// base paths; the integration fails the build if they disagree.
 export default defineConfig({
   site: "https://ascribed-dev.com",
   trailingSlash: "always",
@@ -13,5 +15,14 @@ export default defineConfig({
       themes: { light: "github-light-default", dark: "github-dark-default" },
     },
   },
-  integrations: [ascribe({ project: "../docs", build: "site" })],
+  integrations: [
+    ascribe({
+      projects: [
+        { name: "docs", project: "../docs", build: "site" },
+        { name: "home", project: "home", build: "site" },
+      ],
+      // Review in `astro dev` covers the docs, the pages that get reviewed.
+      review: "docs",
+    }),
+  ],
 });

@@ -50,4 +50,4 @@ The stop hook still checks the whole project before Claude finishes.
 
 Every file here but this README is written by the `ascribe` binary, and a test fails when one differs: run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli plugin` to write them again. Its version is the release's.
 
-See [Agents](https://ascribed-dev.com/guides/agents/) in Ascribe's docs.
+See [Agents](https://ascribed-dev.com/go/agents-guide/) in Ascribe's docs.

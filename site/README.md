@@ -1,33 +1,36 @@
 # site/
 
-Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`, no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/getting-started/) and [Astro](https://ascribed-dev.com/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+Ascribe's website: a landing page at the root, from `home/`, and the user docs, `../docs`, under `/docs/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
-astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
+astro.config.mjs            ascribe({ projects: [docs, home] }); routing as in each project's [consumer]
+home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the hero widget, the docs' release tables) and content/
 netlify.toml                production's build on Netlify
 netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md
 public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
 src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
-src/content.config.ts       the collection, with the schema ascribe build generates in ../docs
-src/nav.ts                  the sidebar: every page, grouped and in order
-src/pages/[...slug].astro   a route per page: the base path plus its entry id
-src/pages/404.astro         the 404 page
-src/layouts/                the shell (header, sidebar) and a docs page (title, availability, edit link, contents)
+src/content.config.ts       a collection per project, `docs` and `home`, each with the schema ascribe build generates
+src/nav.ts                  the docs' sidebar: every page, grouped and in order
+src/site.ts                 the site's name, repository, and the docs' route
+src/pages/[...slug].astro   a route per page of home/, at the root
+src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
+src/pages/404.astro         the 404 page, in the docs' frame
+src/layouts/                the shell (header; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
 src/components/             search, the sidebar, the table of contents, the page's availability badge
-src/styles/site.css         light and dark, following the system, and the element library's theme; its colors and type are generated from ../design/tokens.toml
+src/styles/site.css         light and dark, following the system, the element library's theme, and the hero widget; its colors and type are generated from ../design/tokens.toml
 src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
-test/                       navigation, links and anchors, redirects, and the built site in Chromium
+test/                       navigation, links and anchors, redirects, the two projects, content negotiation, and the built site in Chromium
 ```
 
 ## Publishing
 
-The site is at <https://ascribed-dev.com>, the address in `[consumer]`.
+The site is at <https://ascribed-dev.com>, the address in each project's `[consumer]`, and the docs at <https://ascribed-dev.com/docs/>, their `base-path`.
 
 - **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/`, `site/`, or a file the docs take code examples from (`[sources.code]` in `docs/ascribe.toml`), and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
-- **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app` (the Netlify site's name, `ascribe-docs`, is in the workflow), which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and `[consumer]` alike. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
+- **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app` (the Netlify site's name, `ascribe-docs`, is in the workflow), which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and both projects' `[consumer]` alike, and as `home/`'s `site` phrase. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
 
 ## Building
 
@@ -59,14 +62,16 @@ npm run typecheck
 npm test              # after a build
 ```
 
-- `test/nav.test.ts`: every published page is in `src/nav.ts`, and it names nothing else.
+- `test/nav.test.ts`: every published docs page is in `src/nav.ts`, and it names nothing else.
+- `test/projects.test.ts`: the docs' route is their base path; every permalink `home/`'s pages link to is one the docs publish, by `ascribe permalinks verify`, which also fails on a retired name; and the landing page's install commands are getting started's.
+- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, and a page of `home/`, which has none, with the page.
 - `test/links.test.ts`: every link and anchor between the built pages lands.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the favicons, touch icon, and social card resolve, and the card's address is absolute; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
 
 ## Addresses
 
-A page's address is its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. What links in from outside the docs, the binary's help and diagnostics and the editor's links, uses a [permalink](https://ascribed-dev.com/reference/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
+A docs page's address is `/docs/` and its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. What links in from outside the docs, the binary's help and diagnostics and the editor's links, uses a [permalink](https://ascribed-dev.com/docs/reference/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
 
 ## Navigation
 
@@ -79,6 +84,12 @@ For the content model to give a site its navigation, it would need:
 - **the result in the outputs**: the groups, in order, with each page's title and route, in the JSON output and as a module the site can import, so a layout renders the sidebar and previous and next links without its own list;
 - **a label for a page in the navigation**, where its title is too long (`ascribe.toml reference`).
 
+## The site's own pages
+
+`home/` is a second Ascribe project, at the site's root: one page type, a hero widget (`@hero-banner {status=early}:` around the page's heading and first paragraph, drawn by `src/styles/site.css` with no script), and `content/index.md`, the landing page. It copies the docs' release tables and `[sources.code]`, so a claim there can be marked as the docs mark one; `scripts/docs-site/facts.test.ts` fails until the copies agree. It publishes nothing for agents.
+
+A link into the docs is to a permalink, written `{site}/go/<name>/` with the `site` phrase: a link that starts with `/` names a file of `home/` itself, which `ascribe check` would report. `test/links.test.ts` follows it in the built site, and `test/projects.test.ts` runs `ascribe permalinks verify` on its name.
+
 ## Search
 
-[Pagefind](https://pagefind.app) indexes `dist/` after `astro build`, and the index is served with the site, so search needs no service. Only the page's `<article>` (`data-pagefind-body`) is indexed. `astro dev` has no index; build and `npm run preview` to search.
+[Pagefind](https://pagefind.app) indexes `dist/` after `astro build`, and the index is served with the site, so search needs no service. Only a docs page's `<article>` (`data-pagefind-body`) is indexed, so the pages of `home/` aren't, and the search box is on docs pages only. `astro dev` has no index; build and `npm run preview` to search.

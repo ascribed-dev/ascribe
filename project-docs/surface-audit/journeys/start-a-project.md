@@ -4,7 +4,7 @@ Part of [The surface audit](../README.md), [phase 3](../phase-3-journeys.md), jo
 
 ## The task
 
-> Follow https://ascribed-dev.com/getting-started/ to start a documentation project in this folder, write a first page about making tea, and publish it as a website I can open on this machine.
+> Follow https://ascribed-dev.com/go/getting-started/ to start a documentation project in this folder, write a first page about making tea, and publish it as a website I can open on this machine.
 
 That sentence is the whole prompt. It gives the getting-started page's address and nothing about what's on it. "A website I can open" is the result a check can't confirm: `ascribe check` passing says nothing about whether there's a site with the page in it.
 
@@ -17,7 +17,7 @@ An empty folder: no files, and not a git repository, since there's nothing in it
 One, with no plugin, and with `WebFetch` allowed so the agent can read the page it's given:
 
 ```shell
-claude -p "Follow https://ascribed-dev.com/getting-started/ to start a documentation project in this folder, write a first page about making tea, and publish it as a website I can open on this machine." \
+claude -p "Follow https://ascribed-dev.com/go/getting-started/ to start a documentation project in this folder, write a first page about making tea, and publish it as a website I can open on this machine." \
   --setting-sources project \
   --allowedTools "Read,Edit,Write,Glob,Grep,Bash,WebFetch" \
   --no-session-persistence --include-hook-events \
@@ -138,4 +138,4 @@ For the preparer.
 mkdir <scratch>/start-a-project-nothing
 ```
 
-Nothing else. Before the session, see that `https://ascribed-dev.com/getting-started/` answers 200, and note what `npm view @ascribed/cli dist-tags` says, since the page's commands install the `latest` release and the binary on the path is `main`'s.
+Nothing else. Before the session, see that `https://ascribed-dev.com/go/getting-started/` answers 200, and note what `npm view @ascribed/cli dist-tags` says, since the page's commands install the `latest` release and the binary on the path is `main`'s.

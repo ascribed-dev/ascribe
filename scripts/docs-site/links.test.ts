@@ -1,7 +1,8 @@
 // Readers are sent to the docs site, not to the docs' source files: the
-// READMEs link to the site's pages, and the extension's manifest to its permalinks, at the
-// address in docs/ascribe.toml's `[consumer] site`, and each link lands on a
-// page and a heading the docs have. (The binary's help is checked by
+// READMEs link to the docs' pages, under the address and base path in
+// docs/ascribe.toml's `[consumer]`, or to their permalinks, and the
+// extension's manifest to its permalinks. Each link lands on a page and a
+// heading the docs have, or on a permalink they declare. (The binary's help is checked by
 // crates/ascribe-cli/src/docs.rs, and the site's own links by site/test/.)
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -12,13 +13,25 @@ import { expect, test } from "vitest";
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const content = path.join(root, "docs", "content");
 
-/** `[consumer] site` in docs/ascribe.toml, without a trailing slash. */
-function siteAddress(): string {
+/** A string in docs/ascribe.toml's `[consumer]`. */
+function consumer(key: string): string {
   const config = readFileSync(path.join(root, "docs", "ascribe.toml"), "utf8");
   const table = /^\[consumer\]$([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(config)?.[1] ?? "";
-  const site = /^site\s*=\s*"([^"]+)"/m.exec(table)?.[1];
-  if (site === undefined) throw new Error("docs/ascribe.toml's [consumer] has no site");
-  return site.replace(/\/$/, "");
+  const found = new RegExp(`^${key}\\s*=\\s*"([^"]+)"`, "m").exec(table)?.[1];
+  if (found === undefined) throw new Error(`docs/ascribe.toml's [consumer] has no ${key}`);
+  return found;
+}
+
+/** `[consumer] site` in docs/ascribe.toml, without a trailing slash. */
+function siteAddress(): string {
+  return consumer("site").replace(/\/$/, "");
+}
+
+/** The permalinks the docs publish, by name, from docs/ascribe.permalinks's `[permalinks]`. */
+function permalinks(): Set<string> {
+  const list = readFileSync(path.join(root, "docs", "ascribe.permalinks"), "utf8");
+  const table = /^\[permalinks\]$([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(list)?.[1] ?? "";
+  return new Set(Array.from(table.matchAll(/^"?([\w-]+)"?\s*=/gm), ([, name = ""]) => name));
 }
 
 /** Every README in the repository, outside the docs themselves. */
@@ -69,8 +82,11 @@ test("READMEs link to the docs site, not to the docs' source files", () => {
   expect(found, "link to the page on the docs site instead").toEqual([]);
 });
 
-test("each link to the docs site lands on a page and a heading", () => {
+test("each link to the docs site lands on a page and a heading, or a permalink", () => {
   const site = siteAddress();
+  const basePath = consumer("base-path");
+  const permalinkPath = consumer("permalink-path");
+  const names = permalinks();
   const problems: string[] = [];
   let checked = 0;
   for (const file of readmes()) {
@@ -78,7 +94,17 @@ test("each link to the docs site lands on a page and a heading", () => {
       if (!link.startsWith(`${site}/`)) continue;
       checked++;
       const url = new URL(link);
-      const page = pageFor(url.pathname);
+      if (url.pathname.startsWith(permalinkPath)) {
+        // A permalink's page forwards to its heading, so the link has no fragment.
+        const name = url.pathname.slice(permalinkPath.length).replace(/\/$/, "");
+        if (!names.has(name) || url.hash !== "") problems.push(`${file}: ${link} (no permalink)`);
+        continue;
+      }
+      if (!url.pathname.startsWith(basePath)) {
+        problems.push(`${file}: ${link} (not under the docs' base path, ${basePath})`);
+        continue;
+      }
+      const page = pageFor(url.pathname.slice(basePath.length - 1));
       if (page === undefined) problems.push(`${file}: ${link} (no page)`);
       else if (url.hash !== "" && !anchors(page).has(decodeURIComponent(url.hash.slice(1)))) {
         problems.push(`${file}: ${link} (no heading)`);

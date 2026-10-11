@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         run: >
           ascribe report links agents --config docs
-          --site https://ascribed-dev.com --format summary --exit-code
+          --site https://ascribed-dev.com/docs/ --format summary --exit-code
           > report.md
       - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Open or update the issue

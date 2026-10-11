@@ -427,6 +427,7 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
   --type-h3: 650 1.125rem/1.4;
   --type-h2: 650 1.375rem/1.3;
   --type-h1: 700 1.875rem/1.2;
+  --type-hero: 750 2.75rem/1.1;
   /* End of generated root. */
 
   --header-height: 3.5rem;
@@ -434,6 +435,8 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
   --toc-width: 14rem;
   /* The page's line length: about 70 characters of body text. */
   --measure: 38rem;
+  /* A landing page's width: its hero, wider than a docs page's text. */
+  --wide-measure: 52rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -573,6 +576,24 @@ pre {
 .search-button:hover,
 .repo-link:hover {
   border-color: var(--muted);
+  color: var(--text);
+}
+
+/* Without search, on a page outside the docs, the links go to the right. */
+.docs-link {
+  margin-left: auto;
+  padding: 0.375rem 0.25rem;
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+  text-decoration: none;
+}
+
+.search-button + .docs-link {
+  margin-left: 0;
+}
+
+.docs-link:hover,
+.docs-link[aria-current] {
   color: var(--text);
 }
 
@@ -839,6 +860,65 @@ pre {
   height: auto;
 }
 
+/* A page outside the docs: its hero, then text at the page's measure. */
+
+.landing {
+  max-width: var(--wide-measure);
+  margin-inline: auto;
+}
+
+.landing article {
+  max-width: none;
+}
+
+.landing article > :not(hero-banner) {
+  max-width: var(--measure);
+}
+
+/*
+ * The hero widget (`[widgets.hero-banner]` in home/ascribe.toml): the page's
+ * heading and its first sentence, and how far along Ascribe is.
+ */
+hero-banner {
+  display: block;
+  padding: 2.5rem 0 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+hero-banner[status]::before {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.125rem 0.625rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-surface);
+  color: var(--accent);
+  font: var(--type-caption) var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+hero-banner[status="early"]::before {
+  content: "Early";
+}
+
+hero-banner[status="stable"]::before {
+  content: "Stable";
+}
+
+.page hero-banner h1 {
+  margin: 0 0 1rem;
+  font: var(--type-hero) var(--font);
+  letter-spacing: -0.02em;
+}
+
+hero-banner p {
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-lead) var(--font);
+}
+
 .page-footer {
   max-width: var(--measure);
   margin-top: 3rem;
@@ -901,6 +981,10 @@ pre {
 
   .page h1 {
     font-size: 1.625rem;
+  }
+
+  .page hero-banner h1 {
+    font: var(--type-h1) var(--font);
   }
 }
 

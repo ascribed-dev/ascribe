@@ -1,6 +1,6 @@
 # ascribe-diff
 
-What changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved; and which pages' examples changed while their words didn't. `ascribe diff` and `ascribe drift` are its command line; how to use them, and the JSON they write, are in the [command reference](https://ascribed-dev.com/reference/cli/#cli-diff). This README is about the code.
+What changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved; and which pages' examples changed while their words didn't. `ascribe diff` and `ascribe drift` are its command line; how to use them, and the JSON they write, are in the [command reference](https://ascribed-dev.com/go/cli-diff/). This README is about the code.
 
 | Module | Role |
 |---|---|
@@ -19,7 +19,7 @@ The binary links no git library and no HTTP client: `git` is run as a process wi
 ## Rules
 
 - **Positions never reach a fingerprint.** A block that moved down the file, or was rewrapped, fingerprints the same. Text is compared with whitespace collapsed; what a reader sees besides text (a link's resolved URL, an availability badge's labels, a glossary link, an arm's label) is in the fingerprint too.
-- **Anchors follow the [site-render contract's source anchors](https://ascribed-dev.com/contracts/site-render/#7-source-anchors)**, the same strings the site output writes as `data-ascribe-source` and `data-ascribe-via`, and lines are counted as the JSON output's `lines` are.
+- **Anchors follow the [site-render contract's source anchors](https://ascribed-dev.com/docs/contracts/site-render/#7-source-anchors)**, the same strings the site output writes as `data-ascribe-source` and `data-ascribe-via`, and lines are counted as the JSON output's `lines` are.
 - **Limits** keep a generated page from taking seconds: `words::MAX_TOKENS` for the word diff, `align::MAX_CHILDREN` for comparing inside a container, `align::MAX_PAIRS` for pairing within one unmatched run. The static report keeps a large change openable: `html::MAX_PAGES` pages rendered, `html::MAX_IMAGE_BYTES` per image.
 
 ## Tests

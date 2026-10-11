@@ -2,7 +2,7 @@
 
 The checks, and loading a project from disk to run them on. Every diagnostic Ascribe reports comes from here: `ascribe check`, `ascribe build`, and the language server all call the same functions, which is what keeps their results identical (SPEC §8).
 
-Which diagnostics exist, with their codes, severities, and messages, is defined in one file, `tests/conformance/diagnostics.toml`. The [diagnostics reference](https://ascribed-dev.com/reference/diagnostics/) is generated from it.
+Which diagnostics exist, with their codes, severities, and messages, is defined in one file, `tests/conformance/diagnostics.toml`. The [diagnostics reference](https://ascribed-dev.com/go/diagnostics/) is generated from it.
 
 ## Pieces
 

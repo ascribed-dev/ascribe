@@ -5,8 +5,15 @@ export const name = "Ascribe";
 /** The repository, for the header link and each page's edit link. */
 export const repo = "https://github.com/ascribed-dev/ascribe";
 
-/** Where the pages' sources are in the repository. */
+/** Where the docs pages' sources are in the repository. */
 export const contentDir = "docs/content";
+
+/**
+ * The docs' route: `[consumer] base-path` in ../docs/ascribe.toml less Astro's
+ * `base`, and the folder of their route in src/pages/. test/projects.test.ts
+ * checks it against the base path.
+ */
+export const docsPath = "docs/";
 
 /**
  * The page's source file, relative to the content root, from the path the

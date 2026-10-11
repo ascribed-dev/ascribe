@@ -1,6 +1,6 @@
 # ascribe-cli
 
-The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`, `agents`, and the commands that answer questions (`explain`, `model`, `outline`, `link`, `refs`, `render`). How to use it (every option, the outputs, the JSON report's schema, and the exit codes) is in the [command reference](https://ascribed-dev.com/reference/cli/). This README is about the code.
+The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`, `agents`, and the commands that answer questions (`explain`, `model`, `outline`, `link`, `refs`, `render`). How to use it (every option, the outputs, the JSON report's schema, and the exit codes) is in the [command reference](https://ascribed-dev.com/go/cli-reference/). This README is about the code.
 
 | Module | Role |
 |---|---|

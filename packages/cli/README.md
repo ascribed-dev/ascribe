@@ -9,11 +9,11 @@ npx ascribe build
 npx ascribe fmt --check
 ```
 
-The [command reference](https://ascribed-dev.com/reference/cli/) covers every command, option, output, and exit code, and [Getting started](https://ascribed-dev.com/getting-started/) sets up a project.
+The [command reference](https://ascribed-dev.com/go/cli-reference/) covers every command, option, output, and exit code, and [Getting started](https://ascribed-dev.com/go/getting-started/) sets up a project.
 
 ## The skill
 
-The package ships the Ascribe skill, in the [Agent Skills](https://agentskills.io) format, as `skills/ascribe/`, for tools that install skills from packages. It teaches an AI coding agent to check and fix Ascribe pages. In a project, `npx ascribe agents sync` writes it where agents look, with the project's own rules: see [Agents](https://ascribed-dev.com/guides/agents/).
+The package ships the Ascribe skill, in the [Agent Skills](https://agentskills.io) format, as `skills/ascribe/`, for tools that install skills from packages. It teaches an AI coding agent to check and fix Ascribe pages. In a project, `npx ascribe agents sync` writes it where agents look, with the project's own rules: see [Agents](https://ascribed-dev.com/go/agents-guide/).
 
 ## Platforms
 
