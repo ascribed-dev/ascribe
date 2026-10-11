@@ -160,11 +160,13 @@ pub fn disallowing(lines: &[String], path: &str) -> Option<usize> {
             after_agent = true;
             continue;
         }
+        // Any other line, such as `Sitemap` or `Crawl-delay`, ends a run of
+        // `User-agent` lines, so one after it opens a group of its own.
+        after_agent = false;
         let allow = field.eq_ignore_ascii_case("allow");
         if !allow && !field.eq_ignore_ascii_case("disallow") {
             continue;
         }
-        after_agent = false;
         if !for_every || value.is_empty() || !matches(value, path) {
             continue;
         }
@@ -259,6 +261,11 @@ mod tests {
         assert_eq!(disallowing(&l, "/c/"), Some(4));
         let l = lines(&["User-agent: Googlebot", "User-agent: *", "Disallow: /a/"]);
         assert_eq!(disallowing(&l, "/a/"), Some(2));
+        // Another line ends the run of `User-agent` lines.
+        for between in ["Crawl-delay: 5", "Sitemap: https://example.com/s.xml"] {
+            let l = lines(&["User-agent: *", between, "User-agent: Bot", "Disallow: /x/"]);
+            assert_eq!(disallowing(&l, "/x/"), None, "{between}");
+        }
     }
 
     #[test]

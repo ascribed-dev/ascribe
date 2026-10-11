@@ -75,7 +75,7 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 
 **The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11), and code spans (§5.3).
 
-**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](directives.md#permalinks)), and `listing` (below) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
+**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](directives.md#permalinks)), and `listing` (below) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
 
 @available: ascribe 0.2.0
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
@@ -92,7 +92,7 @@ A page says whether readers that aren't people are offered it with `listing` ([S
 |---|---|
 | `listed` | The default, when a page doesn't set it. Search engines may list it, and agents are offered it in `llms.txt`. |
 | `unquoted` | Listed, and asks not to be quoted. Accepted, and in the page's record, but nothing else acts on it yet. |
-| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt` and the sitemap. It's still built, at its address, with its Markdown version. |
+| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt`, and is to be out of the sitemap. It's still built, at its address, with its Markdown version. |
 
 ```yaml
 ---
@@ -101,7 +101,7 @@ listing: unlisted
 ---
 ```
 
-Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and everything else is written from the record: `llms.txt` now, and in an Astro site the page's head and the sitemap. The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
+Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. The page's head, the sitemap, and `robots.txt` in an Astro site are to be written from it too; `@ascribed/astro` doesn't write them yet. The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
 
 What isn't handled yet:
 
