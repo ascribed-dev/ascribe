@@ -1,10 +1,11 @@
 // Finding the site preview: `.ascribe/dev.json`, whether its server answers,
 // and the page's address on it (`src/preview/site.ts`).
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   answers,
@@ -138,5 +139,33 @@ describe("the page's address", () => {
 
   it("says how to start a dev server when there's none", () => {
     expect(noDevServerMessage("handbook")).toContain("Start its dev server (astro dev)");
+  });
+});
+
+describe("when the dev server is called", () => {
+  /** Every `.ts` file under `src/`. */
+  function sources(): string[] {
+    const src = fileURLToPath(new URL("../../src/", import.meta.url));
+    return readdirSync(src, { withFileTypes: true, recursive: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".ts"))
+      .map((entry) => path.join(entry.parentPath, entry.name));
+  }
+
+  // A committed dev.json names an address on this machine. Reading it and
+  // calling that address happen only once the author asks for the site
+  // preview (Open Site Preview, or the panel's Site switch); the watcher that
+  // offers the command only notices that the file is there.
+  it("only when the author asks for the site preview", () => {
+    const callers: string[] = [];
+    for (const file of sources()) {
+      if (path.basename(file) === "site.ts") continue;
+      const text = readFileSync(file, "utf8");
+      for (const call of text.matchAll(/\b(?:findDevServer|answers|parseDevFile)\(/g)) {
+        const before = text.slice(0, call.index);
+        const method = [...before.matchAll(/^ {2}(?:private )?(?:async )?(\w+)\(/gm)].at(-1);
+        callers.push(`${path.basename(file)} ${method?.[1] ?? "(top level)"}`);
+      }
+    }
+    expect(callers.sort()).toEqual(["controller.ts openSite", "controller.ts showSite"]);
   });
 });

@@ -78,7 +78,7 @@ with a warning.
 in `test/webview/`):
 
 ```
-default-src 'none'; script-src <origin>; style-src <origin>; img-src <origin>; font-src <origin>
+default-src 'none'; script-src <origin>; style-src <origin>; img-src <origin>; font-src <origin>; form-action 'none'; base-uri 'none'
 ```
 
 `<origin>` is `webview.cspSource`: where VS Code serves the extension's and
@@ -88,7 +88,7 @@ by the stylesheet and `--ascribe-*` custom properties), and needs no
 `eval`, so it runs under the policy with **no `'unsafe-inline'`, no nonce, and no
 `'unsafe-eval'`**. The cost is that raw HTML in a page that needs an inline
 script, an inline `style` attribute, or a remote image behaves differently in
-the preview than on the site. Link clicks are handled by the
+the preview than on the site, and a form in it can't be submitted. Link clicks are handled by the
 extension, which opens only `http:`, `https:`, and `mailto:` URLs outside VS
 Code.
 
