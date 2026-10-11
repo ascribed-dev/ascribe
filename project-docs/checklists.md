@@ -70,7 +70,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 **The docs**
 
 - [ ] The reference: `docs/content/reference/directives.md` or `docs/content/reference/content-model.md`, and any guide that shows the form. What no release has yet is marked `@available: next`.
-- [ ] A line in the unreleased section of `CHANGELOG.md`.
+- [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 
 ## A new command or option
 
@@ -87,7 +87,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] The shape's schema and TypeScript, generated from its Rust types by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`): a doc comment on every field, a new shape added to `SHAPES` (and to `PACKAGES` when a package reads it), and a new command's schema included in `docs/content/contracts/json-reports.md`. The packages read the generated `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, never a type of their own.
 - [ ] The TypeScript that runs the command, if it passes the new option: `packages/astro/src/run.ts`.
 - [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
-- [ ] A line in the unreleased section of `CHANGELOG.md`.
+- [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 - [ ] The map of the surface, `project-docs/surface.md`, rewritten by `node scripts/surface/inventory.ts` after the fragments above. Its diff is what the change added to the surface: read it against the conventions at the top of this list.
 - [ ] **A tool for it,** if an agent with no shell needs the answer: named `ascribe_` and the command's own word (`ascribe_search` for `ascribe search`), with the command's arguments under the same names, `response_format` with `concise` the default, and nothing that writes a file. A command that changes the project gets no tool (decision 56).
 - [ ] **A path in what it prints, or in a prompt it writes,** is from the folder the command was run in, the form it takes as an argument. A prompt says once which folder its commands are for.
@@ -118,7 +118,7 @@ An element, an attribute, a class, or the order of what the `site` output writes
 - [ ] The HTML report, `crates/ascribe-diff/src/html/`. Its embedded script and styles are rebuilt from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`.
 - [ ] The Astro example's end-to-end tests, in `examples/astro-site/test/e2e/`.
 - [ ] The docs site's own styles, in `site/src/styles/site.css`, if they style the changed markup.
-- [ ] A line in the unreleased section of `CHANGELOG.md`.
+- [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 
 ## A change to how something looks
 
@@ -132,5 +132,5 @@ A color, a font, the type scale, a space or radius, the mark, or one of its imag
 - [ ] The specimen rewritten (`node scripts/design/specimen.ts`) and looked at.
 - [ ] Screenshots in light and dark of each surface it reaches, in the pull request.
 - [ ] `node scripts/compare/outputs.ts --base main`: only the HTML report's files differ, accepted by name, with the label `outputs changed`.
-- [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in the unreleased section of `CHANGELOG.md`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
+- [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in its changelog entry in `changes/`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
 - [ ] In the extension: a codicon and a theme color first (`packages/vscode/DEVELOPMENT.md`, "Icons and colors").
