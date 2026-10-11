@@ -52,17 +52,24 @@ ascribe({
 // A layout
 import Elements from "@ascribed/astro/Elements.astro";
 import Availability from "@ascribed/astro/Availability.astro";
+import Head from "@ascribed/astro/Head.astro";
 const { entry } = Astro.props;
 ---
-<head><Elements /></head>
+<head>
+  <!-- The title, description, canonical link, and robots rule, from the page's record. -->
+  <Head entry={entry} title={(title, record) => `${title} · Loom`} />
+  <Elements />
+</head>
 <Availability available={entry.data.available} />
 <!-- With `inline = "code"` on `title`: its code spans as <code>. -->
 <h1 set:html={entry.data.formatted.title} />
 ```
 
+Each build writes a record of every page, `_ascribe/pages.json`, and the integration writes from every project's records what search engines read: `Head.astro` gives a page its `<title>`, description, canonical link, and `noindex` when it's `listing: unlisted`; and the site gets one `sitemap.xml`, at Astro's `base`, and one `robots.txt`, at the host's root, with each project's `[crawlers] lines`, in `astro build` and `astro dev`. A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro` and is in the sitemap as a page Astro built. A site with its own `public/robots.txt` or `public/sitemap.xml` keeps it, and a site whose `base` isn't `/` gets no `robots.txt`: the build prints the lines its host's needs. With no `site`, there's no sitemap.
+
 `npx @ascribed/astro init` writes those files into an Astro project once, as yours from then on: the collection (`src/content.config.ts`), the route (`src/pages/[...slug].astro`), a layout that loads the elements (`src/layouts/Docs.astro`), and the sidebar's list (`src/nav.ts`). It never writes over a file. `--project <dir>` names the folder holding `ascribe.toml`, and `--build <name>` the build, when there are several. The layout's sidebar comes from `sidebar(nav, entries)` in `@ascribed/astro/content`, which gives each listed page its entry and address, and fails the build when the list leaves out a page or names one that isn't there.
 
-The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, [a home page in front of the docs](https://ascribed-dev.com/go/a-home-page-in-front-of-the-docs/), [several projects in one site](https://ascribed-dev.com/go/several-projects-in-one-site/), what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/go/review-in-the-site-preview/). [Review](https://ascribed-dev.com/go/review-guide/) walks through reviewing a pull request on your site.
+The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, [a home page in front of the docs](https://ascribed-dev.com/go/a-home-page-in-front-of-the-docs/), [several projects in one site](https://ascribed-dev.com/go/several-projects-in-one-site/), search engines and crawlers, what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/go/review-in-the-site-preview/). [Review](https://ascribed-dev.com/go/review-guide/) walks through reviewing a pull request on your site.
 
 ## Options
 
@@ -75,6 +82,7 @@ The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site
 | `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. With `projects`, an entry's name reviews that entry, and `true` the first. |
 | `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it) above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`. `false` leaves it out. By default, `true`. |
+| `sitemap` | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the sitemap, such as one that carries `noindex`. |
 
 ## Development
 

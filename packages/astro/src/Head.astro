@@ -1,0 +1,40 @@
+---
+// What a page's head says about it to every reader that isn't a person, from
+// its record in the build's `_ascribe/pages.json`: its `<title>`, its
+// description, its canonical link, and `<meta name="robots" content="noindex">`
+// when it isn't listed. Each comes from the record, as the sitemap and
+// `llms.txt` do, so none can disagree with them. A layout includes it in
+// `<head>`, given the page's collection entry:
+//
+//   <Head entry={entry} title={(page, record) => `${page} · Loom`} />
+//
+// `title` is a function from the page's title and its record, which has its
+// route, to the whole title. A page with no record, such as an Astro page of
+// the site's own, gets nothing: it writes its own head.
+import { pageRecord, type PageRecord } from "@ascribed/astro/content";
+
+interface Props {
+  /** The page's collection entry, or `undefined` for a page that has none. */
+  entry?: { filePath?: string | undefined; data?: unknown } | undefined;
+  /** The whole title, from the page's title and its record. Default: the page's title. */
+  title?: (title: string, record: PageRecord) => string;
+}
+
+const { entry, title } = Astro.props;
+const record = entry === undefined ? undefined : pageRecord(entry);
+const whole =
+  record?.title === undefined
+    ? undefined
+    : title === undefined
+      ? record.title
+      : title(record.title, record);
+---
+
+{whole !== undefined && <title>{whole}</title>}
+{
+  record?.description !== undefined && (
+    <meta name="description" content={record.description} />
+  )
+}
+{record?.canonical !== undefined && <link rel="canonical" href={record.canonical} />}
+{record?.listing === "unlisted" && <meta name="robots" content="noindex" />}

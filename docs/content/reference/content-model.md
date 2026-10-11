@@ -92,7 +92,7 @@ A page says whether readers that aren't people are offered it with `listing` ([S
 |---|---|
 | `listed` | The default, when a page doesn't set it. Search engines may list it, and agents are offered it in `llms.txt`. |
 | `unquoted` | Listed, and asks not to be quoted. Accepted, and in the page's record, but nothing else acts on it yet. |
-| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt`, and is to be out of the sitemap. It's still built, at its address, with its Markdown version. |
+| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt` and the sitemap. It's still built, at its address, with its Markdown version. |
 
 ```yaml
 ---
@@ -101,7 +101,7 @@ listing: unlisted
 ---
 ```
 
-Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. The page's head, the sitemap, and `robots.txt` in an Astro site are to be written from it too; `@ascribed/astro` doesn't write them yet. The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
+Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. In an Astro site, `@ascribed/astro` writes the page's head, the sitemap, and `robots.txt` from it too ([the Astro guide](../guides/astro.md#search-engines-and-crawlers)). The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
 
 What isn't handled yet:
 
