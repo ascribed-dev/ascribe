@@ -79,6 +79,74 @@ pub trait Linter: Send + Sync {
     ///
     /// Vale couldn't be run, failed, or ran out of time.
     fn lint(&self, request: &Request) -> Result<BTreeMap<String, Vec<Alert>>, ValeError>;
+
+    /// Why it won't start `command`, as `[checks.vale] command` gives it,
+    /// for the project at `root`, when it won't: what the
+    /// `prose-not-checked` advice says instead. Nothing is written for
+    /// Vale, or run, then.
+    fn refuses(&self, _command: &str, _root: &Path) -> Option<String> {
+        None
+    }
+}
+
+/// Whether `command`, as `[checks.vale] command` gives it, is a program in
+/// the project rather than one found by name on the `PATH`: a relative
+/// path, which is from the project root, or an absolute one that leads
+/// into the project's folder.
+pub fn in_project(command: &str, root: &Path) -> bool {
+    if !command.contains(['/', '\\']) {
+        return false;
+    }
+    let path = Path::new(command);
+    if path.is_relative() {
+        return true;
+    }
+    // Through links, so a link can't hide that it's inside, and as far as
+    // the path exists, so a program not there yet compares like its folder.
+    let real = crate::scope::real;
+    real(path).starts_with(real(root))
+}
+
+/// Runs Vale as `inner` does, unless `[checks.vale] command` is a program
+/// in the project ([`in_project`]): for a caller that can't ask anyone
+/// first, such as the agents' hook. A bare name found on the `PATH` runs.
+pub struct OnPath<'a> {
+    /// What runs Vale when it may.
+    pub inner: &'a dyn Linter,
+    /// Who doesn't start it, for the advice: "the agents' hook".
+    pub who: &'static str,
+}
+
+impl Linter for OnPath<'_> {
+    fn lint(&self, request: &Request) -> Result<BTreeMap<String, Vec<Alert>>, ValeError> {
+        self.inner.lint(request)
+    }
+
+    fn refuses(&self, command: &str, root: &Path) -> Option<String> {
+        if in_project(command, root) {
+            Some(format!(
+                "{} doesn't start `{command}`, a program in the project",
+                self.who
+            ))
+        } else {
+            self.inner.refuses(command, root)
+        }
+    }
+}
+
+/// Starts no program at all, and says why: for a caller that never runs
+/// Vale, such as the MCP server, whose tools say they only read, or one
+/// the person said no to.
+pub struct NotStarted(pub String);
+
+impl Linter for NotStarted {
+    fn lint(&self, _request: &Request) -> Result<BTreeMap<String, Vec<Alert>>, ValeError> {
+        Ok(BTreeMap::new())
+    }
+
+    fn refuses(&self, _command: &str, _root: &Path) -> Option<String> {
+        Some(self.0.clone())
+    }
 }
 
 /// Runs the `vale` program.

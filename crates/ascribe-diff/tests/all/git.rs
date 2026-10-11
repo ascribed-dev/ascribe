@@ -421,3 +421,20 @@ fn a_base_with_no_history_in_common() {
     );
     assert!(found.base(Some("main"), true).is_ok());
 }
+
+#[test]
+fn git_runs_no_command_a_committed_folder_shaped_like_a_repository_names() {
+    let planted =
+        crate::planted::Planted::new(&[("ascribe.toml", MODEL), ("docs/index.md", "# Home\n")]);
+    let dir = planted.project();
+    // `git` refuses the planted folder, or finds the repository around
+    // it; either way, the folder's configuration isn't read.
+    if let Ok(repo) = Repository::discover(&dir) {
+        let _ = repo.working_changes();
+        if let Ok(base) = repo.base(Some("HEAD"), true) {
+            let _ = repo.changed_files(base.compared());
+            let _ = repo.tree(base.compared());
+        }
+    }
+    assert!(!planted.ran(), "git ran the planted folder's command");
+}

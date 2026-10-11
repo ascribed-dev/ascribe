@@ -761,13 +761,13 @@ max-level = "error"
 | `preset` | string | | One of Ascribe's presets: `quiet`. A preset's name never changes once released; a rule added to it is a **Behavior change** in the changelog. |
 | `config` | string | | The project's own `.vale.ini`, a path from the project root. |
 | `off` | array of strings | `[]` | Rules of the preset to turn off, as `<Style>.<Rule>`. Only with `preset`. |
-| `command` | string | `"vale"` | The command run. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. |
+| `command` | string | `"vale"` | The command run. A value with a path separator is a path from the project root; a bare name is looked up on the `PATH`. A relative path, or an absolute one into the project's folder, is a program in the project, which the language server runs only once the person allows it, and the agents' hook never runs (decision 76). |
 | `in-check` | boolean | `false` | Whether `ascribe check` checks the prose without `--vale`. |
 | `max-level` | string | `"error"` | `"advice"`, `"warning"`, or `"error"`: the most a Vale alert is reported as. Vale's `suggestion`, `warning`, and `error` map to advice, warning, and error, capped at this. |
 
 What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a preset's configuration and styles, and the vocabulary `Ascribe` of the project's own words (phrase values, glossary terms and aliases, dimension, value, and feature labels), one escaped regular expression to a line. Nothing outside it is written, except by `ascribe vale eject`.
 
-Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
+Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC166`) at `[checks.vale]`, never a failed check, and so is one the caller doesn't start: the MCP server never starts Vale, the agents' hook never starts a program in the project, and the language server starts one only once the person allows it. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
 
 **Rules** (§23.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
 

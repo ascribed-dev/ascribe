@@ -196,6 +196,7 @@ fn edit_text(files: &[String], found: &Found) -> String {
     lines.push(format!(
         "Checked build `{build}` only. Run `ascribe explain <code>` for any you don't recognize."
     ));
+    lines.extend(found.prose.iter().cloned());
     lines.join("\n") + "\n"
 }
 
@@ -267,6 +268,7 @@ fn stop_text(dir: &str, found: &Found) -> String {
         ));
     }
     lines.push(format!("Fix these, then run `{command}`."));
+    lines.extend(found.prose.iter().cloned());
     lines.join("\n") + "\n"
 }
 

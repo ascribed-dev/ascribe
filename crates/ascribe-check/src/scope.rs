@@ -119,13 +119,13 @@ pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, S
 /// `.` and `..` resolved, so two spellings of one place compare equal. What
 /// doesn't exist yet is kept as written, after the part that does. For
 /// comparing only: on Windows it's a `\\?\` path.
-fn real(path: &Path) -> PathBuf {
+pub(crate) fn real(path: &Path) -> PathBuf {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
     let mut existing = absolute.as_path();
     let mut rest = Vec::new();
     loop {
-        // Outside FileSystem: finding where a path named on the command line
-        // is, before there's a project to read it through.
+        // Outside FileSystem: finding where a path named on the command line,
+        // or a program `[checks.vale] command` names, is: not a project file.
         if let Ok(found) = existing.canonicalize() {
             let mut out = found;
             out.extend(rest.iter().rev());

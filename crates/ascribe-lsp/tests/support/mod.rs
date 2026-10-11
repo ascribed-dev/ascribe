@@ -34,12 +34,17 @@ pub struct Client {
     pub latest: BTreeMap<String, PublishDiagnosticsParams>,
     pub initialize_result: serde_json::Value,
     pub requests_from_server: Vec<Request>,
+    /// What it answers a `window/showMessageRequest` with.
+    answer: serde_json::Value,
 }
 
 pub struct Setup {
     pub encodings: Option<Vec<PositionEncodingKind>>,
     pub watch: bool,
     pub options: Options,
+    /// Whether the client says it handles `window/showMessageRequest`,
+    /// and the title of the action it picks; `None` picks none.
+    pub ask: Option<Option<&'static str>>,
 }
 
 impl Default for Setup {
@@ -48,6 +53,7 @@ impl Default for Setup {
             encodings: None,
             watch: true,
             options: Options::default(),
+            ask: None,
         }
     }
 }
@@ -96,6 +102,10 @@ impl Client {
         if let Some(encodings) = &setup.encodings {
             general["positionEncodings"] = json!(encodings);
         }
+        let mut window = json!({ "showDocument": { "support": true } });
+        if setup.ask.is_some() {
+            window["showMessage"] = json!({});
+        }
         let params = json!({
             "processId": null,
             "rootUri": null,
@@ -103,7 +113,7 @@ impl Client {
             "capabilities": {
                 "general": general,
                 "workspace": { "didChangeWatchedFiles": { "dynamicRegistration": setup.watch } },
-                "window": { "showDocument": { "support": true } },
+                "window": window,
             },
         });
         let mut client = Client {
@@ -116,6 +126,10 @@ impl Client {
             latest: BTreeMap::new(),
             initialize_result: json!(null),
             requests_from_server: Vec::new(),
+            answer: match setup.ask.flatten() {
+                Some(title) => json!({ "title": title }),
+                None => json!(null),
+            },
         };
         let response = client.request("initialize", params);
         client.initialize_result = response.response_result.expect("initialize succeeds");
@@ -135,12 +149,18 @@ impl Client {
             }
             Message::Notification(_) => None,
             Message::Request(request) => {
-                // registerCapability and friends: accept.
+                // registerCapability and friends: accept. A question: the
+                // answer set up.
                 let id = request.id.clone();
+                let result = if request.method == "window/showMessageRequest" {
+                    self.answer.clone()
+                } else {
+                    serde_json::Value::Null
+                };
                 self.requests_from_server.push(request);
                 self.conn
                     .sender
-                    .send(Response::new_ok(id, serde_json::Value::Null).into())
+                    .send(Response::new_ok(id, result).into())
                     .expect("send");
                 None
             }

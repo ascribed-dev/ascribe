@@ -357,3 +357,16 @@ fn an_example_that_no_longer_resolves() {
     );
     assert_eq!(json["pages"][1]["examples"], serde_json::json!([]));
 }
+
+#[test]
+fn drift_runs_no_command_a_committed_folder_shaped_like_a_repository_names() {
+    let planted = crate::planted::Planted::new(&[
+        ("ascribe.toml", MODEL),
+        ("docs/run.md", RUN),
+        ("service/app.py", &code("connect()\n")),
+    ]);
+    for args in [&["drift"][..], &["drift", "--base", "HEAD"]] {
+        let _ = ascribe(&planted.project(), args);
+    }
+    assert!(!planted.ran(), "`ascribe drift` ran the planted command");
+}

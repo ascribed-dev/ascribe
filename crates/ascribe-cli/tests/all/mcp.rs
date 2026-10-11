@@ -107,10 +107,17 @@ struct Server {
 impl Server {
     /// A server in `dir`, for a 2026-07-28 client.
     fn start(dir: &Path) -> Server {
+        Server::start_with(dir, &[])
+    }
+
+    /// A server in `dir`, for a 2026-07-28 client, with these environment
+    /// variables set.
+    fn start_with(dir: &Path, env: &[(&str, std::ffi::OsString)]) -> Server {
         let mut child = Command::new(env!("CARGO_BIN_EXE_ascribe"))
             .current_dir(dir)
             .arg("mcp")
             .env("NO_COLOR", "1")
+            .envs(env.iter().map(|(k, v)| (k, v)))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -994,6 +1001,92 @@ fn each_tools_example_uses_its_arguments() {
         for key in example.keys() {
             assert!(properties.contains_key(key), "{}: {key}", tool["name"]);
         }
+    }
+}
+
+/// A call of each tool, in a project at the server's working directory.
+fn call_in_project(tool: &str) -> Value {
+    match tool {
+        "ascribe_check" => json!({}),
+        "ascribe_explain" => json!({ "code": "ASC037" }),
+        "ascribe_model" => json!({ "section": "phrases" }),
+        "ascribe_outline" => json!({ "page": "docs/install.md", "build": "cloud" }),
+        "ascribe_link" => json!({ "target": "keys.md", "from": "docs/install.md" }),
+        "ascribe_refs" => json!({ "target": "phrase:product" }),
+        "ascribe_render" => json!({ "page": "docs/install.md", "build": "cloud" }),
+        "ascribe_format" => json!({ "paths": ["docs"] }),
+        "ascribe_changes" => json!({ "base": "HEAD" }),
+        other => panic!("{other} is a new tool: give it a call here"),
+    }
+}
+
+/// Every tool `tools/list` gives says it only reads, so none starts a
+/// program the project names: not Vale, with `[checks.vale] in-check`,
+/// whether `command` is a path in the project or a name on the `PATH`, and
+/// not `git` taking a committed folder shaped like a repository for the
+/// repository. The `fix` prompt runs the same check. Vale's stand-ins are
+/// shell scripts, so they're left out on Windows; the `git` half isn't.
+#[test]
+fn no_tool_starts_a_program_the_project_names() {
+    let marks = tempfile::tempdir().unwrap();
+    let vale = |name: &str| -> String {
+        let mark = marks.path().join(name).display().to_string();
+        format!("#!/bin/sh\ntouch '{mark}'\n")
+    };
+    let model = |command: &str| {
+        format!(
+            "{MODEL}\n[checks.vale]\npreset = \"quiet\"\nin-check = true\ncommand = \"{command}\"\n"
+        )
+    };
+    let planted = crate::planted::Planted::new(&[
+        ("ascribe.toml", &model("bin/vale")),
+        ("docs/install.md", INSTALL),
+        ("docs/_fragments/before.md", BEFORE),
+        ("docs/keys.md", KEYS),
+        ("bin/vale", &vale("project")),
+        ("path/vale", &vale("path")),
+    ]);
+    let project = planted.project();
+    #[cfg(unix)]
+    for script in ["bin/vale", "path/vale"] {
+        use std::os::unix::fs::PermissionsExt;
+        let file = project.join(script);
+        fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let mut search = vec![project.join("path")];
+    search.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    let path = std::env::join_paths(search).unwrap();
+
+    for command in ["bin/vale", "vale"] {
+        write(&project.join("ascribe.toml"), &model(command));
+        let mut server = Server::start_with(&project, &[("PATH", path.clone())]);
+        let tools = server.result("tools/list", json!({}));
+        for tool in tools["tools"].as_array().unwrap() {
+            assert_eq!(tool["annotations"]["readOnlyHint"], true, "{tool}");
+            let name = tool["name"].as_str().unwrap();
+            let result = server.call(name, call_in_project(name));
+            if name == "ascribe_check" {
+                assert!(
+                    result["content"][0]["text"]
+                        .as_str()
+                        .unwrap()
+                        .contains("don't start Vale"),
+                    "{command}: {result}"
+                );
+            }
+        }
+        server.result("prompts/get", json!({ "name": "fix", "arguments": {} }));
+        for mark in ["project", "path"] {
+            assert!(
+                !marks.path().join(mark).exists(),
+                "a tool ran the {mark} Vale, with `command = \"{command}\"`"
+            );
+        }
+        assert!(!planted.ran(), "a tool ran the planted folder's command");
+        // Nothing written for Vale either: no tool writes a file.
+        assert!(!project.join(".ascribe").exists(), "{command}");
     }
 }
 

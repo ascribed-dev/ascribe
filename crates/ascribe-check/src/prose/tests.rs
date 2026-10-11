@@ -228,3 +228,62 @@ fn an_older_vale_s_action_gives_the_replacement() {
     newer.suggestions = vec!["The".to_owned()];
     assert_eq!(replacements(&newer, "the the"), ["The"]);
 }
+
+#[test]
+fn a_command_with_a_path_is_a_program_in_the_project_and_a_bare_name_isnt() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    assert!(!in_project("vale", root));
+    assert!(!in_project("vale.exe", root));
+    assert!(in_project("tools/vale", root));
+    assert!(in_project("./vale", root));
+    assert!(in_project("../bin/vale", root));
+    let inside = root.join("bin").join("vale");
+    assert!(in_project(&inside.display().to_string(), root));
+    let outside = tempfile::tempdir().unwrap();
+    let elsewhere = outside.path().join("vale");
+    assert!(!in_project(&elsewhere.display().to_string(), root));
+}
+
+#[test]
+fn a_linter_that_refuses_runs_nothing_writes_nothing_and_says_why() {
+    let dir = tempfile::tempdir().unwrap();
+    let fake = Fake::finding("teh", "the");
+    let page = Page {
+        id: FileId::new(1),
+        path: "docs/page.md",
+        text: "teh text\n",
+    };
+    let on_path = OnPath {
+        inner: &fake,
+        who: "the hook",
+    };
+    let in_the_project = model("command = \"tools/vale\"\n");
+    let found = lint_pages(dir.path(), &in_the_project, &[page], &on_path, FILE_TIMEOUT);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].slug, diagnostics::PROSE_NOT_CHECKED);
+    assert_eq!(
+        found[0].message,
+        "the prose wasn't checked: the hook doesn't start `tools/vale`, a program in the \
+         project. `ascribe check --vale` checks it"
+    );
+    assert!(fake.seen.lock().unwrap().is_empty());
+    // Outside FileSystem: whether anything was written for Vale.
+    assert!(
+        !dir.path().join(".ascribe").exists(),
+        "nothing written for Vale"
+    );
+
+    // A name on the `PATH` runs.
+    let on_the_path = model("");
+    let found = lint_pages(dir.path(), &on_the_path, &[page], &on_path, FILE_TIMEOUT);
+    assert_eq!(fake.seen.lock().unwrap().len(), 1);
+    assert!(found.iter().all(|d| d.slug == diagnostics::PROSE));
+
+    let never = NotStarted("nobody starts it".to_owned());
+    let found = lint_pages(dir.path(), &on_the_path, &[page], &never, FILE_TIMEOUT);
+    assert_eq!(
+        found[0].message,
+        "the prose wasn't checked: nobody starts it. `ascribe check --vale` checks it"
+    );
+}

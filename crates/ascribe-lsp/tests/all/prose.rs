@@ -281,3 +281,93 @@ fn closing_a_page_clears_its_alerts() {
     assert!(prose_lines(&client, &a).is_empty());
     assert_eq!(client.codes(&a), ["link-target-missing"]);
 }
+
+/// A model whose `[checks.vale] command` is `command`.
+fn model_running(command: &str) -> String {
+    format!("{VALE_MODEL}command = \"{command}\"\n")
+}
+
+/// Opens two pages and saves one, with a client set up to answer `ask`,
+/// and returns how many times Vale ran, how many times the client was
+/// asked, and the advice on `ascribe.toml`.
+fn open_and_save(command: &str, ask: Option<Option<&'static str>>) -> (usize, usize, Vec<String>) {
+    let f = Fixture::new(
+        &model_running(command),
+        &[("docs/a.md", PAGE), ("docs/b.md", PAGE)],
+    );
+    let (a, b) = (f.path("docs/a.md"), f.path("docs/b.md"));
+    let fake = Arc::new(Fake::new());
+    let mut client = Client::start_with(
+        &f.root(),
+        Setup {
+            options: Options {
+                linter: Some(fake.clone()),
+                ..Options::default()
+            },
+            ask,
+            ..Setup::default()
+        },
+    );
+    client.open(&a, 1, PAGE);
+    client.open(&b, 1, PAGE);
+    client.settle();
+    client.save(&a);
+    client.settle();
+    let asked = client
+        .requests_from_server
+        .iter()
+        .filter(|r| r.method == "window/showMessageRequest")
+        .count();
+    let advice = client
+        .diagnostics(&f.path("ascribe.toml"))
+        .into_iter()
+        .map(|d| d.message)
+        .collect();
+    (fake.runs.load(Ordering::SeqCst), asked, advice)
+}
+
+#[test]
+fn a_program_in_the_project_runs_once_the_person_says_so_asked_once_a_session() {
+    let (runs, asked, advice) = open_and_save("tools/vale", Some(Some("Run it")));
+    assert_eq!(asked, 1);
+    assert!(runs >= 2, "{runs}");
+    assert!(advice.is_empty(), "{advice:?}");
+}
+
+#[test]
+fn a_program_in_the_project_doesnt_run_when_the_person_says_no() {
+    for answer in [Some("Don't run it"), None] {
+        let (runs, asked, advice) = open_and_save("tools/vale", Some(answer));
+        assert_eq!((runs, asked), (0, 1), "{answer:?}");
+        assert_eq!(advice.len(), 1, "{advice:?}");
+        assert!(
+            advice[0].contains(
+                "the prose wasn't checked: running `tools/vale`, a program in the project, \
+                 wasn't allowed. `ascribe check --vale` checks it"
+            ),
+            "{advice:?}"
+        );
+    }
+}
+
+#[test]
+fn a_program_in_the_project_doesnt_run_when_the_client_cant_ask() {
+    let (runs, asked, advice) = open_and_save("tools/vale", None);
+    assert_eq!((runs, asked), (0, 0));
+    assert!(
+        advice.iter().any(|a| a.contains(
+            "the editor can't ask whether to run `tools/vale`, a program in the project"
+        )),
+        "{advice:?}"
+    );
+}
+
+#[test]
+fn a_command_found_on_the_path_runs_without_asking() {
+    for ask in [None, Some(Some("Run it"))] {
+        let (runs, asked, advice) = open_and_save("vale", ask);
+        assert_eq!(asked, 0, "{ask:?}");
+        assert!(runs >= 2, "{ask:?}: {runs}");
+        assert!(advice.is_empty(), "{advice:?}");
+    }
+}

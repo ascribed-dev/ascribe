@@ -574,3 +574,16 @@ fn html_report_has_each_pages_prompt_as_the_command_writes_it() {
     }
     assert_eq!(seen, 4, "two pages in each of two builds");
 }
+
+/// `ascribe diff` reads revisions with `rev-parse`, `ls-tree`, `cat-file`,
+/// and `merge-base`, none of which asks the file system monitor; this
+/// holds that whatever it runs next doesn't either.
+#[test]
+fn diff_runs_no_command_a_committed_folder_shaped_like_a_repository_names() {
+    let planted =
+        crate::planted::Planted::new(&[("ascribe.toml", MODEL), ("docs/index.md", "# Home\n")]);
+    for args in [&["diff"][..], &["diff", "--base", "HEAD"]] {
+        let _ = ascribe(&planted.project(), args);
+    }
+    assert!(!planted.ran(), "`ascribe diff` ran the planted command");
+}

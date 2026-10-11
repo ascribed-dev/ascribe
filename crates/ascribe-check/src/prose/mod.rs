@@ -27,7 +27,9 @@ use crate::{Diagnostic, Next, Project, Severity, apply_levels};
 pub use eject::{EJECTED_CONFIG, EJECTED_STYLES, EjectError, Ejected, eject, ejected_files};
 pub use extract::{Located, Prose};
 pub use setup::{FOLDER, VOCABULARY, preset_files, vocabulary, with_settings};
-pub use vale::{Action, Alert, Linter, MIN_VERSION, Program, Request, ValeError};
+pub use vale::{
+    Action, Alert, Linter, MIN_VERSION, NotStarted, OnPath, Program, Request, ValeError, in_project,
+};
 
 /// How long one run of Vale on a whole project may take.
 pub const PROJECT_TIMEOUT: Duration = Duration::from_secs(600);
@@ -90,6 +92,9 @@ pub fn lint_pages(
     let Some(settings) = &model.checks.vale else {
         return Vec::new();
     };
+    if let Some(reason) = linter.refuses(&settings.command, root) {
+        return apply_levels(&model.checks, vec![not_started(settings, &reason)]);
+    }
     let found = match run(root, model, settings, pages, linter, timeout) {
         Ok(found) => found,
         Err(e) => vec![not_checked(settings, &e)],
@@ -294,6 +299,16 @@ fn not_checked(settings: &ValeSettings, error: &ValeError) -> Diagnostic {
             .with_arg("command", command.clone())
             .with_arg("seconds", seconds.to_string()),
     };
+    Diagnostic::from_issue(&issue)
+}
+
+/// The advice that the prose wasn't checked because the caller didn't
+/// start Vale, on `[checks.vale]`.
+fn not_started(settings: &ValeSettings, reason: &str) -> Diagnostic {
+    let at = Location::new(FileId::new(0), settings.span);
+    let issue = Issue::new(diagnostics::PROSE_NOT_CHECKED, at)
+        .with_variant("not-started")
+        .with_arg("reason", reason.to_owned());
     Diagnostic::from_issue(&issue)
 }
 
