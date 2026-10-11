@@ -546,6 +546,7 @@ What a site imports:
 | `@ascribed/astro/MissingPermalink.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
+| `ascribe-astro` | A program, from @ascribed/astro |
 
 ## `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli`
 
@@ -700,6 +701,7 @@ READMEs published with a package, a crate, or the repository:
 | File |
 |---|
 | `README.md` |
+| `changes/README.md` |
 | `crates/ascribe-check/README.md` |
 | `crates/ascribe-cli/README.md` |
 | `crates/ascribe-core/README.md` |

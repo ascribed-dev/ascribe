@@ -107,4 +107,4 @@ Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagno
 - `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`, and the JS set from CONTRIBUTING.md. Test files allow `unwrap`, `expect`, and `panic!` with `#![allow(...)]` at the top; keep that line when you add a file.
 - Moved or renamed a test file? `scripts/repo-docs/paths.test.ts` fails on any doc that still names the old path: `corepack pnpm vitest run scripts/repo-docs`.
 - Changed what a test proves? Its doc comment and the crate's README's test list say what it covers; update them.
-- A behavior change has its conformance case, and its page under `docs/content/` and CHANGELOG line, per AGENTS.md. A test-only change has neither, and changes no output: `node scripts/compare/outputs.ts --base main` shows it.
+- A behavior change has its conformance case, and its page under `docs/content/` and changelog entry in `changes/`, per AGENTS.md. A test-only change has neither, and changes no output: `node scripts/compare/outputs.ts --base main` shows it.
