@@ -31,7 +31,7 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **Read project files through `ascribe_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/ascribe-resolve/tests/all/file_reads.rs` fails.
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
 - **`crates/comrak-ascribe` is a fork.** Mark each change `// ASCRIBE:` and list it in `crates/comrak-ascribe/FORK.md`.
-- **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and the unreleased section of `CHANGELOG.md`. Don't run a formatter over Markdown.
+- **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and adds its changelog entry as a file of its own in `changes/` ([changes/README.md](changes/README.md)); it doesn't edit `CHANGELOG.md`, which a release gathers the entries into. Don't run a formatter over Markdown.
 - **Paths, case, and links differ by platform.** Pull requests run on Linux and Windows; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
 
 ## Where to look

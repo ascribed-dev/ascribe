@@ -35,7 +35,7 @@ A thread chosen because it's easy, and that avoids the risky seam, proves nothin
 Narrow the scope, never the standard.
 
 - **Narrow:** which cases are handled, which surfaces show the result, how many options exist. What isn't handled yet is said plainly, in the docs or in a diagnostic, not left to fail oddly.
-- **Not narrow:** the rules in [AGENTS.md](../../../AGENTS.md). The thread has its conformance case, its docs page, its changelog line, and passes every check. Libraries still don't print or panic, and project files are still read through `FileSystem`.
+- **Not narrow:** the rules in [AGENTS.md](../../../AGENTS.md). The thread has its conformance case, its docs page, its changelog entry in `changes/`, and passes every check. Libraries still don't print or panic, and project files are still read through `FileSystem`.
 - **Contracts are the exception to "start small and change it later".** The language, the outputs, the commands' JSON, and the published APIs don't move once shipped. A thread may add to one; it may not ship a shape the plan expects to change. If the thread needs a contract choice that isn't made, a decision by the maintainer comes before it, as its own phase.
 
 ## Ordering the phases
