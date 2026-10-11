@@ -781,8 +781,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/291"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XR0",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/299"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Website: serve a home page in front of the docs from one Astro site"
     },
     {
@@ -799,7 +802,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/298"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Website: make examples/comparison a valid Ascribe project"
     },
     {
