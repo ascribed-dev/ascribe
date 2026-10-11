@@ -513,7 +513,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/349"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "One word for what Ascribe reports, and one count of them"
     },
     {
@@ -745,6 +745,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzg_8VzU",
       "labels": [
         "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/351"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
@@ -1054,7 +1057,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "`ascribe report links`: don't ask again about an address that answered"
     },
     {
