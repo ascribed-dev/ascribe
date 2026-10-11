@@ -785,7 +785,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/299"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Website: serve a home page in front of the docs from one Astro site"
     },
     {
@@ -816,7 +816,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XSY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Website: move the docs to /docs/ and put a landing page at the root"
     },
     {
