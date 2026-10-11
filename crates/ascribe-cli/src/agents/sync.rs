@@ -216,9 +216,9 @@ pub struct Plan {
     /// What an agent doesn't read of what's written, and the target that
     /// adds it.
     pub unread: Vec<&'static str>,
-    /// The MCP server's JSON for the repository's settings on GitHub, for
-    /// the person to paste there, when the cloud agent's setup is asked
-    /// for without a custom agent.
+    /// The MCP servers' JSON for the repository's settings on GitHub, one
+    /// for each block of the setup steps, for the person to paste there,
+    /// when the cloud agent's setup is asked for without a custom agent.
     pub mcp_settings: Option<String>,
     /// The repository's root, or the project's folder when there's no
     /// repository: what's written is under it, and no link on the way
@@ -526,8 +526,10 @@ fn planned(
 }
 
 /// The cloud agent's setup steps and custom agent, when they're asked for
-/// or written already; and the MCP server's JSON for the repository's
-/// settings, when the setup is asked for without the custom agent.
+/// or written already; and the MCP servers' JSON for the repository's
+/// settings, when the setup is asked for without the custom agent. The
+/// settings and the custom agent carry a server for each block of the
+/// steps, this project's and every other's.
 fn plan_cloud(
     options: Options,
     here: &Path,
@@ -555,7 +557,7 @@ fn plan_cloud(
     let has_block = old
         .as_deref()
         .is_some_and(|text| text.lines().any(|line| markers.is_start(line.trim())));
-    if options.cloud || has_block {
+    let steps = if options.cloud || has_block {
         let new = copilot::setup_steps(old.as_deref(), &markers, &install).map_err(|why| {
             SyncError::Settings {
                 path: setup.display().to_string(),
@@ -565,9 +567,18 @@ fn plan_cloud(
         files.push(Planned {
             path: setup,
             old,
-            new,
+            new: new.clone(),
             readers: READ_COPILOT_CLOUD,
         });
+        Some(new)
+    } else {
+        old
+    };
+    // A server for each block of the steps, other projects' too, so the
+    // settings and the custom agent carry every one.
+    let mut servers = steps.as_deref().map(copilot::servers).unwrap_or_default();
+    if servers.is_empty() {
+        servers.push(copilot::server_of(&install));
     }
     let agent = under(root, copilot::AGENT);
     let old = read(&agent)?;
@@ -575,12 +586,12 @@ fn plan_cloud(
         files.push(Planned {
             path: agent,
             old,
-            new: copilot::agent_md(&install),
+            new: copilot::agent_md(&servers),
             readers: READ_COPILOT_CLOUD,
         });
         return Ok(None);
     }
-    Ok(options.cloud.then(|| copilot::mcp_settings(&install)))
+    Ok(options.cloud.then(|| copilot::mcp_settings(&servers)))
 }
 
 /// How the cloud agent's setup installs `ascribe`: the dependencies of the

@@ -31,8 +31,118 @@ pub const SETUP_NODE: &str = "actions/setup-node@v7";
 /// test compares it with the package's `engines`).
 pub const NODE: &str = "24";
 
-/// The MCP server's name, in the settings and the custom agent.
+/// The MCP server's name, in the settings and the custom agent, when the
+/// setup steps install Ascribe one way; and the start of each name when
+/// they install it several ways.
 const SERVER: &str = "ascribe";
+
+/// The setup steps' blocks' names start with it: the block of a global
+/// install, and `ascribe:copilot:<folder>` or `ascribe:copilot:pinned` for
+/// a pinned one.
+pub const BLOCK: &str = "ascribe:copilot";
+
+/// An MCP server the cloud agent starts: one for each block of the setup
+/// steps.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Server {
+    /// Its name in the settings and the custom agent.
+    pub name: String,
+    /// The `node_modules/.bin` that holds a pinned `ascribe`, from the
+    /// repository's root; `None` for one installed globally.
+    pub bin: Option<String>,
+}
+
+/// The one server of a project that installs Ascribe this way, before its
+/// setup steps are written.
+pub fn server_of(install: &Install) -> Server {
+    Server {
+        name: SERVER.to_owned(),
+        bin: match install {
+            Install::Global { .. } => None,
+            Install::Pinned { bin, .. } => Some(bin.clone()),
+        },
+    }
+}
+
+/// A server for each block of the setup steps' text, in the order they're
+/// written, its binary read from the line that puts it on the path. With
+/// one block, the server is `ascribe`; with several, each is named after
+/// its block: `ascribe` for a global install's, and `ascribe-<folder>` or
+/// `ascribe-pinned` for a pinned one's, with each character a name can't
+/// hold as `-`.
+pub fn servers(steps: &str) -> Vec<Server> {
+    let mut blocks: Vec<(&str, Option<String>)> = Vec::new();
+    let mut inside: Option<&str> = None;
+    for line in steps.lines() {
+        let line = line.trim();
+        let Some(comment) = line.strip_prefix("# ") else {
+            if let (Some(_), Some(path)) = (inside, path_line(line))
+                && let Some(last) = blocks.last_mut()
+            {
+                last.1 = Some(path.to_owned());
+            }
+            continue;
+        };
+        match inside {
+            None => {
+                if let Some((name, _)) = comment.split_once(" start")
+                    && (name == BLOCK
+                        || name
+                            .strip_prefix(BLOCK)
+                            .is_some_and(|rest| rest.starts_with(':')))
+                {
+                    inside = Some(name);
+                    blocks.push((name, None));
+                }
+            }
+            Some(name) => {
+                if comment.strip_suffix(" end") == Some(name) {
+                    inside = None;
+                }
+            }
+        }
+    }
+    let several = blocks.len() > 1;
+    let mut servers: Vec<Server> = Vec::new();
+    for (block, bin) in blocks {
+        let base = match block
+            .strip_prefix(BLOCK)
+            .and_then(|rest| rest.strip_prefix(':'))
+        {
+            Some(folder) if several => {
+                let folder: String = folder
+                    .chars()
+                    .map(|c| {
+                        if c.is_ascii_alphanumeric() || "_.".contains(c) {
+                            c
+                        } else {
+                            '-'
+                        }
+                    })
+                    .collect();
+                format!("{SERVER}-{folder}")
+            }
+            _ => SERVER.to_owned(),
+        };
+        // Two folders that name the same server, `a/b` and `a-b`, are told
+        // apart by a number.
+        let mut name = base.clone();
+        let mut n = 2;
+        while servers.iter().any(|s| s.name == name) {
+            name = format!("{base}-{n}");
+            n += 1;
+        }
+        servers.push(Server { name, bin });
+    }
+    servers
+}
+
+/// The folder a setup step's line puts on the path:
+/// `echo "$GITHUB_WORKSPACE/<bin>" >> "$GITHUB_PATH"`.
+fn path_line(line: &str) -> Option<&str> {
+    line.strip_prefix("echo \"$GITHUB_WORKSPACE/")?
+        .strip_suffix("\" >> \"$GITHUB_PATH\"")
+}
 
 /// How the steps install `ascribe`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -376,11 +486,11 @@ fn tools() -> Vec<String> {
 /// root, found with `git` as the hooks find it, since nothing documents
 /// that the setup steps' path, or a folder to start in, carries over to the
 /// agent's servers.
-fn mcp_command(install: &Install) -> (String, String) {
+fn mcp_command(server: &Server) -> (String, String) {
     let quoted = |text: &str| Value::from(text).to_string();
-    match install {
-        Install::Global { .. } => (quoted("ascribe"), format!("[{}]", quoted("mcp"))),
-        Install::Pinned { bin, .. } => {
+    match &server.bin {
+        None => (quoted("ascribe"), format!("[{}]", quoted("mcp"))),
+        Some(bin) => {
             let run = format!("exec \"$(git rev-parse --show-toplevel)/{bin}/ascribe\" mcp");
             (
                 quoted("bash"),
@@ -391,26 +501,37 @@ fn mcp_command(install: &Install) -> (String, String) {
 }
 
 /// The JSON for the repository's MCP settings: a local server running
-/// `ascribe mcp`, with each of its tools allowed. Written out by hand to
-/// keep its keys in the order the settings' documentation shows.
-pub fn mcp_settings(install: &Install) -> String {
-    let (command, args) = mcp_command(install);
+/// `ascribe mcp` for each of `servers`, with each of its tools allowed.
+/// Written out by hand to keep its keys in the order the settings'
+/// documentation shows.
+pub fn mcp_settings(servers: &[Server]) -> String {
     let tools = tools()
         .iter()
         .map(|tool| format!("        {tool}"))
         .collect::<Vec<_>>()
         .join(",\n");
-    format!(
-        "{{
-  \"mcpServers\": {{
-    \"{SERVER}\": {{
+    let servers = servers
+        .iter()
+        .map(|server| {
+            let (command, args) = mcp_command(server);
+            format!(
+                "    {name}: {{
       \"type\": \"local\",
       \"command\": {command},
       \"args\": {args},
       \"tools\": [
 {tools}
       ]
-    }}
+    }}",
+                name = Value::from(server.name.as_str())
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",\n");
+    format!(
+        "{{
+  \"mcpServers\": {{
+{servers}
   }}
 }}
 "
@@ -422,32 +543,64 @@ pub const MCP_SETTINGS_PLACE: &str =
     "the repository's Settings → Copilot → MCP servers, under \"MCP configuration\"";
 
 /// `.github/agents/ascribe-docs.md`: a custom agent for documentation work
-/// that carries the MCP server, for the cloud agent only (VS Code reads the
-/// server from its own settings).
-pub fn agent_md(install: &Install) -> String {
-    let (command, args) = mcp_command(install);
+/// that carries the MCP servers, for the cloud agent only (VS Code reads
+/// the server from its own settings).
+pub fn agent_md(servers: &[Server]) -> String {
+    let tools = tools().join(", ");
+    let entries: String = servers
+        .iter()
+        .map(|server| {
+            let (command, args) = mcp_command(server);
+            format!(
+                "  {}:\n    type: local\n    command: {command}\n    args: {args}\n    tools: [{tools}]\n",
+                server.name
+            )
+        })
+        .collect();
+    let ask = match servers {
+        [one] => format!("Ask the `{}` MCP server's tools", one.name),
+        _ => {
+            let each: Vec<String> = servers
+                .iter()
+                .map(|server| {
+                    let from = match server
+                        .bin
+                        .as_deref()
+                        .map(|bin| bin.strip_suffix("node_modules/.bin"))
+                    {
+                        None => "installs it globally".to_owned(),
+                        Some(Some("")) => "installs it from the root's `package.json`".to_owned(),
+                        Some(Some(folder)) => format!("installs it from `{folder}package.json`"),
+                        Some(None) => format!(
+                            "runs it from `{}`",
+                            server.bin.as_deref().unwrap_or_default()
+                        ),
+                    };
+                    format!("`{}` for a project that {from}", server.name)
+                })
+                .collect();
+            format!(
+                "Ask the MCP server of the Ascribe your project installs ({})",
+                each.join(", ")
+            )
+        }
+    };
     format!(
         "---
 name: ascribe-docs
 description: Writes and fixes this repository's Ascribe documentation, checking each change with Ascribe.
 target: github-copilot
 mcp-servers:
-  {SERVER}:
-    type: local
-    command: {command}
-    args: {args}
-    tools: [{tools}]
----
+{entries}---
 
 <!-- Generated by `ascribe agents sync`. Run it again rather than editing this file. -->
 
 Write and fix documentation in this repository's Ascribe projects.
 
 - Follow the project's rules in the `AGENTS.md` beside its `ascribe.toml`, and use the `ascribe` skill for Ascribe's syntax and commands.
-- Ask the `{SERVER}` MCP server's tools, or the `ascribe` commands, about the content model, a page's outline, links, and where a page is used, rather than guessing.
+- {ask}, or the `ascribe` commands, about the content model, a page's outline, links, and where a page is used, rather than guessing.
 - After each change, run `ascribe check` on the files you changed, and fix what it reports. Before you finish, run `ascribe check` on the whole project.
-",
-        tools = tools().join(", ")
+"
     )
 }
 
@@ -614,11 +767,12 @@ jobs:
     #[test]
     fn the_settings_and_the_agent_list_every_tool() {
         for install in [global(), pinned()] {
-            let settings: Value = serde_json::from_str(&mcp_settings(&install)).unwrap_or_default();
+            let servers = [server_of(&install)];
+            let settings: Value = serde_json::from_str(&mcp_settings(&servers)).unwrap_or_default();
             let server = &settings["mcpServers"]["ascribe"];
             assert_eq!(server["type"], "local");
             assert_eq!(server["tools"].as_array().map(Vec::len), Some(TOOLS.len()));
-            let agent = agent_md(&install);
+            let agent = agent_md(&servers);
             let front = agent.split("---\n").nth(1).unwrap_or_default();
             let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap_or_default();
             let ours = &value["mcp-servers"]["ascribe"];
@@ -633,14 +787,76 @@ jobs:
                 server["args"]
             );
         }
-        let global = serde_json::from_str::<Value>(&mcp_settings(&global())).unwrap_or_default();
+        let global = serde_json::from_str::<Value>(&mcp_settings(&[server_of(&global())]))
+            .unwrap_or_default();
         assert_eq!(global["mcpServers"]["ascribe"]["command"], "ascribe");
         assert_eq!(global["mcpServers"]["ascribe"]["args"][0], "mcp");
-        let pinned = serde_json::from_str::<Value>(&mcp_settings(&pinned())).unwrap_or_default();
+        let pinned = serde_json::from_str::<Value>(&mcp_settings(&[server_of(&pinned())]))
+            .unwrap_or_default();
         assert_eq!(pinned["mcpServers"]["ascribe"]["command"], "bash");
         assert_eq!(
             pinned["mcpServers"]["ascribe"]["args"][1],
             "exec \"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\" mcp"
         );
+    }
+
+    #[test]
+    fn each_block_of_the_steps_is_a_server() {
+        let place = |old: Option<&str>, name: &str, install: &Install| {
+            let markers = Markers { name, ..MARKERS };
+            setup_steps(old, &markers, install).unwrap_or_default()
+        };
+        let one = place(None, "ascribe:copilot:docs", &pinned());
+        assert_eq!(
+            servers(&one),
+            [Server {
+                name: "ascribe".to_owned(),
+                bin: Some("docs/node_modules/.bin".to_owned()),
+            }]
+        );
+        let two = place(Some(&one), "ascribe:copilot", &global());
+        let three = place(
+            Some(&two),
+            "ascribe:copilot:pinned",
+            &Install::Pinned {
+                package: String::new(),
+                install: String::new(),
+                command: "npm ci",
+                bin: "node_modules/.bin".to_owned(),
+            },
+        );
+        let all = servers(&three);
+        let named: Vec<(&str, Option<&str>)> = all
+            .iter()
+            .map(|s| (s.name.as_str(), s.bin.as_deref()))
+            .collect();
+        assert_eq!(
+            named,
+            [
+                ("ascribe-docs", Some("docs/node_modules/.bin")),
+                ("ascribe", None),
+                ("ascribe-pinned", Some("node_modules/.bin")),
+            ]
+        );
+        // The settings and the agent carry each, under the same names.
+        let settings: Value = serde_json::from_str(&mcp_settings(&all)).unwrap_or_default();
+        let agent = agent_md(&all);
+        let front = agent.split("---\n").nth(1).unwrap_or_default();
+        let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap_or_default();
+        for server in &all {
+            let json = &settings["mcpServers"][server.name.as_str()];
+            let yaml = &value["mcp-servers"][server.name.as_str()];
+            assert_eq!(
+                serde_json::to_value(&yaml["args"]).unwrap_or_default(),
+                json["args"],
+                "{}",
+                server.name
+            );
+        }
+        assert!(
+            agent.contains("`ascribe-docs` for a project that installs it from `docs/package.json`, `ascribe` for a project that installs it globally, `ascribe-pinned` for a project that installs it from the root's `package.json`"),
+            "{agent}"
+        );
+        assert!(servers("jobs: {}\n").is_empty());
     }
 }
