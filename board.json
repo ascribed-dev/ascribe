@@ -807,7 +807,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/341"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Share what's identical between the `ascribe.toml` reference and its contract"
     },
     {
@@ -1060,7 +1060,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/352"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "`ascribe report links`: don't ask again about an address that answered"
     },
     {
@@ -1093,8 +1093,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/353"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "A starter for an Astro site: the four files every site writes again"
     },
     {
