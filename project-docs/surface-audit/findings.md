@@ -2,7 +2,7 @@
 
 Part of [The surface audit](README.md). These are [phase 1](phase-1-thread.md)'s: what one task, fixing a broken link, turned up, from the [inventory's slice](inventory-slice.md) and the [walks' notes](journeys/fix-a-broken-link.md). [Phase 5](phase-5-findings.md) adds the rest, reorders the whole list, and writes the opening section.
 
-Each finding has a number, its kind, where it is, the evidence quoted, what it costs a user, one recommendation, and a size. They're in order of cost to a user. A recommendation is one of rename, merge, remove, add, document, or leave. Nothing here is fixed by this plan.
+Each finding has a number, its kind, where it is, the evidence quoted, what it costs a user, one recommendation, and a size. The first twenty-three are in order of cost to a user. A recommendation is one of rename, merge, remove, add, document, or leave. Nothing here is fixed by this plan.
 
 "The walks" are seven: an agent's dry run in the editor (two copies) and at the command line, the maintainer's in the editor and at the command line, an agent with the plugin (two runs), and an agent with the MCP server and no shell.
 
@@ -72,14 +72,14 @@ Each finding has a number, its kind, where it is, the evidence quoted, what it c
 - **Recommendation:** add. The status bar says the project isn't being checked yet, as in finding 3.
 - **Size:** small.
 
-### 7. Every address the binary prints was "Page not found"
+### 7. Every address the binary prints was "Page not found", for a day
 
-- **Kind:** a contradiction.
+- **Kind:** a contradiction, since closed.
 - **Where:** `ascribe --help`, `ascribe explain`, the code's link in the Problems panel, `docs` in `check`'s JSON; the published site.
-- **Evidence:** "`https://ascribed-dev.com/go/ASC036/` and `https://ascribed-dev.com/go/cli-reference/` both gave "Page not found"". Still 404 at 9:17 PM on 10 October 2026, before the agents' walks.
-- **Cost:** For a binary built from `main`, the help's last line and every diagnostic's link lead nowhere until the site is rebuilt from a canary that has permalinks. The released 0.2.0 prints the older addresses, which work.
-- **Recommendation:** leave, if the addresses answer after the next nightly canary. If they don't, it's a bug in the permalinks work, and an issue.
-- **Size:** small.
+- **Evidence:** "`https://ascribed-dev.com/go/ASC036/` and `https://ascribed-dev.com/go/cli-reference/` both gave "Page not found"". Still 404 at 9:17 PM on 10 October 2026, before the agents' walks. After the canary `0.2.1-next.13` was published and the site rebuilt, the same day: `go/cli-reference/`, `go/cli-check/`, `go/agents-guide/`, and `go/getting-started/` answer 200 and forward. `go/ASC036/` answers `301` with `location: /go/asc036/`, which answers 200 and forwards to `/reference/diagnostics/#ASC036`.
+- **Cost:** A binary built from `main` can print addresses the site doesn't have yet, for up to a day. Nobody on a release meets it: the site is rebuilt before a release's binary exists.
+- **Recommendation:** leave. It was the site waiting for a canary, not a fault in permalinks. One thing to look at in phase 4: the host answers a diagnostic's address, which the binary prints in capitals, with a redirect to lower case first. It works, and it's a second hop on every diagnostic's link.
+- **Size:** none.
 
 ### 8. The error under a link is hard to see
 
@@ -132,6 +132,7 @@ Each finding has a number, its kind, where it is, the evidence quoted, what it c
 - **Where:** `ascribe check` and `ascribe link`; `ascribe_check` and `ascribe_link`.
 - **Evidence:** "`check` says `docs/install-agent.md:93:90`, and `link`, given `--from docs/install-agent.md`, answers "doesn't work from install-agent.md"." In the MCP session: `"file":"docs/install-agent.md"` from one tool, and `"from":"install-agent.md"` from the next, for `"from": "docs/install-agent.md"` given.
 - **Cost:** An agent that takes a path from one answer and gives it to the next command is using two bases without being told. Both work as input today, so nothing broke.
+- **Seen since:** the two names are deliberate in one place. `outline`'s JSON has both, and the reference says "`page` is the path from the content root, as links write it, and `file` is from the project root, as `ascribe check` reports it." So `link`'s `from` is a `page` under a name that doesn't say so, answering an input given as a `file`. `permalinks retire --to`, `--page`, and `--under` take the `page` form only (finding 26).
 - **Recommendation:** rename, so a command names a page back as it was given, from the project's folder. It changes a value in `link`'s JSON; the maintainer agreed to that on 10 October 2026, and the change records it in `project-docs/decisions.md`.
 - **Size:** small.
 
@@ -228,6 +229,46 @@ Each finding has a number, its kind, where it is, the evidence quoted, what it c
 - **Cost:** Each is a moment's doubt.
 - **Recommendation:** rename the log's level and add the version; leave the clipboard, which the notification that follows explains; document that checks across pages run on save; and print all three counts every time.
 - **Size:** small, each.
+
+## `ascribe permalinks`, against the conventions
+
+The group merged the day the conventions were written, so it was built without them (README decision 8). Its name and its subcommands fit: a plural noun, four verbs, `--format text|json`, and `verify` exiting 1 for a name that isn't there and 2 when it couldn't check. Four things depart. They come after the walks' findings because no walk met them; phase 5 puts them in order with the rest.
+
+### 24. Two commands named `sync`, and only one can say whether it's current
+
+- **Kind:** a contradiction.
+- **Where:** `ascribe agents sync`, `ascribe permalinks sync`.
+- **Evidence:** `agents sync` has `--check`: "0 the files are written, or with `--check` up to date; 1 with `--check`, a file is out of date". `permalinks sync`'s options are `--config`, `--format`, and `--color`, and it "exits with `0` when the list is up to date, whether or not it changed". Whether the list is behind is `ascribe check`'s to say (`permalinks-list-behind`). Tried: `ascribe permalinks sync --check` answers `error: unexpected argument '--check' found`, exit 2.
+- **Cost:** Someone who has learned `agents sync --check` for CI tries it on the other `sync` and gets a usage error. The answer exists, somewhere else.
+- **Recommendation:** add. `permalinks sync --check`, exiting 1 when the list would change, as the checklist's convention for `sync` has it. `ascribe check` goes on reporting it too.
+- **Size:** small.
+
+### 25. `--list` is a path on one command and a switch on two
+
+- **Kind:** a naming problem.
+- **Where:** `ascribe permalinks verify --list <PATH>`; `ascribe explain --list`; `ascribe agents prompt --list`.
+- **Evidence:** `--list <PATH>`: "The list to check against." `--list`: "List every diagnostic's code and name, one per line, instead." and "List the prompts, with their arguments, instead."
+- **Cost:** One option word, two meanings, and one of them takes a value. Small, and it's in the group that also has a `list` subcommand.
+- **Recommendation:** rename `verify`'s to say what it names, such as `--against <PATH>`. Nothing has released with it.
+- **Size:** small.
+
+### 26. `permalinks retire` names a page from the content root, where other commands take a path from the current folder
+
+- **Kind:** a contradiction.
+- **Where:** `ascribe permalinks retire --to`, `--page`, `--under`; `PAGE` on `outline` and `render`; `--from` on `link`.
+- **Evidence:** `--page <PAGE>`: "Retire every permalink this page declares … by its path from the content root". Tried on 10 October 2026 in a copy of `examples/quill`, whose content root is `docs`, with a permalink on a heading of `docs/keys.md`, from the project's folder. `ascribe render docs/keys.md --build site` and `ascribe render keys.md --build site` both wrote the page. `ascribe permalinks retire --page keys.md --reason test` answered `retired rotate-keys`. `ascribe permalinks retire --page docs/keys.md --reason test` answered `` error: can't retire `docs/keys.md`: it declares no permalinks, and the list has none there ``, exit 2.
+- **Cost:** The path that every other command takes, and that `check` prints, is refused here with a message that says the page has no permalinks when it has one. Someone would go and look for a missing `permalink=true` that isn't missing.
+- **Recommendation:** rename, with finding 13: a page given to a command is a path from the current folder everywhere, as the checklist has it, and what's written into `ascribe.toml` stays from the content root.
+- **Size:** small.
+
+### 27. `--from` means the page a link is on, and a file of names
+
+- **Kind:** a naming problem.
+- **Where:** `ascribe link --from <PAGE>`; `ascribe permalinks verify --from <FILE>`.
+- **Evidence:** `link`: "`--from <PAGE>` (required): the page the link is on". `verify`: "Also check the names in this file, one on each line."
+- **Cost:** Slight. The two are far apart, and each reads naturally where it is.
+- **Recommendation:** leave. An option is named for its part in its own command, which is what the convention says. It's listed so phase 5 sees it beside the others.
+- **Size:** none.
 
 ## Not findings
 
