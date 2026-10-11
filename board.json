@@ -866,8 +866,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/296"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XTU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/303"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Website: the Why Ascribe page"
     },
     {
