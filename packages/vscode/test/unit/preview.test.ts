@@ -49,12 +49,20 @@ describe("the webview's content security policy", () => {
       expect(directives[name], name).toEqual([cspSource]);
     }
     expect(Object.keys(directives).sort()).toEqual([
+      "base-uri",
       "default-src",
       "font-src",
+      "form-action",
       "img-src",
       "script-src",
       "style-src",
     ]);
+  });
+
+  it("refuses a form's submission and a base address, which don't fall to default-src", () => {
+    const directives = policy.split("; ");
+    expect(directives).toContain("form-action 'none'");
+    expect(directives).toContain("base-uri 'none'");
   });
 
   it("has no way to run inline code or reach the network", () => {

@@ -68,6 +68,7 @@ describe("the preview, with the real language server on examples/quill", () => {
     const shell = preview.shell() ?? "";
     assert.match(shell, /Content-Security-Policy/);
     assert.match(shell, /default-src 'none'/);
+    assert.match(shell, /form-action 'none'; base-uri 'none'/);
     assert.doesNotMatch(shell, /unsafe-inline|unsafe-eval|nonce-/);
   });
 

@@ -267,6 +267,35 @@ describe("the preview webview", () => {
     await preview.page.close();
   });
 
+  it("doesn't let a page's raw HTML submit a form", async () => {
+    const preview = await open();
+    const requests: string[] = [];
+    preview.page.on("request", (request) => requests.push(request.url()));
+    await preview.send(
+      render(
+        1,
+        `<form action="https://elsewhere.test/collect" method="post">
+<input name="secret" value="1"><button type="submit">Send</button>
+</form>`,
+      ),
+    );
+    await preview.next("rendered");
+    // As a click on its button would; a click waits for the navigation it starts.
+    await preview.page
+      .locator("main form")
+      .evaluate((form: HTMLFormElement) => form.requestSubmit());
+    await preview.page.waitForTimeout(200);
+    expect(requests.filter((url) => url.startsWith("https://elsewhere.test/"))).toEqual([]);
+    expect(preview.page.url()).toBe(`${ORIGIN}/`);
+    const seen = preview.posted.length;
+    await preview.send(render(2, ""));
+    const second = await preview.next("rendered", seen);
+    if (second.type !== "rendered") throw new Error();
+    const directives = second.report.violations.map((v) => v.split(" ")[0]);
+    expect(directives).toContain("form-action");
+    await preview.page.close();
+  });
+
   it("posts a click on a link to the extension, and follows a fragment itself", async () => {
     const preview = await open();
     await preview.send(
