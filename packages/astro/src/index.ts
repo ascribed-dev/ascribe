@@ -4,9 +4,8 @@
 //   // astro.config.mjs
 //   import ascribe from "@ascribed/astro";
 //   export default defineConfig({
-//     base: "/docs",   // [consumer] base-path is this or a path under it
-//     // `site` and `trailingSlash` come from ascribe.toml's [consumer] when
-//     // they're left out here; set here, they must agree with it.
+//     // `site`, `base`, and `trailingSlash` come from ascribe.toml's
+//     // [consumer] when they're left out here; set here, they must agree.
 //     integrations: [ascribe({ build: "site" })],
 //   });
 //
@@ -209,10 +208,13 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           };
         });
 
-        // The `site` and `trailingSlash` astro.config leaves unset come from [consumer].
+        // What astro.config leaves unset comes from [consumer]: `site` and `trailingSlash` from the
+        // first project that has them, and with one project, `base` from its base path. With
+        // `projects`, `base` stays the site's, the root every base path is under.
         const { routing: astro, supplied } = supplyRouting(
           entries.map((entry) => entry.project),
           { base: config.base, trailingSlash: config.trailingSlash, site: config.site },
+          !named,
         );
         // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
         for (const entry of entries) {

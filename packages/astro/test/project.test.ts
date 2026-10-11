@@ -116,39 +116,38 @@ describe("supplyRouting", () => {
   );
   const unset = { base: "/", trailingSlash: "ignore", site: undefined } as const;
 
-  it("takes the site and trailingSlash astro.config leaves unset from [consumer], and keeps the base", () => {
-    const { routing, supplied } = supplyRouting([docs], unset);
-    expect(supplied).toEqual({ site: "https://a.example", trailingSlash: "never" });
-    expect(routing).toEqual({ base: "/", site: "https://a.example", trailingSlash: "never" });
+  it("takes what astro.config leaves unset from [consumer], with one project", () => {
+    const { routing, supplied } = supplyRouting([docs], unset, true);
+    expect(supplied).toEqual({ site: "https://a.example", trailingSlash: "never", base: "/docs" });
+    expect(routing).toEqual(supplied);
     expect(consumerMismatches(docs, routing)).toEqual([]);
   });
 
   it("keeps what astro.config sets, which must still agree", () => {
-    const astro = { base: "/manual", trailingSlash: "always", site: "https://b.example" } as const;
-    const { routing, supplied } = supplyRouting([docs], astro);
+    const astro = { base: "/manual/", trailingSlash: "always", site: "https://b.example" } as const;
+    const { routing, supplied } = supplyRouting([docs], astro, true);
     expect(supplied).toEqual({});
     expect(routing).toEqual(astro);
     expect(consumerMismatches(docs, routing)).toHaveLength(3);
   });
 
   it("ends a base astro.config sets the way a supplied trailingSlash says", () => {
-    expect(supplyRouting([docs], { ...unset, base: "/docs/" }).supplied).toEqual({
-      site: "https://a.example",
-      trailingSlash: "never",
-      base: "/docs",
-    });
-    expect(supplyRouting([docs], { ...unset, base: "/docs" }).supplied.base).toBeUndefined();
+    const set = { ...unset, base: "/docs/" };
+    expect(supplyRouting([docs], set, true).supplied.base).toBe("/docs");
+    expect(supplyRouting([docs], set, false).supplied.base).toBe("/docs");
+    expect(supplyRouting([docs], { ...unset, base: "/docs" }, true).supplied.base).toBeUndefined();
   });
 
-  it("takes each setting from the first project that has it", () => {
-    const bare = readProject(project('spec = "0.1"\n'));
-    const { routing, supplied } = supplyRouting([home, docs], unset);
+  it("leaves the base the site's with several projects, and takes the rest from the first that has it", () => {
+    const { routing, supplied } = supplyRouting([home, docs], unset, false);
     expect(supplied).toEqual({ site: "https://a.example", trailingSlash: "never" });
+    expect(routing.base).toBe("/");
     expect(consumerMismatches(home, routing)).toEqual([]);
     expect(consumerMismatches(docs, routing)).toEqual([]);
-    expect(supplyRouting([bare, docs], unset).supplied.site).toBe("https://a.example");
+    const bare = readProject(project('spec = "0.1"\n'));
+    expect(supplyRouting([bare, docs], unset, false).supplied.site).toBe("https://a.example");
     // The profile's default, which Ascribe writes its links with.
-    expect(supplyRouting([bare], unset).supplied).toEqual({ trailingSlash: "always" });
+    expect(supplyRouting([bare], unset, true).supplied).toEqual({ trailingSlash: "always" });
   });
 });
 

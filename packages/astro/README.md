@@ -16,12 +16,12 @@ import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
 
 export default defineConfig({
-  base: "/docs", // [consumer] base-path is this path or one under it
+  // `site`, `base`, and `trailingSlash` come from ascribe.toml's [consumer].
   integrations: [ascribe({ build: "site" })],
 });
 ```
 
-Astro's `site` and `trailingSlash` come from `ascribe.toml`'s `[consumer]` when the Astro config leaves them out; with several projects, from the first entry whose project sets them. Set there, they must agree with `[consumer]`, or the build fails.
+Astro's `site`, `base`, and `trailingSlash` come from `ascribe.toml`'s `[consumer]` when the Astro config leaves them out. With `projects`, `site` and `trailingSlash` come from the first entry whose project sets them, and `base` stays the site's. Set in the Astro config, each must agree with `[consumer]`, or the build fails.
 
 ```ts
 // src/content.config.ts
@@ -35,7 +35,7 @@ export const collections = { docs: defineCollection(ascribeCollection({ schema }
 
 If the Ascribe project is outside the Astro root (`project: "../docs"`), import `../.astro/integrations/_ascribed_astro/schema.ts` instead: the integration copies the schema there after each build, so TypeScript finds `astro/zod` from it.
 
-`[consumer] base-path` can be Astro's `base` or a path under it, so a home page can sit at `/` in front of docs at `/docs/`. Several projects can share one site, each under its own base path:
+`[consumer] base-path` can be Astro's `base` or a path under it, so a home page can sit at `/` in front of docs at `/docs/`: list the docs in `projects`, even alone, so Astro's `base` stays `/`. Several projects can share one site, each under its own base path:
 
 ```js
 ascribe({

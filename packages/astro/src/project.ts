@@ -100,19 +100,21 @@ export interface AstroRouting {
 }
 
 /**
- * Astro's routing with `site` and `trailingSlash` taken from `[consumer]` when
- * astro.config leaves them unset, and the settings taken, for `updateConfig`.
- * Astro gives an integration its configuration with its defaults filled in, so
- * unset is the default: no `site`, and `trailingSlash: "ignore"`. Each comes
- * from the first project that has it, since every project must agree with it
- * anyway. `base` stays the site's: Astro's default, `/`, agrees with any base
- * path, so it's set only to put the whole site under a path. When
- * `trailingSlash` is supplied, `base` is rewritten to end the way it says, as
- * Astro writes it when the setting is its own.
+ * Astro's routing with what astro.config leaves unset taken from `[consumer]`,
+ * and the settings taken, for `updateConfig`. Astro gives an integration its
+ * configuration with its defaults filled in, so unset is the default: no
+ * `site`, `trailingSlash: "ignore"`, and `base: "/"`. `site` and
+ * `trailingSlash` come from the first project that has them, since every
+ * project must agree with them anyway. `base` comes from the first project's
+ * `base-path` only with `supplyBase`, as with one project; with several, it
+ * stays the site's, the root every base path is under. A base Astro has is
+ * rewritten to end the way a supplied `trailingSlash` says, as Astro writes
+ * it when the setting is its own.
  */
 export function supplyRouting(
   projects: readonly ProjectInfo[],
   astro: AstroRouting,
+  supplyBase: boolean,
 ): { routing: AstroRouting; supplied: Partial<AstroRouting> } {
   const supplied: Partial<AstroRouting> = {};
   if (astro.site === undefined) {
@@ -120,11 +122,14 @@ export function supplyRouting(
     if (site !== undefined) supplied.site = site;
   }
   const first = projects[0];
-  if (astro.trailingSlash === "ignore" && first !== undefined) {
-    supplied.trailingSlash = first.consumer.trailingSlash;
-    const base = homeRoute(astro.base, supplied.trailingSlash);
-    if (base !== astro.base) supplied.base = base;
-  }
+  if (first === undefined) return { routing: astro, supplied };
+  if (astro.trailingSlash === "ignore") supplied.trailingSlash = first.consumer.trailingSlash;
+  const trailingSlash = supplied.trailingSlash ?? astro.trailingSlash;
+  const base = homeRoute(
+    supplyBase && normalizeBase(astro.base) === "/" ? first.consumer.basePath : astro.base,
+    trailingSlash,
+  );
+  if (base !== astro.base) supplied.base = base;
   return { routing: { ...astro, ...supplied }, supplied };
 }
 

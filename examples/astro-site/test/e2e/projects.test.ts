@@ -41,14 +41,27 @@ const HOME_PAGE = `---
 </html>
 `;
 
+/** The integration with one project in the list form, whose `base` stays the site's. */
+const ONE_ENTRY = 'ascribe({ projects: [{ name: "docs", build: "site" }] })';
+
 /**
  * A copy of the site with Astro's `base` at `/` and the docs still at
- * `/docs/`, their route under `src/pages/docs/`, and a home page at `/`.
+ * `/docs/`, their route under `src/pages/docs/`, and a home page at `/`. The
+ * docs are an entry of `projects`: with `build`, Astro's `base` would come
+ * from their base path, and the home page would move under it.
  */
 async function homeInFront(name: string): Promise<string> {
   const root = await copySite(name);
   await edit(path.join(root, "astro.config.mjs"), (text) =>
-    text.replace('base: "/docs"', 'base: "/"'),
+    text.replace('ascribe({ build: "site" })', ONE_ENTRY),
+  );
+  await edit(path.join(root, "src", "content.config.ts"), (text) =>
+    text
+      .replace(
+        '"../.ascribe/build/site/site/_ascribe/schema.ts"',
+        '"../.astro/integrations/_ascribed_astro/docs/schema.ts"',
+      )
+      .replace("ascribeCollection({ schema })", 'ascribeCollection({ schema, name: "docs" })'),
   );
   const pages = path.join(root, "src", "pages");
   await mkdir(path.join(pages, "docs"));
@@ -159,7 +172,7 @@ async function twoProjects(name: string): Promise<string> {
   );
   await edit(path.join(root, "astro.config.mjs"), (text) =>
     text.replace(
-      'ascribe({ build: "site" })',
+      ONE_ENTRY,
       `ascribe({
       projects: [
         { name: "docs", build: "site" },
@@ -319,7 +332,7 @@ const { Content } = await render(entry);
     });
     await edit(path.join(root, "astro.config.mjs"), (text) =>
       text.replace(
-        'ascribe({ build: "site" })',
+        ONE_ENTRY,
         'ascribe({ projects: [{ name: "docs", build: "site" }, { name: "all", build: "all" }] })',
       ),
     );
