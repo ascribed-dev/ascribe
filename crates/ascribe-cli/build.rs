@@ -39,22 +39,29 @@ fn main() {
 /// canary's is, when this is a Git checkout and Git can run. Asks Cargo to run
 /// the script again when `HEAD`, or the branch it's on, moves.
 fn checkout_commit() -> Option<String> {
-    for path in [
+    // `HEAD` moves on a checkout, and a detached `HEAD` on a commit.
+    // `packed-refs` changes when a packed branch moves without a loose ref.
+    let files = [
         git(&["rev-parse", "--git-path", "HEAD"]),
         git(&["rev-parse", "--git-path", "packed-refs"]),
-    ]
-    .into_iter()
-    .flatten()
-    .chain(
-        git(&["symbolic-ref", "-q", "HEAD"])
-            .and_then(|branch| git(&["rev-parse", "--git-path", &branch])),
-    ) {
-        // Outside FileSystem: the build script asks whether a Git file exists,
-        // since Cargo runs the script on every build when a watched file is
-        // missing.
+    ];
+    // Outside FileSystem: the build script asks whether Git's files exist,
+    // since Cargo runs the script on every build when a watched path is
+    // missing.
+    for path in files.into_iter().flatten() {
         if Path::new(&path).exists() {
             println!("cargo::rerun-if-changed={path}");
         }
+    }
+    // A branch's ref is a loose file only until `git gc` packs it, and the
+    // next commit writes a new one. Watching the nearest folder that holds it
+    // sees that file appear, since Cargo takes a folder as changed when any
+    // file in it is.
+    if let Some(branch) = git(&["symbolic-ref", "-q", "HEAD"])
+        .and_then(|branch| git(&["rev-parse", "--git-path", &branch]))
+        && let Some(folder) = Path::new(&branch).ancestors().skip(1).find(|p| p.is_dir())
+    {
+        println!("cargo::rerun-if-changed={}", folder.display());
     }
     git(&["rev-parse", "--short=12", "HEAD"])
 }
