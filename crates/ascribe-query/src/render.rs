@@ -37,7 +37,10 @@ pub struct Rendered {
 
 /// The page at content path `path`, as `build` renders it in its plain
 /// output; with `frontmatter`, its resolved frontmatter first, between `---`
-/// lines. `project_root` is the directory of `ascribe.toml`.
+/// lines; with `note_switchers`, a line above each switcher's arms saying a
+/// reader sees one at a time ([`PlainEmitter::noting_switchers`]), which the
+/// text of `ascribe render` has and its JSON doesn't. `project_root` is the
+/// directory of `ascribe.toml`.
 ///
 /// # Errors
 ///
@@ -48,6 +51,7 @@ pub fn render(
     path: &RelPath,
     build: &Build,
     frontmatter: bool,
+    note_switchers: bool,
 ) -> Result<Rendered, QueryError> {
     let file = project.file(path).ok_or_else(|| QueryError::NotASource {
         path: path.to_string(),
@@ -81,7 +85,11 @@ pub fn render(
         });
     };
     let cx = EmitContext::new(project, project_root, build);
-    let emitted = emit_page(&PlainEmitter::new(project.model()), &cx, &page)?;
+    let mut emitter = PlainEmitter::new(project.model());
+    if note_switchers {
+        emitter = emitter.noting_switchers();
+    }
+    let emitted = emit_page(&emitter, &cx, &page)?;
     if frontmatter && let Some(value) = page.frontmatter.as_ref().filter(|v| !v.is_null()) {
         // A value parsed from YAML always writes back as YAML; were it not
         // to, the page is still worth showing without its frontmatter.
