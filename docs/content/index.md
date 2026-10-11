@@ -5,15 +5,20 @@ permalink: docs
 ---
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
+- [Content that varies](guides/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 - [Directive reference](reference/directives.md): the language: directives, attributes, titles, phrases, links, and images.
 - [`ascribe.toml` reference](reference/content-model.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
-- [Command reference](reference/cli.md): `ascribe check`, `build`, `diff`, `drift`, `fmt`, and `lsp`, their options, outputs, and exit codes.
+- [Command reference](reference/cli.md): every `ascribe` command, its options, outputs, and exit codes.
 - @available: ascribe 0.2.0
   [Review](guides/review.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
 - @available: ascribe 0.2.0
   [Drift](guides/drift.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
 - @available: next
   [Agents](guides/agents.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
+- @available: next
+  [Prose, through Vale](guides/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
+- @available: next
+  [The project report](guides/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.

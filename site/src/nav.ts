@@ -16,6 +16,7 @@ export const nav: NavGroup[] = [
     pages: [
       "guides/astro.md",
       "guides/editor.md",
+      "guides/variants.md",
       "guides/review.md",
       "guides/drift.md",
       "guides/agents.md",
