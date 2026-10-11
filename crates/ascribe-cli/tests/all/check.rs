@@ -103,7 +103,15 @@ fn help_and_version_exit_0() {
     let dir = project(&[]);
     let out = ascribe(dir.path(), &["--version"]);
     assert_eq!(code(&out), 0);
-    assert!(stdout(&out).starts_with("ascribe "), "{}", stdout(&out));
+    let version = stdout(&out);
+    assert!(
+        version.starts_with(&format!("ascribe {}", env!("CARGO_PKG_VERSION"))),
+        "{version}"
+    );
+    // Neither a release nor a canary: a build like this one says so.
+    if option_env!("ASCRIBE_RELEASE").is_none() && option_env!("ASCRIBE_COMMIT").is_none() {
+        assert!(version.contains("+dev"), "{version}");
+    }
     let out = ascribe(dir.path(), &["check", "--help"]);
     assert_eq!(code(&out), 0);
     assert!(stdout(&out).contains("--deny-warnings"));
