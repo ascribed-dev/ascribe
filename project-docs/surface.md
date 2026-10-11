@@ -64,11 +64,11 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 
 ## `ascribe.toml`
 
-For authors. Read from `docs/content/reference/content-model.md`.
+For authors. Read from `docs/content/reference/content-model.md`, `docs/content/_fragments/content-model/`.
 
 | Section | What it's for | In the reference |
 |---|---|---|
-| Top level: `spec` | The only other top-level keys are the tables in §3–§19. | §2 |
+| Top level: `spec` | The only other top-level keys are the tables in §3–§20. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page, plus the files it applies to. | §4 |
 | `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
