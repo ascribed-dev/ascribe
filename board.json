@@ -832,6 +832,9 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/294"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XSg",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/302"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Website: the landing page's demonstration, claims, and marks"
@@ -846,8 +849,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/295"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XSw",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/301"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Website: publish the changelog at /changelog/"
     },
     {
