@@ -6,8 +6,8 @@ It's done once. It finds and recommends; every change it leads to is separate wo
 
 ## Who does what
 
-- **The maintainer walks the people's journeys:** the author's, the reviewer's, and the site builder's. Nobody else is set up to test yet. Each journey has a script and a notes page, so it can be done in one sitting and picked up by someone else later.
-- **An agent does the rest:** builds the inventory, runs the agents' journeys in fresh sessions, goes through the questions, and writes the findings.
+- **The maintainer decides and reads:** phase 1's verdict on the method, already given, and phase 5's findings, saying which become issues.
+- **An agent does the rest:** builds the inventory and the capability table, runs the journeys as recorded sessions, goes through the questions, and writes the findings. The maintainer walked two journeys in phase 1, which settled the method (decision 9), and walks no more.
 
 ## Decisions
 
@@ -21,6 +21,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 6. **Agents' journeys run in fresh sessions,** with nothing but the project and what Ascribe put in it, and the whole transcript is kept.
 7. **The docs site is in scope twice:** as the place people find things, and as the first site built with Ascribe. What it had to build by hand is evidence about the product.
 8. **The conventions come out early.** The [permalinks plan](../permalinks/README.md) adds the first new command group in its phase 4. Phase 1 here produces the first conventions for the command line, so that plan doesn't wait for the whole audit.
+9. **The journeys are agents' sessions, and the maintainer walks nothing after phase 1.** The capability table is built in phase 2 from the inventory and the use cases, in a user's words; the journeys are run in phase 3 as recorded agent sessions; and the maintainer's part is the verdict and reading the findings. The proposal's journey table, with a walk for each kind of user, is departed from here. _Why:_ the maintainer's two walks in phase 1 took 11 minutes together and both ended by reaching for an agent; the verdict was that the editor with an agent is the surface, and that this audit isn't a user study. A list finds the consistency problems, and the agents' sessions are automatable. What's given up is friction a person feels, which this audit isn't for. _From:_ [phase 1's walks](journeys/fix-a-broken-link.md#what-the-walks-had-in-common), 10 October 2026.
 
 ## The thread
 
@@ -39,17 +40,18 @@ This isn't a feature, so there's no layer to cross. The same idea applies to the
 | The inventory beyond the command line and what one task touches | 2 |
 | The other seven journeys | 3 |
 | The docs site | 4 |
-| The capability table, the full report, the issues | 5 |
+| The capability table | 2 |
+| The full report, the issues | 5 |
 
 ## Phases
 
 | Phase | Result |
 |---|---|
 | [1: One task, start to finish](phase-1-thread.md) | Findings from fixing a broken link four ways, the first command-line conventions, and a method that's been tried. |
-| [2: The inventory](phase-2-inventory.md) | A generated map of the whole surface, kept current by a test. |
-| [3: The journeys](phase-3-journeys.md) | Notes from the other seven tasks, walked by the maintainer and by agents. |
+| [2: The inventory, and what can be done where](phase-2-inventory.md) | A generated map of the whole surface, kept current by a test, and the capability table built from it. |
+| [3: The agents' journeys](phase-3-journeys.md) | Transcripts and notes from an agent doing each of the other seven tasks in a fresh session. |
 | [4: The docs site](phase-4-docs-site.md) | What the first Ascribe site had to build for itself, and how well the docs lead to each part of the surface. |
-| [5: Findings](phase-5-findings.md) | The capability table, the report, the conventions, and the issues. |
+| [5: Findings](phase-5-findings.md) | The report, the conventions, and the issues. |
 
 Phase 1 first. Phases 2, 3, and 4 can run in any order after it, and at the same time. Phase 5 needs all of them.
 

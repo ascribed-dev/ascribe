@@ -4,26 +4,24 @@ Part of [The surface audit](README.md). Requires phases 1 to 4.
 
 ## Goal
 
-What the audit was for: a report of where the surface doesn't hold together, what to do about each, conventions for what's added next, and issues for the changes worth making.
+What the audit was for: a report of where the surface doesn't hold together, what to do about each, conventions for what's added next, and issues for the changes worth making. The capability table is phase 2's; this phase finishes it against what the sessions showed.
 
 ## Context
 
-- Everything the earlier phases wrote: the inventory, the journeys' notes and transcripts, the docs site's two lists, and phase 1's first findings and conventions.
+- Everything the earlier phases wrote: the inventory and the capability table, the sessions' notes and transcripts, the docs site's two lists, and phase 1's first findings and conventions.
 - The [proposal](../proposals/surface-audit.md): the seven questions, and the five kinds of finding.
 - The proposals and plans about to add to the surface: [permalinks](../permalinks/README.md), [tested examples](../proposals/tested-examples.md), [versions](../proposals/versions.md), [page templates](../proposals/page-templates.md), and the [website](../proposals/website.md). Each names commands, settings, or files that don't exist yet. Content checks has landed, so its commands are in the inventory.
 - `project-docs/checklists.md`: where conventions go.
 
 ## Design
 
-### The capability table
+### The capability table, finished
 
-`capabilities.md`: every thing a user can do, down the side; every surface, across. Each cell says how it's done there, or that it isn't.
-
-The rows come from the journeys and the inventory, in a user's words ("find where a phrase is used"), not the surface's ("refs"). An empty cell is marked as deliberate, with where that's said, or as a gap. A row with four full cells is looked at too: four ways to do one thing is a cost someone pays in learning them.
+Phase 2's `capabilities.md`, checked against the sessions: a cell that says a thing can be done where an agent couldn't do it is corrected, with the transcript as evidence, and every cell still open is settled as deliberate, with where that's said, or as a gap.
 
 ### The seven questions
 
-One at a time, across the whole inventory, with the journeys' notes as evidence. For each, the pattern first (what most of the surface does), then what departs from it.
+One at a time, across the inventory and the capability table, with the sessions' notes as evidence. For each, the pattern first (what most of the surface does), then what departs from it.
 
 ### The findings
 
@@ -57,7 +55,7 @@ One issue for each change worth making, with related renames grouped so they hap
 
 ## Tasks
 
-1. The capability table.
+1. The capability table, finished against the sessions.
 2. The seven questions; the findings, in order.
 3. The opening section.
 4. The pending proposals against the findings, with edits to each where the audit changes it, and a name for each command one has left open.
@@ -83,7 +81,7 @@ pnpm test
 
 ## Commits
 
-1. "Lay out what can be done where"
+1. "Finish the capability table against the sessions"
 2. "Report what the surface audit found"
 3. "Check the pending proposals against the findings"
 4. "Write the surface's conventions into the checklists"

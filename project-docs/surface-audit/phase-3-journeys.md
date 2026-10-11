@@ -1,66 +1,64 @@
-# Phase 3: The journeys
+# Phase 3: The agents' journeys
 
-Part of [The surface audit](README.md). Requires phase 1, for the script's form. Mostly the maintainer's time, and agents' sessions.
+Part of [The surface audit](README.md). Requires phase 1, for the script's form. Agents' sessions, prepared, run, and recorded by an agent; no code, and none of the maintainer's time.
 
 ## Goal
 
-Notes from the other seven tasks, each walked by everyone who'd do it, in the form phase 1 settled.
+A transcript and notes from an agent doing each of the other seven tasks in a fresh session, with what it tried first, so the findings about what an agent can find and do rest on recorded runs.
 
-A list of the surface shows what exists. A walk shows what someone can find, in what order, and where two parts that each make sense alone don't meet.
+The maintainer's walks are gone from this phase (README decision 9). Phase 1's two showed that the maintainer's surface is the editor with an agent in it, and that timing a person isn't what this audit is for. The agents' sessions stay because they're what's automatable: each runs unattended and records itself.
 
 ## Context
 
-- Phase 1's script, its notes, and the note on what to change about the method.
-- README decisions 5 and 6: a walk is done as written and noted as it went, and an agent's is a fresh session with its transcript kept.
-- The guides a new user would start from: `docs/content/getting-started.md`, and those under `docs/content/guides/`.
+- Phase 1's script, [`journeys/fix-a-broken-link.md`](journeys/fix-a-broken-link.md): the form a script and its notes take, how a copy is prepared, and how a session is run and recorded (`claude -p` with a clean profile and `--output-format stream-json`).
+- README decisions 5, 6, and 9: a session is run as written and noted as it went; it's a fresh session with nothing but the project and what Ascribe put in it, and its whole transcript is kept.
+- The guides a newcomer starts from: `docs/content/getting-started.md`, and those under `docs/content/guides/`.
 - `examples/quill`, `examples/monorepo`, and `examples/docs-repository`: starting points, each in a fresh copy.
+- The agents plan's pass ([`pass-results.md`](https://github.com/ascribed-dev/ascribe/blob/4dff94ea9d05abbd77e2bf553560aabacf659cc3/project-docs/agents/pass-results.md) at its last commit): seven tasks run with `claude -p`, and what they found. These sessions aren't a repeat of it: they're the same kind of run, on the audit's tasks, kept whole.
 
-## The journeys
+## The sessions
 
-Each has a goal a user would recognize, a starting point, and who walks it. The maintainer's are marked.
+Each has a goal a user would recognize, a starting point, and the setups to run it in.
 
-| | Task | Starts from | Walked |
+| | Task | Starts from | Sessions |
 |---|---|---|---|
-| 1 | Start a project and publish a first page | An empty folder, and the getting-started page | The maintainer, as an author. The maintainer, as a site builder with an Astro site already |
-| 2 | Add a section that differs by platform | `examples/quill` | The maintainer, in the editor. An agent |
-| 3 | Show an example from the code, and keep it current | `examples/quill`, with a code file to draw from | The maintainer. An agent |
-| 4 | Rename a phrase everywhere | `examples/quill` | The maintainer, in the editor. An agent |
-| 5 | Review a pull request's docs | A branch with changes, as the review fixture makes one | The maintainer: in the editor, in the site preview, and from the report |
-| 6 | Set up checks in CI | A project with no workflow | The maintainer, with an agent from the start |
-| 7 | Arrive in an unfamiliar project and make a correct edit | `examples/monorepo`, and a one-line request | An agent with the plugin. An agent with nothing but what `ascribe agents sync` wrote. An agent with nothing |
+| 1 | Start a project and publish a first page | An empty folder, and the getting-started page's address | An agent, with nothing else |
+| 2 | Add a section that differs by platform | `examples/quill` | An agent with the plugin |
+| 3 | Show an example from the code, and keep it current | `examples/quill`, with a code file to draw from | An agent with the plugin |
+| 4 | Rename a phrase everywhere | `examples/quill` | An agent with the plugin |
+| 5 | Review a pull request's docs | A branch with changes, as the review fixture makes one | An agent, from the prompt `ascribe diff --format prompt` writes |
+| 6 | Set up checks in CI | A project with no workflow | An agent with the plugin |
+| 7 | Arrive in an unfamiliar project and make a correct edit | `examples/monorepo`, and a one-line request | Three: with the plugin; with only what `ascribe agents sync` wrote; with nothing |
 
-That's ten walks for the maintainer and seven sessions for agents.
-
-**The maintainer's walks allow an agent.** Phase 1's two walks both ended with the maintainer reaching for one: in the editor, **Prompt agent** sent to Claude Code's extension; at the terminal, a stop rather than an edit by hand. The verdict, 10 October 2026: the editor walk was a reasonable ask, a person at a terminal with a plain editor isn't how the maintainer works, and that's how people work now. So a maintainer's walk is the maintainer's real editor, agent included, and the walk notes what the agent was asked, what it answered, and what it could and couldn't do. The walker still doesn't ask the agent about Ascribe's code or plans, and doesn't correct it. The command line is the agents' surface: journey 6, which is command-line by nature, is walked with an agent from the start, and no journey asks the maintainer to work in a terminal with a plain editor.
+Nine sessions, after phase 1's two. Each is a fresh session with a clean profile, in a copy that holds the project and what its row adds, with the task's sentence as the whole prompt, recorded whole to `journeys/transcripts/<journey>-<setup>.jsonl`. When it stops, the preparer runs `ascribe check` in the copy and notes the exit code and the diff.
 
 Notes on three of them:
 
-- **Journey 1 is the one to do first and coldest.** It can only be walked as a newcomer once. Follow the published getting-started page exactly, on a machine or in a folder with nothing set up, and note every place the page and reality differ.
-- **Journey 5** uses the review fixture (`scripts/review-fixture/`), or the demo pull request if it's still open, so there are real threads to read and answer.
-- **Journey 7's third walk** is the baseline: what an agent does with no help shows what the help is worth, and what an agent guesses Ascribe's commands are called.
+- **Journey 7's third session is the baseline.** What an agent does with no help shows what the help is worth, and what an agent guesses Ascribe's commands are called.
+- **Journey 5** uses the review fixture (`scripts/review-fixture/`), so there are real changes to review; the agent gets the prompt the report gives a reviewer, and nothing else.
+- **Journey 1 is the coldest.** The agent is given the getting-started page's address and an empty folder, and every place the page and what happens differ is a note.
 
-## How a walk is noted
+## How a session is noted
 
-As phase 1 settled it: the parts under "Notes" in [`journeys/fix-a-broken-link.md`](journeys/fix-a-broken-link.md). The steps are a numbered list written as the walk goes, one line per step with what was typed, clicked, or asked and what came back, quoted; not a table, which the maintainer found too fiddly to fill while working. Then each moment of doubt, with what was expected; the time taken; and, for an agent, what it tried before what worked.
+As phase 1 settled it: the parts under "Notes" in [`journeys/fix-a-broken-link.md`](journeys/fix-a-broken-link.md). The steps are a numbered list, one line per step with what the agent ran or asked and what came back, quoted from the transcript; then each place it went wrong or hesitated, with what it tried before what worked; the time taken; what the hook or the tools said; and the transcript's path.
 
-A walk that can't be finished is noted to where it stopped, with why. That's a result.
+A session that doesn't finish is noted to where it stopped, with why. That's a result.
 
 ## Tasks
 
-1. A script for each journey, in `journeys/`.
-2. The maintainer's ten walks. They don't have to be done together, or in order after the first.
-3. The agents' seven sessions, with transcripts in `journeys/transcripts/`.
-4. For each journey, a short list under its notes of what the walks had in common and where they differed. No findings yet beyond what was noted as it happened: phase 5 writes those.
+1. A script for each journey, in `journeys/`, in phase 1's form: the task's sentence, the setups, the notes' parts, and the preparer's section.
+2. The nine sessions, recorded.
+3. For each journey, a short list under its notes of what its sessions had in common and where they differed. No findings yet beyond what was noted as it happened: phase 5 writes those.
 
 ## Out of scope
 
-Fixing what a walk turns up; walking a task twice to see if it goes better; journeys for surfaces nobody has asked about.
+Walks by the maintainer; fixing what a session turns up; running a session twice to see if it goes better; journeys for surfaces nobody has asked about.
 
 ## Acceptance criteria
 
-- Every walk in the table has notes, or a line saying why it wasn't done.
-- Every note of doubt quotes what was on the screen.
-- Each agent's transcript is kept whole.
+- Every session in the table has notes and a transcript, or a line saying why it wasn't run.
+- Every note of doubt quotes the transcript.
+- Each transcript is kept whole.
 
 ## Verify
 
@@ -70,4 +68,4 @@ pnpm test
 
 ## Commits
 
-One for the scripts, then one for each journey's notes as it's finished.
+One for the scripts, then one for each journey's notes and transcripts as it's finished.
