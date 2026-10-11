@@ -1195,3 +1195,68 @@ fn an_index_with_its_pages_in_the_content_root_is_refused() {
     );
     assert!(!dir.join("docs/copies").exists());
 }
+
+/// Whether `file`, from the repository's root, is one `pattern` from the
+/// page's table names: a folder ending `/`, a name with one `*`, or a path.
+fn names(pattern: &str, file: &str) -> bool {
+    if pattern.ends_with('/') {
+        file.starts_with(pattern)
+    } else if let Some((before, after)) = pattern.split_once('*') {
+        file.len() >= before.len() + after.len()
+            && file.starts_with(before)
+            && file.ends_with(after)
+            && !file[before.len()..file.len() - after.len()].contains('/')
+    } else {
+        file == pattern
+    }
+}
+
+/// Files Ascribe writes, `docs/content/reference/project-files.md`, lists
+/// every file `sync` writes with every option, in its rows that name
+/// `ascribe agents sync`, and nothing it doesn't.
+#[test]
+fn the_project_files_page_lists_what_sync_writes() {
+    let page =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/content/reference/project-files.md");
+    let page = read(&page);
+    let mut listed = Vec::new();
+    for row in page.lines().filter(|l| l.starts_with("| ")) {
+        let cells: Vec<&str> = row.split(" | ").collect();
+        if cells.len() < 2 || !cells[1].contains("`ascribe agents sync") {
+            continue;
+        }
+        let paths = cells[0].split('`').skip(1).step_by(2);
+        listed.extend(paths.map(str::to_owned));
+    }
+    assert!(
+        !listed.is_empty(),
+        "no row of the page names `ascribe agents sync`"
+    );
+
+    let repo = repository("quill");
+    let before = files(repo.path());
+    let mut args = EVERY_TARGET.to_vec();
+    args.extend(["--target", "codex", "--with-hook"]);
+    sync(repo.path(), ".", &args);
+    let written: Vec<String> = files(repo.path())
+        .into_iter()
+        .filter(|f| !before.contains(f))
+        .collect();
+
+    let unlisted: Vec<&String> = written
+        .iter()
+        .filter(|file| !listed.iter().any(|pattern| names(pattern, file)))
+        .collect();
+    assert!(
+        unlisted.is_empty(),
+        "sync writes {unlisted:?}, which the project files page doesn't list"
+    );
+    let unwritten: Vec<&String> = listed
+        .iter()
+        .filter(|pattern| !written.iter().any(|file| names(pattern, file)))
+        .collect();
+    assert!(
+        unwritten.is_empty(),
+        "the project files page lists {unwritten:?}, which sync doesn't write"
+    );
+}

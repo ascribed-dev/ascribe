@@ -20,6 +20,9 @@ import { readProject } from "../src/project.js";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm --filter @ascribed/astro exec vitest run test/init.test.ts";
 const example = fileURLToPath(new URL("../../../examples/astro-site/", import.meta.url));
+const projectFiles = fileURLToPath(
+  new URL("../../../docs/content/reference/project-files.md", import.meta.url),
+);
 
 function project(toml: string): string {
   const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-init-"));
@@ -48,6 +51,18 @@ describe("the example", () => {
       if (process.env["ASCRIBE_BLESS"]) writeFileSync(at, text);
       expect(readFileSync(at, "utf8"), `${file} is out of date: run ${BLESS}`).toBe(text);
     }
+  });
+});
+
+describe("Files Ascribe writes", () => {
+  it("lists the files init writes", () => {
+    const rows = readFileSync(projectFiles, "utf8")
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith("| ") && line.includes("@ascribed/astro init"));
+    expect(rows, "one row of the page's table names `npx @ascribed/astro init`").toHaveLength(1);
+    const file = rows[0]?.split(" | ")[0] ?? "";
+    const listed = [...file.matchAll(/`([^`]+)`/g)].map((match) => match[1]);
+    expect(listed).toEqual([...STARTER_FILES]);
   });
 });
 
