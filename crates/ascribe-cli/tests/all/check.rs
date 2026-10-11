@@ -315,6 +315,22 @@ fn the_quill_example_has_no_errors() {
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
 }
 
+#[test]
+fn the_comparison_examples_ascribe_version_has_no_problems_and_is_canonical() {
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/comparison");
+    for args in [&["check", "--deny-warnings"][..], &["fmt", "--check"][..]] {
+        let out = ascribe(&example, args);
+        assert_eq!(
+            code(&out),
+            0,
+            "ascribe {}\n{}{}",
+            args.join(" "),
+            stdout(&out),
+            stderr(&out)
+        );
+    }
+}
+
 /// The projects of `examples/monorepo`, one nested in another's content root.
 const MONOREPO_PROJECTS: [&str; 3] = ["docs", "handbook", "handbook/pages/security"];
 
