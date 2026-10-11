@@ -1,9 +1,10 @@
-//! Checks on the conformance suite as a whole, and on `examples/quill`.
+//! Checks on the conformance suite as a whole, and on the examples that hold SPEC Appendix B.
 //!
 //! The suite's cases run through the adapters; these tests check the suite
 //! itself. They keep the suite complete (every SPEC §8.2 row has a case) and
 //! keep the Quill example project identical to the SPEC's Appendix B page and
-//! to its conformance case.
+//! to its conformance case, and the comparison's Ascribe version identical to
+//! the same page.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -109,7 +110,7 @@ fn appendix_b_page() -> String {
 }
 
 #[test]
-fn quill_example_page_is_the_spec_appendix_b_page() {
+fn the_examples_pages_are_the_spec_appendix_b_page() {
     let page = appendix_b_page();
     let example =
         std::fs::read_to_string(repo().join("examples/quill/docs/install-agent.md")).unwrap();
@@ -123,6 +124,13 @@ fn quill_example_page_is_the_spec_appendix_b_page() {
     assert_eq!(
         sample, page,
         "the appendix-b sample case drifted from SPEC Appendix B"
+    );
+    let comparison =
+        std::fs::read_to_string(repo().join("examples/comparison/ascribe/install-agent.md"))
+            .unwrap();
+    assert_eq!(
+        comparison, page,
+        "examples/comparison/ascribe/install-agent.md drifted from SPEC Appendix B"
     );
 }
 
