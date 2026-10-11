@@ -9,6 +9,7 @@ import { McpRegistration, type McpApi } from "./agents/mcp.js";
 import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
 import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
@@ -49,6 +50,8 @@ export interface AscribeApi {
     lens: BuildLensApi;
     /** The Used by, Pages, and Content model views. */
     sidebar: SidebarApi;
+    /** Check Every Build's problems. */
+    everyBuild: EveryBuildApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -82,7 +85,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const terminals = new TerminalPath(context, projects);
 
   const lenses = new BuildLenses();
-  const builds = new ProjectBuilds(projects, chosen, lenses);
+  const checks = new EveryBuildChecks(projects);
+  checks.register();
+  const builds = new ProjectBuilds(projects, chosen, lenses, checks);
   builds.register();
   const statusBar = new StatusBar(projects, builds, chosen, lenses);
   statusBar.register();
@@ -143,6 +148,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     promptAgent,
     chosen,
     lenses,
+    checks,
     builds,
     statusBar,
     lens,
@@ -207,6 +213,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       projects: projectsView.api,
       lens: lens.api,
       sidebar: sidebar.api,
+      everyBuild: checks.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };
