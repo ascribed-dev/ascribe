@@ -163,7 +163,7 @@ Anything else comes later and doesn't change what a note is. A server for people
 
 ## Checks
 
-Under the [content checks](../content-checks/README.md) contract: each has a kind of next step, a level a project can change in `[checks]`, and a fix paragraph. Each is reported on the note file, at its `about` or `quote` line. The names are for illustration.
+Under the [content checks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/README.md) contract: each has a kind of next step, a level a project can change in `[checks]`, and a fix paragraph. Each is reported on the note file, at its `about` or `quote` line. The names are for illustration.
 
 | Check | Reports | Level | Next step |
 |---|---|---|---|

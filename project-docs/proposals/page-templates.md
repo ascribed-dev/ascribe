@@ -92,7 +92,7 @@ That's a deliberate choice against "always use the newest from Ascribe". A team'
 
 A page made from a template starts full of things to replace, and an escaped placeholder is only text. Left in, it would be published.
 
-Ascribe can still find one, without a new construct, because it knows which template a page's type names. A piece of text in a page that's also a placeholder in its type's template was never filled in. That's an exact comparison, and it's reported as advice under the [content checks](../content-checks/README.md) contract: "this page still has its template's `{Task name}`". It turns "I forgot to fill in the prerequisites" from something a reader finds into something `ascribe check` does.
+Ascribe can still find one, without a new construct, because it knows which template a page's type names. A piece of text in a page that's also a placeholder in its type's template was never filled in. That's an exact comparison, and it's reported as advice under the [content checks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/README.md) contract: "this page still has its template's `{Task name}`". It turns "I forgot to fill in the prerequisites" from something a reader finds into something `ascribe check` does.
 
 It only knows the placeholders of the template as it is now. A project that rewrites its template after pages were made from it loses the check for the old wording, which is a fair trade for adding nothing to the language.
 
