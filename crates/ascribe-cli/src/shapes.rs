@@ -270,7 +270,29 @@ fn schema(shape: &Shape) -> Value {
     let mut schema = (shape.schema)(&mut generator).to_value();
     schema["title"] = shape.title.into();
     plain_descriptions(&mut schema);
+    no_integer_formats(&mut schema);
     schema
+}
+
+/// Drops the `format` that `schemars` gives an integer (`uint`, `uint32`,
+/// …): JSON Schema doesn't define those formats, so validators warn about
+/// each. `"type": "integer"` and `"minimum": 0` say what a reader needs.
+fn no_integer_formats(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            let integer = match map.get("type") {
+                Some(Value::String(kind)) => kind == "integer",
+                Some(Value::Array(kinds)) => kinds.iter().any(|kind| kind == "integer"),
+                _ => false,
+            };
+            if integer && map.get("format").is_some_and(Value::is_string) {
+                map.remove("format");
+            }
+            map.values_mut().for_each(no_integer_formats);
+        }
+        Value::Array(items) => items.iter_mut().for_each(no_integer_formats),
+        _ => {}
+    }
 }
 
 /// Rewrites rustdoc's links in descriptions as code: "[`Report`]" is

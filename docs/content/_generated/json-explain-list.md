@@ -44,7 +44,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     }
