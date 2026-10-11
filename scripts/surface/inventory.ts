@@ -157,8 +157,16 @@ function language(): Section {
 
 // `ascribe.toml`.
 
+/** A page's text with each `@include` of a whole file replaced by that file. */
+function expanded(file: string): string {
+  return read(file).replace(/^@include: (\S+)$/gm, (_, target: string) =>
+    expanded(path.posix.join(path.posix.dirname(file), target)).trimEnd(),
+  );
+}
+
 function model(): Section {
-  const reference = read("docs/content/reference/content-model.md");
+  // The reference takes what it shares with the contract from fragments.
+  const reference = expanded("docs/content/reference/content-model.md");
   const sections = reference.split(/^(?=## )/m);
   const rows = sections.flatMap((section) => {
     const heading = /^## (\d+)\. (.*`.*)\n/.exec(section);
@@ -174,7 +182,7 @@ function model(): Section {
   return {
     title: "`ascribe.toml`",
     for: "authors",
-    from: ["docs/content/reference/content-model.md"],
+    from: ["docs/content/reference/content-model.md", "docs/content/_fragments/content-model/"],
     body: table(["Section", "What it's for", "In the reference"], rows),
   };
 }

@@ -33,13 +33,13 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
-**With `[consumer] agents = true`** {available=next} (content-model.md §16), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
+**With `[consumer] agents = true`** {available=next} (content-model.md §15), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
 
 | Emitter | Page `Guides/My Setup.md` is written to |
 |---|---|
 | `plain` | `guides/my-setup.md`: the page's Astro entry id with `.md` (the root `index.md` stays `index.md`) |
 
-Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §16); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
+Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §15); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
@@ -70,7 +70,7 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 | Field | Meaning |
 |---|---|
 | `version` | The list's format version: `1`. A reader rejects versions it doesn't know. |
-| `path` | Where the addresses are published: `[consumer] permalink-path`, or `go/` under `base-path`, as a path from the site's root ending in `/` (content-model contract §16). A permalink's address is `path`, its name, and a final `/` when `trailing-slash` is `"always"`. |
+| `path` | Where the addresses are published: `[consumer] permalink-path`, or `go/` under `base-path`, as a path from the site's root ending in `/` (content-model contract §15). A permalink's address is `path`, its name, and a final `/` when `trailing-slash` is `"always"`. |
 | `dimensions` | The content model's dimensions, keyed by name and sorted by name, each with its values in declaration order: the parameters an address takes, each setting the reader's choice for a dimension (`?pm=pnpm`). |
 | `permalinks` | One entry per permalink, keyed by its name, sorted by name. A name is unique in a build (`permalink-duplicate`). |
 | `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |

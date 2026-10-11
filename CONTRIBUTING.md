@@ -68,6 +68,8 @@ cargo build -p ascribe-cli
 ./target/debug/ascribe fmt --check --config docs
 ```
 
+Two pages that say the same thing say it once, in a fragment under `docs/content/_fragments/` that each includes. The `ascribe.toml` reference and its contract share theirs from `docs/content/_fragments/content-model/`, and `the_content_model_pages_share_text_only_through_fragments` in `tests/conformance/tests/docs.rs` fails on a paragraph, list, table, or example written in both; change the fragment, and both pages change.
+
 A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/reference/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/ascribe-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:
 
 ```toml
