@@ -1,6 +1,7 @@
 ---
 title: "`ascribe.toml` reference"
 description: "The content model: content types, dimensions, availability, phrases, widgets, and builds."
+permalink: content-model
 ---
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.

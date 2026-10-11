@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { nativeBinaryPath, nativePackageName, resolveBinary } from "../src/binary.js";
+import { nativePackageName, resolveBinary } from "../src/binary.js";
 
 describe("platform selection", () => {
   it.each([
@@ -37,11 +37,11 @@ describe("platform selection", () => {
       }),
     }));
     try {
-      const { nativeBinaryPath: missing } = await import("../src/binary.js");
-      expect(() => missing("linux", "x64")).toThrow(
+      const { resolveBinary: missing } = await import("../src/binary.js");
+      expect(() => missing({ platform: "linux", arch: "x64" })).toThrow(
         /could not find its native package @ascribed\/cli-linux-x64/,
       );
-      expect(() => missing("linux", "x64")).toThrow(/optional dependencies/);
+      expect(() => missing({ platform: "linux", arch: "x64" })).toThrow(/optional dependencies/);
     } finally {
       vi.doUnmock("node:module");
       vi.resetModules();
@@ -50,6 +50,5 @@ describe("platform selection", () => {
 
   it("exposes resolveBinary as the integration API", () => {
     expect(resolveBinary).toBeTypeOf("function");
-    expect(nativeBinaryPath).toBeTypeOf("function");
   });
 });

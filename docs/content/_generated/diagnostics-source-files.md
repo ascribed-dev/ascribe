@@ -281,7 +281,7 @@ Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
-**When:** Permalink published by one build in more than one place: on two pages, or as a page's own and a heading's.
+**When:** Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's.
 
 **Message:** the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only
 

@@ -1,7 +1,8 @@
 // Readers are sent to the docs site, not to the docs' source files: the
-// READMEs link to the docs' pages, under the address and base path in
-// docs/ascribe.toml's `[consumer]`, or to their permalinks, and the
-// extension's manifest to its permalinks. Each link lands on a page and a
+// READMEs link to the docs' permalinks, and the ones that aren't published
+// (the examples', the site's, the tests') may link to a page, under the
+// address and base path in docs/ascribe.toml's `[consumer]`; the extension's
+// manifest links to its permalinks. Each link lands on a page and a
 // heading the docs have, or on a permalink they declare. (The binary's help is checked by
 // crates/ascribe-cli/src/docs.rs, and the site's own links by site/test/.)
 import { execFileSync } from "node:child_process";
@@ -44,6 +45,15 @@ function readmes(): string[] {
     .filter((file) => file !== "" && !file.startsWith("docs/"));
 }
 
+/**
+ * A README that's published: the repository's, the packages', the crates',
+ * and the plugin's. A page can move, and a copy already on npm or the
+ * Marketplace can't follow it, so these link to permalinks only.
+ */
+function published(file: string): boolean {
+  return /^(README\.md$|packages\/|crates\/|plugins\/)/.test(file);
+}
+
 /** A Markdown link's destinations: `[text](destination)`. */
 function destinations(markdown: string): string[] {
   return Array.from(markdown.matchAll(/\]\(([^)\s]+)/g), (match) => match[1] ?? "");
@@ -82,7 +92,7 @@ test("READMEs link to the docs site, not to the docs' source files", () => {
   expect(found, "link to the page on the docs site instead").toEqual([]);
 });
 
-test("each link to the docs site lands on a page and a heading, or a permalink", () => {
+test("each link to the docs site is a permalink, or lands on a page and a heading", () => {
   const site = siteAddress();
   const basePath = consumer("base-path");
   const permalinkPath = consumer("permalink-path");
@@ -98,6 +108,10 @@ test("each link to the docs site lands on a page and a heading, or a permalink",
         // A permalink's page forwards to its heading, so the link has no fragment.
         const name = url.pathname.slice(permalinkPath.length).replace(/\/$/, "");
         if (!names.has(name) || url.hash !== "") problems.push(`${file}: ${link} (no permalink)`);
+        continue;
+      }
+      if (published(file)) {
+        problems.push(`${file}: ${link} (a published README links to a permalink)`);
         continue;
       }
       if (!url.pathname.startsWith(basePath)) {

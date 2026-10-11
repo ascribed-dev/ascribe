@@ -50,6 +50,8 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 
 `ascribe check --format json` gives each problem's `fixes` too: edits that would fix it, each marked `safe` to apply as given, or `unsafe`, to read first.
 
+To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../reference/cli.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
+
 ### Fix it, or say it's intended
 @available: next
 

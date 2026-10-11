@@ -7,7 +7,7 @@
 //! `textDocument/prepareRename` says what's renamed at a position, or why
 //! nothing is.
 
-mod values;
+pub(crate) mod values;
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -467,7 +467,55 @@ fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceE
     let file = ctx.file()?;
     let (heading_span, span) = heading_text_at(&file.document.blocks, offset, &file.source)?;
     let old_heading = file.headings.iter().position(|h| h.span == heading_span)?;
-    let edit = ByteEdit::replace(span, new_text.to_owned());
+    with_id_changes(
+        ctx,
+        file,
+        old_heading,
+        ByteEdit::replace(span, new_text.to_owned()),
+    )
+}
+
+/// Gives the heading at `heading` of the requested page the `@id` `new_id`,
+/// on a line of its own under it, and changes every link and include that
+/// names an id it changes: its own, and those of the headings after it whose
+/// slugs were numbered after its. `None` when it can't: the heading isn't on
+/// a line of its own at the start of the line, or already has an `@id`.
+pub(crate) fn add_id(ctx: &Ctx, heading: usize, new_id: &str) -> Option<WorkspaceEdit> {
+    let file = ctx.file()?;
+    let found = file.headings.get(heading)?;
+    if found.explicit_id.is_some() {
+        return None;
+    }
+    let source = &*file.source;
+    let line_start = source[..found.span.start()]
+        .rfind('\n')
+        .map_or(0, |at| at + 1);
+    if line_start != found.span.start() {
+        return None;
+    }
+    let end = source
+        .get(..found.span.end())?
+        .trim_end_matches(['\n', '\r'])
+        .len();
+    let newline = if source.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let edit = ByteEdit::replace(Span::new(end, end), format!("{newline}@id: {new_id}"));
+    with_id_changes(ctx, file, heading, edit)
+}
+
+/// `edit` to the requested page, which changes the id of its heading at
+/// `heading`, with every link and include that names an id the edit
+/// changes changed to match. `None` when the heading's new id is another
+/// heading's, or the edit adds or removes a heading.
+fn with_id_changes(
+    ctx: &Ctx,
+    file: &FileIndex,
+    heading: usize,
+    edit: ByteEdit,
+) -> Option<WorkspaceEdit> {
     let updated = ascribe_core::apply_edits(&file.source, std::slice::from_ref(&edit)).ok()?;
     let slugger = ascribe_resolve::slug::slugger_by_name(&ctx.model.consumer.slugger)
         .unwrap_or_else(ascribe_resolve::slug::default_slugger);
@@ -481,14 +529,14 @@ fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceE
     if indexed.headings.len() != file.headings.len() {
         return None;
     }
-    let new_id = indexed.headings.get(old_heading)?.source_id.clone();
-    let old_id = &file.headings.get(old_heading)?.source_id;
+    let new_id = indexed.headings.get(heading)?.source_id.clone();
+    let old_id = &file.headings.get(heading)?.source_id;
     if new_id != *old_id
         && file
             .headings
             .iter()
             .enumerate()
-            .any(|(i, h)| i != old_heading && h.source_id == new_id)
+            .any(|(i, h)| i != heading && h.source_id == new_id)
     {
         return None;
     }
@@ -858,14 +906,14 @@ fn workspace_edit(ctx: &Ctx, mut edits: HashMap<RelPath, Vec<ByteEdit>>) -> Work
     }
 }
 
-fn valid_id_or_phrase(name: &str) -> bool {
+pub(crate) fn valid_id_or_phrase(name: &str) -> bool {
     !name.is_empty()
         && name
             .chars()
             .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.'))
 }
 
-fn valid_phrase_key(name: &str) -> bool {
+pub(crate) fn valid_phrase_key(name: &str) -> bool {
     let mut chars = name.chars();
     chars.next().is_some_and(|c| c.is_ascii_lowercase())
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
@@ -931,7 +979,7 @@ fn phrase_entry_at(source: &str, offset: usize) -> Option<(String, Span)> {
     ))
 }
 
-fn phrase_entry_span(source: &str, key: &str) -> Option<Span> {
+pub(crate) fn phrase_entry_span(source: &str, key: &str) -> Option<Span> {
     let mut phrases = false;
     let mut at = 0;
     for line in source.split_inclusive('\n') {
