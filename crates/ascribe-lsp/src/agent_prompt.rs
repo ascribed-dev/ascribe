@@ -77,6 +77,11 @@ pub struct AgentPromptParams {
     /// names it in a page's `because`.
     #[serde(default)]
     pub fragment: Option<String>,
+    /// The command that runs Ascribe where the agent is, when `ascribe`
+    /// isn't it: the path of the binary the editor runs. The prompt's
+    /// commands start with it. Without one, `ascribe`.
+    #[serde(default)]
+    pub program: Option<String>,
 }
 
 /// The answer to `ascribe/agentPrompt`, or `null` when there's nothing to
@@ -117,7 +122,9 @@ pub(crate) fn agent_prompt(
     .with_today(ctx.today);
     let unsaved = unsaved_paths(&root, params);
     let build = ctx.model.editor_default_build().name.clone();
-    let context = Context::of_project(&root, Builds::Editor(build)).with_unsaved(unsaved);
+    let context = Context::of_project(&root, Builds::Editor(build))
+        .with_unsaved(unsaved)
+        .with_program(params.program.clone());
     let shown_on = |fragment: &RelPath| ctx.snapshot.including_pages(fragment);
 
     if params.kind == PromptKind::Project {
@@ -194,7 +201,8 @@ fn change_prompt(
         None => ctx.model.editor_default_build(),
     };
     let context = Context::of_project(root, Builds::Named(vec![build.name.clone()]))
-        .with_unsaved(unsaved_paths(root, params));
+        .with_unsaved(unsaved_paths(root, params))
+        .with_program(params.program.clone());
     let now = Side {
         project: ctx.snapshot.project(),
         model_text: &ctx.model_text,

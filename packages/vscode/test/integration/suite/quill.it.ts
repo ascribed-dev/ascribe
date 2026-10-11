@@ -1,6 +1,10 @@
 import * as assert from "node:assert/strict";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import * as path from "node:path";
+import { shellWord } from "@ascribed/review/prompt";
 import * as vscode from "vscode";
+import { ascribeElsewhere } from "../../../src/agents/reach.js";
+import { nodePathEnvironment } from "../../../src/environment.js";
 import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
@@ -211,8 +215,27 @@ describe("with the real language server on examples/quill", () => {
       prompt.startsWith("Fix this problem in `docs/broken.md`.\n\nWhere: docs/broken.md:8\n"),
       prompt,
     );
-    assert.ok(prompt.includes("When you're done, run `ascribe check docs/broken.md`"), prompt);
+    // The binary the editor runs, as an agent beside it can run it.
+    const binary = api.binary()?.path;
+    assert.ok(binary);
+    const elsewhere = await ascribeElsewhere(binary, nodePathEnvironment());
+    const ascribe = elsewhere ? shellWord(elsewhere.program) : "ascribe";
+    assert.ok(prompt.includes(`When you're done, run \`${ascribe} check docs/broken.md\``), prompt);
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("puts the binary the editor runs on the terminals' path when `ascribe` isn't it", async () => {
+    const api = await activated();
+    await api.agents.terminals.whenSettled();
+    const binary = api.binary()?.path;
+    assert.ok(binary);
+    const elsewhere = await ascribeElsewhere(binary, nodePathEnvironment());
+    const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    assert.ok(folder);
+    assert.equal(
+      api.agents.terminals.directories().get(folder),
+      elsewhere ? path.dirname(binary) : undefined,
+    );
   });
 
   it("updates diagnostics after the file changes on disk", async () => {

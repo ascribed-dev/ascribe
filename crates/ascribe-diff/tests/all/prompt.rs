@@ -67,6 +67,7 @@ fn context() -> Context {
         agents: Some("AGENTS.md".to_owned()),
         builds: Builds::Named(vec!["site".to_owned()]),
         unsaved: Vec::new(),
+        program: None,
     }
 }
 

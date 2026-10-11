@@ -67,6 +67,7 @@ fn plain() -> Context {
         agents: None,
         builds: Builds::All,
         unsaved: Vec::new(),
+        program: None,
     }
 }
 
@@ -186,9 +187,41 @@ fn a_project_in_a_subfolder_writes_commands_from_the_repository_root() {
         folder: Some("site/docs".to_owned()),
         agents: Some("site/docs/AGENTS.md".to_owned()),
         builds: Builds::Named(vec!["self-hosted".to_owned()]),
-        unsaved: Vec::new(),
+        ..plain()
     };
     insta::assert_snapshot!(one_problem(&project, &context, "docs/install.md"));
+}
+
+#[test]
+fn a_program_the_editor_names_starts_every_command() {
+    let links: String = (1..=25)
+        .map(|n| format!("Read [part {n}](missing-{n}.md).\n\n"))
+        .collect();
+    let project = project(&[("install.md", &page(&links))]);
+    let context = Context {
+        builds: Builds::Editor("site".to_owned()),
+        program: Some("/home/jane doe/.vscode/extensions/ascribe/bin/linux-x64/ascribe".to_owned()),
+        ..plain()
+    };
+    let reported = reported(&project, "docs/install.md");
+    let text = prompt::file(
+        &project,
+        &context,
+        id(&project, "install.md"),
+        &reported,
+        &shown_on(&project),
+    )
+    .expect("problems");
+    let program = "'/home/jane doe/.vscode/extensions/ascribe/bin/linux-x64/ascribe'";
+    assert!(text.contains(&format!(
+        "Build: `site`, the editor's. `{program} check` checks every build.\n"
+    )));
+    assert!(text.contains(&format!(
+        "and 5 more: `{program} check docs/install.md --format concise`"
+    )));
+    assert!(text.ends_with(&format!(
+        "When you're done, run `{program} check docs/install.md` and fix what it reports.\n"
+    )));
 }
 
 #[test]

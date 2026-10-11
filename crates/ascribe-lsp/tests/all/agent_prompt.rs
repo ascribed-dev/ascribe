@@ -148,3 +148,31 @@ fn the_projects_prompt_needs_no_file() {
         "{text}"
     );
 }
+
+#[test]
+fn a_program_the_editor_sends_starts_the_prompts_commands() {
+    let fixture = Fixture::new(MODEL, &[("docs/install.md", BROKEN)]);
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let answer = ask(
+        &mut client,
+        json!({ "kind": "project", "program": "/opt/ascribe/bin/ascribe" }),
+    );
+    let text = prompt(&answer);
+    assert!(
+        text.contains(
+            "Build: `site`, the editor's. `/opt/ascribe/bin/ascribe check` checks every build.\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("To list each problem: `/opt/ascribe/bin/ascribe check --format concise`\n"),
+        "{text}"
+    );
+    assert!(
+        text.ends_with(
+            "When you're done, run `/opt/ascribe/bin/ascribe check` and fix what it reports.\n"
+        ),
+        "{text}"
+    );
+}
