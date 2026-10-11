@@ -86,6 +86,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] The TypeScript that runs the command, if it passes the new option: `packages/astro/src/run.ts`.
 - [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
 - [ ] A line in the unreleased section of `CHANGELOG.md`.
+- [ ] The map of the surface, `project-docs/surface.md`, rewritten by `node scripts/surface/inventory.ts` after the fragments above. Its diff is what the change added to the surface: read it against the conventions at the top of this list.
 - [ ] The tools of `ascribe mcp`, whose names and arguments are a contract (decision 56): the tools list in `docs/content/guides/agents.md` and each tool's section in `docs/content/reference/cli.md`.
 
 ## A change to the site output's markup
