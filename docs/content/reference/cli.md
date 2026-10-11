@@ -534,7 +534,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-permalinks
 @available: next
 
-Keeps the project's list of [permalinks](directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired permalink in `ascribe.toml`'s [`[permalinks]`](content-model.md#20-permalinks), and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
+Keeps the project's list of [permalinks](directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired permalink in `ascribe.toml`'s [`[permalinks]`](content-model.md#20-permalinks), and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md), and [Permalinks](../guides/permalinks.md) walks through using them.
 
 ### `ascribe permalinks sync`
 @id {permalink=true}: cli-permalinks-sync
@@ -562,7 +562,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ### `ascribe permalinks verify`
 @id {permalink=true}: cli-permalinks-verify
 
-Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Checking a product's links](../guides/astro.md#checking-a-products-links) shows the step for CI.
+Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Checking a product's links](../guides/permalinks.md#checking-a-products-links) shows the step for CI.
 
 ```sh
 ascribe permalinks verify cli-check ASC036

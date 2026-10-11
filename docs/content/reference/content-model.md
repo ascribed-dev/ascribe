@@ -768,7 +768,7 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 ## 20. `[permalinks]`
 @available: next
 
-Names for something outside the docs to link to that no heading or page declares: a [permalink](directives.md#permalinks) ended on purpose, and a second name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../guides/astro.md#moving-aliasing-and-retiring) says when to use each.
+Names for something outside the docs to link to that no heading or page declares: a [permalink](directives.md#permalinks) ended on purpose, and a second name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../guides/permalinks.md#moving-aliasing-and-retiring) says when to use each.
 
 ```toml
 [permalinks.retired]
