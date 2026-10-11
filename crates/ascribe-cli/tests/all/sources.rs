@@ -176,7 +176,7 @@ fn update_names_the_page_and_rewrites_the_lock_and_the_copy() {
     let pair = Pair::new();
     let head = pair.change_api();
 
-    let out = pair.ascribe(&["sources", "update", "--format", "summary"]);
+    let out = pair.ascribe(&["sources", "update", "--format", "markdown"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let summary = stdout(&out);
     assert!(
@@ -202,7 +202,7 @@ fn update_names_the_page_and_rewrites_the_lock_and_the_copy() {
 
     // Again: nothing to move, no file changes, and the summary is empty.
     let lock = pair.read("ascribe.lock");
-    let out = pair.ascribe(&["sources", "update", "--format", "summary"]);
+    let out = pair.ascribe(&["sources", "update", "--format", "markdown"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(stdout(&out), "");
     let out = pair.ascribe(&["sources", "update"]);

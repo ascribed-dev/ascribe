@@ -88,7 +88,7 @@ pub enum UpdateFormat {
     /// One JSON document, for tools.
     Json,
     /// Markdown for a pull request's description.
-    Summary,
+    Markdown,
 }
 
 /// Arguments of `ascribe sources status`.
@@ -346,7 +346,7 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out))
         }
-        UpdateFormat::Summary => write_update_summary(out, &report, to, &pages, site),
+        UpdateFormat::Markdown => write_update_summary(out, &report, to, &pages, site),
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe
