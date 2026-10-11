@@ -304,7 +304,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/322"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Check every build from the editor"
     },
     {
@@ -595,6 +595,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzg_8VwY",
       "labels": [
         "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/323"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
