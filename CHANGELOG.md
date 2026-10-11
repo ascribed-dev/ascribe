@@ -156,6 +156,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 - **Fixed:** in VS Code, review uses a GitHub sign-in only for its own host: VS Code's GitHub sign-in for `github.com`, and its GitHub Enterprise sign-in for the server `github-enterprise.uri` names. A remote on any other host gets no sign-in, and the page preview says why. `@ascribed/review/github`'s `tokenTransport` accepts a token with the host it's for (`HostToken`), and refuses to send it to another host or follow a redirect. See [What you need for each part](docs/content/guides/review.md#what-you-need-for-each-part).
 - **Fixed:** in the editor, a link outside the docs is clickable only when it's a web or email address (`http`, `https`, or `mailto`). A link with any other scheme stays in the page for the site's readers, and is no longer a link the editor follows. The VS Code extension drops such links from an older `ascribe` too. See [the editor guide](docs/content/guides/editor.md).
 - **Fixed:** a page's includes can expand it to at most 100,000 blocks and 16 MiB of text, far more than any real page. The include in the page that takes it past is an error, `include-limit`, and isn't expanded, nor is any include after it. See [`@include`](docs/content/reference/directives.md#include).
+- **Fixed:** the language server, when told a folder was created, and `ascribe fmt` go into each folder once, by where it really is, as `ascribe check` does.
 
 ## 0.2.0 (2026-10-06)
 
