@@ -220,9 +220,14 @@ pub fn source_path(project: &Project, given: &Path) -> Result<RelPath, QueryErro
 /// `file`, relative to the project root, as a path from the current
 /// directory, `/`-separated.
 pub fn from_here(root: &Path, file: &str) -> String {
-    let target = root.join(file);
+    path_from_here(&root.join(file))
+}
+
+/// `target`, absolute or from the current directory, as a path from the
+/// current directory, `/`-separated.
+pub fn path_from_here(target: &Path) -> String {
     let here = std::env::current_dir().ok();
-    let absolute = std::path::absolute(&target).unwrap_or_else(|_| target.clone());
+    let absolute = std::path::absolute(target).unwrap_or_else(|_| target.to_path_buf());
     here.and_then(|here| relative_path(&here, &absolute))
         .map_or_else(
             || absolute.to_string_lossy().replace('\\', "/"),

@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use ascribe_check::Project;
-use ascribe_core::path::relative_path;
 use ascribe_core::{Coded, RelPath};
 use ascribe_lsp::{RenameError, Renamed, Renaming};
 use clap::Args as ClapArgs;
@@ -219,7 +218,7 @@ fn path_renaming(
 /// Writes each file the rename changes, then moves the one that moves.
 fn write(renamed: &Renamed) -> Result<(), RenameCommandError> {
     let unwritable = |path: &Path, e: io::Error| RenameCommandError::Unwritable {
-        path: shown(path).into(),
+        path: answer::path_from_here(path).into(),
         message: e.to_string(),
     };
     for file in &renamed.files {
@@ -241,23 +240,17 @@ fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
         writeln!(
             out,
             "changed {} ({} {places})",
-            shown(&file.path),
+            answer::path_from_here(&file.path),
             file.edits
         )?;
     }
     if let Some((from, to)) = &renamed.moved {
-        writeln!(out, "moved {} to {}", shown(from), shown(to))?;
+        writeln!(
+            out,
+            "moved {} to {}",
+            answer::path_from_here(from),
+            answer::path_from_here(to)
+        )?;
     }
     Ok(())
-}
-
-/// `path`, absolute, as a path from the current directory, `/`-separated.
-fn shown(path: &Path) -> String {
-    std::env::current_dir()
-        .ok()
-        .and_then(|here| relative_path(&here, path))
-        .map_or_else(
-            || path.to_string_lossy().replace('\\', "/"),
-            |rel| rel.to_string(),
-        )
 }
