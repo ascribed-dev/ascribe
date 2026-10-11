@@ -39,8 +39,10 @@ const commands: Record<string, string> = {
     "Picks the build the preview shows, for the previewed page's project, as the preview's **Build** picker does. It's the same choice as **Switch Build**.",
   "ascribe.switchBuild":
     "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar).",
+  "ascribe.checkEveryBuild":
+    "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../guides/editor.md#the-problems-panel).",
   "ascribe.projectMenu":
-    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, dim what the build leaves out, or open the preview.",
+    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, restart its server, dim what the build leaves out, or open the preview.",
   "ascribe.toggleBuildLens":
     "Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../guides/editor.md#the-build-lens).",
   "ascribe.startReview":
@@ -80,6 +82,7 @@ const available: Record<string, string> = {
   "ascribe.changedPages": "ascribe 0.2.0",
   "ascribe.refreshComments": "ascribe 0.2.0",
   "ascribe.switchBuild": "next",
+  "ascribe.checkEveryBuild": "next",
   "ascribe.projectMenu": "next",
   "ascribe.toggleBuildLens": "next",
   "ascribe.preview.scrollPreviewWithEditor": "ascribe 0.2.0",

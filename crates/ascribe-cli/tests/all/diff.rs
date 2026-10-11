@@ -488,7 +488,7 @@ fn prompt_output_is_about_every_page_or_the_one_named() {
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     let text = stdout(&out);
     assert!(
-        text.starts_with("Review what this change does to the 2 pages it changes.\n\nProject: site/\nBuild: `site`\n"),
+        text.starts_with("Review what this change does to the 2 pages it changes.\n\nPaths and commands here are from `site` in the repository.\nBuild: `site`\n"),
         "{text}"
     );
     assert!(
@@ -509,7 +509,7 @@ fn prompt_output_is_about_every_page_or_the_one_named() {
             "{text}"
         );
         assert!(
-            text.contains("\nTo read it: `ascribe render site/docs/install.md --build site`\n"),
+            text.contains("\nTo read it: `ascribe render docs/install.md --build site`\n"),
             "{text}"
         );
     }

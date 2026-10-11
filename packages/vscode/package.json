@@ -267,6 +267,12 @@
         "icon": "$(package)"
       },
       {
+        "command": "ascribe.checkEveryBuild",
+        "title": "Check Every Build",
+        "category": "Ascribe",
+        "icon": "$(checklist)"
+      },
+      {
         "command": "ascribe.projectMenu",
         "title": "Project Menu",
         "category": "Ascribe"
@@ -967,6 +973,10 @@
         {
           "command": "ascribe.switchBuild",
           "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.checkEveryBuild",
+          "when": "ascribe.active"
         },
         {
           "command": "ascribe.projectMenu",

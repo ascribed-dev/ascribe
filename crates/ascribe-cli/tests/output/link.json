@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ascribe_version": "{version}",
-  "from": "install-agent.md",
+  "from": "examples/quill/docs/install-agent.md",
   "target": "keys.md#rotate-keys",
   "exists": true,
   "kind": "heading",

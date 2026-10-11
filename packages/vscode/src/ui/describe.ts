@@ -20,6 +20,12 @@ export interface ProjectInfo extends Project {
   build: string | undefined;
   /** Whether the build lens is on: the editor dims what `build` leaves out. */
   lens: boolean;
+  /**
+   * Whether the Problems panel holds a check of every build
+   * (**Check Every Build**) that nothing in the project has changed since.
+   * Without one, it holds the editor build's problems alone.
+   */
+  everyBuild: boolean;
 }
 
 /** A server's state in words. */
@@ -111,14 +117,28 @@ export function statusFor(
   // While the lens dims by the build, the eye says so.
   const lens = build !== undefined && project.lens;
   const icon = lens ? "eye" : STATE_ICONS[project.state];
-  const text = `$(${icon}) ${project.name}${build ? ` · ${build}` : ""}`;
+  const alone = build === undefined ? undefined : coveredAlone(project);
+  const covers = alone === undefined ? "" : alone === build ? "this build only" : `${alone} only`;
+  const text = `$(${icon}) ${project.name}${build ? ` · ${build}` : ""}${covers ? ` · problems: ${covers}` : ""}`;
   const state = STATE_NAMES[project.state];
   return {
     project,
     text,
     tooltip: tooltipLines(project).join("\n"),
-    label: `Ascribe project ${project.name}, server ${state}${build ? `, build ${build}` : ""}${lens ? ", dimming what it leaves out" : ""}`,
+    label: `Ascribe project ${project.name}, server ${state}${build ? `, build ${build}` : ""}${lens ? ", dimming what it leaves out" : ""}${alone ? `, problems for ${alone} only` : ""}`,
   };
+}
+
+/**
+ * The build whose problems the Problems panel holds alone: the editor
+ * build, while the project has other builds and no check of every build
+ * is current. `undefined` when the panel covers every build.
+ */
+function coveredAlone(project: ProjectInfo): string | undefined {
+  if (project.state !== "running" || project.everyBuild || project.builds.length < 2) {
+    return undefined;
+  }
+  return project.builds.find((b) => b.editor)?.name;
 }
 
 /** The tooltip's lines: where the project is, the binary, the state, and the build. */
@@ -136,6 +156,14 @@ function tooltipLines(project: ProjectInfo): string[] {
       `Build: ${project.build}${editor === project.build ? " (the editor build)" : editor ? ` (the editor build is ${editor})` : ""}`,
     );
     if (project.lens) lines.push(`Dimming what ${project.build} leaves out`);
+    const alone = coveredAlone(project);
+    if (alone !== undefined) {
+      lines.push(
+        `Problems: ${alone} only. Ascribe: Check Every Build adds the problems of the others.`,
+      );
+    } else if (project.everyBuild) {
+      lines.push("Problems: every build, from Ascribe: Check Every Build");
+    }
   }
   return lines;
 }

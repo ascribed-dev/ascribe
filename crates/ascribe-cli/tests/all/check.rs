@@ -1232,7 +1232,9 @@ fn prompt_format_in_a_repository_names_the_projects_folder_and_agents_md() {
     );
     let text = stdout(&out);
     assert!(
-        text.contains("Where: docs/index.md\nProject: site/\n"),
+        text.contains(
+            "Where: site/docs/index.md\nPaths and commands here are from the repository's root.\nProject: site/\n"
+        ),
         "{text}"
     );
     assert!(

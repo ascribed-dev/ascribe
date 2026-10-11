@@ -78,7 +78,7 @@ describe("the build lens, with the real language server on the Lantern docs", ()
       /Left out of self-hosted.*Shows only edition=self-hosted/,
     );
     assert.equal(api.preview.build(), "self-hosted");
-    assert.match(api.ui.statusBar.shown()?.text ?? "", /^\$\(eye\) .* · self-hosted$/);
+    assert.match(api.ui.statusBar.shown()?.text ?? "", /^\$\(eye\) .* · self-hosted( · |$)/);
 
     await open(rollouts);
     const section = await shown(

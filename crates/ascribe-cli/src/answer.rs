@@ -217,6 +217,25 @@ pub fn source_path(project: &Project, given: &Path) -> Result<RelPath, QueryErro
         })
 }
 
+/// `file`, relative to the project root, as a path from the current
+/// directory, `/`-separated.
+pub fn from_here(root: &Path, file: &str) -> String {
+    let target = root.join(file);
+    let here = std::env::current_dir().ok();
+    let absolute = std::path::absolute(&target).unwrap_or_else(|_| target.clone());
+    here.and_then(|here| relative_path(&here, &absolute))
+        .map_or_else(
+            || absolute.to_string_lossy().replace('\\', "/"),
+            |rel| {
+                if rel.is_root() {
+                    ".".to_owned()
+                } else {
+                    rel.to_string()
+                }
+            },
+        )
+}
+
 /// What a path named on the command line can be as a content path: a path
 /// from the current directory into the content root, then the path itself.
 /// The file needn't exist: a page `ascribe diff` reports as removed doesn't.

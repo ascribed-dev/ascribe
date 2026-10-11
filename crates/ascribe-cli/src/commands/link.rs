@@ -52,10 +52,18 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<L
     let loaded = answer::load(projects, global, Some(&args.from))?;
     let project = &loaded.project;
     let from = answer::source_path(project, &args.from)?;
+    // The page is named back as `check` names a file: from the folder the
+    // command was run in, whichever form it was given in.
+    let in_project = project
+        .content_root()
+        .join(from.as_str())
+        .map_or_else(|_| from.to_string(), |path| path.to_string());
+    let named = answer::from_here(project.root(), &in_project);
     Ok(ascribe_query::link(
         loaded.index(),
         project.file_system(),
         &from,
+        &named,
         &args.target,
     )?)
 }

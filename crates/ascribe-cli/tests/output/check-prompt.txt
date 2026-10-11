@@ -1,6 +1,7 @@
 Fix the problem `ascribe check` reports in `docs/keys.md`.
 
 Where: docs/keys.md
+Paths and commands here are from the project's folder, where `ascribe.toml` is.
 
 - 7: [ASC041] this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
 

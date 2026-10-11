@@ -2,7 +2,7 @@
 //! building; with paths, only what counts for them.
 
 use std::io::{self, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::rc::Rc;
 
@@ -13,7 +13,6 @@ use ascribe_check::{
     diagnose, diagnose_editor_build_in, locate_for,
 };
 use ascribe_core::Coded;
-use ascribe_core::path::relative_path;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{Found, FromDisk, Loaded, Projects};
@@ -447,7 +446,11 @@ fn write_prompt(
     } else {
         Builds::Named(args.build.clone())
     };
-    let mut context = prompt::Context::of_project(project.root(), builds);
+    let mut context = prompt::Context::seen_from(
+        project.root(),
+        std::env::current_dir().ok().as_deref(),
+        builds,
+    );
     let named = scope.and_then(|s| s.named_sources(project));
     let one = named.as_deref().and_then(|files| match files {
         [file] => project.source_at(file),
@@ -606,30 +609,11 @@ impl<'a> Command<'a> {
             return self.listing();
         }
         let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
-        words.push(quote(&from_here(project.root(), file)));
+        words.push(quote(&crate::answer::from_here(project.root(), file)));
         words.extend(self.options());
         words.extend(["--format".to_owned(), "concise".to_owned()]);
         words.join(" ")
     }
-}
-
-/// `file`, relative to the project root, as a path from the current
-/// directory, `/`-separated.
-fn from_here(root: &Path, file: &str) -> String {
-    let target = root.join(file);
-    let here = std::env::current_dir().ok();
-    let absolute = std::path::absolute(&target).unwrap_or_else(|_| target.clone());
-    here.and_then(|here| relative_path(&here, &absolute))
-        .map_or_else(
-            || absolute.to_string_lossy().replace('\\', "/"),
-            |rel| {
-                if rel.is_root() {
-                    ".".to_owned()
-                } else {
-                    rel.to_string()
-                }
-            },
-        )
 }
 
 /// Reports a check that couldn't be made, and returns the exit code: as
