@@ -67,7 +67,7 @@ To leave a whole host out, name it in `ascribe.toml`. A name with `*.` before it
 ignore = ["localhost", "*.internal.example.com"]
 ```
 
-Install lychee from [its releases](https://github.com/lycheeverse/lychee/releases), or with `cargo install lychee`. When it isn't on the path, `[checks.links] command` names where it is, relative to the project root. lychee runs in the project's folder, the one with `ascribe.toml`, and reads its own `lychee.toml` there, for headers, timeouts, or how often to retry. Results aren't kept between runs.
+Install lychee from [its releases](https://github.com/lycheeverse/lychee/releases), or with `cargo install lychee`. When it isn't on the path, `[checks.links] command` names where it is, relative to the project root. lychee runs in the project's folder, the one with `ascribe.toml`, and reads its own `lychee.toml` there, for headers, timeouts, or how often to retry. Results aren't kept between runs: Ascribe turns lychee's cache off, whatever `lychee.toml` says, because lychee keeps a link's status and not where it moved to, so a cached answer would hide every moved link.
 
 ## The site and agents
 
