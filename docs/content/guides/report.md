@@ -108,7 +108,7 @@ External links break and sites change without a commit in your repository, and c
 
 @snippet {lang=yaml}: code:.github/workflows/report.yml#job
 
-- **`actions/cache`** keeps the answers `links` reuses from one run to the next, so a daily run asks about roughly a tenth of the addresses. A saved cache can't be replaced, so each run saves under its own key and restores the newest by the prefix; GitHub removes a cache nobody has read for seven days. A run that restores nothing asks about every address, as a first run does. Its `path` is `.ascribe/cache` in the project's folder, so change `docs` there too.
+- **`actions/cache/restore` and `actions/cache/save`** keep the answers `links` reuses from one run to the next, so a daily run asks about roughly a tenth of the addresses. The save comes right after the report, so a run that finds something, and fails, still saves. A saved cache can't be replaced, so each run saves under its own key and restores the newest by the prefix; GitHub removes a cache nobody has read for seven days. A run that restores nothing asks about every address, as a first run does. Its `path` is `.ascribe/cache` in the project's folder, so change `docs` there too.
 - **`--format markdown`** writes Markdown, for the run's summary and the issue's body.
 - **`--exit-code`** fails on any problem; `--exit-code=warning` only on warnings and errors. A section that couldn't run fails it too, with exit code 2: a report that didn't check the links isn't a pass.
 - **The issue** is found by its title, so one stays open until someone closes it, and each run replaces its body with the latest report.
