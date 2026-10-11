@@ -110,7 +110,13 @@ The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access t
 
 ### 1. Check what's published
 
-The changelog's section for the release lists what it ships, and nothing in it is unfinished.
+Gather the changelog's entries first: each change since the last release wrote its entry as a file in `changes/` (decision 123), and this moves them all to the top of `CHANGELOG.md`'s unreleased section and deletes their files.
+
+```sh
+node scripts/release/changes.ts gather
+```
+
+Then the unreleased section lists what the release ships, and nothing in it is unfinished. Group its entries under the release's `###` headings (the language, the `ascribe` command, the editor, and so on), as earlier releases do.
 
 Reread the landing page's "Where it's going" (`site/home/content/index.md`): an item the release ships, or a plan that was dropped, comes off the list, and nothing checks it but you. Its claims' availability marks are checked: `ascribe check` on `site/home` reports `availability-left-behind` once the docs' release tables move past them.
 
@@ -126,7 +132,7 @@ Set the `version` phrase in `docs/ascribe.toml` to the new version too; a test f
 
 In `CHANGELOG.md`, write the release's section as `## 0.2.0 (YYYY-MM-DD)`, with today's date. For 0.1.0, replace `(unreleased)` with the date.
 
-**Check:** `node scripts/release/version.ts --check` prints the version.
+**Check:** `node scripts/release/version.ts --check` prints the version. It fails while `changes/` has an entry the changelog doesn't.
 
 ### 3. Check everything locally
 

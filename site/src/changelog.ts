@@ -1,11 +1,13 @@
-// The changelog page: CHANGELOG.md at the repository's root, rendered by
-// Astro's Markdown, with its links pointed at the site and the repository.
-// The file stays where it is, and nothing is copied from it.
+// The changelog page: CHANGELOG.md at the repository's root, with the entries
+// in changes/ that no release has gathered yet in its unreleased section,
+// rendered by Astro's Markdown, with its links pointed at the site and the
+// repository. The files stay where they are, and nothing is copied from them.
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Loader } from "astro/loaders";
 import { z } from "astro/zod";
+import { changesDir, readChanges, withChanges } from "../../scripts/release/changes.ts";
 import { contentDir } from "./site.ts";
 
 /** The file the page renders, relative to the repository's root. */
@@ -16,7 +18,8 @@ export const changelogId = "changelog";
 
 /**
  * A collection with one entry: CHANGELOG.md, read from the repository the
- * site is in, rendered with the site's Markdown settings. The links are left
+ * site is in, with the entries in `changes/` gathered into it as a release
+ * would gather them, rendered with the site's Markdown settings. The links are left
  * as the file writes them; the page points them, since only it can see which
  * docs pages were published.
  */
@@ -28,23 +31,29 @@ export function changelogLoader(): Loader {
     load: async (context) => {
       const { config, store, watcher, logger } = context;
       const file = fileURLToPath(new URL(`../${changelogFile}`, config.root));
+      const repository = path.dirname(file);
+      const changes = path.join(repository, changesDir);
       const load = async () => {
-        const body = await readFile(file, "utf8");
+        const body = withChanges(await readFile(file, "utf8"), readChanges(repository));
         store.clear();
         store.set({
           id: changelogId,
-          data: { repository: path.dirname(file) },
+          data: { repository },
           body,
           rendered: await context.renderMarkdown(body),
         });
       };
       await load();
-      watcher?.add(file);
-      watcher?.on("change", (changed) => {
-        if (path.resolve(changed) !== file) return;
-        logger.info(`${changelogFile} changed`);
+      watcher?.add([file, changes]);
+      const reload = (changed: string) => {
+        const at = path.resolve(changed);
+        if (at !== file && path.dirname(at) !== changes) return;
+        logger.info(`${path.relative(repository, at)} changed`);
         void load();
-      });
+      };
+      watcher?.on("change", reload);
+      watcher?.on("add", reload);
+      watcher?.on("unlink", reload);
     },
   };
 }
