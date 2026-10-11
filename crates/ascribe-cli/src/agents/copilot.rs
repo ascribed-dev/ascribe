@@ -85,7 +85,9 @@ pub fn servers(steps: &str) -> Vec<Server> {
         };
         match inside {
             None => {
-                if let Some((name, _)) = comment.split_once(" start")
+                // `Markers::start` always writes a note in brackets, so a
+                // folder with ` start` in its name doesn't end the name.
+                if let Some((name, _)) = comment.split_once(" start (")
                     && (name == BLOCK
                         || name
                             .strip_prefix(BLOCK)
@@ -380,7 +382,10 @@ fn is_blank(line: &str) -> bool {
 /// Whether a line ends a block `sync` wrote, of this project or another.
 fn is_block_end(line: &str) -> bool {
     let trimmed = line.trim();
-    trimmed.starts_with("# ascribe:copilot") && trimmed.ends_with(" end")
+    trimmed
+        .strip_prefix("# ")
+        .is_some_and(|comment| comment.starts_with(BLOCK))
+        && trimmed.ends_with(" end")
 }
 
 /// A YAML line's key, when it's `key:` with nothing after it but a
@@ -858,5 +863,11 @@ jobs:
             "{agent}"
         );
         assert!(servers("jobs: {}\n").is_empty());
+        // A folder with ` start` in its name ends neither its block nor
+        // the ones after it.
+        let odd = place(Some(&one), "ascribe:copilot:my start/docs", &pinned());
+        let odd = place(Some(&odd), "ascribe:copilot", &global());
+        let names: Vec<String> = servers(&odd).into_iter().map(|s| s.name).collect();
+        assert_eq!(names, ["ascribe-docs", "ascribe-my-start-docs", "ascribe"]);
     }
 }

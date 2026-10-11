@@ -541,11 +541,11 @@ fn plan_cloud(
     // `package.json`.
     let install = install_of(here, root)?;
     let name = match &install {
-        copilot::Install::Global { .. } => "ascribe:copilot".to_owned(),
+        copilot::Install::Global { .. } => copilot::BLOCK.to_owned(),
         copilot::Install::Pinned { package, .. } if package.is_empty() => {
-            "ascribe:copilot:pinned".to_owned()
+            format!("{}:pinned", copilot::BLOCK)
         }
-        copilot::Install::Pinned { package, .. } => format!("ascribe:copilot:{package}"),
+        copilot::Install::Pinned { package, .. } => format!("{}:{package}", copilot::BLOCK),
     };
     let markers = Markers {
         name: &name,
