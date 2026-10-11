@@ -1,8 +1,9 @@
-Address this review comment on `docs/_fragments/prereqs.md`.
+Address this review comment on `site/docs/_fragments/prereqs.md`.
 
-Where: docs/_fragments/prereqs.md:3
+Where: site/docs/_fragments/prereqs.md:3
+Paths and commands here are from the repository's root.
 Project: site/
-Shown on: docs/guides/page-0.md, docs/guides/page-1.md, docs/guides/page-10.md, docs/guides/page-11.md, docs/guides/page-12.md, docs/guides/page-2.md, docs/guides/page-3.md, docs/guides/page-4.md, docs/guides/page-5.md, docs/guides/page-6.md, and 3 more: `ascribe refs site/docs/_fragments/prereqs.md`
+Shown on: site/docs/guides/page-0.md, site/docs/guides/page-1.md, site/docs/guides/page-10.md, site/docs/guides/page-11.md, site/docs/guides/page-12.md, site/docs/guides/page-2.md, site/docs/guides/page-3.md, site/docs/guides/page-4.md, site/docs/guides/page-5.md, site/docs/guides/page-6.md, and 3 more: `ascribe refs site/docs/_fragments/prereqs.md`
 
 Line 3:
 ```markdown

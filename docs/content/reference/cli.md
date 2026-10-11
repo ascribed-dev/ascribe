@@ -14,6 +14,11 @@ Install it in a project with `npm install --save-dev @ascribed/cli` (see [Gettin
 
 @include: ../_generated/cli-global-options.md
 
+Without `--config`, a command's project is the nearest `ascribe.toml` at or above the current directory, or at or above the path it's given.
+
+@available: next
+When there's none, and the folder holds projects in its subfolders, as a repository with several does at its root, the error names their folders, so you can run the command in one, or pass `--config` with its folder: `the projects below it are in docs, handbook: run ascribe in one of them, or pass --config with its folder`. `ascribe agents sync` is the exception: there, it syncs each of them.
+
 ## `ascribe check`
 @id {permalink=true}: cli-check
 
@@ -85,16 +90,16 @@ With `--vale`, or with `in-check = true` in [`[checks.vale]`](content-model.md#c
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and the output ends with a summary. With paths, the summary says how many files it reported on (`checked 12 files, reported on 1`):
+Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), the files reported on, which with no paths are all of them, and the counts of errors, warnings, and advice (`checked 12 files for every build, reported on 1: 1 error, 0 warnings, 0 advice`):
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
 @available: next
-Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart when there is some: `checked 12 files: 0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](content-model.md#19-checks).
+Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](content-model.md#19-checks).
 
-A problem [acknowledged as intended](directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `checked 12 files: 0 errors, 2 warnings, 1 acknowledged`. `ascribe build` counts it the same way.
+A problem [acknowledged as intended](directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
 ### JSON output
 
@@ -232,7 +237,7 @@ A report renders at most 300 changed pages; the rest are listed by name, and the
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
 
-The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its commands (`ascribe render`, `git diff`, `ascribe diff`) are written from the repository's root, with the base, the build, and `--config` as this run had them. The review report's **Copy prompt** and the editor's **Prompt agent** give the same prompt.
+The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe render`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML report's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
 
 ### Diff JSON
 
@@ -495,9 +500,14 @@ The pages are found as `ascribe drift` finds them, comparing the working tree, w
 ### `ascribe sources status`
 @id {permalink=true}: cli-sources-status
 
-Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). It reads only the project's files: no `git`, no network. It exits with `0` whatever it finds, and `2` when the project doesn't load.
+Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). It reads only the project's files: no `git`, no network.
 
 @include: ../_generated/cli-sources-status-options.md
+
+| Code | Meaning |
+|---|---|
+| `0` | It showed the sources, whatever state their copies are in |
+| `2` | It couldn't run: a usage error, no `ascribe.toml`, or one with errors |
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and `sources`, each with `name`, `git`, `branch` (or null), `commit` (the pin, or null), and `files`, each with `path` and `state`: `current`, `changed`, `missing`, `unlocked`, `unused`, `not_copied`, or `not_at_pin`.
 
@@ -556,7 +566,7 @@ ascribe permalinks retire --page guides/legacy.md --reason "The sync agent was r
 ascribe permalinks retire --under guides/legacy/ --reason "The sync agent was removed in 4.0"
 ```
 
-It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. It refuses a name still declared anywhere else, an alias, or one already retired, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. It lists each name it retired.
+It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. `--page`, `--under`, and `--to` take a path from the current folder, as `ascribe check` prints it, or from the content root; what it writes in `ascribe.toml` is from the content root, as links there are. It refuses a name still declared anywhere else, an alias, or one already retired, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. It lists each name it retired.
 
 @include: ../_generated/cli-permalinks-retire-options.md
 
@@ -590,7 +600,7 @@ Says what a diagnostic means: its severity, its messages, how to fix it, a link 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/explain.txt
 
-An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing. `ascribe explain --list` lists every diagnostic's code and name, one per line.
+An example that needs something in `ascribe.toml` to go wrong shows that too: a few lines of the model it was checked against. Every example is checked, so each wrong page reports its diagnostic and nothing else, and each right page reports nothing. `ascribe explain --list` lists every diagnostic's code and name, one per line; with no code and no `--list`, it says so, and exits with `2`.
 
 | Code | Meaning |
 |---|---|
@@ -656,6 +666,8 @@ When the target doesn't work, it says why and lists the closest targets that do:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-missing.txt
 
+For a page or a heading, `Write:` gives the link with its title and with empty text, `[](keys.md#rotate-keys)`, which shows the same title: either does, and the empty one is the smaller edit to a link that has no text.
+
 A URL with a scheme isn't checked: it exists as far as `link` knows. A file that isn't a page, such as an image, exists when the project has it.
 
 | Code | Meaning |
@@ -668,7 +680,7 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/link.json
 
-`kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
+`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root. `kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs
@@ -704,6 +716,8 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/render.txt
 
+Above the arms of a variant group the build keeps, which the site shows as tabs and the plain output as sections in a row, the text says so in a comment: `` <!-- A switcher: a reader sees one of the next 3 sections at a time, chosen by `os`. --> ``, or `chosen by label` for labeled arms. The plain output and the JSON's `text` don't have it.
+
 `--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
 
 | Code | Meaning |
@@ -724,6 +738,8 @@ Writes the files AI coding agents read on their own: your project's rules, from 
 @id {permalink=true}: cli-agents-sync
 
 Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. It also keeps up to date each other target whose files exist already, and writes those `--target` names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
+
+Run where there's no `ascribe.toml` at or above, such as at the root of a repository with several projects, it syncs each project in the folders below, in path order, and says which. Each writes its own block in the root's `AGENTS.md`, and the list names each file once.
 
 With `--with-hook`, it also writes the [hooks](../guides/agents.md#hooks) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
 
@@ -746,14 +762,22 @@ Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside
 
 @include: ../_generated/cli-agents-rules-options.md
 
-It exits with `0`, or with `2` when there's no `ascribe.toml`, it has errors, or `git` can't say where the repository is.
+| Code | Meaning |
+|---|---|
+| `0` | It printed the rules |
+| `2` | It couldn't run: a usage error, no `ascribe.toml`, one with errors, or `git` can't say where the repository is |
 
 ### `ascribe agents skill`
 @id {permalink=true}: cli-agents-skill
 
-Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. It needs no project, and exits with `0`.
+Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. It needs no project.
 
 @include: ../_generated/cli-agents-skill-options.md
+
+| Code | Meaning |
+|---|---|
+| `0` | It printed the file |
+| `2` | A usage error, such as a file that isn't the skill's |
 
 ### `ascribe agents prompt`
 @id {permalink=true}: cli-agents-prompt
@@ -774,7 +798,10 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](../guides
 ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
 ```
 
-It exits with `0`, or with `2` for a prompt or an argument it doesn't know, a required argument missing, an unknown page type, a project it can't load, or, for `review`, a comparison `ascribe diff` can't make.
+| Code | Meaning |
+|---|---|
+| `0` | It printed the prompt, or with `--list`, the prompts |
+| `2` | It couldn't: a prompt or an argument it doesn't know, a required argument missing, an unknown page type, a project it can't load, or, for `review`, a comparison `ascribe diff` can't make |
 
 ### `ascribe agents hook`
 @id {permalink=true}: cli-agents-hook
@@ -795,4 +822,8 @@ It never writes a project's file, and never stops an edit: the file is written b
 
 The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It opens no port: the hook and the server pass requests and answers as files in a folder of your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder), and it stops after 10 minutes with no request, or when the `ascribe` it was started from is replaced. On Windows it runs from a copy in that folder, so it never holds up installing or building a new `ascribe`. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
 
-It exits with `0`, whatever it found, or with `1` when its input isn't JSON, which agents show you and not the model.
+| Code | Meaning |
+|---|---|
+| `0` | It ran, whatever it found, and also when a check ran out of time |
+| `1` | Its input isn't JSON. Agents show this to you, not to the model. |
+| `2` | A usage error: a harness or event it doesn't know |

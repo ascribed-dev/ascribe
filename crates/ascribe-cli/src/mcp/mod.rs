@@ -106,7 +106,7 @@ impl Server {
         {
             dirs.push(dir.to_owned());
         }
-        below(&self.cwd, &mut dirs);
+        dirs.extend(Project::find_below(&self.cwd, MAX_PROJECTS));
         dirs.sort();
         dirs.dedup();
         dirs.into_iter()
@@ -144,36 +144,6 @@ impl Server {
         let loaded = answer::load(&self.cache, &self.global(), Some(Path::new(project)))
             .map_err(|f| answer::Stop::Load(f).message())?;
         sync::rules_beside(&loaded.project, loaded.index()).map_err(|e| e.to_string())
-    }
-}
-
-/// Adds every folder below `dir` that holds an `ascribe.toml`, skipping
-/// folders whose names start with `.`, `node_modules`, and `target`.
-fn below(dir: &Path, found: &mut Vec<PathBuf>) {
-    if found.len() > MAX_PROJECTS {
-        return;
-    }
-    // Outside FileSystem: looking for projects, before there is one.
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-    let mut dirs: Vec<PathBuf> = entries
-        .flatten()
-        .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
-        .filter(|e| {
-            let name = e.file_name();
-            let name = name.to_string_lossy();
-            !name.starts_with('.') && name != "node_modules" && name != "target"
-        })
-        .map(|e| e.path())
-        .collect();
-    dirs.sort();
-    for child in dirs {
-        // Outside FileSystem: as above.
-        if child.join(ascribe_check::MODEL_FILE).is_file() {
-            found.push(child.clone());
-        }
-        below(&child, found);
     }
 }
 

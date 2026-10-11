@@ -271,7 +271,10 @@ describe("with several projects, one nested in another", () => {
       assert.equal(shown.get("docs")?.state, "stopped");
       assert.equal(shown.get("handbook/pages/nested")?.state, "stopped");
 
-      await statusText("the handbook", (text) => text === "$(book) handbook · site");
+      await statusText(
+        "the handbook",
+        (text) => text === "$(book) handbook · site · problems: this build only",
+      );
       const tooltip = api.ui.statusBar.shown()?.tooltip ?? "";
       assert.ok(tooltip.includes(path.join(folder.handbook(), "ascribe.toml")), tooltip);
       assert.match(tooltip, /Server: running/);
@@ -499,10 +502,16 @@ describe("with several projects, one nested in another", () => {
         "the docs page in the cloud build",
         (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "cloud",
       );
-      await statusText("the cloud build", (text) => text === "$(book) docs · cloud");
+      await statusText(
+        "the cloud build",
+        (text) => text === "$(book) docs · cloud · problems: site only",
+      );
 
       await preview.receive({ type: "build", name: "site" });
-      await statusText("the site build", (text) => text === "$(book) docs · site");
+      await statusText(
+        "the site build",
+        (text) => text === "$(book) docs · site · problems: this build only",
+      );
 
       // Switch build, from the status bar's menu, changes what the preview renders.
       after = latestSeq();
@@ -515,7 +524,10 @@ describe("with several projects, one nested in another", () => {
       );
       assert.match(html(cloud), /Sign in to Quill Cloud/);
       assert.equal(preview.build(), "cloud");
-      await statusText("the cloud build", (text) => text === "$(book) docs · cloud");
+      await statusText(
+        "the cloud build",
+        (text) => text === "$(book) docs · cloud · problems: site only",
+      );
 
       // And back to the editor's build, with the command.
       after = latestSeq();
@@ -525,7 +537,10 @@ describe("with several projects, one nested in another", () => {
         "the docs page in the site build",
         (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "site",
       );
-      await statusText("the site build", (text) => text === "$(book) docs · site");
+      await statusText(
+        "the site build",
+        (text) => text === "$(book) docs · site · problems: this build only",
+      );
     });
 
     it("says when a file isn't part of any project", async () => {
@@ -557,6 +572,58 @@ describe("with several projects, one nested in another", () => {
       assert.equal(messages.length, 1, messages.join("\n"));
       assert.match(messages[0] ?? "", /is in the project docs, but outside its content root/);
       assert.doesNotMatch(messages[0] ?? "", /isn't part of an Ascribe project/);
+    });
+  });
+
+  describe("checking every build", () => {
+    const selfManaged = uriOf("docs", "docs", "self-managed.md");
+    const linking = uriOf("docs", "docs", "cloud-link.md");
+
+    after(async () => {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      rmSync(selfManaged.fsPath, { force: true });
+      rmSync(linking.fsPath, { force: true });
+    });
+
+    it("adds the problems of the other builds, and the status bar says what the panel covers", async () => {
+      // A link to a page the cloud build leaves out: a problem in cloud alone.
+      writeFileSync(
+        selfManaged.fsPath,
+        "---\ntitle: Self-managed\navailable: self-managed\n---\n\nRun your own.\n",
+      );
+      writeFileSync(linking.fsPath, "---\ntitle: Cloud link\n---\n\nSee [](self-managed.md).\n");
+      // Opened first, so the server has the page before it checks the link.
+      await open(selfManaged);
+      const editor = await open(linking);
+      await statusText(
+        "the editor build alone",
+        (text) => text === "$(book) docs · site · problems: this build only",
+      );
+      await diagnosticsOf(linking, (diagnostics) => diagnostics.length === 0);
+
+      await vscode.commands.executeCommand("ascribe.checkEveryBuild");
+      // The missing `setup.md` of the docs' home page is in every build: the
+      // server shows it already, so the check doesn't add it again.
+      assert.deepEqual(
+        api.ui.everyBuild.problems().map((p) => [path.basename(p.file), p.code]),
+        [["cloud-link.md", "ASC121"]],
+      );
+      assert.deepEqual(codes(linking), ["ASC121"]);
+      assert.deepEqual(codes(docsPage), ["ASC036"]);
+      assert.equal(api.ui.everyBuild.isCurrent(folder.docs()), true);
+      await statusText("every build", (text) => text === "$(book) docs · site");
+
+      // An edit takes the file's added problem away, and the panel covers the
+      // editor build alone again.
+      const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+      assert.ok(await editor.edit((e) => e.insert(end, "\nMore.\n")));
+      await waitFor("the added problem to go", () => codes(linking).length === 0);
+      assert.equal(api.ui.everyBuild.isCurrent(folder.docs()), false);
+      await statusText(
+        "the editor build alone again",
+        (text) => text === "$(book) docs · site · problems: this build only",
+      );
+      await vscode.commands.executeCommand("workbench.action.files.revert");
     });
   });
 

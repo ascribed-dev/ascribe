@@ -134,6 +134,7 @@ describe("package.json", () => {
       ...Object.values(PROMPT_COMMANDS),
       "ascribe.actions",
       "ascribe.switchBuild",
+      "ascribe.checkEveryBuild",
       "ascribe.projectMenu",
       "ascribe.toggleBuildLens",
       "ascribe.startReview",

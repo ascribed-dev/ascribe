@@ -1,10 +1,12 @@
 ---
 source: crates/ascribe-check/tests/all/prompt.rs
+assertion_line: 226
 expression: text
 ---
 Fix the 2 problems `ascribe check` reports in `docs/install.md`.
 
 Where: docs/install.md
+Paths and commands here are from the repository's root.
 
 - 5: [ASC036] `overview.md` doesn't exist
 - 7: [ASC025] `bun` isn't a value of `pm`; its values are: `npm`, `pnpm`, `yarn`

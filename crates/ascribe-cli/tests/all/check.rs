@@ -58,7 +58,11 @@ fn a_clean_project_exits_0() {
     let dir = project(&[("index.md", CLEAN)]);
     let out = ascribe(dir.path(), &["check"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
-    assert!(stdout(&out).contains("checked 1 file: 0 errors, 0 warnings"));
+    assert!(
+        stdout(&out).contains(
+            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice"
+        )
+    );
 }
 
 #[test]
@@ -183,7 +187,9 @@ fn a_project_nested_in_the_content_root_is_left_to_its_own_check() {
     let out = ascribe(dir.path(), &["check"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(
-        stdout(&out).contains("checked 1 file: 0 errors, 0 warnings"),
+        stdout(&out).contains(
+            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice"
+        ),
         "{}",
         stdout(&out)
     );
@@ -213,7 +219,10 @@ fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
     let out = ascribe(&proj, &["check"]);
     assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
     let text = stdout(&out);
-    assert!(text.contains("checked 2 files: 1 error"), "{text}");
+    assert!(
+        text.contains("checked 2 files for every build, reported on 2: 1 error"),
+        "{text}"
+    );
     assert!(text.contains("own.md"), "{text}");
     assert!(!text.contains("bad.md"), "{text}");
 }
@@ -655,7 +664,9 @@ fn a_problem_in_a_fragment_is_shown_once_with_how_many_more_includes_have_it() {
     let text = stdout(&ascribe(dir.path(), &["check", "docs/_f.md"]));
     assert!(text.contains("(also at 2 other includes)"), "{text}");
     assert!(
-        text.contains("checked 4 files, reported on 1: 1 error, 0 warnings"),
+        text.contains(
+            "checked 4 files for every build, reported on 1: 1 error, 0 warnings, 0 advice"
+        ),
         "{text}"
     );
 }
@@ -964,7 +975,7 @@ fn concise_output_is_a_line_per_diagnostic_grouped_by_file_and_cut_at_50() {
             "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
             "docs/index.md:5: [ASC037] `index.md` has no heading with the id `gone`\n",
             "docs/index.md:7: [ASC036] `gone.md` doesn't exist\n",
-            "checked 4 files: 4 errors, 1 warning\n",
+            "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
         )
     );
 
@@ -995,7 +1006,10 @@ title: Many
         lines[50],
         "and 10 more: ascribe check docs/b.md --format concise"
     );
-    assert_eq!(lines[51], "checked 2 files: 0 errors, 60 warnings");
+    assert_eq!(
+        lines[51],
+        "checked 2 files for every build, reported on 2: 0 errors, 60 warnings, 0 advice"
+    );
     // Checking one file, the rest of it is in the JSON.
     let dir = project(&[("a.md", &format!("{page}{many}"))]);
     let text = stdout(&ascribe(
@@ -1023,7 +1037,7 @@ fn summary_counts_by_code_and_by_file_instead_of_listing() {
             "  2  docs/guides/b.md (1 error, 1 warning)\n",
             "  2  docs/index.md (2 errors, 0 warnings)\n",
             "  1  docs/guides/a.md (1 error, 0 warnings)\n",
-            "checked 4 files: 4 errors, 1 warning\n",
+            "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
         )
     );
 
@@ -1232,7 +1246,9 @@ fn prompt_format_in_a_repository_names_the_projects_folder_and_agents_md() {
     );
     let text = stdout(&out);
     assert!(
-        text.contains("Where: docs/index.md\nProject: site/\n"),
+        text.contains(
+            "Where: site/docs/index.md\nPaths and commands here are from the repository's root.\nProject: site/\n"
+        ),
         "{text}"
     );
     assert!(

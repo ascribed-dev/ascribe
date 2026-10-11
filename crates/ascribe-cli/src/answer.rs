@@ -42,7 +42,7 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     };
     let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
     let start = normalize(&cwd.join(path));
-    Project::find_config(&start).ok_or(LocateError::NotFound { dir: start })
+    Project::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
 /// A loaded project, and its source index once something asks for it.
@@ -215,6 +215,25 @@ pub fn source_path(project: &Project, given: &Path) -> Result<RelPath, QueryErro
         .ok_or_else(|| QueryError::NotASource {
             path: given.display().to_string(),
         })
+}
+
+/// `file`, relative to the project root, as a path from the current
+/// directory, `/`-separated.
+pub fn from_here(root: &Path, file: &str) -> String {
+    let target = root.join(file);
+    let here = std::env::current_dir().ok();
+    let absolute = std::path::absolute(&target).unwrap_or_else(|_| target.clone());
+    here.and_then(|here| relative_path(&here, &absolute))
+        .map_or_else(
+            || absolute.to_string_lossy().replace('\\', "/"),
+            |rel| {
+                if rel.is_root() {
+                    ".".to_owned()
+                } else {
+                    rel.to_string()
+                }
+            },
+        )
 }
 
 /// What a path named on the command line can be as a content path: a path

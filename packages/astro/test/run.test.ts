@@ -105,6 +105,11 @@ describe("hasWarnings", () => {
     expect(hasWarnings("")).toBe(false);
     expect(hasWarnings("checked 14 files: 0 errors, 0 warnings")).toBe(false);
     expect(hasWarnings("checked 1 file: 0 errors, 0 warnings")).toBe(false);
+    expect(
+      hasWarnings(
+        "checked 14 files for build `site`, reported on 14: 0 errors, 0 warnings, 0 advice",
+      ),
+    ).toBe(false);
   });
 
   it("is false for a report with only advice", () => {
@@ -123,6 +128,9 @@ describe("hasWarnings", () => {
     ).toBe(true);
     expect(hasWarnings("checked 4 files: 0 errors, 2 warnings")).toBe(true);
     expect(hasWarnings("checked 4 files: 0 errors, 1 warning, 2 advice")).toBe(true);
+    expect(
+      hasWarnings("checked 4 files for build `site`, reported on 4: 0 errors, 1 warning, 0 advice"),
+    ).toBe(true);
     expect(hasWarnings("something unexpected")).toBe(true);
   });
 });
