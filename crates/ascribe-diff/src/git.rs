@@ -4,6 +4,8 @@
 //! Every call runs the `git` executable with a fixed argument list (never
 //! through a shell), with `core.quotepath` off so paths come back as they
 //! are, and `-z` wherever a listing is parsed. No git library is linked.
+//! Every call also runs with `ascribe_core::git`'s options, so that `git`
+//! runs no command the repository supplies.
 
 use std::collections::BTreeMap;
 use std::io::{self, BufRead, BufReader, Write};
@@ -352,10 +354,15 @@ impl Repository {
 
     fn command(&self, args: &[&str]) -> Command {
         let mut command = Command::new("git");
-        command
-            .current_dir(&self.dir)
-            .args(["-c", "core.quotepath=off"])
-            .args(args);
+        command.current_dir(&self.dir);
+        // Reading the repository runs nothing it supplies.
+        for option in ascribe_core::git::OPTIONS {
+            command.args(["-c", option]);
+        }
+        for name in ascribe_core::git::CLEARED {
+            command.env_remove(name);
+        }
+        command.args(["-c", "core.quotepath=off"]).args(args);
         command
     }
 

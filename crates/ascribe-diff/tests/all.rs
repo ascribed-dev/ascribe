@@ -7,6 +7,8 @@
 
 #[path = "../../ascribe-resolve/tests/incremental_support/mod.rs"]
 mod incremental_support;
+#[path = "planted/mod.rs"]
+mod planted;
 
 #[path = "all/command.rs"]
 mod command;

@@ -38,6 +38,8 @@ mod network;
 mod output;
 #[path = "all/permalinks.rs"]
 mod permalinks;
+#[path = "../../ascribe-diff/tests/planted/mod.rs"]
+mod planted;
 #[path = "all/report.rs"]
 mod report;
 #[path = "all/sources.rs"]
