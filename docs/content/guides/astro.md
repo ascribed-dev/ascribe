@@ -83,6 +83,8 @@ npx astro dev     # rebuilds as you edit
 npx astro build
 ```
 
+`astro dev` prints the address it serves, such as `http://localhost:4321/`. Open it with your `base-path` after it, `http://localhost:4321/docs/` for the `ascribe.toml` above, and the site is there. `astro build` writes it to `dist/`, for your host.
+
 ## Options
 
 | Option | Meaning |
