@@ -417,6 +417,79 @@ fn retiring_a_removed_permalink_keeps_the_model_s_comments_and_quiets_check() {
 }
 
 #[test]
+fn retire_takes_a_page_as_check_names_it_and_writes_it_from_the_content_root() {
+    let dir = project();
+    ascribe(dir.path(), &["permalinks", "sync"]);
+
+    // From the project's folder: the path `ascribe check` prints.
+    let retire = ascribe(
+        dir.path(),
+        &[
+            "permalinks",
+            "retire",
+            "--page",
+            "docs/keys.md",
+            "--reason",
+            "Merged into the install page",
+            "--to",
+            "docs/install.md",
+        ],
+    );
+    assert_eq!(code_of(&retire), 0, "{}", stderr(&retire));
+    assert!(
+        stdout(&retire).starts_with("retired rotate-keys, leading to docs/install.md\n"),
+        "{}",
+        stdout(&retire)
+    );
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    assert!(
+        model.contains(
+            "rotate-keys = { to = \"install.md\", reason = \"Merged into the install page\" }\n"
+        ),
+        "{model}"
+    );
+
+    // From the content root, a path from there.
+    let retire = ascribe(
+        &dir.path().join("docs"),
+        &[
+            "permalinks",
+            "retire",
+            "--page",
+            "install.md",
+            "--reason",
+            "Gone",
+        ],
+    );
+    assert_eq!(code_of(&retire), 0, "{}", stderr(&retire));
+    assert!(
+        stdout(&retire).starts_with("retired install\n"),
+        "{}",
+        stdout(&retire)
+    );
+
+    // A page with none is named as it was given.
+    write(dir.path(), "docs/other.md", "# Other\n");
+    let none = ascribe(
+        dir.path(),
+        &[
+            "permalinks",
+            "retire",
+            "--page",
+            "docs/other.md",
+            "--reason",
+            "Gone",
+        ],
+    );
+    assert_eq!(code_of(&none), 2);
+    assert!(
+        stderr(&none).contains("can't retire `docs/other.md`: it declares no permalinks"),
+        "{}",
+        stderr(&none)
+    );
+}
+
+#[test]
 fn an_alias_is_listed_and_verified_as_found() {
     let dir = project();
     let mut model = MODEL.to_owned();

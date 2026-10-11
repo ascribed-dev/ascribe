@@ -322,6 +322,7 @@ fn link_answers_from_a_page() {
         0,
     );
     assert_eq!(value["exists"], true);
+    assert_eq!(value["from"], from, "the page as it was given");
     assert_eq!(value["kind"], "heading");
     assert_eq!(value["title"], "Rotate keys");
     assert_eq!(value["href"], "keys.md#rotate-keys");
@@ -358,6 +359,12 @@ fn link_answers_from_a_page() {
     );
     assert_eq!(fragment["kind"], "fragment");
     assert_eq!(fragment["closest"][0]["path"], "install.md");
+
+    // A page given from the content root is named back from the folder the
+    // command was run in, as `ascribe check` names it.
+    let site = dir.path().join("site");
+    let value = json(&site, &["link", "keys.md", "--from", "install.md"], 0);
+    assert_eq!(value["from"], "docs/install.md");
 }
 
 #[test]

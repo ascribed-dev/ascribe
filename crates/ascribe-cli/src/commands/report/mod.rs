@@ -396,8 +396,12 @@ fn write_prompt(
     } else {
         PromptBuilds::Named(args.build.clone())
     };
-    let context = prompt::Context::of_project(project.root(), builds);
-    // The command that verifies the work, from the repository's root.
+    let context = prompt::Context::seen_from(
+        project.root(),
+        std::env::current_dir().ok().as_deref(),
+        builds,
+    );
+    // The command that verifies the work, from the prompt's base.
     let verify = |section: Section| {
         let mut words = vec!["ascribe".to_owned(), "report".to_owned()];
         words.push(section.as_str().to_owned());
