@@ -114,10 +114,14 @@ rewrites directives and attribute blocks into their canonical spelling, and chan
 
 ## Publish it with Astro
 
-Publishing the site is this guide's second half, on its own page: [Astro](guides/astro.md) adds Ascribe to an [Astro](https://astro.build) project file by file, and ends with the site open in your browser. Start it one of two ways:
+Publishing the site is this guide's second half, on its own page: [Astro](guides/astro.md) adds Ascribe to an [Astro](https://astro.build) project file by file, and ends with the site open in your browser. For a new site:
 
-- **A new site.** Create an Astro project (`npm create astro@latest`), move `ascribe.toml` and `docs/` into it, beside `astro.config.mjs`, and follow the guide from its first step.
-- **An existing site.** Keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's directory.
+@steps
+1. Create an Astro project: `npm create astro@latest`.
+2. Move `ascribe.toml` and `docs/` into it, beside `astro.config.mjs`.
+3. Follow the guide from its first step.
+
+For an existing site, keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's directory.
 
 Either way:
 
