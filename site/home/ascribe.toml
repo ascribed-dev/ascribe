@@ -16,12 +16,12 @@ default = true
 title = "string"
 description = { type = "string", role = "description" }
 
-# The landing page's opening: the page's heading and a sentence, drawn by the
-# site's stylesheet. `status` says how far along Ascribe is.
+# A page's opening: its heading and a sentence, drawn by the site's
+# stylesheet. `status`, on the landing page, says how far along Ascribe is.
 [widgets.hero-banner]
-description = "The page's opening: its heading and a sentence, with how far along Ascribe is."
+description = "A page's opening: its heading and a sentence, and on the landing page how far along Ascribe is."
 forms = ["container"]
-attributes = { status = "enum(early, stable)" }
+attributes = { status = "enum(early, stable)?" }
 
 # A page's source beside what a reader sees. Its content is the source, a
 # `@snippet` of the page's file; `page` names that page in ../demo, and the

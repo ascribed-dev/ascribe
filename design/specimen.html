@@ -580,12 +580,16 @@ pre {
 }
 
 /* Without search, on a page outside the docs, the links go to the right. */
-.docs-link {
-  margin-left: auto;
+.docs-link,
+.why-link {
   padding: 0.375rem 0.25rem;
   color: var(--muted);
   font: var(--type-small) var(--font);
   text-decoration: none;
+}
+
+.docs-link {
+  margin-left: auto;
 }
 
 .search-button + .docs-link {
@@ -593,7 +597,9 @@ pre {
 }
 
 .docs-link:hover,
-.docs-link[aria-current] {
+.docs-link[aria-current],
+.why-link:hover,
+.why-link[aria-current] {
   color: var(--text);
 }
 
@@ -1010,6 +1016,11 @@ claim-example > :not(pre, figure, ascribe-tabs) {
 
   .search-button kbd,
   .repo-link span {
+    display: none;
+  }
+
+  /* A docs page's header holds the menu and search too, so Why Ascribe is on the site's own pages only. */
+  .search-button ~ .why-link {
     display: none;
   }
 

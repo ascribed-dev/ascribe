@@ -1,7 +1,7 @@
 // The built site in Chromium: the landing page, the head and the header,
 // variants, availability, code titles, links between pages, search, the edit
-// link, the 404 page, the narrow layout, and the landing page's demonstration,
-// marks, phone width, and reading without a script.
+// link, the 404 page, the narrow layout, the landing page's demonstration,
+// marks, phone width, and reading without a script, and Why Ascribe.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { launchChromium, requireBuild, serve, siteAddress } from "./built.ts";
@@ -304,5 +304,65 @@ test("the landing page reads without a script", async () => {
     expect(await page.getByText(text, { exact: true }).first().isVisible(), text).toBe(true);
   }
   expect(await page.locator("source-and-result .result ascribe-note").isVisible()).toBe(true);
+  await context.close();
+});
+
+test("the header's Why Ascribe opens the page, in the frame of the site's own pages", async () => {
+  const page = await open("/");
+  const link = page.locator("header").getByRole("link", { name: "Why Ascribe", exact: true });
+  expect(await link.getAttribute("href")).toBe("/why/");
+  await link.click();
+  await page.waitForURL(`${server.url}/why/`);
+  expect(await page.title()).toBe("Why Ascribe · Ascribe");
+  expect(await link.getAttribute("aria-current")).toBe("page");
+  const heading = page.locator("h1");
+  expect(await heading.count()).toBe(1);
+  expect(await page.locator("hero-banner h1").textContent()).toBe("Why Ascribe");
+  // The badge is the landing page's: this hero has no status.
+  expect(await page.locator("hero-banner[status]").count()).toBe(0);
+  for (const docsOnly of ["#sidebar", ".search-button", ".menu-button", ".toc"]) {
+    expect(await page.locator(docsOnly).count(), docsOnly).toBe(0);
+  }
+  await page.close();
+});
+
+test("the landing page links to Why Ascribe", async () => {
+  const page = await open("/");
+  const link = page.locator("article").getByRole("link", { name: "Why Ascribe", exact: true });
+  expect(await link.getAttribute("href")).toBe("/why/");
+  await page.close();
+});
+
+test("Why Ascribe shows its examples, marks what no release has, and links to the comparison", async () => {
+  const page = await open("/why/");
+  const problems = page.locator("claim-example");
+  expect(await problems.count()).toBeGreaterThan(3);
+  // Each example is a code block read from a file in the repository.
+  expect(await page.locator("claim-example pre").count()).toBeGreaterThan(3);
+  const marks = page.locator("claim-example ascribe-availability");
+  expect(await marks.count()).toBeGreaterThan(0);
+  expect(await marks.first().textContent()).toContain("not yet released");
+  const comparison = page.getByRole("link", { name: "examples/comparison" });
+  expect(await comparison.getAttribute("href")).toBe(
+    "https://github.com/ascribed-dev/ascribe/tree/main/examples/comparison",
+  );
+  expect(await page.getByRole("heading", { name: "What it doesn’t do" }).isVisible()).toBe(true);
+  await page.close();
+});
+
+test("at phone width, nothing on Why Ascribe scrolls sideways, and it reads without a script", async () => {
+  const page = await open("/why/", 390);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(0);
+  await page.close();
+
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const plain = await context.newPage();
+  await plain.goto(server.url + "/why/");
+  for (const text of ["Examples stop matching the code", "No hosting."]) {
+    expect(await plain.getByText(text, { exact: true }).first().isVisible(), text).toBe(true);
+  }
   await context.close();
 });

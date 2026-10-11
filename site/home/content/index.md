@@ -60,6 +60,8 @@ A code example is read from the code's own file with `@snippet`, every time a pa
 A pull request's changes are read the way readers will see them: in the site's own preview, or in VS Code's, with what changed marked and each review comment beside the paragraph it's about. [Review]({site}/go/review-guide/) shows how.
 @end
 
+[Why Ascribe](why.md) says which problems these answer, from what teams that keep docs as code report, and what Ascribe doesn't do.
+
 ## Start
 
 Install the command in your project's directory:
