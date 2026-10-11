@@ -1,4 +1,4 @@
-// The built site in Chromium: the landing page, the head and the header,
+// The built site in Chromium: the landing page, the changelog, the head and the header,
 // variants, availability, code titles, links between pages, search, the edit
 // link, the 404 page, the narrow layout, the landing page's demonstration,
 // marks, phone width, and reading without a script, and Why Ascribe.
@@ -116,6 +116,28 @@ test("the landing page's link to getting started opens it under /docs/", async (
   await page.goto(server.url + href.pathname);
   await page.waitForURL(`${server.url}/docs/getting-started/`);
   expect(await page.locator("h1").textContent()).toBe("Getting started");
+  await page.close();
+});
+
+test("the header's Changelog opens the changelog, in the frame of the site's own pages", async () => {
+  const page = await open("/");
+  const link = page.getByRole("link", { name: "Changelog", exact: true });
+  expect(await link.getAttribute("href")).toBe("/changelog/");
+  await link.click();
+  await page.waitForURL(`${server.url}/changelog/`);
+  expect(await page.title()).toBe("Changelog · Ascribe");
+  expect(await link.getAttribute("aria-current")).toBe("page");
+  expect(await page.locator("h1").textContent()).toBe("Changelog");
+  for (const docsOnly of ["#sidebar", ".search-button", ".menu-button", ".toc"]) {
+    expect(await page.locator(docsOnly).count(), docsOnly).toBe(0);
+  }
+  // The unreleased section says so, and each release has its version's anchor.
+  expect(await page.locator("#unreleased + .unreleased-note").isVisible()).toBe(true);
+  expect(await page.locator("h2[id^='v0.']").count()).toBeGreaterThan(1);
+  // A link to a docs page's source opens the page.
+  await page.locator("article a[href^='/docs/']").first().click();
+  await page.waitForURL(new RegExp(`^${server.url}/docs/.+`));
+  expect(await page.locator("h1").count()).toBe(1);
   await page.close();
 });
 
@@ -245,6 +267,18 @@ test("at phone width, the sidebar opens from the menu and nothing scrolls sidewa
   );
   expect(overflow).toBe(0);
   await page.close();
+});
+
+test("at phone width, the changelog and the landing page don't scroll sideways", async () => {
+  for (const path of ["/changelog/", "/"]) {
+    const page = await open(path, 390);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, path).toBe(0);
+    expect(await page.getByRole("link", { name: "Changelog", exact: true }).isVisible()).toBe(true);
+    await page.close();
+  }
 });
 
 test("the demonstration draws its page beside its source, and under it at phone width", async () => {

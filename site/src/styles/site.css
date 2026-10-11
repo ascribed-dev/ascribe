@@ -179,8 +179,10 @@ pre {
 
 /* Without search, on a page outside the docs, the links go to the right. */
 .docs-link,
-.why-link {
+.why-link,
+.changelog-link {
   padding: 0.375rem 0.25rem;
+  white-space: nowrap;
   color: var(--muted);
   font: var(--type-small) var(--font);
   text-decoration: none;
@@ -197,7 +199,9 @@ pre {
 .docs-link:hover,
 .docs-link[aria-current],
 .why-link:hover,
-.why-link[aria-current] {
+.why-link[aria-current],
+.changelog-link:hover,
+.changelog-link[aria-current] {
   color: var(--text);
 }
 
@@ -479,6 +483,18 @@ pre {
   max-width: var(--measure);
 }
 
+/* The changelog: a long path in code wraps rather than widening the page. */
+.changelog :not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+/* What's on `main` and in no release yet says so under its heading. */
+.changelog .unreleased-note {
+  margin-top: -0.25rem;
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+}
+
 /*
  * The hero widget (`[widgets.hero-banner]` in home/ascribe.toml): the page's
  * heading and its first sentence, and how far along Ascribe is.
@@ -617,9 +633,19 @@ claim-example > :not(pre, figure, ascribe-tabs) {
     display: none;
   }
 
-  /* A docs page's header holds the menu and search too, so Why Ascribe is on the site's own pages only. */
-  .search-button ~ .why-link {
+  /* A docs page's header holds the menu and search too, so Why Ascribe and Changelog are on the site's own pages only. */
+  .search-button ~ .why-link,
+  .search-button ~ .changelog-link {
     display: none;
+  }
+
+  /* Docs, Why Ascribe, Changelog, and GitHub fit beside the mark at phone width. */
+  .site-header {
+    gap: 0.5rem;
+  }
+
+  .site-header .site-name svg {
+    height: 1.25rem;
   }
 
   .sidebar {
@@ -654,5 +680,16 @@ claim-example > :not(pre, figure, ascribe-tabs) {
 
   source-and-result {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * At the narrowest widths the site's own pages leave GitHub out of the header,
+ * for Docs, Why Ascribe, and Changelog; the landing page links to it in its
+ * text. A docs page's header, which hides those two, keeps it.
+ */
+@media (max-width: 26rem) {
+  .site-header:not(:has(.search-button)) .repo-link {
+    display: none;
   }
 }

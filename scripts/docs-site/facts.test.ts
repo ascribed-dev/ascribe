@@ -2,7 +2,8 @@
 // Node version (`engines.node` in package.json), the Rust version
 // (rust-toolchain.toml), the glibc floor (`GLIBC` in release-build.yml), and
 // the folders the docs take code examples from (`[sources.code] include` in
-// docs/ascribe.toml), the tables site/home/ascribe.toml copies from
+// docs/ascribe.toml) and the changelog the site renders (`changelogFile` in
+// site/src/changelog.ts), the tables site/home/ascribe.toml copies from
 // docs/ascribe.toml, the docs' address the Report workflow checks, and the
 // install commands the landing page and the README repeat from getting
 // started. A copy that can't be generated is compared here, so
@@ -163,7 +164,7 @@ function codeExamples(): string[] {
   return [...files].sort();
 }
 
-test("the docs' source folders are docs/ascribe.toml's everywhere a build is started for them", () => {
+test("the docs' source folders and the changelog are named everywhere a build is started for them", () => {
   const include = all(
     /^include\s*=\s*\[([\s\S]*?)\]/m.exec(table(read("docs/ascribe.toml"), "sources.code"))?.[1] ??
       "",
@@ -174,6 +175,10 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
     expect(glob, "an include is a whole folder").toMatch(/^[^*]+\/\*\*$/);
     return glob.replace(/\/\*\*$/, "");
   });
+  // The changelog the site renders, at the repository's root.
+  const changelog =
+    /^export const changelogFile = "([^"]+)";$/m.exec(read("site/src/changelog.ts"))?.[1] ?? "";
+  expect(changelog).toBe("CHANGELOG.md");
 
   // A folder inside site/, such as the landing page's demonstration, is
   // covered by the site's own pattern in both of the next two.
@@ -182,12 +187,19 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
   // site-npm.yml builds production's site when one of them changes on `main`.
   const npm = read(".github/workflows/site-npm.yml");
   const paths = /^ {4}paths:\n((?: {6}.*\n)+)/m.exec(npm)?.[1] ?? "";
-  expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(["docs/**", "site/**", ...outside].sort());
+  expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(
+    ["docs/**", "site/**", ...outside, changelog].sort(),
+  );
 
   // Netlify skips a push to `main` when none of them changed.
   const netlify = /^\s*ignore = "git diff .* -- (.*)"$/m.exec(read("site/netlify.toml"))?.[1];
   expect(netlify?.split(" ").sort()).toEqual(
-    [".", "../docs", ...outside.map((glob) => `../${glob.replace(/\/\*\*$/, "")}`)].sort(),
+    [
+      ".",
+      "../docs",
+      ...outside.map((glob) => `../${glob.replace(/\/\*\*$/, "")}`),
+      `../${changelog}`,
+    ].sort(),
   );
 
   // CI's site job runs when a file the docs take an example from changed.
@@ -204,6 +216,7 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
     expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
   }
   expect(site.test("docs/content/index.md")).toBe(true);
+  expect(site.test(changelog), `ci.yml's site pattern matches ${changelog}`).toBe(true);
 });
 
 test("the site's own pages share the docs' release tables, sources, and address, and the report checks the docs", () => {
