@@ -7,7 +7,7 @@ const read = (relative: string) => readFileSync(new URL(relative, import.meta.ur
 
 interface Manifest {
   private?: boolean;
-  capabilities: { untrustedWorkspaces: { supported: boolean } };
+  capabilities: { untrustedWorkspaces: { supported: boolean | "limited" } };
   main: string;
   activationEvents: string[];
   contributes: {
@@ -50,8 +50,9 @@ describe("package.json", () => {
     ]);
   });
 
-  it("doesn't support untrusted workspaces, since it runs the project's binary", () => {
-    expect(manifest.capabilities.untrustedWorkspaces.supported).toBe(false);
+  it("runs nothing in an untrusted workspace, since it runs the project's binary, and says so", () => {
+    // `activate` waits for trust before it starts anything.
+    expect(manifest.capabilities.untrustedWorkspaces.supported).toBe("limited");
   });
 
   it("hides every command from the palette until a workspace has ascribe.toml", () => {

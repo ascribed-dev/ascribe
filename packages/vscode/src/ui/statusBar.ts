@@ -3,12 +3,13 @@ import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
 import { TOGGLE_LENS_COMMAND } from "./buildLens.js";
 import type { ChosenBuilds } from "./chosenBuild.js";
-import { statusFor, type StatusText } from "./describe.js";
+import { RESTRICTED_NOTICE, statusFor, waitingNotice, type Notice } from "./describe.js";
 import type { BuildLenses } from "./lens.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
 
 const MENU_COMMAND = "ascribe.projectMenu";
 const SWITCH_BUILD_COMMAND = "ascribe.switchBuild";
+const MANAGE_TRUST_COMMAND = "workbench.trust.manage";
 
 /** What the status bar item shows, for tests. */
 export interface StatusBarApi {
@@ -21,6 +22,8 @@ export interface StatusBarApi {
 /**
  * The status bar item: the active file's project, the build you're looking
  * at, and the server's state. Clicking it opens a small menu for the project.
+ * While no page of a project is active, it says which projects haven't been
+ * checked yet, if any.
  */
 export class StatusBar implements vscode.Disposable {
   private readonly item = vscode.window.createStatusBarItem(
@@ -28,7 +31,7 @@ export class StatusBar implements vscode.Disposable {
     vscode.StatusBarAlignment.Left,
     0,
   );
-  private current: StatusText | undefined;
+  private current: Notice | undefined;
   private readonly answers: string[] = [];
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -39,7 +42,6 @@ export class StatusBar implements vscode.Disposable {
     private readonly lenses: BuildLenses,
   ) {
     this.item.name = "Ascribe Project";
-    this.item.command = MENU_COMMAND;
   }
 
   get api(): StatusBarApi {
@@ -74,18 +76,22 @@ export class StatusBar implements vscode.Disposable {
 
   private update(): void {
     const document = vscode.window.activeTextEditor?.document;
-    this.current = statusFor(
+    const projects = this.projects.servers.map((server) => this.builds.info(server));
+    const status = statusFor(
       document && {
         scheme: document.uri.scheme,
         path: document.uri.fsPath,
         languageId: document.languageId,
       },
-      this.projects.servers.map((server) => this.builds.info(server)),
+      projects,
     );
+    this.current = status ?? waitingNotice(projects);
     if (!this.current) {
       this.item.hide();
       return;
     }
+    // The menu is about a project's server, so only the project's own item opens it.
+    this.item.command = status ? MENU_COMMAND : undefined;
     this.item.text = this.current.text;
     this.item.tooltip = this.current.tooltip;
     this.item.accessibilityInformation = { label: this.current.label };
@@ -176,4 +182,23 @@ export class StatusBar implements vscode.Disposable {
     }
     return vscode.window.showQuickPick(items, options);
   }
+}
+
+/**
+ * The status bar item in Restricted Mode, until the folder is trusted.
+ * Clicking it opens VS Code's Workspace Trust editor.
+ */
+export function showRestricted(): vscode.Disposable {
+  const item = vscode.window.createStatusBarItem(
+    "ascribe.project",
+    vscode.StatusBarAlignment.Left,
+    0,
+  );
+  item.name = "Ascribe Project";
+  item.command = MANAGE_TRUST_COMMAND;
+  item.text = RESTRICTED_NOTICE.text;
+  item.tooltip = RESTRICTED_NOTICE.tooltip;
+  item.accessibilityInformation = { label: RESTRICTED_NOTICE.label };
+  item.show();
+  return item;
 }

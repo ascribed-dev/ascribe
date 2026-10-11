@@ -24,10 +24,11 @@ A server serves one project, which it finds at startup:
   in each parent, and takes the first it finds (`find_config` in
   `src/core.rs`). It never looks below a folder: a folder whose projects are
   all in subfolders has none.
-- It logs one line to stderr saying what it found:
-  `ascribe-lsp: using the project at <path to ascribe.toml>`,
-  `ascribe-lsp: no ascribe.toml at or above <folders, comma-separated>`, or
-  `ascribe-lsp: no workspace folder, so no project`.
+- It says what it found, with its version, in a `window/logMessage` at Info
+  (not on stderr, which a client shows as errors):
+  `ascribe-lsp <version>: using the project at <path to ascribe.toml>`,
+  `ascribe-lsp <version>: no ascribe.toml at or above <folders, comma-separated>`,
+  or `ascribe-lsp <version>: no workspace folder, so no project`.
 - A server with no project publishes nothing, and the preview request answers
   with a problem saying so. When the file watcher reports an `ascribe.toml`
   created or changed directly in one of its workspace folders (not in a parent
