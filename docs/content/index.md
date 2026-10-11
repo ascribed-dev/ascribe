@@ -24,6 +24,7 @@ permalink: docs
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.
+- [Element library reference](reference/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
 
 ## For implementers
 
