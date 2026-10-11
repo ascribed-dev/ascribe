@@ -3194,3 +3194,15 @@ message = "`{name}` is retired to `{to}`, and there's no page `{path}`"
 messages.fragment = "`{name}` is retired to `{to}`, which is a fragment; lead to a page that includes it"
 messages.heading = "`{name}` is retired to `{to}`, and `{path}` has no heading with the id `{id}`"
 fix = "Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone."
+
+[[diagnostic]]
+code = "ASC182"
+slug = "include-limit"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.2"
+row = "`@include` | A page's includes expand it past the processor's limit (page level)"
+message = "including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is"
+fix = "Include less on this page. Usually a fragment is included more than once on the way: a few files that each include the next twice double the page at every step. Include each fragment once, or split the page."

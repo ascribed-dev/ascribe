@@ -395,6 +395,28 @@ fn deleting_a_directory_deletes_everything_under_it() {
     assert!(client.codes(&page).is_empty());
 }
 
+/// A folder with two links to itself is a tree with no end, walked naively:
+/// the walk of a folder the editor reports goes into each folder once.
+#[test]
+fn a_created_folder_that_links_to_itself_is_walked_once() {
+    let f = Fixture::new(
+        MODEL,
+        &[("docs/index.md", "---\ntitle: Home\n---\n[A](loop/a.md)\n")],
+    );
+    let page = f.path("docs/index.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert_eq!(client.codes(&page), ["link-target-missing"]);
+
+    f.write("docs/loop/a.md", "---\ntitle: A\n---\n");
+    crate::links::dir(".", f.path("docs/loop/a"));
+    crate::links::dir(".", f.path("docs/loop/b"));
+    client.watched(&[(&f.path("docs/loop"), FileChangeType::CREATED)]);
+    // Answered within the client's time limit.
+    client.settle();
+    assert!(client.codes(&page).is_empty());
+}
+
 #[test]
 fn a_deleted_file_has_its_diagnostics_cleared() {
     let f = Fixture::new(

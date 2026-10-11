@@ -121,3 +121,27 @@ fn a_file_that_isnt_utf8_stops_it() {
         format!("{}: not valid UTF-8", bad.display())
     );
 }
+
+/// A folder with two links to itself is a tree with no end, walked naively:
+/// the walk goes into each folder once, by its real path, as the source index
+/// does, and finishes. The time limit is far above what the walk takes; it
+/// isn't a measure of speed.
+#[test]
+fn a_folder_that_links_to_itself_is_walked_once() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let root = dir.path().to_owned();
+    let config = root.join("ascribe.toml");
+    write(&config, MODEL.as_bytes());
+    write(&root.join("docs/a.md"), UNFORMATTED.as_bytes());
+    crate::links::dir(".", root.join("docs/x"));
+    crate::links::dir(".", root.join("docs/y"));
+
+    let (send, receive) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = send.send(run(&config, &[], true).expect("checked"));
+    });
+    let changed = receive
+        .recv_timeout(std::time::Duration::from_secs(60))
+        .expect("the walk finishes within a minute");
+    assert_eq!(changed.len(), 1, "{changed:?}");
+}

@@ -385,6 +385,7 @@ Transcludes a file or a heading's section into the current document.
   | `heading` | boolean | `true` | When `false`, the included section's own heading is omitted. It applies only with `#id`; on an include of a whole file it has no effect, and processors SHOULD warn |
 
 - The target file and id MUST exist. Include cycles are an error: an include is a cycle when expanding it would, directly or through other includes, include the same section of the same file again, so its expansion would never end.
+- Includes without a cycle can still make a page very large: a few files that each include the next twice double it at every step. A processor MAY limit how many blocks a page's includes expand it to, set far above what a real page reaches. The include in the page's own file that takes the page past the limit is an error (page level), and it and every include after it on the page are left unexpanded.
 - Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
 - Included headings keep the levels they're written with. Include a section where its levels fit the page.
 - Bindings are decided in the file where a directive is written. With `{heading=false}`, a heading-bound directive under the omitted heading, such as `@available`, still describes the rest of the included section, as it does in the fragment.
@@ -955,6 +956,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |
 | `@include` | Include cycle | Error |
+| `@include` | A page's includes expand it past the processor's limit (page level) | Error |
 | `@include` | `{heading=false}` without an `#id`, which has no effect | Warning |
 | `@variant` | No arm of a group survives a build's selection (page level) | Warning |
 | `@variant` | Unknown dimension or value | Error |

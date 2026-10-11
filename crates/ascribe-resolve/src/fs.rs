@@ -10,7 +10,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use ascribe_core::RelPath;
+use ascribe_core::{RelPath, Visited};
 
 use crate::layout::Layout;
 use crate::project::Unreadable;
@@ -228,7 +228,7 @@ impl DiskFs {
 impl FileSystem for DiskFs {
     fn sources(&self) -> Sources {
         let mut out = Sources::default();
-        let mut seen = BTreeSet::new();
+        let mut seen = Visited::default();
         let walk_from = Walk {
             own: fs::canonicalize(&self.project_root).ok(),
         };
@@ -454,21 +454,19 @@ impl Walk {
     /// Collects source files under `dir`, as paths relative to the content root,
     /// and the nested projects' folders it skips. `seen` holds the canonical
     /// directories already walked, so a symbolic link back up the tree can't loop.
-    fn walk(&self, dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Sources) {
+    fn walk(&self, dir: &Path, rel: &RelPath, seen: &mut Visited, out: &mut Sources) {
         let unreadable = |out: &mut Sources, path: &Path, err: io::Error| {
             out.unreadable.push(Unreadable {
                 path: rel.clone(),
                 reason: format!("{}: {err}", path.display()),
             });
         };
-        let canonical = match fs::canonicalize(dir) {
-            Ok(canonical) => canonical,
+        let canonical = match seen.enter(dir) {
+            Ok(Some(canonical)) => canonical,
+            Ok(None) => return,
             Err(err) => return unreadable(out, dir, err),
         };
         let own = self.own.as_ref() == Some(&canonical);
-        if !seen.insert(canonical) {
-            return;
-        }
         let entries = match fs::read_dir(dir) {
             Ok(entries) => entries,
             Err(err) => return unreadable(out, dir, err),

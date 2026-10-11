@@ -49,6 +49,8 @@ ascribe observe                 # runs `test` from the config
 ascribe observe --name node-22  # a second observation, made under another environment
 ```
 
+The name follows the [surface audit](../surface-audit/findings.md#the-proposals-against-the-findings)'s conventions: a verb alone, while it's the only command about examples. A second one, such as listing the observations or saying which are stale, would make a group, `ascribe examples`, with `observe` in it. It writes `text` or `json`, and exits 1 when an example's test fails.
+
 Ascribe watches the project's command run and writes down what it saw: an **observation**. The word is chosen for the size of its claim. An observation says what happened and under what conditions, not that the code is correct. If the command passes, Ascribe writes one beside the config, as TOML, like `ascribe.toml`:
 
 ```toml

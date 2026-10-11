@@ -333,6 +333,17 @@ Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.
 
 **Fix:** Remove `heading=false`, or include a section: `file.md#id`.
 
+#### ASC182 `include-limit`
+@id {permalink=true}: ASC182
+
+Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+
+**When:** A page's includes expand it past the processor's limit.
+
+**Message:** including `{path}` here takes this page past \{limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is
+
+**Fix:** Include less on this page. Usually a fragment is included more than once on the way: a few files that each include the next twice double the page at every step. Include each fragment once, or split the page.
+
 ### `@variant`
 
 #### ASC024 `variant-no-arm-survives`

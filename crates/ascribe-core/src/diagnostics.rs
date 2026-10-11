@@ -581,6 +581,9 @@ pub const PERMALINK_NAME_CONFLICT: DiagnosticSlug = DiagnosticSlug("permalink-na
 pub const PERMALINK_RETIRED_TARGET_MISSING: DiagnosticSlug =
     DiagnosticSlug("permalink-retired-target-missing");
 
+/// `ASC182`, error, page level: SPEC §8.2, "`@include` | A page's includes expand it past the processor's limit (page level)".
+pub const INCLUDE_LIMIT: DiagnosticSlug = DiagnosticSlug("include-limit");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -764,6 +767,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     PERMALINK_ALIAS_TARGET_MISSING,
     PERMALINK_NAME_CONFLICT,
     PERMALINK_RETIRED_TARGET_MISSING,
+    INCLUDE_LIMIT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

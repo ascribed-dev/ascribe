@@ -24,6 +24,8 @@ mod build_quill;
 mod file_reads;
 #[path = "all/headings.rs"]
 mod headings;
+#[path = "all/include_graphs.rs"]
+mod include_graphs;
 #[path = "all/includes.rs"]
 mod includes;
 #[path = "all/incremental.rs"]
