@@ -99,3 +99,8 @@ With `--list`:
 @available: next
 
 @include: ../_generated/json-render.md
+
+## `ascribe agents index`
+@available: next
+
+@include: ../_generated/json-agents-index.md

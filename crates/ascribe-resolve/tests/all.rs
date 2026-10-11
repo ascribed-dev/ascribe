@@ -20,6 +20,8 @@ mod build_content;
 mod build_modes;
 #[path = "all/build_quill.rs"]
 mod build_quill;
+#[path = "all/compact_index.rs"]
+mod compact_index;
 #[path = "all/file_reads.rs"]
 mod file_reads;
 #[path = "all/headings.rs"]

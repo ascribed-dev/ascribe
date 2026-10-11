@@ -1,7 +1,9 @@
 //! `ascribe agents`: the files agents read on their own, and the prompts
 //! for them. `sync` writes the project's rules into the instruction files
 //! and the skill into the skills folder; `rules` prints the rules, `skill`
-//! the skill, and `prompt` a named prompt.
+//! the skill, and `prompt` a named prompt. `index` is for the agents of the
+//! product the docs are about: a compact index of the docs, for its
+//! `AGENTS.md`.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -11,8 +13,8 @@ use ascribe_check::{LocateError, MODEL_FILE, Project};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 
 use crate::agents::sync::{self, Agent, Plan};
-use crate::agents::{checker, copilot, hook, prompts, skill};
-use crate::answer::{self, FromDisk};
+use crate::agents::{checker, copilot, hook, index as index_file, prompts, skill};
+use crate::answer::{self, Format, FromDisk};
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
@@ -35,6 +37,10 @@ pub enum Command {
     /// AGENTS.md beside ascribe.toml.
     #[command(after_help = docs_link!("cli-agents-rules"))]
     Rules(RulesArgs),
+    /// Write a compact index of the docs, one line a page, for the
+    /// AGENTS.md of the product they're about.
+    #[command(after_help = docs_link!("cli-agents-index"))]
+    Index(IndexArgs),
     /// Print a file of the Ascribe skill: its SKILL.md, or its directive
     /// reference.
     #[command(after_help = docs_link!("cli-agents-skill"))]
@@ -79,6 +85,36 @@ pub struct RulesArgs {
     /// By default, the current directory.
     #[arg(value_name = "PATH")]
     pub path: Option<PathBuf>,
+}
+
+/// Arguments of `ascribe agents index`.
+#[derive(Debug, ClapArgs)]
+pub struct IndexArgs {
+    /// The build whose pages to index.
+    ///
+    /// Needed when `ascribe.toml` has more than one build.
+    #[arg(long, value_name = "NAME")]
+    pub build: Option<String>,
+
+    /// Write the index into this file, between its markers, instead of
+    /// printing it.
+    ///
+    /// The rest of the file is left as it is, and a file without the
+    /// markers gets the block at its end.
+    #[arg(long, value_name = "FILE")]
+    pub into: Option<PathBuf>,
+
+    /// Also copy each page's Markdown version into this folder, and point
+    /// the index's addresses into it: for a package that ships its docs.
+    ///
+    /// The addresses are from the folder of the file the index is written
+    /// into, or from the current directory when it's printed.
+    #[arg(long, value_name = "DIR")]
+    pub pages: Option<PathBuf>,
+
+    /// How to show the answer.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// Arguments of `ascribe agents skill`.
@@ -199,6 +235,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let code = match args.command {
         Command::Sync(args) => sync(global, &args, &mut out, &mut err),
         Command::Rules(args) => rules(global, &args, &mut out, &mut err),
+        Command::Index(args) => index(global, &args, &mut out, &mut err),
         Command::Skill(args) => {
             let text = if args.file == skill::DIRECTIVES {
                 skill::directives_md()
@@ -376,6 +413,108 @@ fn rules(global: &Global, args: &RulesArgs, out: &mut dyn Write, err: &mut dyn W
         Ok(text) => answer::written(out.write_all(text.as_bytes()), err).unwrap_or(exit::OK),
         Err(e) => exit::fail(err, &e),
     }
+}
+
+fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let loaded = match answer::load(&FromDisk, global, None) {
+        Ok(loaded) => loaded,
+        Err(failure) => return answer::report_failure(err, &failure),
+    };
+    let project = &loaded.project;
+    let build = match answer::one_build(project.model(), args.build.as_deref()) {
+        Ok(build) => build,
+        Err(e) => return exit::fail(err, &e),
+    };
+    let cwd = std::env::current_dir().unwrap_or_default();
+    let absolute = |path: &Path| ascribe_core::path::normalize(&cwd.join(path));
+    let file = args.into.as_deref().map(absolute);
+    let folder = args.pages.as_deref().map(absolute);
+    // The addresses are read from the file's folder, or from here.
+    let reader = file
+        .as_deref()
+        .and_then(Path::parent)
+        .map_or_else(|| absolute(Path::new(".")), Path::to_owned);
+    let address = folder
+        .as_deref()
+        .map(|folder| index_file::folder_address(&reader, folder));
+    let mut answer = match ascribe_query::agents_index(
+        loaded.index(),
+        project.root(),
+        build,
+        address.as_deref(),
+        ascribe_resolve::llms::COMPACT_INDEX_LIMIT,
+    ) {
+        Ok(answer) => answer,
+        Err(e) => return exit::fail(err, &e),
+    };
+    let mut written = index_file::Written::default();
+    if file.is_some() || folder.is_some() {
+        let content = absolute(&project.root().join(project.content_root().as_str()));
+        written = match index_file::write(&answer, file.as_deref(), folder.as_deref(), &content) {
+            Ok(written) => written,
+            Err(e) => return exit::fail(err, &e),
+        };
+    }
+    answer.file = file.as_deref().map(shown);
+    answer.changed = written.changed;
+    answer.folder = folder.as_deref().map(shown);
+    if args.format == Format::Json {
+        let result = answer::write_json(out, &answer);
+        return answer::written(result, err).unwrap_or(exit::OK);
+    }
+    // The index goes to standard output unless it's written into a file;
+    // then what was written does.
+    let pages = answer.folder.as_deref().map(|folder| {
+        let done = if written.pages_changed > 0 {
+            "wrote"
+        } else {
+            "unchanged"
+        };
+        let count = answer.pages.len();
+        let noun = if count == 1 { "page" } else { "pages" };
+        format!(
+            "{done:<9} {folder}  {count} {noun}, {} changed",
+            written.pages_changed
+        )
+    });
+    let result = match &answer.file {
+        None => out.write_all(answer.text.as_bytes()).map(|()| {
+            if let Some(pages) = &pages {
+                let _ = writeln!(err, "{pages}");
+            }
+        }),
+        Some(file) => {
+            let done = if written.changed {
+                "wrote"
+            } else {
+                "unchanged"
+            };
+            writeln!(out, "{done:<9} {file}")
+                .and_then(|()| pages.map_or(Ok(()), |pages| writeln!(out, "{pages}")))
+        }
+    };
+    if let Some(code) = answer::written(result, err) {
+        return code;
+    }
+    if !answer.left_out.is_empty() || !answer.without_description.is_empty() {
+        let _ = writeln!(
+            err,
+            "note: to stay under {} bytes, the index leaves out {} of {} pages, and the descriptions of {} more",
+            answer.limit,
+            answer.left_out.len(),
+            answer.offered,
+            answer.without_description.len()
+        );
+    }
+    if !written.stray.is_empty() {
+        let _ = writeln!(
+            err,
+            "note: {} has Markdown files that aren't pages of this index, perhaps from an earlier run: {}",
+            answer.folder.as_deref().unwrap_or_default(),
+            written.stray.join(", ")
+        );
+    }
+    exit::OK
 }
 
 fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {

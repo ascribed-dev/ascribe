@@ -827,6 +827,28 @@ Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside
 | `0` | It printed the rules |
 | `2` | It couldn't run: a usage error, no `ascribe.toml`, one with errors, or `git` can't say where the repository is |
 
+### `ascribe agents index`
+@id {permalink=true}: cli-agents-index
+
+Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. It's for your product's agents, where `sync` is for the agents that write your docs; [Index your docs for your product's agents](../guides/agents.md#index-your-docs-for-your-products-agents) says when it's worth it.
+
+It lists the pages the build offers, the ones in `llms.txt`: a page that's `unlisted` isn't in it. A page's address is its Markdown version's, with `[consumer] agents = true`, or else its own. The index holds to 8 KB: past that, it leaves out descriptions, from the last page back, then pages, from the last back, and ends with a sentence saying how many it left out and where every page is.
+
+It prints the index. With `--into`, it writes it between markers in that file instead, as `sync` writes its block, leaving the rest of the file as it is, so a second run replaces the first; it says whether the file changed. With `--pages`, it also writes each offered page's Markdown version, as the build's `plain` output writes it, into that folder, and the index's addresses are paths into it, from the folder of the `--into` file: the folder a package ships beside its `AGENTS.md`. A file in the folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
+
+@include: ../_generated/cli-agents-index-options.md
+
+```sh
+ascribe agents index --build site --into packages/sdk/AGENTS.md --pages packages/sdk/docs
+```
+
+| Code | Meaning |
+|---|---|
+| `0` | It printed the index, or wrote it |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, more than one build and no `--build`, an unknown build, a file whose markers are damaged, a file or folder under the content root (so one of the project's pages), or a file it can't read or write. Nothing is written. |
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `build`, `limit` and `bytes` (the index's size, in bytes, and the most it holds), `offered` (how many pages the build offers), `listed`, `left_out`, and `without_description` (pages, as paths from the content root), `file` and `changed` (the `--into` file, and whether it changed), `folder` and `pages` (the `--pages` folder, and each page copied into it, with its `source` and its `path` in the folder), and `text`, the index. Its schema is in the [JSON report contract](../contracts/json-reports.md#ascribe-agents-index).
+
 ### `ascribe agents skill`
 @id {permalink=true}: cli-agents-skill
 

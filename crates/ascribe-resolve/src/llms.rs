@@ -27,7 +27,7 @@ use ascribe_syntax::{BlockKind, ParseOptions};
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
 use crate::index::heading_text;
-use crate::pages::PageRecords;
+use crate::pages::{PageRecord, PageRecords};
 
 /// The version of the delivery spec the outputs for agents follow. Its
 /// checker, `afdocs`, is pinned in `examples/astro-site/package.json`.
@@ -100,34 +100,11 @@ impl Section<'_> {
 pub fn llms_files(model: &ContentModel, records: &PageRecords) -> Vec<LlmsFile> {
     let router = AstroRouter::from_consumer(&model.consumer);
     let absolute = |path: &str| absolute_url(model, &router.url_of(path));
-    let entries: Vec<Entry<'_>> = records
-        .pages
-        .iter()
-        .filter(|record| record.offered())
-        .map(|record| {
-            let id = router
-                .markdown_path(&record.source)
-                .trim_end_matches(".md")
-                .to_owned();
-            Entry {
-                page: &record.source,
-                title: record
-                    .title
-                    .as_deref()
-                    .map(one_line)
-                    .filter(|t| !t.is_empty())
-                    .unwrap_or_else(|| id.clone()),
-                url: absolute(&router.markdown_path(&record.source)),
-                description: record.description.clone(),
-                id,
-            }
-        })
-        .collect();
-    let root = entries.iter().find(|e| e.id == "index");
-    let name = root.map_or_else(|| site_name(model), |e| e.title.clone());
-    let summary = root.and_then(|e| e.description.clone()).unwrap_or_else(|| {
-        "Every page of this documentation, each linked to its Markdown version.".to_owned()
+    let entries = entries(&router, records, |record| {
+        absolute(&router.markdown_path(&record.source))
     });
+    let root = entries.iter().find(|e| e.id == "index");
+    let (name, summary) = name_and_summary(model, root);
     let root_page = root.map(|e| e.page.clone());
     let sections = sections(entries);
     let first_page = sections
@@ -205,6 +182,48 @@ pub fn llms_files(model: &ContentModel, records: &PageRecords) -> Vec<LlmsFile> 
         },
     );
     files
+}
+
+/// The offered pages of `records` as entries, each with the address `url`
+/// gives it.
+fn entries<'a>(
+    router: &AstroRouter,
+    records: &'a PageRecords,
+    url: impl Fn(&PageRecord) -> String,
+) -> Vec<Entry<'a>> {
+    records
+        .pages
+        .iter()
+        .filter(|record| record.offered())
+        .map(|record| {
+            let id = router
+                .markdown_path(&record.source)
+                .trim_end_matches(".md")
+                .to_owned();
+            Entry {
+                page: &record.source,
+                title: record
+                    .title
+                    .as_deref()
+                    .map(one_line)
+                    .filter(|t| !t.is_empty())
+                    .unwrap_or_else(|| id.clone()),
+                url: url(record),
+                description: record.description.clone(),
+                id,
+            }
+        })
+        .collect()
+}
+
+/// An index's name and summary: the title and description of the page at
+/// the base path, `root`, or else the site's host and a sentence.
+fn name_and_summary(model: &ContentModel, root: Option<&Entry<'_>>) -> (String, String) {
+    let name = root.map_or_else(|| site_name(model), |e| e.title.clone());
+    let summary = root.and_then(|e| e.description.clone()).unwrap_or_else(|| {
+        "Every page of this documentation, each linked to its Markdown version.".to_owned()
+    });
+    (name, summary)
 }
 
 /// The entries in sections, in the order their first pages come: the pages
@@ -368,6 +387,236 @@ fn markdown_text(model: &ContentModel, text: &str) -> String {
             _ => text.to_owned(),
         },
         _ => text.to_owned(),
+    }
+}
+
+/// The most bytes a compact index holds ([`compact_index`]): the size of the
+/// one first-party evaluation of a docs index in `AGENTS.md`, which found it
+/// enough.
+pub const COMPACT_INDEX_LIMIT: usize = 8 * 1024;
+
+/// A compact index of a build's docs, for a product's `AGENTS.md`
+/// ([`compact_index`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompactIndex {
+    /// Its Markdown.
+    pub text: String,
+    /// The pages it lists, in its order.
+    pub listed: Vec<RelPath>,
+    /// The offered pages it leaves out to stay under its limit, in the order
+    /// they'd have come.
+    pub left_out: Vec<RelPath>,
+    /// The pages it lists without the description they have, to stay under
+    /// its limit.
+    pub without_description: Vec<RelPath>,
+}
+
+/// A compact index of the pages a build offers, from its page records
+/// ([`crate::pages::records`]): the index's name and summary, then a line a
+/// page, with its title, its address, and its description, grouped in
+/// sections as `llms.txt` is ([`llms_files`]), at most `limit` bytes long.
+///
+/// A page's address is its Markdown version's, absolute when the content
+/// model has a `site`, or the page's own when the build publishes no
+/// Markdown versions; with `folder`, it's the Markdown version's path in
+/// that folder (`folder/guides/setup.md`), for an index beside a copy of the
+/// pages.
+///
+/// An index longer than `limit` leaves out descriptions first, from the last
+/// page back, then pages, from the last back, and ends with a sentence that
+/// says what it left out and where every page is. A page that isn't offered
+/// isn't in it.
+pub fn compact_index(
+    model: &ContentModel,
+    records: &PageRecords,
+    folder: Option<&str>,
+    limit: usize,
+) -> CompactIndex {
+    let router = AstroRouter::from_consumer(&model.consumer);
+    let folder = folder.map(|f| f.trim_end_matches('/'));
+    let entries = entries(&router, records, |record| match folder {
+        Some(folder) => folder_path(folder, &router.markdown_path(&record.source)),
+        None => match &record.markdown {
+            Some(markdown) => absolute_url(model, markdown),
+            None => record
+                .canonical
+                .clone()
+                .unwrap_or_else(|| record.route.clone()),
+        },
+    });
+    let root = entries.iter().find(|e| e.id == "index");
+    let (name, summary) = name_and_summary(model, root);
+    let sections = sections(entries);
+    let everywhere = match folder {
+        Some(folder) => Some(format!("`{}`", folder_path(folder, ""))),
+        None => model.consumer.agents.then(|| {
+            format!(
+                "[llms.txt]({})",
+                absolute_url(model, &router.url_of("llms.txt"))
+            )
+        }),
+    };
+    let compact = Compact {
+        name: &name,
+        summary: &summary,
+        sections: &sections,
+        everywhere: everywhere.as_deref(),
+        limit,
+    };
+    let count: usize = sections.iter().map(|s| s.entries.len()).sum();
+    let fits = |pages: usize, described: usize| compact.text(pages, described).len() <= limit;
+    let (pages, described) = if fits(count, count) {
+        (count, count)
+    } else if fits(count, 0) {
+        (count, largest(count, |k| fits(count, k)))
+    } else {
+        (largest(count, |m| fits(m, 0)), 0)
+    };
+    let mut index = CompactIndex {
+        text: compact.text(pages, described),
+        listed: Vec::new(),
+        left_out: Vec::new(),
+        without_description: Vec::new(),
+    };
+    let all = sections.iter().flat_map(|s| &s.entries).enumerate();
+    for (at, entry) in all {
+        if at >= pages {
+            index.left_out.push(entry.page.clone());
+            continue;
+        }
+        index.listed.push(entry.page.clone());
+        if at >= described && entry.description.is_some() {
+            index.without_description.push(entry.page.clone());
+        }
+    }
+    index
+}
+
+/// The largest `n` below `count` for which `fits` holds, given that it holds
+/// for every number below one it holds for; `0` when it holds for none.
+fn largest(count: usize, fits: impl Fn(usize) -> bool) -> usize {
+    let (mut low, mut high) = (0, count);
+    // `fits(low)` is assumed, and `fits(high)` doesn't hold.
+    while high - low > 1 {
+        let mid = low + (high - low) / 2;
+        if fits(mid) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    low
+}
+
+/// A path in a folder, as an index's address: `folder/path`, or `path` when
+/// the folder is the index's own.
+fn folder_path(folder: &str, path: &str) -> String {
+    match folder {
+        "" | "." => path.to_owned(),
+        folder => format!("{folder}/{path}"),
+    }
+}
+
+/// What a compact index is written from.
+struct Compact<'a> {
+    name: &'a str,
+    summary: &'a str,
+    sections: &'a [Section<'a>],
+    /// Where every page is, in Markdown, for the sentence about the pages
+    /// left out.
+    everywhere: Option<&'a str>,
+    limit: usize,
+}
+
+impl Compact<'_> {
+    /// The index with the first `pages` pages, the first `described` of them
+    /// with their descriptions.
+    fn text(&self, pages: usize, described: usize) -> String {
+        let mut text = format!(
+            "## {}\n\n> {}\n",
+            one_line(self.name),
+            one_line(self.summary)
+        );
+        let mut at = 0;
+        let mut undescribed = 0;
+        let mut left_out = 0;
+        for section in self.sections {
+            for (i, entry) in section.entries.iter().enumerate() {
+                if at >= pages {
+                    left_out += 1;
+                    at += 1;
+                    continue;
+                }
+                if i == 0 {
+                    text.push_str(&format!("\n### {}\n\n", one_line(&section.heading)));
+                }
+                text.push_str(&format!(
+                    "- [{}]({})",
+                    link_text(&entry.title),
+                    destination(&entry.url)
+                ));
+                match &entry.description {
+                    Some(description) if at < described => {
+                        text.push_str(": ");
+                        text.push_str(description);
+                    }
+                    Some(_) => undescribed += 1,
+                    None => {}
+                }
+                text.push('\n');
+                at += 1;
+            }
+        }
+        let size = size(self.limit);
+        if left_out > 0 {
+            let descriptions = if undescribed > 0 {
+                ", and the descriptions of the rest,"
+            } else {
+                ""
+            };
+            text.push_str(&format!(
+                "\nThis index leaves out {}{descriptions} to stay under {size}.",
+                pages_count(left_out)
+            ));
+            if let Some(everywhere) = self.everywhere {
+                text.push_str(&format!(" {everywhere} has every page."));
+            }
+            text.push('\n');
+        } else if undescribed > 0 {
+            text.push_str(&format!(
+                "\nThis index leaves out the descriptions of {}, to stay under {size}.\n",
+                pages_count(undescribed)
+            ));
+        }
+        text
+    }
+}
+
+/// A number of pages, in words: `1 page`, `3 pages`.
+fn pages_count(n: usize) -> String {
+    if n == 1 {
+        "1 page".to_owned()
+    } else {
+        format!("{n} pages")
+    }
+}
+
+/// A size in bytes, in words: `8 KB`, or `500 bytes`.
+fn size(bytes: usize) -> String {
+    if bytes >= 1024 && bytes.is_multiple_of(1024) {
+        format!("{} KB", bytes / 1024)
+    } else {
+        format!("{bytes} bytes")
+    }
+}
+
+/// An address as a link's destination: in angle brackets when it has a
+/// space or a parenthesis, which would end it.
+fn destination(url: &str) -> String {
+    if url.contains([' ', '(', ')', '<', '>']) {
+        format!("<{}>", url.replace('<', "%3C").replace('>', "%3E"))
+    } else {
+        url.to_owned()
     }
 }
 

@@ -1,4 +1,4 @@
-//! `ascribe agents sync` and `ascribe agents skill`, by running the binary
+//! `ascribe agents sync`, `ascribe agents index`, and `ascribe agents skill`, by running the binary
 //! on copies of projects in temporary repositories. This repository has an
 //! `AGENTS.md` of its own, so nothing here runs on `examples/` in place.
 //!
@@ -1080,4 +1080,118 @@ fn a_committed_link_on_the_way_stops_everything() {
         !repo.path().join("AGENTS.md").exists(),
         "it wrote AGENTS.md"
     );
+}
+
+/// `ascribe agents index --format json` in `dir`, with `args`.
+fn index_json(dir: &Path, args: &[&str]) -> serde_json::Value {
+    let mut all = vec!["agents", "index", "--format", "json"];
+    all.extend_from_slice(args);
+    let out = run(dir, &all, 0);
+    serde_json::from_slice(&out.stdout).expect("index --format json is JSON")
+}
+
+#[test]
+fn the_index_of_ascribes_docs_lists_every_offered_page_under_its_limit() {
+    let docs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs");
+    let index = index_json(&docs, &[]);
+    let limit = index["limit"].as_u64().unwrap();
+    let bytes = index["bytes"].as_u64().unwrap();
+    let text = index["text"].as_str().unwrap();
+    assert!(bytes <= limit, "{bytes} bytes, over {limit}:\n{text}");
+    assert_eq!(bytes, text.len() as u64);
+    let listed = index["listed"].as_array().unwrap();
+    let left_out = index["left_out"].as_array().unwrap();
+    assert_eq!(
+        (listed.len() + left_out.len()) as u64,
+        index["offered"].as_u64().unwrap(),
+        "every offered page is listed or left out"
+    );
+    if !left_out.is_empty() {
+        assert!(
+            text.contains(&format!("leaves out {} page", left_out.len())),
+            "{text}"
+        );
+    }
+    for page in listed {
+        let page = page.as_str().unwrap();
+        let source = read(&docs.join("content").join(page));
+        let frontmatter = source.split("\n---").next().unwrap_or_default();
+        assert!(
+            !frontmatter.contains("\nlisting: unlisted"),
+            "{page} isn't offered, but the index lists it"
+        );
+    }
+}
+
+#[test]
+fn a_second_index_into_a_file_changes_nothing() {
+    let repo = repository("quill");
+    let dir = repo.path();
+    write(
+        &dir.join("pkg/AGENTS.md"),
+        "# Quill's SDK\n\nUse the SDK.\n",
+    );
+    let args = [
+        "agents",
+        "index",
+        "--build",
+        "site",
+        "--into",
+        "pkg/AGENTS.md",
+        "--pages",
+        "pkg/docs",
+    ];
+    let first = run(dir, &args, 0);
+    assert!(
+        stdout(&first).starts_with("wrote     pkg/AGENTS.md\nwrote     pkg/docs"),
+        "{}",
+        stdout(&first)
+    );
+    let agents_md = read(&dir.join("pkg/AGENTS.md"));
+    assert!(
+        agents_md.starts_with("# Quill's SDK\n\nUse the SDK.\n\n<!-- ascribe:agents:index start"),
+        "{agents_md}"
+    );
+    // The addresses are from the file's folder.
+    assert!(agents_md.contains("](docs/"), "{agents_md}");
+    let pages = files(&dir.join("pkg/docs"));
+    assert!(!pages.is_empty());
+    for page in &pages {
+        assert!(
+            agents_md.contains(&format!("](docs/{page})")),
+            "{page} isn't in:\n{agents_md}"
+        );
+    }
+
+    let second = run(dir, &args, 0);
+    assert!(
+        stdout(&second).starts_with("unchanged pkg/AGENTS.md\nunchanged pkg/docs"),
+        "{}",
+        stdout(&second)
+    );
+    assert_eq!(read(&dir.join("pkg/AGENTS.md")), agents_md);
+}
+
+#[test]
+fn an_index_with_its_pages_in_the_content_root_is_refused() {
+    let repo = repository("quill");
+    let dir = repo.path();
+    let out = run(
+        dir,
+        &[
+            "agents",
+            "index",
+            "--build",
+            "site",
+            "--pages",
+            "docs/copies",
+        ],
+        2,
+    );
+    assert!(
+        stderr(&out).contains("under the content root"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(!dir.join("docs/copies").exists());
 }
