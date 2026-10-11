@@ -1,0 +1,26 @@
+# The project the guide to content that varies builds: one dimension, one
+# page with a variant group and an availability mark, and two builds. The
+# guide takes each part from here, and crates/ascribe-cli/tests/all/output.rs
+# renders the page for both builds.
+spec = "0.1"
+
+# :snippet-start: dimension
+[dimensions.platform]
+label = "Platform"
+values = ["linux", "macos", "windows"]
+labels = { linux = "Linux", macos = "macOS", windows = "Windows" }
+versionless = ["linux", "macos", "windows"]
+# :snippet-end:
+
+[consumer]
+site = "https://docs.example.com"
+
+# :snippet-start: builds
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[builds.windows]
+variants = { platform = "windows" }
+availability = { filter = "windows" }
+# :snippet-end:

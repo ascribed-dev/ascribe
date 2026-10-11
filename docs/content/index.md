@@ -5,6 +5,7 @@ permalink: docs
 ---
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
+- [Content that varies](guides/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 - [Directive reference](reference/directives.md): the language: directives, attributes, titles, phrases, links, and images.
 - [`ascribe.toml` reference](reference/content-model.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
 - [Command reference](reference/cli.md): every `ascribe` command, its options, outputs, and exit codes.

@@ -1,0 +1,33 @@
+# Install Lantern
+
+## Install the CLI
+
+<!-- A switcher: a reader sees one of the next 3 sections at a time, chosen by `platform`. -->
+
+**Linux**
+
+```sh
+curl -fsSL https://lantern.example.com/install.sh | sh
+```
+
+**macOS**
+
+```sh
+brew install lantern
+```
+
+**Windows**
+
+```powershell
+winget install Lantern.CLI
+```
+
+## Start it at login
+
+Available: Linux (GA); macOS (GA)
+
+`lantern service install` starts Lantern when you log in, and keeps it running in the background.
+
+## Sign in
+
+Run `lantern login` and follow the link it prints.
