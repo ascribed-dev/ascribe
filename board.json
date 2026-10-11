@@ -853,7 +853,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/301"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Website: publish the changelog at /changelog/"
     },
     {
@@ -883,9 +883,26 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/297"
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_8XTk",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/304"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Website: screenshots and a social card per page"
+    },
+    {
+      "content": {
+        "body": "Found while taking the review screenshot for #297 (#304).\n\n**What happens.** In `astro dev` on `site/`, with review on and a pull request whose thread is on the line of a one-line note, such as `@note {type=tip}: …` (line 29 of `docs/content/getting-started.md`), the overlay draws that thread's card twice, one under the other. The panel still says \"Comments (1)\". The overlay's shadow root holds two `.thread` elements with the same `data-thread`.\n\n**Likely cause.** The note element and the paragraph inside it both carry `data-ascribe-source` for the same line, and the overlay places a card at each block anchored to that line.\n\n**Done when.** A thread on a one-line note draws one card, beside the note, with an end-to-end case in `examples/astro-site/test/e2e/review.test.ts`.",
+        "number": 305,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Review in the site preview: a thread on a one-line note draws its card twice",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/305"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAAvzQ",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Review in the site preview: a thread on a one-line note draws its card twice"
     }
   ]
 }
