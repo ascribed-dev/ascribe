@@ -13,7 +13,7 @@ Ascribe's mark and design tokens, and the images made from them. Everything Ascr
 | `fonts/InterDisplay-SemiBold.ttf` | The font a page's social card draws its title in, for generation only, with its license (SIL Open Font License) in `fonts/LICENSE.txt` |
 | `assets.json` | The generated images of the mark, their sizes, and the hashes of their sources |
 | `out/` | The generated images nothing builds from: the README headers and the avatar |
-| `candidates/chosen.toml` | The palette and type scale the mark's images are drawn in. `tokens.toml`'s shared colors are the same, by test |
+| `candidates/chosen.toml` | The palette and type scale the mark's images are drawn in and the specimen shows. Its shared colors, and the palette steps they take, are generated from `tokens.toml`; the type scale and the rest of each hue's ramp are written in it |
 | `candidates/pairs.toml` | Every pairing of colors the stylesheets use, with the contrast each must reach |
 | `specimen.html` | The mark, the palette, and the type scale in light and dark, with a docs page in each and every pairing's contrast. Open it in a browser |
 
@@ -23,9 +23,8 @@ The mark, wordmark, and tagline are outlines from Inter (SIL Open Font License),
 
 To change the accent, or any color:
 
-1. Point the token at another palette entry in `tokens.toml`, or add the entry under `[palette]`. A palette entry's name is its hue and its step: 1000 × (1 − the color's OKLCH lightness), rounded, so a higher step is darker; a tie takes the next step.
-2. If the token is one of the shared ones, the top-level `[color]` tokens such as `color.accent` or `color.note`, give it the same value in `candidates/chosen.toml`, whose palette names its steps 50 to 975 rather than by lightness. A test holds the two to the same colors, and the mark's images are drawn from the second.
-3. Rewrite everything generated from them, then read the diff:
+1. Point the token at another palette entry in `tokens.toml`, or add the entry under `[palette]`. A palette entry's name is its hue and its step: 1000 × (1 − the color's OKLCH lightness), rounded, so a higher step is darker; a tie takes the next step. The specimen shows each hue's whole ramp under these names: a step under `[ramp]` in `candidates/chosen.toml` is one no color takes yet, and a color that comes to take it moves it from there into `tokens.toml`'s palette.
+2. Rewrite everything generated from it, then read the diff:
 
    ```sh
    ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts
@@ -34,11 +33,11 @@ To change the accent, or any color:
    node scripts/design/specimen.ts
    ```
 
-   The first rewrites the stylesheets' generated blocks, the second the HTML report's embedded stylesheet, the third the mark's images (only a shared color can change them), and the fourth the specimen.
-4. Run the tests: `pnpm exec vitest run scripts/design`. They fail on a pairing below its contrast in light or dark (4.5:1 for text, 3:1 for a border, bar, or mark that carries meaning), on a stale block or image, and on a color written in a stylesheet outside its generated blocks.
-5. Look at it, in light and dark: the specimen, then each surface the token reaches. The tests check contrast, not taste.
-6. The report's embedded stylesheet is compiled into the binary, so the change is an output change: `node scripts/compare/outputs.ts --base main` lists the report's files, which the pull request accepts by name (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
-7. A change to a default of an `--ascribe-*` or `--ascribe-review-*` property is a **Behavior change** in `CHANGELOG.md`, with the previous values for a site to paste (decision 44).
+   The first rewrites the stylesheets' generated blocks and the shared colors in `candidates/chosen.toml` (the top-level `[color]` tokens such as `color.accent` or `color.note`, and the palette steps they take); the second the HTML report's embedded stylesheet, the third the mark's images (only a shared color can change them), and the fourth the specimen.
+3. Run the tests: `pnpm exec vitest run scripts/design`. They fail on a pairing below its contrast in light or dark (4.5:1 for text, 3:1 for a border, bar, or mark that carries meaning), on a stale block or image, and on a color written in a stylesheet outside its generated blocks.
+4. Look at it, in light and dark: the specimen, then each surface the token reaches. The tests check contrast, not taste.
+5. The report's embedded stylesheet is compiled into the binary, so the change is an output change: `node scripts/compare/outputs.ts --base main` lists the report's files, which the pull request accepts by name (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+6. A change to a default of an `--ascribe-*` or `--ascribe-review-*` property is a **Behavior change** in `CHANGELOG.md`, with the previous values for a site to paste (decision 44).
 
 The full list is the checklist for [a change to how something looks](../project-docs/checklists.md#a-change-to-how-something-looks).
 
@@ -48,7 +47,7 @@ Reuse a token when the new use means the same thing: a new panel is `color.surfa
 
 - Name it for what it's for (`color.flash`, "a block that was just scrolled to"), never for how it looks, with a comment above it saying where it's used. A color only one surface uses goes under that surface's name (`color.preview.error`, `color.toolbar.shadow`).
 - A color that's text, or a graphic that carries meaning, gets its pairings in `candidates/pairs.toml`, so its contrast is checked.
-- A new shared color is also added to `candidates/chosen.toml`, and to `COLORS` in `scripts/design/specimen.ts`; a property of the element library's or review's that takes it, to `EMIT` there too, so the specimen shows it.
+- A new shared color is also added to `COLORS` in `scripts/design/specimen.ts`, which puts it in `candidates/chosen.toml` the next time the tokens test is blessed; a property of the element library's or review's that takes it, to `EMIT` there too, so the specimen shows it.
 - The stylesheet takes it through its `[emit]` block; see below. A new `--ascribe-*` or `--ascribe-review-*` property is a contract addition, made by a recorded decision (`packages/elements/CONTRACT.md`).
 
 ### How `tokens.toml` is laid out

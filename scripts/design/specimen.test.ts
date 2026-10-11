@@ -68,15 +68,18 @@ test("a candidate names the key it got wrong", () => {
     new URL("../../design/candidates/chosen.toml", import.meta.url),
     "utf8",
   );
-  expect(() => readCandidate("x", good.replace('"indigo.600"', '"indigo.601"'))).toThrow(
-    'x.toml color.accent.light: no palette entry "indigo.601"',
+  expect(() => readCandidate("x", good.replace('"indigo.435"', '"indigo.436"'))).toThrow(
+    'x.toml color.accent.light: no palette entry "indigo.436"',
   );
   expect(() => readCandidate("x", good.replace(/^focus = .*$/m, ""))).toThrow(
     "x.toml color.focus: expected a table",
   );
   expect(() => readCandidate("x", good.replace('"#ffffff"', '"#FFF"'))).toThrow(
-    'x.toml palette.neutral.0: "#FFF" isn\'t a lowercase #rrggbb',
+    'x.toml palette.gray.0: "#FFF" isn\'t a lowercase #rrggbb',
   );
+  expect(() =>
+    readCandidate("x", good.replace("[ramp.gray]", '[ramp.gray]\n18 = "#f7f9fd"')),
+  ).toThrow("x.toml ramp.gray.18: already in [palette]");
 });
 
 test("the chosen mark comes first, with its wordmark", () => {

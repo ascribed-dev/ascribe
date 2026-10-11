@@ -7,7 +7,7 @@
       "height": 32,
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -16,7 +16,7 @@
       "height": 32,
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -25,7 +25,7 @@
       "height": 180,
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -36,7 +36,7 @@
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
         "design/tagline.svg": "cca9325d1bf75647e96ce85b35d66b02efcc948c3e867e40612cab6fc740010f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -46,7 +46,7 @@
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54",
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
         "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
         "site/home/content/index.md#heading": "c945ce11b811a12af022f35d9b512bde04be0d382b6204de0f1bde9baa03156e"
       }
@@ -58,7 +58,7 @@
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54",
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
         "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
         "site/home/content/why.md#heading": "81c83d34e56d4c9cb4e87ca2f8cf7b90164837580b8ee48c6f9999747e638952"
       }
@@ -70,7 +70,7 @@
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54",
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d",
         "design/fonts/InterDisplay-SemiBold.ttf": "9d7a047d4d226e3fe401347199a6554f84d8b017ac0976544fd5701af61c1660",
         "CHANGELOG.md#heading": "ead07c84baac57a9542f388a07a2a5209456ce790b04251bc9bd7d179ea85cb1"
       }
@@ -90,7 +90,7 @@
       "height": 256,
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -107,7 +107,7 @@
       "height": 48,
       "sources": {
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -116,7 +116,7 @@
       "height": 48,
       "sources": {
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -125,7 +125,7 @@
       "height": 192,
       "sources": {
         "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     },
     {
@@ -134,7 +134,7 @@
       "height": 512,
       "sources": {
         "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
-        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+        "design/candidates/chosen.toml": "8b301a2ab0418449fcbcb0b7617e5db2efd4ac955a0fb00a969fb68c8964ea6d"
       }
     }
   ]
