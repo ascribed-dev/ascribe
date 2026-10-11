@@ -60,6 +60,8 @@ const { entry } = Astro.props;
 <h1 set:html={entry.data.formatted.title} />
 ```
 
+`npx @ascribed/astro init` writes those files into an Astro project once, as yours from then on: the collection (`src/content.config.ts`), the route (`src/pages/[...slug].astro`), a layout that loads the elements (`src/layouts/Docs.astro`), and the sidebar's list (`src/nav.ts`). It never writes over a file. `--project <dir>` names the folder holding `ascribe.toml`, and `--build <name>` the build, when there are several. The layout's sidebar comes from `sidebar(nav, entries)` in `@ascribed/astro/content`, which gives each listed page its entry and address, and fails the build when the list leaves out a page or names one that isn't there.
+
 The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, [a home page in front of the docs](https://ascribed-dev.com/go/a-home-page-in-front-of-the-docs/), [several projects in one site](https://ascribed-dev.com/go/several-projects-in-one-site/), what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/go/review-in-the-site-preview/). [Review](https://ascribed-dev.com/go/review-guide/) walks through reviewing a pull request on your site.
 
 ## Options
@@ -79,7 +81,9 @@ The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site
 | File | Role |
 |---|---|
 | `src/index.ts` | The integration |
-| `src/content.ts` | `ascribeCollection`, for `content.config.ts` |
+| `src/content.ts` | `ascribeCollection`, for `content.config.ts`, and `sidebar`, for a layout |
+| `src/nav.ts` | The sidebar: entry ids, routes, and the check of the site's list against the collection |
+| `src/init.ts`, `src/cli.ts`, `starter/` | `npx @ascribed/astro init`, the package's command (`ascribe-astro`), and the files it writes. `examples/astro-site`'s are what it writes for that project; `test/init.test.ts` holds that, and rewrites them with `ASCRIBE_BLESS=1` |
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
 | `src/Availability.astro` | A page's availability as the element library's badge |
 | `src/code-titles.ts` | The Shiki transformer that shows code block titles |

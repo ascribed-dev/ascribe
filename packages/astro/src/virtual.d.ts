@@ -9,4 +9,10 @@ declare module "virtual:ascribe/site" {
   export const collections: Record<string, string>;
   /** Each entry's site output root and its project's root route, in the entries' order. */
   export const permalinks: { siteRoot: string; home: string }[];
+  /** Each entry's site output root, and its project's base path and trailing slash, for its pages' routes. */
+  export const routes: {
+    siteRoot: string;
+    basePath: string;
+    trailingSlash: "always" | "never";
+  }[];
 }

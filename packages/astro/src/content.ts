@@ -13,10 +13,24 @@
 //   export const collections = {
 //     docs: defineCollection(ascribeCollection({ schema: docs, name: "docs" })),
 //   };
+//
+// A layout's sidebar, from the site's list of pages (`src/nav.ts`, which
+// `npx @ascribed/astro init` writes), checked against the collection:
+//
+//   const groups = sidebar(nav, await getCollection("docs"));
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { glob } from "astro/loaders";
-import { collections, siteRoot } from "virtual:ascribe/site";
+import { collections, routes, siteRoot } from "virtual:ascribe/site";
+import {
+  pageRoute,
+  sidebarGroups,
+  type NavEntry,
+  type NavGroup,
+  type SidebarGroup,
+} from "./nav.js";
+
+export type { NavGroup, SidebarGroup, SidebarPage } from "./nav.js";
 
 /**
  * The collection's loader and schema: the `glob` loader on the site output's
@@ -36,6 +50,40 @@ export function ascribeCollection<S>(options: { schema: S; name?: string }): {
   // `_ascribe/` holds the schema and published files, never pages.
   const base = pathToFileURL(rootFor(options.name) + path.sep);
   return { loader: glob({ pattern: ["**/*.md", "!_ascribe/**"], base }), schema: options.schema };
+}
+
+/**
+ * A layout's sidebar: `nav`'s groups, each page with its collection entry and
+ * its address, which is the one Ascribe's links use. `entries` is the
+ * collection (`await getCollection("docs")`), and `name` says which project's,
+ * as for `ascribeCollection`. Throws, naming each, when `nav` leaves out a page
+ * of the collection, names a file that isn't one, or names a page twice, so the
+ * build fails until the list is complete.
+ */
+export function sidebar<E extends NavEntry>(
+  nav: readonly NavGroup[],
+  entries: readonly E[],
+  options: { name?: string } = {},
+): SidebarGroup<E>[] {
+  const root = rootFor(options.name);
+  const at = routes.find((route) => route.siteRoot === root);
+  const basePath = at?.basePath ?? "/";
+  const trailingSlash = at?.trailingSlash ?? "always";
+  return sidebarGroups(
+    nav,
+    entries,
+    (id) => pageRoute(id, basePath, trailingSlash),
+    (entry) => sourceFile(root, entry),
+  );
+}
+
+/** An entry's source file, by its path in the site output, which mirrors the content root. */
+function sourceFile(root: string, entry: NavEntry): string {
+  if (entry.filePath === undefined) return `the page ${entry.id}`;
+  const relative = path.relative(root, path.resolve(entry.filePath));
+  return relative.startsWith("..") || path.isAbsolute(relative)
+    ? entry.filePath
+    : relative.split(path.sep).join("/");
 }
 
 /** The site output root of the entry `name` names. */

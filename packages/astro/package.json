@@ -12,8 +12,12 @@
   "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/astro#readme",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "sideEffects": false,
+  "bin": {
+    "ascribe-astro": "./dist/cli.js"
+  },
   "files": [
     "dist",
+    "starter",
     "src/Elements.astro",
     "src/Availability.astro",
     "src/Permalink.astro",
