@@ -92,7 +92,7 @@ The review tools answer while [review](#review-in-the-preview) is on, and say so
 
 - **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a phrase or feature key, to its entry in `ascribe.toml`.
 - **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there. A term with `match = "marked"` is only a word until you link it, so it has no uses of its own: use **Find All References** on its page or heading instead.
-- **Document links**: links, images, and includes are clickable.
+- **Document links**: links, images, and includes are clickable. A link outside the docs is clickable when it's a web address (`http`, `https`) or an email address (`mailto`); one with any other scheme, such as `tel:` or `vscode:`, stays as it's written for the site's readers, and isn't a link in the editor.
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
 

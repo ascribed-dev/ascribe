@@ -19,6 +19,21 @@ use crate::nav::{Ctx, Lines, substitute_phrases};
 /// so no client code is involved.
 pub(crate) const OPEN_FILE: &str = "ascribe.openFile";
 
+/// The schemes an external destination needs to be a document link: a web
+/// page or an email. A page may name any other scheme for a site's readers,
+/// but following one in the editor could do more than open something, as a
+/// `command:` link runs an editor command, so the editor gets no link.
+const LINK_SCHEMES: [&str; 3] = ["http", "https", "mailto"];
+
+/// Whether an external destination is one the editor may follow.
+fn followable(destination: &str) -> bool {
+    destination.split_once(':').is_some_and(|(scheme, _)| {
+        LINK_SCHEMES
+            .iter()
+            .any(|allowed| allowed.eq_ignore_ascii_case(scheme))
+    })
+}
+
 /// A `#L` fragment makes VS Code open a file at a line.
 fn with_line(uri: Uri, line: u32) -> Option<Uri> {
     Uri::from_str(&format!("{}#L{}", uri.as_str(), line + 1)).ok()
@@ -37,7 +52,10 @@ pub(crate) fn document_links(ctx: &Ctx) -> Vec<DocumentLink> {
             continue;
         };
         let (target, tooltip) = match resolution {
-            Resolution::External => (Uri::from_str(&reference.expanded_destination).ok(), None),
+            Resolution::External if followable(&reference.expanded_destination) => {
+                (Uri::from_str(&reference.expanded_destination).ok(), None)
+            }
+            Resolution::External => continue,
             other => {
                 let location = resolution_location(ctx, &mut lines, other);
                 let line = location.as_ref().map(|l| l.range.start.line);

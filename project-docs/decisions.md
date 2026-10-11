@@ -108,6 +108,8 @@ The optimization plan's proposed decisions that held, carried over when it finis
 
 74. **A GitHub sign-in goes only to the host it was issued for.** In VS Code, review uses VS Code's `github` sign-in for `github.com`, its `github-enterprise` sign-in for the host of the `github-enterprise.uri` setting (compared by host name, without case or port), and none for any other host a remote names, which is never asked about. `@ascribed/review/github`'s `tokenTransport` may be given a `HostToken`, `{ token, host }`, and then refuses a token for another host before sending anything; it never follows a redirect. The addition to the package's API is additive: a bare string still works. _Why:_ any host that wasn't `github.com` got the GitHub Enterprise sign-in, so a remote on another host was sent the token. _From:_ the security review of October 2026.
 
+75. **The language server gives the editor a document link for an external destination only when its scheme is `http`, `https`, or `mailto`,** compared without case; any other scheme gets no link. What counts as external doesn't change (`classify_destination`), so a page may still write `tel:` or `vscode:` for a site's readers. SPEC §10's document links say so. _Why:_ an editor follows a document link with whatever its scheme does, and some schemes, such as VS Code's `command:`, do more than open something. _From:_ the security review of October 2026.
+
 ## The look
 
 The mark, the colors, the type, and the images made from them. [design/README.md](../design/README.md) says how to use them.
