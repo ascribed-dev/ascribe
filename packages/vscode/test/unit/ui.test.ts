@@ -7,6 +7,7 @@ import {
   projectNodes,
   statusFor,
   tildeFolder,
+  waitingNotice,
   type ActiveFile,
   type ProjectInfo,
 } from "../../src/ui/describe.js";
@@ -105,6 +106,20 @@ describe("the status bar item", () => {
     expect(
       statusFor({ ...file("docs/docs/index.md"), scheme: "untitled" }, registry()),
     ).toBeUndefined();
+  });
+
+  it("says which projects aren't checked yet, while no page of theirs has started a server", () => {
+    const one = [project("docs", "docs"), project("handbook", "handbook", running)];
+    expect(waitingNotice(one)?.text).toBe("$(circle-slash) docs: not checked yet");
+    expect(waitingNotice(one)?.tooltip).toBe(
+      "Not checked yet: docs\nAscribe checks a project once one of its pages is open.",
+    );
+    const both = [project("docs", "docs"), project("handbook", "handbook")];
+    expect(waitingNotice(both)?.text).toBe("$(circle-slash) 2 projects: not checked yet");
+    expect(waitingNotice(both)?.label).toContain("docs, handbook");
+    // Starting, running, or failed: each says something else, so nothing's waiting.
+    expect(waitingNotice(registry())).toBeUndefined();
+    expect(waitingNotice([])).toBeUndefined();
   });
 
   it("says where the project is, the binary, the state, and the build", () => {
