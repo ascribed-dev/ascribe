@@ -255,6 +255,34 @@
       ],
       "type": "object"
     },
+    "FixedEntry": {
+      "description": "A safe fix `--fix` applied.",
+      "properties": {
+        "code": {
+          "description": "The code of the diagnostic it fixed, such as `ASC036`.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file it changed, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The diagnostic's name.",
+          "type": "string"
+        },
+        "title": {
+          "description": "What the fix did.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "title",
+        "file"
+      ],
+      "type": "object"
+    },
     "Place": {
       "description": "A place in a file.",
       "properties": {
@@ -436,6 +464,13 @@
       "description": "How many of them the report covers: the source files in the paths\nnamed, or every one when no path was.",
       "minimum": 0,
       "type": "integer"
+    },
+    "fixed": {
+      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. Left out when none was applied.",
+      "items": {
+        "$ref": "#/$defs/FixedEntry"
+      },
+      "type": "array"
     },
     "next_command": {
       "description": "The command that lists the ones left out, when `truncated`; `null`\notherwise.",

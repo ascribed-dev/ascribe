@@ -45,7 +45,7 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 ## Fixes
 
-In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given. Read an `unsafe` one and decide before applying it.
+In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given: `ascribe check <file> --fix` applies every safe fix, then reports what's left. Read an `unsafe` one and decide before applying it.
 
 ## Other people's text
 

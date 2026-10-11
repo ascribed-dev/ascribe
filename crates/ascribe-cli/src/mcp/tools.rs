@@ -583,6 +583,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         deny_warnings: false,
+        fix: false,
         vale: false,
         vale_timeout: None,
         // The tool says it only reads: it starts no program the project
