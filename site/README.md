@@ -4,28 +4,31 @@ Ascribe's website: a landing page at the root and Why Ascribe at `/why/`, from `
 
 ```
 astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]
-home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the pages' widgets, the docs' release tables) and content/
+home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the pages' widgets, the screenshots' `scheme`, the docs' release tables) and content/
+home/content/screenshots/   the pictures of review and the editor, light and dark, each with the release it was taken at (see Screenshots)
 demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
 netlify.toml                production's build on Netlify
 netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md
 public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
+public/cards/               a social card for each page outside the docs, generated (../design/README.md)
 src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
 src/content.config.ts       a collection per project, `docs`, `home`, and `demo`, each with the schema ascribe build generates, and `changelog`
 src/changelog.ts            the changelog's collection, and how its links and headings are pointed
 src/demo.ts                 where the landing page's demonstration draws demo/'s page: inside its widget, after the source
 src/nav.ts                  the docs' sidebar: every page, grouped and in order
 src/site.ts                 the site's name, repository, and the docs' route
-src/pages/[...slug].astro   a route per page of home/, at the root, with demo/'s page drawn in each demonstration
+src/pages/[...slug].astro   a route per page of home/, at the root, through render() so its images are Astro's, with demo/'s page drawn in each demonstration (src/components/Demonstrations.astro)
 src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
 src/pages/changelog.astro   the changelog, in the frame of home/'s pages
 src/pages/404.astro         the 404 page, in the docs' frame
 src/layouts/                the shell (header; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
-src/components/             search, the sidebar, the table of contents, the page's availability badge
+src/components/             search, the sidebar, the table of contents, the page's availability badge, and a page of home/ with its demonstrations
 src/styles/site.css         light and dark, following the system, the element library's theme, and the landing page's widgets; its colors and type are generated from ../design/tokens.toml
 src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
+scripts/screenshot.ts       the review picture: a pull request on the docs in astro dev (see Screenshots)
 test/                       navigation, links and anchors, redirects, the projects, the demonstration, content negotiation, and the built site in Chromium
 ```
 
@@ -72,7 +75,7 @@ npm test              # after a build
 - `test/changelog.test.ts`: the changelog's rules for links and anchors, on Markdown made in the test, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the header's link to the changelog, and the changelog's link to a docs page; and Why Ascribe, from the header and the landing page, with its examples, its marks, and its link to the comparison.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the header's link to the changelog, and the changelog's link to a docs page; and Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's.
 
 ## Addresses
 
@@ -112,3 +115,18 @@ The header links to it. On a docs page at phone width, where the menu and search
 ## Search
 
 [Pagefind](https://pagefind.app) indexes `dist/` after `astro build`, and the index is served with the site, so search needs no service. Only a docs page's `<article>` (`data-pagefind-body`) is indexed, so the pages of `home/` aren't, and the search box is on docs pages only. `astro dev` has no index; build and `npm run preview` to search.
+
+## Screenshots
+
+What the built pages can't show, the editor and review, is shown in pictures, in `home/content/screenshots/`: `review` and `editor`, each a PNG for light and for dark, and a record, `<name>.json`, of the release it was taken at. A page shows them as two images marked `{scheme=light}` and `{scheme=dark}`, and `src/styles/site.css` shows the reader's.
+
+Each is taken by a script, and retaken with one command at the repository's root, which also writes its record from `[versions] current` in `docs/ascribe.toml`:
+
+```sh
+node scripts/docs-site/screenshots.ts review   # or editor, or neither for both
+```
+
+- **review**, by `scripts/screenshot.ts`: the docs and this site as committed, copied into a repository of their own with a change on a branch, in `astro dev`, with a pull request's comments from the end-to-end suite's fake GitHub (`../examples/astro-site/test/e2e/fake-github.ts`). It needs the site installed with the Ascribe to show (`npm run build:checkout`, with `ASCRIBE_BIN`), and a POSIX system.
+- **editor**, by `../packages/vscode/scripts/screenshot.ts`: a copy of `../examples/quill` in VS Code, at the version the script names, with the extension built from the checkout, a link written as an address, and its quick fix open. It needs `ASCRIBE_BIN` and Linux with Xvfb.
+
+Both fix what would change between runs (the clock, the window's size, blinking and fading), so a retake with nothing changed writes the same bytes on the same machine; fonts differ between machines, so take them on Linux. `scripts/docs-site/screenshots.test.ts`, in the repository's tests, fails when a picture's release is more than one minor release behind the current one, and names the command.
