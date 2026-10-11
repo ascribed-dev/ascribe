@@ -652,7 +652,7 @@ Says whether a link works, written on a given page: whether its target exists, t
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link.txt
 
-When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there, pages with a similar path for a page that isn't, the pages that include a fragment, or the file that a published route belongs to.
+When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there; for a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path; the pages that include a fragment; or the file that a published route belongs to. `ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-missing.txt
 

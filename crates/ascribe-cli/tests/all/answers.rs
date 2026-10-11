@@ -341,6 +341,16 @@ fn link_answers_from_a_page() {
     assert!(missing["href"].is_null());
     assert_eq!(missing["closest"][0]["path"], "keys.md");
 
+    // A page whose name is far from the one written is found by the heading
+    // the link names.
+    let renamed = json(
+        dir.path(),
+        &["link", "credentials.md#rotate-keys", "--from", from],
+        1,
+    );
+    assert_eq!(renamed["closest"][0]["href"], "keys.md#rotate-keys");
+    assert_eq!(renamed["closest"][0]["title"], "Rotate keys");
+
     let fragment = json(
         dir.path(),
         &["link", "_fragments/before.md", "--from", from],

@@ -7,7 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use ascribe_check::{Diagnostic, Project, Severity, check_files};
-use ascribe_core::{FileId, RelPath, apply_edits};
+use ascribe_core::{Applicability, FileId, RelPath, apply_edits};
 
 const MODEL: &str = r#"
 spec = "0.1"
@@ -358,6 +358,61 @@ fn links_files_pages_and_fragments() {
         ("_f.md", "Text.\n"),
     ]);
     assert_eq!(slugs(&p), ["link-target-missing", "link-to-fragment"]);
+}
+
+/// A broken link is offered the targets `ascribe link` lists as closest,
+/// as fixes only the author can confirm. A page renamed far from its old
+/// name is found by the heading the link names.
+#[test]
+fn a_broken_link_is_offered_the_page_with_its_heading() {
+    let p = project(&[
+        ("guides/install.md", &page("[keys](keys.md#rotate-keys)")),
+        ("guides/api-keys.md", &page("## Rotate keys\n\nText.")),
+        ("guides/other.md", &page("Text.")),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["link-target-missing"]);
+    let fixes = &all[0].fixes;
+    assert_eq!(fixes.len(), 1, "{fixes:#?}");
+    assert_eq!(fixes[0].applicability, Applicability::Unsafe);
+    let file = p
+        .source_at(&RelPath::parse("guides/install.md").expect("path"))
+        .expect("a source");
+    assert_eq!(
+        apply_edits(&file.text, &fixes[0].edits).expect("edits apply"),
+        page("[keys](api-keys.md#rotate-keys)")
+    );
+}
+
+/// A link to a fragment is offered the pages that include it.
+#[test]
+fn a_link_to_a_fragment_is_offered_the_pages_that_include_it() {
+    let p = project(&[
+        ("index.md", &page("[f](_f.md)")),
+        ("setup.md", &page("@include: _f.md")),
+        ("_f.md", "Text.\n"),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["link-to-fragment"]);
+    let hrefs: Vec<&str> = all[0]
+        .fixes
+        .iter()
+        .map(|f| f.edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(hrefs, ["setup.md"]);
+}
+
+/// A reference form's destination is in its definition, which may serve
+/// other links, so it's offered no fix.
+#[test]
+fn a_broken_reference_link_is_offered_no_fix() {
+    let p = project(&[
+        ("index.md", &page("[keys][k]\n\n[k]: key.md")),
+        ("keys.md", &page("Text.")),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["link-target-missing"]);
+    assert!(all[0].fixes.is_empty(), "{:#?}", all[0].fixes);
 }
 
 #[test]
