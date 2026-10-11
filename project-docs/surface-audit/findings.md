@@ -1,6 +1,6 @@
 # Findings
 
-Part of [The surface audit](README.md). What the audit found, each finding with its evidence quoted, and what it recommends. Nothing here is fixed by this plan: [phase 5](phase-5-findings.md) ends with the maintainer reading this and saying which findings become issues.
+Part of [The surface audit](README.md). What the audit found, each finding with its evidence quoted, and what it recommends. Nothing here is fixed by this plan. [Phase 5](phase-5-findings.md) ended with the maintainer reading this and saying which findings become issues: [what became of each](#what-became-of-each-finding) is below.
 
 Each finding has a number, its kind, where it is, the evidence quoted, what it costs a user, one recommendation, and a size. A recommendation is one of rename, merge, remove, add, document, or leave. A finding keeps the number it was given when it was written, since other files point at it by number, so the numbers aren't the order. [The order](#in-order-of-what-they-cost-a-user) is below.
 
@@ -66,6 +66,64 @@ And the ones recommended as "leave" or as only saying what's already so, each wi
 
 - **12 and the checklist's rule for naming a project.** Finding 12 merges `[PATH]` and `--project` into `--config`. The checklist's rule already says a command finds its project from its path arguments, which is what `[PATH]` on `model` is. Keeping the positional path and dropping only `--project` on `refs` is the smaller change, and fits the rule as written.
 - **51, 52, and D1.** A command that renames and one that applies fixes would each want a tool, and the tools change nothing by decision 56. The commands can exist without tools, which keeps the decision and leaves an agent with no shell where it is.
+
+## What became of each finding
+
+The maintainer read the findings and said which become issues. Related changes are grouped, so some issues answer several findings, and two findings (17 and 46) are in two.
+
+| Findings | Issue | What it does |
+|---|---|---|
+| 2 | [#258](https://github.com/ascribed-dev/ascribe/issues/258) | A Markdown formatter on save changes what a page builds to, and nothing says so |
+| 3, 6 | [#259](https://github.com/ascribed-dev/ascribe/issues/259) | Say in the status bar when Ascribe isn't checking a project |
+| 5 | [#260](https://github.com/ascribed-dev/ascribe/issues/260) | Check every build from the editor |
+| 1 | [#261](https://github.com/ascribed-dev/ascribe/issues/261) | Offer the page a broken link meant |
+| 13, 26, 49 | [#262](https://github.com/ascribed-dev/ascribe/issues/262) | One base for a page's path: in what commands print, accept, and write into prompts |
+| 4 | [#263](https://github.com/ascribed-dev/ascribe/issues/263) | Let an agent in the editor's window run the binary the editor runs |
+| 45 | [#264](https://github.com/ascribed-dev/ascribe/issues/264) | A binary built from main says it's the release |
+| 48 | [#265](https://github.com/ascribed-dev/ascribe/issues/265) | `ascribe diff PAGE`: show one page's changes in a terminal |
+| 50 | [#266](https://github.com/ascribed-dev/ascribe/issues/266) | Say which projects are there when a command is run above several |
+| 36 | [#267](https://github.com/ascribed-dev/ascribe/issues/267) | Permalinks that differ only by case are accepted |
+| 24, 25 | [#268](https://github.com/ascribed-dev/ascribe/issues/268) | `permalinks sync --check`, and rename `verify --list` |
+| 11 | [#269](https://github.com/ascribed-dev/ascribe/issues/269) | Rename `--format summary` to `markdown` |
+| 9, 10 | [#270](https://github.com/ascribed-dev/ascribe/issues/270) | One word for what Ascribe reports, and one count of them |
+| 14, 15, 19, 56, 62 | [#271](https://github.com/ascribed-dev/ascribe/issues/271) | What the commands' text output leaves out |
+| 21 | [#272](https://github.com/ascribed-dev/ascribe/issues/272) | Remove the integer formats from the generated JSON Schemas |
+| 32 | [#273](https://github.com/ascribed-dev/ascribe/issues/273) | Let `@ascribed/astro` supply Astro's `site`, `base`, and `trailingSlash` from `[consumer]` |
+| 31 | [#274](https://github.com/ascribed-dev/ascribe/issues/274) | Give a layout the page's source path |
+| 43 | [#275](https://github.com/ascribed-dev/ascribe/issues/275) | Link the READMEs to permalinks, and remove the moved-page stubs |
+| 60 | [#276](https://github.com/ascribed-dev/ascribe/issues/276) | One recipe for checking a project in CI |
+| 46, 47, 59, 17 | [#277](https://github.com/ascribed-dev/ascribe/issues/277) | The skill: say where the rules are, and how to do five things agents needed |
+| 46, 58 | [#278](https://github.com/ascribed-dev/ascribe/issues/278) | `ascribe model` shows sources, and `agents sync` says which agents read each file |
+| 37 | [#279](https://github.com/ascribed-dev/ascribe/issues/279) | Link each diagnostic's entry to its section of the references |
+| 38 | [#280](https://github.com/ascribed-dev/ascribe/issues/280) | A guide to content that varies |
+| 39 | [#281](https://github.com/ascribed-dev/ascribe/issues/281) | A guide to permalinks, out of the Astro guide |
+| 42 | [#282](https://github.com/ascribed-dev/ascribe/issues/282) | A reference page for the element library |
+| 44 | [#283](https://github.com/ascribed-dev/ascribe/issues/283) | A table of the files Ascribe writes into a project |
+| 40, 54 | [#284](https://github.com/ascribed-dev/ascribe/issues/284) | The home page and getting started: what they list, and where getting started ends |
+| 41 | [#285](https://github.com/ascribed-dev/ascribe/issues/285) | Share what's identical between the `ascribe.toml` reference and its contract |
+| 12 | [#286](https://github.com/ascribed-dev/ascribe/issues/286) | Drop `--project` from `ascribe refs` |
+| 52 | [#287](https://github.com/ascribed-dev/ascribe/issues/287) | `ascribe check --fix`: apply the safe fixes |
+| 51 | [#288](https://github.com/ascribed-dev/ascribe/issues/288) | Rename across a project from the command line |
+
+Two that should land before the [website plan](../website/README.md)'s phase 2, or that phase does their work twice: #273, which rewrites the check phase 2 rewrites, and #275, after which phase 2 has no README addresses to move. Two that are free while the `permalinks` group hasn't released, and cost a changelog entry after: #262's part about `retire`, and #268.
+
+**Where the two pairs that pulled against each other landed:**
+
+- **Finding 12.** The checklist's rule stands: a command finds its project from its path arguments. `[PATH]` on `model` and `agents rules` stays, and only `--project` on `refs` goes (#286). The finding's merge into `--config` isn't taken.
+- **Findings 51 and 52.** Both are opened for the command line alone (#288, #287). The MCP tools stay read-only (decision 56); whether they ever get a counterpart that writes is a separate decision, not made.
+
+**No issue, and why:**
+
+| Findings | Why |
+|---|---|
+| 7, 8, 16, 18, 27, 33, 35, 55, 57, 61 | Recommended as "leave", and the reasons hold. Finding 57 asked that the security plan be told, and its phase on sources now says so |
+| 20 | Its convention is in the [checklist](../checklists.md#a-new-command-or-option). The five missing exit codes are in #271 |
+| 22 | Left as two styles, with the rule in the checklist. Its one rename, "Content model" against "Content Model", is a word in the manifest |
+| 23 | Its log line is in #259 and its summary counts in #271. The clipboard and the advice that waits for a save are left |
+| 28 | Navigation is large, changes the content model, and has no proposal. It gets a proposal in `project-docs/proposals/` before any issue |
+| 29, 53 | The [page templates proposal](../proposals/page-templates.md), which now has a site's starter files and a project's first `ascribe.toml` in it |
+| 30 | The [versions proposal](../proposals/versions.md)'s level 2 |
+| 34 | A one-line change to the docs' own model, made as a pull request with no issue |
 
 ## The seven questions
 
