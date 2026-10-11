@@ -10,6 +10,7 @@ import {
   copyAgentFiles,
   copyPublishedFiles,
   filesMiddleware,
+  folderUnder,
 } from "../src/files.js";
 
 const siteRoot = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
@@ -66,6 +67,17 @@ describe("copyPublishedFiles", () => {
     ).toBe("a: 1\n");
   });
 
+  it("copies them to the base path's folder when the base path is under Astro's base", async () => {
+    const out = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
+    expect(await copyPublishedFiles(siteRoot, pathToFileURL(out + path.sep), "docs/")).toBe(true);
+    expect(
+      readFileSync(
+        path.join(out, "docs", "_ascribe", "files", "downloads", "my config.yaml"),
+        "utf8",
+      ),
+    ).toBe("a: 1\n");
+  });
+
   it("does nothing when a build published none", async () => {
     const empty = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     expect(await copyPublishedFiles(empty, pathToFileURL(empty + path.sep))).toBe(false);
@@ -119,5 +131,20 @@ describe("copyAgentFiles", () => {
     expect(await copyAgentFiles(plainRoot, pathToFileURL(out + path.sep))).toBe(true);
     expect(readFileSync(path.join(out, "llms.txt"), "utf8")).toBe("# Docs\n");
     expect(readFileSync(path.join(out, "guides", "my-setup.md"), "utf8")).toBe("# Set up\n");
+  });
+
+  it("copies it to the base path's folder when the base path is under Astro's base", async () => {
+    const out = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
+    expect(await copyAgentFiles(plainRoot, pathToFileURL(out + path.sep), "docs/")).toBe(true);
+    expect(readFileSync(path.join(out, "docs", "llms.txt"), "utf8")).toBe("# Docs\n");
+  });
+});
+
+describe("folderUnder", () => {
+  it("is the base path less Astro's base", () => {
+    expect(folderUnder("/docs/", "/")).toBe("docs/");
+    expect(folderUnder("/site/docs/", "/site")).toBe("docs/");
+    expect(folderUnder("/docs/", "/docs")).toBe("");
+    expect(folderUnder("/", "/")).toBe("");
   });
 });

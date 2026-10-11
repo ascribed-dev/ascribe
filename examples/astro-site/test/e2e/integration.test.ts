@@ -2,46 +2,24 @@
 // build on Ascribe errors and on routing that disagrees with ascribe.toml, it
 // serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   BASE,
   buildSite,
   copySite,
+  edit,
   launchChromium,
   serveDev,
   servePreview,
   siteDir,
+  untilRebuilt,
 } from "./harness.js";
 
 afterAll(async () => {
   await rm(path.join(siteDir, ".e2e-tmp"), { recursive: true, force: true });
 });
-
-/**
- * Polls `check` until it's true, rewriting `file` unchanged every three
- * seconds. The dev server's watcher can still be starting when a test edits a
- * freshly copied site on a busy machine, and a change it misses is never
- * rebuilt; the rewrite reports the same edit again.
- */
-async function untilRebuilt(file: string, check: () => Promise<boolean>): Promise<void> {
-  const deadline = Date.now() + 45_000;
-  let touched = Date.now();
-  for (;;) {
-    if (await check()) return;
-    if (Date.now() > deadline) throw new Error(`no rebuild after editing ${file}`);
-    if (Date.now() - touched > 3_000) {
-      await writeFile(file, await readFile(file));
-      touched = Date.now();
-    }
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-}
-
-async function edit(file: string, change: (text: string) => string): Promise<void> {
-  await writeFile(file, change(await readFile(file, "utf8")));
-}
 
 describe("the integration", () => {
   it("fails the Astro build when Ascribe reports errors", async () => {

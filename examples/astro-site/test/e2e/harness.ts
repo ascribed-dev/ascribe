@@ -2,7 +2,7 @@
 // JavaScript API, and drive it in Chromium.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -102,4 +102,29 @@ export async function copySite(name: string): Promise<string> {
     await cp(path.join(siteDir, entry), path.join(target, entry), { recursive: true });
   }
   return target;
+}
+
+/**
+ * Polls `check` until it's true, rewriting `file` unchanged every three
+ * seconds. The dev server's watcher can still be starting when a test edits a
+ * freshly copied site on a busy machine, and a change it misses is never
+ * rebuilt; the rewrite reports the same edit again.
+ */
+export async function untilRebuilt(file: string, check: () => Promise<boolean>): Promise<void> {
+  const deadline = Date.now() + 45_000;
+  let touched = Date.now();
+  for (;;) {
+    if (await check()) return;
+    if (Date.now() > deadline) throw new Error(`no rebuild after editing ${file}`);
+    if (Date.now() - touched > 3_000) {
+      await writeFile(file, await readFile(file));
+      touched = Date.now();
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+/** Rewrites `file` with `change`. */
+export async function edit(file: string, change: (text: string) => string): Promise<void> {
+  await writeFile(file, change(await readFile(file, "utf8")));
 }

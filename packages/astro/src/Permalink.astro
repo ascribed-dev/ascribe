@@ -9,18 +9,19 @@
 //
 // A retired permalink with nowhere to lead gets a page that says what was
 // here was removed, gives the reason as its authors wrote it, as text, and
-// links to the docs' home.
-import { home, siteRoot } from "virtual:ascribe/site";
+// links to the docs' home: the root of the project whose list named it.
+import { home as root, permalinks } from "virtual:ascribe/site";
 import { forwardingPaths, type Forwarding } from "@ascribed/astro/permalinks";
 
 export function getStaticPaths() {
-  return forwardingPaths(siteRoot);
+  return forwardingPaths(permalinks);
 }
 
 const props = Astro.props as Forwarding;
 const to = "to" in props ? props.to : undefined;
 const dimensions = "to" in props ? props.dimensions : {};
 const reason = "reason" in props ? props.reason : undefined;
+const home = ("reason" in props ? props.home : undefined) ?? root;
 const canonical =
   to === undefined || Astro.site === undefined ? to : new URL(to, Astro.site).href;
 ---

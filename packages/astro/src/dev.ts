@@ -90,7 +90,8 @@ export function watchDev(options: {
   logger: ServerOptions["logger"];
   project: ProjectInfo;
   astro: { base: string; trailingSlash: string; site: string | undefined };
-  build: string;
+  /** The project's builds the site shows: one, or more when entries share the project. */
+  builds: readonly string[];
   rebuild: () => Promise<void>;
   /** Called after each successful rebuild, before Astro reloads the page. */
   onBuilt?: () => void;
@@ -107,7 +108,7 @@ export function watchDev(options: {
   let assets = new Set<string>();
   const seen = options.seen ?? new SeenFiles();
   const watchAssets = () => {
-    assets = new Set(outsideAssets(project, options.build));
+    assets = new Set(options.builds.flatMap((build) => outsideAssets(project, build)));
     if (assets.size > 0) server.watcher.add([...assets]);
     seen.prime([...assets]);
   };
@@ -115,8 +116,9 @@ export function watchDev(options: {
   const drain = async () => {
     running = true;
     const previousProject = project;
-    const previousSiteRoot = previousProject.siteRoot(options.build);
-    const previousPermalinks = permalinksText(previousSiteRoot);
+    const previousSiteRoots = options.builds.map((build) => previousProject.siteRoot(build));
+    const permalinkTexts = () => previousSiteRoots.map((root) => permalinksText(root) ?? "");
+    const previousPermalinks = permalinkTexts().join("\0");
     while (dirty) {
       dirty = false;
       try {
@@ -131,7 +133,7 @@ export function watchDev(options: {
       options.onBuilt?.();
       try {
         const reloaded = readProject(project.dir);
-        if (reloaded.siteRoot(options.build) !== previousSiteRoot) {
+        if (options.builds.some((build, i) => reloaded.siteRoot(build) !== previousSiteRoots[i])) {
           throw new Error(
             "ascribe.toml changed output-dir; restart astro dev to reload the collection.",
           );
@@ -149,7 +151,7 @@ export function watchDev(options: {
         await refreshContent();
         // Astro keeps each route's `getStaticPaths` until content changes, and adding or removing a
         // permalink may change no page: clear it, as Astro does, so the addresses follow the list.
-        if (permalinksText(previousSiteRoot) !== previousPermalinks) {
+        if (permalinkTexts().join("\0") !== previousPermalinks) {
           for (const name of ["ssr", "prerender"]) {
             server.environments[name]?.hot.send("astro:content-changed", {});
           }

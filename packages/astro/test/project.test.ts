@@ -77,14 +77,23 @@ describe("consumerMismatches", () => {
     ).toEqual([]);
   });
 
+  it("accepts a base path under Astro's base, which leaves the rest of the site to other pages", () => {
+    expect(
+      consumerMismatches(info, { base: "/", trailingSlash: "never", site: undefined }),
+    ).toEqual([]);
+    expect(
+      consumerMismatches(info, { base: "/doc", trailingSlash: "never", site: undefined }),
+    ).toHaveLength(1);
+  });
+
   it("names each difference", () => {
     const problems = consumerMismatches(info, {
-      base: "/",
+      base: "/manual",
       trailingSlash: "always",
       site: "https://b.example",
     });
     expect(problems).toHaveLength(3);
-    expect(problems.join("\n")).toMatch(/base-path.*"\/docs\/".*"\/"/);
+    expect(problems.join("\n")).toMatch(/base-path.*"\/docs\/".*"\/manual".*or a path under it/);
     expect(problems.join("\n")).toMatch(/trailing-slash.*"never".*"always"/);
     expect(problems.join("\n")).toMatch(/site/);
   });

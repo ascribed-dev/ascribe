@@ -3,7 +3,8 @@
 // one with nowhere to lead, which says why it was removed. Ascribe writes the list,
 // `_ascribe/permalinks.json` in the site output (output-layout contract §1.2);
 // the integration adds the route (`Permalink.astro`) and builds its pages
-// from it, in `astro build` and `astro dev`.
+// from it, in `astro build` and `astro dev`. With several projects, one route
+// serves every project's list.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { normalizeBase } from "./project.js";
@@ -35,7 +36,14 @@ export interface PermalinkList {
  * parameters it takes; or, for a retired permalink with nowhere to lead,
  * why it was removed.
  */
-export type Forwarding = { to: string; dimensions: Record<string, string[]> } | { reason: string };
+export type Forwarding =
+  { to: string; dimensions: Record<string, string[]> } | { reason: string; home?: string };
+
+/** A build's site output whose list the route serves, and the route of its project's root. */
+export interface PermalinkSource {
+  siteRoot: string;
+  home: string;
+}
 
 /** The list's text in a build's site output, or `undefined` when there isn't one. */
 export function permalinksText(siteRoot: string): string | undefined {
@@ -87,19 +95,53 @@ function destination(entry: { route: string; fragment?: string }): string {
 
 /**
  * `getStaticPaths` for the route: one page for each permalink in the site
- * output's list, and one for each retired permalink it lists as removed.
+ * outputs' lists, and one for each retired permalink they list as removed,
+ * whose page links to its project's root. A name in more than one list gets
+ * the first's page; the integration refuses one that two projects declare.
  */
-export function forwardingPaths(siteRoot: string): { params: { id: string }; props: Forwarding }[] {
-  const list = readPermalinks(siteRoot);
-  if (list === undefined) return [];
-  const dimensions = list.dimensions ?? {};
-  const forwarding = Object.entries(list.permalinks).map(([id, entry]) => ({
-    params: { id },
-    props: { to: destination(entry), dimensions } as Forwarding,
-  }));
-  const removed = Object.entries(list.removed ?? {}).map(([id, entry]) => ({
-    params: { id },
-    props: { reason: entry.reason } as Forwarding,
-  }));
-  return [...forwarding, ...removed];
+export function forwardingPaths(
+  sources: string | readonly PermalinkSource[],
+): { params: { id: string }; props: Forwarding }[] {
+  const all = typeof sources === "string" ? [{ siteRoot: sources, home: undefined }] : sources;
+  const pages = new Map<string, Forwarding>();
+  for (const { siteRoot, home } of all) {
+    const list = readPermalinks(siteRoot);
+    if (list === undefined) continue;
+    const dimensions = list.dimensions ?? {};
+    for (const [id, entry] of Object.entries(list.permalinks)) {
+      if (!pages.has(id)) pages.set(id, { to: destination(entry), dimensions });
+    }
+    for (const [id, entry] of Object.entries(list.removed ?? {})) {
+      if (!pages.has(id))
+        pages.set(
+          id,
+          home === undefined ? { reason: entry.reason } : { reason: entry.reason, home },
+        );
+    }
+  }
+  const forwarding = [...pages].filter(([, props]) => "to" in props);
+  const removed = [...pages].filter(([, props]) => !("to" in props));
+  return [...forwarding, ...removed].map(([id, props]) => ({ params: { id }, props }));
+}
+
+/** Whether a list names anything: a permalink, or a retired one it lists as removed. */
+export function hasPermalinks(list: PermalinkList): boolean {
+  return Object.keys(list.permalinks).length + Object.keys(list.removed ?? {}).length > 0;
+}
+
+/**
+ * The list a site's not-found page explains addresses from, and the route of
+ * its project's root: the first that has a permalink, or else the first list.
+ */
+export function servedList(
+  sources: readonly PermalinkSource[],
+): { path: string; home: string } | undefined {
+  let first: { path: string; home: string } | undefined;
+  for (const { siteRoot, home } of sources) {
+    const list = readPermalinks(siteRoot);
+    if (list === undefined) continue;
+    first ??= { path: list.path, home };
+    if (hasPermalinks(list)) return { path: list.path, home };
+  }
+  return first;
 }

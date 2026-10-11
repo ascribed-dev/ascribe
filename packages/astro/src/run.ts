@@ -41,8 +41,8 @@ export function anchorsFor(
   return anchors === true || (command === "dev" && (anchors === "dev" || review));
 }
 
-/** Whether an Astro command has review in the site preview, given the `review` option. */
-export function reviewFor(review: boolean | undefined, command: string): boolean {
+/** Whether an Astro command has review in the site preview, given the `review` option (an entry's name is on). */
+export function reviewFor(review: boolean | string | undefined, command: string): boolean {
   return command === "dev" && review !== false;
 }
 

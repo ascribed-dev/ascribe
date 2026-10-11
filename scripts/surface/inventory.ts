@@ -454,18 +454,22 @@ function exportsOf(dir: string): string[][] {
 
 function astro(): Section {
   const source = read("packages/astro/src/index.ts");
-  const start = source.indexOf("export interface AscribeOptions {");
-  if (start < 0) throw new Error("the surface map found no AscribeOptions; its source moved");
-  const options = all(
-    source.slice(start, source.indexOf("\n}\n", start)),
-    /\/\*\*([\s\S]*?)\*\/\s+(\w+)(\??): ([^;]+);/g,
-    "integration options",
-  ).map(([, comment = "", name = "", optional = "", type = ""]) => [
-    code(name),
-    code(type),
-    optional === "?" ? "No" : "Yes",
-    sentence(comment.replace(/^\s*\* ?/gm, "")),
-  ]);
+  // The options every form takes, then each form's own: one project, or several.
+  const forms = ["OneProjectOptions", "ProjectsOptions", "SharedOptions"];
+  const options = forms.flatMap((form) => {
+    const start = source.indexOf(`interface ${form} `);
+    if (start < 0) throw new Error(`the surface map found no ${form}; its source moved`);
+    return all(
+      source.slice(start, source.indexOf("\n}\n", start)),
+      /\/\*\*([\s\S]*?)\*\/\s+(\w+)(\??): ([^;]+);/g,
+      "integration options",
+    ).map(([, comment = "", name = "", optional = "", type = ""]) => [
+      code(name),
+      code(type),
+      optional === "?" ? "No" : form === "SharedOptions" ? "Yes" : "In its form",
+      sentence(comment.replace(/^\s*\* ?/gm, "")),
+    ]);
+  });
   return {
     title: "`@ascribed/astro`",
     for: "site builders",

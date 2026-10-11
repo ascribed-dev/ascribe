@@ -56,5 +56,6 @@ changes, and returns 503 while an invalid source is being fixed.
 - a linked file is served at `/docs/_ascribe/files/`;
 - every heading's id, and Astro's table of contents, equal the ids in `ascribe build --emit json`, at the route the JSON gives;
 - the build fails on an Ascribe error and on routing that disagrees with `ascribe.toml`; the dev server serves `_ascribe/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
+- on copies of the site with Astro's `base` at `/` (`test/e2e/projects.test.ts`), in a build and under `astro dev`: a home page at `/` with the docs at `/docs/`, their files, `llms.txt`, and permalinks there; a second project, `home/`, at `/` beside the docs, with a permalink from each and a `.ascribe/dev.json` for each; two entries for one project with two builds; and the four refusals: two projects at one base path, a page under another project's path, a permalink both declare, and an entry's name used twice.
 
 `pnpm test` runs nothing here: the end-to-end test needs the compiler and a browser, so it has its own script (and its own job in `.github/workflows/js.yml`).

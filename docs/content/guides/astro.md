@@ -27,7 +27,7 @@ It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascrib
 
 ### 2. Write `ascribe.toml`
 
-Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings must agree with Astro's `site`, `base`, and `trailingSlash`, because Ascribe writes every link:
+Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings must agree with Astro's `site`, `base`, and `trailingSlash`, because Ascribe writes every link ([a home page in front of the docs](#a-home-page-in-front-of-the-docs) says how `base-path` can differ from `base`):
 
 @snippet: code:examples/astro-site/ascribe.toml#site
 
@@ -86,18 +86,19 @@ npx astro build
 
 | Option | Meaning |
 |---|---|
-| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
+| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required, unless `projects` is given. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
+| `projects` {available=next} | [Several projects in one site](#several-projects-in-one-site): a list of entries, each `{ name, build, project }`, in place of `build` and `project`. |
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
 | `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
-| `review` {available="ascribe 0.2.0"} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. |
+| `review` {available="ascribe 0.2.0"} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
 | `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
 
 ## What the integration does
 
-- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. Astro's `trailingSlash: "ignore"` agrees with either value.
+- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. Astro's `trailingSlash: "ignore"` agrees with either value. `base-path` agrees with Astro's `base` when it's that path or, from the next release, a path under it ([A home page in front of the docs](#a-home-page-in-front-of-the-docs)).
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself. Their types come from `satteri` and `@types/hast`, optional peer dependencies: a Sätteri processor already has the first, and a `unified()` one the second.
-- **Serves the files pages link to** (other than pages and images) at `<base>_ascribe/files/`, in `astro dev` and in the built site.
+- **Serves the files pages link to** (other than pages and images) at `<base-path>_ascribe/files/`, in `astro dev` and in the built site.
 - @available: next
   **Publishes the outputs for agents** with `[consumer] agents = true`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](#publish-for-ai-agents)).
 - @available: next
@@ -114,7 +115,82 @@ npx astro build
 - After a failed one, the diagnostics are in Astro's terminal, and pages answer with HTTP 503 until a save builds cleanly again, so you never see a stale page.
 - A change to `[project] output-dir` needs a restart of `astro dev`, and says so.
 - @available: ascribe 0.2.0
-  It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops.
+  It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops. The `url` is the project's base path on the dev server.
+
+## A home page in front of the docs
+@available: next
+
+`[consumer] base-path` can be a path under Astro's `base`, which leaves the rest of the site to your own pages: a home page at `/` with the docs at `/docs/`, in one Astro site. Set Astro's `base` to the site's root and `base-path` to the docs' path:
+
+```js
+// astro.config.mjs
+export default defineConfig({
+  site: "https://docs.example.com",
+  base: "/",
+  trailingSlash: "never",
+  integrations: [ascribe({ build: "site" })],
+});
+```
+
+```toml
+# ascribe.toml
+[consumer]
+profile = "astro"
+site = "https://docs.example.com"
+base-path = "/docs/"
+trailing-slash = "never"
+```
+
+A page's route is then `base-path` less Astro's `base`, plus its entry id, so the docs' route goes in `src/pages/docs/[...slug].astro`, with the same `getStaticPaths` as [step 5](#5-add-a-route). Your home page is `src/pages/index.astro`, or a second Ascribe project ([below](#several-projects-in-one-site)).
+
+Everything Ascribe publishes for the docs is at their base path: the files pages link to (`/docs/_ascribe/files/`), `llms.txt` and each page's Markdown, and, by default, the permalinks (`/docs/go/`). [`permalink-path`](../reference/content-model.md#15-consumer) can put the permalinks anywhere under Astro's `base`, such as `/go/`. A base path outside Astro's `base` still fails the build, since an Astro site serves nothing outside it.
+
+## Several projects in one site
+@available: next
+
+One integration can build several Ascribe projects into one site, each under its own base path, such as a home page written in Ascribe at `/` and the docs at `/docs/`. List them in `projects`, each entry with a name:
+
+```js
+// astro.config.mjs
+integrations: [
+  ascribe({
+    projects: [
+      { name: "docs", project: "../docs", build: "site" },
+      { name: "home", project: "home", build: "site" },
+    ],
+    review: "docs",
+  }),
+],
+```
+
+The name is what everything else says: the collection, `review`, the folder of the entry's schema, and an error message. It has letters, digits, `-`, and `_`, starts with a letter, and is the entry's own. Each collection names its entry, and imports the copy of its schema from a folder named for it:
+
+```ts
+// src/content.config.ts
+import { defineCollection } from "astro:content";
+import { ascribeCollection } from "@ascribed/astro/content";
+import { schema as docsSchema } from "../.astro/integrations/_ascribed_astro/docs/schema.ts";
+import { schema as homeSchema } from "../.astro/integrations/_ascribed_astro/home/schema.ts";
+
+export const collections = {
+  docs: defineCollection(ascribeCollection({ schema: docsSchema, name: "docs" })),
+  home: defineCollection(ascribeCollection({ schema: homeSchema, name: "home" })),
+};
+```
+
+Each collection gets its own route, under its project's base path: here `src/pages/[...slug].astro` for `home` and `src/pages/docs/[...slug].astro` for `docs`.
+
+Two entries can name one project with two builds, such as a collection for each release line. They share the project's `ascribe.toml`, so they share its base path: route one of them at it, and use the other's collection as you like. Where both publish a file or a permalink, the first entry's wins.
+
+What the projects share, the integration checks, and it fails the build, naming the entries, when:
+
+- **Two projects have one base path.** Each needs its own. One project at `/` with another beneath it at `/docs/` is fine.
+- **A page of one project is under another's base path,** such as a page at `/docs/extra/` in the project at `/`.
+- **Their permalinks are published at two paths.** One route serves every project's permalinks, so set `permalink-path` to one path in each project that declares any. A project with none can leave it.
+- **Two projects declare one permalink.** Neither project's build can see the other's, so the integration reports it; rename or retire it in one of them.
+- **Two entries have one name,** or a name has other characters.
+
+In `astro dev`, a change rebuilds the project it's in, and each project's folder gets its own `.ascribe/dev.json`, with its own base path. Review covers one project: the entry `review` names, or the first entry when it's `true`. Each removed permalink's page links to the root of the project that retired it, and [`MissingPermalink`](#a-permalink-that-isnt-here) offers the root of the first project with permalinks.
 
 ## Publish for AI agents
 @available: next
@@ -234,7 +310,7 @@ import MissingPermalink from "@ascribed/astro/MissingPermalink.astro";
 <MissingPermalink />
 ```
 
-On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the site's home page and search. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the site's root by default; children replace its last paragraph, such as to point at your search:
+On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the docs' home page and search. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the docs' base path by default; children replace its last paragraph, such as to point at your search:
 
 ```astro
 <MissingPermalink>

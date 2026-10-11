@@ -1,33 +1,56 @@
 // Serving `_ascribe/files/`: the files pages link to that aren't pages or
 // images. Astro doesn't copy them, so the integration
 // does: into the build's output directory, and in dev through a middleware.
-// Both put them at `<base>_ascribe/files/`, the URL the site output links to.
+// Both put them at `<base-path>_ascribe/files/`, the URL the site output links
+// to, where `<base-path>` is the project's `[consumer] base-path`: Astro's
+// `base` or a path under it.
 //
 // With `[consumer] agents = true`, the same for the plain output, which is
 // laid out by URL: `llms.txt`, each page's Markdown, and their files, all at
-// `<base>` and below.
+// `<base-path>` and below.
 import { createReadStream } from "node:fs";
 import { cp, stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizeBase } from "./project.js";
 
 /** The directory of published files inside a site output root. */
 function publishedDir(siteRoot: string): string {
   return path.join(siteRoot, "_ascribe", "files");
 }
 
-/** Copies the published files to `<outDir>/_ascribe/files/`. Returns whether there were any. */
-export async function copyPublishedFiles(siteRoot: string, outDir: URL): Promise<boolean> {
+/**
+ * The base path's folder in Astro's build output, which is at Astro's `base`:
+ * `docs/` for a base path of `/docs/` under a `base` of `/`, `""` when they're the same.
+ */
+export function folderUnder(basePath: string, astroBase: string): string {
+  const root = normalizeBase(astroBase);
+  return basePath.startsWith(root) ? basePath.slice(root.length) : "";
+}
+
+/**
+ * Copies the published files to `<outDir>/<folder>_ascribe/files/`, `folder` being the
+ * base path's (`folderUnder`). Returns whether there were any.
+ */
+export async function copyPublishedFiles(
+  siteRoot: string,
+  outDir: URL,
+  folder = "",
+): Promise<boolean> {
   return copyDirectory(
     publishedDir(siteRoot),
-    path.join(fileURLToPath(outDir), "_ascribe", "files"),
+    path.join(fileURLToPath(outDir), folder, "_ascribe", "files"),
   );
 }
 
-/** Copies the plain output for agents to the build output's root, the base path. Returns whether there was one. */
-export async function copyAgentFiles(plainRoot: string, outDir: URL): Promise<boolean> {
-  return copyDirectory(plainRoot, fileURLToPath(outDir));
+/** Copies the plain output for agents to the base path's folder of the build output. Returns whether there was one. */
+export async function copyAgentFiles(
+  plainRoot: string,
+  outDir: URL,
+  folder = "",
+): Promise<boolean> {
+  return copyDirectory(plainRoot, path.join(fileURLToPath(outDir), folder));
 }
 
 async function copyDirectory(from: string, to: string): Promise<boolean> {
@@ -64,7 +87,7 @@ const TYPES: Record<string, string> = {
 
 type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 
-/** A dev-server middleware serving the published files at `<base>_ascribe/files/`. */
+/** A dev-server middleware serving the published files at `<base>_ascribe/files/`, `base` being the project's base path. */
 export function filesMiddleware(siteRoot: string, base: string): Middleware {
   return directoryMiddleware(publishedDir(siteRoot), `${base}_ascribe/files/`);
 }

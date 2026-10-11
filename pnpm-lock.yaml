@@ -245,6 +245,9 @@ importers:
       '@ascribed/review':
         specifier: workspace:*
         version: link:../review
+      github-slugger:
+        specifier: ^2.0.0
+        version: 2.0.0
       property-information:
         specifier: ^7.2.0
         version: 7.2.0
