@@ -272,12 +272,12 @@ jobs:
       - uses: actions/checkout@v4
       # The docs' list, from their repository; or keep a copy in this one.
       - run: curl -fsSL -o docs.permalinks https://raw.githubusercontent.com/example/docs/main/ascribe.permalinks
-      - run: npx @ascribed/cli permalinks verify --list docs.permalinks --from docs-links.txt
+      - run: npx @ascribed/cli permalinks verify --against docs.permalinks --from docs-links.txt
 ```
 
 `docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](../reference/cli.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
 
-In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-removed`), which `sync` doesn't clear: restore the name, or retire it ([Moving, aliasing, and retiring](#moving-aliasing-and-retiring)).
+In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change; `ascribe permalinks sync --check` fails in CI when it wasn't. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-removed`), which `sync` doesn't clear: restore the name, or retire it ([Moving, aliasing, and retiring](#moving-aliasing-and-retiring)).
 
 ### Moving, aliasing, and retiring
 

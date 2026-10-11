@@ -54,6 +54,10 @@ pub enum Command {
 /// Arguments of `ascribe permalinks sync`.
 #[derive(Debug, ClapArgs)]
 pub struct SyncArgs {
+    /// Write nothing, and exit with 1 when the list would change: for CI.
+    #[arg(long)]
+    pub check: bool,
+
     /// How to show what changed.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -82,7 +86,7 @@ pub struct VerifyArgs {
     /// The list to check against. By default, the ascribe.permalinks beside
     /// the project's ascribe.toml.
     #[arg(long, value_name = "PATH")]
-    pub list: Option<PathBuf>,
+    pub against: Option<PathBuf>,
 
     /// How to show the answer.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -127,7 +131,7 @@ pub struct RetireArgs {
 #[derive(Debug, thiserror::Error)]
 pub enum PermalinksError {
     /// The list to check against isn't there.
-    #[error("{} doesn't exist; pass the list with --list, or run `ascribe permalinks sync` in the docs to make one", .0.display())]
+    #[error("{} doesn't exist; pass the list with --against, or run `ascribe permalinks sync` in the docs to make one", .0.display())]
     ListNotFound(PathBuf),
     /// A file can't be read: the list, or the names.
     #[error("can't read {}: {message}", path.display())]
@@ -192,8 +196,9 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-/// Exit codes: 0 when the list is up to date, whether or not it changed; 2
-/// when the project doesn't load, or the list can't be read or written.
+/// Exit codes: 0 when the list is up to date, whether or not it changed; 1
+/// with `--check` when it would change; 2 when the project doesn't load, or
+/// the list can't be read or written.
 fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
         Ok(project) => project,
@@ -208,15 +213,24 @@ fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn
         Err(e) => return answer::fail(err, &e),
     };
     if synced.changed
+        && !args.check
         && let Err(error) = write_permalinks(project.root(), &synced.text)
     {
         return answer::fail(err, &error);
     }
     let result = match args.format {
         Format::Json => answer::write_json(out, &synced),
+        Format::Text if args.check => write_sync_check(out, err, &synced),
         Format::Text => write_sync(out, err, &synced),
     };
-    answer::written(result, err).unwrap_or(exit::OK)
+    if let Some(code) = answer::written(result, err) {
+        return code;
+    }
+    if args.check && synced.changed {
+        exit::PROBLEMS
+    } else {
+        exit::OK
+    }
 }
 
 fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
@@ -256,6 +270,46 @@ fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::R
         )?;
     }
     Ok(())
+}
+
+/// What `sync --check` says: what `sync` would write, without writing it.
+fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
+    if s.created {
+        return writeln!(
+            err,
+            "error: there's no {PERMALINKS_FILE}; run `ascribe permalinks sync` to make one"
+        );
+    }
+    for name in &s.added {
+        writeln!(out, "would add {name}")?;
+    }
+    for moved in &s.moved {
+        writeln!(
+            out,
+            "would move {}: {} to {}",
+            moved.name, moved.from, moved.to
+        )?;
+    }
+    for name in &s.aliased {
+        writeln!(out, "would record the alias {name}")?;
+    }
+    for name in &s.retired {
+        writeln!(out, "would record {name} as retired")?;
+    }
+    for name in &s.removed {
+        writeln!(
+            err,
+            "warning: {PERMALINKS_FILE} has {name}, which the project no longer has; `ascribe check` reports it until it's back or retired"
+        )?;
+    }
+    if s.changed {
+        writeln!(
+            err,
+            "error: {PERMALINKS_FILE} is out of date; run `ascribe permalinks sync` to update it"
+        )
+    } else {
+        writeln!(out, "{PERMALINKS_FILE} is up to date.")
+    }
 }
 
 /// Exit codes: 0 whatever the list says; 2 when the project doesn't load,
@@ -344,7 +398,7 @@ fn write_list(out: &mut dyn Write, a: &PermalinksAnswer) -> io::Result<()> {
 /// Exit codes: 0 when the list has every name, 1 when it doesn't have one
 /// or has it as retired, 2 when the list or the names can't be read.
 fn run_verify(global: &Global, args: &VerifyArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let list = match &args.list {
+    let list = match &args.against {
         Some(path) => path.clone(),
         None => match crate::context::locate(global) {
             Ok(config) => config
