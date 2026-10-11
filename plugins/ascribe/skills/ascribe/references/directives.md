@@ -17,3 +17,36 @@ A title line, `.<Title>`, goes on the line above a directive that takes one. A d
 A project can declare its own directives, widgets, whose names have a hyphen: `ascribe model --section widgets` lists them, with their attributes. Which note types, dimensions, and sources a project has: `ascribe model`.
 
 The full reference, with examples: https://ascribed-dev.com/go/directives/
+
+## Declaring a source
+
+A `@snippet` reads a file through a source. Declare one in `ascribe.toml` with the folder the code is in, relative to the folder `ascribe.toml` is in:
+
+```toml
+[sources.code]
+path = ".."
+include = ["src/**", "examples/**"]
+```
+
+Mark a region in the code file with two line comments, in its own comment syntax: `:snippet-start: <region>` on the line above, and `:snippet-end:` on the line below.
+
+```ts
+// :snippet-start: connect
+const client = connect(url);
+// :snippet-end:
+```
+
+Then `@snippet: code:src/client.ts#connect` shows it, and `@snippet: code:src/client.ts` shows the whole file. `ascribe model --section sources` lists the sources a project has.
+
+## Declaring a dimension
+
+`@variant` and `@available` name a dimension's values. Declare a dimension in `ascribe.toml` with its values, and optionally the labels readers see:
+
+```toml
+[dimensions.platform]
+label = "Platform"
+values = ["linux", "macos", "windows"]
+labels = { macos = "macOS" }
+```
+
+A value belongs to one dimension only. `ascribe model --section dimensions` lists the dimensions a project has.

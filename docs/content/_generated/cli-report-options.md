@@ -8,7 +8,7 @@
   - `agents`: The delivery spec's checks on a built site. Needs `afdocs`, the network, and `--site`.
 - `--format <FORMAT>`: How to show the report.
   - `text` (the default): Each section, for people.
-  - `summary`: Markdown, for a CI job's summary or an issue's body.
+  - `markdown`: Markdown, for a CI job's summary or an issue's body.
   - `json`: One JSON document, for tools.
   - `prompt`: A prompt for an agent that acts on one section's findings: only with one section, `problems`, `links`, or `agents`. Nothing when it finds nothing.
 - `--build <NAME>`: Report only on this build: its problems, and what it leaves out. Repeat it for several. By default, every build in `ascribe.toml`. An unknown build name is a usage error, and the message lists the builds.

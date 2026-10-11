@@ -264,11 +264,10 @@ For Claude Code, use the plugin or the project's entries, not both: with both, i
 
 The Ascribe plugin, in `plugins/ascribe/` in Ascribe's repository, gives Claude Code everything in one install:
 
-- **The language server**, which Claude Code starts for `.md` files and whose diagnostics it reads after each edit: the check after each edit, with no hook. It reports the editor's build, as the edit hook does.
-- **The stop hook.**
-- **The MCP server.**
-- **The skill.**
-- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#cli-agents-prompt).
+- **The skill**, for every agent: how to write, check, and fix pages.
+- **The MCP server**, whose tools are for an agent with no shell; one with a shell does as well with the commands.
+- **The stop hook**, and **the language server**, which Claude Code starts for `.md` files and whose diagnostics it reads after each edit: they check for an agent that doesn't check its own work. The language server reports the editor's build, as the edit hook does, and only for edits Claude Code makes with its own tools, not through its shell.
+- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#cli-agents-prompt). `/ascribe:new-page` takes what the page is for: the agent chooses the page type from `ascribe model`, then runs the prompt.
 
 Add it from a copy of the repository, in Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`):
 
