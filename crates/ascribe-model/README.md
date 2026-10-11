@@ -2,7 +2,7 @@
 
 Loading and validating a project's content model, `ascribe.toml`, into a typed `ContentModel`, and reading and writing `ascribe.lock`. Every loading rule is a `model-` diagnostic in the registry, reported at the span of the key or value that breaks it.
 
-What the content model may contain is SPEC §7 and the [content model reference](https://ascribed-dev.com/reference/content-model/). This README is about the code.
+What the content model may contain is SPEC §7 and the [content model reference](https://ascribed-dev.com/docs/reference/content-model/). This README is about the code.
 
 ## Pieces
 

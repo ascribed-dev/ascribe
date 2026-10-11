@@ -60,7 +60,7 @@ const { entry } = Astro.props;
 <h1 set:html={entry.data.formatted.title} />
 ```
 
-The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, [a home page in front of the docs](https://ascribed-dev.com/guides/astro/#a-home-page-in-front-of-the-docs), [several projects in one site](https://ascribed-dev.com/guides/astro/#several-projects-in-one-site), what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/guides/review/) walks through reviewing a pull request on your site.
+The [Astro guide](https://ascribed-dev.com/docs/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, [a home page in front of the docs](https://ascribed-dev.com/docs/guides/astro/#a-home-page-in-front-of-the-docs), [several projects in one site](https://ascribed-dev.com/docs/guides/astro/#several-projects-in-one-site), what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/docs/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/docs/guides/review/) walks through reviewing a pull request on your site.
 
 ## Options
 
