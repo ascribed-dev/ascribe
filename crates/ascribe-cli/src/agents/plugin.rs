@@ -22,9 +22,10 @@ use super::{prompts, skill};
 const NAME: &str = "ascribe";
 
 /// What the plugin is for, in its manifests.
-const DESCRIPTION: &str = "Check Ascribe docs as an agent edits them: the language server's \
-     diagnostics after each edit, a full check before the agent finishes, the MCP server, the \
-     Ascribe skill, and commands for the named prompts.";
+const DESCRIPTION: &str = "Ascribe for AI agents. The Ascribe skill, for every agent: how to \
+     write, check, and fix pages. The MCP server's tools, for an agent with no shell. The stop \
+     hook, and the language server's diagnostics after each edit, for an agent that doesn't \
+     check its own work. Commands for the named prompts.";
 
 /// The stop hook's command.
 const STOP_HOOK: &str = "ascribe agents hook claude-code --event stop";
@@ -128,8 +129,12 @@ fn files() -> Vec<(String, String)> {
 
 /// A command's file: it runs `ascribe agents prompt` for its prompt, with
 /// the arguments the person gave, since the prompt is about the project as
-/// it is when it's used.
+/// it is when it's used. `new-page` takes the request instead, since the
+/// person doesn't know the page type until the agent reads the model.
 fn command(prompt: &prompts::Named) -> String {
+    if prompt.name == "new-page" {
+        return new_page_command(prompt);
+    }
     let hint: Vec<String> = prompt
         .arguments
         .iter()
@@ -141,17 +146,6 @@ fn command(prompt: &prompts::Named) -> String {
             }
         })
         .collect();
-    let words: Vec<String> = prompt
-        .arguments
-        .iter()
-        .map(|(name, _, required)| {
-            if *required {
-                format!(" --arg {name}=<{name}>")
-            } else {
-                format!(" [--arg {name}=<{name}>]")
-            }
-        })
-        .collect();
     let mut out = format!(
         "---\ndescription: {}\nargument-hint: {}\n---\n\n",
         yaml_string(prompt.description),
@@ -160,7 +154,7 @@ fn command(prompt: &prompts::Named) -> String {
     out.push_str(&format!(
         "Run `ascribe agents prompt {}{}`, and do what the prompt it prints asks.\n\n",
         prompt.name,
-        words.concat()
+        arguments(prompt)
     ));
     if !prompt.arguments.is_empty() {
         out.push_str("Take the arguments from this, in this order, and leave out an optional one that isn't given: $ARGUMENTS\n\n");
@@ -174,6 +168,52 @@ fn command(prompt: &prompts::Named) -> String {
         prompt.name
     ));
     out
+}
+
+/// `new-page`'s file: the request, the page type from `ascribe model`, then
+/// the prompt.
+fn new_page_command(prompt: &prompts::Named) -> String {
+    let mut out = format!(
+        "---\ndescription: {}\nargument-hint: {}\n---\n\n",
+        yaml_string(
+            "Write a new page from a request: the page type that fits it, the frontmatter the \
+             type requires, and where its file goes."
+        ),
+        yaml_string("<what the page is for>")
+    );
+    out.push_str("The page to write: $ARGUMENTS\n\n");
+    out.push_str(
+        "1. Run `ascribe model --section types`, and choose the page type that fits the \
+         request. Choose the page's title, and, when the request says where the page goes, a \
+         file or folder for it.\n",
+    );
+    out.push_str(&format!(
+        "2. Run `ascribe agents prompt {}{}`, and do what the prompt it prints asks.\n\n",
+        prompt.name,
+        arguments(prompt)
+    ));
+    out.push_str(&format!(
+        "Without a shell, call the MCP server's tool `ascribe_model` for the page types, then \
+         use its prompt `{}`.\n",
+        prompt.name
+    ));
+    out
+}
+
+/// A prompt's arguments as `ascribe agents prompt` takes them, with a
+/// space before each.
+fn arguments(prompt: &prompts::Named) -> String {
+    prompt
+        .arguments
+        .iter()
+        .map(|(name, _, required)| {
+            if *required {
+                format!(" --arg {name}=<{name}>")
+            } else {
+                format!(" [--arg {name}=<{name}>]")
+            }
+        })
+        .collect()
 }
 
 /// JSON as the plugin's files hold it: two-space indents, and a line end.
@@ -283,22 +323,34 @@ mod tests {
 
     #[test]
     fn a_command_runs_its_prompt() {
-        let new_page = prompts::find("new-page").unwrap();
-        let text = command(new_page);
-        assert!(
-            text.starts_with("---\ndescription: \"Write a new page"),
-            "{text}"
-        );
-        assert!(
-            text.contains("argument-hint: \"<type> <title> [path]\""),
-            "{text}"
-        );
+        let review = prompts::find("review").unwrap();
+        let text = command(review);
+        assert!(text.contains("argument-hint: \"[path] [base]\""), "{text}");
         assert!(
             text.contains(
-                "Run `ascribe agents prompt new-page --arg type=<type> --arg title=<title> \
-                 [--arg path=<path>]`"
+                "Run `ascribe agents prompt review [--arg path=<path>] [--arg base=<base>]`"
             ),
             "{text}"
         );
+    }
+
+    /// `new-page` takes the request, and the agent finds the type before
+    /// it runs the prompt.
+    #[test]
+    fn new_page_takes_the_request() {
+        let new_page = prompts::find("new-page").unwrap();
+        let text = command(new_page);
+        assert!(
+            text.contains("argument-hint: \"<what the page is for>\""),
+            "{text}"
+        );
+        let model = text.find("ascribe model --section types").unwrap();
+        let prompt = text
+            .find(
+                "Run `ascribe agents prompt new-page --arg type=<type> --arg title=<title> \
+                 [--arg path=<path>]`",
+            )
+            .unwrap();
+        assert!(model < prompt, "{text}");
     }
 }
