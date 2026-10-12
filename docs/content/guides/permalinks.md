@@ -1,7 +1,7 @@
 ---
 title: Permalinks
 description: Giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
-available: next
+available: ascribe 0.3.0
 ---
 
 A heading marked as a [permalink](../reference/directives.md#permalinks), `@id {permalink=true}: weave-config`, gets an address of its own, `go/weave-config` under the base path, which sends the reader to the heading wherever it is now. A page with `permalink: options` in its frontmatter gets `go/options`, which leads to the top of the page. Link to that address from outside the docs, such as from your product's interface or its error messages, and the link keeps working when the page moves.

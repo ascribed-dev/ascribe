@@ -126,7 +126,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-source-remote` | A source has `path` or `git`, not both; `branch` only with `git`; a URL `git` can be given; a branch name `git` accepts; and, with `git`, copies outside the content root. | `` source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both ``<br>`` source `{source}` needs `path`, a folder in this repository, or `git`, another repository's URL ``<br>`` source `{source}` has `branch` but no `git`: a branch is only for a source in another repository ``<br>`` `{url}` isn't a URL Ascribe can give `git`: use `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path` ``<br>`` `{branch}` isn't a branch name `git` accepts ``<br>`` the copies of source `{source}` go in `sources/{source}/`, which is inside the content root `{content}`, where they'd be read as pages; give the content root a folder of its own `` |
 
 ### 24.9 Checks
-@available: next
+@available: ascribe 0.3.0
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -136,14 +136,14 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-checks-vale` | `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules. | `` `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini` `` |
 
 ### 24.10 Permalinks
-@available: next
+@available: ascribe 0.3.0
 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-permalinks` | A name in `[permalinks]` is retired or an alias, not both; an alias leads, through aliases, to a name that isn't one; a retired permalink's reason isn't the quick fix's placeholder. | `` `{name}` is both retired and an alias; a name is one thing `` |
 
 ### 24.11 Crawlers
-@available: next
+@available: ascribe 0.3.0
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -151,7 +151,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-crawlers-named-twice` | A crawler is named in one group: not by a disallowed purpose and a group of `lines`, nor by two groups of `lines`. | `` `{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one `` |
 
 ### 24.12 Listing
-@available: next
+@available: ascribe 0.3.0
 
 | Slug | Rule | Message |
 |---|---|---|

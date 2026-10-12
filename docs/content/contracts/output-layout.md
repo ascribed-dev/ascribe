@@ -33,7 +33,8 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
-**With `[consumer] agents = true`** {available=next} (content-model.md §15), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
+@available: ascribe 0.3.0
+**With `[consumer] agents = true`** (content-model.md §15), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
 
 | Emitter | Page `Guides/My Setup.md` is written to |
 |---|---|
@@ -46,7 +47,7 @@ Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored
 **`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), and the headers its files need (`_ascribe/headers.json`, §1.4).
 
 ### 1.2 The permalinks list
-@available: next
+@available: ascribe 0.3.0
 
 The site output holds `_ascribe/permalinks.json`: every permalink the build publishes (SPEC §2.1, §4.1), for the site to give each one an address that forwards to its page or heading. It's `generated` in the manifest, and written for every build, with an empty table when the build has none, so a consumer can tell "no permalinks" from an Ascribe that doesn't write the list.
 
@@ -83,7 +84,7 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 An address forwards to `route`, then `#` and `fragment` when there is one. A later version may add keys to the file or to an entry; it doesn't change these.
 
 ### 1.3 The page records
-@available: next
+@available: ascribe 0.3.0
 
 The site output holds `_ascribe/pages.json`: a record of each page the build publishes (SPEC §9.4), saying what every reader that isn't a person is told about it, and what the project says to crawlers, for a site to write each page's head, its sitemap, and its `robots.txt` from. `llms.txt` is written from the same records. It's `generated` in the manifest, and written for every build, with an empty table when the build has no pages.
 
@@ -143,7 +144,7 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
 
 ### 1.4 The headers
-@available: next
+@available: ascribe 0.3.0
 
 The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, so the host sends it, and the host is the site's: `@ascribed/astro` writes the rules into Netlify's `_headers` with `[consumer] headers = "netlify"`, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
 
@@ -186,7 +187,8 @@ Ascribe owns exactly these, and touches nothing else under `<output-dir>`:
 
 Everything else under `<output-dir>` belongs to the user, even inside an emitter root. A user's file is never deleted, moved, or overwritten, and a build that would need to overwrite one fails instead (§4). A directory is removed only when a build empties it by removing files it owned.
 
-**Links.** {available=next} A build writes and removes only through real folders. It fails, naming the link and touching nothing, when a symbolic link (or, on Windows, a junction) is any of these:
+@available: ascribe 0.3.0
+**Links.** A build writes and removes only through real folders. It fails, naming the link and touching nothing, when a symbolic link (or, on Windows, a junction) is any of these:
 
 - a folder on the way from the project's folder to `<output-dir>`, or `<output-dir>` itself;
 - `<output-dir>/.lock`, `.staging/`, or a folder in it on the way to a build's staging;

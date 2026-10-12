@@ -1,7 +1,7 @@
 ---
 title: The permalinks list
 description: The format of ascribe.permalinks, the list of a project's permalinks that something outside the docs can check its links against.
-available: next
+available: ascribe 0.3.0
 ---
 
 A project can commit a list of its [permalinks](../reference/directives.md#permalinks), `ascribe.permalinks`, beside `ascribe.toml` (SPEC §7.5), with its aliases and the permalinks it retired (§7.6). With it, `ascribe check` warns when a permalink goes away, and something outside the docs, such as a product's CI, can check the names it links to against a copy of the file, without the docs. This contract says what the file holds, how Ascribe reads and writes it, and what a reader of a copy can rely on.

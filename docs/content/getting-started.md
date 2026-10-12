@@ -40,7 +40,7 @@ It checks your pages as you type, completes directives, [phrases](reference/dire
 
 Format your pages with Ascribe, not a general Markdown formatter: one such as Prettier can change what a page builds to as it saves it. When another extension formats Markdown in your project's folder, the extension offers to be its Markdown formatter instead; choose **Use Ascribe**. See [Formatting](guides/editor.md#formatting).
 
-@available: next
+@available: ascribe 0.3.0
 After you install it, its walkthrough, **Get Started with Ascribe**, shows the preview, the actions bar that writes directives for you, and the Ascribe sidebar. It's under **Help → Welcome** whenever you want it again.
 
 ## Create `ascribe.toml`
@@ -140,10 +140,10 @@ It installs the latest release. To run the version your `package.json` pins inst
 
 ## Work with an AI agent
 
-@available: next
+@available: ascribe 0.3.0
 If you write with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, give it your project's rules:
 
-@available: next
+@available: ascribe 0.3.0
 @variant {pm=npm}:
 ```sh
 npx ascribe agents sync
@@ -154,7 +154,7 @@ pnpm exec ascribe agents sync
 ```
 @end
 
-@available: next
+@available: ascribe 0.3.0
 That writes `AGENTS.md`, with your page types, phrases, and the check to run after each edit, and a skill that teaches the agent to check and fix its own work. Most agents read both on their own. [Agents](guides/agents.md) covers the rest: the commands an agent uses, prompts you hand it, the MCP server, and hooks that check each edit.
 
 ## Next
@@ -166,5 +166,5 @@ That writes `AGENTS.md`, with your page types, phrases, and the check to run aft
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](guides/editor.md): the VS Code extension.
 - [Astro](guides/astro.md): publishing a site.
-- @available: next
+- @available: ascribe 0.3.0
   [Agents](guides/agents.md): working with an AI coding agent.

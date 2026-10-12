@@ -7,7 +7,7 @@ The commands for agents and editors. The options every command accepts are in th
 
 ## `ascribe agents`
 @id {permalink=true}: cli-agents
-@available: next
+@available: ascribe 0.3.0
 
 Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](../../guides/agents.md).
 
@@ -129,7 +129,7 @@ The first hook in a project starts a check server in the background, the same `a
 
 ## `ascribe mcp`
 @id {permalink=true}: cli-mcp
-@available: next
+@available: ascribe 0.3.0
 
 Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](../../guides/agents.md#the-mcp-server) to set it up.
 

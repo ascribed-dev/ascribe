@@ -6,7 +6,7 @@ description: "How the content model sets the checks' levels, permalinks, crawler
 Part of the [`ascribe.toml` reference](../content-model.md), whose [contents](../content-model.md#contents) list every section.
 
 ## 19. `[checks]`
-@available: next
+@available: ascribe 0.3.0
 
 How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. A diagnostic about whether the project is valid, such as a broken link, can't be set here: it's always reported at its own severity.
 
@@ -47,7 +47,7 @@ Advice is shown in the editor and by `ascribe check`, and never fails the check,
 
 ### `[[intended]]`: acknowledgements
 @id: intended-acknowledgements
-@available: next
+@available: ascribe 0.3.0
 
 Says that a check's problem with a content model entry or an image is intended, as [`@intended`](../directives.md#intended) does for a block and the `intended` frontmatter key for a page. Each table names one check, one entry, and why.
 
@@ -64,7 +64,7 @@ A glossary term whose only occurrences are inside a phrase's value is reported b
 **Rules.** A check that doesn't exist, isn't a review check, or reports its problems somewhere other than an entry is an error (`model-intended-check`). A table without exactly one entry key, or naming an entry that isn't declared, is an error (`model-intended-entry`).
 
 ### `[checks.vale]`
-@available: next
+@available: ascribe 0.3.0
 
 Checks the prose with [Vale](https://vale.sh), a program the project installs: Ascribe gives it each page's prose, with phrases replaced by their text and without frontmatter, directive lines, attributes, or code, and reports its alerts as `prose` diagnostics at their place in the source. The editor runs it on a page when it's opened and saved; `ascribe check` runs it with `--vale`, or always with `in-check = true`. [Prose, through Vale](../../guides/vale.md) has the steps.
 
@@ -90,7 +90,7 @@ The level of every Vale alert can be set at once with `prose` in `[checks]`, and
 **Rules.** `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules (`model-checks-vale`). `preset` is one of Ascribe's presets, and `max-level` one of the three levels (`model-invalid-value`).
 
 ### `[checks.links]`
-@available: next
+@available: ascribe 0.3.0
 
 How `ascribe report links` checks the project's external links, with [lychee](https://lychee.cli.rs), a program the project installs. `ascribe check` never checks external links. [The project report](../../guides/report.md#external-links) has the steps.
 
@@ -117,7 +117,7 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 ---
 
 ## 20. `[permalinks]`
-@available: next
+@available: ascribe 0.3.0
 
 Names for something outside the docs to link to that no heading or page declares: a [permalink](../directives.md#permalinks) ended on purpose, and a second name for one. Each is published at an address, as a permalink is, and recorded in `ascribe.permalinks` when the project has it (SPEC §7.6). The [guide](../../guides/permalinks.md#moving-aliasing-and-retiring) says when to use each.
 
@@ -147,7 +147,7 @@ cli-settings = "settings"
 ---
 
 ## 21. `[crawlers]`
-@available: next
+@available: ascribe 0.3.0
 
 @include: ../../_fragments/content-model/crawlers.md
 
@@ -176,7 +176,7 @@ The list changes, as operators add bots and rename them. Ascribe's release proce
 ---
 
 ## 22. `[listing]`
-@available: next
+@available: ascribe 0.3.0
 
 @include: ../../_fragments/content-model/listing.md
 

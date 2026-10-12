@@ -13,13 +13,13 @@ permalink: docs
   [Review](guides/review.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
 - @available: ascribe 0.2.0
   [Drift](guides/drift.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
-- @available: next
+- @available: ascribe 0.3.0
   [Agents](guides/agents.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
-- @available: next
+- @available: ascribe 0.3.0
   [Prose, through Vale](guides/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
-- @available: next
+- @available: ascribe 0.3.0
   [The project report](guides/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
-- @available: next
+- @available: ascribe 0.3.0
   [Permalinks](guides/permalinks.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.

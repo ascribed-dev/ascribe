@@ -29,7 +29,6 @@ A broken link, a missing heading, or a name the content model doesn't declare is
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
-@available: next
 An AI coding agent runs the same check after each edit: [`ascribe agents sync`]({site}/go/agents-guide/) gives it the project's rules.
 @end
 

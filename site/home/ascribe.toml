@@ -59,7 +59,7 @@ values = ["ascribe"]
 labels = { ascribe = "Ascribe" }
 
 [versions]
-current = "0.2.0"
+current = "0.3.0"
 
 [lifecycle.unreleased]
 available = true

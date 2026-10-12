@@ -41,10 +41,10 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 `build` names the [build](../reference/content-model/output.md#16-buildsname) in `ascribe.toml` whose output the site shows. A project without `[builds]` has one, `site`.
 
 ### 4. Write the site's files
-@available: next
 
 A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar too. One command writes the four files, in the Astro project's root:
 
+@available: ascribe 0.3.0
 @variant {pm=npm}:
 ```sh
 npx @ascribed/astro init
@@ -55,6 +55,7 @@ pnpm exec ascribe-astro init
 ```
 @end
 
+@available: ascribe 0.3.0
 It writes `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts`, and from then on they're yours to change; it never writes over a file, and if any of the four is there, it writes nothing. It builds the project first, to list its pages in the sidebar. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
 
 In a release without `init`, write the four files yourself, from the sections below.
@@ -85,13 +86,13 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
 
-@available: next
+@available: ascribe 0.3.0
 `<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes everything the page's head says about the page, from its record: its `<title>`, description, canonical link, robots rule, link to its Markdown version, link preview, and breadcrumbs ([the head](#the-head)).
 
 @available: ascribe 0.2.0
 The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../reference/content-model.md#53-code-in-a-field).
 
-@available: next
+@available: ascribe 0.3.0
 `entry.data.source` is the page's path from the content root, with `/`, as `guides/install.md`. An "Edit this page" link is your repository's edit address, the content root's folder in it, and `source`, wherever Ascribe's build folder is.
 
 A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
@@ -102,7 +103,7 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 In a release without `Availability.astro`, copy [its markup]({repo}/blob/main/packages/astro/src/Availability.astro) into your layout in place of the component.
 
 #### The sidebar
-@available: next
+@available: ascribe 0.3.0
 
 Ascribe's content model doesn't order or group pages yet, so the site lists them, by their source files under the content root, in groups:
 
@@ -125,27 +126,27 @@ npx astro build
 |---|---|
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required, unless `projects` is given. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
-| `projects` {available=next} | [Several projects in one site](#several-projects-in-one-site): a list of entries, each `{ name, build, project }`, in place of `build` and `project`. |
+| `projects` {available="ascribe 0.3.0"} | [Several projects in one site](#several-projects-in-one-site): a list of entries, each `{ name, build, project }`, in place of `build` and `project`. |
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
 | `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` {available="ascribe 0.2.0"} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. With `projects`, it reviews one entry: the one an entry's name names (`review: "docs"`), or the first for `true`. |
 | `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
-| `sitemap` {available=next} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](#search-engines-and-crawlers), such as `["/drafts"]`. |
+| `sitemap` {available="ascribe 0.3.0"} | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the [sitemap](#search-engines-and-crawlers), such as `["/drafts"]`. |
 
 ## What the integration does
 
 - **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. In ascribe 0.2.0, Astro's `trailingSlash: "ignore"` agrees with either value; from the next release, the integration replaces it, as below. `base-path` agrees with Astro's `base` when it's that path or, from the next release, a path under it ([A home page in front of the docs](#a-home-page-in-front-of-the-docs)).
-- @available: next
+- @available: ascribe 0.3.0
   **Gives Astro its `site`, `base`, and `trailingSlash`** from `[consumer]` when `astro.config.mjs` leaves them out, so the site's address is written once: `site`, `base-path`, and `trailing-slash`. A setting `astro.config.mjs` does give must still agree. With [`projects`](#several-projects-in-one-site), `base` stays the site's. Astro can't tell an integration a setting left out from one set to its default, so `base: "/"` and `trailingSlash: "ignore"` are replaced too.
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself. Their types come from `satteri` and `@types/hast`, optional peer dependencies: a Sätteri processor already has the first, and a `unified()` one the second.
 - **Serves the files pages link to** (other than pages and images) at `<base-path>_ascribe/files/`, in `astro dev` and in the built site.
-- @available: next
+- @available: ascribe 0.3.0
   **Publishes the outputs for agents** with `[consumer] agents = true`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](#publish-for-ai-agents)).
-- @available: next
+- @available: ascribe 0.3.0
   **Gives each permalink an address** that forwards to its page or heading, in `astro dev` and in the built site ([Permalinks](#permalinks)).
-- @available: next
+- @available: ascribe 0.3.0
   **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([search engines and crawlers](#search-engines-and-crawlers)), in `astro dev` and in the built site.
-- @available: next
+- @available: ascribe 0.3.0
   **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](#response-headers)).
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
@@ -163,7 +164,7 @@ npx astro build
 
 ## A home page in front of the docs
 @id {permalink=true}: a-home-page-in-front-of-the-docs
-@available: next
+@available: ascribe 0.3.0
 
 `[consumer] base-path` can be a path under Astro's `base`, which leaves the rest of the site to your own pages: a home page at `/` with the docs at `/docs/`, in one Astro site. Set `base-path` to the docs' path, leave Astro's `base` at the site's root, its default, and list the project in [`projects`](#several-projects-in-one-site), even alone. With `build`, the integration gives Astro's `base` the docs' base path, which would put your home page under it; with `projects`, `base` stays the site's:
 
@@ -189,7 +190,7 @@ Everything Ascribe publishes for the docs is at their base path: the files pages
 
 ## Several projects in one site
 @id {permalink=true}: several-projects-in-one-site
-@available: next
+@available: ascribe 0.3.0
 
 One integration can build several Ascribe projects into one site, each under its own base path, such as a home page written in Ascribe at `/` and the docs at `/docs/`. List them in `projects`, each entry with a name:
 
@@ -238,7 +239,7 @@ What the projects share, the integration checks, and it fails the build, naming 
 In `astro dev`, a change rebuilds the project it's in, and each project's folder gets its own `.ascribe/dev.json`, with its own base path. Review covers one project: the entry `review` names, or the first entry when it's `true`. Each removed permalink's page links to the root of the project that retired it, and [`MissingPermalink`](permalinks.md#a-permalink-that-isnt-here) offers the root of the first project with permalinks.
 
 ## Publish for AI agents
-@available: next
+@available: ascribe 0.3.0
 
 An AI agent reading your docs does better with Markdown than with HTML, and with an index to choose pages from. Turn on the outputs for agents in `ascribe.toml`'s `[consumer]`, beside `site`, and each build publishes them with the site, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays them out:
 
@@ -264,7 +265,7 @@ The files are static, so any host serves them. A few things the spec asks are th
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
 
 ## Search engines and crawlers
-@available: next
+@available: ascribe 0.3.0
 
 Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../reference/content-model.md#listing-a-page), whether the page set it or a rule of [`[listing]`](../reference/content-model/checks.md#22-listing) did, for a folder, a type, or the whole site, and what the project says to crawlers in [`[crawlers]`](../reference/content-model/checks.md#21-crawlers): what each kind of AI crawler may do, and its own `robots.txt` lines. The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
 
@@ -429,7 +430,7 @@ A `location` with `add_header` lines of its own, such as one that gives `.md` fi
 Cloudflare Pages reads a `_headers` file in the same form as Netlify's, but takes at most 100 rules, one for each Markdown version here; a larger site gives the rules to a Worker instead.
 
 ## Permalinks
-@available: next
+@available: ascribe 0.3.0
 
 The integration gives each [permalink](permalinks.md) an address, in `astro build` and in `astro dev`; [With Astro](permalinks.md#with-astro) says what it serves and where. [Permalinks](permalinks.md) covers the rest: linking to them from your product, checking those links in its CI, retiring one, and [`MissingPermalink`](permalinks.md#a-permalink-that-isnt-here) for your 404 page.
 

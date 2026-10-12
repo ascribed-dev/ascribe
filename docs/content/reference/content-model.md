@@ -81,11 +81,11 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics/c
 @available: ascribe 0.2.0
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
-@available: next
+@available: ascribe 0.3.0
 `source` is reserved on page types too: the site output writes each page's path from the content root under it, for a layout's edit link, so a type must not declare it (`model-field-reserved`).
 
 ### Listing a page
-@available: next
+@available: ascribe 0.3.0
 
 A page says whether readers that aren't people are offered it with `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), one of three values, from open to closed:
 
@@ -159,7 +159,7 @@ Only a content type's own `string` fields can set it, not fields in objects or t
 
 ### 5.4 Field roles
 
-@available: next
+@available: ascribe 0.3.0
 A field's name is yours to choose, so a check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field the content type marks with a `role`:
 
 ```toml

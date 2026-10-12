@@ -2,6 +2,6 @@
 
 | Tool | What it gives |
 |---|---|
-| `#ascribe_editor_problems` {available=next} | The problems Ascribe's language server reports in a file or project as the editor has it, saved or not, for the editor's build. |
-| `#ascribe_review_threads` {available=next} | While review is on: the pull request's open review threads, with the pages that show each. |
-| `#ascribe_review_changes` {available=next} | While review is on: the pages the change touches, against the review's base, with counts and causes. |
+| `#ascribe_editor_problems` {available="ascribe 0.3.0"} | The problems Ascribe's language server reports in a file or project as the editor has it, saved or not, for the editor's build. |
+| `#ascribe_review_threads` {available="ascribe 0.3.0"} | While review is on: the pull request's open review threads, with the pages that show each. |
+| `#ascribe_review_changes` {available="ascribe 0.3.0"} | While review is on: the pages the change touches, against the review's base, with counts and causes. |

@@ -20,7 +20,7 @@ Part of the [`ascribe.toml` reference](../content-model.md), whose [contents](..
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `scheme` | string | `"numeric"` | The version scheme. Spec 0.1 defines one: `"numeric"`. |
-| `current` {available=next} | string (version) | none | The latest release, such as `"0.2.0"`. With it, the [`availability-left-behind`](../diagnostics/content-checks.md) check reports a feature whose versions are all at or before it. Set it to each release as it ships. |
+| `current` {available="ascribe 0.3.0"} | string (version) | none | The latest release, such as `"0.2.0"`. With it, the [`availability-left-behind`](../diagnostics/content-checks.md) check reports a feature whose versions are all at or before it. Set it to each release as it ships. |
 
 @include: ../../_fragments/content-model/versions-numeric.md
 

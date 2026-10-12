@@ -1,7 +1,7 @@
 ---
 title: Agents
 description: Working on an Ascribe project with an AI coding agent, such as Claude Code, GitHub Copilot, or Cursor, and handing it the problems Ascribe finds.
-available: next
+available: ascribe 0.3.0
 permalink: agents-guide
 ---
 
@@ -53,7 +53,7 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../reference/cli/questions.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
 
 ### Fix it, or say it's intended
-@available: next
+@available: ascribe 0.3.0
 
 A problem whose next step is `review` may be fine as it is: a page nothing links to because the site's sidebar does, say. Fixing it is still the first answer, and an agent should fix it unless you tell it the problem is intended. When it is, the answer is an [acknowledgement](../reference/directives.md#intended): the check's name and your reason, written where the check reports the problem, so the next person reads why. Don't acknowledge a problem to make a check pass, and don't let an agent do it on its own: a prompt about a review check says to acknowledge it only when you've said so. The editor's **Mark as intended, and write why** writes a placeholder reason, which is reported until you replace it.
 
@@ -237,7 +237,7 @@ A hook is a command your agent runs at a point in its work. Ascribe's checks an 
 - **After an edit**, `ascribe agents hook <agent>` checks the files the agent wrote, as `ascribe check <file> --editor-build` does, and adds their errors to what the agent reads next, at most 10, with the build it checked. It says nothing when there are none, and leaves warnings and advice out, which would interrupt every edit.
 - **Before the agent finishes**, `ascribe agents hook <agent> --event stop` checks every build of each project whose pages or `ascribe.toml` the working tree changes, anywhere in the repository. While there are errors, or a project can't be checked at all, it keeps the agent working, and tells it why. It asks once: when the agent is already continuing because of it, it lets the agent stop. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
 
-@available: next
+@available: ascribe 0.3.0
 A project that checks its prose with [Vale](vale.md) has the hooks run it only with `in-check = true` in `[checks.vale]`, as `ascribe check` does: after an edit on the files the agent wrote, and before it finishes on the whole project. Vale gets half of what the hook waits; when it takes longer, its alerts are left out, and the rest of the check reaches the agent as usual. Only Vale's error-level alerts reach the agent, as with every other check; with `max-level = "advice"` or `"warning"`, none do. A hook can't ask you before it runs a program, so it runs Vale only when `command` is a name found on your `PATH`, such as `vale`, never when it's a path to a program in the project: then it tells the agent, with the errors it reports, that the prose wasn't checked and that `ascribe check --vale` checks it.
 
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli/agents.md#cli-agents-hook).
