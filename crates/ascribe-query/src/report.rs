@@ -8,12 +8,15 @@
 //!   orphan pages, and unused entries the checks find, as lists;
 //! - **builds**: the pages and the content each build leaves out that
 //!   another keeps;
+//! - **pages**: each build's page records ([`ascribe_resolve::pages`]),
+//!   what every reader that isn't a person is told about each page, sorted
+//!   by address;
 //! - **links**: the external links a link checker finds broken or moved
 //!   ([`ascribe_check::links`]);
 //! - **agents**: the delivery spec's checks on a built site
 //!   ([`ascribe_check::site`]).
 //!
-//! The first three need nothing outside the project. Each section is
+//! The first four need nothing outside the project. Each section is
 //! independent: one that can't run says why ([`NotRun`]), and the others
 //! still run. The answer is typed; `ascribe report` writes it as text,
 //! Markdown, JSON, or a prompt.
@@ -30,8 +33,9 @@ use ascribe_check::{
 };
 use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
-use ascribe_model::{FieldRole, TypeMatch};
-use ascribe_resolve::{FileKind, Removal};
+use ascribe_model::{FieldRole, Listing, TypeMatch};
+use ascribe_resolve::pages::{self, PageRecord};
+use ascribe_resolve::{AstroRouter, FileKind, Removal};
 
 /// A section of the report.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -42,6 +46,8 @@ pub enum Section {
     Inventory,
     /// What each build leaves out that another keeps.
     Builds,
+    /// Each build's page records.
+    Pages,
     /// External links that fail, redirect, or time out.
     Links,
     /// The delivery spec's checks on a built site.
@@ -50,16 +56,18 @@ pub enum Section {
 
 impl Section {
     /// Every section, in the order the report shows them.
-    pub const ALL: [Section; 5] = [
+    pub const ALL: [Section; 6] = [
         Section::Problems,
         Section::Inventory,
         Section::Builds,
+        Section::Pages,
         Section::Links,
         Section::Agents,
     ];
 
-    /// The sections that need nothing outside the project: those the report
-    /// runs when none is named.
+    /// The sections the report runs when none is named: those that need
+    /// nothing outside the project, apart from `pages`, which lists every
+    /// page rather than saying what state the project is in.
     pub const LOCAL: [Section; 3] = [Section::Problems, Section::Inventory, Section::Builds];
 
     /// Its name on the command line and in the JSON.
@@ -68,6 +76,7 @@ impl Section {
             Section::Problems => "problems",
             Section::Inventory => "inventory",
             Section::Builds => "builds",
+            Section::Pages => "pages",
             Section::Links => "links",
             Section::Agents => "agents",
         }
@@ -106,6 +115,8 @@ pub struct Options<'a> {
     /// The builds `problems` checks and `builds` reports on; every build
     /// when empty.
     pub builds: &'a [String],
+    /// For `pages`, only the pages that aren't `listed`.
+    pub not_listed: bool,
     /// The built site `agents` checks.
     pub site: Option<&'a str>,
     /// The programs to run.
@@ -232,6 +243,31 @@ pub struct LeftContent {
     pub kept_by: Vec<String>,
 }
 
+/// `pages`: each build's page records.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Pages {
+    /// One for each build reported on, in the content model's order.
+    pub builds: Vec<BuildPages>,
+}
+
+/// One build's page records.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuildPages {
+    /// The build.
+    pub build: String,
+    /// The project's address, `[consumer] site`, without a final `/`.
+    pub site: Option<String>,
+    /// How many pages the build publishes.
+    pub published: usize,
+    /// How many of them aren't `listed`.
+    pub not_listed: usize,
+    /// The records, sorted by address: every page's, or with
+    /// [`Options::not_listed`] those that aren't `listed`. Two pages at one
+    /// address, which the site output refuses, are listed with the first,
+    /// as `_ascribe/pages.json` has them.
+    pub records: Vec<PageRecord>,
+}
+
 /// `links`: what the link checker said about the external links.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Links {
@@ -289,6 +325,8 @@ pub struct Report {
     pub inventory: Option<Inventory>,
     /// `builds`, when asked for.
     pub builds: Option<Builds>,
+    /// `pages`, when asked for.
+    pub pages: Option<Pages>,
     /// `links`, when asked for.
     pub links: Option<Ran<Links>>,
     /// `agents`, when asked for.
@@ -352,6 +390,13 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
     }
     if asked(Section::Builds) {
         out.builds = Some(builds(project, &out.builds_checked));
+    }
+    if asked(Section::Pages) {
+        out.pages = Some(page_records(
+            project,
+            &out.builds_checked,
+            options.not_listed,
+        ));
     }
     if asked(Section::Links) {
         out.links = Some(links(project, options));
@@ -503,6 +548,44 @@ fn builds(project: &Project, names: &[String]) -> Builds {
         out.builds.push(left);
     }
     out
+}
+
+/// `pages`: the records of each build in `names`, sorted by address, as the
+/// site output's `_ascribe/pages.json` holds them; with `not_listed`, only
+/// the pages that aren't `listed`.
+fn page_records(project: &Project, names: &[String], not_listed: bool) -> Pages {
+    let model = project.model();
+    let index = project.held_index();
+    let router = AstroRouter::from_consumer(&model.consumer);
+    let builds = model
+        .builds
+        .iter()
+        .filter(|b| names.contains(&b.name))
+        .map(|build| {
+            let resolved = index.resolve_build(build, &router);
+            let records = pages::records(model, &resolved.pages);
+            let mut by_route: BTreeMap<String, PageRecord> = BTreeMap::new();
+            for record in records.pages {
+                by_route.entry(record.route.clone()).or_insert(record);
+            }
+            let published = by_route.len();
+            let hidden = by_route
+                .values()
+                .filter(|r| r.listing != Listing::Listed)
+                .count();
+            BuildPages {
+                build: build.name.clone(),
+                site: records.site,
+                published,
+                not_listed: hidden,
+                records: by_route
+                    .into_values()
+                    .filter(|r| !not_listed || r.listing != Listing::Listed)
+                    .collect(),
+            }
+        })
+        .collect();
+    Pages { builds }
 }
 
 /// `links`: runs the link checker, and applies `[checks]` levels and the

@@ -310,6 +310,39 @@
       ],
       "type": "object"
     },
+    "Capped_PageRecordJson": {
+      "description": "A list of at most `--limit` items.",
+      "properties": {
+        "items": {
+          "description": "The items, at most `--limit` of them.",
+          "items": {
+            "$ref": "#/$defs/PageRecordJson"
+          },
+          "type": "array"
+        },
+        "shown": {
+          "description": "How many are listed.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total": {
+          "description": "How many there are.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "truncated": {
+          "description": "Whether some are left out: `shown` is less than `total`. The\nreport's `next_command` lists them all.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "shown",
+        "total",
+        "truncated"
+      ],
+      "type": "object"
+    },
     "Capped_UnconfirmedEntry": {
       "description": "A list of at most `--limit` items.",
       "properties": {
@@ -790,6 +823,48 @@
       ],
       "type": "object"
     },
+    "ListingFromJson": {
+      "description": "Where a page's listing comes from.",
+      "properties": {
+        "folder": {
+          "description": "For a folder's rule, the folder, as `[listing.folders]` names it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "level": {
+          "description": "`default` when nothing sets it, `page` for the page's own `listing`,\nor the level of the rule of `[listing]` it's under: `site`,\n`folder`, or `type`.",
+          "type": "string"
+        },
+        "line": {
+          "description": "For a rule, its line in `ascribe.toml`.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "rule": {
+          "description": "For a rule, the rule as written in `ascribe.toml`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "description": "For a type's rule, the type.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "type": "object"
+    },
     "NextCount": {
       "description": "How many problems have one kind of next step.",
       "properties": {
@@ -846,6 +921,107 @@
       "required": [
         "owner",
         "pages"
+      ],
+      "type": "object"
+    },
+    "PageRecordJson": {
+      "description": "What a build says about one page: its entry in `_ascribe/pages.json`,\nwith its route.",
+      "properties": {
+        "breadcrumbs": {
+          "description": "Its place in the site, from the top down to the page itself.",
+          "items": {
+            "$ref": "#/$defs/StepJson"
+          },
+          "type": "array"
+        },
+        "canonical": {
+          "description": "Its own address, absolute; absent without `[consumer] site`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "description": "Its description, as plain text on one line; absent when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "listing": {
+          "description": "`listed`, `unquoted`, or `unlisted`.",
+          "type": "string"
+        },
+        "listing_from": {
+          "$ref": "#/$defs/ListingFromJson",
+          "description": "Where `listing` comes from."
+        },
+        "markdown": {
+          "description": "Its Markdown version's address, from the host's root; absent when the\nbuild publishes none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "route": {
+          "description": "The page's address, from the host's root, as the site output's links\nwrite it.",
+          "type": "string"
+        },
+        "source": {
+          "description": "The page's source path, from the content root.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Its title, as plain text; absent when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "route",
+        "source",
+        "listing",
+        "listing_from",
+        "breadcrumbs"
+      ],
+      "type": "object"
+    },
+    "PagesJson": {
+      "description": "One build's page records.",
+      "properties": {
+        "build": {
+          "description": "The build.",
+          "type": "string"
+        },
+        "not_listed": {
+          "description": "How many of them aren't `listed`: `unquoted` or `unlisted`.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "published": {
+          "description": "How many pages the build publishes.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "records": {
+          "$ref": "#/$defs/Capped_PageRecordJson",
+          "description": "The records, sorted by `route`: every page's, or with `--not-listed`\nthose that aren't `listed`. Each has the fields of its entry in the\nbuild's `_ascribe/pages.json` (output-layout contract §1.3), by the\nsame names, with `route`, the key it's under there."
+        },
+        "site": {
+          "description": "The project's address, `[consumer] site`, as the build's\n`_ascribe/pages.json` has it; absent when it isn't set.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "build",
+        "published",
+        "not_listed",
+        "records"
       ],
       "type": "object"
     },
@@ -964,6 +1140,24 @@
         "file",
         "range",
         "message"
+      ],
+      "type": "object"
+    },
+    "StepJson": {
+      "description": "A step of a page's breadcrumbs.",
+      "properties": {
+        "route": {
+          "description": "The step's page's address, as `route` is.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The step's page's title, as plain text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "route",
+        "title"
       ],
       "type": "object"
     },
@@ -1096,7 +1290,7 @@
       ]
     },
     "builds_checked": {
-      "description": "The builds `problems` checked and `builds` reports on, in\n`ascribe.toml`'s order.",
+      "description": "The builds `problems` checked and `builds` and `pages` report on, in\n`ascribe.toml`'s order.",
       "items": {
         "type": "string"
       },
@@ -1145,6 +1339,16 @@
       },
       "type": "array"
     },
+    "pages": {
+      "description": "`pages`, when asked for: one for each build checked.",
+      "items": {
+        "$ref": "#/$defs/PagesJson"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "problems": {
       "anyOf": [
         {
@@ -1162,7 +1366,7 @@
       "type": "integer"
     },
     "sections": {
-      "description": "The sections asked for, in the order the report has them:\n`problems`, `inventory`, `builds`, `links`, `agents`.",
+      "description": "The sections asked for, in the order the report has them:\n`problems`, `inventory`, `builds`, `pages`, `links`, `agents`.",
       "items": {
         "type": "string"
       },

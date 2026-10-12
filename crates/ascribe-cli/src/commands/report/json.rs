@@ -7,9 +7,12 @@ use std::io::{self, Write};
 
 use ascribe_check::links::Answer;
 use ascribe_check::{Diagnostic, Next};
+use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
-    Agents, Builds, LeftContent, LeftPage, Links, NotRun, Problems, Ran, Report, Section,
+    Agents, BuildPages, Builds, LeftContent, LeftPage, Links, NotRun, Pages, Problems, Ran, Report,
+    Section,
 };
+use ascribe_resolve::pages::PageRecord;
 use serde::Serialize;
 
 use super::text::{by_check, by_file, by_next};
@@ -34,9 +37,9 @@ pub(crate) struct ReportJson {
     /// isn't `null`, no section is there.
     error: Option<String>,
     /// The sections asked for, in the order the report has them:
-    /// `problems`, `inventory`, `builds`, `links`, `agents`.
+    /// `problems`, `inventory`, `builds`, `pages`, `links`, `agents`.
     sections: Vec<&'static str>,
-    /// The builds `problems` checked and `builds` reports on, in
+    /// The builds `problems` checked and `builds` and `pages` report on, in
     /// `ascribe.toml`'s order.
     builds_checked: Vec<String>,
     /// The sections asked for that couldn't run. Each says why in its own
@@ -58,6 +61,9 @@ pub(crate) struct ReportJson {
     /// `builds`, when asked for: one for each build checked.
     #[serde(skip_serializing_if = "Option::is_none")]
     builds: Option<Vec<BuildJson>>,
+    /// `pages`, when asked for: one for each build checked.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pages: Option<Vec<PagesJson>>,
     /// `links`, when asked for.
     #[serde(skip_serializing_if = "Option::is_none")]
     links: Option<LinksJson>,
@@ -240,6 +246,90 @@ struct LeftContentJson {
     why: String,
     /// The builds that keep it.
     kept_by: Vec<String>,
+}
+
+/// One build's page records.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct PagesJson {
+    /// The build.
+    build: String,
+    /// The project's address, `[consumer] site`, as the build's
+    /// `_ascribe/pages.json` has it; absent when it isn't set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    site: Option<String>,
+    /// How many pages the build publishes.
+    published: usize,
+    /// How many of them aren't `listed`: `unquoted` or `unlisted`.
+    not_listed: usize,
+    /// The records, sorted by `route`: every page's, or with `--not-listed`
+    /// those that aren't `listed`. Each has the fields of its entry in the
+    /// build's `_ascribe/pages.json` (output-layout contract §1.3), by the
+    /// same names, with `route`, the key it's under there.
+    records: Capped<PageRecordJson>,
+}
+
+/// What a build says about one page: its entry in `_ascribe/pages.json`,
+/// with its route.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct PageRecordJson {
+    /// The page's address, from the host's root, as the site output's links
+    /// write it.
+    route: String,
+    /// The page's source path, from the content root.
+    source: String,
+    /// Its title, as plain text; absent when it has none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>,
+    /// Its description, as plain text on one line; absent when it has none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+    /// Its own address, absolute; absent without `[consumer] site`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    canonical: Option<String>,
+    /// `listed`, `unquoted`, or `unlisted`.
+    listing: &'static str,
+    /// Where `listing` comes from.
+    listing_from: ListingFromJson,
+    /// Its Markdown version's address, from the host's root; absent when the
+    /// build publishes none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    markdown: Option<String>,
+    /// Its place in the site, from the top down to the page itself.
+    breadcrumbs: Vec<StepJson>,
+}
+
+/// Where a page's listing comes from.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct ListingFromJson {
+    /// `default` when nothing sets it, `page` for the page's own `listing`,
+    /// or the level of the rule of `[listing]` it's under: `site`,
+    /// `folder`, or `type`.
+    level: &'static str,
+    /// For a folder's rule, the folder, as `[listing.folders]` names it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    folder: Option<String>,
+    /// For a type's rule, the type.
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    type_name: Option<String>,
+    /// For a rule, the rule as written in `ascribe.toml`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rule: Option<String>,
+    /// For a rule, its line in `ascribe.toml`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    line: Option<usize>,
+}
+
+/// A step of a page's breadcrumbs.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct StepJson {
+    /// The step's page's address, as `route` is.
+    route: String,
+    /// The step's page's title, as plain text.
+    title: String,
 }
 
 /// Why a section couldn't run, and what would let it.
@@ -446,6 +536,7 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
             unused: entries(&i.unused),
         }),
         builds: report.builds.as_ref().map(|b| builds(b, files, limit)),
+        pages: report.pages.as_ref().map(|p| pages(p, limit)),
         links: report.links.as_ref().map(|l| match l {
             Ran::NotRun(why) => LinksJson {
                 not_run: Some(not_run(why)),
@@ -477,6 +568,7 @@ pub(crate) fn failed(error: &str, sections: &[Section]) -> ReportJson {
         problems: None,
         inventory: None,
         builds: None,
+        pages: None,
         links: None,
         agents: None,
     }
@@ -527,6 +619,56 @@ fn builds(b: &Builds, files: &FileTable, limit: usize) -> Vec<BuildJson> {
             }),
         })
         .collect()
+}
+
+fn pages(p: &Pages, limit: usize) -> Vec<PagesJson> {
+    p.builds
+        .iter()
+        .map(|b: &BuildPages| PagesJson {
+            build: b.build.clone(),
+            site: b.site.clone(),
+            published: b.published,
+            not_listed: b.not_listed,
+            records: Capped::of(b.records.iter(), limit, record),
+        })
+        .collect()
+}
+
+fn record(r: &PageRecord) -> PageRecordJson {
+    let rule = match &r.listing_from {
+        ListingFrom::Rule(rule) => Some(rule),
+        ListingFrom::Default | ListingFrom::Page => None,
+    };
+    PageRecordJson {
+        route: r.route.clone(),
+        source: r.source.to_string(),
+        title: r.title.clone(),
+        description: r.description.clone(),
+        canonical: r.canonical.clone(),
+        listing: r.listing.name(),
+        listing_from: ListingFromJson {
+            level: r.listing_from.level_name(),
+            folder: rule.and_then(|rule| match &rule.level {
+                ListingLevel::Folder(folder) => Some(folder.clone()),
+                _ => None,
+            }),
+            type_name: rule.and_then(|rule| match &rule.level {
+                ListingLevel::Type(name) => Some(name.clone()),
+                _ => None,
+            }),
+            rule: rule.map(|rule| rule.text.clone()),
+            line: rule.map(|rule| rule.line),
+        },
+        markdown: r.markdown.clone(),
+        breadcrumbs: r
+            .breadcrumbs
+            .iter()
+            .map(|step| StepJson {
+                route: step.route.clone(),
+                title: step.title.clone(),
+            })
+            .collect(),
+    }
 }
 
 fn not_run(why: &NotRun) -> NotRunJson {
@@ -617,6 +759,11 @@ pub(crate) fn longest(report: &Report) -> usize {
         for left in &b.builds {
             see(left.pages.len());
             see(left.content.len());
+        }
+    }
+    if let Some(p) = &report.pages {
+        for build in &p.builds {
+            see(build.records.len());
         }
     }
     if let Some(Ran::Done(l)) = &report.links {

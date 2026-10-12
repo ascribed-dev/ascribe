@@ -8,11 +8,12 @@ available: next
 
 ```sh
 ascribe report                       # problems, inventory, and builds
+ascribe report pages --not-listed    # the pages kept out of search, and why
 ascribe report links                 # external links, with lychee
 ascribe report agents --site https://docs.example.com
 ```
 
-Without a section named, it runs the three that need nothing outside the project. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli.md#cli-report) lists every option, and the JSON.
+Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages`, the table of every page's record, needs nothing outside it either, and runs when it's named. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli.md#cli-report) lists every option, and the JSON.
 
 ## Problems
 
@@ -45,6 +46,22 @@ Without one, every page is counted as having no owner, and the report leaves tha
 ## Builds
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.
+
+## Pages
+
+Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../reference/content-model.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
+
+```text
+Pages
+  site publishes 4 pages on https://docs.example.com, 2 of them not listed:
+    ADDRESS                LISTING   FROM                       TITLE    DESCRIPTION
+    /docs/                 listed    default                    Home     Where to start.
+    /docs/guides/install/  listed    default                    Install  Install the product.
+    /docs/internal/notes/  unlisted  folder internal/, line 16  Notes
+    /docs/roadmap/         unquoted  page                       Roadmap
+```
+
+`--not-listed` lists only the pages that aren't `listed`, which answers "what are we hiding, and why?". With `--format json`, each record has the fields of its entry in the build's `_ascribe/pages.json`, by the same names, for a script that checks them.
 
 ## External links
 
