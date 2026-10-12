@@ -16,6 +16,7 @@ interface PageRecord {
   description?: string;
   canonical?: string;
   markdown?: string;
+  listing: "listed" | "unquoted" | "unlisted";
   breadcrumbs: { route: string; title: string }[];
 }
 
@@ -91,7 +92,10 @@ describe("each page's head", () => {
       expect(
         markdown.map((tag) => tag.attributes["href"]),
         route,
-      ).toEqual(record.markdown === undefined ? [] : [record.markdown]);
+      ).toEqual(
+        // A page that isn't listed doesn't point to its Markdown version.
+        record.markdown === undefined || record.listing === "unlisted" ? [] : [record.markdown],
+      );
       const trail = tags
         .filter((tag) => key(tag).endsWith(" BreadcrumbList"))
         .map(
