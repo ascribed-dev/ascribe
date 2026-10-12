@@ -27,3 +27,9 @@ name = "reference"
 summary = "A reference article provides users with descriptions of specific components or characteristics of an application."
 template = "reference.md"
 guide = "reference.guide.md"
+
+[[template]]
+name = "troubleshooting"
+summary = "A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue."
+template = "troubleshooting.md"
+guide = "troubleshooting.guide.md"
