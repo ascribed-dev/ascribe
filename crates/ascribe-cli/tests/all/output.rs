@@ -153,6 +153,19 @@ fn copy_tree(from: &Path, to: &Path) {
 /// `ascribe check` on `examples/quill`, with a link to a page's route on line
 /// 7 of `keys.md`: the command reference's text, JSON, concise, and prompt
 /// output.
+/// `ascribe init` in an empty folder: what it says, and the `ascribe.toml`
+/// it writes, which the command reference shows.
+#[test]
+fn init() {
+    let dir = tempfile::tempdir().unwrap();
+    let out = run(dir.path(), &["init"], 0);
+    expect("init.txt", &stdout(&out));
+    expect(
+        "init-ascribe.toml",
+        &fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
+    );
+}
+
 #[test]
 fn check() {
     let dir = tempfile::tempdir().unwrap();

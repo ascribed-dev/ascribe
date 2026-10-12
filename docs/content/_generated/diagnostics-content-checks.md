@@ -122,7 +122,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Write the phrase where its value belongs, or remove it from `[phrases]`. A phrase is used wherever a page or a fragment writes its key in braces, in the text or in a frontmatter field that takes phrases.
 
-**Read more:** [`[phrases]`](../reference/content-model/content.md#11-phrases) in the `ascribe.toml` reference.
+**Read more:** [`[phrases]`](../reference/content-model/content.md#phrases) in the `ascribe.toml` reference.
 
 ### ASC157 `feature-unused`
 @id {permalink=true}: ASC157
@@ -237,7 +237,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC184 `listing-disallowed`
 @id {permalink=true}: ASC184
@@ -330,7 +330,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Fix:** Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../reference/../guides/astro.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC171 `delivery-output`
 @id {permalink=true}: ASC171
@@ -343,4 +343,4 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.

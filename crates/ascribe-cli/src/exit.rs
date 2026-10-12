@@ -231,6 +231,15 @@ mod tests {
             "templates_unwritable",
             "a template or templates.lock can't be written",
         ),
+        (
+            "project_exists",
+            "init found an ascribe.toml at or above the folder",
+        ),
+        ("init_folder_refused", "init's folder is a file"),
+        (
+            "init_unwritable",
+            "init can't write ascribe.toml or make the content root",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -402,6 +411,14 @@ mod tests {
                 | ascribe_templates::EjectError::Write { .. } => {}
             }
         }
+        fn init(e: &ascribe_templates::InitError) {
+            match e {
+                ascribe_templates::InitError::Project { .. }
+                | ascribe_templates::InitError::NotAFolder { .. }
+                | ascribe_templates::InitError::Templates(_)
+                | ascribe_templates::InitError::Write { .. } => {}
+            }
+        }
         fn templates_command(e: &TemplatesError) {
             match e {
                 TemplatesError::NoProject(_) | TemplatesError::ToOutside { .. } => {}
@@ -432,6 +449,7 @@ mod tests {
             rename_command,
             templates,
             templates_command,
+            init,
         );
 
         let store_errors = || {
@@ -591,6 +609,18 @@ mod tests {
                 reason: text(),
             }),
             Box::new(ascribe_templates::EjectError::Write {
+                path: text(),
+                reason: text(),
+            }),
+            Box::new(ascribe_templates::InitError::Project { found: path() }),
+            Box::new(ascribe_templates::InitError::NotAFolder { folder: path() }),
+            Box::new(ascribe_templates::InitError::Templates(
+                ascribe_templates::EjectError::Write {
+                    path: text(),
+                    reason: text(),
+                },
+            )),
+            Box::new(ascribe_templates::InitError::Write {
                 path: text(),
                 reason: text(),
             }),

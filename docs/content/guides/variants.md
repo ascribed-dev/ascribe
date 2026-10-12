@@ -24,7 +24,7 @@ A dimension is an axis your content varies along, with the values it takes. Decl
 - `labels` and `label` are what readers see: a tab reads **macOS**, not `macos`.
 - `versionless` says the platforms have no versions of their own, so a mark names a platform and nothing more. A product whose releases matter leaves it out, and marks content with the version it arrived in, such as `self-managed 3.3`. See [availability specs](../reference/directives.md#availability-specs).
 
-See [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) for every key.
+See [`[dimensions.<name>]`](../reference/content-model/content.md#dimensions) for every key.
 
 ## 2. Write the page
 

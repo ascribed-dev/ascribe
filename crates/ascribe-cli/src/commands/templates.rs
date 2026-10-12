@@ -71,7 +71,7 @@ pub struct EjectArgs {
 pub enum TemplatesError {
     /// There's no `ascribe.toml` to add to.
     #[error(
-        "{0}\neject adds templates to a project, so write its ascribe.toml first: a file with the line `spec = \"0.1\"`, beside the folder the pages go in, which is `docs` unless `[project] content-root` says otherwise. Then run it again."
+        "{0}\neject adds templates to a project, and this folder isn't in one: to start a project here with the templates, run `ascribe init --templates`"
     )]
     NoProject(LocateError),
     /// `--to` names a folder outside the project's.
@@ -198,14 +198,28 @@ fn write_eject(
     ejected: &EjectAnswer,
 ) -> io::Result<()> {
     if !ejected.refused.is_empty() {
-        for refusal in &ejected.refused {
-            writeln!(err, "error: {}: {}", refusal.name, refusal.message)?;
-        }
-        return writeln!(err, "wrote nothing");
+        return write_refused(err, ejected);
     }
     for path in &ejected.written {
         writeln!(out, "wrote {}", from_here(root, path))?;
     }
+    write_added(out, root, ejected)
+}
+
+/// What eject refused, on standard error.
+pub(crate) fn write_refused(err: &mut dyn Write, ejected: &EjectAnswer) -> io::Result<()> {
+    for refusal in &ejected.refused {
+        writeln!(err, "error: {}: {}", refusal.name, refusal.message)?;
+    }
+    writeln!(err, "wrote nothing")
+}
+
+/// The types eject added, and how to start a page of one.
+pub(crate) fn write_added(
+    out: &mut dyn Write,
+    root: &Path,
+    ejected: &EjectAnswer,
+) -> io::Result<()> {
     if ejected.page_declared {
         writeln!(
             out,

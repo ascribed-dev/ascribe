@@ -77,7 +77,8 @@ pub struct Global {
     ///
     /// By default, the nearest `ascribe.toml` in the current directory or a
     /// parent, so the commands work from anywhere inside a project. Not for
-    /// `lsp`, whose project comes from the editor.
+    /// `lsp`, whose project comes from the editor, or `init`, which starts
+    /// one.
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
 
@@ -127,6 +128,12 @@ pub enum Command {
     /// Rewrite Ascribe constructs into canonical form.
     #[command(after_help = docs_link!("cli-fmt"))]
     Fmt(commands::fmt::Args),
+    /// Start a project: write its first ascribe.toml, and make the folder its
+    /// pages go in. With --templates, take the page templates too.
+    ///
+    /// Writes nothing where there's an ascribe.toml at or above the folder.
+    #[command(after_help = docs_link!("cli-init"))]
+    Init(commands::init::Args),
     /// Say whether a link target exists as seen from a page, its title, and
     /// the link to write.
     #[command(after_help = docs_link!("cli-link"))]
@@ -189,6 +196,7 @@ impl Command {
             Command::Drift(args) => commands::drift::run(global, args),
             Command::Explain(args) => commands::explain::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
+            Command::Init(args) => commands::init::run(global, args),
             Command::Link(args) => commands::link::run(global, args),
             Command::Lsp(args) => commands::lsp::run(global, args),
             Command::Mcp(args) => commands::mcp::run(global, args),

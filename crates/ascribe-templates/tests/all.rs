@@ -5,5 +5,7 @@
 
 #[path = "all/eject.rs"]
 mod eject;
+#[path = "all/init.rs"]
+mod init;
 #[path = "all/set.rs"]
 mod set;

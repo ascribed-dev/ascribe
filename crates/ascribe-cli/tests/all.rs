@@ -31,6 +31,8 @@ mod drift;
 mod fmt;
 #[path = "all/hook.rs"]
 mod hook;
+#[path = "all/init.rs"]
+mod init;
 #[path = "all/lsp_parity.rs"]
 mod lsp_parity;
 #[path = "all/lsp_project_log.rs"]

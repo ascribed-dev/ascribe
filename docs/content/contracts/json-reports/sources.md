@@ -1,9 +1,14 @@
 ---
-title: "JSON reports: `ascribe sources`, `ascribe permalinks`, and `ascribe templates`"
-description: "The JSON Schemas of what ascribe sources, ascribe permalinks, and ascribe templates write with --format json."
+title: "JSON reports: `ascribe init`, `ascribe sources`, `ascribe permalinks`, and `ascribe templates`"
+description: "The JSON Schemas of what ascribe init, ascribe sources, ascribe permalinks, and ascribe templates write with --format json."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
+
+## `ascribe init`
+@available: next
+
+@include: ../../_generated/json-init.md
 
 ## `ascribe sources status`
 @available: ascribe 0.3.0

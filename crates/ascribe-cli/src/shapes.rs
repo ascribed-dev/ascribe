@@ -110,6 +110,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_templates::EjectAnswer>(),
     },
     Shape {
+        file: "init",
+        title: "InitReport",
+        written_by: "`ascribe init --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_templates::InitAnswer>(),
+    },
+    Shape {
         file: "fmt",
         title: "FmtReport",
         written_by: "`ascribe fmt --format json`",
