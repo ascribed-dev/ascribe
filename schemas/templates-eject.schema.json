@@ -41,6 +41,45 @@
       ],
       "type": "object"
     },
+    "Kept": {
+      "description": "A type `ascribe.toml` declared already, which eject kept, adding only\nits `template` and `guide`.",
+      "properties": {
+        "guide": {
+          "description": "The `guide` added, from the folder `ascribe.toml` is in, in the order\nto read them: their guide, then Ascribe's notes on the type.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "left": {
+          "description": "The type's keys left as they were, in the order `ascribe.toml` has\nthem, such as `files` and `frontmatter`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "The type's name, `[types.<name>]`, which is the template's.",
+          "type": "string"
+        },
+        "summary": {
+          "description": "Their index's summary of it.",
+          "type": "string"
+        },
+        "template": {
+          "description": "The `template` added, from the folder `ascribe.toml` is in.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "summary",
+        "template",
+        "guide",
+        "left"
+      ],
+      "type": "object"
+    },
     "Refusal": {
       "description": "A template eject refused, and why.",
       "properties": {
@@ -89,6 +128,21 @@
           "const": "file_in_the_way",
           "description": "A file is where one of its files would be written.",
           "type": "string"
+        },
+        {
+          "const": "type_not_table",
+          "description": "Asked to keep the type, `ascribe.toml` writes it as an inline or a\ndotted table, which eject doesn't add to.",
+          "type": "string"
+        },
+        {
+          "const": "type_has_template",
+          "description": "Asked to keep the type, it names a `template` or a `guide` already.",
+          "type": "string"
+        },
+        {
+          "const": "frontmatter_differs",
+          "description": "Asked to keep the type, its frontmatter doesn't declare a field the\ntemplate's has, or declares it as something other than a string.",
+          "type": "string"
         }
       ]
     }
@@ -106,6 +160,13 @@
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
+    },
+    "kept": {
+      "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each was given its `template` and\n`guide`, and nothing else in it changed. Empty when anything was\nrefused.",
+      "items": {
+        "$ref": "#/$defs/Kept"
+      },
+      "type": "array"
     },
     "page_declared": {
       "description": "Whether `ascribe.toml` declared no types, so that every page was of\nthe implicit type `page`, and `[types.page]` was written out first,\nas it was, so the pages outside the types added keep it.",
@@ -136,6 +197,7 @@
     "ascribe_version",
     "written",
     "added",
+    "kept",
     "refused",
     "page_declared"
   ],

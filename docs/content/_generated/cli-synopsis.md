@@ -31,7 +31,7 @@ ascribe sources fetch     [NAME]...
 ascribe sources update    [NAME]... [--to <REV>] [--format text|json|markdown]
 ascribe sources status    [--format text|json]
 ascribe templates list
-ascribe templates eject   [NAME]... [--to <DIR>] [--format text|json]
+ascribe templates eject   [NAME]... [--to <DIR>] [--keep-type] [--format text|json]
 ascribe templates status  [--format text|json] [--exit-code] [--diff <NAME>]
 ascribe vale eject
 ascribe --version

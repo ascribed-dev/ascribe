@@ -152,6 +152,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
                 names: &[],
                 to: &to,
                 ascribe_version: request.ascribe_version,
+                keep_type: false,
             },
             &fs,
         )?;
