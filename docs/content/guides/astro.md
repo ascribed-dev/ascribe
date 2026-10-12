@@ -86,7 +86,7 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
 
 @available: next
-`<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes what the page's head says about it to search engines and other crawlers: its `<title>`, its description, its canonical link, and a robots rule for a page that isn't listed or isn't to be quoted, from the page's record ([search engines and crawlers](#search-engines-and-crawlers)).
+`<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes everything the page's head says about the page, from its record: its `<title>`, description, canonical link, robots rule, link to its Markdown version, link preview, and breadcrumbs ([the head](#the-head)).
 
 @available: ascribe 0.2.0
 The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../reference/content-model.md#53-code-in-a-field).
@@ -268,21 +268,54 @@ Each build writes a record of every page, `_ascribe/pages.json` ([output-layout 
 
 ### The head
 
-A layout includes `Head.astro` in `<head>`, given the page's collection entry:
+A layout includes `Head.astro` in `<head>`, given the page's collection entry, and writes none of what it writes:
 
 ```astro
 ---
 import Head from "@ascribed/astro/Head.astro";
+import Elements from "@ascribed/astro/Elements.astro";
 const { entry } = Astro.props;
 ---
 <head>
-  <Head entry={entry} title={(title, record) => (record.route === "/docs" ? "Loom" : `${title} · Loom`)} />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <Head
+    entry={entry}
+    title={(title, record) => (record.route === "/" ? "Loom" : `${title} · Loom`)}
+    name="Loom"
+    card={{ src: "/social-card.png", alt: "Loom's docs", width: 1200, height: 630 }}
+  />
+  <Elements />
 </head>
 ```
 
-It writes the page's `<title>`, `<meta name="description">`, `<link rel="canonical">` when `[consumer] site` is set, `<meta name="robots" content="noindex">` for a page that's `unlisted`, and `<meta name="robots" content="nosnippet">` for one that's `unquoted`, which asks a search engine to show no text from it in a result, or in an AI answer inside its search product; it asks nothing of a crawler gathering training data. `title` is a function from the page's title and its record to the whole title; the record has the page's `route`, so a site can title its home page differently. Without `title`, the title is the page's own. A page whose title is missing gets no `<title>` from it.
+From the page's record, it writes:
 
-A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro`, and writes its own `<title>`, description, and canonical link. A page that isn't an Ascribe page and shouldn't be listed writes its own `<meta name="robots" content="noindex">`, and goes in the `sitemap` option's `exclude`, since the integration reads no HTML and can't see the rule.
+- `<title>`, and `<meta property="og:title">` with the same text;
+- `<meta name="description">` and `<meta property="og:description">`;
+- `<link rel="canonical">` and `<meta property="og:url">`, when `[consumer] site` is set, and `<meta property="og:type" content="website">`;
+- `<meta name="robots" content="noindex">` for a page that's `unlisted`, and `<meta name="robots" content="nosnippet">` for one that's `unquoted`, which asks a search engine to show no text from it in a result, or in an AI answer inside its search product; it asks nothing of a crawler gathering training data;
+- `<link rel="alternate" type="text/markdown">` to the page's Markdown version, when the build publishes one ([`[consumer] agents`](#publish-for-ai-agents)) and the page isn't `unlisted`;
+- the page's breadcrumbs, as [`BreadcrumbList`](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) structured data, when there are two steps or more.
+
+From the site, by property, since the record doesn't hold them:
+
+- `title`, a function from the page's title and its record to the whole title. The record has the page's `route`, so a site can title its home page with its name alone. Without `title`, the title is the page's own, and a page whose title is missing gets no `<title>`.
+- `name`, the site's name, for `<meta property="og:site_name">`, and, on the page at the host's root (`/`), the site's name as [`WebSite`](https://developers.google.com/search/docs/appearance/site-names) structured data, which a search engine shows as the name in a result. Google reads it only on the home page.
+- `card`, the page's social card: `src`, its image, from the host's root or absolute; `alt`, what it shows; and `width` and `height`, in pixels. It's the `og:image` tags a link preview shows. Without it, there are no image tags.
+
+The layout keeps the character set, the viewport, icons, theme colors, styles, the elements, and tags for one network that Open Graph doesn't cover, such as `<meta name="twitter:card">`. A tag `Head.astro` writes that the layout writes too is in the head twice; `astro dev` warns once about each such tag, naming it and the first page it's on. It's a warning and not an error, since a site may have a reason.
+
+**Breadcrumbs.** A page's place in the site, from its route's folders: the page at each folder of its route that has one, named by its title, down to the page itself. `/docs/guides/install/` has the page at `/docs/`, the page at `/docs/guides/` if there is one, and itself. A folder with no page isn't a step, since there's nothing to link to. The steps are the record's `breadcrumbs`, so a layout can draw visible breadcrumbs from the same list with `pageRecord(entry)`. They change how a search result is displayed, and nothing else. They aren't the site's navigation: the content model has none, so a page's folders are all that say where it is.
+
+**A page with no record**, such as an Astro page of the site's own, gets nothing from `Head.astro`, and writes its own `<title>`, description, canonical link, and link preview. A page that isn't an Ascribe page and shouldn't be listed writes its own `<meta name="robots" content="noindex">`, and goes in the `sitemap` option's `exclude`, since the integration reads no HTML and can't see the rule. A site whose home page isn't an Ascribe page writes the site's name there itself:
+
+```html
+<script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "WebSite",
+   "name": "Loom", "url": "https://loom.example.com/"}
+</script>
+```
 
 `pageRecord(entry)`, from `@ascribed/astro/content`, gives a layout the record itself, for anything else it writes from it.
 

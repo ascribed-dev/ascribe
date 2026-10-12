@@ -1,42 +1,58 @@
 ---
-// What a page's head says about it to every reader that isn't a person, from
-// its record in the build's `_ascribe/pages.json`: its `<title>`, its
-// description, its canonical link, and `<meta name="robots">`: `noindex` when
-// it isn't listed, and `nosnippet` when it's listed and not to be quoted. Each
-// comes from the record, as the sitemap and `llms.txt` do, so none can
-// disagree with them. A layout includes it in
-// `<head>`, given the page's collection entry:
+// Everything a page's head says about the page, from its record in the
+// build's `_ascribe/pages.json`: its `<title>` and description, its canonical
+// link, `<meta name="robots">` (`noindex` when it isn't listed, `nosnippet`
+// when it's listed and not to be quoted), a link to its Markdown version when
+// the build publishes one and the page is offered, the Open Graph tags a link
+// preview reads, and its breadcrumbs as structured data. Each comes from the
+// record, as the sitemap and `llms.txt` do, so none can disagree with them. A
+// layout includes it in `<head>`, given the page's collection entry:
 //
-//   <Head entry={entry} title={(page, record) => `${page} · Loom`} />
+//   <Head
+//     entry={entry}
+//     title={(page, record) => (record.route === "/" ? "Loom" : `${page} · Loom`)}
+//     name="Loom"
+//     card={{ src: "/social-card.png", alt: "Loom's docs", width: 1200, height: 630 }}
+//   />
 //
-// `title` is a function from the page's title and its record, which has its
-// route, to the whole title. A page with no record, such as an Astro page of
-// the site's own, gets nothing: it writes its own head.
-import { pageRecord, type PageRecord } from "@ascribed/astro/content";
+// What the site knows and the record doesn't is given by property: `title`,
+// a function from the page's title and its record, which has its route, to
+// the whole title; `name`, the site's name, for `og:site_name` and, on the
+// page at the host's root, the site-name structured data; and `card`, the
+// page's social card. The layout keeps the character set, the viewport,
+// icons, theme colors, and styles. A page with no record, such as an Astro
+// page of the site's own, gets nothing: it writes its own head.
+import { headTags, pageRecord, scriptJson, type Card, type PageRecord } from "@ascribed/astro/content";
 
 interface Props {
   /** The page's collection entry, or `undefined` for a page that has none. */
   entry?: { filePath?: string | undefined; data?: unknown } | undefined;
   /** The whole title, from the page's title and its record. Default: the page's title. */
   title?: (title: string, record: PageRecord) => string;
+  /** The site's name. */
+  name?: string;
+  /** The page's social card. Without one, no image tags. */
+  card?: Card;
 }
 
-const { entry, title } = Astro.props;
+const { entry, title, name, card } = Astro.props;
 const record = entry === undefined ? undefined : pageRecord(entry);
-const whole =
-  record?.title === undefined
-    ? undefined
-    : title === undefined
-      ? record.title
-      : title(record.title, record);
+const tags =
+  record === undefined
+    ? []
+    : headTags(record, { title, name, card, address: Astro.site ?? Astro.url });
 ---
 
-{whole !== undefined && <title>{whole}</title>}
 {
-  record?.description !== undefined && (
-    <meta name="description" content={record.description} />
+  tags.map((tag) =>
+    tag.tag === "title" ? (
+      <title>{tag.text}</title>
+    ) : tag.tag === "meta" ? (
+      <meta {...tag.attributes} />
+    ) : tag.tag === "link" ? (
+      <link {...tag.attributes} />
+    ) : (
+      <script is:inline type="application/ld+json" set:html={scriptJson(tag.json)} />
+    ),
   )
 }
-{record?.canonical !== undefined && <link rel="canonical" href={record.canonical} />}
-{record?.listing === "unlisted" && <meta name="robots" content="noindex" />}
-{record?.listing === "unquoted" && <meta name="robots" content="nosnippet" />}

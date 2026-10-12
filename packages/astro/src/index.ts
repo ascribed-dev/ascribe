@@ -54,6 +54,7 @@ import {
   filesMiddleware,
   folderUnder,
 } from "./files.js";
+import { WARN as HEAD_WARN } from "./head-check.js";
 import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import {
   consumerMismatches,
@@ -253,6 +254,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         addDevToolbarApp,
         createCodegenDir,
         injectRoute,
+        addMiddleware,
       }) => {
         const root = fileURLToPath(config.root);
         publicDir = fileURLToPath(config.publicDir);
@@ -403,6 +405,15 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           for (const entry of entries) await buildEntry(entry);
           checkShared();
           devCommand = command === "dev";
+          if (devCommand) {
+            // A tag of the head written twice, by Head.astro and the layout, is warned about.
+            (globalThis as Record<symbol, unknown>)[HEAD_WARN] = (message: string) =>
+              logger.warn(message);
+            addMiddleware({
+              entrypoint: new URL("./head-check.js", import.meta.url),
+              order: "post",
+            });
+          }
 
           // Each permalink's address, a page that forwards to its heading. One route serves every
           // list, at the path of the first that names anything.

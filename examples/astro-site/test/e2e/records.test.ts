@@ -26,6 +26,7 @@ interface Records {
       listing: string;
       listing_from: { level: string; rule?: string; line?: number };
       markdown?: string;
+      breadcrumbs: { route: string; title: string }[];
     }
   >;
 }
@@ -80,6 +81,11 @@ function head(html: string): {
   description?: string;
   canonical?: string;
   robots?: string;
+  markdown?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogUrl?: string;
+  breadcrumbs?: string;
 } {
   const match = (pattern: RegExp) => {
     const found = pattern.exec(html)?.[1];
@@ -90,8 +96,18 @@ function head(html: string): {
     description: match(/<meta name="description" content="([^"]*)"/),
     canonical: match(/<link rel="canonical" href="([^"]*)"/),
     robots: match(/<meta name="robots" content="([^"]*)"/),
+    markdown: match(/<link rel="alternate" type="text\/markdown" href="([^"]*)"/),
+    ogTitle: match(/<meta property="og:title" content="([^"]*)"/),
+    ogDescription: match(/<meta property="og:description" content="([^"]*)"/),
+    ogUrl: match(/<meta property="og:url" content="([^"]*)"/),
+    breadcrumbs: match(/<script type="application\/ld\+json">(\{"@context":"https:\/\/schema.org","@type":"BreadcrumbList".*?)<\/script>/),
   };
   return Object.fromEntries(Object.entries(result).filter(([, value]) => value !== undefined));
+}
+
+/** A page's breadcrumbs, as structured data. */
+interface Trail {
+  itemListElement: { name: string; item: string }[];
 }
 
 /** The sitemap's addresses. */
@@ -113,13 +129,27 @@ async function checkAgainstRecords(
   expect(Object.keys(pages).length).toBeGreaterThan(0);
   for (const [route, record] of Object.entries(pages)) {
     const unlisted = record.listing === "unlisted";
-    expect(head(await text(origin, route)), route).toEqual({
-      ...(record.title === undefined ? {} : { title: record.title }),
-      ...(record.description === undefined ? {} : { description: record.description }),
-      ...(record.canonical === undefined ? {} : { canonical: record.canonical }),
+    const { breadcrumbs, ...tags } = head(await text(origin, route));
+    expect(tags, route).toEqual({
+      ...(record.title === undefined ? {} : { title: record.title, ogTitle: record.title }),
+      ...(record.description === undefined
+        ? {}
+        : { description: record.description, ogDescription: record.description }),
+      ...(record.canonical === undefined
+        ? {}
+        : { canonical: record.canonical, ogUrl: record.canonical }),
       ...(unlisted ? { robots: "noindex" } : {}),
       ...(record.listing === "unquoted" ? { robots: "nosnippet" } : {}),
+      ...(record.markdown === undefined || unlisted ? {} : { markdown: record.markdown }),
     });
+    // The trail, from the record's steps, when there are two or more.
+    const steps = breadcrumbs === undefined ? [] : (JSON.parse(breadcrumbs) as Trail).itemListElement;
+    expect(
+      steps.map((step) => [step.name, new URL(step.item).pathname]),
+      `${route}'s breadcrumbs`,
+    ).toEqual(
+      record.breadcrumbs.length < 2 ? [] : record.breadcrumbs.map((step) => [step.title, step.route]),
+    );
     expect(sitemap.includes(record.canonical ?? ""), `${route} in the sitemap`).toBe(!unlisted);
     expect(llms.includes(`${record.markdown ?? route})`), `${route} in llms.txt`).toBe(!unlisted);
   }
@@ -300,10 +330,13 @@ describe("what a site leaves out", () => {
       path.join(root, "dist", "docs", "reference", "options", "index.html"),
       "utf8",
     );
-    expect(head(html)).toEqual({
+    const { breadcrumbs: _, ...tags } = head(html);
+    expect(tags).toEqual({
       title: "loom.yaml options",
       description: "Every Loom option.",
       robots: "noindex",
+      ogTitle: "loom.yaml options",
+      ogDescription: "Every Loom option.",
     });
   });
 
@@ -323,4 +356,23 @@ describe("what a site leaves out", () => {
       await server.stop();
     }
   });
+});
+
+describe("a layout that writes a tag Head.astro writes", () => {
+  it("is warned about once in astro dev, naming the tag", async () => {
+    const root = await copySite("records-twice");
+    await edit(path.join(root, "src", "layouts", "Docs.astro"), (text) =>
+      text.replace("<Head entry={entry} />", "<Head entry={entry} />\n    <title>Loom</title>"),
+    );
+    const server = await serveDev(root);
+    try {
+      await text(server.origin, "/docs/guides/my-setup");
+      await text(server.origin, UNLISTED);
+      const warned = server.output().match(/head has <title> twice/g) ?? [];
+      expect(warned, server.output()).toHaveLength(1);
+      expect(server.output()).toContain("/docs/guides/my-setup's head has <title> twice");
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
 });
