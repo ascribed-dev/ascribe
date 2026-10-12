@@ -94,7 +94,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-191 in use, and 1 retired. By severity: 27 advice, 142 error, 22 warning. By level: 172 file, 19 page. By kind of next step: 42 choose, 13 fix, 3 outside, 11 review, 122 write.
+193 in use, and 1 retired. By severity: 27 advice, 144 error, 22 warning. By level: 174 file, 19 page. By kind of next step: 42 choose, 13 fix, 3 outside, 11 review, 124 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -290,6 +290,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC190` | `crawlers-disallowed` | advice | choose | `{purpose} = "disallow"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine |
 | `ASC191` | `description-duplicate` | advice | write | this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want |
 | `ASC192` | `title-heading-differs` | advice | review | the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another |
+| `ASC193` | `model-type-file` | error | write | `{path}`, the {key} of content type `{type}`, doesn't exist |
+| `ASC194` | `model-type-template` | error | write | can't read `{path}`, the template of content type `{type}`: {reason} |
 
 ## The VS Code extension
 

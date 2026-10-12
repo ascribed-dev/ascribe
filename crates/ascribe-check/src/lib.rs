@@ -51,6 +51,7 @@ pub mod registry;
 mod scope;
 pub mod site;
 pub mod tool;
+pub mod type_files;
 mod yaml;
 
 pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};

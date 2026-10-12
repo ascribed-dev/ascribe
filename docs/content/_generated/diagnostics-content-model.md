@@ -316,6 +316,28 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Field roles](../reference/content-model.md#54-field-roles) in the `ascribe.toml` reference.
 
+### ASC193 `model-type-file`
+@id {permalink=true}: ASC193
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{path}`, the \{key} of content type `{type}`, doesn't exist
+
+**Fix:** Name a file by its path from the folder ascribe.toml is in, with its name's case as it is on disk, outside the content root and the output directory: `template = "templates/how-to.md"`. A type's template and guide are read by people and tools starting a page, and aren't pages themselves.
+
+**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
+
+### ASC194 `model-type-template`
+@id {permalink=true}: ASC194
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** can't read `{path}`, the template of content type `{type}`: \{reason}
+
+**Fix:** Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it.
+
+**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
+
 ## Dimensions, names, lifecycle states, notes, and features
 
 ### ASC082 `model-name-multiple-roles`

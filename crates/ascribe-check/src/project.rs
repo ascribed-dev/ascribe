@@ -400,7 +400,7 @@ impl Project {
             Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
             _ => PathBuf::from("."),
         };
-        match ascribe_model::load_str_bounded(&text, FileId::new(0), &root, bound) {
+        match crate::type_files::load_model(&text, &root, bound) {
             Ok(model) => Ok(ModelFile { root, text, model }),
             Err(issues) => Err(LoadError::Model {
                 text,

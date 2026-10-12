@@ -17,6 +17,11 @@ mod file_system;
 mod ids;
 #[path = "all/link_cache.rs"]
 mod link_cache;
+// `links.rs` panics on a link it can't make, as a test helper may.
+#[allow(clippy::expect_used, clippy::panic)]
+#[path = "../../../tests/support/links.rs"]
+mod links;
+
 #[path = "all/page.rs"]
 mod page;
 #[path = "all/page_index.rs"]
@@ -29,5 +34,7 @@ mod permalinks_list;
 mod prompt;
 #[path = "all/snippets.rs"]
 mod snippets;
+#[path = "all/type_files.rs"]
+mod type_files;
 #[path = "all/vale.rs"]
 mod vale;
