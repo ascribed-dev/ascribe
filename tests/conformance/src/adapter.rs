@@ -54,6 +54,8 @@ pub struct BuildResult {
 pub struct PageResult {
     /// The resolved page's outline, if the adapter can produce one.
     pub outline: Option<Outline>,
+    /// The page's `listing`, if the adapter can say.
+    pub listing: Option<String>,
     /// Emitted outputs, by emitter.
     pub outputs: BTreeMap<OutputKind, String>,
 }

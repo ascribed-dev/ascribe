@@ -3443,3 +3443,78 @@ example.model = '''
 [crawlers]
 lines = ["Disallow: /page/"]
 '''
+
+[[diagnostic]]
+code = "ASC185"
+slug = "model-listing-folder"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model.md#22-listing"
+group = "listing"
+message = "`{folder}` in `[listing.folders]` doesn't exist under the content root"
+messages.not-directory = "`{folder}` in `[listing.folders]` isn't a folder"
+messages.shape = "`{folder}` in `[listing.folders]` isn't a folder's path; write it from the content root, with `/` between its parts and at its end, such as `internal/`"
+fix = "Write the folder's path from the content root, ending in `/`, with its name's case as it is on disk: `\"internal/\" = \"unlisted\"`. A rule is for a folder and everything under it; patterns aren't read."
+
+[[diagnostic]]
+code = "ASC186"
+slug = "model-listing-type"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model.md#22-listing"
+group = "listing"
+message = "`{type}` in `[listing.types]` isn't a content type; use one of: {values}"
+fix = "Name a content type the project declares in `[types]`, or `page` when it declares none."
+
+[[diagnostic]]
+code = "ASC187"
+slug = "model-listing-looser"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model.md#22-listing"
+group = "listing"
+message = "`{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict"
+messages.default = "`{rule}` is looser than the site's `{wider}` on line {line}; with that default, no folder or type can be listed more openly"
+fix = "Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own."
+
+[[diagnostic]]
+code = "ASC188"
+slug = "listing-loosened"
+severity = "error"
+level = "file"
+next = "fix"
+evidence = []
+spec = "2.1"
+reference = "content-model.md#22-listing"
+row = "Frontmatter | `listing` looser than a rule of the content model the page is under"
+message = "this page is `{listing}`, looser than `{rule}` on line {line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter"
+messages.default = "this page is `{listing}`, and the site's `{rule}` on line {line} of ascribe.toml makes every page at least `{strict}`, so none can be `{listing}`"
+fix = "Remove the page's `listing`, which the rule already sets, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list the page more openly, change the rule in `[listing]`: a page can only restrict what it's under. The editor's quick fix removes `listing`."
+example.wrong = '''
+---
+title: Roadmap
+listing: listed
+---
+
+What's coming next.
+'''
+example.right = '''
+---
+title: Roadmap
+---
+
+What's coming next.
+'''
+example.model = '''
+[listing]
+default = "unlisted"
+'''

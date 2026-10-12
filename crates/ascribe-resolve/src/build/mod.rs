@@ -296,12 +296,12 @@ impl<'p> BuildResolver<'p> {
             .and_then(|f| f.get("title"))
             .and_then(|t| t.as_str())
             .map(str::to_owned);
-        let listing = frontmatter
+        let own = frontmatter
             .as_ref()
             .and_then(|f| f.get(Listing::KEY))
             .and_then(|l| l.as_str())
-            .and_then(Listing::from_name)
-            .unwrap_or_default();
+            .and_then(Listing::from_name);
+        let (listing, listing_from) = model.listing_of(path.as_str(), own);
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
         // Acknowledgements (SPEC §4.9) are for the checks: no output shows
@@ -320,6 +320,7 @@ impl<'p> BuildResolver<'p> {
             availability: page_availability,
             permalink,
             listing,
+            listing_from,
             blocks,
             assets: Vec::new(),
             problems,

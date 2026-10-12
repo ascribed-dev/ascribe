@@ -1,7 +1,8 @@
 // The page records, `_ascribe/pages.json`, as the site serves them: each
 // page's head from `Head.astro`, and the site's one sitemap and `robots.txt`,
 // in a build and under `astro dev`. Each test works on a copy of the site
-// under `.e2e-tmp/`, with a page that isn't listed beside one with nothing set.
+// under `.e2e-tmp/`, with rules of `[listing]` at every level: a folder whose
+// page isn't listed, and one whose page isn't quoted.
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -17,22 +18,34 @@ afterAll(async () => {
 interface Records {
   pages: Record<
     string,
-    { title?: string; description?: string; canonical?: string; listing: string; markdown?: string }
+    {
+      title?: string;
+      description?: string;
+      canonical?: string;
+      listing: string;
+      listing_from: { level: string; rule?: string; line?: number };
+      markdown?: string;
+    }
   >;
 }
 
-/** The page that isn't listed, and the page beside it with nothing set. */
+/** The page that isn't listed, and the page that's listed and not quoted. */
 const UNLISTED = "/docs/reference/options";
-const LISTED = "/docs/guides/my-setup";
+const UNQUOTED = "/docs/guides/my-setup";
 
-/** Marks the options page as not listed, and gives the docs a line for every crawler. */
+/**
+ * Lists the docs' pages by a rule at every level of `[listing]`, with no
+ * change to a page: the reference isn't listed, and the guides aren't quoted.
+ * Gives the docs a line for every crawler too.
+ */
 async function withUnlisted(root: string): Promise<string> {
-  await edit(path.join(root, "content", "Reference", "Options.md"), (text) =>
-    text.replace("permalink: options\n", "permalink: options\nlisting: unlisted\n"),
-  );
   await edit(
     path.join(root, "ascribe.toml"),
-    (text) => `${text}\n[crawlers]\nlines = ["Disallow: /drafts/"]\n`,
+    (text) =>
+      `${text}\n[crawlers]\nlines = ["Disallow: /drafts/"]\n` +
+      `\n[listing]\ndefault = "listed"\n` +
+      `\n[listing.folders]\n"Reference/" = "unlisted"\n"Guides/" = "unquoted"\n` +
+      `\n[listing.types]\npage = "listed"\n`,
   );
   return root;
 }
@@ -88,7 +101,7 @@ function locations(sitemap: string): string[] {
 /**
  * Checks each page's head, the sitemap, and `llms.txt` against the records,
  * page by page: a page that isn't listed has `noindex` and is in neither; any
- * other is in both.
+ * other is in both, and one that isn't quoted has `nosnippet`.
  */
 async function checkAgainstRecords(
   origin: string,
@@ -104,6 +117,7 @@ async function checkAgainstRecords(
       ...(record.description === undefined ? {} : { description: record.description }),
       ...(record.canonical === undefined ? {} : { canonical: record.canonical }),
       ...(unlisted ? { robots: "noindex" } : {}),
+      ...(record.listing === "unquoted" ? { robots: "nosnippet" } : {}),
     });
     expect(sitemap.includes(record.canonical ?? ""), `${route} in the sitemap`).toBe(!unlisted);
     expect(llms.includes(`${record.markdown ?? route})`), `${route} in llms.txt`).toBe(!unlisted);
@@ -134,7 +148,7 @@ describe("a site at the host's root", () => {
   const SITEMAP = [
     "https://docs.example.com/",
     "https://docs.example.com/docs",
-    `https://docs.example.com${LISTED}`,
+    `https://docs.example.com${UNQUOTED}`,
     "https://docs.example.com/v1.2",
   ];
 
@@ -152,7 +166,16 @@ describe("a site at the host's root", () => {
       const llms = await text(server.origin, "/docs/llms.txt");
       await checkAgainstRecords(server.origin, (await records(root)).pages, sitemap, llms);
       expect(head(await text(server.origin, UNLISTED)).robots).toBe("noindex");
-      expect(head(await text(server.origin, LISTED)).robots).toBeUndefined();
+      expect(head(await text(server.origin, UNQUOTED)).robots).toBe("nosnippet");
+      // Each from the rule it's under.
+      const pages = (await records(root)).pages;
+      expect(pages[UNLISTED]?.listing_from).toMatchObject({
+        level: "folder",
+        rule: '"Reference/" = "unlisted"',
+      });
+      expect(pages[UNQUOTED]?.listing_from).toMatchObject({ level: "folder" });
+      // A type and the default as strict: the narrower, the type.
+      expect(pages["/docs"]?.listing_from).toMatchObject({ level: "type", rule: 'page = "listed"' });
       // The home page is the site's own, with no record, and writes its own head.
       expect(head(await text(server.origin, "/"))).toEqual({ title: "Loom" });
     } finally {
@@ -193,7 +216,7 @@ describe("two projects", () => {
   const SITEMAP = [
     "https://docs.example.com/",
     "https://docs.example.com/docs",
-    `https://docs.example.com${LISTED}`,
+    `https://docs.example.com${UNQUOTED}`,
     "https://docs.example.com/why",
   ];
 
@@ -264,7 +287,7 @@ describe("what a site leaves out", () => {
     try {
       expect(locations(await text(server.origin, "/docs/sitemap.xml"))).toEqual([
         "https://docs.example.com/docs",
-        `https://docs.example.com${LISTED}`,
+        `https://docs.example.com${UNQUOTED}`,
       ]);
       expect(head(await text(server.origin, UNLISTED)).robots).toBe("noindex");
     } finally {

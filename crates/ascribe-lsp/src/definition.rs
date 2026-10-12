@@ -26,8 +26,19 @@ pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
         }
         Some(Hit::Availability(text, _)) => feature_entry(ctx, text),
         Some(Hit::Frontmatter(text, _)) => feature_entry(ctx, &text),
+        Some(Hit::Listing(_)) => listing_rule(ctx),
         Some(Hit::Directive(_)) | None => id_definition(ctx, &mut lines, offset),
     }
+}
+
+/// The rule of `[listing]` the page is under, in `ascribe.toml`.
+fn listing_rule(ctx: &Ctx) -> Option<Location> {
+    let rule = ctx.model.listing_rule(ctx.path.as_str())?;
+    let index = LineIndex::new(&ctx.model_text);
+    Some(Location {
+        uri: crate::uri::path_to_uri(&ctx.config)?,
+        range: ctx.encoding.range(&index, rule.span),
+    })
 }
 
 /// The location a link or image names.

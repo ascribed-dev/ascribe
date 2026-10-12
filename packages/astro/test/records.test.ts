@@ -43,19 +43,21 @@ const RECORDS = {
       title: "Loom",
       canonical: "https://docs.example.com/docs/",
       listing: "listed",
+      listing_from: { level: "default" },
     },
     "/docs/drafts/": {
       source: "drafts.md",
       title: "Drafts",
       canonical: "https://docs.example.com/docs/drafts/",
       listing: "unlisted",
+      listing_from: { level: "folder", folder: "drafts/", rule: '"drafts/" = "unlisted"', line: 3 },
     },
   },
   robots: { lines: ["Disallow: /docs/private/"] },
 };
 
 function page(route: string, listing: PageRecord["listing"] = "listed"): PageRecord {
-  return { route, source: `${route.slice(1)}.md`, listing };
+  return { route, source: `${route.slice(1)}.md`, listing, listing_from: { level: "default" } };
 }
 
 describe("readRecords and recordFor", () => {
@@ -71,6 +73,7 @@ describe("readRecords and recordFor", () => {
       title: "Drafts",
       canonical: "https://docs.example.com/docs/drafts/",
       listing: "unlisted",
+      listing_from: { level: "folder", folder: "drafts/", rule: '"drafts/" = "unlisted"', line: 3 },
     });
     expect(recordFor(root, "missing.md")).toBeUndefined();
   });
@@ -86,7 +89,14 @@ describe("readRecords and recordFor", () => {
     expect(recordFor(root, "index.md")?.title).toBe("Loom");
     write(root, {
       ...RECORDS,
-      pages: { "/docs/": { source: "index.md", title: "Loom, again", listing: "listed" } },
+      pages: {
+        "/docs/": {
+          source: "index.md",
+          title: "Loom, again",
+          listing: "listed",
+          listing_from: { level: "default" },
+        },
+      },
     });
     const later = new Date(Date.now() + 5_000);
     utimesSync(path.join(root, "_ascribe", "pages.json"), later, later);

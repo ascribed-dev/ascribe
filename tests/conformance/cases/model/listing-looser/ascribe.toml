@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[listing]
+default = "unquoted"
+
+[listing.folders]
+"a/" = "unlisted"
+"a/b/" = "unquoted"
+"c/" = "listed"
+"d/" = "unquoted"
+
+[listing.types]
+page = "listed"

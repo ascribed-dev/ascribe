@@ -21,3 +21,4 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[checks]` | Every check at its own level. |
 | `[permalinks]` | No retired permalinks and no aliases. |
 | `[crawlers]` | No lines. |
+| `[listing]` | No rules. A page that doesn't set `listing` is `listed`. |

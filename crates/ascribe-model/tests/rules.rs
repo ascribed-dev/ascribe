@@ -670,6 +670,41 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[crawlers]\nlines = [\" \"] #!\n",
         ),
         case(
+            "model-invalid-value",
+            None,
+            "spec = \"0.1\"\n[listing]\ndefault = \"hidden\" #!\n",
+        ),
+        case(
+            "model-listing-folder",
+            Some("shape"),
+            "spec = \"0.1\"\n[listing.folders]\n\"internal\" = \"unlisted\" #!\n",
+        ),
+        case(
+            "model-listing-folder",
+            Some("shape"),
+            "spec = \"0.1\"\n[listing.folders]\n\"drafts/**\" = \"unlisted\" #!\n",
+        ),
+        case(
+            "model-listing-folder",
+            Some("shape"),
+            "spec = \"0.1\"\n[listing.folders]\n\"../shared/\" = \"unlisted\" #!\n",
+        ),
+        case(
+            "model-listing-type",
+            None,
+            "spec = \"0.1\"\n[listing.types]\nchangelog = \"unquoted\" #!\n",
+        ),
+        case(
+            "model-listing-looser",
+            None,
+            "spec = \"0.1\"\n[listing.folders]\n\"a/\" = \"unlisted\"\n\"a/b/\" = \"unquoted\" #!\n",
+        ),
+        case(
+            "model-listing-looser",
+            Some("default"),
+            "spec = \"0.1\"\n[listing]\ndefault = \"unquoted\"\n[listing.types]\npage = \"listed\" #!\n",
+        ),
+        case(
             "model-checks-vale",
             None,
             "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\nconfig = \".vale.ini\" #!\n",

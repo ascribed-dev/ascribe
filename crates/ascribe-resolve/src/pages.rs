@@ -5,8 +5,9 @@
 //! ([`crate::llms::llms_files`]), so the two can't disagree.
 //!
 //! A record holds the page's route, its source path, its title and
-//! description as plain text, its canonical address, its `listing`, and its
-//! Markdown version's address when the build publishes one. The project's
+//! description as plain text, its canonical address, its `listing` and
+//! where that comes from, and its Markdown version's address when the build
+//! publishes one. The project's
 //! `[crawlers] lines` are held as a host reads them: a path in an `Allow` or
 //! `Disallow` line is from the project's base path in `ascribe.toml`, and
 //! from the host's root here ([`host_line`]).
@@ -16,7 +17,7 @@
 //! reads that.
 
 use ascribe_core::{RelPath, Router};
-use ascribe_model::{ContentModel, Listing};
+use ascribe_model::{ContentModel, Listing, ListingFrom};
 
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
@@ -49,8 +50,11 @@ pub struct PageRecord {
     /// Its own address, absolute: the site and the route. `None` without a
     /// site.
     pub canonical: Option<String>,
-    /// Its `listing` (SPEC §2.1).
+    /// Its `listing` (SPEC §2.1), after the rules of `[listing]`.
     pub listing: Listing,
+    /// Where its `listing` comes from: the page, a rule of `[listing]`, or
+    /// nothing.
+    pub listing_from: ListingFrom,
     /// Its Markdown version's address, from the host's root, when the build
     /// publishes one (`[consumer] agents = true`).
     pub markdown: Option<String>,
@@ -84,6 +88,7 @@ pub fn records<'a>(
                 title: page.title.clone(),
                 description: llms::description(model, page),
                 listing: page.listing,
+                listing_from: page.listing_from.clone(),
                 markdown: model
                     .consumer
                     .agents

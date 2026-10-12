@@ -1,9 +1,10 @@
 ---
 // What a page's head says about it to every reader that isn't a person, from
 // its record in the build's `_ascribe/pages.json`: its `<title>`, its
-// description, its canonical link, and `<meta name="robots" content="noindex">`
-// when it isn't listed. Each comes from the record, as the sitemap and
-// `llms.txt` do, so none can disagree with them. A layout includes it in
+// description, its canonical link, and `<meta name="robots">`: `noindex` when
+// it isn't listed, and `nosnippet` when it's listed and not to be quoted. Each
+// comes from the record, as the sitemap and `llms.txt` do, so none can
+// disagree with them. A layout includes it in
 // `<head>`, given the page's collection entry:
 //
 //   <Head entry={entry} title={(page, record) => `${page} · Loom`} />
@@ -38,3 +39,4 @@ const whole =
 }
 {record?.canonical !== undefined && <link rel="canonical" href={record.canonical} />}
 {record?.listing === "unlisted" && <meta name="robots" content="noindex" />}
+{record?.listing === "unquoted" && <meta name="robots" content="nosnippet" />}

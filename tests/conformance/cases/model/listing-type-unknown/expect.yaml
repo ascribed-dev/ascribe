@@ -1,0 +1,8 @@
+description: >-
+  A key of `[listing.types]` that isn't a content type is an error at the
+  key, listing the types there are.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-listing-type, file: ascribe.toml, line: 10}

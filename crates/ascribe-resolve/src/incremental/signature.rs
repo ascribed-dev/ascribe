@@ -176,6 +176,7 @@ impl Fingerprints {
             intended,
             permalinks,
             crawlers,
+            listing,
             warnings,
         } = model;
         // `parse` reads the directive schemas (built-ins and widgets) and the
@@ -256,7 +257,8 @@ impl Fingerprints {
                     checks,
                     intended,
                     permalinks,
-                    crawlers
+                    crawlers,
+                    listing
                 ),
             )
         ));

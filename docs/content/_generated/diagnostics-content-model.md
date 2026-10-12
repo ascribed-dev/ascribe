@@ -779,6 +779,41 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
 
+### `[listing]`
+
+#### ASC185 `model-listing-folder`
+@id {permalink=true}: ASC185
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{folder}` in `[listing.folders]` doesn't exist under the content root
+
+**Fix:** Write the folder's path from the content root, ending in `/`, with its name's case as it is on disk: `"internal/" = "unlisted"`. A rule is for a folder and everything under it; patterns aren't read.
+
+**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+
+#### ASC186 `model-listing-type`
+@id {permalink=true}: ASC186
+
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{type}` in `[listing.types]` isn't a content type; use one of: \{values}
+
+**Fix:** Name a content type the project declares in `[types]`, or `page` when it declares none.
+
+**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+
+#### ASC187 `model-listing-looser`
+@id {permalink=true}: ASC187
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{rule}` is looser than `{wider}` on line \{line}, which it's under; a narrower rule can only restrict
+
+**Fix:** Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own.
+
+**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+
 ### `[checks]`
 
 #### ASC142 `model-check-not-configurable`

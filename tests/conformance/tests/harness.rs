@@ -127,6 +127,7 @@ impl ConformanceAdapter for FakeAdapter {
                 file,
                 PageResult {
                     outline: Some(fake_outline(&text)),
+                    listing: None,
                     outputs,
                 },
             );

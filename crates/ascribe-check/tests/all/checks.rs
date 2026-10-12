@@ -748,3 +748,42 @@ fn a_description_is_measured_as_its_line_in_llms_txt_with_agents_on() {
     );
     assert!(found(&described(true, &[("a.md", &linked)])).is_empty());
 }
+
+#[test]
+fn a_page_looser_than_its_rule_quotes_the_rule_and_its_line() {
+    let text = format!("{MODEL}\n[listing.folders]\n\"internal/\" = \"unlisted\"\n");
+    let line = text
+        .lines()
+        .position(|l| l == "\"internal/\" = \"unlisted\"")
+        .expect("the rule")
+        + 1;
+    let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
+    let sources = Project::from_sources([(
+        RelPath::parse("internal/plan.md").expect("a relative path"),
+        "---\ntitle: Plan\nlisting: listed\n---\n".to_owned(),
+    )]);
+    let project = Project::from_parts(
+        PathBuf::from("/nonexistent-ascribe-project"),
+        RelPath::parse("docs").expect("a relative path"),
+        model,
+        text.clone(),
+        sources,
+    );
+    let d = one(&project);
+    assert_eq!(d.slug.as_str(), "listing-loosened");
+    assert_eq!(
+        d.message,
+        format!(
+            "this page is `listed`, looser than `\"internal/\" = \"unlisted\"` on line {line} of \
+             ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter"
+        )
+    );
+    // The fix removes the page's own setting, and the rule holds.
+    let fix = &d.fixes[0];
+    assert_eq!(fix.applicability, Applicability::Safe);
+    let file = project.file(d.location.file).expect("a known file");
+    assert_eq!(
+        apply_edits(file.text, &fix.edits).expect("the edits apply"),
+        "---\ntitle: Plan\n---\n"
+    );
+}

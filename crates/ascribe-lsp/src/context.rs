@@ -1024,7 +1024,7 @@ fn token(
             section: include.section.clone(),
         }),
         Hit::Directive(line) => directive_token(line, offset, &range),
-        Hit::Availability(..) | Hit::Frontmatter(..) => None,
+        Hit::Availability(..) | Hit::Frontmatter(..) | Hit::Listing(_) => None,
     });
     hit.or_else(|| {
         let line = directive_at(&file.document.blocks, offset)?;

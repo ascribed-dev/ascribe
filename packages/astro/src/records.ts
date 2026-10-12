@@ -13,6 +13,20 @@ const VERSION = 1;
 /** How a page is treated: listed, listed and not to be quoted, or not listed. */
 export type Listing = "listed" | "unquoted" | "unlisted";
 
+/**
+ * Where a page's listing comes from: `default` when nothing sets it, `page`
+ * for the page's own, and for a rule of `[listing]` its level (`site`,
+ * `folder`, or `type`), its folder or type, the rule as written, and its line
+ * in `ascribe.toml`.
+ */
+export interface ListingFrom {
+  level: "default" | "page" | "site" | "folder" | "type";
+  folder?: string;
+  type?: string;
+  rule?: string;
+  line?: number;
+}
+
 /** One page's record, with the route it's keyed by. */
 export interface PageRecord {
   /** The page's route, from the host's root. */
@@ -26,6 +40,8 @@ export interface PageRecord {
   /** The page's own address, absolute, when the project sets `[consumer] site`. */
   canonical?: string;
   listing: Listing;
+  /** Where `listing` comes from: the page, a rule of `[listing]`, or neither. */
+  listing_from: ListingFrom;
   /** The address of the page's Markdown version, from the host's root, when the build publishes one. */
   markdown?: string;
 }

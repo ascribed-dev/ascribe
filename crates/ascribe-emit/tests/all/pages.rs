@@ -58,6 +58,7 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "description": "Every page of the docs.",
                     "canonical": "https://docs.example.com/docs/",
                     "listing": "listed",
+                    "listing_from": { "level": "default" },
                     "markdown": "/docs/index.md",
                 },
                 "/docs/faq/": {
@@ -65,6 +66,7 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "title": "FAQ",
                     "canonical": "https://docs.example.com/docs/faq/",
                     "listing": "unquoted",
+                    "listing_from": { "level": "page" },
                     "markdown": "/docs/faq.md",
                 },
                 "/docs/guides/drafts/": {
@@ -72,6 +74,7 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "title": "Drafts",
                     "canonical": "https://docs.example.com/docs/guides/drafts/",
                     "listing": "unlisted",
+                    "listing_from": { "level": "page" },
                     "markdown": "/docs/guides/drafts.md",
                 },
                 "/docs/guides/install/": {
@@ -80,6 +83,7 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "description": "Install and connect it.",
                     "canonical": "https://docs.example.com/docs/guides/install/",
                     "listing": "listed",
+                    "listing_from": { "level": "default" },
                     "markdown": "/docs/guides/install.md",
                 },
             },
@@ -103,7 +107,14 @@ fn without_a_site_or_agents_a_record_has_no_addresses_but_its_route() {
         records(&project),
         json!({
             "version": 1,
-            "pages": { "/a/": { "source": "a.md", "title": "A", "listing": "listed" } },
+            "pages": {
+                "/a/": {
+                    "source": "a.md",
+                    "title": "A",
+                    "listing": "listed",
+                    "listing_from": { "level": "default" },
+                },
+            },
             "robots": { "lines": [] },
         })
     );
@@ -131,14 +142,97 @@ fn line_for<'a>(llms: &'a str, url: &str) -> Option<&'a str> {
     llms.lines().find(|line| line.contains(&link))
 }
 
+/// [`MODEL`] with a rule at every level of `[listing]`.
+fn with_rules() -> String {
+    format!(
+        "{MODEL}[types.changelog]\nfiles = [\"changes/**\"]\n\
+         [types.changelog.frontmatter]\ntitle = \"string\"\n\
+         [listing]\ndefault = \"listed\"\n\
+         [listing.folders]\n\"internal/\" = \"unlisted\"\n\
+         [listing.types]\nchangelog = \"unquoted\"\n"
+    )
+}
+
+/// [`FILES`], with pages under each rule of [`with_rules`].
+fn files_with_rules() -> Vec<(&'static str, &'static str)> {
+    let mut files = FILES.to_vec();
+    files.extend([
+        ("internal/plan.md", "---\ntitle: Plan\n---\n"),
+        ("changes/one.md", "---\ntitle: One\n---\n"),
+        (
+            "changes/two.md",
+            "---\ntitle: Two\nlisting: unlisted\n---\n",
+        ),
+    ]);
+    files
+}
+
+#[test]
+fn a_record_says_which_rule_its_listing_comes_from() {
+    let model = with_rules();
+    let project = memory_project(&model, &files_with_rules());
+    let pages = records(&project)["pages"].clone();
+    let line = |rule: &str| {
+        model
+            .lines()
+            .position(|l| l == rule)
+            .expect("the rule is in the model")
+            + 1
+    };
+    assert_eq!(pages["/docs/internal/plan/"]["listing"], "unlisted");
+    assert_eq!(
+        pages["/docs/internal/plan/"]["listing_from"],
+        json!({
+            "level": "folder",
+            "folder": "internal/",
+            "rule": "\"internal/\" = \"unlisted\"",
+            "line": line("\"internal/\" = \"unlisted\""),
+        })
+    );
+    assert_eq!(pages["/docs/changes/one/"]["listing"], "unquoted");
+    assert_eq!(
+        pages["/docs/changes/one/"]["listing_from"],
+        json!({
+            "level": "type",
+            "type": "changelog",
+            "rule": "changelog = \"unquoted\"",
+            "line": line("changelog = \"unquoted\""),
+        })
+    );
+    assert_eq!(pages["/docs/changes/two/"]["listing"], "unlisted");
+    assert_eq!(
+        pages["/docs/changes/two/"]["listing_from"],
+        json!({ "level": "page" })
+    );
+    assert_eq!(pages["/docs/guides/install/"]["listing"], "listed");
+    assert_eq!(
+        pages["/docs/guides/install/"]["listing_from"],
+        json!({
+            "level": "site",
+            "rule": "default = \"listed\"",
+            "line": line("default = \"listed\""),
+        })
+    );
+}
+
 #[test]
 fn llms_txt_lists_each_offered_record_as_the_record_says() {
     let project = memory_project(MODEL, FILES);
-    let records = records(&project);
+    llms_txt_agrees_with_the_records(&project);
+}
+
+#[test]
+fn llms_txt_agrees_with_the_records_with_rules_at_every_level() {
+    let project = memory_project(&with_rules(), &files_with_rules());
+    llms_txt_agrees_with_the_records(&project);
+}
+
+fn llms_txt_agrees_with_the_records(project: &Project) {
+    let records = records(project);
     let site = records["site"].as_str().expect("a site");
     let plain = emit_build(
         Path::new("/nowhere"),
-        &project,
+        project,
         "site",
         &PlainEmitter::new(project.model()),
     );

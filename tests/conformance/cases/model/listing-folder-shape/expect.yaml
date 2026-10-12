@@ -1,0 +1,11 @@
+description: >-
+  A key of `[listing.folders]` is a folder's path from the content root,
+  ending in `/`: a path without the `/`, a pattern, and a path out of the
+  content root are errors.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-listing-folder, file: ascribe.toml, line: 4}
+  - {slug: model-listing-folder, file: ascribe.toml, line: 5}
+  - {slug: model-listing-folder, file: ascribe.toml, line: 6}

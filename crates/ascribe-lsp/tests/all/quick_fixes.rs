@@ -1084,6 +1084,11 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             "listing: unlisted\n",
             "\n[crawlers]\nlines = [\"Disallow: /keys/\"]\n",
         ),
+        (
+            "listing-loosened",
+            "listing: listed\n",
+            "\n[listing]\ndefault = \"unquoted\"\n",
+        ),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()

@@ -185,3 +185,7 @@
 | [ASC182](../reference/diagnostics.md#ASC182) | `include-limit` | Error | Page | write |
 | [ASC183](../reference/diagnostics.md#ASC183) | `model-crawlers-line` | Error | File | write |
 | [ASC184](../reference/diagnostics.md#ASC184) | `listing-disallowed` | Advice | File | fix |
+| [ASC185](../reference/diagnostics.md#ASC185) | `model-listing-folder` | Error | File | write |
+| [ASC186](../reference/diagnostics.md#ASC186) | `model-listing-type` | Error | File | choose |
+| [ASC187](../reference/diagnostics.md#ASC187) | `model-listing-looser` | Error | File | write |
+| [ASC188](../reference/diagnostics.md#ASC188) | `listing-loosened` | Error | File | fix |
