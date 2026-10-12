@@ -47,7 +47,7 @@ With `--with-hook`, each target's file gets these entries:
 
 It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`; it adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
 
-It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
+`sync` writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
 
 | Code | Meaning |
 |---|---|
