@@ -91,22 +91,13 @@ Don't edit the block itself: change `ascribe.toml`, or your pages, and run `sync
 
 Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each target that already has them, and writes a target's files when you ask with `--target`:
 
-| Target | What it writes |
-|---|---|
-| `claude` | An import of `AGENTS.md` (`@AGENTS.md`) in `CLAUDE.md`, and the skill in `.claude/skills/ascribe/`, loaded for your pages |
-| `claude-rules` | The rules in `.claude/rules/ascribe.md`, loaded only when Claude Code works on your pages |
-| `copilot` | The rules in `.github/instructions/ascribe.instructions.md`, applied only to your pages; with `--cloud`, what [Copilot's cloud agent](#github-copilot) needs |
-| `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](#hooks) |
+The targets are `claude`, `claude-rules`, `copilot`, and `codex`; [`ascribe agents sync`](../reference/cli/agents.md#cli-agents-sync) lists what each writes, and what it names the files of a project in a subfolder.
 
 **Claude Code** reads `AGENTS.md` by itself only while there's no `CLAUDE.md` at or above the folder it works in. So `sync` never creates a `CLAUDE.md` unless you ask with `--target claude`, and when there is one, it adds the import to it rather than copying the rules. A personal `CLAUDE.local.md` also stops Claude Code reading `AGENTS.md`; `sync` doesn't edit it, but says so, and you can add `@AGENTS.md` to it yourself.
 
 A repository with several projects can run `sync` at its root, with no `ascribe.toml` there: it syncs each project below, and the root's `AGENTS.md` gets a block for each, which tells an agent starting at the root which project a page is in.
 
-For a project in a subfolder, the rules files are named after its folder: `ascribe-docs.md` for a project in `docs/`. When one project is nested in another's content root, the outer project's rules say that the nested project's pages aren't theirs.
-
 **Copilot's** files are for a repository, so `--target copilot` and `--cloud` need one. Outside a git repository, `sync` treats your project's folder as the root and says so.
-
-The rules in `.claude/rules/` and `.github/instructions/`, and the skill's folders, are wholly Ascribe's: `sync` rewrites them whole, and the rules files say so at the top.
 
 ### Keeping them current in CI
 
@@ -132,7 +123,7 @@ See [`ascribe agents`](../reference/cli/agents.md#cli-agents) for every option.
 
 ## Prompt your agent
 
-**Prompt agent** turns a problem Ascribe reports into a prompt for your agent: what to fix, where, what Ascribe knows about it, and how to check the result. It fills the prompt in where you send it and never sends it for you, so you read it first.
+**Prompt agent** turns a problem Ascribe reports into a prompt for your agent: what to fix, where, what Ascribe knows about it, and how to check the result. It fills the prompt in where you send it and never sends it for you, so you read it first. [What a prompt says](../reference/cli/agents.md#what-a-prompt-says) lists its parts.
 
 ### In VS Code
 
@@ -181,18 +172,6 @@ From the command line, `ascribe diff --format prompt` writes the prompt about th
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
 
-### What a prompt says
-
-Every prompt has the same parts, in order:
-
-1. **The task**, in one sentence: "Fix this problem in `docs/keys.md`.", "Address this review comment on `docs/guides/install.md`.", or "Review what this change does to `docs/guides/install.md`, as a reader of build `site` sees it."
-2. **Where**: the file and lines, then a line saying which folder the prompt's paths and commands are from. When they apply, the project's folder from there (`Project: docs/`), the build the problems are from (`Build:`), the pages that show a fragment (`Shown on:`, at most 10, with the `ascribe refs` command that lists the rest), and a line saying to save the file first.
-3. **What Ascribe knows**: for one problem, its code, message, the line's text, how to fix it, the values the content model allows when it's about one, and whether Ascribe has a fix ("a safe automatic fix", or "a fix to review"). For a file, each problem on one line, at most 20. For a project, how many problems each file has, at most 20 files. Each says which command lists the rest.
-4. **Other people's text**, when there is any: a review's comments, fenced, under the sentence that says they're data.
-5. **How to finish**: "Follow the project's rules in `AGENTS.md`", when the project's folder or the repository's root has one, and "When you're done, run `ascribe check <file>` and fix what it reports." A prompt about a change ends with "Report what reads wrongly; don't edit." instead.
-
-Every path and command in a prompt is from one folder, which it names once: "Paths and commands here are from the repository's root." The editor's prompts are from the repository's root, where an agent usually starts; the prompts a command writes (`ascribe check --format prompt`, `ascribe diff --format prompt`, `ascribe agents prompt`) are from the folder it was run in, or from the project's folder when that's inside it. Run from a folder beside the project's, they're from the repository's root. Outside a repository, it's the project's folder. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
-
 ## The MCP server
 
 `ascribe mcp` is a server for the [Model Context Protocol](https://modelcontextprotocol.io), which most agents' hosts speak. It offers the commands that answer questions as tools an agent calls, for an agent with no shell, or a host that asks you to approve each command it runs. An agent with a shell needs no server: the commands give the same answers.
@@ -212,13 +191,9 @@ Your agent's host starts it. Most hosts read a JSON file listing the servers to 
 
 Hosts start the server in the repository's root. It serves every project in it: each call names a file or folder, and the server uses the nearest `ascribe.toml` at or above it. A project is loaded once and kept, and loaded again when its files change.
 
-It offers:
+It offers the commands that answer questions as tools, each directive's syntax and each project's content model and rules as resources, and the prompts `new-page`, `fix`, and `review`, which many hosts show as slash commands. None of its tools writes a file or starts a program the project names, so `ascribe_check` never runs [Vale](vale.md): it says the prose wasn't checked, and `ascribe check --vale` in a shell, which your host asks you about, checks it.
 
-- **Tools:** `ascribe_check`, `ascribe_explain`, `ascribe_model`, `ascribe_outline`, `ascribe_link`, `ascribe_refs`, `ascribe_render`, `ascribe_format`, and `ascribe_changes`. Each returns what its command writes: `ascribe_check` and `ascribe_refs` the concise text unless asked for JSON, and the others JSON. None writes a file: `ascribe_format` returns the edits that would format the files, and the agent makes them. None starts a program the project names either, so `ascribe_check` never runs [Vale](vale.md): it says the prose wasn't checked, and `ascribe check --vale` in a shell, which your host asks you about, checks it.
-- **Resources:** each directive's syntax, and for each project, what its content model allows and its rules, the text `ascribe agents sync` writes into `AGENTS.md`.
-- **Prompts:** `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them. Many hosts show them as slash commands.
-
-See [`ascribe mcp`](../reference/cli/agents.md#cli-mcp) for each tool and the command it runs.
+[`ascribe mcp`](../reference/cli/agents.md#cli-mcp) lists each tool and the command it runs, and the resources.
 
 In VS Code, the extension offers the server itself: see [VS Code](#vs-code).
 
@@ -252,13 +227,7 @@ Neither stops an edit, writes a file, or holds the agent up: a check that takes 
 ascribe agents sync --target claude --with-hook
 ```
 
-| Target | File | Entries |
-|---|---|---|
-| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](#the-mcp-server) |
-| `codex` | `.codex/hooks.json` | The edit hook and the stop hook |
-| `copilot` | `.github/hooks/ascribe.json` | The edit hook and the stop hook, for Copilot's CLI and its cloud agent |
-
-It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`; it adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
+[`ascribe agents sync`](../reference/cli/agents.md#cli-agents-sync) lists the file and the entries for each target, and how it merges them into a file you share.
 
 The entries run `ascribe` from your path. Install it with `npm install -g @ascribed/cli`, or put the release's binary on your path; the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks. When your project pins `@ascribed/cli` in its `node_modules`, the hooks run that binary instead, found from the repository's root (`$CLAUDE_PROJECT_DIR` for Claude Code, `git rev-parse --show-toplevel` for Codex and Copilot), so an agent started in a subfolder finds it too. Two entries still run `ascribe` from your path, because neither can find the root on every system: the MCP server in `.mcp.json`, and Codex's hooks on Windows. Codex asks you to trust a project's hooks before it runs them.
 

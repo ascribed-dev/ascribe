@@ -1,0 +1,19 @@
+# Written by `ascribe templates eject`, which adds to it. Don't edit it: it
+# records what each template was copied from, and a hash of it as written.
+version = 1
+
+[[template]]
+name = "reference"
+summary = "A reference article provides users with descriptions of specific components or characteristics of an application."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (dbbfcb9cd616)"
+
+[template.files]
+"templates/reference.md" = "sha256:5f21fea3961d8cd645e36fe47ca8f2fb66025b3b573ec336ebf0cca4ecc4d097"
+"templates/reference.guide.md" = "sha256:1f7296d6eb5883abffab43d694c82cac7c8f2c2a0b325921caa0a713a137b3ff"
+
+[template.ascribe-files]
+"templates/reference.ascribe.md" = "sha256:73bf4b2651848acd4eacaa012e848835f3a001a3994bcb308e5756d368ccdf63"
