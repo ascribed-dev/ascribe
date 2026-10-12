@@ -392,20 +392,39 @@ Each rule is for one exact path, never a pattern, so a rule for a page can't rea
 - **A site with its own `_headers`** in `public/` keeps it, and the integration never rewrites it. The build checks that it has Ascribe's lines, and fails when it doesn't, with the lines to add as its message. A line counts when it's under the same path, with the same value; the case of a header's name doesn't matter.
 - **A site whose Astro `base` isn't `/`** has no root to write `_headers` to, so the build prints the lines instead.
 
-**On another host,** read the list after the build and give each path its headers in the host's own configuration. For nginx, a script that writes a `location` block for each rule, for the server's configuration to include:
+**On another host,** read the list after the build and give each path its headers in the host's own configuration. For nginx, a script that writes a `map` for each header, from a Markdown version's path to the header's value, for the `http` block to include:
 
 ```js
-// After `astro build`: headers.conf, with a block for each Markdown version.
+// After `astro build`: headers.conf, a map for each header Ascribe's rules give.
 import { readFileSync, writeFileSync } from "node:fs";
 const { headers } = JSON.parse(
   readFileSync(".ascribe/build/site/site/_ascribe/headers.json", "utf8"),
 );
-const blocks = headers.map(({ path, headers }) => {
-  const lines = Object.entries(headers).map(([name, value]) => `  add_header ${name} '${value}';`);
-  return `location = ${path} {\n${lines.join("\n")}\n}\n`;
+const names = [...new Set(headers.flatMap((rule) => Object.keys(rule.headers)))];
+const maps = names.map((name) => {
+  const variable = `$ascribe_${name.toLowerCase().replaceAll("-", "_")}`;
+  const lines = headers
+    .filter((rule) => name in rule.headers)
+    .map((rule) => `  '${rule.path}' '${rule.headers[name]}';`);
+  return `map $uri ${variable} {\n  default "";\n${lines.join("\n")}\n}\n`;
 });
-writeFileSync("headers.conf", blocks.join(""));
+writeFileSync("headers.conf", maps.join(""));
 ```
+
+The server then sends each header from its variable, and nginx leaves out a header whose value is empty, so every other file is answered as before:
+
+```nginx
+http {
+  include headers.conf;
+
+  server {
+    add_header Link $ascribe_link;
+    add_header X-Robots-Tag $ascribe_x_robots_tag;
+  }
+}
+```
+
+A `location` with `add_header` lines of its own, such as one that gives `.md` files their type, doesn't inherit the server's, so it repeats these two.
 
 Cloudflare Pages reads a `_headers` file in the same form as Netlify's, but takes at most 100 rules, one for each Markdown version here; a larger site gives the rules to a Worker instead.
 
