@@ -110,15 +110,17 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
   const title = heading[1] ?? "";
   start++;
 
-  // What the template says about itself: the block quote after the title, and
+  // What the template says about itself: the block quotes after the title, and
   // the one it closes with, with the thematic break that sets it off (decision 22).
   skipBlank();
   if (!quoteLine.test(lines[start] ?? ""))
     throw new ConversionError(
       `${name}: no block quote about the template after its title (line ${start + 1})`,
     );
-  while (start < end && quoteLine.test(lines[start] ?? "")) start++;
-  skipBlank();
+  while (start < end && quoteLine.test(lines[start] ?? "")) {
+    while (start < end && quoteLine.test(lines[start] ?? "")) start++;
+    skipBlank();
+  }
   trimBlank();
   if (end <= start || !quoteLine.test(lines[end - 1] ?? ""))
     throw new ConversionError(`${name}: the template doesn't close with a block quote`);

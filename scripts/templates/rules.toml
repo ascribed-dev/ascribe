@@ -32,3 +32,6 @@ description = "{One sentence that says what a reader will have learned by the en
 [[tutorial.directives]]
 directive = "@steps"
 before = "1. {Write the step here. Use a verb to start.}"
+
+[reference]
+description = "{One sentence that says what this page lists and what a reader looks up in it.}"

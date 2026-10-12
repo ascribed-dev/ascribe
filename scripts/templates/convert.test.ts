@@ -43,6 +43,24 @@ test("the title goes to frontmatter, and what the template says about itself goe
   );
 });
 
+test("every block quote the template opens with goes, however many", () => {
+  const source =
+    "# T\n\n> Read the [guide](link to the guide).\n\n> Text in {curly brackets}.\n\n## Overview\n\nText.\n\n---\n\n> Explore other templates.\n";
+  expect(convertTemplate("t", source, rules)).toBe(
+    [
+      "---",
+      'title: "T"',
+      `description: "{Say what it's for.}"`,
+      "---",
+      "",
+      "## Overview",
+      "",
+      "Text.",
+      "",
+    ].join("\n"),
+  );
+});
+
 test("a brace in a code span or a fenced block isn't escaped", () => {
   const lines = [
     "Run `echo {a}` and ``x ` {b}`` with {c}.",
@@ -137,7 +155,7 @@ test("the pin is a tag and its commit, and every template converted has its rule
   const pin = readPin();
   expect(pin.tag).toMatch(/^v\d+\.\d+\.\d+$/);
   expect(pin.commit).toMatch(/^[0-9a-f]{40}$/);
-  expect([...readRules().keys()]).toEqual(["how-to", "concept", "tutorial"]);
+  expect([...readRules().keys()]).toEqual(["how-to", "concept", "tutorial", "reference"]);
 });
 
 const ascribe = binary();

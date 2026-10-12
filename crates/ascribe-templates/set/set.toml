@@ -21,3 +21,9 @@ name = "tutorial"
 summary = "Instructions for setting up an example project using the product, intended for the purpose of hands-on learning."
 template = "tutorial.md"
 guide = "tutorial.guide.md"
+
+[[template]]
+name = "reference"
+summary = "A reference article provides users with descriptions of specific components or characteristics of an application."
+template = "reference.md"
+guide = "reference.guide.md"
