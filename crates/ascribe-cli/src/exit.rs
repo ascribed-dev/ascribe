@@ -228,6 +228,10 @@ mod tests {
         ),
         ("templates_lock_invalid", "templates.lock can't be added to"),
         (
+            "unknown_template",
+            "a name isn't one of the set's templates",
+        ),
+        (
             "templates_unwritable",
             "a template or templates.lock can't be written",
         ),
@@ -421,7 +425,9 @@ mod tests {
         }
         fn templates_command(e: &TemplatesError) {
             match e {
-                TemplatesError::NoProject(_) | TemplatesError::ToOutside { .. } => {}
+                TemplatesError::NoProject(_)
+                | TemplatesError::ToOutside { .. }
+                | TemplatesError::Unknown { .. } => {}
             }
         }
         fn rename_command(e: &RenameCommandError) {
@@ -631,6 +637,10 @@ mod tests {
             Box::new(TemplatesError::ToOutside {
                 to: path(),
                 root: path(),
+            }),
+            Box::new(TemplatesError::Unknown {
+                name: text(),
+                known: text(),
             }),
             Box::new(Failure::Config(LocateError::NotFound {
                 dir: path(),

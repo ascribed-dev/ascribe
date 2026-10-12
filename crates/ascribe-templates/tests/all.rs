@@ -11,3 +11,5 @@ mod init;
 mod set;
 #[path = "all/start.rs"]
 mod start;
+#[path = "all/status.rs"]
+mod status;

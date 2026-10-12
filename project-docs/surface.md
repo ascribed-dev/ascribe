@@ -41,6 +41,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
 | `ascribe templates list` | Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. |  |  |
 | `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>]` | `text`, `json` |
+| `ascribe templates status` | Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. | `[--exit-code] [--diff <NAME>]` | `text`, `json` |
 | `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
 
 On every command:
@@ -689,6 +690,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/sources-status.schema.json` | SourcesStatusReport | What `ascribe sources status --format json` writes: each source's pin and the state of its copies, read from the files alone. |
 | `schemas/sources-update.schema.json` | SourcesUpdateReport | What `ascribe sources update --format json` writes: how each source's pin moved, and the pages whose examples the new copies change. |
 | `schemas/templates-eject.schema.json` | TemplatesEjectReport | What `ascribe templates eject` did: the files it wrote and the types it added, or, when it refused anything, what it refused, and then it wrote nothing. |
+| `schemas/templates-status.schema.json` | TemplatesStatusReport | What `ascribe templates status` found: for each template the project took, whether the set and the project have changed it since the copy, and each template of the set it doesn't have. |
 
 ## The docs
 

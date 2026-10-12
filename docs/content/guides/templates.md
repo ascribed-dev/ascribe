@@ -49,6 +49,24 @@ From then on the files are your project's, and nothing in Ascribe writes over th
 
 A change to a template changes what the check looks for, since it compares a page with the template as it is now. A placeholder you take out of the template isn't looked for in pages any more, and one you add is.
 
+## See what's changed in the set
+
+The Good Docs Project keeps improving their templates, and a later `ascribe` carries their newer release. Nothing changes your copies: to see what's different, run:
+
+```sh
+ascribe templates status
+```
+
+For each template you took, it says whether the set has changed it since your copy, from `templates.lock`'s record of each file as written, and whether you've changed it; then the templates of the set you don't have. A file the set changed and you didn't is listed with the sections that are different. It reads nothing but your project and the set your `ascribe` carries, so it works offline, and its first line says which release that set is from.
+
+To take a change, see it, then copy what you want by hand:
+
+```sh
+ascribe templates status --diff how-to
+```
+
+`--exit-code` makes it exit with 1 when the set has changed a template you took, or no longer has one, for a CI job that wants to know. The [command reference](../reference/cli/sources.md#cli-templates-status) has the rest, and its JSON.
+
 ## In a project that has pages
 
 A project that takes the set late is one with pages written already. Ascribe's own docs took it that way, with 46 pages, and it showed what to expect:

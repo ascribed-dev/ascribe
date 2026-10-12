@@ -168,7 +168,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages; [Page templates](../../guides/templates.md) says where they come from, and how to use them.
 
-The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file into the type's folder. `eject` adds to a project, and never starts one: [`ascribe init --templates`](#cli-init) does, with the set.
+The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file into the type's folder. `eject` adds to a project, and never starts one: [`ascribe init --templates`](#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list
@@ -221,6 +221,31 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 |---|---|
 | `0` | Every template named was written, and its type added |
 | `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, or the types can't be added to `ascribe.toml`. Or a file couldn't be written; the files it wrote before that stay. |
+
+### `ascribe templates status`
+@id {permalink=true}: cli-templates-status
+
+Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. It compares the project's files and `templates.lock` with the set the binary carries, and reads nothing else: no network, so what it says is as of this `ascribe`, and its first line names the release of theirs the set is from. It changes no file: a team that wants a change copies it by hand.
+
+```sh
+ascribe templates status
+```
+
+@include: ../../_generated/cli-templates-status-options.md
+
+`templates.lock` keeps a hash of each file as `eject` wrote it, and that's what tells the two apart: when the set's text isn't what was written, the set changed it; when the project's file isn't, the project did. A template can be both. A file the set changed and the project didn't is listed with what's different by section: each heading the set added, removed, or changed the text under, with `the start` for what comes before the first heading. A file that's gone is `deleted`. Line endings a checkout changed to CRLF aren't a change.
+
+It finds a template's entry in the `templates.lock` in `templates/`, or beside the template a type names, and finds the templates a project took from the lock's entries and from the types named as the set's templates are. When there's no lock, it's one `eject` didn't write, or it has no entry for a type of the set's, it says so, and says what it can from the files alone: whether each is the same as the set's or different, without telling who changed it.
+
+With `--diff NAME`, it prints only the change to that template, as a unified diff from the project's files to the set's, for each file the set has changed since the copy. When the project hasn't changed its copy, that's the upstream change itself; when it has, or the lock remembers nothing of the file, it says so on standard error, since the diff then undoes the project's changes too.
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `set` (the set's `repository`, `tag`, and `commit`), `upstream_changed` (whether the set has changed a template the project took, or no longer has one), `templates`, and `not_taken`, each with `name` and `summary`. Each template has `name`, `record` (`entry`, `no_lock`, `no_entry`, or `invalid_lock`), `lock` (the lock its entry is in, or the one looked in), `lock_problem` (why the lock can't be read, or null), `copied_from` (their release, or null without an entry), `upstream` (`unchanged`, `changed`, `unknown`, or `removed`, when the set no longer has it), `project` (`unchanged`, `changed`, or `unknown`), and `files`, each with `path`, `kind` (`template`, `guide`, or `notes`), `upstream`, `project` (`unchanged`, `changed`, `deleted`, or `unknown`), `matches_set` (whether it's the set's text now, or null), and `sections` (each with `heading`, null for the start, and `change`: `added`, `removed`, or `changed`; null unless the set changed the file and the project didn't). Paths are from the folder `ascribe.toml` is in.
+
+| Code | Meaning |
+|---|---|
+| `0` | It ran, whatever it found |
+| `1` | With `--exit-code`, the set has changed a template the project took, or no longer has one; with `--diff`, the one named. Or `--diff` names a template of the set the project hasn't taken. |
+| `2` | It couldn't run: no `ascribe.toml`, one that doesn't load, or `--diff` with a name the set doesn't have |
 
 ## `ascribe vale`
 @id {permalink=true}: cli-vale
