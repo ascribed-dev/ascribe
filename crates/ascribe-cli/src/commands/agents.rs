@@ -580,13 +580,17 @@ fn check(plans: &[Plan], out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     exit::PROBLEMS
 }
 
-/// A path as the person typed it: from the current directory, with `/`.
+/// A path as the person typed it: from the current directory, with `/`,
+/// and `.` for the current directory itself.
 fn shown(path: &Path) -> String {
     std::env::current_dir()
         .ok()
         .and_then(|cwd| {
             ascribe_core::path::relative_path(&ascribe_core::path::normalize(&cwd), path)
         })
-        .map(|rel| rel.as_str().to_owned())
+        .map(|rel| match rel.as_str() {
+            "" => ".".to_owned(),
+            rel => rel.to_owned(),
+        })
         .unwrap_or_else(|| path.display().to_string())
 }

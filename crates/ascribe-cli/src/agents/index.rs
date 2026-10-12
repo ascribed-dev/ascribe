@@ -106,9 +106,14 @@ pub fn write(
     }
     if let Some(folder) = folder {
         let ours: Vec<&str> = index.pages.iter().map(|p| p.path.as_str()).collect();
+        // The file the index is placed in may be in the folder, as a
+        // package's `AGENTS.md` at the root of what it ships is.
+        let own = file
+            .and_then(|file| relative_path(folder, file))
+            .map(|rel| rel.as_str().to_owned());
         let mut found = Vec::new();
         markdown_files(folder, folder, &mut found);
-        found.retain(|path| !ours.contains(&path.as_str()));
+        found.retain(|path| !ours.contains(&path.as_str()) && own.as_ref() != Some(path));
         found.sort();
         written.stray = found;
     }

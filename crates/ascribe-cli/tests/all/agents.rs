@@ -1173,6 +1173,55 @@ fn a_second_index_into_a_file_changes_nothing() {
 }
 
 #[test]
+fn an_index_in_its_own_pages_folder_isnt_a_stray_page() {
+    let repo = repository("quill");
+    let dir = repo.path();
+    let args = [
+        "agents",
+        "index",
+        "--build",
+        "site",
+        "--into",
+        "out/AGENTS.md",
+        "--pages",
+        "out",
+    ];
+    for _ in 0..2 {
+        let out = run(dir, &args, 0);
+        assert!(!stderr(&out).contains("AGENTS.md"), "{}", stderr(&out));
+    }
+    // A Markdown file of the folder's that isn't a page is still named.
+    write(&dir.join("out/old.md"), "# Old\n");
+    let out = run(dir, &args, 0);
+    assert!(stderr(&out).contains(": old.md"), "{}", stderr(&out));
+    assert!(!stderr(&out).contains("AGENTS.md"), "{}", stderr(&out));
+}
+
+#[test]
+fn pages_in_the_current_folder_are_shown_as_a_dot() {
+    let repo = repository("quill");
+    let out_dir = repo.path().join("out");
+    fs::create_dir_all(&out_dir).unwrap();
+    let out = run(
+        &out_dir,
+        &[
+            "--config",
+            "..",
+            "agents",
+            "index",
+            "--build",
+            "site",
+            "--into",
+            "AGENTS.md",
+            "--pages",
+            ".",
+        ],
+        0,
+    );
+    assert!(stdout(&out).contains("\nwrote     .  "), "{}", stdout(&out));
+}
+
+#[test]
 fn an_index_with_its_pages_in_the_content_root_is_refused() {
     let repo = repository("quill");
     let dir = repo.path();
