@@ -151,3 +151,26 @@ fn init_takes_no_config() {
     );
     assert!(fs::read_dir(dir.path()).unwrap().next().is_none());
 }
+
+/// Getting started's project is made by the command: its `ascribe.toml`,
+/// without the tags that mark the page's two snippets, is what `ascribe
+/// init` writes, then what the page adds at its end.
+#[test]
+fn getting_started_s_ascribe_toml_starts_with_what_init_writes() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["init"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let written = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    let example =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started/ascribe.toml");
+    let example = fs::read_to_string(example).unwrap();
+    let untagged: String = example
+        .lines()
+        .filter(|line| !line.starts_with("# :snippet-"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    assert!(
+        untagged.starts_with(&written),
+        "examples/getting-started/ascribe.toml no longer starts with what `ascribe init` writes:\n{written}"
+    );
+}

@@ -1,5 +1,6 @@
 ---
 title: Install Quill
+description: Install Quill with your package manager, and set it up.
 ---
 
 @note {type=tip}: {product} {version} needs Node.js 22 or later.

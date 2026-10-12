@@ -1,7 +1,7 @@
 [ASC036] Error: `configure.md` doesn't exist
-    ╭─[ docs/install.md:29:22 ]
+    ╭─[ docs/install.md:30:22 ]
     │
- 29 │ Next, [configure it](configure.md).
+ 30 │ Next, [configure it](configure.md).
     │                      ──────┬─────
     │                            ╰─────── link-target-missing
     │
