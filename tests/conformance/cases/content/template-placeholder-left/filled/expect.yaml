@@ -1,0 +1,8 @@
+description: >-
+  A page with every placeholder written over, and no instruction of its
+  template's left, has nothing to report. A block quote of the writer's own
+  isn't an instruction.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

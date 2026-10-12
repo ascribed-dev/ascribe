@@ -348,6 +348,34 @@ fn the_comparison_examples_ascribe_version_has_no_problems_and_is_canonical() {
     }
 }
 
+#[test]
+fn the_templates_example_has_no_problems_and_holds_what_eject_writes() {
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/templates");
+    for args in [&["check", "--deny-warnings"][..], &["fmt", "--check"][..]] {
+        let out = ascribe(&example, args);
+        assert_eq!(
+            code(&out),
+            0,
+            "ascribe {}\n{}{}",
+            args.join(" "),
+            stdout(&out),
+            stderr(&out)
+        );
+    }
+    // The example was made by `ascribe templates eject how-to`; when the set
+    // changes, it's made again.
+    for template in ascribe_templates::set().templates {
+        for name in [&template.template, &template.guide] {
+            let copy = fs::read_to_string(example.join("templates").join(name)).unwrap();
+            assert_eq!(
+                copy,
+                template.text(name),
+                "examples/templates/templates/{name} isn't what `ascribe templates eject` writes; run it again in a copy of the example without its templates and types"
+            );
+        }
+    }
+}
+
 /// The projects of `examples/monorepo`, one nested in another's content root.
 const MONOREPO_PROJECTS: [&str; 3] = ["docs", "handbook", "handbook/pages/security"];
 

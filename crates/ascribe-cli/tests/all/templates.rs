@@ -167,3 +167,105 @@ fn to_is_a_folder_from_the_current_folder() {
     assert_eq!(code_of(&outside), 2);
     assert!(stderr(&outside).contains("isn't inside the folder ascribe.toml is in"));
 }
+
+fn copy_dir(from: &Path, to: &Path) {
+    fs::create_dir_all(to).unwrap();
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), &target).unwrap();
+        }
+    }
+}
+
+/// The diagnostics `ascribe check` reports on `file`, a path from the
+/// project's folder.
+fn reported_on(dir: &Path, file: &str) -> Vec<Value> {
+    let check = ascribe(dir, &["check", "--format", "json"]);
+    let report: Value = serde_json::from_slice(&check.stdout).unwrap();
+    report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["file"].as_str().is_some_and(|f| f.ends_with(file)))
+        .cloned()
+        .collect()
+}
+
+const FILLED: &str = "---
+title: \"Rotate keys\"
+description: \"Replace the keys Quill signs releases with, without a release going unsigned.\"
+---
+
+## Overview
+
+This guide explains how to replace the keys Quill signs releases with.
+
+## Before you start
+
+Before you rotate the keys, ensure:
+
+* You can publish a release.
+* You have the old key's passphrase.
+
+## Rotate the keys
+
+@steps
+1. Run `quill keys new`.
+
+2. Run `quill keys retire` with the old key's name.
+
+## See also
+
+* [Install Quill](../install.md)
+";
+
+/// The phase's goal, in a copy of `examples/getting-started`: eject the
+/// how-to, copy its template to a page, and `ascribe check` gives one advice
+/// for each placeholder the page still has, its two frontmatter fields among
+/// them, and the placeholder that runs across blocks once. Filled in, the
+/// page has nothing to report.
+#[test]
+fn a_page_copied_from_the_template_has_an_advice_for_each_placeholder() {
+    let dir = tempfile::tempdir().unwrap();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started");
+    copy_dir(&example, dir.path());
+    let eject = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    let template = fs::read_to_string(dir.path().join("templates/how-to.md")).unwrap();
+    fs::create_dir_all(dir.path().join("docs/how-to")).unwrap();
+    fs::write(dir.path().join("docs/how-to/rotate-keys.md"), &template).unwrap();
+    // Linked to, so whether it's an orphan isn't in the way.
+    let install = dir.path().join("docs/install.md");
+    let mut text = fs::read_to_string(&install).unwrap();
+    text.push_str("\nTo change its keys, see [Rotate keys](how-to/rotate-keys.md).\n");
+    fs::write(&install, text).unwrap();
+
+    let found = reported_on(dir.path(), "how-to/rotate-keys.md");
+    assert!(
+        found
+            .iter()
+            .all(|d| d["slug"] == "template-placeholder-left"),
+        "{found:#?}"
+    );
+    // Each placeholder opens with the one brace the template escapes, and
+    // the title and the description are the template's.
+    let placeholders = template.matches("\\{").count();
+    assert_eq!(found.len(), placeholders + 2, "{found:#?}");
+    let see_also = found
+        .iter()
+        .filter(|d| {
+            d["message"]
+                .as_str()
+                .is_some_and(|m| m.contains("{Include references"))
+        })
+        .count();
+    assert_eq!(see_also, 1, "{found:#?}");
+
+    fs::write(dir.path().join("docs/how-to/rotate-keys.md"), FILLED).unwrap();
+    let found = reported_on(dir.path(), "how-to/rotate-keys.md");
+    assert!(found.is_empty(), "{found:#?}");
+}

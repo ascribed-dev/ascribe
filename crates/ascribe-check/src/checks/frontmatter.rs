@@ -91,6 +91,7 @@ impl Ctx<'_> {
             self.check_reserved_keys(&value, &index, first_line);
             self.check_roles(schema, &value, &index, first_line);
             self.check_description_length(schema, &value, &index);
+            self.check_template_fields(&value, &index);
         }
         self.check_intended_key(&value, &index, first_line);
     }

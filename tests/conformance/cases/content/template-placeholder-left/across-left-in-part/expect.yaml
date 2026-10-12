@@ -1,0 +1,8 @@
+description: >-
+  A placeholder that runs across blocks is found only when a page has every
+  piece of it. One a writer has started to fill in, keeping its first
+  paragraph and writing their own list, isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []
