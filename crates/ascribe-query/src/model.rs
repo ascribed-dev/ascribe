@@ -725,6 +725,9 @@ fn type_line(t: &ModelType) -> String {
         text.push_str(&format!(": frontmatter {}", fields.join(", ")));
     }
     if let Some(purpose) = &t.purpose {
+        // One line, so a `purpose` written over several can't end the list
+        // item it's in.
+        let purpose = purpose.split_whitespace().collect::<Vec<_>>().join(" ");
         text.push_str(&format!(". {}", purpose.trim_end_matches('.')));
     }
     text

@@ -480,12 +480,27 @@ mod tests {
     }
 
     #[test]
-    fn without_a_lock_a_type_from_the_set_says_only_its_purpose() {
+    fn without_a_lock_a_type_from_the_set_says_nothing_of_what_it_is_for() {
         let rules = rules_of(SIX, &[]);
         assert!(
             line(&rules, "how-to").ends_with("`description` (string, required)"),
             "{rules}"
         );
+    }
+
+    #[test]
+    fn a_purpose_over_several_lines_is_one_line_of_the_rules() {
+        let model = SIX.replacen(
+            "[types.how-to]\n",
+            "[types.how-to]\npurpose = \"\"\"\nOne task,\n- step by step.\n\"\"\"\n",
+            1,
+        );
+        let rules = rules_of(&model, &[]);
+        assert!(
+            line(&rules, "how-to").ends_with(". One task, - step by step"),
+            "{rules}"
+        );
+        assert!(!rules.contains("\n- step by step"), "{rules}");
     }
 
     #[test]
