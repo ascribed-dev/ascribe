@@ -56,3 +56,9 @@ Most of what's written about being found by AI has no evidence behind it, and so
 - **"No AI" markers control how AI uses a page.** No major operator has committed to honoring any of them. `robots.txt` is a request, and some crawlers document that they may ignore it.
 
 **Where the evidence is thin:** no study looks at documentation or developer questions alone; the two strongest results for agents are each one vendor's study; and no project has published a before-and-after number for any change to versioned docs in search. Treat a claim that one change will move your traffic, Ascribe's included, as untested until your own numbers say otherwise.
+
+## Related resources
+
+- [The project report](report.md): the pages a build lists or keeps out, and how the published site delivers to agents.
+- [`[crawlers]`](../reference/content-model/checks.md#21-crawlers): what each kind of AI crawler may do.
+- [Index your docs for your product's agents](agents.md#index-your-docs-for-your-products-agents): giving your product's own agents the docs.
