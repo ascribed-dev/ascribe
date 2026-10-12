@@ -16,7 +16,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 - `packages/elements/CONTRACT.md`: the availability element's attributes and its text.
 - `docs/content/contracts/output-layout.md` §1, and `json-reports.md`: how a report names the builds a problem is in.
 - `project-docs/checklists.md`, "A new command or option".
-- The [search and answers plan](../search-and-answers/README.md): decisions 5, 15, 17, and 19.
+- The [search and answers plan](https://github.com/ascribed-dev/ascribe/blob/5b22286fd2f370e796219e68a7c9d7cdb2ba8acc/project-docs/search-and-answers/README.md): decisions 5, 15, 17, and 19.
 
 ## The decisions
 
