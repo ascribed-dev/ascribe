@@ -44,6 +44,18 @@ export interface PageRecord {
   listing_from: ListingFrom;
   /** The address of the page's Markdown version, from the host's root, when the build publishes one. */
   markdown?: string;
+  /**
+   * The page's place in the site, from the top down to the page itself: the
+   * page at each of its route's folders that has one, then the page. Absent
+   * in records an earlier Ascribe wrote.
+   */
+  breadcrumbs?: Step[];
+}
+
+/** One step of a page's breadcrumbs: a page's route, from the host's root, and its title. */
+export interface Step {
+  route: string;
+  title: string;
 }
 
 /** `_ascribe/pages.json`. */
