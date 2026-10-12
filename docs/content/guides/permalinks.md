@@ -23,7 +23,7 @@ So it works on any static host.
 
 [`@ascribed/astro`](astro.md) adds the route itself, from the list, in `astro build` and in `astro dev`, where a permalink you add or remove is served on the next rebuild, with no restart. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents.
 
-[`permalink-path`](../reference/content-model/output.md#15-consumer) moves them, as a path from the site's root, such as `"/go/"` when the docs move under `/docs/` but the addresses your product prints shouldn't. It must be under Astro's `base`, since that's all an Astro site serves; the integration fails the build when it isn't.
+[`permalink-path`](../reference/content-model/output.md#consumer) moves them, as a path from the site's root, such as `"/go/"` when the docs move under `/docs/` but the addresses your product prints shouldn't. It must be under Astro's `base`, since that's all an Astro site serves; the integration fails the build when it isn't.
 
 ### With another generator
 
@@ -31,7 +31,7 @@ Read `_ascribe/permalinks.json` from the build's site output and publish a page 
 
 ## Linking from a product
 
-A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../reference/content-model/content.md#6-dimensionsname):
+A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../reference/content-model/content.md#dimensions):
 
 ```ts
 // The docs' permalinks, as `[consumer]` publishes them.

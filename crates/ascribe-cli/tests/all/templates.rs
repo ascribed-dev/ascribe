@@ -185,13 +185,13 @@ fn eject_refused_writes_nothing_and_exits_2() {
 }
 
 #[test]
-fn eject_with_no_ascribe_toml_says_how_to_write_one() {
+fn eject_with_no_ascribe_toml_names_ascribe_init() {
     let dir = tempfile::tempdir().unwrap();
     let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
     assert_eq!(code_of(&output), 2);
     let err = stderr(&output);
     assert!(err.starts_with("error: no ascribe.toml found"), "{err}");
-    assert!(err.contains("`spec = \"0.1\"`"), "{err}");
+    assert!(err.contains("run `ascribe init --templates`"), "{err}");
     assert!(fs::read_dir(dir.path()).unwrap().next().is_none());
 }
 

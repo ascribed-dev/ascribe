@@ -1,0 +1,3 @@
+wrote ascribe.toml
+made docs/, the folder the pages go in
+Next, to publish the pages as a site with Astro, read https://ascribed-dev.com/go/astro-guide/

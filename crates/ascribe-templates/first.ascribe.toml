@@ -1,0 +1,26 @@
+# The project's content model: where its pages are, and what each kind of
+# page must say in its frontmatter. `ascribe check` and the editor read it.
+# Every section is in the reference: https://ascribed-dev.com/go/content-model/
+spec = "0.1"
+
+[project]
+# The folder the pages are in. A link that starts with `/` starts here.
+content-root = "docs"
+
+# What most projects add next:
+#
+# - A phrase, such as the product's name, written once here and on a page as
+#   {product}: https://ascribed-dev.com/go/phrases/
+# - A dimension, such as the reader's platform, for content that's for some
+#   readers only: https://ascribed-dev.com/go/dimensions/
+# - [consumer], the site the pages are published as, and its address:
+#   https://ascribed-dev.com/go/consumer/
+
+# A page that no other type's `files` covers is a `page`, with a title and a
+# description.
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string"

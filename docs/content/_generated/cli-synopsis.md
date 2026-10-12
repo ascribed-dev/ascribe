@@ -13,6 +13,7 @@ ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>].
 ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json|markdown] [--exit-code]
 ascribe explain           [CODE] [--list] [--format text|json]
 ascribe fmt               [--check] [PATHS]... [--format text|json]
+ascribe init              [DIR] [--templates] [--format text|json]
 ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe lsp
 ascribe mcp

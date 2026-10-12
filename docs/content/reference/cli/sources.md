@@ -1,9 +1,9 @@
 ---
-title: "`ascribe sources`, `permalinks`, `templates`, and `vale`"
-description: "Fetch and update source repositories, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
+title: "`ascribe init`, `sources`, `permalinks`, `templates`, and `vale`"
+description: "Start a project, fetch and update source repositories, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
 ---
 
-The commands that look after what a project keeps beside its pages: its source repositories, its permalinks, its page templates, and Vale's configuration. The options every command accepts are in the [command reference](../cli.md#options-every-command-accepts).
+The commands that start a project, and look after what it keeps beside its pages: its source repositories, its permalinks, its page templates, and Vale's configuration. The options every command accepts are in the [command reference](../cli.md#options-every-command-accepts).
 
 ## `ascribe sources`
 @id {permalink=true}: cli-sources
@@ -128,13 +128,47 @@ It retires a name given only when the content no longer declares it and `ascribe
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `retired` (the names, in order), `reason`, `to` (or null), and `list_changed` (whether `ascribe.permalinks` was written). It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be written.
 
+## `ascribe init`
+@id {permalink=true}: cli-init
+@available: next
+
+Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. With `--templates`, it takes the page templates too, as [`ascribe templates eject`](#cli-templates-eject) with no name does.
+
+```sh
+mkdir handbook && cd handbook
+ascribe init --templates
+```
+
+@include: ../../_generated/cli-init-options.md
+
+It writes in the current folder, or in `DIR`, a path from the current folder, which it makes if it isn't there. It asks nothing. Where there's an `ascribe.toml` in the folder or above it, it refuses, names the one it found, and writes nothing: `ascribe templates eject`, run there, adds the templates to that project. To start a second project in a repository that has one, name a folder outside it. It takes no `--config`, since the project is the one it starts.
+
+The file it writes is small, and says what each part is for:
+
+@snippet: code:crates/ascribe-cli/tests/output/init-ascribe.toml
+
+It sets the content root, `docs`, though that's the default, since it's the first thing a project changes. It declares one type, `page`, the default, for every page no other type's `files` covers, with a title and a description; a project with types and no default has no type for a page outside their folders. Its comments name what most projects add next, each with its section of the [`ascribe.toml` reference](../content-model.md), and it adds none of them: no site address, no builds, and no dimensions.
+
+With `--templates`, the six types are added after `page`, each covering a folder of its name in `docs/`, and the templates, their guides, Ascribe's notes, and `templates.lock` are written into `templates/`, as `eject` writes them. When a file is where one would be written, it's named, as `eject` names it, and nothing is written.
+
+It lists each file it wrote, `ascribe.toml` last, from the current folder; the content root, when it made it; with `--templates`, each type it added, as `eject` says it; and last, the [Astro guide](../../guides/astro.md), to publish the pages as a site.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/init.txt
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the new project's folder, in the order written), `content_root` (from the new project's folder), `content_root_made` (whether it made it), `templates` (what `eject` did, with the fields its own JSON has, or null without `--templates`), and `next` (the Astro guide's address). When `templates.refused` isn't empty, `written` is empty.
+
+| Code | Meaning |
+|---|---|
+| `0` | The project is there: `ascribe.toml` is written, the content root is there, and with `--templates`, every template and its type |
+| `2` | It wrote nothing: there's an `ascribe.toml` in the folder or above it, the folder is a file, a template was refused, or it was given `--config`. Or a file couldn't be written; the files it wrote before that stay. |
+
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
 @available: next
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages; [Page templates](../../guides/templates.md) says where they come from, and how to use them.
 
-The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file into the type's folder, and a project's first `ascribe.toml` is written by hand: `eject` adds to a project, and never starts one.
+The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file into the type's folder. `eject` adds to a project, and never starts one: [`ascribe init --templates`](#cli-init) does, with the set.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list
@@ -177,7 +211,7 @@ title = "string"
 
 Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
 
-It checks everything before it writes anything. A type `ascribe.toml` declares already, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so and what to write by hand: a file with the line `spec = "0.1"`, beside the folder the pages go in.
+It checks everything before it writes anything. A type `ascribe.toml` declares already, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
 
 It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; that a type's `files` is the line to change to keep its pages elsewhere; and how to start a page.
 

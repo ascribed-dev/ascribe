@@ -22,6 +22,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
 | `ascribe explain` | Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in Diagnostics, and, for the diagnostics people meet most, a short page that has the problem and the same page without it. | `[CODE] [--list]` | `text`, `json` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [PATHS]...` | `text`, `json` |
+| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates]` | `text`, `json` |
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
@@ -665,6 +666,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/explain-list.schema.json` | ExplainListReport | What `ascribe explain --list` answers: every diagnostic. |
 | `schemas/explain.schema.json` | ExplainReport | What `ascribe explain <CODE>` answers: one diagnostic. |
 | `schemas/fmt.schema.json` | FmtReport | What `ascribe fmt --format json` writes: one document. |
+| `schemas/init.schema.json` | InitReport | What `ascribe init` did. |
 | `schemas/link.schema.json` | LinkReport | What `ascribe link <TARGET> --from <PAGE>` answers. |
 | `schemas/lsp-agent-prompt.schema.json` | AgentPromptResult | The answer to `ascribe/agentPrompt`, or `null` when there's nothing to prompt about: the file has no problem, the diagnostic is no longer reported, review is off, or the page or fragment didn't change. |
 | `schemas/lsp-build-view.schema.json` | BuildViewResult | The answer to `ascribe/buildView`. |
@@ -706,7 +708,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` |  |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions |  |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` |  |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe sources`, `ascribe permalinks`, and `ascribe templates` |  |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe permalinks`, and `ascribe templates` |  |
 | `contracts/output-layout.md` | Output-layout contract |  |
 | `contracts/permalinks-list.md` | The permalinks list |  |
 | `contracts/site-render.md` | Site-render contract |  |
@@ -729,7 +731,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `reference/cli/check.md` | `ascribe check`, `build`, and `fmt` |  |
 | `reference/cli/diff.md` | `ascribe diff`, `drift`, and `report` |  |
 | `reference/cli/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` |  |
-| `reference/cli/sources.md` | `ascribe sources`, `permalinks`, `templates`, and `vale` |  |
+| `reference/cli/sources.md` | `ascribe init`, `sources`, `permalinks`, `templates`, and `vale` |  |
 | `reference/content-model.md` | `ascribe.toml` reference |  |
 | `reference/content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing |  |
 | `reference/content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets |  |

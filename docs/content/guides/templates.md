@@ -16,7 +16,9 @@ The set has six templates, for a how-to, a concept, a tutorial, a reference, a t
 
 ## Take the templates
 
-In a project, the folder with its `ascribe.toml`, take the whole set:
+To start a project with the set, run `ascribe init --templates` in an empty folder. It writes the project's first `ascribe.toml`, with a type for every page no template covers, and takes the six templates as `eject` would; the [command reference](../reference/cli/sources.md#cli-init) shows the file.
+
+In a project that has its `ascribe.toml` already, take the whole set:
 
 ```sh
 ascribe templates eject
@@ -39,7 +41,7 @@ Each type's page has a title and a description, as every template's frontmatter 
 
 To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
 
-`eject` adds to a project, and doesn't start one. Without an `ascribe.toml`, write one first: a file named `ascribe.toml`, beside the folder your pages go in (`docs`, unless you say otherwise), with the line `spec = "0.1"`.
+`eject` adds to a project, and doesn't start one: without an `ascribe.toml`, it says to run `ascribe init --templates`.
 
 ## Change a template
 
