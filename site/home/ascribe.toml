@@ -70,7 +70,7 @@ name = "In main, not yet released"
 available = "ascribe unreleased"
 
 [phrases]
-version = "0.2.0"
+version = "0.3.0"
 # `[consumer] site`, for links into the docs, which are another project: a
 # link that starts with `/` names a file in this one. Write a docs page by its
 # permalink, `{site}/go/<name>/`; the site's tests check each name.
