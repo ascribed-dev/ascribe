@@ -3,6 +3,7 @@
 ```text
 ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]
 ascribe agents rules      [PATH]
+ascribe agents index      [--build <NAME>] [--into <FILE>] [--pages <DIR>] [--format text|json]
 ascribe agents skill      [FILE]
 ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list]
 ascribe agents hook       HARNESS [--event edit|stop]

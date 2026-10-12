@@ -2,21 +2,21 @@
 
 ## Install the CLI
 
-<!-- A switcher: a reader sees one of the next 3 sections at a time, chosen by `platform`. -->
+A reader sees one of the next 3 sections at a time, chosen by platform.
 
-**Linux**
+### Platform: Linux
 
 ```sh
 curl -fsSL https://lantern.example.com/install.sh | sh
 ```
 
-**macOS**
+### Platform: macOS
 
 ```sh
 brew install lantern
 ```
 
-**Windows**
+### Platform: Windows
 
 ```powershell
 winget install Lantern.CLI

@@ -12,6 +12,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 |---|---|---|---|
 | `ascribe agents sync` | Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. | `[--check] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent]` |  |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
+| `ascribe agents index` | Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. | `[--build <NAME>] [--into <FILE>] [--pages <DIR>]` | `text`, `json` |
 | `ascribe agents skill` | Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. | `[FILE]` |  |
 | `ascribe agents prompt` | Prints a named prompt for an agent, in the same form as Prompt agent's. | `[NAME] [--arg <KEY=VALUE>]... [--list]` |  |
 | `ascribe agents hook` | Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. | `HARNESS [--event edit\|stop]` |  |
@@ -647,6 +648,7 @@ The JSON the commands and the language server write, each with a schema:
 
 | Schema | Shape | What it is |
 |---|---|---|
+| `schemas/agents-index.schema.json` | AgentsIndexReport | What `ascribe agents index --format json` answers. |
 | `schemas/check.schema.json` | CheckReport | What `ascribe check --format json` and `ascribe build --format json` write: one document, whatever the outcome. |
 | `schemas/diff-html-data.schema.json` | ReportData | The data the report's script draws from. |
 | `schemas/diff.schema.json` | DiffReport | The whole report, as `ascribe diff --format json` writes it. |

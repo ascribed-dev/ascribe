@@ -79,12 +79,14 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
 fn the_cloud_build_keeps_the_package_manager_group_and_shows_availability() {
     let plain = output("cloud", &PlainEmitter::default());
     let page = &plain["install-agent.md"];
-    // The `pm` group stays a full set of labeled sections...
+    // The `pm` group stays a switcher: a line saying so, then each arm
+    // under a heading below "Install the agent"'s...
     // (They're inside a list item, so indented by three spaces.)
     for section in [
-        "   **npm**\n\n   ```shell\n   npm install -g @quill/agent\n   ```",
-        "   **pnpm**\n\n   ```shell\n   pnpm add -g @quill/agent\n   ```",
-        "   **Yarn**\n\n   ```shell\n   yarn global add @quill/agent\n   ```",
+        "   A reader sees one of the next 3 sections at a time, chosen by package manager.",
+        "   ### Package manager: npm\n\n   ```shell\n   npm install -g @quill/agent\n   ```",
+        "   ### Package manager: pnpm\n\n   ```shell\n   pnpm add -g @quill/agent\n   ```",
+        "   ### Package manager: Yarn\n\n   ```shell\n   yarn global add @quill/agent\n   ```",
     ] {
         assert!(page.contains(section), "{section}\n{page}");
     }
@@ -94,7 +96,8 @@ fn the_cloud_build_keeps_the_package_manager_group_and_shows_availability() {
         "{page}"
     );
     assert!(!page.contains("Point the agent at your server"), "{page}");
-    assert!(!page.contains("**self-managed**"), "{page}");
+    assert!(!page.contains("Deployment: self-managed"), "{page}");
+    assert!(!page.contains("chosen by deployment"), "{page}");
     // ...and the availability line is there.
     assert!(
         page.contains("Available: Quill Cloud (GA); self-managed (preview, 3.4+)"),
@@ -108,9 +111,12 @@ fn the_self_managed_3_3_build_drops_what_isnt_available_yet() {
     let page = &plain["install-agent.md"];
     assert!(!page.contains("Streaming sync"), "{page}");
     assert!(page.contains("Point the agent at your server"), "{page}");
-    // Both arms of the `deployment` group stay, as labeled sections.
+    // Both arms of the `deployment` group stay, a switcher.
     assert!(
-        page.contains("**Quill Cloud**") && page.contains("**self-managed**"),
+        page.contains(
+            "A reader sees one of the next 2 sections at a time, chosen by deployment.\n\n\
+             ### Deployment: Quill Cloud\n"
+        ) && page.contains("\n### Deployment: self-managed\n"),
         "{page}"
     );
 }
