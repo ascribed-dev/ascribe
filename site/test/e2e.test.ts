@@ -348,6 +348,27 @@ test("the sidebar lists the pages and marks the current one", async () => {
   await page.close();
 });
 
+test("the page comes before the sidebar in the HTML, and the sidebar is drawn on its left", async () => {
+  const page = await open("/docs/reference/cli/");
+  const follows = await page.evaluate(() => {
+    const main = document.querySelector("main");
+    const sidebar = document.getElementById("sidebar");
+    return Boolean(
+      main && sidebar && main.compareDocumentPosition(sidebar) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+  expect(follows).toBe(true);
+  const main = await page.locator("main").boundingBox();
+  const sidebar = await page.locator("#sidebar").boundingBox();
+  expect(sidebar && main && sidebar.x + sidebar.width <= main.x).toBe(true);
+  // The second skip link reaches it from the top of the page.
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => location.hash)).toBe("#sidebar");
+  await page.close();
+});
+
 test("search finds a known word, with no network", async () => {
   const page = await open("/docs/");
   await page.route(/^(?!http:\/\/127\.0\.0\.1)/, (route) => route.abort());
@@ -403,6 +424,10 @@ test("at phone width, the sidebar opens from the menu and nothing scrolls sidewa
   expect(await sidebar.isVisible()).toBe(false);
   await page.getByRole("button", { name: "Menu" }).click();
   expect(await sidebar.isVisible()).toBe(true);
+  // It follows the page in the HTML, so opening it moves focus into it.
+  expect(await page.evaluate(() => document.activeElement?.getAttribute("aria-current"))).toBe(
+    "page",
+  );
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );

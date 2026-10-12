@@ -668,7 +668,9 @@ impl Renderer<'_> {
 }
 
 /// `<ascribe-availability>` with one `<ascribe-availability-target>` per
-/// entry, as one HTML block (contract §4): no blank line inside.
+/// entry, as one HTML block (contract §4): no blank line inside. A table
+/// row's targets are between a visually hidden `(Available: ` and `)`, so
+/// its text is the plain output's (decision #430).
 pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &[Entry]) -> String {
     let targets: Vec<String> = entries
         .iter()
@@ -690,13 +692,27 @@ pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &
             )
         })
         .collect();
+    let mut targets = targets.join("; ");
+    if scope == "row" {
+        let lead_in = |text: &str| {
+            format!(
+                "{}{text}{}",
+                open(
+                    "span",
+                    &Attrs::new().with("class", names::CLASS_AVAILABILITY_LEAD_IN)
+                ),
+                close("span")
+            )
+        };
+        targets = format!("{}{targets}{}", lead_in("(Available: "), lead_in(")"));
+    }
     format!(
         "{}\n{}\n{}",
         open(
             names::ELEMENT_AVAILABILITY,
             &Attrs::new().with("scope", scope)
         ),
-        targets.join("; "),
+        targets,
         close(names::ELEMENT_AVAILABILITY)
     )
 }

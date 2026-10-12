@@ -58,6 +58,9 @@ names! {
     /// `<ascribe-availability-target>`: one target of `<ascribe-availability>`
     /// (packages/elements/CONTRACT.md §4).
     ELEMENT_AVAILABILITY_TARGET = "ascribe-availability-target";
+    /// On the visually hidden `(Available: ` and `)` around a table row's
+    /// `<ascribe-availability>` targets (packages/elements/CONTRACT.md §4).
+    CLASS_AVAILABILITY_LEAD_IN = "ascribe-availability-lead-in";
     /// `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6).
     ELEMENT_GROUP = "ascribe-group";
     /// `<ascribe-for-agents>`: the visually hidden pointer to `llms.txt` at the top

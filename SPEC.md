@@ -1154,7 +1154,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
 | `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
 | `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
-| Table row's `available`, `badge` | A `<ascribe-availability scope="row">` element at the end of the row's first cell, on one line | The text "(Available: …)" at the end of the row's first cell |
+| Table row's `available`, `badge` | A `<ascribe-availability scope="row">` element at the end of the row's first cell, on one line, whose text is the plain output's: its targets between a visually hidden "(Available: " and ")" | The text "(Available: …)" at the end of the row's first cell |
 | Table row's `available`, `filter` | Unavailable rows removed; the rest annotated as in `badge` | Unavailable rows removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | `@snippet` | A fenced code block | A fenced code block |

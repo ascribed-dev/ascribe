@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**A table row's availability badge in the site output carries the plain output's `(Available: ` and `)`, visually hidden.** `<ascribe-availability scope="row">` puts its targets between two `<span class="ascribe-availability-lead-in">` elements holding `(Available: ` and `)`, which the element library hides as it hides `<ascribe-for-agents>`. The page looks as it did, and the row's text, `` `b` (Available: Self-managed (preview, 3.4+)) ``, is the same in the HTML as in the Markdown. A block's or a section's badge is unchanged: its lead-in is still CSS generated content. _Why:_ the delivery spec's `markdown-content-parity` check failed on the docs because each row's HTML text, the cell's text and then the badge, isn't in the Markdown, which writes the lead-in; and a screen reader heard the badge's targets with nothing saying what they were. Dropping the lead-in from the Markdown would have left a `.md` reader with the same puzzle. _From:_ Kyle, in the thread for issue #430, 12 October 2026.

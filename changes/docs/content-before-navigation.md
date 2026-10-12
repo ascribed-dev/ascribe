@@ -1,0 +1,1 @@
+- **The docs site's pages put their content before the sidebar in the HTML.** The sidebar is still drawn on the left, and a second skip link reaches it from the top; the menu at phone width moves focus into it. An agent reading a page's HTML meets the content first, which the delivery spec's `content-start-position` check measures.
