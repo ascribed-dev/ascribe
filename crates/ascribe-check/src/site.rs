@@ -130,8 +130,10 @@ pub const CHECKS: &[(&str, Owner)] = &[
     ),
     (
         "content-start-position",
+        // The checker measures the whole page converted to Markdown, so
+        // `<main>` alone doesn't move where the content starts.
         Owner::Hosting(
-            "Put each page's content earlier in its HTML than the navigation, or in `<main>`: the site's page template",
+            "Put each page's content before the navigation in its HTML, and place the navigation with CSS: the site's page template",
         ),
     ),
     // It measures a page's HTML converted to Markdown, navigation and all.
