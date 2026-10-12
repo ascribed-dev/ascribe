@@ -46,15 +46,44 @@ After you install it, its walkthrough, **Get Started with Ascribe**, shows the p
 ## Create `ascribe.toml`
 @id {permalink=true}: create-ascribetoml
 
-`ascribe.toml` is the content model: the project's schema. It marks the project root, and the smallest one is a single line:
+`ascribe.toml` is the content model: the project's schema. It marks the project root, and says what each kind of page must have in its frontmatter.
+
+### Start with `ascribe init`
+@available: next
+
+Start the project with the command:
+
+@variant {pm=npm}:
+```sh
+npx ascribe init
+```
+@variant {pm=pnpm}:
+```sh
+pnpm exec ascribe init
+```
+@end
+
+It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the pages go in. The file says what each part is for:
+
+@snippet: code:examples/getting-started/ascribe.toml#init
+
+Every page needs a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](guides/templates.md).
+
+### Write it by hand
+
+For a project that wants nothing written for it, or with Ascribe 0.3.0 or earlier, which don't have `ascribe init`, write `ascribe.toml` yourself, and make `docs/`. The smallest is a single line:
 
 ```toml
 spec = "0.1"
 ```
 
-With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, every page needs a `title`, and there's one build, `site`. A more useful start declares a dimension your content varies by, and a few phrases:
+With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, there's one build, `site`, and every page needs a `title` and has no other field, so leave out the page's `description` below.
 
-@snippet: code:examples/getting-started/ascribe.toml
+### Add what the page uses
+
+The page below uses what most projects add next: a dimension the content varies by, a few phrases, and the address the site is published at. Add them at the end of `ascribe.toml`:
+
+@snippet: code:examples/getting-started/ascribe.toml#added
 
 The [`ascribe.toml` reference](reference/content-model.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
@@ -74,6 +103,7 @@ Create `docs/install.md`:
 
 - `@note` is a callout; `{type=tip}` is its attribute.
 - `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](guides/variants.md).
+- `title` and `description` are the fields `ascribe.toml` asks every page for.
 - `{product}` and `{version}` are phrases from `ascribe.toml`.
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
@@ -90,7 +120,7 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
-Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with a `title`, and check again.
+Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, and check again.
 
 ## Build it
 
