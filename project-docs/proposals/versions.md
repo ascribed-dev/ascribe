@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Documentation versioning approaches](../reports/Documentation%20versioning%20approaches.md).
 
+The plan for building it is in [versions/](../versions/README.md).
+
 ## The goal
 
 Four levels, each costing a project only what it needs:
