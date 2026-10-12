@@ -20,6 +20,7 @@
 //   // a layout
 //   import Elements from "@ascribed/astro/Elements.astro";           // <Elements /> in <head>
 //   import Availability from "@ascribed/astro/Availability.astro";   // the page's availability
+//   import Head from "@ascribed/astro/Head.astro";                   // <Head entry={entry} /> in <head>
 //
 //   // the sidebar: src/nav.ts's list, checked against the collection
 //   import { sidebar } from "@ascribed/astro/content";
@@ -38,10 +39,11 @@
 //     review: "docs",
 //   })
 //   ascribeCollection({ schema, name: "docs" })
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AstroIntegration } from "astro";
+import type { AstroIntegration, IntegrationResolvedRoute } from "astro";
 import { findBinary } from "./binary.js";
 import { codeTitles } from "./code-titles.js";
 import { SeenFiles, watchDev, type DevBuilds } from "./dev.js";
@@ -52,10 +54,11 @@ import {
   filesMiddleware,
   folderUnder,
 } from "./files.js";
-import { hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
+import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import {
   consumerMismatches,
   homeRoute,
+  normalizeBase,
   readProject,
   supplyRouting,
   type AstroRouting,
@@ -68,12 +71,20 @@ import {
   type ProjectEntry,
   type ResolvedEntry,
 } from "./projects.js";
+import { pageList, readRecords, routeAs, routeKey, sitemapRoute } from "./records.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
 import { runDiff, runPrompt } from "./review/diff.js";
 import { APP_ID } from "./review/protocol.js";
 import { readRoutes } from "./review/routes.js";
 import { channelProblem, ReviewServer, type ToolbarChannel } from "./review/server.js";
+import {
+  devRouted,
+  devSitePages,
+  rootFiles,
+  rootFilesMiddleware,
+  type RootFileSources,
+} from "./root-files.js";
 import { anchorsFor, hasWarnings, reviewFor, runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
 import { copySchema } from "./schema.js";
@@ -112,6 +123,13 @@ interface SharedOptions {
    * `<figure class="code-title">` with a `<figcaption>`. Default `true`.
    */
   codeTitles?: boolean;
+  /**
+   * The site's one sitemap, at `<base>sitemap.xml`, of every listed page of
+   * every project and every page of the site's own. `exclude` lists routes,
+   * from the host's root, of the site's own pages to leave out of it, such
+   * as one that carries `noindex`.
+   */
+  sitemap?: { exclude?: string[] };
 }
 
 /** Options of the integration with one project. */
@@ -162,7 +180,8 @@ function fail(problems: string[], what: string): void {
 /**
  * Runs `ascribe build` for each project, checks the site's routing, adds the markdown plugin, adds a
  * page for each permalink's address, and serves published files, and, with `[consumer] agents = true`,
- * `llms.txt` and each page's Markdown, each at its project's base path.
+ * `llms.txt` and each page's Markdown, each at its project's base path; and writes the site's one
+ * sitemap and `robots.txt` from every project's page records.
  */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   /** With `projects`; otherwise the one entry has no name a collection gives. */
@@ -177,6 +196,42 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
   let devCommand = false;
   let devHttps = false;
   let review: ReviewServer | undefined;
+  /** The site's routes, as Astro resolved them, for what `astro dev` serves of the site's own. */
+  let astroRoutes: IntegrationResolvedRoute[] = [];
+  /** The site's `public/` folder, where its own `robots.txt` would be. */
+  let publicDir = "";
+
+  /** What the sitemap and `robots.txt` are drawn from, given the site's pages and its routes. */
+  const rootSources = (
+    sitePages: readonly string[],
+    routed: (route: string) => boolean,
+  ): RootFileSources => {
+    const base = routing?.base ?? "/";
+    const records = entries.map((entry) => readRecords(entry.siteRoot));
+    // Entries of one project share its `ascribe.toml`, and so its lines.
+    const lines = new Map<string, string[]>();
+    for (const [i, entry] of entries.entries()) {
+      if (!lines.has(entry.project.dir))
+        lines.set(entry.project.dir, records[i]?.robots.lines ?? []);
+    }
+    const root = normalizeBase(base);
+    return {
+      projects: records.map(pageList),
+      routed,
+      sitePages,
+      excluded: [
+        ...forwardingRoutes(entries.map((entry) => readPermalinks(entry.siteRoot))),
+        `${root}404`,
+        `${root}500`,
+        ...(options.sitemap?.exclude ?? []),
+      ],
+      lines: [...lines.values()],
+      site: routing?.site,
+      base,
+      ownRobots: existsSync(path.join(publicDir, "robots.txt")),
+      ownSitemap: existsSync(path.join(publicDir, "sitemap.xml")),
+    };
+  };
   return {
     name: "@ascribed/astro",
     hooks: {
@@ -190,6 +245,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         injectRoute,
       }) => {
         const root = fileURLToPath(config.root);
+        publicDir = fileURLToPath(config.publicDir);
         const list: ProjectEntry[] = options.projects ?? [
           {
             name: "",
@@ -395,11 +451,25 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                     if (entry.agentsRoot !== undefined)
                       server.middlewares.use(agentsMiddleware(entry.agentsRoot, base));
                   }
+                  // The sitemap and robots.txt, as the build would write them now.
+                  server.middlewares.use(
+                    rootFilesMiddleware(astro.base, () =>
+                      rootFiles(
+                        rootSources(
+                          devSitePages(astroRoutes, astro),
+                          devRouted(astroRoutes, astro),
+                        ),
+                      ),
+                    ),
+                  );
                 },
               },
             ],
           },
         });
+      },
+      "astro:routes:resolved": ({ routes }) => {
+        astroRoutes = routes;
       },
       "astro:server:setup": ({ server, refreshContent, logger, toolbar }) => {
         if (!devCommand || !routing) return;
@@ -472,8 +542,27 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         review = undefined;
         if (devCommand) for (const group of groups) removeDevFile(group.project.dir, process.pid);
       },
-      "astro:build:done": async ({ dir, logger }) => {
+      "astro:build:done": async ({ dir, pages, logger }) => {
         const base = routing?.base ?? "/";
+        const trailingSlash = routing?.trailingSlash ?? "ignore";
+        // Every page Astro built, by its route from the host's root. Astro lists
+        // pages only, not endpoints such as a feed, so a dot in a page's last
+        // segment, as in `/v1.2`, is still a page.
+        const built = pages.map((page) =>
+          routeAs(`${normalizeBase(base)}${page.pathname.replace(/^\//, "")}`, trailingSlash),
+        );
+        const builtKeys = new Set(built.map(routeKey));
+        const files = rootFiles(rootSources(built, (route) => builtKeys.has(routeKey(route))));
+        for (const note of files.notes) logger[note.level](note.text);
+        const out = fileURLToPath(dir);
+        if (files.sitemap !== undefined) {
+          await writeFile(path.join(out, "sitemap.xml"), files.sitemap);
+          logger.info(`wrote ${sitemapRoute(base)}`);
+        }
+        if (files.robots !== undefined) {
+          await writeFile(path.join(out, "robots.txt"), files.robots);
+          logger.info("wrote /robots.txt");
+        }
         // Entries of one project publish at one base path: the first entry's copies go last, so they win.
         for (const entry of [...entries].reverse()) {
           const folder = folderUnder(entry.project.consumer.basePath, base);

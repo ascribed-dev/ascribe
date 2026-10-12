@@ -3,6 +3,8 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import type { ComponentProps } from "astro/types";
 import Availability from "@ascribed/astro/Availability.astro";
 import Elements from "@ascribed/astro/Elements.astro";
+// The page's title, description, canonical link, and robots rule, from its record.
+import Head from "@ascribed/astro/Head.astro";
 import { sidebar } from "@ascribed/astro/content";
 import { nav } from "../nav.ts";
 
@@ -19,7 +21,6 @@ interface Props {
  */
 interface Page {
   title: string;
-  description?: string;
   available?: ComponentProps<typeof Availability>["available"];
   formatted?: { title?: string };
 }
@@ -30,7 +31,7 @@ const page = (of: CollectionEntry<"docs">) => of.data as Page;
 const titleHtml = (of: CollectionEntry<"docs">) =>
   page(of).formatted?.title ??
   page(of).title.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-const { title, description, available } = page(entry);
+const { available } = page(entry);
 // The sidebar: src/nav.ts's groups, each page with its address. The build
 // fails when the list leaves out a page, or names one that doesn't exist.
 const groups = sidebar(nav, await getCollection("docs"));
@@ -41,9 +42,8 @@ const groups = sidebar(nav, await getCollection("docs"));
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <Head entry={entry} />
     <Elements />
-    {description && <meta name="description" content={description} />}
   </head>
   <body>
     <nav aria-label="Docs">

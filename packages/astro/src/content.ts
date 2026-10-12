@@ -22,6 +22,7 @@ import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { glob } from "astro/loaders";
 import { astroRoot, collections, routes, siteRoot } from "virtual:ascribe/site";
+import { recordFor, type PageRecord } from "./records.js";
 import {
   pageRoute,
   sidebarGroups,
@@ -31,6 +32,7 @@ import {
 } from "./nav.js";
 
 export type { NavGroup, SidebarGroup, SidebarPage } from "./nav.js";
+export type { Listing, PageRecord } from "./records.js";
 
 /**
  * The collection's loader and schema: the `glob` loader on the site output's
@@ -76,6 +78,29 @@ export function sidebar<E extends NavEntry>(
     (id) => pageRoute(id, basePath, trailingSlash),
     (entry) => sourceFile(root, entry),
   );
+}
+
+/**
+ * A collection entry's page record, from its build's `_ascribe/pages.json`:
+ * its route, title, description, canonical address, and listing, as every
+ * output Ascribe writes has them. `undefined` for an entry that isn't from an
+ * Ascribe collection, or whose page has no record.
+ */
+export function pageRecord(entry: {
+  filePath?: string | undefined;
+  data?: unknown;
+}): PageRecord | undefined {
+  if (entry.filePath === undefined) return undefined;
+  const file = path.resolve(astroRoot, entry.filePath);
+  const roots = [...Object.values(collections), ...(siteRoot === "" ? [] : [siteRoot])];
+  const root = roots.find((candidate) => inside(candidate, file));
+  if (root === undefined) return undefined;
+  const data = entry.data as { source?: unknown } | undefined;
+  const source =
+    typeof data?.source === "string"
+      ? data.source
+      : path.relative(root, file).split(path.sep).join("/");
+  return recordFor(root, source);
 }
 
 /**

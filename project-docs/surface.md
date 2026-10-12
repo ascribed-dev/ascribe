@@ -537,6 +537,7 @@ The integration's options:
 | `anchors` | `boolean \| "dev"` | No | Mark each block of the site output with the source lines it came from (source anchors), for review: `"dev"` in `astro dev` only, `true` always. |
 | `review` | `boolean \| string` | No | Review in the site preview: an **Ascribe review** app in `astro dev`'s toolbar, which marks the page's changes and shows the pull request's comments, with source anchors in `astro dev`. |
 | `codeTitles` | `boolean` | No | Show a code block's title (`title="…"` in its info string, as `@snippet` writes it) above it, with a Shiki transformer that puts the block in a `<figure class="code-title">` with a `<figcaption>`. |
+| `sitemap` | `{ exclude?: string[] }` | No | The site's one sitemap, at `<base>sitemap.xml`, of every listed page of every project and every page of the site's own. |
 
 What a site imports:
 
@@ -548,6 +549,7 @@ What a site imports:
 | `@ascribed/astro/Elements.astro` | An import |
 | `@ascribed/astro/Availability.astro` | An import |
 | `@ascribed/astro/MissingPermalink.astro` | An import |
+| `@ascribed/astro/Head.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |

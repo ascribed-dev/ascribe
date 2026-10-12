@@ -776,7 +776,7 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/render.txt
 
-Above the arms of a variant group the build keeps, which the site shows as tabs and the plain output as sections in a row, the text says so in a comment: `` <!-- A switcher: a reader sees one of the next 3 sections at a time, chosen by `os`. --> ``, or `chosen by label` for labeled arms. The plain output and the JSON's `text` don't have it.
+A variant group the build keeps more than one arm of, which the site shows as tabs, is a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms, as the plain output writes it.
 
 `--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
 

@@ -145,3 +145,18 @@ export function servedList(
   }
   return first;
 }
+
+/**
+ * The routes of the forwarding pages, from the host's root: one for each name
+ * in `lists`, at the path of the list the route serves, as `hasPermalinks`
+ * picks it. They aren't pages of a build, and no sitemap lists them.
+ */
+export function forwardingRoutes(lists: readonly (PermalinkList | undefined)[]): string[] {
+  const known = lists.filter((list) => list !== undefined);
+  const served = known.find(hasPermalinks) ?? known[0];
+  if (served === undefined) return [];
+  const at = normalizeBase(served.path);
+  return known.flatMap((list) =>
+    [...Object.keys(list.permalinks), ...Object.keys(list.removed ?? {})].map((id) => `${at}${id}`),
+  );
+}

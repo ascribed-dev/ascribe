@@ -25,19 +25,21 @@ Before you install the agent, make sure you have:
 
 1. Install the agent package:
 
-   **npm**
+   A reader sees one of the next 3 sections at a time, chosen by package manager.
+
+   ### Package manager: npm
 
    ```shell
    npm install -g @quill/agent
    ```
 
-   **pnpm**
+   ### Package manager: pnpm
 
    ```shell
    pnpm add -g @quill/agent
    ```
 
-   **Yarn**
+   ### Package manager: Yarn
 
    ```shell
    yarn global add @quill/agent

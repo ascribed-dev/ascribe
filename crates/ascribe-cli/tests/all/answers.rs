@@ -519,25 +519,24 @@ fn render_says_a_reader_sees_one_arm_of_a_switcher() {
     let text = stdout(&run(dir.path(), &args, 0));
     assert!(
         text.contains(
-            "<!-- A switcher: a reader sees one of the next 2 sections at a time, chosen by `pm`. -->\n\n**npm**"
+            "A reader sees one of the next 2 sections at a time, chosen by pm.\n\n## pm: npm\n"
         ),
         "{text}"
     );
     assert!(
-        text.contains(
-            "<!-- A switcher: a reader sees one of the next 2 sections at a time, chosen by label. -->\n\n**Docker**"
-        ),
+        text.contains("A reader sees one of the next 2 sections at a time.\n\n## Docker\n"),
         "{text}"
     );
     assert_eq!(
-        text.matches("A switcher").count(),
+        text.matches("A reader sees").count(),
         2,
         "a group the build reduces to one arm isn't one: {text}"
     );
     let value = json(dir.path(), &args, 0);
-    assert!(
-        !value["text"].as_str().unwrap().contains("A switcher"),
-        "the JSON is the plain output's text, which has no note: {value}"
+    assert_eq!(
+        value["text"].as_str().unwrap(),
+        text,
+        "the JSON's text is the plain output's, as the text is"
     );
 }
 

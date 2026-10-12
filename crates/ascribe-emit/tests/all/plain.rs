@@ -63,11 +63,54 @@ fn details_are_the_bold_title_then_the_content() {
 }
 
 #[test]
-fn a_group_is_one_section_per_arm_led_by_its_label() {
+fn a_switcher_says_a_reader_sees_one_arm_then_heads_each_with_its_values() {
     let source = "@variant {pm=npm}:\nnpm i\n@variant {pm=yarn}:\nyarn add\n@end\n";
-    assert_eq!(body(source), "**npm**\n\nnpm i\n\n**Yarn**\n\nyarn add\n");
+    assert_eq!(
+        body(source),
+        "A reader sees one of the next 2 sections at a time, chosen by package manager.\n\n\
+         ## Package manager: npm\n\nnpm i\n\n## Package manager: Yarn\n\nyarn add\n"
+    );
+    // A labeled group has no dimension to choose by: its arms' titles head
+    // them.
     let labeled = ".Docker\n@variant:\nA\n\n.Other\n@variant:\nB\n@end\n";
-    assert_eq!(body(labeled), "**Docker**\n\nA\n\n**Other**\n\nB\n");
+    assert_eq!(
+        body(labeled),
+        "A reader sees one of the next 2 sections at a time.\n\n## Docker\n\nA\n\n## Other\n\nB\n"
+    );
+    // A value set, and several dimensions on one arm.
+    let several = "@variant {deployment=cloud pm=npm|pnpm}:\nA\n@variant {deployment=self-managed pm=yarn}:\nB\n@end\n";
+    assert_eq!(
+        body(several),
+        "A reader sees one of the next 2 sections at a time, chosen by deployment.\n\n\
+         ## Deployment: Quill Cloud, Package manager: npm / pnpm\n\nA\n\n\
+         ## Deployment: Self-managed, Package manager: Yarn\n\nB\n"
+    );
+}
+
+#[test]
+fn an_arms_heading_is_one_level_below_the_section_its_in() {
+    let source = "## Install\n\n@variant {pm=npm}:\nA\n@variant {pm=yarn}:\nB\n@end\n\n## Next\n";
+    assert_eq!(
+        body(source),
+        "## Install\n\nA reader sees one of the next 2 sections at a time, chosen by package manager.\n\n\
+         ### Package manager: npm\n\nA\n\n### Package manager: Yarn\n\nB\n\n## Next\n"
+    );
+    // A group in an arm goes a level further, and a level-6 section's arms
+    // stay at 6.
+    let nested = "@variant {pm=npm}:\n- Item\n\n  .One\n  @variant:\n  A\n\n  .Two\n  @variant:\n  B\n  @end\n@variant {pm=yarn}:\nC\n@end\n";
+    let text = body(nested);
+    assert!(
+        text.contains(
+            "  ### One (npm)\n\n  A\n\n  ### Two (npm)\n\n  B\n\n## Package manager: Yarn\n"
+        ),
+        "{text}"
+    );
+    let deep = "###### Deep\n\n@variant {pm=npm}:\nA\n@variant {pm=yarn}:\nB\n@end\n";
+    assert!(
+        body(deep).contains("\n###### Package manager: npm\n"),
+        "{}",
+        body(deep)
+    );
 }
 
 #[test]
@@ -78,7 +121,9 @@ fn a_heading_inside_an_arm_ends_with_the_arms_label() {
         "@variant {pm=npm}:\n## Install\nnpm i\n@variant {pm=yarn}:\n## Install\nyarn add\n@end\n";
     assert_eq!(
         body(source),
-        "**npm**\n\n## Install (npm)\n\nnpm i\n\n**Yarn**\n\n## Install (Yarn)\n\nyarn add\n"
+        "A reader sees one of the next 2 sections at a time, chosen by package manager.\n\n\
+         ## Package manager: npm\n\n## Install (npm)\n\nnpm i\n\n\
+         ## Package manager: Yarn\n\n## Install (Yarn)\n\nyarn add\n"
     );
     // A group reduced to one arm is that arm's content, headings unchanged.
     let project = memory_project(FULL_MODEL, &[("index.md", &page(source))]);
@@ -93,12 +138,13 @@ fn a_selection_that_leaves_one_arm_leaves_just_its_content() {
     let source = "@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\nServer.\n@end\n";
     let project = memory_project(FULL_MODEL, &[("index.md", &page(source))]);
     assert_eq!(plain(&project, "cloud", "index.md"), "# Test\n\nCloud.\n");
-    // Several surviving arms stay labeled sections.
+    // Several surviving arms stay a switcher, counted as the build keeps it.
     let two = "@variant {pm=npm}:\nA\n@variant {pm=pnpm}:\nB\n@variant {pm=yarn}:\nC\n@end\n";
     let project = memory_project(FULL_MODEL, &[("index.md", &page(two))]);
     assert_eq!(
         plain(&project, "self-managed-3.5", "index.md"),
-        "# Test\n\n**npm**\n\nA\n\n**pnpm**\n\nB\n"
+        "# Test\n\nA reader sees one of the next 2 sections at a time, chosen by package manager.\n\n\
+         ## Package manager: npm\n\nA\n\n## Package manager: pnpm\n\nB\n"
     );
 }
 

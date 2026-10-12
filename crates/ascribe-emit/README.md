@@ -32,7 +32,8 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 |---|---|
 | `@note {type=tip}` with a title | `> **Tip: Title**`, a blank quoted line, then the content; without a title, `> **Tip**` |
 | `@steps` | The ordered list |
-| A group | One section per surviving arm: the arm's bold label, then its content, each of its headings ending with the label in parentheses (`## Install (pnpm)`) |
+| A `@variant` group with more than one arm left | A line, `A reader sees one of the next 3 sections at a time, chosen by package manager.` (the dimension the site's tabs sync on; nothing after `at a time` for labeled arms), then one section per arm: a heading one level below the section it's in (at most 6) naming each dimension and value, `### Package manager: pnpm`, or the arm's title, then its content, each of its headings ending with the arm's label in parentheses (`## Install (pnpm)`) |
+| A group of a project widget | One section per arm: the arm's bold label, then its content, its headings ending with the label in parentheses |
 | `@details` | The title in bold, then the content |
 | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` |
 | A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` |
