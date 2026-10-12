@@ -55,11 +55,22 @@ struct Origin<'a> {
 #[derive(Serialize)]
 struct Robots<'a> {
     lines: &'a [String],
+    purposes: BTreeMap<&'static str, &'static str>,
+    groups: Vec<Group<'a>>,
+}
+
+/// A group a disallowed purpose writes.
+#[derive(Serialize)]
+struct Group<'a> {
+    purpose: &'static str,
+    user_agents: &'a [String],
+    lines: &'a [String],
 }
 
 /// The records, as JSON: every page the build publishes, keyed by its route
-/// and sorted by it, and the project's `[crawlers] lines` as a host reads
-/// them. A build with no pages has an empty table, so a reader can tell
+/// and sorted by it, and what the project says to crawlers: its
+/// `[crawlers] lines` as a host reads them, its purposes, and the group each
+/// disallowed purpose writes. A build with no pages has an empty table, so a reader can tell
 /// "none" from an output without the file. Two pages with one route, which
 /// the site output refuses, are listed with the first.
 pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
@@ -76,6 +87,20 @@ pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
         pages,
         robots: Robots {
             lines: &records.robots_lines,
+            purposes: records
+                .robots_purposes
+                .iter()
+                .map(|(purpose, permission)| (purpose.name(), permission.name()))
+                .collect(),
+            groups: records
+                .robots_groups
+                .iter()
+                .map(|g| Group {
+                    purpose: g.purpose.name(),
+                    user_agents: &g.user_agents,
+                    lines: &g.lines,
+                })
+                .collect(),
         },
     };
     // Serializing strings and maps of strings can't fail.

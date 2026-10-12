@@ -258,7 +258,9 @@ test("search finds a known word, with no network", async () => {
   await page.keyboard.press("/");
   const input = page.locator("#search input");
   await input.fill("slugger");
-  const result = page.locator(".pagefind-ui__result-link").first();
+  // The page among the results, not the first: Pagefind ranks by how often
+  // a page says the word for its length, which moves as pages grow.
+  const result = page.locator('.pagefind-ui__result-link[href="/docs/reference/content-model/"]');
   await result.waitFor();
   expect(await result.textContent()).toBeTruthy();
   await result.click();

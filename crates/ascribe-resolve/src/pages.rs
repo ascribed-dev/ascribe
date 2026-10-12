@@ -10,14 +10,18 @@
 //! publishes one. The project's
 //! `[crawlers] lines` are held as a host reads them: a path in an `Allow` or
 //! `Disallow` line is from the project's base path in `ascribe.toml`, and
-//! from the host's root here ([`host_line`]).
+//! from the host's root here ([`host_line`]). Each purpose the project
+//! disallows in `[crawlers]` is a group of its own ([`robots_groups`]),
+//! naming every token of that purpose Ascribe knows, with `Disallow: /`.
 //!
-//! [`disallowing`] reads the lines as RFC 9309 says a crawler does, for the
-//! check that a page that isn't listed can be fetched, so that the crawler
-//! reads that.
+//! [`disallowing`] and [`disallowing_for`] read the lines as RFC 9309 says a
+//! crawler does, for the check that a page that isn't listed can be fetched,
+//! so that the crawler reads that.
 
 use ascribe_core::{RelPath, Router};
-use ascribe_model::{ContentModel, Listing, ListingFrom};
+use ascribe_model::{
+    ContentModel, Listing, ListingFrom, Permission, Purpose, crawler_tokens, user_agent,
+};
 
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
@@ -33,6 +37,22 @@ pub struct PageRecords {
     pub pages: Vec<PageRecord>,
     /// The project's `[crawlers] lines`, with paths from the host's root.
     pub robots_lines: Vec<String>,
+    /// What the project says of each purpose in `[crawlers]`, in
+    /// [`Purpose::ALL`]'s order: only the ones it sets.
+    pub robots_purposes: Vec<(Purpose, Permission)>,
+    /// A group for each purpose the project disallows, in the same order.
+    pub robots_groups: Vec<RobotsGroup>,
+}
+
+/// A group of `robots.txt` that a disallowed purpose writes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RobotsGroup {
+    /// The purpose.
+    pub purpose: Purpose,
+    /// Every token of the purpose Ascribe knows, each a `User-agent` line.
+    pub user_agents: Vec<String>,
+    /// The group's rules: `Disallow: /`.
+    pub lines: Vec<String>,
 }
 
 /// What a build says about one page.
@@ -101,7 +121,30 @@ pub fn records<'a>(
         site,
         pages,
         robots_lines: robots_lines(model),
+        robots_purposes: model
+            .crawlers
+            .purposes
+            .iter()
+            .map(|c| (c.purpose, c.permission))
+            .collect(),
+        robots_groups: robots_groups(model),
     }
+}
+
+/// A group for each purpose the project disallows, in [`Purpose::ALL`]'s
+/// order, naming every token of it Ascribe knows. `allow` writes no group:
+/// one that named those crawlers would take them out of the `*` group, and
+/// with it out of every path the project's own lines disallow.
+pub fn robots_groups(model: &ContentModel) -> Vec<RobotsGroup> {
+    Purpose::ALL
+        .into_iter()
+        .filter(|&p| model.crawlers.disallows(p))
+        .map(|purpose| RobotsGroup {
+            purpose,
+            user_agents: crawler_tokens(purpose).map(str::to_owned).collect(),
+            lines: vec!["Disallow: /".to_owned()],
+        })
+        .collect()
 }
 
 /// The project's `[crawlers] lines`, as a host reads them ([`host_line`]).
@@ -135,36 +178,55 @@ pub fn host_line(base: &str, line: &str) -> String {
 }
 
 /// The line of `lines`, as [`robots_lines`] gives them, that keeps every
-/// crawler from fetching `path`, a path from the host's root, by its index.
-///
-/// The lines are read as RFC 9309 says a crawler reads them: the groups for
-/// `*`, combined, with the lines before any `User-agent` line among them;
-/// the rule whose path matches the most characters wins, `*` and `$` read as
-/// patterns, and an `Allow` wins a tie. A group for a named crawler isn't
-/// read, and a line that isn't a `User-agent`, `Allow`, or `Disallow` line is
-/// skipped. `None` when the path may be fetched.
+/// crawler from fetching `path`, a path from the host's root, by its index:
+/// [`disallowing_for`] the `*` group.
 pub fn disallowing(lines: &[String], path: &str) -> Option<usize> {
+    disallowing_for(lines, "*", path)
+}
+
+/// The line of `lines`, as [`robots_lines`] gives them, that keeps `crawler`
+/// from fetching `path`, a path from the host's root, by its index.
+///
+/// The lines are read as RFC 9309 says a crawler reads them: the groups that
+/// name the crawler, combined, or when none does, the groups for `*`, with
+/// the lines before any `User-agent` line among them; a crawler's name is
+/// compared without case. The rule whose path matches the most characters
+/// wins, `*` and `$` read as patterns, and an `Allow` wins a tie. A line that
+/// isn't a `User-agent`, `Allow`, or `Disallow` line is skipped. `None` when
+/// the path may be fetched.
+pub fn disallowing_for(lines: &[String], crawler: &str, path: &str) -> Option<usize> {
+    let named = crawler != "*"
+        && lines
+            .iter()
+            .any(|l| user_agent(l).is_some_and(|a| a.eq_ignore_ascii_case(crawler)));
+    let applies = |agent: &str| {
+        if named {
+            agent.eq_ignore_ascii_case(crawler)
+        } else {
+            agent == "*"
+        }
+    };
     // Lines before any `User-agent` belong to `*`.
-    let mut for_every = true;
+    let mut in_group = !named;
     let mut after_agent = false;
     // The longest match so far: its length, whether it allows, and its line.
     let mut best: Option<(usize, bool, usize)> = None;
     for (at, line) in lines.iter().enumerate() {
+        if let Some(agent) = user_agent(line) {
+            // Consecutive `User-agent` lines open one group.
+            if !after_agent {
+                in_group = false;
+            }
+            in_group |= applies(agent);
+            after_agent = true;
+            continue;
+        }
         let text = line.split('#').next().unwrap_or_default();
         let Some((field, value)) = text.split_once(':') else {
             continue;
         };
         let field = field.trim();
         let value = value.trim();
-        if field.eq_ignore_ascii_case("user-agent") {
-            // Consecutive `User-agent` lines open one group.
-            if !after_agent {
-                for_every = false;
-            }
-            for_every |= value == "*";
-            after_agent = true;
-            continue;
-        }
         // Any other line, such as `Sitemap` or `Crawl-delay`, ends a run of
         // `User-agent` lines, so one after it opens a group of its own.
         after_agent = false;
@@ -172,7 +234,7 @@ pub fn disallowing(lines: &[String], path: &str) -> Option<usize> {
         if !allow && !field.eq_ignore_ascii_case("disallow") {
             continue;
         }
-        if !for_every || value.is_empty() || !matches(value, path) {
+        if !in_group || value.is_empty() || !matches(value, path) {
             continue;
         }
         let length = value.len();
@@ -271,6 +333,25 @@ mod tests {
             let l = lines(&["User-agent: *", between, "User-agent: Bot", "Disallow: /x/"]);
             assert_eq!(disallowing(&l, "/x/"), None, "{between}");
         }
+    }
+
+    #[test]
+    fn a_named_crawler_reads_only_its_own_groups() {
+        let l = lines(&[
+            "Disallow: /a/",
+            "User-agent: OAI-SearchBot",
+            "User-agent: Other",
+            "Disallow: /b/",
+            "User-agent: *",
+            "Disallow: /c/",
+        ]);
+        assert_eq!(disallowing_for(&l, "oai-searchbot", "/a/"), None);
+        assert_eq!(disallowing_for(&l, "OAI-SearchBot", "/b/"), Some(3));
+        assert_eq!(disallowing_for(&l, "OAI-SearchBot", "/c/"), None);
+        // A crawler no group names reads `*`.
+        assert_eq!(disallowing_for(&l, "PerplexityBot", "/a/"), Some(0));
+        assert_eq!(disallowing_for(&l, "PerplexityBot", "/c/"), Some(5));
+        assert_eq!(disallowing_for(&l, "PerplexityBot", "/b/"), None);
     }
 
     #[test]

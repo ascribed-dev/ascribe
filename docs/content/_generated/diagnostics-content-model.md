@@ -779,6 +779,17 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
 
+#### ASC189 `model-crawlers-named-twice`
+@id {permalink=true}: ASC189
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{key}` names `{token}`, which a group on line \{line} names already; a crawler obeys only one group, so write everything for it in one
+
+**Fix:** Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`.
+
+**Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
+
 ### `[listing]`
 
 #### ASC185 `model-listing-folder`

@@ -1,0 +1,11 @@
+description: >-
+  Disallowing `search` or `on-request` for a site whose pages are listed is
+  advice, at the choice in `ascribe.toml`: it isn't wrong, and it costs the
+  site its place in AI search answers and in what an assistant fetches when
+  a person asks. Disallowing `training` isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: crawlers-disallowed, file: ascribe.toml, line: 8}
+  - {slug: crawlers-disallowed, file: ascribe.toml, line: 9}

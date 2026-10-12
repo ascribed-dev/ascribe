@@ -3421,9 +3421,11 @@ spec = "2.1"
 reference = "content-model.md#21-crawlers"
 configurable = true
 area = "outputs"
-when = "A page is `unlisted`, and the project's own `[crawlers] lines` disallow its address for every crawler"
+when = "A page is `unlisted`, and what the project says in `[crawlers]` keeps a search crawler from fetching it: its own lines, for every crawler or in a group that names the crawler, or a disallowed purpose"
 message = "this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone"
-fix = "Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`."
+messages.crawler = "this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address for {crawler}, so that crawler never fetches it to read that it isn't to be listed; its search can still list the address alone"
+messages.purpose = "this page is unlisted, and `{purpose} = \"disallow\"` in `[crawlers]` keeps {crawler} from fetching it to read that it isn't to be listed; its search can still list the address alone"
+fix = "Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page, or allow the purpose. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`."
 example.wrong = '''
 ---
 title: Drafts
@@ -3518,3 +3520,33 @@ example.model = '''
 [listing]
 default = "unlisted"
 '''
+
+[[diagnostic]]
+code = "ASC189"
+slug = "model-crawlers-named-twice"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model.md#21-crawlers"
+group = "crawlers"
+message = "`{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one"
+messages.purpose = "`{key}` names `{token}`, a `{purpose}` crawler, and `{purpose} = \"disallow\"` writes the group for it; a crawler obeys only one group"
+fix = "Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`."
+
+[[diagnostic]]
+code = "ASC190"
+slug = "crawlers-disallowed"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.2"
+reference = "content-model.md#21-crawlers"
+configurable = true
+area = "outputs"
+when = "`[crawlers]` disallows `search` or `on-request`, and the site's pages are listed unless they say otherwise"
+message = "`{purpose} = \"disallow\"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine"
+messages.on-request = "`{purpose} = \"disallow\"` asks assistants not to fetch the site's pages when a person asks about them, so they answer from what they already have, or from another site, while the pages are listed for every other search engine"
+fix = "Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`."

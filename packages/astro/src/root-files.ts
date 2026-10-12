@@ -9,19 +9,21 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { normalizeBase } from "./project.js";
 import {
+  purposeConflicts,
   robotsText,
   routeAs,
   routeKey,
   sitemapAddresses,
   sitemapRoute,
   sitemapXml,
+  type ProjectRobots,
   type SitemapSources,
 } from "./records.js";
 
 /** What the files are drawn from. */
 export interface RootFileSources extends Omit<SitemapSources, "site"> {
-  /** Each project's `robots.txt` lines, from the host's root, each project once. */
-  lines: readonly (readonly string[])[];
+  /** What each project says to crawlers, each project once. */
+  robots: readonly ProjectRobots[];
   /** Astro's `site`, when it's set. */
   site: string | undefined;
   /** Astro's `base`. */
@@ -38,11 +40,16 @@ interface RootFileNote {
   text: string;
 }
 
-/** The files, each `undefined` when none is written, and what to say about them. */
+/**
+ * The files, each `undefined` when none is written, what to say about them,
+ * and the problems that stop `robots.txt` from being written, which fail a
+ * build.
+ */
 export interface RootFiles {
   sitemap: string | undefined;
   robots: string | undefined;
   notes: RootFileNote[];
+  problems: string[];
 }
 
 /** The sitemap and `robots.txt` for a site, and what the build says about them. */
@@ -64,7 +71,14 @@ export function rootFiles(sources: RootFileSources): RootFiles {
     sitemap = sitemapXml(sitemapAddresses({ ...sources, site: sources.site }));
     sitemapAddress = new URL(sitemapRoute(base), sources.site).href;
   }
-  let robots = robotsText(sources.lines, sitemapAddress);
+  const problems = purposeConflicts(sources.robots);
+  let robots =
+    problems.length > 0
+      ? undefined
+      : robotsText(
+          sources.robots.map((project) => project.robots),
+          sitemapAddress,
+        );
   if (robots !== undefined && base !== "/") {
     notes.push({
       level: "info",
@@ -78,7 +92,7 @@ export function rootFiles(sources: RootFileSources): RootFiles {
     });
     robots = undefined;
   }
-  return { sitemap, robots, notes };
+  return { sitemap, robots, notes, problems };
 }
 
 type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void;

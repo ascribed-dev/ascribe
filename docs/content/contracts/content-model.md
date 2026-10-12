@@ -470,7 +470,9 @@ No other key is allowed in `[permalinks]` or in a retired permalink's table. A n
 
 @include: ../_fragments/content-model/crawlers.md
 
-**Rules** (§24.11): each line is a string (`model-wrong-type`), one line (`model-crawlers-line`), and not empty (`model-empty-text`); no other key (`model-unknown-key`). What a line says isn't validated: a line that isn't a `User-agent`, `Allow`, or `Disallow` line is written as it is, and `ascribe check` reads only the lines it can.
+**Rules** (§24.11): each line is a string (`model-wrong-type`), one line (`model-crawlers-line`), and not empty (`model-empty-text`); `training`, `search`, and `on-request` are each `"allow"` or `"disallow"` (`model-invalid-value`); a crawler a `User-agent` line of `lines` names, compared without case, isn't one a disallowed purpose names, nor one an earlier group of `lines` names (`model-crawlers-named-twice`), where consecutive `User-agent` lines open one group and `*` is never counted; no other key (`model-unknown-key`). What a line says isn't validated otherwise: a line that isn't a `User-agent`, `Allow`, or `Disallow` line is written as it is, and `ascribe check` reads only the lines it can.
+
+The crawlers of each purpose are data Ascribe ships, each with its operator, the operator's page about it, and the day it was read; a release may add to them. A disallowed purpose's group names every one Ascribe knows of it.
 
 ---
 
@@ -632,6 +634,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-crawlers-line` | Each of `[crawlers] lines` is one line, with no line break. | `` `{key}` has a line break; each string in `lines` is one line of robots.txt `` |
+| `model-crawlers-named-twice` | A crawler is named in one group: not by a disallowed purpose and a group of `lines`, nor by two groups of `lines`. | `` `{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one `` |
 
 ### 24.12 Listing
 @available: next

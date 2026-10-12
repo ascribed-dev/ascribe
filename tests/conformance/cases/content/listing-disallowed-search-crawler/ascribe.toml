@@ -1,0 +1,20 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[crawlers]
+search = "allow"
+lines = [
+  "Disallow: /drafts/",
+  "User-agent: OAI-SearchBot",
+  "Disallow: /answers/",
+  "User-agent: Bot",
+  "Disallow: /bots/",
+]
