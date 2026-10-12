@@ -13,7 +13,8 @@ name: Templates
 # Run by hand from Actions → Templates → Run workflow, with `from` set to an
 # older tag of theirs to try it: the branch's first commit sets the pin back to
 # that tag, and the second is the update, so the pull request's diff from
-# `main` is empty and its second commit is the one to read. Close that pull
+# `main` is empty and its second commit is the one to read. It goes on the
+# branch `templates/trial`, apart from the update's. Close that pull
 # request rather than merging it.
 #
 # The job's own token opens the pull request, so the pull request's checks
@@ -48,7 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      BRANCH: templates/update
+      # A trial pushes to a branch of its own, so it never replaces an open
+      # update pull request.
+      BRANCH: ${{ inputs.from && 'templates/trial' || 'templates/update' }}
       BOT: github-actions[bot]
       FROM: ${{ inputs.from }}
     steps:

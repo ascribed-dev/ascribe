@@ -95,7 +95,7 @@ Three more, from phase 6's job ([#411](https://github.com/ascribed-dev/ascribe/i
 
 42. **The update pull request is opened with the job's own `GITHUB_TOKEN`,** with contents and pull-requests write, so its checks don't start by themselves, and its description says to close and reopen it to start them. A GitHub App's token would start them, and is the maintainer's to make. _From:_ the issue, as its default.
 43. **The update makes `examples/templates` again too,** by `ascribe templates eject` with no name in an empty project, with the binary built from the new copies, so decision 41's test holds on the pull request without a person's step. **A rule that no longer finds its place moves the pin and nothing else,** so the pull request is where the rule is fixed, and `update.ts --pin <tag>` then writes the copies.
-44. **The job is tried after the merge by setting the pin back on its branch, in a commit of its own,** with the workflow's `from` input: the branch's first commit sets the pin back and writes the copies at that tag, and the second is the update. The pull request's diff from `main` is then empty, its second commit is what the job would open, and it is closed rather than merged.
+44. **The job is tried after the merge by setting the pin back on its branch, in a commit of its own,** with the workflow's `from` input: the branch's first commit sets the pin back and writes the copies at that tag, and the second is the update. The pull request's diff from `main` is then empty, its second commit is what the job would open, and it is closed rather than merged. It goes on `templates/trial`, so it never replaces an open update pull request.
 
 ## The thread
 
