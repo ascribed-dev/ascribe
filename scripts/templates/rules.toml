@@ -1,0 +1,23 @@
+# The structural rules scripts/templates/convert.ts applies, a table for each
+# template it converts, named by the template's folder in their repository.
+# Only the templates named here are converted.
+#
+# A rule changes structure, never their words, and names the text it applies
+# at, as their template has it, before any brace is escaped. A rule that
+# doesn't find its text exactly once stops the script, naming the template and
+# the text (project-docs/page-templates/README.md, decision 3).
+#
+# Each table has:
+# - `description`: the placeholder for the page's description in its
+#   frontmatter. Their templates have none, and a type asks for one, so these
+#   are the only words in a template that are Ascribe's (decision 21).
+# - `directives`: a directive line put before a line of theirs, at that line's
+#   indentation, such as `@steps` before a numbered procedure's first step.
+
+[how-to]
+description = "{One sentence that says what a reader can do once they've followed this page.}"
+
+# Their procedure: the numbered steps under "{Task name }".
+[[how-to.directives]]
+directive = "@steps"
+before = "1. {Write the step here. Use a verb to start.}"

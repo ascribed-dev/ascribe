@@ -28,3 +28,7 @@ THIRD-PARTY-NOTICES
 # Local mockups
 
 project-docs/mockups/
+
+# The Good Docs Project's files at the pinned commit, fetched by
+# scripts/templates/convert.ts and never committed.
+scripts/templates/.upstream/

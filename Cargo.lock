@@ -342,6 +342,19 @@ name = "ascribe-synthetic"
 version = "0.3.0"
 
 [[package]]
+name = "ascribe-templates"
+version = "0.3.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-fmt",
+ "ascribe-model",
+ "ascribe-syntax",
+ "serde",
+ "toml",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

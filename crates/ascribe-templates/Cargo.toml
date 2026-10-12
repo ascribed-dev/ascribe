@@ -1,0 +1,22 @@
+[package]
+name = "ascribe-templates"
+description = "The page templates Ascribe ships: The Good Docs Project's, converted into Ascribe pages and carried as they were committed."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dev-dependencies]
+# The tests check what `ascribe check` and `ascribe fmt` say of the copies.
+ascribe-check.workspace = true
+ascribe-core.workspace = true
+ascribe-fmt.workspace = true
+ascribe-model.workspace = true
+ascribe-syntax.workspace = true
+serde.workspace = true
+toml.workspace = true
+
+[lints]
+workspace = true
