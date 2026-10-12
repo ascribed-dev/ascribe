@@ -39,7 +39,6 @@ Here is the site's preview of one of these docs' pages, with a pull request's ch
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
-@available: ascribe 0.3.0
 An AI coding agent can run the checks you run. [`ascribe agents sync`]({site}/go/agents-guide/) gives it the project's rules and the check to run after each edit, so its change reaches review with its links, names, and examples already checked.
 @end
 
@@ -69,7 +68,6 @@ In VS Code, the warning is on the link as you type, with a quick fix that makes 
 ![VS Code with a page whose link is written as an address: the link is underlined, the Problems view says to link to the file instead, and the quick fix menu offers "Link to the page's file instead of its route".](screenshots/editor-light.png){scheme=light}
 ![VS Code with a page whose link is written as an address: the link is underlined, the Problems view says to link to the file instead, and the quick fix menu offers "Link to the page's file instead of its route".](screenshots/editor-dark.png){scheme=dark}
 
-@available: ascribe 0.3.0
 For links from outside the docs, a page or a heading can have a [permalink]({site}/go/directives/): a name, at an address that leads to it wherever it moves. With the list of permalinks committed, `ascribe check` warns when one goes away. Ascribe's command and editor link to these docs by permalink, which is how the docs moved to `/docs/` without breaking those links.
 @end
 
