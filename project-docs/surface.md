@@ -701,6 +701,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/astro.md` | Astro |  |
 | `guides/drift.md` | Drift |  |
 | `guides/editor.md` | Editing |  |
+| `guides/measuring.md` | What to measure |  |
 | `guides/permalinks.md` | Permalinks |  |
 | `guides/report.md` | The project report |  |
 | `guides/review.md` | Review |  |

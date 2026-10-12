@@ -61,7 +61,7 @@ Pages
     /docs/roadmap/         unquoted  page                       Roadmap
 ```
 
-`--not-listed` lists only the pages that aren't `listed`, which answers "what are we hiding, and why?". With `--format json`, each record has the fields of its entry in the build's `_ascribe/pages.json`, by the same names, for a script that checks them.
+`--not-listed` lists only the pages that aren't `listed`, which answers "what are we hiding, and why?". With `--format json`, each record has the fields of its entry in the build's `_ascribe/pages.json`, by the same names, for a script that checks them. What happens to the pages after a deploy, in search engines and in what agents read, is outside what Ascribe sees: [What to measure](measuring.md) says where to look.
 
 ## External links
 
