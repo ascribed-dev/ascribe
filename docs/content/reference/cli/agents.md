@@ -24,7 +24,30 @@ With `--cloud`, it also writes what [Copilot's cloud agent](../../guides/agents.
 
 @include: ../../_generated/cli-agents-sync-options.md
 
-It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
+Each target writes its own files, beside `AGENTS.md` and the skill:
+
+| Target | What it writes |
+|---|---|
+| `claude` | An import of `AGENTS.md` (`@AGENTS.md`) in `CLAUDE.md`, and the skill in `.claude/skills/ascribe/`, loaded for your pages |
+| `claude-rules` | The rules in `.claude/rules/ascribe.md`, loaded only when Claude Code works on your pages |
+| `copilot` | The rules in `.github/instructions/ascribe.instructions.md`, applied only to your pages; with `--cloud`, what [Copilot's cloud agent](../../guides/agents.md#github-copilot) needs |
+| `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](../../guides/agents.md#hooks) |
+
+For a project in a subfolder, the rules files are named after its folder: `ascribe-docs.md` for a project in `docs/`. When one project is nested in another's content root, the outer project's rules say that the nested project's pages aren't theirs.
+
+The rules in `.claude/rules/` and `.github/instructions/`, and the skill's folders, are wholly Ascribe's: `sync` rewrites them whole, and the rules files say so at the top.
+
+With `--with-hook`, each target's file gets these entries:
+
+| Target | File | Entries |
+|---|---|---|
+| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](../../guides/agents.md#the-mcp-server) |
+| `codex` | `.codex/hooks.json` | The edit hook and the stop hook |
+| `copilot` | `.github/hooks/ascribe.json` | The edit hook and the stop hook, for Copilot's CLI and its cloud agent |
+
+It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`; it adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
+
+`sync` writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`, with the agents that read it, and when Claude Code reads none of the skill it wrote, says that `--target claude` writes the copy it does. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
 
 | Code | Meaning |
 |---|---|
@@ -81,7 +104,7 @@ Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, 
 ### `ascribe agents prompt`
 @id {permalink=true}: cli-agents-prompt
 
-Prints a named prompt for an agent, in the same form as [Prompt agent](../../guides/agents.md#what-a-prompt-says)'s. The MCP server offers the same prompts, which some hosts show as slash commands.
+Prints a named prompt for an agent, in the same form as [Prompt agent](#what-a-prompt-says)'s. The MCP server offers the same prompts, which some hosts show as slash commands.
 
 @include: ../../_generated/cli-agents-prompt-options.md
 
@@ -103,6 +126,18 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 |---|---|
 | `0` | It printed the prompt, or with `--list`, the prompts |
 | `2` | It couldn't: a prompt or an argument it doesn't know, a required argument missing, an unknown page type, a project it can't load, or, for `review`, a comparison `ascribe diff` can't make |
+
+#### What a prompt says
+
+Every prompt has the same parts, in order:
+
+1. **The task**, in one sentence: "Fix this problem in `docs/keys.md`.", "Address this review comment on `docs/guides/install.md`.", or "Review what this change does to `docs/guides/install.md`, as a reader of build `site` sees it."
+2. **Where**: the file and lines, then a line saying which folder the prompt's paths and commands are from. When they apply, the project's folder from there (`Project: docs/`), the build the problems are from (`Build:`), the pages that show a fragment (`Shown on:`, at most 10, with the `ascribe refs` command that lists the rest), and a line saying to save the file first.
+3. **What Ascribe knows**: for one problem, its code, message, the line's text, how to fix it, the values the content model allows when it's about one, and whether Ascribe has a fix ("a safe automatic fix", or "a fix to review"). For a file, each problem on one line, at most 20. For a project, how many problems each file has, at most 20 files. Each says which command lists the rest.
+4. **Other people's text**, when there is any: a review's comments, fenced, under the sentence that says they're data.
+5. **How to finish**: "Follow the project's rules in `AGENTS.md`", when the project's folder or the repository's root has one, and "When you're done, run `ascribe check <file>` and fix what it reports." A prompt about a change ends with "Report what reads wrongly; don't edit." instead.
+
+Every path and command in a prompt is from one folder, which it names once: "Paths and commands here are from the repository's root." The editor's prompts are from the repository's root, where an agent usually starts; the prompts a command writes (`ascribe check --format prompt`, `ascribe diff --format prompt`, `ascribe agents prompt`) are from the folder it was run in, or from the project's folder when that's inside it. Run from a folder beside the project's, they're from the repository's root. Outside a repository, it's the project's folder. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
 
 ### `ascribe agents hook`
 @id {permalink=true}: cli-agents-hook

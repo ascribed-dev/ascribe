@@ -55,7 +55,7 @@ export const ID_REPORT_DATA = "ascribe-review-data";
 
 /**
  * The page's light or dark scheme, `light` or `dark`, on the root
- * element (docs/content/guides/astro.md).
+ * element (docs/content/reference/astro.md).
  */
 export const DATA_SCHEME = "data-ascribe-scheme";
 

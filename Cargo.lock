@@ -357,6 +357,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_yaml_ng",
+ "similar 3.2.0",
  "tempfile",
  "thiserror",
  "toml",

@@ -90,7 +90,7 @@ names! {
     // kept here so every package and stylesheet takes them from one place.
 
     /// The page's light or dark scheme, `light` or `dark`, on the root
-    /// element (docs/content/guides/astro.md).
+    /// element (docs/content/reference/astro.md).
     DATA_SCHEME = "data-ascribe-scheme";
     /// On a marked page's root: what it shows, `changes`, `will`, or `was`.
     DATA_SHOW = "data-ascribe-show";
