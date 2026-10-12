@@ -581,8 +581,7 @@ pre {
 
 /* Without search, on a page outside the docs, the links go to the right. */
 .docs-link,
-.why-link,
-.changelog-link {
+.why-link {
   padding: 0.375rem 0.25rem;
   white-space: nowrap;
   color: var(--muted);
@@ -601,9 +600,7 @@ pre {
 .docs-link:hover,
 .docs-link[aria-current],
 .why-link:hover,
-.why-link[aria-current],
-.changelog-link:hover,
-.changelog-link[aria-current] {
+.why-link[aria-current] {
   color: var(--text);
 }
 
@@ -1035,6 +1032,36 @@ claim-example > :not(pre, figure, ascribe-tabs) {
   font: var(--type-small) var(--font);
 }
 
+/* The footer ---------------------------------------------------------------- */
+
+.site-footer {
+  padding: 1.5rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font: var(--type-small) var(--font);
+}
+
+/* The links wrap, so the footer fits at any width. */
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+  max-width: 90rem;
+  margin-inline: auto;
+}
+
+.site-footer a {
+  padding: 0.25rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-footer a:hover,
+.site-footer a[aria-current] {
+  color: var(--text);
+}
+
 /* Narrower screens ------------------------------------------------------------ */
 
 @media (max-width: 75rem) {
@@ -1065,13 +1092,12 @@ claim-example > :not(pre, figure, ascribe-tabs) {
     display: none;
   }
 
-  /* A docs page's header holds the menu and search too, so Why Ascribe and Changelog are on the site's own pages only. */
-  .search-button ~ .why-link,
-  .search-button ~ .changelog-link {
+  /* A docs page's header holds the menu and search too, so Why Ascribe is on the site's own pages only. */
+  .search-button ~ .why-link {
     display: none;
   }
 
-  /* Docs, Why Ascribe, Changelog, and GitHub fit beside the mark at phone width. */
+  /* Docs, Why Ascribe, and GitHub fit beside the mark at phone width. */
   .site-header {
     gap: 0.5rem;
   }
@@ -1117,8 +1143,8 @@ claim-example > :not(pre, figure, ascribe-tabs) {
 
 /*
  * At the narrowest widths the site's own pages leave GitHub out of the header,
- * for Docs, Why Ascribe, and Changelog; the landing page links to it in its
- * text. A docs page's header, which hides those two, keeps it.
+ * for Docs and Why Ascribe; the footer links to the repository. A docs page's
+ * header, which hides Why Ascribe, keeps it.
  */
 @media (max-width: 26rem) {
   .site-header:not(:has(.search-button)) .repo-link {
