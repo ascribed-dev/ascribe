@@ -82,6 +82,7 @@ fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
          wrote ascribe.toml\n\
          added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and the pages outside the new types keep it\n\
          added [types.how-to] to ascribe.toml, for pages under docs/how-to/\n\
+         A type's folder is only a start: to keep its pages elsewhere, change the type's `files` in ascribe.toml.\n\
          To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.\n"
     );
     fs::create_dir(dir.path().join("docs/how-to")).unwrap();

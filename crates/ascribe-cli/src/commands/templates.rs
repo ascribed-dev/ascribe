@@ -222,6 +222,13 @@ fn write_eject(
             from_here(root, &added.folder)
         )?;
     }
+    if !ejected.added.is_empty() {
+        writeln!(
+            out,
+            "A type's folder is only a start: to keep its pages elsewhere, change the type's `files` in {}.",
+            from_here(root, ascribe_check::MODEL_FILE)
+        )?;
+    }
     match ejected.added.as_slice() {
         [] => {}
         [one] => writeln!(
