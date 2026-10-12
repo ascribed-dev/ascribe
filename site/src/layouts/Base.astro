@@ -1,7 +1,8 @@
 ---
-// The page shell: the header and a slot for the page. Every page, the 404
-// included, uses it. A docs page's frame (`docs`) adds the sidebar, the menu
-// that opens it at narrow widths, and search, which covers the docs only.
+// The page shell: the header, a slot for the page, and the footer. Every page,
+// the 404 included, uses it. A docs page's frame (`docs`) adds the sidebar, the
+// menu that opens it at narrow widths, and search, which covers the docs only.
+// The header links to the site's main pages; the footer, to the rest.
 //
 // A page of a project, a docs page or one of home/'s, has everything its head
 // says about it from its record, through `Head.astro`, as the sitemap and
@@ -126,11 +127,6 @@ const canonical = new URL(Astro.url.pathname, site).href;
       <a class="why-link" href={why} aria-current={Astro.url.pathname === why ? "page" : undefined}
         >Why Ascribe</a
       >
-      <a
-        class="changelog-link"
-        href={changelog}
-        aria-current={Astro.url.pathname === changelog ? "page" : undefined}>Changelog</a
-      >
       <a class="repo-link" href={repo} aria-label="Ascribe on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true"
           ><path
@@ -151,6 +147,15 @@ const canonical = new URL(Astro.url.pathname, site).href;
         <slot />
       )
     }
+    <footer class="site-footer">
+      <nav aria-label="More">
+        <a href={changelog} aria-current={Astro.url.pathname === changelog ? "page" : undefined}
+          >Changelog</a
+        >
+        <a href={`${repo}/blob/main/LICENSE`}>License</a>
+        <a href={repo}>Repository</a>
+      </nav>
+    </footer>
     <script>
       // The sidebar is a drawer at narrow widths.
       const button = document.querySelector<HTMLButtonElement>(".menu-button");

@@ -1,0 +1,1 @@
+- **The site has a footer.** Every page of <https://ascribed-dev.com>, the docs, the site's own pages, and the changelog, ends with links to the changelog, the license, and the repository. The changelog's link moves there from the header, which keeps Docs, Why Ascribe, and GitHub.

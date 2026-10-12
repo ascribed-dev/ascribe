@@ -22,7 +22,7 @@ src/pages/[...slug].astro   a route per page of home/, at the root, through rend
 src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
 src/pages/changelog.astro   the changelog, in the frame of home/'s pages
 src/pages/404.astro         the 404 page, in the docs' frame
-src/layouts/                the shell (the head, with each project page's from its record; header; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
+src/layouts/                the shell (the head, with each project page's from its record; header; footer; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
 src/components/             search, the sidebar, the table of contents, the page's availability badge, and a page of home/ with its demonstrations
 src/styles/site.css         light and dark, following the system, the element library's theme, and the landing page's widgets; its colors and type are generated from ../design/tokens.toml
 src/theme.ts                the theme-color for each scheme, read from site.css
@@ -77,7 +77,7 @@ npm test              # after a build
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/crawlers.test.ts`: the sitemap lists every built page that doesn't say `noindex`, other than a permalink's forwarding page, the 404 page, and `unindexed` in `src/site.ts`, and nothing else; a page that says `noindex` is in neither the sitemap nor `llms.txt`; `robots.txt` names the sitemap; and the changelog has its canonical link. No docs page is marked `listing: unlisted`, so the rules are also run on `test/fixtures/crawled/`, which has such a page.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the header's link to the changelog, and the changelog's link to a docs page; Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's; and Credits, from the landing page, with comrak's release and no sideways scroll at phone width.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the footer, on every kind of page, with its links to the changelog, the license, and the repository, and the changelog's link to a docs page; and Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's.
 
 ## Addresses
 
@@ -114,7 +114,7 @@ Anything else, a docs file that isn't a published page, or a file that isn't in 
 
 Each release's heading is anchored by `v` and its version, its tag (`/changelog/#v0.2.0`), so a release's notes can link to it; a heading inside a release is anchored by both (`#v0.2.0-the-language`). The unreleased section, `## Unreleased` or a version marked `(unreleased)`, is `#unreleased`, and says under its heading that it's in `main` and not yet released.
 
-The header links to it. On a docs page at phone width, where the menu and search fill the header, the link is on the site's own pages only; and below 26rem, those pages' header leaves out GitHub to fit Docs, Why Ascribe, and Changelog beside the mark.
+The footer links to it, on every page, beside the license and the repository: the header is for the site's main pages, Docs and Why Ascribe, and GitHub. On a docs page at phone width, where the menu and search fill the header, Why Ascribe is on the site's own pages only; and below 26rem, those pages' header leaves out GitHub to fit Docs and Why Ascribe beside the mark.
 
 ## Search engines
 
