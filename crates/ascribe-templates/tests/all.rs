@@ -9,5 +9,7 @@ mod eject;
 mod init;
 #[path = "all/set.rs"]
 mod set;
+#[path = "all/start.rs"]
+mod start;
 #[path = "all/status.rs"]
 mod status;

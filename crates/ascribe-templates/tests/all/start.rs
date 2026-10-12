@@ -1,0 +1,166 @@
+//! `start` in a project in a temporary folder: a page of a type with a
+//! template, of one without, where a page goes when no path is given, and
+//! the files it never starts a page over.
+
+#![allow(clippy::expect_used)]
+
+use std::path::Path;
+
+use ascribe_check::Project;
+use ascribe_core::{Coded, RelPath};
+use ascribe_resolve::{DiskFs, Layout};
+use ascribe_templates::{Eject, NewPage, StartError, eject, set, start};
+
+const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = \"string\"\naudience = \"string\"\nowner = \"string?\"\n";
+
+/// A project with the type `guide`, which has no template, and the how-to,
+/// as `ascribe templates eject how-to` gives it.
+fn project() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    std::fs::write(dir.path().join("ascribe.toml"), MODEL).expect("written");
+    std::fs::create_dir(dir.path().join("docs")).expect("made");
+    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let fs = DiskFs::new(dir.path(), &Layout::from_model(&file.model));
+    let names = ["how-to".to_owned()];
+    let answer = eject(
+        &Eject {
+            root: dir.path(),
+            model: &file.model,
+            model_text: &file.text,
+            names: &names,
+            to: &RelPath::parse("templates").expect("a relative path"),
+            ascribe_version: "9.9.9",
+        },
+        &fs,
+    )
+    .expect("ejected");
+    assert!(answer.refused.is_empty());
+    dir
+}
+
+fn run(
+    dir: &Path,
+    type_name: &str,
+    title: &str,
+    path: Option<&str>,
+) -> Result<NewPage, StartError> {
+    let project = Project::load(&dir.join("ascribe.toml")).expect("the project loads");
+    let path = path.map(|p| RelPath::parse(p).expect("a relative path"));
+    start(&project, type_name, title, path.as_ref())
+}
+
+#[test]
+fn a_type_with_a_template_starts_from_it_with_the_title_set() {
+    let dir = project();
+    let page = run(dir.path(), "how-to", "Rotate keys", None).expect("started");
+    assert_eq!(page.path.as_str(), "how-to/rotate-keys.md");
+    let how_to = set()
+        .templates
+        .into_iter()
+        .find(|t| t.name == "how-to")
+        .expect("the set has the how-to");
+    let template = how_to.text(&how_to.template);
+    assert_eq!(
+        page.text,
+        template.replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
+    );
+    assert_eq!(page.template.as_deref(), Some("templates/how-to.md"));
+    assert_eq!(
+        page.guide,
+        ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
+    );
+}
+
+#[test]
+fn a_type_without_a_template_starts_with_its_frontmatter() {
+    let dir = project();
+    let page = run(dir.path(), "guide", "Keys: \"why\"", None).expect("started");
+    // The default type covers the content root.
+    assert_eq!(page.path.as_str(), "keys-why.md");
+    assert_eq!(
+        page.text,
+        "---\ntitle: \"Keys: \\\"why\\\"\"\naudience:\n---\n"
+    );
+    assert_eq!(page.template, None);
+    assert!(page.guide.is_empty());
+}
+
+#[test]
+fn a_page_is_never_started_over_a_file() {
+    let dir = project();
+    std::fs::create_dir(dir.path().join("docs/how-to")).expect("made");
+    std::fs::write(
+        dir.path().join("docs/how-to/rotate-keys.md"),
+        "---\ntitle: Mine\ndescription: Mine.\n---\n",
+    )
+    .expect("written");
+    let error = run(dir.path(), "how-to", "Rotate Keys!", None).expect_err("refused");
+    assert_eq!(
+        error,
+        StartError::FileInTheWay {
+            path: "how-to/rotate-keys.md".to_owned()
+        }
+    );
+    assert_eq!(error.code(), "page_exists");
+    // Nothing was written over it.
+    assert!(
+        std::fs::read_to_string(dir.path().join("docs/how-to/rotate-keys.md"))
+            .expect("read")
+            .contains("Mine")
+    );
+}
+
+#[test]
+fn a_path_or_a_folder_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
+    let dir = project();
+    let page = run(
+        dir.path(),
+        "how-to",
+        "Rotate keys",
+        Some("how-to/keys/rotate.md"),
+    )
+    .expect("started");
+    assert_eq!(page.path.as_str(), "how-to/keys/rotate.md");
+    assert!(page.text.starts_with("---\ntitle: \"Rotate keys\"\n"));
+
+    let refused =
+        |path: &str| run(dir.path(), "how-to", "Rotate keys", Some(path)).expect_err("refused");
+    assert!(
+        matches!(refused("rotate.md"), StartError::NotTheType { reason, .. } if reason == "it's a page of type `guide`")
+    );
+    assert!(matches!(
+        refused("how-to/_rotate.md"),
+        StartError::NotTheType { .. }
+    ));
+    // A folder: the page is named for the title in it.
+    let page = run(dir.path(), "how-to", "Rotate keys", Some("how-to/keys")).expect("started");
+    assert_eq!(page.path.as_str(), "how-to/keys/rotate-keys.md");
+    assert_eq!(
+        refused("guides"),
+        StartError::NotTheType {
+            path: "guides/rotate-keys.md".to_owned(),
+            type_name: "how-to".to_owned(),
+            reason: "it's a page of type `guide`".to_owned()
+        }
+    );
+    assert!(matches!(
+        refused("../elsewhere"),
+        StartError::NotTheType { .. }
+    ));
+}
+
+#[test]
+fn an_unknown_type_or_a_title_with_no_name_in_it_is_refused() {
+    let dir = project();
+    assert_eq!(
+        run(dir.path(), "recipe", "X", None).expect_err("refused"),
+        StartError::UnknownType {
+            name: "recipe".to_owned(),
+            types: "`guide`, `how-to`".to_owned()
+        }
+    );
+    assert!(matches!(
+        run(dir.path(), "how-to", "?!", None).expect_err("refused"),
+        StartError::NoPath { .. }
+    ));
+}

@@ -10,11 +10,13 @@
 //! into a project, as `ascribe templates eject` does, [`summaries`] reads
 //! back what it recorded in `templates.lock`, [`status()`] says what's
 //! changed in the set since a project's copy, as `ascribe templates status`
-//! does, and [`init()`] starts a project, as `ascribe init` does.
+//! does, [`init()`] starts a project, as `ascribe init` does, and [`start()`]
+//! starts a page from its type's template, in a project.
 
 pub mod eject;
 pub mod init;
 pub mod lock;
+pub mod start;
 pub mod status;
 
 pub use eject::{
@@ -22,6 +24,7 @@ pub use eject::{
 };
 pub use init::{Init, InitAnswer, InitError, MODEL_TEXT, init};
 pub use lock::summaries;
+pub use start::{NewPage, StartError, start};
 pub use status::{
     Change, FileDiff, FileKind, FileStatus, NotTaken, Record, SectionChange, SectionChangeKind,
     SetRelease, Status, StatusAnswer, TemplateStatus, Upstream, UpstreamChange, diff, status,

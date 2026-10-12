@@ -176,8 +176,8 @@ fn new_page_command(prompt: &prompts::Named) -> String {
     let mut out = format!(
         "---\ndescription: {}\nargument-hint: {}\n---\n\n",
         yaml_string(
-            "Write a new page from a request: the page type that fits it, the frontmatter the \
-             type requires, and where its file goes."
+            "Write a new page from a request: the page type that fits it, where its file goes, \
+             the guide to read first, and the type's template to start from."
         ),
         yaml_string("<what the page is for>")
     );

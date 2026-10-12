@@ -158,11 +158,13 @@ Each one fills the prompt in and leaves it for you to send. When the one you cho
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-prompt.txt
 
-`ascribe agents prompt` prints the other prompts: `new-page` to write a page of a type, with the frontmatter it requires and where its file goes; `fix` to check the project and fix what's reported; and `review` to review what a branch does to its pages, the prompt `ascribe diff --format prompt` writes. `ascribe agents prompt --list` lists them with their arguments:
+`ascribe agents prompt` prints the other prompts: `new-page` to write a page of a type; `fix` to check the project and fix what's reported; and `review` to review what a branch does to its pages, the prompt `ascribe diff --format prompt` writes. `ascribe agents prompt --list` lists them with their arguments:
 
 ```shell
-ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
+ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
+
+`new-page` says where the page goes: where its `path` says, a file or a folder, or in the first folder the type's `files` covers, named for the title as its address would be, `docs/how-to/rotate-keys.md`; never over a file that's there. For a type with a [template](templates.md), it gives the template with the title set, to start the file from, and before it, the paths of the type's `guide`, the template's guide and Ascribe's notes, for the agent to read before it writes. The guide isn't put in the prompt: it's long, and a file the agent reads arrives whole. For a type with no template, it gives the frontmatter the type requires, with each field to fill in.
 
 ### In review
 

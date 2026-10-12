@@ -87,14 +87,16 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](../../gui
 
 | Prompt | Arguments | What it asks |
 |---|---|---|
-| `new-page` | `type`, `title`, and `path` | Write a new page of that type: where its file goes, the frontmatter to start it with, and the type's fields |
+| `new-page` | `type`, `title`, and `path` | Write a new page of that type: where its file goes, the type's `guide` to read first, the type's template with the title set, or, for a type with no template, the frontmatter to start it with, and the type's fields |
 | `fix` | `path` | Fix what `ascribe check` reports: the prompt `ascribe check --format prompt` writes when there are problems, else the loop of checking and fixing |
 | `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](diff.md#cli-diff) writes, or a line saying no page changed |
 
-`path` is a file or folder in the project, by default the current directory; `fix` reports on it. `--list` lists the prompts and their arguments.
+`path` is a file or folder in the project, by default the current directory; `fix` reports on it. For `new-page`, a `path` in the content root, from the current directory or from the content root, is where the page goes: its file, or a folder for it. `--list` lists the prompts and their arguments.
+
+Without a `path` in the content root, `new-page` puts the page in the first folder the type's `files` covers, named for the title slugged as a page's address is, `how-to/rotate-keys.md` for "Rotate keys", and asks for another path of the type's when a file is there. A `path` that isn't one of the type's is refused.
 
 ```shell
-ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
+ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
 | Code | Meaning |

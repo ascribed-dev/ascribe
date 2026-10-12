@@ -283,7 +283,7 @@
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe templates status` found.",
+  "description": "What `ascribe templates status` found: for each template the project\ntook, whether the set and the project have changed it since the copy, and\neach template of the set it doesn't have.",
   "properties": {
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",

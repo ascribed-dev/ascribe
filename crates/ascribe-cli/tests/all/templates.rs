@@ -473,3 +473,114 @@ fn status_reports_a_deleted_template_the_model_still_names() {
         stdout(&output)
     );
 }
+
+/// `ascribe agents prompt new-page` for a type eject gave: the template with
+/// the title set, the guide to read first, and a check command that works
+/// from the folder the prompt was asked for in, the repository's root or
+/// the project's.
+#[test]
+fn the_new_page_prompt_has_the_template_and_the_guide_and_its_check_runs_where_it_was_asked() {
+    let repo = tempfile::tempdir().unwrap();
+    let site = repo.path().join("site");
+    fs::create_dir(&site).unwrap();
+    let dir = project();
+    copy_dir(dir.path(), &site);
+    let git = Command::new("git")
+        .current_dir(repo.path())
+        .args(["init", "-q"])
+        .output()
+        .expect("run git");
+    assert!(git.status.success());
+    let eject = ascribe(&site, &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    let template = fs::read_to_string(site.join("templates/how-to.md")).unwrap();
+    let body = &template[template.find("\n---\n").unwrap()..];
+
+    for (here, base, path) in [
+        (repo.path(), "site/", "path=site"),
+        (site.as_path(), "", "path=."),
+    ] {
+        let output = ascribe(
+            here,
+            &[
+                "agents",
+                "prompt",
+                "new-page",
+                "--arg",
+                "type=how-to",
+                "--arg",
+                "title=Rotate keys",
+                "--arg",
+                path,
+            ],
+        );
+        assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+        let text = stdout(&output);
+        assert!(
+            text.contains(&format!("Where: `{base}docs/how-to/rotate-keys.md`")),
+            "{text}"
+        );
+        let guide = text
+            .find(&format!(
+                "read the type's guide, in this order: `{base}templates/how-to.guide.md`, then \
+                 `{base}templates/how-to.ascribe.md`"
+            ))
+            .unwrap_or_else(|| panic!("{text}"));
+        let started = text
+            .find("title: \"Rotate keys\"\n")
+            .unwrap_or_else(|| panic!("{text}"));
+        assert!(guide < started, "{text}");
+        assert!(text.contains(body), "{text}");
+        assert!(
+            !text.contains(&format!("{base}templates/how-to.md")),
+            "{text}"
+        );
+
+        let command = text
+            .lines()
+            .find_map(|l| l.strip_prefix("When you're done, run `"))
+            .and_then(|l| l.split('`').next())
+            .unwrap_or_else(|| panic!("{text}"));
+        assert_eq!(command, format!("ascribe check {base}docs"));
+        let words: Vec<&str> = command.split(' ').skip(1).collect();
+        let check = ascribe(here, &words);
+        assert_eq!(code_of(&check), 0, "{command}: {}", stderr(&check));
+    }
+}
+
+/// `new-page`'s `path` says where the page goes: its file or a folder, from
+/// the current directory or the content root.
+#[test]
+fn the_new_page_prompt_puts_the_page_where_path_says() {
+    let dir = project();
+    let eject = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    let prompt = |path: &str| {
+        let output = ascribe(
+            dir.path(),
+            &[
+                "agents",
+                "prompt",
+                "new-page",
+                "--arg",
+                "type=how-to",
+                "--arg",
+                "title=Rotate keys",
+                "--arg",
+                path,
+            ],
+        );
+        (code_of(&output), stdout(&output), stderr(&output))
+    };
+    for (path, place) in [
+        ("path=how-to/keys/rotate.md", "docs/how-to/keys/rotate.md"),
+        ("path=docs/how-to/keys", "docs/how-to/keys/rotate-keys.md"),
+    ] {
+        let (code, text, err) = prompt(path);
+        assert_eq!(code, 0, "{err}");
+        assert!(text.contains(&format!("Where: `{place}`.\n")), "{text}");
+    }
+    let (code, _, err) = prompt("path=index.md");
+    assert_eq!(code, 2);
+    assert!(err.contains("of type `page`"), "{err}");
+}

@@ -2,20 +2,26 @@
 //! MCP server's prompts, which hosts show as slash commands. Each follows
 //! the agent prompt format (`ascribe_check::prompt`).
 //!
-//! - `new-page`: write a page of a type, with the frontmatter the type
-//!   requires and where its file goes;
+//! - `new-page`: write a page of a type: where its file goes, the guide to
+//!   read first, and the type's template with the title set, or, for a type
+//!   with none, the frontmatter it requires;
 //! - `fix`: fix what `ascribe check` reports: its prompt about the problems
 //!   when there are any, else the loop of checking and fixing;
 //! - `review`: review what the branch does to its pages, as readers see
 //!   them: the prompt `ascribe diff --format prompt` writes.
 
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use ascribe_check::Project;
 use ascribe_check::prompt::{self, Builds, Context};
+use ascribe_core::RelPath;
 use ascribe_core::path::{normalize, relative_path};
+use ascribe_model::ContentType;
 use ascribe_query::Section;
 use ascribe_query::model::ModelType;
+use ascribe_templates::StartError;
+use ascribe_templates::start;
 
 use crate::answer::{self, Projects};
 use crate::cli::Global;
@@ -49,8 +55,8 @@ pub const PROMPTS: &[Named] = &[
     Named {
         name: "new-page",
         title: "New page",
-        description: "Write a new page of a type: the frontmatter the type requires, and \
-            where its file goes.",
+        description: "Write a new page of a type: where its file goes, the guide to read \
+            first, and the type's template to start from.",
         arguments: &[
             (
                 "type",
@@ -58,7 +64,14 @@ pub const PROMPTS: &[Named] = &[
                 true,
             ),
             ("title", "The page's title.", true),
-            PATH,
+            (
+                "path",
+                "Where the page goes: its file, or a folder for it, in the content root, from \
+                 the current directory or the content root. Any other file or folder names \
+                 the project. By default, the type's first folder in the project at or above \
+                 the current directory.",
+                false,
+            ),
         ],
         build: new_page,
     },
@@ -168,7 +181,10 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
     let types = ascribe_query::model(project.model(), Some(Section::Types))
         .types
         .unwrap_or_default();
-    let Some(page_type) = types.iter().find(|t| t.name == type_name) else {
+    let (Some(page_type), Some(content_type)) = (
+        types.iter().find(|t| t.name == type_name),
+        project.model().types.iter().find(|t| t.name == type_name),
+    ) else {
         return Err(format!(
             "the content model has no page type `{type_name}`; its types are {}",
             types
@@ -179,21 +195,63 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
         ));
     };
     let context = Context::seen_from(project.root(), here().as_deref(), Builds::All);
-    let content = project.content_root().as_str();
-    let content_dir = context.shown(content);
+    let content = project.content_root();
+    let shown = |path: &RelPath| {
+        let in_project = content.join(path.as_str()).unwrap_or_else(|_| path.clone());
+        context.shown(in_project.as_str())
+    };
+    let content_dir = context.shown(content.as_str());
     let content_dir = if content_dir.is_empty() {
         ".".to_owned()
     } else {
         content_dir
     };
-    let place = vec![where_it_goes(page_type, &types, &content_dir)];
-    let mut known = vec![frontmatter(page_type, title)];
+    let elsewhere = where_it_goes(page_type, &types, &content_dir);
+    let asked = given.as_deref().and_then(|given| page_path(project, given));
+    // Where the page goes, unless a file is there or the title names no
+    // file; then the agent picks another path of the type's, and starts from
+    // the same text.
+    let (place, text) = match ascribe_templates::start(project, type_name, title, asked.as_ref()) {
+        Ok(page) if asked.is_some() => (format!("Where: `{}`.", shown(&page.path)), page.text),
+        Ok(page) => (
+            format!(
+                "Where: `{}`, or, when the request says where the page goes, {elsewhere}.",
+                shown(&page.path)
+            ),
+            page.text,
+        ),
+        Err(StartError::FileInTheWay { path }) => (
+            format!(
+                "Where: not `{}`, which is there already, but {elsewhere}.",
+                RelPath::parse(&path).map_or(path.clone(), |p| shown(&p))
+            ),
+            start::text(project, content_type, title).map_err(|e| e.to_string())?,
+        ),
+        Err(StartError::NoPath { .. }) => (
+            format!("Where: {elsewhere}."),
+            start::text(project, content_type, title).map_err(|e| e.to_string())?,
+        ),
+        Err(e) => return Err(e.to_string()),
+    };
+    let mut known = Vec::new();
+    if let Some(guide) = guide(content_type, &context) {
+        known.push(guide);
+    }
+    known.push(start_with(content_type, &text));
     known.push(format!("The type's fields:\n{}", fields(page_type)));
     known.push(
         "A file or folder whose name starts with `_` is a fragment, not a page: don't name \
          the page that way."
             .to_owned(),
     );
+    let cut = match &content_type.template {
+        Some(template) => format!(
+            "(cut: the type's template is `{}`, and `ascribe model --section types` lists \
+             its fields)",
+            context.shown(&template.path)
+        ),
+        None => "(cut: run `ascribe model --section types` for the rest)".to_owned(),
+    };
     Ok(prompt::compose(
         &context,
         &format!(
@@ -201,11 +259,36 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
             page_type.name,
             quoted_title(title)
         ),
-        place,
+        vec![place],
         &known,
-        "(cut: run `ascribe model --section types` for the rest)",
+        &cut,
         &[content_dir],
     ))
+}
+
+/// Where `given`, the `path` argument, asks for the page to go, from the
+/// content root: a file or a folder in the content root, from the current
+/// directory, or, when nothing is there, from the content root. `None` when
+/// it names the project, or the content root itself.
+fn page_path(project: &Project, given: &Path) -> Option<RelPath> {
+    let absolute = |p: &Path| normalize(&std::path::absolute(p).unwrap_or_else(|_| p.to_owned()));
+    let content = absolute(project.root()).join(project.content_root().as_str());
+    let content = normalize(&content);
+    let inside = |path: &Path| {
+        relative_path(&content, path)
+            .filter(RelPath::is_inside)
+            .filter(|rel| !rel.is_root())
+    };
+    let from_here = absolute(given);
+    if let Some(rel) = inside(&from_here) {
+        return Some(rel);
+    }
+    // Outside FileSystem: whether the argument names something that's there,
+    // which makes it the project's file or folder, not the page's.
+    if given.is_absolute() || from_here.exists() {
+        return None;
+    }
+    inside(&normalize(&content.join(given)))
 }
 
 /// A title in double quotes, its own double quotes escaped.
@@ -213,7 +296,9 @@ fn quoted_title(title: &str) -> String {
     format!("\"{}\"", title.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
-/// `Where:`, the folder and the patterns the page's path must match.
+/// The paths the page's path must match: in the content root, at a path
+/// matching the type's `files`, or, for a type with none, at a path no
+/// other type's match.
 fn where_it_goes(page_type: &ModelType, types: &[ModelType], content_dir: &str) -> String {
     if !page_type.files.is_empty() {
         let patterns = page_type
@@ -223,8 +308,8 @@ fn where_it_goes(page_type: &ModelType, types: &[ModelType], content_dir: &str) 
             .collect::<Vec<_>>()
             .join(", ");
         return format!(
-            "Where: in the content root, `{content_dir}/`, at a path matching {patterns} \
-             (relative to it)."
+            "in the content root, `{content_dir}/`, at a path matching {patterns} (relative \
+             to it)"
         );
     }
     let others: Vec<String> = types
@@ -233,41 +318,63 @@ fn where_it_goes(page_type: &ModelType, types: &[ModelType], content_dir: &str) 
         .flat_map(|t| t.files.iter().map(|p| format!("`{p}`")))
         .collect();
     if others.is_empty() {
-        format!("Where: anywhere in the content root, `{content_dir}/`.")
+        format!("anywhere in the content root, `{content_dir}/`")
     } else {
         format!(
-            "Where: in the content root, `{content_dir}/`, at a path that matches none of \
-             {} (those are other types' pages).",
+            "in the content root, `{content_dir}/`, at a path that matches none of {} (those \
+             are other types' pages)",
             others.join(", ")
         )
     }
 }
 
-/// The page's frontmatter to start from: the title, and each other required
-/// field to fill in.
-fn frontmatter(page_type: &ModelType, title: &str) -> String {
-    let mut lines = vec!["Start the file with this frontmatter, and fill in each `…`:".to_owned()];
-    lines.push("```yaml".to_owned());
-    lines.push("---".to_owned());
-    let has_title = page_type.fields.iter().any(|f| f.name == "title");
-    if has_title {
-        lines.push(format!("title: {}", quoted_title(title)));
+/// What to read before writing: the type's `guide`, in order, when it has
+/// one. The files aren't put in the prompt: they're long, and a file the
+/// agent reads arrives whole.
+fn guide(page_type: &ContentType, context: &Context) -> Option<String> {
+    if page_type.guide.is_empty() {
+        return None;
     }
-    for field in page_type
-        .fields
+    let paths: Vec<String> = page_type
+        .guide
         .iter()
-        .filter(|f| f.required && f.name != "title")
-    {
-        lines.push(format!("{}: …", field.name));
+        .map(|g| format!("`{}`", context.shown(&g.path)))
+        .collect();
+    Some(format!(
+        "Before you write, read the type's guide, in this order: {}. It says what belongs in \
+         each part of the page.",
+        paths.join(", then ")
+    ))
+}
+
+/// What the page starts with: the type's template with the title set, or,
+/// for a type with none, its frontmatter.
+fn start_with(page_type: &ContentType, text: &str) -> String {
+    let fence = "`".repeat(longest_run(text, '`').max(2) + 1);
+    let lead = if page_type.template.is_some() {
+        "Start the file with this text, the type's template with the title set. Write over \
+         each placeholder, the text in `{curly brackets}`, and each quoted instruction, and \
+         leave out a part that's marked optional and doesn't apply: `ascribe check` reports \
+         what's left of the template (`template-placeholder-left`)."
+    } else {
+        "Start the file with this frontmatter, and fill in each empty field:"
+    };
+    let info = if page_type.template.is_some() {
+        "markdown"
+    } else {
+        "yaml"
+    };
+    format!("{lead}\n{fence}{info}\n{text}{fence}")
+}
+
+/// The most times `c` is repeated in a row in `text`.
+fn longest_run(text: &str, c: char) -> usize {
+    let (mut longest, mut run) = (0, 0);
+    for ch in text.chars() {
+        run = if ch == c { run + 1 } else { 0 };
+        longest = longest.max(run);
     }
-    lines.push("---".to_owned());
-    lines.push("```".to_owned());
-    if !has_title {
-        lines.push(format!(
-            "The type has no `title` field: start the page with the heading `# {title}`."
-        ));
-    }
-    lines.join("\n")
+    longest
 }
 
 /// One line per field: its name, type, whether it's required, the values it
