@@ -101,6 +101,7 @@ Three pages are two in one: the Astro, review, and agents guides. Splitting them
 | `contracts/json-reports/diff.md` | reference | Reference | | Nothing: generated schemas. |
 | `contracts/json-reports/report.md` | reference | Reference | | Nothing: a generated schema. |
 | `contracts/json-reports/sources.md` | reference | Reference | | Nothing: generated schemas. |
+| `contracts/json-reports/templates.md` | reference | Reference | | Nothing: generated schemas. |
 | `contracts/json-reports/questions.md` | reference | Reference | | Nothing: generated schemas. |
 | `contracts/permalinks-list.md` | reference | Reference | | As the other contracts. |
 
