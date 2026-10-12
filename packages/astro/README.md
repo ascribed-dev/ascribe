@@ -56,8 +56,8 @@ import Head from "@ascribed/astro/Head.astro";
 const { entry } = Astro.props;
 ---
 <head>
-  <!-- The title, description, canonical link, and robots rule, from the page's record. -->
-  <Head entry={entry} title={(title, record) => `${title} · Loom`} />
+  <!-- Everything the head says about the page, from its record. -->
+  <Head entry={entry} title={(title, record) => `${title} · Loom`} name="Loom" />
   <Elements />
 </head>
 <Availability available={entry.data.available} />
@@ -65,7 +65,7 @@ const { entry } = Astro.props;
 <h1 set:html={entry.data.formatted.title} />
 ```
 
-Each build writes a record of every page, `_ascribe/pages.json`, and the integration writes from every project's records what search engines read: `Head.astro` gives a page its `<title>`, description, canonical link, `noindex` when it's `unlisted`, and `nosnippet` when it's `unquoted`; and the site gets one `sitemap.xml`, at Astro's `base`, and one `robots.txt`, at the host's root, with each project's `[crawlers] lines` and a group for each kind of crawler it disallows, such as `training = "disallow"`, in `astro build` and `astro dev`; projects that disagree on a kind fail the build. A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro` and is in the sitemap as a page Astro built. A site with its own `public/robots.txt` or `public/sitemap.xml` keeps it, and a site whose `base` isn't `/` gets no `robots.txt`: the build prints the lines its host's needs. With no `site`, there's no sitemap.
+Each build writes a record of every page, `_ascribe/pages.json`, and the integration writes from every project's records what search engines read: `Head.astro` gives a page its `<title>`, description, canonical link, `noindex` when it's `unlisted`, and `nosnippet` when it's `unquoted`, a link to its Markdown version, the Open Graph tags a link preview reads, with the site's name and a social card given as properties, and its breadcrumbs as structured data, and `astro dev` warns about a tag a layout writes again; and the site gets one `sitemap.xml`, at Astro's `base`, and one `robots.txt`, at the host's root, with each project's `[crawlers] lines` and a group for each kind of crawler it disallows, such as `training = "disallow"`, in `astro build` and `astro dev`; projects that disagree on a kind fail the build. A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro` and is in the sitemap as a page Astro built. A site with its own `public/robots.txt` or `public/sitemap.xml` keeps it, and a site whose `base` isn't `/` gets no `robots.txt`: the build prints the lines its host's needs. With no `site`, there's no sitemap.
 
 A page's Markdown version has no head, so its rules are response headers, which each build lists in `_ascribe/headers.json`: `X-Robots-Tag` when the page isn't listed, and a canonical `Link` to the page. `astro dev` sends them. With `[consumer] headers = "netlify"`, `astro build` writes them into the site's `_headers`; a site with its own `public/_headers` keeps it, and the build fails with the lines it lacks.
 

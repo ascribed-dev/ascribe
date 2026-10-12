@@ -6,8 +6,8 @@
 //!
 //! A record holds the page's route, its source path, its title and
 //! description as plain text, its canonical address, its `listing` and
-//! where that comes from, and its Markdown version's address when the build
-//! publishes one. The project's
+//! where that comes from, its Markdown version's address when the build
+//! publishes one, and its breadcrumbs ([`breadcrumbs`]). The project's
 //! `[crawlers] lines` are held as a host reads them: a path in an `Allow` or
 //! `Disallow` line is from the project's base path in `ascribe.toml`, and
 //! from the host's root here ([`host_line`]). Each purpose the project
@@ -22,7 +22,7 @@
 //! crawler does, for the check that a page that isn't listed can be fetched,
 //! so that the crawler reads that.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use ascribe_core::{RelPath, Router};
 use ascribe_model::{
@@ -84,6 +84,18 @@ pub struct PageRecord {
     /// Its Markdown version's address, from the host's root, when the build
     /// publishes one (`[consumer] agents = true`).
     pub markdown: Option<String>,
+    /// Its place in the site, from the top down to itself ([`breadcrumbs`]).
+    pub breadcrumbs: Vec<Step>,
+}
+
+/// One step of a page's breadcrumbs: a page at one of its route's folders,
+/// or the page itself.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Step {
+    /// The step's route, from the host's root, as the page's record has it.
+    pub route: String,
+    /// The step's page's title, as plain text.
+    pub title: String,
 }
 
 impl PageRecord {
@@ -104,9 +116,12 @@ pub fn records<'a>(
         .site
         .as_deref()
         .map(|s| s.trim_end_matches('/').to_owned());
+    let pages: Vec<&ResolvedPage> = pages.into_iter().collect();
+    let steps = breadcrumbs(&router, &pages);
     let pages = pages
         .into_iter()
-        .map(|page| {
+        .zip(steps)
+        .map(|(page, breadcrumbs)| {
             let route = router.route(&page.path);
             PageRecord {
                 canonical: site.as_ref().map(|site| format!("{site}{route}")),
@@ -120,6 +135,7 @@ pub fn records<'a>(
                     .agents
                     .then(|| router.markdown_url(&page.path)),
                 route,
+                breadcrumbs,
             }
         })
         .collect();
@@ -174,6 +190,51 @@ pub fn header_rules(records: &PageRecords) -> Vec<HeaderRule> {
         .map(|(path, headers)| HeaderRule {
             path: path.to_owned(),
             headers,
+        })
+        .collect()
+}
+
+/// Each page's breadcrumbs, in `pages` order: its route's folders from the
+/// top down, each that is the route of a page, then the page itself. A folder
+/// with no page at its route isn't a step, since there's nothing to link to,
+/// and neither is a page with no title, since a step is named by its page's
+/// title. The folders are of the route, within the build: under a base path
+/// of `/docs/`, the first step is the page at `/docs/`, never one at `/`. Two
+/// pages at one route, which the site output refuses, give the first.
+///
+/// The content model has no navigation, so a page's folders are all that
+/// say its place in the site.
+pub fn breadcrumbs(router: &AstroRouter, pages: &[&ResolvedPage]) -> Vec<Vec<Step>> {
+    let mut by_id: HashMap<String, &ResolvedPage> = HashMap::new();
+    for page in pages {
+        by_id
+            .entry(AstroRouter::entry_id(&page.path))
+            .or_insert(page);
+    }
+    pages
+        .iter()
+        .map(|page| {
+            let id = AstroRouter::entry_id(&page.path);
+            let mut ids = vec!["index".to_owned()];
+            if id != "index" {
+                let mut at = String::new();
+                for segment in id.split('/') {
+                    if !at.is_empty() {
+                        at.push('/');
+                    }
+                    at.push_str(segment);
+                    ids.push(at.clone());
+                }
+            }
+            ids.iter()
+                .filter_map(|id| by_id.get(id))
+                .filter_map(|step| {
+                    Some(Step {
+                        route: router.route(&step.path),
+                        title: step.title.clone()?,
+                    })
+                })
+                .collect()
         })
         .collect()
 }

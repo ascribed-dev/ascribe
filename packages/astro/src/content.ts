@@ -32,7 +32,8 @@ import {
 } from "./nav.js";
 
 export type { NavGroup, SidebarGroup, SidebarPage } from "./nav.js";
-export type { Listing, ListingFrom, PageRecord } from "./records.js";
+export type { Listing, ListingFrom, PageRecord, Step } from "./records.js";
+export { headTags, scriptJson, type Card, type HeadOptions, type HeadTag } from "./head.js";
 
 /**
  * The collection's loader and schema: the `glob` loader on the site output's

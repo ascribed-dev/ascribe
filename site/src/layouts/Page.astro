@@ -13,14 +13,10 @@ interface Props {
 }
 
 const { entry, heading } = Astro.props;
-const { title, description } = entry.data;
 ---
 
 <Base
   entry={entry}
-  title={title}
-  description={description}
-  home={entry.id === "index"}
   card={{ name: entry.id, alt: `Ascribe: ${heading}` }}
 >
   <main id="content" class="page landing">
