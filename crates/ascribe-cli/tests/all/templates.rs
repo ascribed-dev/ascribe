@@ -71,11 +71,12 @@ fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
         stdout(&output),
         "wrote templates/how-to.md\n\
          wrote templates/how-to.guide.md\n\
+         wrote templates/how-to.ascribe.md\n\
          wrote templates/templates.lock\n\
          wrote ascribe.toml\n\
          added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and the pages outside the new types keep it\n\
          added [types.how-to] to ascribe.toml, for pages under docs/how-to/\n\
-         To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md first.\n"
+         To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.\n"
     );
     fs::create_dir(dir.path().join("docs/how-to")).unwrap();
     fs::copy(
@@ -101,9 +102,13 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(answer["schema_version"], 1);
-    assert_eq!(answer["written"][3], "ascribe.toml");
+    assert_eq!(answer["written"][4], "ascribe.toml");
     assert_eq!(answer["added"][0]["name"], "how-to");
     assert_eq!(answer["added"][0]["folder"], "docs/how-to");
+    assert_eq!(
+        answer["added"][0]["guide"],
+        serde_json::json!(["templates/how-to.guide.md", "templates/how-to.ascribe.md"])
+    );
     assert_eq!(answer["refused"], Value::Array(Vec::new()));
     assert_eq!(answer["page_declared"], true);
 }

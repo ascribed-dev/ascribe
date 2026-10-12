@@ -1,11 +1,12 @@
 //! Writing templates into a project: `ascribe templates eject`.
 //!
 //! Each template of the set named is written as the project's own file, with
-//! its guide, under a folder beside `ascribe.toml` (`templates/`, unless the
+//! its guide and Ascribe's notes on its type, under a folder beside `ascribe.toml` (`templates/`, unless the
 //! caller names another), and its type is added to `ascribe.toml`, at its
 //! end, so the rest of the file stays as it was, comments and order with it.
 //! `templates.lock`, in the same folder, records what each file was copied
-//! from and a hash of it as written; a second eject adds to it.
+//! from and a hash of it as written, with Ascribe's notes apart from their
+//! files; a second eject adds to it.
 //!
 //! Everything is checked before anything is written: a type the project
 //! declares already, or a file in the way, is refused, and then nothing is
@@ -54,9 +55,9 @@ pub struct EjectAnswer {
     /// The version of Ascribe that wrote it.
     pub ascribe_version: &'static str,
     /// The files written, from the folder `ascribe.toml` is in,
-    /// `/`-separated, in the order they were written: each template and its
-    /// guide, then `templates.lock`, then `ascribe.toml`. Empty when anything
-    /// was refused.
+    /// `/`-separated, in the order they were written: each template, its
+    /// guide, and Ascribe's notes on its type, then `templates.lock`, then
+    /// `ascribe.toml`. Empty when anything was refused.
     pub written: Vec<String>,
     /// The types added to `ascribe.toml`, in the order they were named.
     /// Empty when anything was refused.
@@ -85,7 +86,8 @@ pub struct Added {
     pub folder: String,
     /// Its `template`, from the folder `ascribe.toml` is in.
     pub template: String,
-    /// Its `guide`, from the folder `ascribe.toml` is in.
+    /// Its `guide`, from the folder `ascribe.toml` is in, in the order to
+    /// read them: their guide, then Ascribe's notes on the type.
     pub guide: Vec<String>,
 }
 
@@ -188,8 +190,8 @@ pub struct Eject<'a> {
     pub ascribe_version: &'a str,
 }
 
-/// Writes the templates `request` names into the project, with their guides
-/// and `templates.lock`, and adds their types to `ascribe.toml`. What's there
+/// Writes the templates `request` names into the project, with their guides,
+/// Ascribe's notes on their types, and `templates.lock`, and adds their types to `ascribe.toml`. What's there
 /// is looked at through `fs`, the project's [`FileSystem`].
 ///
 /// # Errors
@@ -239,12 +241,25 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
     let mut lock = lock;
     let mut files: Vec<(String, &'static str)> = Vec::new();
     for (template, added) in chosen.iter().zip(&answer.added) {
-        let written = [
+        let theirs = [
             (added.template.clone(), template.text(&template.template)),
             (added.guide[0].clone(), template.text(&template.guide)),
         ];
-        lock_entry(&mut lock, &set, template, &written, request.ascribe_version);
-        files.extend(written);
+        let ours: Vec<(String, &'static str)> = added.guide[1..]
+            .iter()
+            .cloned()
+            .zip(template.notes().map(|n| n.text))
+            .collect();
+        lock_entry(
+            &mut lock,
+            &set,
+            template,
+            &theirs,
+            &ours,
+            request.ascribe_version,
+        );
+        files.extend(theirs);
+        files.extend(ours);
     }
     for (path, text) in &files {
         write(request.root, path, text)?;
@@ -307,7 +322,11 @@ fn refusals(
             message: format!("ascribe.toml declares [types.{name}] already"),
         });
     }
-    for file in [&template.template, &template.guide] {
+    let notes = template.notes().map(|n| n.name);
+    for file in [template.template.as_str(), template.guide.as_str()]
+        .into_iter()
+        .chain(notes)
+    {
         let path = at(request.to, file);
         if fs.probe(&path) != Probe::Missing || fs.real_path(&path).is_some() {
             refused.push(Refusal {
@@ -334,7 +353,10 @@ fn added(template: &Template, to: &RelPath, layout: &Layout) -> Added {
         files: format!("{}/**", template.name),
         folder: folder.to_string(),
         template: at(to, &template.template).to_string(),
-        guide: vec![at(to, &template.guide).to_string()],
+        guide: std::iter::once(template.guide.as_str())
+            .chain(template.notes().map(|n| n.name))
+            .map(|file| at(to, file).to_string())
+            .collect(),
     }
 }
 
@@ -509,12 +531,15 @@ fn read_lock(path: &RelPath, fs: &dyn FileSystem) -> Result<DocumentMut, EjectEr
 }
 
 /// Records `template`'s files, as written, in the lock: in place of an entry
-/// of the same name, or at the end.
+/// of the same name, or at the end. Their files are `files`, and Ascribe's
+/// notes on the type are `ascribe-files`, so a later release of theirs is
+/// compared with their files alone.
 fn lock_entry(
     lock: &mut DocumentMut,
     set: &Set,
     template: &Template,
-    written: &[(String, &str)],
+    theirs: &[(String, &str)],
+    ours: &[(String, &str)],
     ascribe_version: &str,
 ) {
     let mut entry = Table::new();
@@ -525,11 +550,16 @@ fn lock_entry(
     entry.insert("commit", value(&set.commit));
     entry.insert("license", value(&set.license));
     entry.insert("ascribe", value(ascribe_version));
-    let mut files = Table::new();
-    for (path, text) in written {
-        files.insert(path, value(file_hash(text.as_bytes())));
+    for (key, written) in [("files", theirs), ("ascribe-files", ours)] {
+        if written.is_empty() {
+            continue;
+        }
+        let mut files = Table::new();
+        for (path, text) in written {
+            files.insert(path, value(file_hash(text.as_bytes())));
+        }
+        entry.insert(key, Item::Table(files));
     }
-    entry.insert("files", Item::Table(files));
     let item = lock
         .entry("template")
         .or_insert(Item::ArrayOfTables(ArrayOfTables::new()));

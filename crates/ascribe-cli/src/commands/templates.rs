@@ -229,11 +229,15 @@ fn write_eject(
             "To start a page, copy {} into {}/, and read {} first.",
             from_here(root, &one.template),
             from_here(root, &one.folder),
-            from_here(root, &one.guide[0])
+            one.guide
+                .iter()
+                .map(|g| from_here(root, g))
+                .collect::<Vec<_>>()
+                .join(" and ")
         )?,
         _ => writeln!(
             out,
-            "To start a page, copy its type's template into the type's folder, and read its guide first."
+            "To start a page, copy its type's template into the type's folder, and read its guide and Ascribe's notes on it first."
         )?,
     }
     Ok(())

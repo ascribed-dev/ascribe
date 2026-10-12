@@ -5,8 +5,9 @@
 //!
 //! `set/set.toml` lists the templates: each one's name, their index's
 //! summary of it, and its template and guide, with their tag and the license;
-//! [`set`] reads it. [`eject()`] writes templates into a project, as
-//! `ascribe templates eject` does.
+//! [`set`] reads it. [`NOTES`] is Ascribe's notes on each type, written by hand
+//! in `notes/`, which the conversion never opens. [`eject()`] writes templates
+//! into a project, as `ascribe templates eject` does.
 
 pub mod eject;
 
@@ -36,6 +37,37 @@ pub const FILES: &[File] = &[
     File {
         name: "how-to.md",
         text: include_str!("../set/how-to.md"),
+    },
+];
+
+/// Ascribe's notes on each type, by name, as committed: what's particular to
+/// writing a page of that type in Ascribe, and nothing their guide says. Each
+/// is written by hand, as `notes/<name>.ascribe.md`, and keeps that name in a
+/// project.
+pub const NOTES: &[File] = &[
+    File {
+        name: "concept.ascribe.md",
+        text: include_str!("../notes/concept.ascribe.md"),
+    },
+    File {
+        name: "how-to.ascribe.md",
+        text: include_str!("../notes/how-to.ascribe.md"),
+    },
+    File {
+        name: "reference.ascribe.md",
+        text: include_str!("../notes/reference.ascribe.md"),
+    },
+    File {
+        name: "release-notes.ascribe.md",
+        text: include_str!("../notes/release-notes.ascribe.md"),
+    },
+    File {
+        name: "troubleshooting.ascribe.md",
+        text: include_str!("../notes/troubleshooting.ascribe.md"),
+    },
+    File {
+        name: "tutorial.ascribe.md",
+        text: include_str!("../notes/tutorial.ascribe.md"),
     },
 ];
 
@@ -72,6 +104,12 @@ impl Template {
     /// The text of one of its files, by name.
     pub fn text(&self, name: &str) -> &'static str {
         FILES.iter().find(|f| f.name == name).map_or("", |f| f.text)
+    }
+
+    /// Ascribe's notes on its type, from [`NOTES`], when there are any.
+    pub fn notes(&self) -> Option<&'static File> {
+        let name = format!("{}.ascribe.md", self.name);
+        NOTES.iter().find(|f| f.name == name)
     }
 }
 

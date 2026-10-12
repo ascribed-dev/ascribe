@@ -22,13 +22,13 @@ In a project, the folder with its `ascribe.toml`:
 ascribe templates eject how-to
 ```
 
-It writes the template and its guide into `templates/`, beside `ascribe.toml`, and adds the how-to type to `ascribe.toml`, below what's there:
+It writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, and adds the how-to type to `ascribe.toml`, below what's there:
 
 ```toml
 [types.how-to]
 files = ["how-to/**"]
 template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md"]
+guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
 [types.how-to.frontmatter]
 title = "string"
@@ -37,13 +37,17 @@ description = "string"
 
 A page in the content root's `how-to/` folder is a how-to now. Commit the files, with `templates/templates.lock`, which records what each was copied from.
 
-From then on they're your project's. Change the template, add to the guide, or add a file of your own notes to the type's `guide` list: nothing in Ascribe writes over them. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
+From then on they're your project's. Change the template, add to the guide or the notes, or add a file of your own to the type's `guide` list: nothing in Ascribe writes over them. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
 
 `eject` adds to a project, and doesn't start one. Without an `ascribe.toml`, write one first: a file named `ascribe.toml`, beside the folder your pages go in (`docs`, unless you say otherwise), with the line `spec = "0.1"`.
 
+## Ascribe's notes
+
+Their guide says what belongs in a page of each kind, and it's written for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../reference/directives.md#variant) group, and a step's command taken from tested code with [`@snippet`](../reference/directives.md#snippet). They're the only words in the set that are Ascribe's, and `templates.lock` records them apart from their files.
+
 ## Start a page
 
-Copy the template into the type's folder, and read the guide before you write:
+Copy the template into the type's folder, and read the guide and the notes before you write:
 
 ```sh
 mkdir -p docs/how-to

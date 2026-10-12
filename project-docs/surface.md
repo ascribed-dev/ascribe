@@ -39,7 +39,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
 | `ascribe templates list` | Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. |  |  |
-| `ascribe templates eject` | Writes each template named, with its guide, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>]` | `text`, `json` |
+| `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>]` | `text`, `json` |
 | `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
 
 On every command:
@@ -787,7 +787,7 @@ For people and agents. Read from `docs/content/reference/project-files.md`.
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
 | `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
-| `templates/` | `ascribe templates eject`, once for each template: the template and its guide, in `templates/` or the folder `--to` names, and `templates.lock` beside them, which records what each was copied from. From then on the templates are yours, and Ascribe doesn't write them again. | Yes |
+| `templates/` | `ascribe templates eject`, once for each template: the template, its guide, and Ascribe's notes on the type, in `templates/` or the folder `--to` names, and `templates.lock` beside them, which records what each was copied from. From then on the templates are yours, and Ascribe doesn't write them again. | Yes |
 | `AGENTS.md` | `ascribe agents sync`, between its markers, beside `ascribe.toml`, and at the repository's root when that's another folder. The rest of the file is yours. | Yes |
 | `CLAUDE.md` | `ascribe agents sync`, an import of `AGENTS.md` between its markers, in each `CLAUDE.md` there is; it creates one only with `--target claude`. | Yes |
 | `.agents/skills/ascribe/` and `.claude/skills/ascribe/` | `ascribe agents sync`, at the repository's root: the skill, the second with `--target claude`. | Yes |
