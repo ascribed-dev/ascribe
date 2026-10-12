@@ -474,6 +474,17 @@ fn status_reports_a_deleted_template_the_model_still_names() {
     );
 }
 
+#[test]
+fn status_of_a_model_that_doesn_t_load_exits_2() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::remove_dir_all(dir.path().join("docs")).unwrap();
+    let output = ascribe(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+}
+
 /// `ascribe agents prompt new-page` for a type eject gave: the template with
 /// the title set, the guide to read first, and a check command that works
 /// from the folder the prompt was asked for in, the repository's root or

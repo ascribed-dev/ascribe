@@ -304,3 +304,16 @@ fn diff_is_the_upstream_change_to_an_untouched_copy() {
     );
     assert!(diff(&answer, "tutorial", &upstream, &fs).is_none());
 }
+
+#[test]
+fn a_template_the_set_no_longer_has_is_removed_and_counts_as_a_change() {
+    let dir = project(&["how-to"]);
+    let mut upstream = Upstream::carried();
+    upstream.set.templates.retain(|t| t.name != "how-to");
+    let answer = run(dir.path(), &upstream);
+    assert!(answer.upstream_changed);
+    let how_to = template(&answer, "how-to");
+    assert_eq!(how_to.upstream, UpstreamChange::Removed);
+    assert_eq!(how_to.project, Change::Unchanged);
+    assert!(answer.not_taken.iter().all(|t| t.name != "how-to"));
+}

@@ -313,7 +313,7 @@
       "type": "array"
     },
     "upstream_changed": {
-      "description": "Whether a file of a template the project took has changed in the set\nsince the copy, as `templates.lock` remembers it. What `--exit-code`\nexits with 1 for.",
+      "description": "Whether the set has changed a template the project took since the\ncopy, as `templates.lock` remembers it, or no longer has one. What\n`--exit-code` exits with 1 for.",
       "type": "boolean"
     }
   },

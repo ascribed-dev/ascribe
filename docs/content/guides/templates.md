@@ -65,7 +65,7 @@ To take a change, see it, then copy what you want by hand:
 ascribe templates status --diff how-to
 ```
 
-`--exit-code` makes it exit with 1 when the set has changed a template you took, for a CI job that wants to know. The [command reference](../reference/cli/sources.md#cli-templates-status) has the rest, and its JSON.
+`--exit-code` makes it exit with 1 when the set has changed a template you took, or no longer has one, for a CI job that wants to know. The [command reference](../reference/cli/sources.md#cli-templates-status) has the rest, and its JSON.
 
 ## Ascribe's notes
 

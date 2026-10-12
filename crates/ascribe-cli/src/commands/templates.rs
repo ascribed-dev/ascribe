@@ -86,7 +86,7 @@ pub struct StatusArgs {
     pub format: Format,
 
     /// Exit with 1 when the set has changed a template the project took
-    /// since the copy.
+    /// since the copy, or no longer has one.
     #[arg(long)]
     pub exit_code: bool,
 
@@ -307,7 +307,7 @@ pub(crate) fn write_added(
 }
 
 /// Exit codes: 0 whatever it finds; 1 with `--exit-code` when the set has
-/// changed a template the project took, or when `--diff` names one of the
+/// changed a template the project took, or no longer has one, or when `--diff` names one of the
 /// set's the project hasn't taken; 2 when it couldn't run, or `--diff` names
 /// a template the set doesn't have.
 fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
@@ -320,12 +320,17 @@ fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut
         _ => PathBuf::from("."),
     };
     // A template or guide that's gone is something status reports, so the
-    // model's own check of its files doesn't stop it: what's written in
-    // ascribe.toml must still load.
+    // check of the types' files (`type_files::check`) doesn't stop it; every
+    // other rule of the loader, the folders it names included, still does.
     let model = match Project::load_model(&config) {
         Ok(file) => file.model,
         Err(LoadError::Model { text, diagnostics }) => {
-            match ascribe_model::load_str(&text, ascribe_core::FileId::new(0)) {
+            match ascribe_model::load_str_bounded(
+                &text,
+                ascribe_core::FileId::new(0),
+                &root,
+                ascribe_model::SourceBound::Anywhere,
+            ) {
                 Ok(model) => model,
                 Err(_) => {
                     let failure = Failure::Load(LoadError::Model { text, diagnostics });
@@ -424,7 +429,7 @@ fn run_diff(
     let changed = status
         .templates
         .iter()
-        .any(|t| t.name == name && t.upstream == UpstreamChange::Changed);
+        .any(|t| t.name == name && t.upstream.is_change());
     if args.exit_code && changed {
         exit::PROBLEMS
     } else {

@@ -74,9 +74,9 @@ pub struct StatusAnswer {
     pub ascribe_version: &'static str,
     /// The set this `ascribe` carries, which the copies are compared with.
     pub set: SetRelease,
-    /// Whether a file of a template the project took has changed in the set
-    /// since the copy, as `templates.lock` remembers it. What `--exit-code`
-    /// exits with 1 for.
+    /// Whether the set has changed a template the project took since the
+    /// copy, as `templates.lock` remembers it, or no longer has one. What
+    /// `--exit-code` exits with 1 for.
     pub upstream_changed: bool,
     /// Each template the project took, in the set's order, then any the set
     /// no longer has, by name.
@@ -153,6 +153,14 @@ pub enum UpstreamChange {
     Unknown,
     /// The set no longer has it.
     Removed,
+}
+
+impl UpstreamChange {
+    /// Whether it's a change in the set since the copy: `changed`, or
+    /// `removed`.
+    pub fn is_change(self) -> bool {
+        matches!(self, UpstreamChange::Changed | UpstreamChange::Removed)
+    }
 }
 
 /// Whether the project has changed a template, or a file of one, since the
@@ -341,7 +349,7 @@ pub fn status(request: &Status<'_>, fs: &dyn FileSystem) -> StatusAnswer {
             tag: upstream.set.tag.clone(),
             commit: upstream.set.commit.clone(),
         },
-        upstream_changed: found.iter().any(|t| t.upstream == UpstreamChange::Changed),
+        upstream_changed: found.iter().any(|t| t.upstream.is_change()),
         templates: found,
         not_taken,
     }
