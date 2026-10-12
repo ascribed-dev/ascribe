@@ -108,7 +108,6 @@ A project can set `listing` for the whole site, a folder, or a content type, in 
 
 What isn't handled yet:
 
-- **A project says nothing to crawlers by purpose,** such as the ones that gather training data. Its own `robots.txt` lines are [`[crawlers]`](#21-crawlers).
 - **The Markdown version of a page that isn't listed can still be indexed** unless the host sends it with `X-Robots-Tag: noindex`, since only a response header keeps a file that isn't HTML out of a search index. With [`[consumer] headers`](#15-consumer) set, the build gives the host the header; without it, the header is in `_ascribe/headers.json`, and the host sends it only if a deploy step gives it the list.
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
@@ -513,9 +512,25 @@ cli-settings = "settings"
 
 `robots.txt` is a request: a crawler may ignore it, and some bots document that they may. A crawler that follows it and is told not to fetch a page never reads that page's head. Keeping a page out of search results is the page's [`listing`](#listing-a-page), not a `Disallow` line: `ascribe check` says so when a page that isn't listed is at an address the project's own lines disallow for every crawler (`listing-disallowed`), since the crawler can't read the rule then, and a search engine can list the address alone.
 
-A project doesn't yet say anything about crawlers by purpose, such as the ones that gather training data, here; `lines` is the whole of what it says.
+`ascribe check` reads each search crawler the way it reads the file: the one group that applies to it. A page that isn't listed is reported when a search crawler may not fetch it, whether the lines for every crawler say so, a group of `lines` that names that crawler, or `search = "disallow"`.
 
-**Rules.** Each line is one line (`model-crawlers-line`) and not empty (`model-empty-text`). No other key is allowed in `[crawlers]` (`model-unknown-key`).
+### Crawlers by purpose
+
+Each operator below runs a bot for each purpose, or a token that says what it may do with what its other bots fetch, and says on its own page which is which. A purpose's group names each of them. A bot whose operator states no single purpose isn't here, such as Common Crawl's `CCBot`, whose archive many train on, or Meta's `meta-externalagent`, which gathers for training and for indexing both; name such a bot in `lines`, in a group of its own. Each row says what its operator said on the day in its last column, linked to the page.
+
+@include: ../_generated/crawlers.md
+
+What each choice costs, in a sentence each:
+
+- **Disallowing `training`** asks those operators not to train models on the site. It doesn't take the site out of any search or answer, and it stops nothing already gathered. Google's and Apple's are tokens, not crawlers: Googlebot and Applebot still fetch every page for search, and the token says only what may be done with it.
+- **Disallowing `search`** takes the site out of those AI search products' answers, which is the point of being crawled by them: a site opted out of OpenAI's search crawler isn't shown in ChatGPT's search answers, for one ([OpenAI](https://developers.openai.com/api/docs/bots), read 2026-10-12). It doesn't touch Google's or Bing's search, whose AI answers are drawn from their ordinary index, which only a page's `listing` keeps a page out of. `ascribe check` says what it costs (`crawlers-disallowed`).
+- **Disallowing `on-request`** asks assistants not to fetch a page when a person asks about it, so they answer from what they already have, or from another site. It's a request several operators say their fetcher may not follow, since a person asked: OpenAI's, Perplexity's, Amazon's, and Meta's say so (see the table), and Google's own fetchers for its agents generally ignore `robots.txt` and have no token, so they aren't listed ([Google](https://developers.google.com/search/docs/crawling-indexing/google-user-triggered-fetchers), read 2026-10-12). `ascribe check` says what it costs (`crawlers-disallowed`).
+
+A host's or a CDN's own settings for bots can block a crawler before it reads `robots.txt`, whatever the file says, and can allow it in spite of it. Those are the host's, not Ascribe's: check them when a crawler you allowed can't reach the site.
+
+The list changes, as operators add bots and rename them. Ascribe's release process rereads every source, and a newer Ascribe may name more crawlers for a purpose than an older one did.
+
+**Rules.** Each line is one line (`model-crawlers-line`) and not empty (`model-empty-text`). A purpose is `allow` or `disallow` (`model-invalid-value`). A crawler is named in one group: not in a group of `lines` that a disallowed purpose names, and not in two groups of `lines` (`model-crawlers-named-twice`). Projects that build one site must agree on each purpose, since it has one `robots.txt`: one that allows a purpose and one that disallows it fail the site's build, naming both. No other key is allowed in `[crawlers]` (`model-unknown-key`).
 
 ---
 

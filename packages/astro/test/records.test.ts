@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { forwardingRoutes } from "../src/permalinks.js";
 import {
   pageList,
+  purposeConflicts,
   readRecords,
   recordFor,
   robotsText,
@@ -13,6 +14,7 @@ import {
   sitemapAddresses,
   sitemapXml,
   type PageRecord,
+  type RobotsGroup,
 } from "../src/records.js";
 import {
   devRouted,
@@ -173,34 +175,164 @@ describe("sitemapXml", () => {
   });
 });
 
+/**
+ * Whether `agent` may fetch `route` under `robots`, read as RFC 9309 says a
+ * crawler reads it: the groups that name the agent, without case, combined,
+ * or the `*` groups when none does; the longest matching rule wins, and an
+ * `Allow` wins a tie. Paths here are prefixes, without patterns.
+ */
+function mayFetch(robots: string, agent: string, route: string): boolean {
+  const lines = robots.split("\n").map((line) => line.split("#")[0]?.trim() ?? "");
+  const groups: { agents: string[]; rules: [boolean, string][] }[] = [];
+  let open = false;
+  for (const line of lines) {
+    const [field = "", ...rest] = line.split(":");
+    const value = rest.join(":").trim();
+    const name = field.trim().toLowerCase();
+    if (name === "user-agent") {
+      if (!open) groups.push({ agents: [], rules: [] });
+      groups.at(-1)?.agents.push(value.toLowerCase());
+      open = true;
+    } else {
+      open = false;
+      if ((name === "allow" || name === "disallow") && value !== "")
+        groups.at(-1)?.rules.push([name === "allow", value]);
+    }
+  }
+  const own = groups.filter((group) => group.agents.includes(agent.toLowerCase()));
+  const applying = own.length > 0 ? own : groups.filter((group) => group.agents.includes("*"));
+  let best: [boolean, string] | undefined;
+  for (const rule of applying.flatMap((group) => group.rules)) {
+    if (!route.startsWith(rule[1])) continue;
+    if (
+      best === undefined ||
+      rule[1].length > best[1].length ||
+      (rule[1].length === best[1].length && rule[0])
+    )
+      best = rule;
+  }
+  return best?.[0] ?? true;
+}
+
+const TRAINING: RobotsGroup = {
+  purpose: "training",
+  user_agents: ["GPTBot", "ClaudeBot"],
+  lines: ["Disallow: /"],
+};
+const SEARCH: RobotsGroup = {
+  purpose: "search",
+  user_agents: ["OAI-SearchBot"],
+  lines: ["Disallow: /"],
+};
+const ON_REQUEST: RobotsGroup = {
+  purpose: "on-request",
+  user_agents: ["ChatGPT-User"],
+  lines: ["Disallow: /"],
+};
+const SITEMAP = "https://docs.example.com/sitemap.xml";
+
 describe("robotsText", () => {
   it("opens a group for every crawler, then each project's whole groups, then the sitemap", () => {
     expect(
       robotsText(
         [
-          ["Disallow: /docs/drafts/", "User-agent: ExampleBot", "Disallow: /"],
-          ["Disallow: /private/"],
+          { lines: ["Disallow: /docs/drafts/", "User-agent: ExampleBot", "Disallow: /"] },
+          { lines: ["Disallow: /private/"] },
         ],
-        "https://docs.example.com/sitemap.xml",
+        SITEMAP,
       ),
     ).toBe(
       "User-agent: *\nDisallow: /docs/drafts/\nDisallow: /private/\n\n" +
         "User-agent: ExampleBot\nDisallow: /\n\n" +
-        "Sitemap: https://docs.example.com/sitemap.xml\n",
+        `Sitemap: ${SITEMAP}\n`,
     );
   });
 
   it("is the sitemap's address alone with no lines, and nothing with neither", () => {
-    expect(robotsText([[], []], "https://docs.example.com/sitemap.xml")).toBe(
-      "Sitemap: https://docs.example.com/sitemap.xml\n",
-    );
-    expect(robotsText([[], []], undefined)).toBeUndefined();
+    const none = { lines: [], purposes: {}, groups: [] };
+    expect(robotsText([none, none], SITEMAP)).toBe(`Sitemap: ${SITEMAP}\n`);
+    expect(robotsText([none, none], undefined)).toBeUndefined();
   });
 
   it("opens no group for every crawler when every line is in a named one", () => {
-    expect(robotsText([["user-agent: ExampleBot", "Disallow: /"]], undefined)).toBe(
+    expect(robotsText([{ lines: ["user-agent: ExampleBot", "Disallow: /"] }], undefined)).toBe(
       "user-agent: ExampleBot\nDisallow: /\n",
     );
+  });
+
+  it("writes a disallowed purpose's group first, naming each of its tokens, and nothing for one allowed", () => {
+    const robots = robotsText(
+      [{ lines: [], purposes: { training: "disallow", search: "allow" }, groups: [TRAINING] }],
+      SITEMAP,
+    );
+    expect(robots).toBe(
+      `User-agent: GPTBot\nUser-agent: ClaudeBot\nDisallow: /\n\nSitemap: ${SITEMAP}\n`,
+    );
+  });
+
+  it("writes each purpose once for the site, before the lines for every crawler", () => {
+    const robots = robotsText(
+      [
+        { lines: ["Disallow: /docs/drafts/"], groups: [TRAINING, SEARCH, ON_REQUEST] },
+        { lines: ["User-agent: ExampleBot", "Disallow: /"], groups: [TRAINING] },
+      ],
+      undefined,
+    );
+    expect(robots).toBe(
+      "User-agent: GPTBot\nUser-agent: ClaudeBot\nDisallow: /\n\n" +
+        "User-agent: OAI-SearchBot\nDisallow: /\n\n" +
+        "User-agent: ChatGPT-User\nDisallow: /\n\n" +
+        "User-agent: *\nDisallow: /docs/drafts/\n\n" +
+        "User-agent: ExampleBot\nDisallow: /\n",
+    );
+  });
+
+  it("reads as a crawler of each purpose would", () => {
+    // Training is disallowed; search and on-request are allowed, and so stay
+    // under the lines for every crawler, the drafts among them.
+    const robots =
+      robotsText(
+        [
+          {
+            lines: ["Disallow: /docs/drafts/", "User-agent: ExampleBot", "Disallow: /"],
+            purposes: { training: "disallow", search: "allow", "on-request": "allow" },
+            groups: [TRAINING],
+          },
+        ],
+        SITEMAP,
+      ) ?? "";
+    expect(mayFetch(robots, "GPTBot", "/docs/")).toBe(false);
+    expect(mayFetch(robots, "claudebot", "/docs/guide/")).toBe(false);
+    expect(mayFetch(robots, "OAI-SearchBot", "/docs/")).toBe(true);
+    expect(mayFetch(robots, "OAI-SearchBot", "/docs/drafts/")).toBe(false);
+    expect(mayFetch(robots, "ChatGPT-User", "/docs/")).toBe(true);
+    expect(mayFetch(robots, "ChatGPT-User", "/docs/drafts/a/")).toBe(false);
+    expect(mayFetch(robots, "Googlebot", "/docs/drafts/")).toBe(false);
+    expect(mayFetch(robots, "ExampleBot", "/docs/")).toBe(false);
+  });
+});
+
+describe("purposeConflicts", () => {
+  const project = (name: string, purposes: Record<string, "allow" | "disallow">) => ({
+    name,
+    robots: { lines: [], purposes },
+  });
+
+  it("names both projects when one allows a purpose and another disallows it", () => {
+    expect(
+      purposeConflicts([
+        project("docs", { training: "disallow", search: "allow" }),
+        project("site", { training: "allow", search: "allow" }),
+      ]),
+    ).toEqual([
+      '"docs" has [crawlers] training = "disallow" and "site" has training = "allow". The site has one robots.txt, so its projects must agree: make them the same, or remove one.',
+    ]);
+  });
+
+  it("lets a project that says nothing agree with either", () => {
+    expect(
+      purposeConflicts([project("docs", { training: "disallow" }), project("site", {})]),
+    ).toEqual([]);
   });
 });
 
@@ -210,7 +342,7 @@ describe("rootFiles", () => {
     routed: () => true,
     sitePages: [],
     excluded: [],
-    lines: [["Disallow: /docs/drafts/"]],
+    robots: [{ name: "docs", robots: { lines: ["Disallow: /docs/drafts/"] } }],
     site: "https://docs.example.com",
     base: "/",
     ownRobots: false,
@@ -224,6 +356,20 @@ describe("rootFiles", () => {
       "User-agent: *\nDisallow: /docs/drafts/\n\nSitemap: https://docs.example.com/sitemap.xml\n",
     );
     expect(files.notes).toEqual([]);
+    expect(files.problems).toEqual([]);
+  });
+
+  it("writes no robots.txt when two projects disagree on a purpose, and says why", () => {
+    const files = rootFiles({
+      ...sources,
+      robots: [
+        { name: "docs", robots: { lines: [], purposes: { search: "disallow" }, groups: [SEARCH] } },
+        { name: "site", robots: { lines: [], purposes: { search: "allow" } } },
+      ],
+    });
+    expect(files.robots).toBeUndefined();
+    expect(files.problems).toHaveLength(1);
+    expect(files.problems[0]).toContain('"docs" has [crawlers] search = "disallow"');
   });
 
   it("writes no sitemap without a site, and says why", () => {
@@ -262,7 +408,12 @@ describe("rootFiles", () => {
   });
 
   it("says nothing about robots.txt when there'd be nothing in it", () => {
-    const files = rootFiles({ ...sources, site: undefined, lines: [[]], ownRobots: true });
+    const files = rootFiles({
+      ...sources,
+      site: undefined,
+      robots: [{ name: "docs", robots: { lines: [] } }],
+      ownRobots: true,
+    });
     expect(files.robots).toBeUndefined();
     expect(files.notes.map((note) => note.level)).toEqual(["warn"]);
   });
@@ -317,6 +468,7 @@ describe("rootFilesMiddleware", () => {
       sitemap: "<urlset/>",
       robots: "Sitemap: x\n",
       notes: [],
+      problems: [],
     }));
     return new Promise((resolve) => {
       const headers: Record<string, string> = {};

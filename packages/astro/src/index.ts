@@ -72,7 +72,14 @@ import {
   type ProjectEntry,
   type ResolvedEntry,
 } from "./projects.js";
-import { pageList, readRecords, routeAs, routeKey, sitemapRoute } from "./records.js";
+import {
+  pageList,
+  readRecords,
+  routeAs,
+  routeKey,
+  sitemapRoute,
+  type ProjectRobots,
+} from "./records.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
 import { runDiff, runPrompt } from "./review/diff.js";
@@ -210,11 +217,14 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
   ): RootFileSources => {
     const base = routing?.base ?? "/";
     const records = entries.map((entry) => readRecords(entry.siteRoot));
-    // Entries of one project share its `ascribe.toml`, and so its lines.
-    const lines = new Map<string, string[]>();
+    // Entries of one project share its `ascribe.toml`, and so what it says to crawlers.
+    const robots = new Map<string, ProjectRobots>();
     for (const [i, entry] of entries.entries()) {
-      if (!lines.has(entry.project.dir))
-        lines.set(entry.project.dir, records[i]?.robots.lines ?? []);
+      if (!robots.has(entry.project.dir))
+        robots.set(entry.project.dir, {
+          name: entry.name,
+          robots: records[i]?.robots ?? { lines: [] },
+        });
     }
     const root = normalizeBase(base);
     return {
@@ -227,7 +237,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         `${root}500`,
         ...(options.sitemap?.exclude ?? []),
       ],
-      lines: [...lines.values()],
+      robots: [...robots.values()],
       site: routing?.site,
       base,
       ownRobots: existsSync(path.join(publicDir, "robots.txt")),
@@ -561,6 +571,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         );
         const builtKeys = new Set(built.map(routeKey));
         const files = rootFiles(rootSources(built, (route) => builtKeys.has(routeKey(route))));
+        fail(files.problems, "the site's robots.txt");
         for (const note of files.notes) logger[note.level](note.text);
         const out = fileURLToPath(dir);
         if (files.sitemap !== undefined) {

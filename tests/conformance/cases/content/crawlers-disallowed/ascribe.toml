@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[crawlers]
+training = "disallow"
+search = "disallow"
+on-request = "disallow"

@@ -209,7 +209,7 @@ Some files are generated from a source, or copied from what the code writes, and
 
 | Test | Rewrites |
 |---|---|
-| `tests/conformance/tests/docs.rs` | The diagnostics reference's fragments in `docs/content/_generated/` |
+| `tests/conformance/tests/docs.rs` | The diagnostics reference's fragments in `docs/content/_generated/`, and the `ascribe.toml` reference's table of crawlers by purpose, `crawlers.md` there, from `crates/ascribe-model/data/crawlers.toml` |
 | `crates/ascribe-cli/src/docs.rs` | Each command's options in `docs/content/_generated/` |
 | `crates/ascribe-cli/src/shapes.rs` | The JSON Schemas in `schemas/`, the TypeScript types in `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, and the schemas' fragments in `docs/content/_generated/`, from the Rust types that write the JSON |
 | `crates/ascribe-cli/tests/all/output.rs` | The command output in `crates/ascribe-cli/tests/output/` |
@@ -232,4 +232,4 @@ The corpora's recorded counts in `tests/corpora/baselines/` have their own varia
 
 ## CI
 
-`.github/workflows/ci.yml` decides what a change needs and runs `rust.yml`, `js.yml`, and `site.yml`; the one required check, `all checks`, waits for them. `drift.yml` and `review.yml` report on pull requests that change the docs. `site-npm.yml` builds the docs with the published canary, after each canary and after a merge to `main` that touches the docs or the site. `canary.yml` publishes the nightly `next` packages, `release.yml` and `release-build.yml` make a release ([RELEASING.md](RELEASING.md)), and `corpora.yml` runs the benchmarks weekly, and `report.yml` runs `ascribe report links agents` on the docs daily, keeping the link answers it reuses and its link history with `actions/cache`, and opening an issue when it finds something.
+`.github/workflows/ci.yml` decides what a change needs and runs `rust.yml`, `js.yml`, and `site.yml`; the one required check, `all checks`, waits for them. `drift.yml` and `review.yml` report on pull requests that change the docs. `site-npm.yml` builds the docs with the published canary, after each canary and after a merge to `main` that touches the docs or the site. `canary.yml` publishes the nightly `next` packages, `release.yml` and `release-build.yml` make a release ([RELEASING.md](RELEASING.md)), and `corpora.yml` runs the benchmarks weekly, and `report.yml` runs `ascribe report links agents` on the docs daily, keeping the link answers it reuses and its link history with `actions/cache`, and opening an issue when it finds something; it also asks each source of the crawlers Ascribe knows whether it answers and was read within a year (`scripts/crawlers/sources.ts`).

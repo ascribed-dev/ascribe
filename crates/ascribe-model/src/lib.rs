@@ -15,6 +15,7 @@
 //! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
 //! | [`permalinks`] | [`PermalinkList`]: `ascribe.permalinks`, the project's permalinks and where each is declared |
 //! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
+//! | `crawlers` | [`known_crawlers`]: the crawlers Ascribe knows, by purpose, from `data/crawlers.toml` |
 //!
 //! The availability-spec parser is in `ascribe_core::availability`; this
 //! crate checks specs against the model ([`ContentModel::check_availability`]).
@@ -53,6 +54,9 @@ pub mod vale;
 use std::path::{Path, PathBuf};
 
 pub use ascribe_core::Issue;
+pub use crawlers::{
+    KNOWN_CRAWLERS_FILE, KnownCrawler, crawler_tokens, known_crawlers, parse_known, user_agent,
+};
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;

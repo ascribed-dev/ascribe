@@ -229,6 +229,91 @@ pub struct Crawlers {
     /// `lines`: the project's own `robots.txt` lines, in order. A path in an
     /// `Allow` or `Disallow` line is from the project's base path.
     pub lines: Vec<CrawlerLine>,
+    /// `training`, `search`, and `on-request`, as the project set them, in
+    /// [`Purpose::ALL`]'s order.
+    pub purposes: Vec<PurposeChoice>,
+}
+
+impl Crawlers {
+    /// What the project says of `purpose`, if it says anything.
+    pub fn choice(&self, purpose: Purpose) -> Option<&PurposeChoice> {
+        self.purposes.iter().find(|c| c.purpose == purpose)
+    }
+
+    /// Whether the project disallows `purpose`.
+    pub fn disallows(&self, purpose: Purpose) -> bool {
+        self.choice(purpose)
+            .is_some_and(|c| c.permission == Permission::Disallow)
+    }
+}
+
+/// What a kind of crawler is for: a key of `[crawlers]`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Purpose {
+    /// Gathering text to train a model.
+    Training,
+    /// Building the index an AI search product answers from.
+    Search,
+    /// Fetching a page because a person asked an assistant about it.
+    OnRequest,
+}
+
+impl Purpose {
+    /// Every purpose, in the order `robots.txt` has their groups.
+    pub const ALL: [Purpose; 3] = [Purpose::Training, Purpose::Search, Purpose::OnRequest];
+
+    /// The key, as it's written.
+    pub fn name(self) -> &'static str {
+        match self {
+            Purpose::Training => "training",
+            Purpose::Search => "search",
+            Purpose::OnRequest => "on-request",
+        }
+    }
+
+    /// The purpose written `name`.
+    pub fn from_name(name: &str) -> Option<Purpose> {
+        Purpose::ALL.into_iter().find(|p| p.name() == name)
+    }
+}
+
+/// What a project says a kind of crawler may do.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Permission {
+    /// `allow`: it may fetch what every crawler may. Writes nothing.
+    Allow,
+    /// `disallow`: it may fetch nothing. Writes a group naming every token
+    /// of the purpose, with `Disallow: /`.
+    Disallow,
+}
+
+impl Permission {
+    /// Both values.
+    pub const ALL: [Permission; 2] = [Permission::Allow, Permission::Disallow];
+
+    /// The value, as it's written.
+    pub fn name(self) -> &'static str {
+        match self {
+            Permission::Allow => "allow",
+            Permission::Disallow => "disallow",
+        }
+    }
+
+    /// The value written `name`.
+    pub fn from_name(name: &str) -> Option<Permission> {
+        Permission::ALL.into_iter().find(|p| p.name() == name)
+    }
+}
+
+/// One of `[crawlers] training`, `search`, and `on-request`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct PurposeChoice {
+    /// The key.
+    pub purpose: Purpose,
+    /// Its value.
+    pub permission: Permission,
+    /// `key = value`, in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// One of `[crawlers] lines`.
