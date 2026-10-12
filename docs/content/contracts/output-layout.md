@@ -43,7 +43,7 @@ Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section wh
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
-**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), and its page records (`_ascribe/pages.json`, §1.3).
+**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), and the headers its files need (`_ascribe/headers.json`, §1.4).
 
 ### 1.2 The permalinks list
 @available: next
@@ -123,6 +123,39 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 | `robots.lines` | The project's `[crawlers] lines` (content-model contract §21), in order, each path in an `Allow` or `Disallow` line with the base path before it, so that each is from the host's root, and every other line as written. Lines before any `User-agent` line are for every crawler. Empty when the project has none. |
 
 A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
+
+### 1.4 The headers
+@available: next
+
+The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, so the host sends it, and the host is the site's: `@ascribed/astro` writes the rules into Netlify's `_headers` with `[consumer] headers = "netlify"`, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
+
+```json
+{
+  "version": 1,
+  "headers": [
+    {
+      "path": "/docs/guides/install.md",
+      "headers": { "Link": "<https://docs.example.com/docs/guides/install/>; rel=\"canonical\"" }
+    },
+    {
+      "path": "/docs/internal/runbook.md",
+      "headers": {
+        "Link": "<https://docs.example.com/docs/internal/runbook/>; rel=\"canonical\"",
+        "X-Robots-Tag": "noindex"
+      }
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
+| `headers` | One rule for each page's Markdown version, sorted by `path`. |
+| `headers[].path` | The path the rule is for, from the host's root, matched exactly and never as a pattern: the page record's `markdown` (§1.3). |
+| `headers[].headers` | Each header's value, keyed by its name, sorted by name. `Link` is `<canonical>; rel="canonical"`, the page's own address from its record, so a search engine lists the page and not its Markdown version. `X-Robots-Tag` is the rule the page's head gives a crawler: `noindex` for a page that's `unlisted`, `nosnippet` for one that's `unquoted`, and absent for one that's `listed`. |
+
+Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, such as a list of redirects beside `headers`, or more headers to a rule; it doesn't change these.
 
 ## 2. What Ascribe owns
 

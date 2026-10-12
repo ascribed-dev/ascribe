@@ -274,6 +274,17 @@ impl Listing {
     pub fn from_name(name: &str) -> Option<Listing> {
         Listing::ALL.into_iter().find(|l| l.name() == name)
     }
+
+    /// The rule a crawler is given for a page with this listing, in a robots
+    /// meta tag or an `X-Robots-Tag` header: `noindex` for `unlisted`,
+    /// `nosnippet` for `unquoted`, and none for `listed`.
+    pub fn robots(self) -> Option<&'static str> {
+        match self {
+            Listing::Listed => None,
+            Listing::Unquoted => Some("nosnippet"),
+            Listing::Unlisted => Some("noindex"),
+        }
+    }
 }
 
 /// `[listing]`: how pages are listed, set for many at once: the whole site,
@@ -786,6 +797,26 @@ pub struct Consumer {
     /// `permalink-path`: a path from the site's root, starting with `/`.
     /// [`Consumer::permalink_path`] gives the path with its default.
     pub permalink_path: Option<String>,
+    /// The host whose format the site's response headers are written in
+    /// (`headers`), by the site generator's integration from
+    /// `_ascribe/headers.json`. `None`: nothing is written for a host.
+    pub headers: Option<HeadersFormat>,
+}
+
+/// A host's format for response headers, `[consumer] headers`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HeadersFormat {
+    /// A `_headers` file at the root of what's deployed, as Netlify reads it.
+    Netlify,
+}
+
+impl HeadersFormat {
+    /// The value as `ascribe.toml` writes it.
+    pub fn name(self) -> &'static str {
+        match self {
+            HeadersFormat::Netlify => "netlify",
+        }
+    }
 }
 
 impl Consumer {

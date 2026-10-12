@@ -168,6 +168,7 @@ They're meant to agree, and these tests hold them to it:
 | Site: Markdown with web components | `ascribe_emit::SiteEmitter` | [Site render](docs/content/contracts/site-render.md), and [the elements' contract](packages/elements/CONTRACT.md) |
 | Plain Markdown | `ascribe_emit::PlainEmitter` | SPEC §9.4, and [crates/ascribe-emit/README.md](crates/ascribe-emit/README.md) |
 | A build's page records, `_ascribe/pages.json` | `ascribe_resolve::pages`, written by `SiteEmitter` | [Output layout](docs/content/contracts/output-layout.md) §1.3 |
+| The headers a build's Markdown versions need, `_ascribe/headers.json` | `ascribe_resolve::pages::header_rules`, from the page records, written by `SiteEmitter`; `@ascribed/astro` writes them into `_headers` | [Output layout](docs/content/contracts/output-layout.md) §1.4 |
 | `llms.txt`, with `[consumer] agents = true` | `ascribe_resolve::llms`, from the page records, written by `PlainEmitter` | SPEC §9.4, and the [content model contract](docs/content/contracts/content-model.md) §15; `examples/astro-site/test/e2e/agent-docs.test.ts` runs the delivery spec's checker on the built example |
 | JSON, one document per page | `ascribe_emit::JsonEmitter` | [crates/ascribe-emit/README.md](crates/ascribe-emit/README.md) |
 | Where each output's files go, and what Ascribe may replace | `ascribe_emit::OutputDir` | [Output layout](docs/content/contracts/output-layout.md) |
