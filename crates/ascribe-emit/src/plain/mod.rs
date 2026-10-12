@@ -9,7 +9,8 @@
 //! |---|---|
 //! | `@note` | A blockquote beginning `**Tip: Title**` (the type's display label) |
 //! | `@steps` | The ordered list |
-//! | A `@variant` group | One section per surviving arm, led by its bold label, each of its headings ending with the label in parentheses (a group reduced to one arm is that arm's content, already, in the tree) |
+//! | A `@variant` group | A line saying a reader sees one of its arms at a time, then one section per surviving arm, led by a heading one level below the section it's in that names each dimension and value, each of the arm's own headings ending with the value's label in parentheses (a group reduced to one arm is that arm's content, already, in the tree) |
+//! | A group of a project widget | One section per arm, led by its bold label, its headings ending with the label in parentheses |
 //! | `@details` | The title in bold, then the content |
 //! | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` |
 //! | A project widget | Its `plain-fallback`, and its wrapped content unless `plain-content = "drop"` |
@@ -31,7 +32,7 @@
 
 pub(crate) mod inline;
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 use ascribe_core::{AssetUse, RelPath};
 use ascribe_model::{ContentModel, PlainContent, Segment};
@@ -55,9 +56,6 @@ pub struct PlainEmitter {
     /// The router of the outputs for agents, when the content model asks for
     /// them (`[consumer] agents = true`).
     agents: Option<Agents>,
-    /// Whether a switcher says above its arms that a reader sees one at a
-    /// time: for `ascribe render`, never in the plain output.
-    switchers: bool,
 }
 
 /// What the outputs for agents need: where each page is published, and the
@@ -90,18 +88,7 @@ impl PlainEmitter {
                     router: AstroRouter::from_consumer(consumer),
                     origin: origin.clone(),
                 }),
-            switchers: false,
         }
-    }
-
-    /// The emitter that says, above a switcher's arms, that a reader sees one
-    /// of them at a time and what chooses: for `ascribe render`, which shows
-    /// a page as one build's readers see it, and whose text would otherwise
-    /// show a switcher as sections in a row. The plain output never says so.
-    #[must_use]
-    pub fn noting_switchers(mut self) -> PlainEmitter {
-        self.switchers = true;
-        self
     }
 }
 
@@ -128,7 +115,7 @@ impl Emitter for PlainEmitter {
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
-        let text = render_page(cx, page, self.switchers);
+        let text = render_page(cx, page);
         Ok(match &self.agents {
             Some(agents) => {
                 let index = agents.absolute(&agents.router.url_of("llms.txt"));
@@ -198,12 +185,12 @@ impl Emitter for PlainEmitter {
 }
 
 /// Renders a page as plain markdown.
-fn render_page(cx: &PageContext<'_>, page: &ResolvedPage, switchers: bool) -> String {
+fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
     let r = Renderer {
         page: cx,
         model: cx.emit.model,
         arms: RefCell::new(Vec::new()),
-        switchers,
+        level: Cell::new(1),
     };
     let mut chunks = Vec::new();
     if let Some(segments) = page.formatted_title() {
@@ -270,8 +257,9 @@ pub(crate) struct Renderer<'a> {
     /// The labels of the arms the block being written is in, outermost
     /// first, which its headings carry.
     arms: RefCell<Vec<String>>,
-    /// Whether a switcher says it is one ([`PlainEmitter::noting_switchers`]).
-    switchers: bool,
+    /// The level of the section being written: of the last heading, or of
+    /// the variant arm's heading the block is in. The page's title is 1.
+    level: Cell<u8>,
 }
 
 impl Renderer<'_> {
@@ -358,8 +346,8 @@ impl Renderer<'_> {
                         return out;
                     }
                 }
-                if self.switchers && name == "variant" && arms.len() > 1 {
-                    out.push(self.switcher_note(arms));
+                if name == "variant" && arms.len() > 1 {
+                    return self.switcher(block, arms);
                 }
                 for arm in arms {
                     let label = self.arm_label(block, &arm.opener);
@@ -395,12 +383,9 @@ impl Renderer<'_> {
                 } else {
                     format!("{} ({})", escape_closing_hash(text), arms.join(", "))
                 };
-                let marks = "#".repeat(usize::from(h.level.clamp(1, 6)));
-                vec![if text.is_empty() {
-                    marks
-                } else {
-                    format!("{marks} {text}")
-                }]
+                let level = h.level.clamp(1, 6);
+                self.level.set(level);
+                vec![heading(level, &text)]
             }
             BlockKind::Paragraph(p) => {
                 vec![self.inlines(block, &p.inlines, Style::default())]
@@ -558,22 +543,79 @@ impl Renderer<'_> {
         (!text.trim().is_empty()).then_some(text)
     }
 
-    /// What `ascribe render` writes above a switcher's arms: that a reader
-    /// sees one at a time, and the dimension the site's tabs choose by
-    /// (contract §3), or that they choose by label.
-    fn switcher_note(&self, arms: &[ResolvedArm]) -> String {
+    /// A variant group the build keeps more than one arm of, which the site
+    /// shows as a switcher: a line saying a reader sees one arm at a time,
+    /// and what chooses (the dimension the site's tabs sync on, contract
+    /// §3), then each arm under a heading one level below the section it's
+    /// in, naming each dimension and value, or the arm's title.
+    fn switcher(&self, block: &ResolvedBlock, arms: &[ResolvedArm]) -> Vec<String> {
         let values: Vec<_> = arms
             .iter()
             .map(|arm| arm_values(self.model, &arm.opener))
             .collect();
-        let chosen = match sync_dimension(self.model, &values) {
-            Some(dimension) => format!("by `{dimension}`"),
-            None => "by label".to_owned(),
-        };
-        format!(
-            "<!-- A switcher: a reader sees one of the next {} sections at a time, chosen {chosen}. -->",
+        let chosen = sync_dimension(self.model, &values)
+            .and_then(|name| self.model.dimensions.iter().find(|d| d.name == name))
+            .map(|dimension| {
+                format!(
+                    ", chosen by {}",
+                    escape(&in_a_sentence(&dimension.label), false)
+                )
+            })
+            .unwrap_or_default();
+        let mut out = vec![format!(
+            "A reader sees one of the next {} sections at a time{chosen}.",
             arms.len()
-        )
+        )];
+        let section = self.level.get();
+        let level = section.saturating_add(1).min(6);
+        for (arm, values) in arms.iter().zip(&values) {
+            let label = self.arm_label(block, &arm.opener);
+            let named = self.named_values(values);
+            if let Some(text) = named.or_else(|| label.clone()) {
+                // In another arm, it ends with that arm's label, as any
+                // heading there does.
+                let enclosing = self.arms.borrow();
+                let text = if enclosing.is_empty() {
+                    text
+                } else {
+                    format!("{text} ({})", enclosing.join(", "))
+                };
+                out.push(heading(level, &escape_closing_hash(text)));
+            }
+            self.level.set(level);
+            if let Some(label) = &label {
+                self.arms.borrow_mut().push(label.clone());
+            }
+            out.extend(self.blocks(&arm.children));
+            if label.is_some() {
+                self.arms.borrow_mut().pop();
+            }
+        }
+        self.level.set(section);
+        out
+    }
+
+    /// A dimensional arm's values with their dimensions' labels, escaped:
+    /// "Package manager: npm / pnpm", and several dimensions joined with
+    /// `, `. `None` for a labeled arm.
+    fn named_values(&self, values: &[(String, Vec<String>)]) -> Option<String> {
+        let parts: Vec<String> = values
+            .iter()
+            .map(|(name, members)| {
+                let dimension = self
+                    .model
+                    .dimensions
+                    .iter()
+                    .find(|d| &d.name == name)
+                    .map_or(name.as_str(), |d| d.label.as_str());
+                let members: Vec<&str> = members
+                    .iter()
+                    .map(|v| self.model.value_label(v).unwrap_or(v))
+                    .collect();
+                format!("{dimension}: {}", members.join(" / "))
+            })
+            .collect();
+        (!parts.is_empty()).then(|| escape(&parts.join(", "), false))
     }
 
     /// The label that leads an arm's section: its title, or the display labels
@@ -667,6 +709,28 @@ fn leaf_name(block: &ResolvedBlock) -> Option<&str> {
             _ => None,
         },
         _ => None,
+    }
+}
+
+/// An ATX heading: its marks, and its text when it has some.
+fn heading(level: u8, text: &str) -> String {
+    let marks = "#".repeat(usize::from(level));
+    if text.is_empty() {
+        marks
+    } else {
+        format!("{marks} {text}")
+    }
+}
+
+/// A label as a sentence has it after its first word: "Package manager" as
+/// "package manager", and "OS" or "macOS" as they are.
+fn in_a_sentence(label: &str) -> String {
+    let mut chars = label.chars();
+    match (chars.next(), chars.next()) {
+        (Some(first), Some(second)) if first.is_uppercase() && !second.is_uppercase() => {
+            first.to_lowercase().chain(label.chars().skip(1)).collect()
+        }
+        _ => label.to_owned(),
     }
 }
 
