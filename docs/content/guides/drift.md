@@ -73,6 +73,7 @@ include = ["src/**", "examples/**"]
 
 Ascribe doesn't read the other repository whenever it checks. It copies the files your snippets use, whole, into `sources/api/` beside `ascribe.toml`, and pins the commit they came from in `ascribe.lock`. You commit both with the docs:
 
+@steps
 1. Write the `@snippet`, then run `ascribe sources fetch`. It pins the source to the head of its branch the first time, and copies the file.
 2. Commit `ascribe.lock` and `sources/`.
 3. When the code moves on, run `ascribe sources update`, or let [the update pull request](#the-update-pull-request) run it. It moves the pin, copies the files again, and lists the pages whose examples changed, the way `ascribe drift` does, so the pull request that moves the pin says which pages to read. The pages are found by comparing with the docs' last commit, so in a new repository, commit once first.
@@ -109,6 +110,7 @@ Because the copies are in its diff, the pull request is reviewed like any change
 
 The workflow takes two tokens from a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) that you create for your organization:
 
+@steps
 1. Create the App with no webhook, and give it two repository permissions: **Contents** (read and write) and **Pull requests** (read and write).
 2. Install it on the docs repository and the code's repositories, and nowhere else.
 3. In the docs repository, add the App's client ID as the Actions variable `SOURCES_APP_CLIENT_ID`, and a private key for it as the secret `SOURCES_APP_PRIVATE_KEY`.
@@ -143,4 +145,8 @@ This GitHub Actions job writes the report to the run's summary on each pull requ
 
 This repository runs this job on these docs, in [`.github/workflows/drift.yml`]({repo}/blob/main/.github/workflows/drift.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
 
-See [`ascribe drift`](../reference/cli/diff.md#cli-drift) for its options and JSON.
+## See also
+
+- [`ascribe drift`](../reference/cli/diff.md#cli-drift): its options and JSON.
+- [`ascribe sources`](../reference/cli/sources.md#cli-sources): fetching, updating, and showing a source in another repository.
+- [`@snippet`](../reference/directives.md#snippet): every attribute and tag.

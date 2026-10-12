@@ -15,6 +15,17 @@ ascribe report agents --site https://docs.example.com
 
 Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages`, the table of every page's record, needs nothing outside it either, and runs when it's named. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli/diff.md#cli-report) lists every option, and the JSON.
 
+This guide takes the report a section at a time and says what to do about what each one finds, then runs it every week in CI.
+
+## Before you start
+
+The sections that run by default, and `pages`, need only `ascribe`. The other two need a program each:
+
+- [External links](#external-links) needs [lychee](https://lychee.cli.rs).
+- [The site and agents](#the-site-and-agents) needs `afdocs`, and a built site at an address it can reach.
+
+Each section says how to install its program.
+
 ## Problems
 
 The same problems as `ascribe check`, counted three ways: by check, by file, and by kind of next step. The kind is what tells you how to spend the time:
@@ -156,3 +167,9 @@ External links break and sites change without a commit in your repository, and c
 - **The issue** is found by its title, so one stays open until someone closes it, and each run replaces its body with the latest report.
 
 This repository runs this job on these docs, in [`.github/workflows/report.yml`]({repo}/blob/main/.github/workflows/report.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
+
+## See also
+
+- [`ascribe report`](../reference/cli/diff.md#cli-report): every option, and the JSON.
+- [What to measure](measuring.md): what happens to the pages after a deploy, which the report can't see.
+- [`[checks.links]`](../reference/content-model/checks.md#checkslinks): the settings for the external links.

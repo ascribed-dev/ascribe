@@ -727,6 +727,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/permalinks.md` | Permalinks |  |
 | `guides/report.md` | The project report |  |
 | `guides/review.md` | Review |  |
+| `guides/review/troubleshooting.md` | Troubleshooting review |  |
 | `guides/templates.md` | Page templates |  |
 | `guides/vale.md` | Prose, through Vale |  |
 | `guides/variants.md` | Content that varies |  |

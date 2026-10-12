@@ -1,5 +1,7 @@
 // The sidebar. Ascribe's content model has no page order or grouping, so the
-// site lists its pages here, by their source files under docs/content/.
+// site lists its pages here, by their source files under docs/content/. Each
+// group is a type in docs/ascribe.toml, but for Start, the home page, and
+// Contracts, reference pages kept apart since they're for implementers.
 // test/nav.test.ts fails when a published page is missing from this list, or
 // when it names a page that doesn't exist.
 
@@ -10,24 +12,23 @@ export interface NavGroup {
 }
 
 export const nav: NavGroup[] = [
-  { label: "Start", pages: ["index.md", "getting-started.md"] },
+  { label: "Start", pages: ["index.md"] },
+  { label: "Tutorials", pages: ["getting-started.md", "guides/variants.md"] },
   {
-    label: "Guides",
+    label: "How-to guides",
     pages: [
       "guides/astro.md",
-      "guides/editor.md",
-      "guides/editor/settings.md",
-      "guides/variants.md",
       "guides/review.md",
       "guides/drift.md",
       "guides/agents.md",
       "guides/vale.md",
       "guides/report.md",
-      "guides/measuring.md",
       "guides/permalinks.md",
       "guides/templates.md",
     ],
   },
+  { label: "Concepts", pages: ["guides/measuring.md"] },
+  { label: "Troubleshooting", pages: ["guides/review/troubleshooting.md"] },
   {
     label: "Reference",
     pages: [
@@ -50,6 +51,8 @@ export const nav: NavGroup[] = [
       "reference/elements.md",
       "reference/astro.md",
       "reference/project-files.md",
+      "guides/editor.md",
+      "guides/editor/settings.md",
     ],
   },
   {

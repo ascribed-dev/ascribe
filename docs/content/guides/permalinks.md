@@ -112,3 +112,10 @@ On an address under the permalinks' path, it says the link came from a product t
   <p>Search the docs for what you need, or go back to the <a href="/docs">home page</a>.</p>
 </MissingPermalink>
 ```
+
+## See also
+
+- [Permalinks](../reference/directives.md#permalinks), in the directive reference: how a heading or a page gets one, and the names it may have.
+- [`[permalinks]`](../reference/content-model/checks.md#20-permalinks): the moved, aliased, and retired names in `ascribe.toml`.
+- [`ascribe permalinks`](../reference/cli/sources.md#cli-permalinks-verify): verifying a product's list, and retiring a name.
+- [The permalinks list](../contracts/permalinks-list.md): the file a product's CI checks against.

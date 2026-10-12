@@ -67,6 +67,18 @@ ascribe templates status --diff how-to
 
 `--exit-code` makes it exit with 1 when the set has changed a template you took, or no longer has one, for a CI job that wants to know. The [command reference](../reference/cli/sources.md#cli-templates-status) has the rest, and its JSON.
 
+## In a project that has pages
+
+A project that takes the set late is one with pages written already. Ascribe's own docs took it that way, with 46 pages, and it showed what to expect:
+
+- **A type you declare already is refused,** and nothing is written. To take its template and keep your type as it is, add `--keep-type`.
+- **The new types match no page** until you change their `files`. Eject puts each type's pages in a folder of its name, and yours are somewhere else; a type that matches nothing isn't reported either.
+- **Each type's frontmatter is the set's,** a plain `title` and `description`. Put back what your own types declare, such as a title drawn as code (`inline = "code"`), on each one.
+- **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. A phrase with a placeholder's name, such as `{product}`, which the tutorial's template has, isn't reported, since the template's brace is escaped and the phrase's isn't.
+- **Not every page fits.** A home page that lists the other pages is none of the six: give it a type of your own, with no template. The troubleshooting template's "Cause" and "Solution" headings repeat under every symptom, and the check warns about headings with the same name on a page, so the docs write them as bold paragraphs instead.
+
+The docs didn't change a page that already did its job to match its template heading for heading: a guide says what a kind of page is for, and the template is one way to get there.
+
 ## Ascribe's notes
 
 Their guide says what belongs in a page of each kind, and it's written for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../reference/directives.md#variant) group, and a step's command taken from tested code with [`@snippet`](../reference/directives.md#snippet). They're the only words in the set that are Ascribe's, and `templates.lock` records them apart from their files.
@@ -75,14 +87,18 @@ Their guide says what belongs in a page of each kind, and it's written for any t
 
 In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with the title set, in the first folder the type's `files` cover, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](editor.md#start-a-page)).
 
-Without the editor, copy the template into the type's folder, and read the guide and the notes before you write:
+Without the editor:
 
-```sh
-mkdir -p docs/how-to
-cp templates/how-to.md docs/how-to/rotate-keys.md
-```
+@steps
+1. Copy the template into the type's folder:
 
-Then replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
+   ```sh
+   mkdir -p docs/how-to
+   cp templates/how-to.md docs/how-to/rotate-keys.md
+   ```
+
+2. Read the type's guide and Ascribe's notes on it, before you write.
+3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
 An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](agents.md#from-the-command-line)), and the prompt gives it the template with the title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
 
@@ -110,3 +126,9 @@ To turn it off, or make it a warning, set its level in [`[checks]`](../reference
 [checks]
 template-placeholder-left = "warning"
 ```
+
+## See also
+
+- [`ascribe templates`](../reference/cli/sources.md#cli-templates-eject): `list` and `eject`, and their options.
+- [Page types](../reference/content-model.md#41-page-types): a type's `template`, `guide`, and `purpose`.
+- [ASC195 `template-placeholder-left`](../reference/diagnostics/content-checks.md#ASC195): what the check reports.
