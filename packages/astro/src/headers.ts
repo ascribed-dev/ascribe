@@ -24,7 +24,7 @@ export interface HeaderRule {
 }
 
 /** `_ascribe/headers.json`. */
-export interface HeaderList {
+interface HeaderList {
   version: number;
   headers: HeaderRule[];
 }
