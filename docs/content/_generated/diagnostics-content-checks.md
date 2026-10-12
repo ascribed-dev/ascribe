@@ -57,6 +57,19 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Read more:** [Field roles](../reference/content-model.md#54-field-roles) in the `ascribe.toml` reference.
 
+#### ASC192 `title-heading-differs`
+@id {permalink=true}: ASC192
+
+Advice · page level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** A page writes its own level-1 heading, and neither it nor the page's title contains the other, ignoring case. A page without a level-1 heading, which most pages are, since the layout draws the title as one, isn't looked at.
+
+**Message:** the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another
+
+**Fix:** Make the two agree: change the title or the heading so one says what the other does, or remove the heading and let the layout draw the title, as it does on most pages. When they differ on purpose, as a landing page's title is often the site's name and its heading a tagline, acknowledge it in the page's `intended` frontmatter, saying why.
+
+**Read more:** [`[checks]`](../reference/content-model.md#19-checks) in the `ascribe.toml` reference.
+
 ### Across the project
 
 #### ASC154 `page-orphan`

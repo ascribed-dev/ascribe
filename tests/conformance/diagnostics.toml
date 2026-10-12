@@ -3565,3 +3565,41 @@ reference = "content-model.md#54-field-roles"
 when = "Two pages the build publishes have the same description, ignoring case"
 message = "this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want"
 fix = "Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."
+
+[[diagnostic]]
+code = "ASC192"
+slug = "title-heading-differs"
+severity = "advice"
+level = "page"
+next = "review"
+evidence = []
+configurable = true
+place = "page"
+area = "pages"
+spec = "2.1"
+reference = "content-model.md#19-checks"
+when = "A page writes its own level-1 heading, and neither it nor the page's title contains the other, ignoring case. A page without a level-1 heading, which most pages are, since the layout draws the title as one, isn't looked at"
+message = "the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another"
+fix = "Make the two agree: change the title or the heading so one says what the other does, or remove the heading and let the layout draw the title, as it does on most pages. When they differ on purpose, as a landing page's title is often the site's name and its heading a tagline, acknowledge it in the page's `intended` frontmatter, saying why."
+example.wrong = '''
+---
+title: Install
+---
+
+# Get started in five minutes
+
+Download the installer.
+'''
+example.right = '''
+---
+title: Install
+---
+
+# Install in five minutes
+
+Download the installer.
+'''
+example.model = '''
+[checks]
+heading-level-skipped = "off"
+'''
