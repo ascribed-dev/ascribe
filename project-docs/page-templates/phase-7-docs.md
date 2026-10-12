@@ -23,6 +23,8 @@ One table, in the pull request, before any file changes: every page of the docs,
 
 The maintainer reads the table before the pages move. It's a restructuring of the docs, and the table is where to disagree with it cheaply.
 
+The table is [docs-types.md](docs-types.md).
+
 ### Take the set as a user would
 
 `ascribe templates eject` in `docs/`, for the types the table needs, and no others.
