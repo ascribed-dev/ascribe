@@ -9,7 +9,7 @@ import { activated, uriOf, waitFor, workspace } from "./helpers.js";
 // A pull request's review threads in the preview and the source editor, with
 // the real `ascribe lsp`, on a copy of examples/quill made into a git
 // repository whose `feature` branch rewords install-agent.md's first paragraph
-// (line 7) and is pushed to github.com/acme/quill (`run.ts` prepares it).
+// (line 8) and is pushed to github.com/acme/quill (`run.ts` prepares it).
 // GitHub is a fake, kept in memory: the extension's sign-in is replaced by
 // its transport.
 describe("review threads, with a fake GitHub", () => {
@@ -37,7 +37,7 @@ describe("review threads, with a fake GitHub", () => {
       headOid: git("rev-parse", "HEAD"),
       files: ["docs/install-agent.md"],
     });
-    github.addThread("docs/install-agent.md", 7, "Which changes does it sync?");
+    github.addThread("docs/install-agent.md", 8, "Which changes does it sync?");
     preview.review.threads.useTransport(() => github);
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
     await vscode.commands.executeCommand("ascribe.openPreview");
@@ -74,7 +74,7 @@ describe("review threads, with a fake GitHub", () => {
       preview.threadsDrawn().find((r) => Object.values(r.blocks).flat().length > 0),
     );
     const [source, ids] = Object.entries(report.blocks)[0] ?? [];
-    assert.match(source ?? "", /^install-agent\.md:7-/);
+    assert.match(source ?? "", /^install-agent\.md:8-/);
     assert.deepEqual(ids, [github.threads[0]?.id]);
     assert.deepEqual(report.detached, []);
   });
@@ -84,7 +84,7 @@ describe("review threads, with a fake GitHub", () => {
       preview.sourceThreads().find((t) => t.id === github.threads[0]?.id),
     );
     assert.equal(thread.file, install.fsPath);
-    assert.equal(thread.line, 6);
+    assert.equal(thread.line, 7);
     assert.deepEqual(thread.bodies, ["Which changes does it sync?"]);
   });
 
@@ -104,7 +104,7 @@ describe("review threads, with a fake GitHub", () => {
       ),
       text,
     );
-    assert.match(text, /\nThread 1: docs\/install-agent\.md:7\b/);
+    assert.match(text, /\nThread 1: docs\/install-agent\.md:8\b/);
     assert.match(text, /\nShown on: docs\/install-agent\.md\n/);
     assert.match(
       text,
@@ -122,11 +122,11 @@ describe("review threads, with a fake GitHub", () => {
     });
     assert.ok(
       prompt.startsWith(
-        "Address this review comment on `docs/install-agent.md`.\n\nWhere: docs/install-agent.md:7",
+        "Address this review comment on `docs/install-agent.md`.\n\nWhere: docs/install-agent.md:8",
       ),
       prompt,
     );
-    assert.match(prompt, /\nLines? 7[^\n]*:\n```markdown\n/);
+    assert.match(prompt, /\nLines? 8[^\n]*:\n```markdown\n/);
     assert.match(prompt, /\n```text\n@[^\n]+:\nWhich changes does it sync\?\n```\n/);
   });
 
@@ -143,13 +143,13 @@ describe("review threads, with a fake GitHub", () => {
   it("holds a comment in the pending review, and sends it on submit", async () => {
     const before = github.calls.length;
     await request("comment", {
-      anchor: { source: "install-agent.md:7-7", via: [] },
+      anchor: { source: "install-agent.md:8-8", via: [] },
       body: "Say which repository.",
     });
     const added = github.calls.slice(before).find((c) => c.operation === "AddThread");
     assert.ok(added, "the comment reached GitHub as a review thread");
     assert.equal(added.variables["path"], "docs/install-agent.md");
-    assert.equal(added.variables["line"], 7);
+    assert.equal(added.variables["line"], 8);
     // Pending: only the reviewer sees it until the review is submitted.
     assert.equal(github.reviews[0]?.state, "PENDING");
     assert.equal(

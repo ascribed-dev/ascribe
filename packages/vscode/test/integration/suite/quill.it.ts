@@ -97,7 +97,7 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
       [
         "Linked from (1)",
         "  install-agent.md (docs/install-agent.md)",
-        "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 93)",
+        "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)",
       ],
     );
     const api = await activated();
@@ -178,7 +178,7 @@ describe("with the real language server on examples/quill", () => {
   it("delivers diagnostics for a page that isn't open", async () => {
     const diagnostics = await diagnosticsOf(broken, (all) => all.length > 0);
     assert.ok(diagnostics.every((diagnostic) => diagnostic.severity !== undefined));
-    assert.ok(diagnostics.some((diagnostic) => diagnostic.range.start.line === 7));
+    assert.ok(diagnostics.some((diagnostic) => diagnostic.range.start.line === 8));
   });
 
   it("reports nothing for the pages of the example that are correct", async () => {
@@ -212,7 +212,7 @@ describe("with the real language server on examples/quill", () => {
     assert.equal(api.promptAgent.deliveries[before]?.delivered, "clipboard");
     const prompt = await vscode.env.clipboard.readText();
     assert.ok(
-      prompt.startsWith("Fix this problem in `docs/broken.md`.\n\nWhere: docs/broken.md:8\n"),
+      prompt.startsWith("Fix this problem in `docs/broken.md`.\n\nWhere: docs/broken.md:9\n"),
       prompt,
     );
     // The binary the editor runs, as an agent beside it can run it.
@@ -257,7 +257,7 @@ describe("with the real language server on examples/quill", () => {
       await vscode.workspace.openTextDocument(broken),
     );
     await diagnosticsOf(broken, (all) => all.length > 0);
-    const line = editor.document.lineAt(7);
+    const line = editor.document.lineAt(8);
     await editor.edit((edit) => edit.replace(line.range, "@note {type=tip}: Now it is fine."));
     await diagnosticsOf(broken, (all) => all.length === 0);
   });
