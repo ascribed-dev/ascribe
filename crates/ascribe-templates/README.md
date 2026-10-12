@@ -10,17 +10,19 @@ The page templates Ascribe ships: The Good Docs Project's, converted into Ascrib
 | `notes/` | Ascribe's notes on each type, `<name>.ascribe.md`, written by hand: what's particular to writing that kind of page in Ascribe, and nothing their guide says. The conversion never opens them. |
 | `src/lib.rs` | `FILES`: each file of `set/`, as committed; `NOTES`, each file of `notes/`; and `set()`, which reads `set.toml`. |
 | `src/eject.rs` | `eject`: writing templates into a project, as `ascribe templates eject` does. Each template, its guide, and Ascribe's notes on its type go in `templates/` or another folder outside the content root, `templates.lock` beside them records what each was copied from, with the notes apart, and each type is added at the end of `ascribe.toml`. It checks everything before it writes, and writes nothing when a type is declared already or a file is in the way. |
+| `src/start.rs` | `start`: starting a page from its type, for `ascribe agents prompt new-page`: the type's template with its `title` set, or, for a type with none, its frontmatter, and where the page goes, in the first folder the type's `files` covers when no path is given. It writes nothing, and refuses a path where a file is. |
 
 ## Rules
 
 - **Nobody edits a file in `set/`.** A change to one is a change to the script, to a rule in `scripts/templates/rules.toml`, or to their repository. `node scripts/templates/convert.ts` rewrites them, and `--check` lists the stale ones. When they release, the Templates workflow (`.github/workflows/templates.yml`) opens a pull request with them written again at the new tag, by `scripts/templates/update.ts`, for a person to read.
 - **The notes are the only words in the set that are Ascribe's,** so they're held to the docs' standard, and each reads in about a minute. A change to one is read by the maintainer.
 - **A template carries no line saying where it came from:** a page copied from it would carry the line too. Its guide says it, `set.toml` does, and in a project, `templates.lock` does.
-- **Eject never writes over a file of the project's,** and writes nothing when it refuses anything. Once written, the files are the project's.
+- **Neither eject nor start writes over a file of the project's,** and writes nothing when it refuses anything. Once written, the files are the project's.
 
 ## Tests
 
 - `tests/all/set.rs`, with no network: `FILES` and `set.toml` list what `set/` holds, `NOTES` lists what `notes/` holds, and every template has notes, each of which `ascribe check` has nothing to say about read as a page; each template is a page `ascribe check` has nothing to say about, in a project that declares its type, and that `ascribe fmt` leaves as it is; and none has a level-1 heading or a block quote.
 - `tests/all/eject.rs`: eject in a project in a temporary folder: what it writes and adds, `templates.lock` written and added to, each case it refuses with nothing written, a project with no types, and `--to`'s folder. `crates/ascribe-cli/tests/all/templates.rs` runs the command.
+- `tests/all/start.rs`: `start` in a project in a temporary folder: a type with a template, one without, a title that slugs to a file that's there, a path given, and the paths and types it refuses. `crates/ascribe-cli/tests/all/templates.rs` runs the prompt.
 - `scripts/templates/convert.test.ts`: the conversion's steps, and the copies being what the pinned release gives, which needs their repository and an `ascribe` binary. CI runs that comparison after its build, in `rust.yml`.
 - `scripts/templates/update.test.ts`: taking their newest release: which tag is newest, moving the pin, what changed between two tags, and the pull request's description.

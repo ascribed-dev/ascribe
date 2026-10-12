@@ -38,7 +38,12 @@ fn project() -> tempfile::TempDir {
     dir
 }
 
-fn run(dir: &Path, type_name: &str, title: &str, path: Option<&str>) -> Result<NewPage, StartError> {
+fn run(
+    dir: &Path,
+    type_name: &str,
+    title: &str,
+    path: Option<&str>,
+) -> Result<NewPage, StartError> {
     let project = Project::load(&dir.join("ascribe.toml")).expect("the project loads");
     let path = path.map(|p| RelPath::parse(p).expect("a relative path"));
     start(&project, type_name, title, path.as_ref())
@@ -106,7 +111,7 @@ fn a_page_is_never_started_over_a_file() {
 }
 
 #[test]
-fn a_path_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
+fn a_path_or_a_folder_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
     let dir = project();
     let page = run(
         dir.path(),
@@ -118,9 +123,8 @@ fn a_path_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
     assert_eq!(page.path.as_str(), "how-to/keys/rotate.md");
     assert!(page.text.starts_with("---\ntitle: \"Rotate keys\"\n"));
 
-    let refused = |path: &str| {
-        run(dir.path(), "how-to", "Rotate keys", Some(path)).expect_err("refused")
-    };
+    let refused =
+        |path: &str| run(dir.path(), "how-to", "Rotate keys", Some(path)).expect_err("refused");
     assert!(
         matches!(refused("rotate.md"), StartError::NotTheType { reason, .. } if reason == "it's a page of type `guide`")
     );
@@ -128,8 +132,19 @@ fn a_path_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
         refused("how-to/_rotate.md"),
         StartError::NotTheType { .. }
     ));
+    // A folder: the page is named for the title in it.
+    let page = run(dir.path(), "how-to", "Rotate keys", Some("how-to/keys")).expect("started");
+    assert_eq!(page.path.as_str(), "how-to/keys/rotate-keys.md");
+    assert_eq!(
+        refused("guides"),
+        StartError::NotTheType {
+            path: "guides/rotate-keys.md".to_owned(),
+            type_name: "how-to".to_owned(),
+            reason: "it's a page of type `guide`".to_owned()
+        }
+    );
     assert!(matches!(
-        refused("how-to/rotate.txt"),
+        refused("../elsewhere"),
         StartError::NotTheType { .. }
     ));
 }

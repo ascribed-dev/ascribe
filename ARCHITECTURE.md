@@ -24,7 +24,7 @@ All in `crates/`. Each depends only on the crates listed for it in [How the crat
 | [`ascribe-query`](crates/ascribe-query) | Answers about a project that change nothing: a diagnostic explained, the content model, a page's outline, a link, a page rendered for one build, where something is used, the project's rules for an agent, and the report on what state a project is in (`report`). |
 | [`ascribe-lsp`](crates/ascribe-lsp) | The language server, run as `ascribe lsp`. |
 | [`ascribe-mcp`](crates/ascribe-mcp) | The Model Context Protocol over standard input and output, for `ascribe mcp`: messages, revisions, and errors. What the server offers is the binary's (`crates/ascribe-cli/src/mcp/`), since each tool returns what its command writes. |
-| [`ascribe-templates`](crates/ascribe-templates) | The page templates Ascribe ships: The Good Docs Project's, converted into Ascribe pages by `scripts/templates/convert.ts` and committed in `set/`, with `set.toml` listing them; and writing them into a project, with their types, for `ascribe templates eject` (`crates/ascribe-templates/src/eject.rs`). |
+| [`ascribe-templates`](crates/ascribe-templates) | The page templates Ascribe ships: The Good Docs Project's, converted into Ascribe pages by `scripts/templates/convert.ts` and committed in `set/`, with `set.toml` listing them; and writing them into a project, with their types, for `ascribe templates eject` (`crates/ascribe-templates/src/eject.rs`); and starting a page from its type's template, for the `new-page` prompt (`crates/ascribe-templates/src/start.rs`). |
 | [`ascribe-cli`](crates/ascribe-cli) | The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`, `mcp`, `agents`, `report`, `rename`, and the commands that answer questions (`explain`, `model`, `outline`, `link`, `refs`, `render`). |
 | [`comrak-ascribe`](crates/comrak-ascribe) | A fork of the comrak CommonMark parser, with Ascribe's block-level changes. Each change is marked `// ASCRIBE:` and listed in [FORK.md](crates/comrak-ascribe/FORK.md). It doesn't use the workspace lints. |
 
@@ -74,7 +74,7 @@ ascribe-diff       core, syntax, model, resolve, check, emit
 ascribe-query      core, model, resolve, check, emit
 ascribe-lsp        core, syntax, model, resolve, check, emit, diff, fmt
 ascribe-mcp        (none)
-ascribe-templates  core, model, resolve, check
+ascribe-templates  core, syntax, model, resolve, check
 ascribe-cli        core, model, resolve, check, emit, diff, sources, fmt, query, lsp, mcp, templates
 ```
 
@@ -144,7 +144,7 @@ Each command is one call into a library, after the project is loaded. The call t
 | `agents sync` | `ascribe_query::rules` | The files each agent reads, and the skill, are the binary's: `crates/ascribe-cli/src/agents/`, the one place that knows about particular agents. It finds the repository's root with `ascribe_diff::Repository`. |
 | `agents rules` | `ascribe_query::rules` | The block `agents sync` writes beside `ascribe.toml` (`agents::sync::rules_beside`). |
 | `agents index` | `ascribe_query::agents_index` | The index is `ascribe_resolve::llms::compact_index`, from the build's page records, as `llms.txt` is; the pages are the `plain` output's. The CLI writes them (`crates/ascribe-cli/src/agents/index.rs`), the index between markers as `sync` writes its block. |
-| `agents prompt` | `crates/ascribe-cli/src/agents/prompts.rs` | Each prompt is built from a command's: `new-page` from `ascribe_query::model` and `ascribe_check::prompt::compose`, `fix` from `check --format prompt`, and `review` from `diff --format prompt`. |
+| `agents prompt` | `crates/ascribe-cli/src/agents/prompts.rs` | Each prompt is built from a command's: `new-page` from `ascribe_templates::start`, `ascribe_query::model`, and `ascribe_check::prompt::compose`, `fix` from `check --format prompt`, and `review` from `diff --format prompt`. |
 | `agents hook` | `ascribe_check::diagnose_editor_build_in`, `check::run_check`, `ascribe_lsp::Watched` | Reads each harness's input and writes its output in `crates/ascribe-cli/src/agents/hook.rs`; checks in `crates/ascribe-cli/src/agents/checker.rs`, through the check server (`agents hook-server`, hidden) that keeps the project loaded and talks to hooks through files in the user's cache folder. |
 
 The language server calls the same code where it does the same job: `ascribe_fmt::format` for formatting, and `ascribe_diff::compare_builds`, which `diff_project` calls, for review. It checks incrementally, so it calls `check_file` and `PageChecker` instead of `diagnose`, and `crates/ascribe-cli/tests/all/lsp_parity.rs` holds the two to the same diagnostics.

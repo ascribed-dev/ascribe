@@ -5,8 +5,9 @@
 //! [`FileSystem`], with its frontmatter's `title` set to the title given and
 //! nothing else changed. A type with no template gives its frontmatter: the
 //! title and each other field it requires, empty. The page goes where it's
-//! asked to, or, when nothing is asked, in the first folder the type's
-//! `files` covers, named for the title slugged as a route's segments are.
+//! asked to, or, when it's asked for a folder or nothing, in that folder or
+//! the first folder the type's `files` covers, named for the title slugged as
+//! a route's segments are.
 //! Nothing here writes a file, and a page is never started where a file is.
 
 use ascribe_check::Project;
@@ -90,7 +91,9 @@ impl ascribe_core::Coded for StartError {
 }
 
 /// The page of type `type_name` titled `title`, at `path` from the content
-/// root, or where the type's pages go when it's `None`.
+/// root: a page's path, ending in `.md`, or a folder, where the page is named
+/// for the title. When it's `None`, the page goes in the first folder the
+/// type's `files` covers.
 ///
 /// # Errors
 ///
@@ -116,16 +119,14 @@ pub fn start(
         });
     };
     let path = match path {
-        Some(path) => {
-            if let Some(reason) = not_of_type(model, page_type, path) {
-                return Err(StartError::NotTheType {
-                    path: path.to_string(),
-                    type_name: type_name.to_owned(),
-                    reason,
-                });
-            }
-            path.clone()
+        // A folder: the page goes in it, named for the title.
+        Some(folder) if folder.extension() != Some("md") => {
+            let path = folder
+                .join(&file_name(page_type, title)?)
+                .unwrap_or_else(|_| folder.clone());
+            of_type(model, page_type, path)?
         }
+        Some(path) => of_type(model, page_type, path.clone())?,
         None => default_path(model, page_type, title)?,
     };
     let fs = project.file_system();
@@ -138,15 +139,29 @@ pub fn start(
             path: path.to_string(),
         });
     }
-    let text = match &page_type.template {
-        Some(template) => with_title(&read_template(fs, &template.path)?, title),
-        None => frontmatter_only(page_type, title),
-    };
+    let text = text(project, page_type, title)?;
     Ok(NewPage {
         path,
         text,
         template: page_type.template.as_ref().map(|t| t.path.clone()),
         guide: page_type.guide.iter().map(|g| g.path.clone()).collect(),
+    })
+}
+
+/// The text a page of `page_type` titled `title` starts with, wherever it
+/// goes: the type's template with the title set, or its frontmatter when it
+/// has none.
+///
+/// # Errors
+///
+/// A template that can't be read.
+pub fn text(project: &Project, page_type: &ContentType, title: &str) -> Result<String, StartError> {
+    Ok(match &page_type.template {
+        Some(template) => with_title(
+            &read_template(project.file_system(), &template.path)?,
+            title,
+        ),
+        None => frontmatter_only(page_type, title),
     })
 }
 
@@ -156,13 +171,26 @@ fn is_there(fs: &dyn FileSystem, path: &RelPath) -> bool {
     fs.probe(path) != Probe::Missing || fs.real_path(path).is_some()
 }
 
+/// `path`, when it would be a page of `page_type`.
+fn of_type(
+    model: &ContentModel,
+    page_type: &ContentType,
+    path: RelPath,
+) -> Result<RelPath, StartError> {
+    match not_of_type(model, page_type, &path) {
+        None => Ok(path),
+        Some(reason) => Err(StartError::NotTheType {
+            path: path.to_string(),
+            type_name: page_type.name.clone(),
+            reason,
+        }),
+    }
+}
+
 /// Why `path` wouldn't be a page of `page_type`, or `None` when it would.
 fn not_of_type(model: &ContentModel, page_type: &ContentType, path: &RelPath) -> Option<String> {
     if !path.is_inside() || path.is_root() {
         return Some("it isn't a file in the content root".to_owned());
-    }
-    if path.extension() != Some("md") {
-        return Some("a page's name ends in `.md`".to_owned());
     }
     if model.is_fragment(path.as_str()) {
         return Some("it's a fragment's path".to_owned());
@@ -183,18 +211,7 @@ fn default_path(
     page_type: &ContentType,
     title: &str,
 ) -> Result<RelPath, StartError> {
-    let no_path = |reason: &str| StartError::NoPath {
-        type_name: page_type.name.clone(),
-        reason: reason.to_owned(),
-    };
-    // A fresh scope's first slug is the slug of the text alone, as a route's
-    // segment is (`ascribe_resolve::astro`).
-    let slug = GithubSlugger.new_scope().slug(title);
-    let name = slug.trim_start_matches('_');
-    if name.is_empty() {
-        return Err(no_path("it has no letter or digit"));
-    }
-    let file = format!("{name}.md");
+    let file = file_name(page_type, title)?;
     let folders: Vec<RelPath> = if page_type.files.is_empty() {
         vec![RelPath::root()]
     } else {
@@ -204,7 +221,26 @@ fn default_path(
         .iter()
         .filter_map(|folder| folder.join(&file).ok())
         .find(|path| not_of_type(model, page_type, path).is_none())
-        .ok_or_else(|| no_path("no folder its `files` covers takes a page named for it"))
+        .ok_or_else(|| StartError::NoPath {
+            type_name: page_type.name.clone(),
+            reason: "no folder its `files` covers takes a page named for it".to_owned(),
+        })
+}
+
+/// The file a page titled `title` is named: the title slugged as a route's
+/// segment is, with `.md`.
+fn file_name(page_type: &ContentType, title: &str) -> Result<String, StartError> {
+    // A fresh scope's first slug is the slug of the text alone, as a route's
+    // segment is (`ascribe_resolve::astro`).
+    let slug = GithubSlugger.new_scope().slug(title);
+    let name = slug.trim_start_matches('_');
+    if name.is_empty() {
+        return Err(StartError::NoPath {
+            type_name: page_type.name.clone(),
+            reason: "it has no letter or digit".to_owned(),
+        });
+    }
+    Ok(format!("{name}.md"))
 }
 
 /// The folder a pattern covers: its segments before the first with a glob
@@ -333,7 +369,8 @@ mod tests {
 
     #[test]
     fn the_title_is_set_and_nothing_else_changes() {
-        let template = "---\ntitle: \"Title\"\ndescription: \"{One sentence.}\"\n---\n\n## Overview\n";
+        let template =
+            "---\ntitle: \"Title\"\ndescription: \"{One sentence.}\"\n---\n\n## Overview\n";
         assert_eq!(
             with_title(template, "Rotate \"keys\""),
             "---\ntitle: \"Rotate \\\"keys\\\"\"\ndescription: \"{One sentence.}\"\n---\n\n## Overview\n"
