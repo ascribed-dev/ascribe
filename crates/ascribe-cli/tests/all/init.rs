@@ -1,6 +1,6 @@
 //! `ascribe init`, by running the binary in temporary folders: what it says
-//! it wrote, its JSON, the project it starts checking clean with a page of
-//! the default type, and what it exits with when it refuses. What it writes,
+//! it wrote, its JSON, the project it starts checking clean with a page that
+//! names its type, and what it exits with when it refuses. What it writes,
 //! and each case it refuses, is held by
 //! `crates/ascribe-templates/tests/all/init.rs`.
 

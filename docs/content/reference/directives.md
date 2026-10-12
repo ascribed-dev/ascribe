@@ -38,14 +38,18 @@ A project's source files are the `.md` files under its **content root** (`docs/`
 - A **page** is published on its own.
 - A **fragment** exists only to be included in other files. A file is a fragment when any part of its path starts with `_` (`_warning.md`, `_snippets/setup.md`), or when it matches one of the `[fragments] patterns` in `ascribe.toml`.
 
-A file may start with YAML frontmatter between `---` lines. Its content type in `ascribe.toml` says which keys it takes; every page takes a `title`. Two keys are reserved for pages: `available` ([availability](#available)) and `variant` ([whole-page variants](#whole-page-variants)).
+A file may start with YAML frontmatter between `---` lines. Its content type in `ascribe.toml` says which keys it takes; every page takes a `title`. Some keys are reserved for pages: `type`, `available` ([availability](#available)), and `variant` ([whole-page variants](#whole-page-variants)), with `permalink` and `listing`.
 
 ```markdown
 ---
+type: guide
 title: Install the Quill agent
 available: cloud, self-managed preview 3.3
 ---
 ```
+
+@available: next
+A page says what type it is with `type`, the name of a [content type](content-model.md#41-page-types) `ascribe.toml` declares, conventionally its first key. In a project that declares types, every page names one, wherever its file is; in a project that declares none, every page is of the implicit type `page`, and names none. A fragment has no type, and can't use `type`.
 
 ## Directive lines
 

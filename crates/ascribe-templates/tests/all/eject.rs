@@ -195,9 +195,7 @@ fn a_new_lock_says_what_it_is() {
 
 #[test]
 fn a_type_declared_already_is_refused_and_nothing_is_written() {
-    let model = format!(
-        "{MODEL}\n[types.how-to.frontmatter]\ntitle = \"string\"\n"
-    );
+    let model = format!("{MODEL}\n[types.how-to.frontmatter]\ntitle = \"string\"\n");
     let dir = project(&model);
     let before = files(dir.path());
     let answer = run(dir.path(), &["how-to"], "templates").expect("answered");
@@ -510,13 +508,8 @@ fn an_empty_types_table_declares_no_type_and_keeps_the_page_type() {
     let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
     let names: Vec<&str> = file.model.types.iter().map(|t| t.name.as_str()).collect();
     assert_eq!(names, ["page", "how-to"]);
-    // The page outside the new type is still of a type, as it was before.
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
-    let errors: Vec<_> = ascribe_check::check_all_builds(&project)
-        .into_iter()
-        .filter(|d| d.slug.as_str() == "content-type-unresolved")
-        .collect();
-    assert!(errors.is_empty(), "{errors:#?}");
+    // The page there names no type: it's listed, to be given `type: page`.
+    assert_eq!(answer.untyped, ["docs/index.md"]);
 }
 
 #[test]
@@ -613,8 +606,8 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
     }
 }
 
-/// A project whose pages are under `guides/`, of its default type, which
-/// declares its title and description with more than their type.
+/// A project with one type, `guide`, which declares its title and
+/// description with more than their type.
 const DECLARED: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n";
 
 #[test]

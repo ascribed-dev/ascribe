@@ -39,7 +39,10 @@ fn project() -> (Fixture, Client) {
         MODEL,
         &[
             ("templates/how-to.md", how_to()),
-            ("docs/index.md", "---\ntype: page\ntitle: Home\nowner: me\n---\nHome.\n"),
+            (
+                "docs/index.md",
+                "---\ntype: page\ntitle: Home\nowner: me\n---\nHome.\n",
+            ),
             (
                 "docs/how-to/index.md",
                 "---\ntype: how-to\ntitle: How-tos\ndescription: All of them.\n---\n",
@@ -123,7 +126,10 @@ fn a_folder_lists_the_types_a_page_started_there_would_be_of() {
         types(&mut client, Some(folder_uri(&fixture, "docs/how-to"))),
         every
     );
-    assert_eq!(types(&mut client, Some(folder_uri(&fixture, "docs"))), every);
+    assert_eq!(
+        types(&mut client, Some(folder_uri(&fixture, "docs"))),
+        every
+    );
     let fragments = types(&mut client, Some(folder_uri(&fixture, "docs/_parts")));
     assert_eq!(fragments, json!([]));
     let outside = types(&mut client, Some(folder_uri(&fixture, "templates")));

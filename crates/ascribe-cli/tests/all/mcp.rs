@@ -748,7 +748,10 @@ fn files_outside_the_content_root_dont_load_the_project_again() {
     assert_eq!(heading(&mut server), "rotate-keys");
 
     // A file in the content root is.
-    write(&root.join("docs/tokens.md"), "---\ntype: page\ntitle: Tokens\n---\n");
+    write(
+        &root.join("docs/tokens.md"),
+        "---\ntype: page\ntitle: Tokens\n---\n",
+    );
     assert_eq!(heading(&mut server), "rotate-keyz");
 }
 
@@ -788,7 +791,10 @@ fn a_project_is_loaded_again_when_its_files_change() {
 
     // A file added.
     assert!(!link(&mut server, "tokens.md"));
-    write(&root.join("docs/tokens.md"), "---\ntype: page\ntitle: Tokens\n---\n");
+    write(
+        &root.join("docs/tokens.md"),
+        "---\ntype: page\ntitle: Tokens\n---\n",
+    );
     assert!(link(&mut server, "tokens.md"));
 
     // A file deleted.

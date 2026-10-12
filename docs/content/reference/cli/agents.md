@@ -117,7 +117,7 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](#what-a-p
 
 `path` is a file or folder in the project, by default the current directory; `fix` reports on it. For `new-page`, a `path` in the content root, from the current directory or from the content root, is where the page goes: its file, or a folder for it. `--list` lists the prompts and their arguments.
 
-Without a `path` in the content root, `new-page` puts the page in the first folder the type's `files` covers, named for the title slugged as a page's address is, `how-to/rotate-keys.md` for "Rotate keys", and asks for another path of the type's when a file is there. A `path` that isn't one of the type's is refused.
+Without a `path` in the content root, `new-page` says the page goes where the request says, anywhere in the content root, and otherwise in the content root, named for the title slugged as a page's address is, `rotate-keys.md` for "Rotate keys"; when a file is there, it asks for another path. A page names its type in its frontmatter, so it can go in any folder of pages; a fragment's path is refused.
 
 ```shell
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"

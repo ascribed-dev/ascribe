@@ -72,7 +72,7 @@ It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the 
 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
-Every page needs a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](guides/templates.md).
+Every page is of the one type, `page`, and says so with `type: page` in its frontmatter, with a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](guides/templates.md).
 
 ### Write it by hand
 
@@ -82,7 +82,7 @@ For a project that wants nothing written for it, or with Ascribe 0.3.0 or earlie
 spec = "0.1"
 ```
 
-With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, there's one build, `site`, and every page needs a `title` and has no other field, so leave out the page's `description` below.
+With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, there's one build, `site`, and every page needs a `title` and has no other field, so leave out the page's `type` and `description` below: a project that declares no types has one, implicitly, and its pages don't name it.
 
 ### Add what the page uses
 
@@ -108,7 +108,7 @@ Create `docs/install.md`:
 
 - `@note` is a callout; `{type=tip}` is its attribute.
 - `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](guides/variants.md).
-- `title` and `description` are the fields `ascribe.toml` asks every page for.
+- `type: page` says what kind of page it is: a type `ascribe.toml` declares. `title` and `description` are the fields that type asks for.
 - `{product}` and `{version}` are phrases from `ascribe.toml`.
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
@@ -125,7 +125,7 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
-Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, and check again.
+Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again.
 
 ## Build it
 

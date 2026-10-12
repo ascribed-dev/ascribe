@@ -48,8 +48,14 @@ fn each_page_is_published_at_its_route_with_md_and_points_at_the_index() {
     let project = memory_project(
         &agents_model(),
         &[
-            ("index.md", "---\ntype: guide\ntitle: Home\n---\n\nWelcome.\n"),
-            ("Guides/My Setup.md", "---\ntype: guide\ntitle: Set up\n---\n\nSteps.\n"),
+            (
+                "index.md",
+                "---\ntype: guide\ntitle: Home\n---\n\nWelcome.\n",
+            ),
+            (
+                "Guides/My Setup.md",
+                "---\ntype: guide\ntitle: Set up\n---\n\nSteps.\n",
+            ),
         ],
     );
     let files = plain_files(&project, "site");
@@ -108,7 +114,10 @@ fn llms_txt_is_named_and_summarized_by_the_home_page_and_sectioned_by_folder() {
                 "---\ntype: guide\ntitle: Quill\ndescription: Docs for *Quill*, the [editor](https://quill.dev).\n---\n",
             ),
             ("install.md", "---\ntype: guide\ntitle: Install\n---\n"),
-            ("guides/index.md", "---\ntype: guide\ntitle: How-to guides\n---\n"),
+            (
+                "guides/index.md",
+                "---\ntype: guide\ntitle: How-to guides\n---\n",
+            ),
             (
                 "guides/sync.md",
                 "---\ntype: guide\ntitle: Sync\ndescription: Keep two copies the same.\n---\n",
@@ -131,7 +140,10 @@ fn llms_txt_is_named_and_summarized_by_the_home_page_and_sectioned_by_folder() {
 #[test]
 fn an_index_over_the_limit_is_split_into_a_file_per_section() {
     let long = "x".repeat(1_000);
-    let mut sources = vec![("index.md".to_owned(), "---\ntype: guide\ntitle: Home\n---\n".to_owned())];
+    let mut sources = vec![(
+        "index.md".to_owned(),
+        "---\ntype: guide\ntitle: Home\n---\n".to_owned(),
+    )];
     for n in 0..60 {
         sources.push((
             format!("reference/page-{n:02}.md"),
@@ -179,7 +191,10 @@ fn an_asset_is_published_under_files_at_its_absolute_url() {
 fn without_agents_the_plain_output_is_laid_out_by_source() {
     let project = memory_project(
         FULL_MODEL,
-        &[("Guides/My Setup.md", "---\ntype: guide\ntitle: Set up\n---\n")],
+        &[(
+            "Guides/My Setup.md",
+            "---\ntype: guide\ntitle: Set up\n---\n",
+        )],
     );
     let files = plain_files(&project, "site");
     assert_eq!(

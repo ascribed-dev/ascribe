@@ -415,7 +415,10 @@ fn the_strictest_rule_a_page_is_under_wins() {
         Some(ListingLevel::Folder("internal/old/".into()))
     );
     // Not a folder's page: the folder's name is a prefix of it only.
-    assert_eq!(level("internal-notes.md", Some("guide")), Some(ListingLevel::Site));
+    assert_eq!(
+        level("internal-notes.md", Some("guide")),
+        Some(ListingLevel::Site)
+    );
     // A folder and a type: the stricter, and the folder of two as strict.
     assert_eq!(
         level("changes/a.md", Some("changelog")),
@@ -429,7 +432,11 @@ fn the_strictest_rule_a_page_is_under_wins() {
 #[test]
 fn a_page_may_tighten_its_rule_and_never_loosen_it() {
     let m = listing_model("[listing.folders]\n\"internal/\" = \"unquoted\"\n");
-    let rule = ListingFrom::Rule(m.listing_rule("internal/a.md", Some("guide")).unwrap().clone());
+    let rule = ListingFrom::Rule(
+        m.listing_rule("internal/a.md", Some("guide"))
+            .unwrap()
+            .clone(),
+    );
     assert_eq!(
         m.listing_of("internal/a.md", Some("guide"), None),
         (Listing::Unquoted, rule.clone())

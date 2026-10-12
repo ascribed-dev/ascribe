@@ -72,7 +72,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, and `schema`. A type the project declares has the reserved `type` too, as the literal of its name, and with several types `schema` is a `z.discriminatedUnion` on it. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all zod`.
 
 ## JSON
 

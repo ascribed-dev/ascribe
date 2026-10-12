@@ -38,8 +38,7 @@ build = "cloud"
 
 const INSTALL: &str = "---\ntype: guide\ntitle: Install\nteam: platform\n---\n\nSee the [old docs](https://gone.example/) first.\n";
 
-const CLOUD: &str =
-    "---\ntype: guide\ntitle: Cloud\nteam: platform\navailable: cloud\n---\n\nRead [install](install.md).\n";
+const CLOUD: &str = "---\ntype: guide\ntitle: Cloud\nteam: platform\navailable: cloud\n---\n\nRead [install](install.md).\n";
 
 fn project(model: &str) -> TempDir {
     let dir = tempfile::tempdir().expect("a temporary directory");

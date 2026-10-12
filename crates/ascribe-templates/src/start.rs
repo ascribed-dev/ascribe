@@ -127,7 +127,13 @@ pub fn start(
             of_type(model, page_type, path)?
         }
         Some(path) => of_type(model, page_type, path.clone())?,
-        None => of_type(model, page_type, RelPath::root().join(&file_name(page_type, title)?).unwrap_or_else(|_| RelPath::root()))?,
+        None => of_type(
+            model,
+            page_type,
+            RelPath::root()
+                .join(&file_name(page_type, title)?)
+                .unwrap_or_else(|_| RelPath::root()),
+        )?,
     };
     let fs = project.file_system();
     let in_project = project
@@ -381,7 +387,11 @@ mod tests {
     #[test]
     fn a_template_without_a_title_gets_one_first() {
         assert_eq!(
-            with_key("---\ndescription: x\n---\nBody\n", "title", &yaml_string("New")),
+            with_key(
+                "---\ndescription: x\n---\nBody\n",
+                "title",
+                &yaml_string("New")
+            ),
             "---\ntitle: \"New\"\ndescription: x\n---\nBody\n"
         );
         assert_eq!(
@@ -398,7 +408,11 @@ mod tests {
             "---\ntype: how-to\ntitle: \"Title\"\n---\nBody\n"
         );
         assert_eq!(
-            with_key("---\ntype: concept\ntitle: T\n---\n", "type", &type_value("how-to")),
+            with_key(
+                "---\ntype: concept\ntitle: T\n---\n",
+                "type",
+                &type_value("how-to")
+            ),
             "---\ntype: how-to\ntitle: T\n---\n"
         );
         assert_eq!(type_value("true"), "\"true\"");

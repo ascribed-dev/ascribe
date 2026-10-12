@@ -125,7 +125,8 @@ fn notes_lists_every_file_in_notes_and_every_template_has_ascribe_s_notes() {
 /// them.
 #[test]
 fn ascribe_s_notes_check_clean_read_as_pages() {
-    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[checks]\npage-orphan = \"off\"\n";
+    let model =
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[checks]\npage-orphan = \"off\"\n";
     for note in NOTES {
         let (heading, body) = note
             .text

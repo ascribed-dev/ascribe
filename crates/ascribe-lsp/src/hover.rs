@@ -53,7 +53,10 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
         }
         Hit::Availability(text, span) => (span, availability_markdown(&ctx.model, text)?),
         Hit::Frontmatter(text, span) => (span, availability_markdown(&ctx.model, &text)?),
-        Hit::Listing(span) => (span, listing_markdown(&ctx.model, ctx.path.as_str(), ctx.page_type_name())),
+        Hit::Listing(span) => (
+            span,
+            listing_markdown(&ctx.model, ctx.path.as_str(), ctx.page_type_name()),
+        ),
         Hit::Directive(d) => {
             let schema = ctx
                 .model

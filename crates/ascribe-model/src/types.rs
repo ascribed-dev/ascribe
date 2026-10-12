@@ -288,7 +288,12 @@ impl Cx<'_> {
         if top && key == "intended" {
             return;
         }
-        if top && matches!(key, "available" | "variant" | "permalink" | "listing" | "type") {
+        if top
+            && matches!(
+                key,
+                "available" | "variant" | "permalink" | "listing" | "type"
+            )
+        {
             match self.schema.owner {
                 SchemaOwner::Type(_) => {}
                 SchemaOwner::Fragment => {

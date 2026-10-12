@@ -5,16 +5,13 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-# Every page has a type, and none is the default, so a page no `files`
-# pattern matches is an error rather than a page of no kind. Five of the types
-# are the set's, from `ascribe templates eject`: each one's template and guide
-# are in templates/, with Ascribe's notes on it, and templates.lock records
-# where they came from. What the set's types don't have is put back here: the
-# pages where they are, since the docs keep their guides together under
-# guides/ and their addresses don't move, each type's purpose, and the same
-# frontmatter on all of them. Titles can show code ("`ascribe.toml`
-# reference"); the site's layout uses the formatted title for the heading and
-# the sidebar.
+# Every page names its type with `type:` in its frontmatter. Five of the
+# types are the set's, from `ascribe templates eject`: each one's template and
+# guide are in templates/, with Ascribe's notes on it, and templates.lock
+# records where they came from. What the set's types don't have is put back
+# here: each type's purpose, and the same frontmatter on all of them. Titles
+# can show code ("`ascribe.toml` reference"); the site's layout uses the
+# formatted title for the heading and the sidebar.
 
 # The home page, a list of the other pages. No template is for a landing page,
 # so the type has none.
@@ -35,8 +32,7 @@ purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnosti
 title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
-# The set's other four types, from `ascribe templates eject`, with each
-# type's pages where they are.
+# The set's other four types, from `ascribe templates eject`.
 [types.how-to]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]

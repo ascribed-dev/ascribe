@@ -33,7 +33,10 @@ const FILES: &[(&str, &str)] = &[
         "guides/drafts.md",
         "---\ntype: page\ntitle: Drafts\nlisting: unlisted\n---\n",
     ),
-    ("faq.md", "---\ntype: page\ntitle: FAQ\nlisting: unquoted\n---\n"),
+    (
+        "faq.md",
+        "---\ntype: page\ntitle: FAQ\nlisting: unquoted\n---\n",
+    ),
 ];
 
 fn records(project: &Project) -> Value {
@@ -457,7 +460,10 @@ fn each_markdown_version_has_its_headers() {
 fn without_markdown_versions_the_headers_are_an_empty_list() {
     let project = memory_project(
         "spec = \"0.1\"\n",
-        &[("a.md", "---\ntype: page\ntitle: A\nlisting: unlisted\n---\n")],
+        &[(
+            "a.md",
+            "---\ntype: page\ntitle: A\nlisting: unlisted\n---\n",
+        )],
     );
     assert_eq!(headers(&project), json!({ "version": 1, "headers": [] }));
 }

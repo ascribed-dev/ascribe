@@ -29,7 +29,7 @@ describe("starting a page from a template", () => {
     return record;
   }
 
-  it("on the how-to folder, offers the how-to, makes the page, and selects its first placeholder", async () => {
+  it("on the how-to folder, offers every type, makes the page, and selects its first placeholder", async () => {
     let offered: string[] = [];
     const record = await newPage(
       [
@@ -42,7 +42,16 @@ describe("starting a page from a template", () => {
       uriOf("docs", "how-to"),
     );
     assert.deepEqual(record.messages, []);
-    assert.deepEqual(offered, ["how-to"]);
+    // A page names its type, so a folder of pages takes any of them.
+    assert.deepEqual(offered, [
+      "page",
+      "how-to",
+      "concept",
+      "tutorial",
+      "reference",
+      "troubleshooting",
+      "release-notes",
+    ]);
     assert.equal(record.file, "docs/how-to/rotate-signing-keys.md");
 
     const file = uriOf("docs", "how-to", "rotate-signing-keys.md");

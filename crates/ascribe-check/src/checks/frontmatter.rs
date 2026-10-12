@@ -125,9 +125,11 @@ impl Ctx<'_> {
         };
         let node = index.get(TYPE_KEY);
         let at = node.map_or(first_line, |n| n.value);
-        let mut issue =
-            Issue::new(diagnostics::CONTENT_TYPE_UNKNOWN, Location::new(self.id, at))
-                .with_arg("values", names.join(", "));
+        let mut issue = Issue::new(
+            diagnostics::CONTENT_TYPE_UNKNOWN,
+            Location::new(self.id, at),
+        )
+        .with_arg("values", names.join(", "));
         match value.get(TYPE_KEY) {
             Some(Value::String(declared)) => {
                 issue = issue.with_arg("type", declared.clone());

@@ -74,8 +74,8 @@ pub struct EjectArgs {
     pub to: Option<PathBuf>,
 
     /// When ascribe.toml declares a template's type already, keep the type
-    /// and add only its template and guide to it, leaving its files,
-    /// frontmatter, other keys, and comments as they are. Refuses a type
+    /// and add only its template and guide to it, leaving its frontmatter,
+    /// other keys, and comments as they are. Refuses a type
     /// whose frontmatter doesn't declare the template's fields as strings,
     /// or that names a template or guide already.
     #[arg(long)]
@@ -367,7 +367,7 @@ pub(crate) fn write_added(
     Ok(())
 }
 
-/// `keys` as a person reads a list of them: "`files`, `purpose`, and
+/// `keys` as a person reads a list of them: "`template`, `purpose`, and
 /// `frontmatter`".
 fn listed(keys: &[String]) -> String {
     let keys: Vec<String> = keys.iter().map(|k| format!("`{k}`")).collect();

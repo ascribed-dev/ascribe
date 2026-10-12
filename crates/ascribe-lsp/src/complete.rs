@@ -168,7 +168,12 @@ impl Cx<'_> {
             .filter(|t| t.name.starts_with(typed))
             .enumerate()
             .map(|(n, t)| {
-                let mut item = self.item(&t.name, CompletionItemKind::ENUM_MEMBER, typed.len(), &t.name);
+                let mut item = self.item(
+                    &t.name,
+                    CompletionItemKind::ENUM_MEMBER,
+                    typed.len(),
+                    &t.name,
+                );
                 item.sort_text = Some(format!("{n:04}"));
                 item.documentation = t.purpose.clone().map(markdown);
                 item

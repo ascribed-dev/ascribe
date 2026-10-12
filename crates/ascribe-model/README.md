@@ -14,7 +14,7 @@ What the content model may contain is SPEC §7 and the [content model reference]
 | `src/sections.rs` | | Content types, fragments, the glossary, images, widgets, the consumer, builds, and the editor. |
 | `src/fields.rs`, `src/types.rs` | `Field`, `FieldType`, `validate_frontmatter` | Field and attribute types, and checking a page's frontmatter against its type. |
 | `src/inline.rs` | `InlineMarkup`, `Segment` | Code spans in a field that sets `inline = "code"`. |
-| `src/pattern.rs` | `Pattern` | The glob syntax of `files` and fragment patterns. |
+| `src/pattern.rs` | `Pattern` | The glob syntax of fragment patterns and of a source's `include` and `ignore`. |
 | `src/lock.rs` | `Lock`, `LockedSource`, `file_hash` | `ascribe.lock`: the commit each source in another repository is pinned to, and the hash of each copied file. |
 | `src/names.rs` | `suggest` | Name grammars, and the closest known name for a misspelled one. |
 

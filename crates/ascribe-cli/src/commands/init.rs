@@ -23,8 +23,7 @@ pub struct Args {
     pub dir: Option<PathBuf>,
 
     /// Take the page templates too, as `ascribe templates eject` with no
-    /// name does: six types, each with its folder of pages, beside the
-    /// default type.
+    /// name does: six types, beside the type `page`.
     #[arg(long)]
     pub templates: bool,
 

@@ -1,61 +1,59 @@
 ### 4.1 Page types
 
-A **content type** is a frontmatter schema for a kind of page, plus the files it applies to.
+A **content type** is a frontmatter schema for a kind of page. A page names its type in its frontmatter, with `type`.
 
 ```toml
-[types.guide]
-default = true
-
 [types.guide.frontmatter]
 title = "string"
 description = "string?"
-
-[types.reference]
-files = ["reference/**"]
 
 [types.reference.frontmatter]
 title = "string"
 api-version = "string"
 ```
 
-`<name>` is the type's name (`key` rule). It appears in diagnostics and in generated code (the Zod schema's name).
+`<name>` is the type's name (`key` rule). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `files` | array of patterns | `[]` | The pages this type applies to (§1.3). |
-| `default` | boolean | `false` | Makes this the **default type**: it applies to every page that no type's `files` match. At most one type may be the default. |
-| `frontmatter` | table of fields | **required** | The frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). It MUST declare `title` as a required string (below). |
+| `frontmatter` | table of fields | **required** | The frontmatter schema: one entry per field, keyed by field name (`name-word`). Values are field types (§5). It MUST declare `title` as a required string (below). A type can't declare a field `type`, which is reserved (`model-field-reserved`). |
 | `purpose` {available=next} | string | none | What a page of the type is for, in a few words. The rules `ascribe agents sync` writes say it on the type's line, and `ascribe model` shows it. A type copied from the starter set says its summary there without one (below). |
 | `template` {available=next} | string (path) | none | The page a page of the type starts from: a file from the folder `ascribe.toml` is in, outside the content root (below). |
 | `guide` {available=next} | array of paths | `[]` | What to read before writing a page of the type, in the order to read it, such as a guide and a project's own notes on it: files from the folder `ascribe.toml` is in, outside the content root (below). |
 
-**Which type applies to a page.** For each page (not fragments; see §4.3):
+@available: next
+**Which type a page is.** A page says what type it is with `type` in its frontmatter, the first key by convention, wherever its file is: a folder can hold pages of every type.
 
-1. If exactly one type's `files` match the page, that type applies.
-2. If several types' `files` match, it's an error on the page: the page is ambiguous. There's no precedence between types.
-3. If none match and a default type exists, the default applies.
-4. If none match and there's no default type, it's an error on the page.
+```yaml
+---
+type: reference
+title: Commands
+api-version: "3"
+---
+```
 
-A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, listed in [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics).
+- **A project that declares no types** has one, the implicit `page`, whose only field is a required string `title`. Its pages need no `type`, and a page that has one is an error (`content-type-unknown`), with a fix that removes it.
+- **A project that declares types** has no implicit one. A page that names no type is an error on the page (`content-type-missing`), with a fix for each declared type that adds `type:` to the page's frontmatter. A page whose `type` names a type that isn't declared is an error at the value (`content-type-unknown`), with a fix to the closest name when one is close.
+- **Fragments** have no type (§4.3), and can't use `type` (`frontmatter-reserved-in-fragment`).
+
+A type's table has no keys that say which pages it applies to: `files` and `default` are unknown keys (`model-unknown-key`), whose message says to name the type on its pages instead.
 
 @available: next
 **A type's template and guide.** Both are paths from the folder `ascribe.toml` is in, and both name files that aren't pages:
 
 ```toml
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 ```
 
-Each file must be there, with its name's case as it is on disk, inside the folder `ascribe.toml` is in, and outside the content root, where it would be read as a page, and the output directory, which a build writes and removes. A symbolic link is followed to where it leads (`model-type-file`). `guide` is always a list, as `files` is, even with one file in it (`model-wrong-type`). The template is read when the content model loads, and must read as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax (`model-type-template`). Either is a problem with the content model, reported at the path, once, rather than on every page made from the template. A type with neither key is as it is without them.
+Each file must be there, with its name's case as it is on disk, inside the folder `ascribe.toml` is in, and outside the content root, where it would be read as a page, and the output directory, which a build writes and removes. A symbolic link is followed to where it leads (`model-type-file`). `guide` is always a list, even with one file in it (`model-wrong-type`). The template is read when the content model loads, and must read as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax (`model-type-template`). Either is a problem with the content model, reported at the path, once, rather than on every page made from the template. A type with neither key is as it is without them.
 
 @available: next
 **What a type is for.** `purpose` is one string, for a project's own types, and for a team that wants to say what one of the starter set's types means to it:
 
 ```toml
 [types.how-to]
-files = ["how-to/**"]
 purpose = "One task, done step by step, for someone who knows why they're doing it."
 ```
 

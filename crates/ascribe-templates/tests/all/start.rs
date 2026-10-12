@@ -123,9 +123,18 @@ fn a_path_or_a_folder_given_is_where_the_page_goes_when_it_s_a_page_s() {
     )
     .expect("started");
     assert_eq!(page.path.as_str(), "how-to/keys/rotate.md");
-    assert!(page.text.starts_with("---\ntype: how-to\ntitle: \"Rotate keys\"\n"));
+    assert!(
+        page.text
+            .starts_with("---\ntype: how-to\ntitle: \"Rotate keys\"\n")
+    );
     // A page names its type, so any folder takes it.
-    let page = run(dir.path(), "how-to", "Rotate keys", Some("guides/rotate.md")).expect("started");
+    let page = run(
+        dir.path(),
+        "how-to",
+        "Rotate keys",
+        Some("guides/rotate.md"),
+    )
+    .expect("started");
     assert_eq!(page.path.as_str(), "guides/rotate.md");
 
     let refused =

@@ -1196,7 +1196,7 @@ Astro is the primary consumer, through its content collections.
 - Compiled pages from the site output are loaded into an Astro content collection.
 - The collection's schema MUST be generated from the content model, as a Zod schema.
 - Page layouts are the project's own.
-- Page-level frontmatter, including `available`, reaches the layout as collection data, except `listing`, which reaches the site in the page's record (§9.4). A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
+- Page-level frontmatter, including `type` and `available`, reaches the layout as collection data, except `listing`, which reaches the site in the page's record (§9.4). A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
 
 An Astro integration SHOULD provide the collection configuration and generated schema, load the element library, and supply the markdown processing needed for explicit heading ids.
 
@@ -1325,8 +1325,8 @@ UTF8-non-ascii  = %x80-10FFFF
 *Non-normative.* A complete page, assuming a content model that declares:
 
 - the dimensions `pm` (`npm`, `pnpm`, `yarn`) and `deployment` (`cloud`, `self-managed`), with `cloud` versionless;
-- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`).
-- the content type `page`, which the page names with `type: page`, whose frontmatter has a `title` and a `description`.
+- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`);
+- the content type `page`, with a `title` and a `description`, which the page names with `type: page`.
 
 ````markdown
 ---

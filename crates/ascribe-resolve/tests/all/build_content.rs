@@ -267,7 +267,10 @@ fn a_link_to_a_page_points_at_its_route_and_an_empty_one_takes_the_pages_title()
             "index.md",
             &page("See [](keys.md) and [text](guides/setup.md).\n"),
         ),
-        ("keys.md", "---\ntype: page\ntitle: Rotate {product} keys\n---\n"),
+        (
+            "keys.md",
+            "---\ntype: page\ntitle: Rotate {product} keys\n---\n",
+        ),
         ("guides/setup.md", "---\ntype: page\ntitle: Setup\n---\n"),
     ]);
     let resolved = resolve(&p, "index.md", "site");
@@ -466,7 +469,10 @@ fn links_with_a_missing_target_or_id_are_left_unresolved_without_a_build_problem
             "index.md",
             &page("[a](nope.md) [b](keys.md#missing) [d](_f.md)\n"),
         ),
-        ("keys.md", "---\ntype: page\ntitle: Keys\n---\n\n@include: _f.md\n"),
+        (
+            "keys.md",
+            "---\ntype: page\ntitle: Keys\n---\n\n@include: _f.md\n",
+        ),
         ("_f.md", "## Frag\n"),
     ]);
     let resolved = resolve(&p, "index.md", "site");
@@ -534,7 +540,10 @@ fn a_reference_link_resolves_through_its_definition_and_its_phrases() {
                 "[api][a] and [keys][k] and [kd].\n\n[a]: {api}streaming\n[k]: keys.md#rotate\n[kd]: keys.md\n",
             ),
         ),
-        ("keys.md", "---\ntype: page\ntitle: Keys\n---\n\n## Rotate\n"),
+        (
+            "keys.md",
+            "---\ntype: page\ntitle: Keys\n---\n\n## Rotate\n",
+        ),
     ]);
     let resolved = resolve(&p, "index.md", "site");
     let all = links(&resolved);

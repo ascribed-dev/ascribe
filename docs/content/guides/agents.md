@@ -68,7 +68,7 @@ ascribe agents sync
 
 It writes:
 
-- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types with what each is for and its frontmatter, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
+- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types with what each is for and its frontmatter, and that each page names its type with `type:`, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
 
@@ -156,7 +156,7 @@ Each one fills the prompt in and leaves it for you to send. When the one you cho
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
-`new-page` says where the page goes: where its `path` says, a file or a folder, or in the first folder the type's `files` covers, named for the title as its address would be, `docs/how-to/rotate-keys.md`; never over a file that's there. For a type with a [template](templates.md), it gives the template with the title set, to start the file from, and before it, the paths of the type's `guide`, the template's guide and Ascribe's notes, for the agent to read before it writes. The guide isn't put in the prompt: it's long, and a file the agent reads arrives whole. For a type with no template, it gives the frontmatter the type requires, with each field to fill in.
+`new-page` says where the page goes: where its `path` says, a file or a folder, or else where the request says, and otherwise in the content root, named for the title as its address would be, `docs/rotate-keys.md`; never over a file that's there. For a type with a [template](templates.md), it gives the template with its `type` and title set, to start the file from, and before it, the paths of the type's `guide`, the template's guide and Ascribe's notes, for the agent to read before it writes. The guide isn't put in the prompt: it's long, and a file the agent reads arrives whole. For a type with no template, it gives the frontmatter the type requires, with each field to fill in.
 
 ### In review
 

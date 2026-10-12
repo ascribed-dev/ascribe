@@ -64,7 +64,7 @@ Every row of SPEC §8.2 has at least one case that expects it; `tests/suite.rs` 
 
 Conventions the cases follow:
 
-- **A page needs a title.** The shared model's default type requires `title`, so a single-file case that expects diagnostics starts with a three-line frontmatter block. Diagnostic lines count it. A case that expects only an outline has none, and neither does a fragment.
+- **A page needs a title.** The shared model declares no types, so its pages are of the implicit type `page`, which requires `title`; so a single-file case that expects diagnostics starts with a three-line frontmatter block. Diagnostic lines count it. A case that expects only an outline has none, and neither does a fragment.
 - **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so a case runs when its own adapter exists. A case carries several tags only when it needs several adapters.
 - **Page-level diagnostics need the `page-check` tag**, and top-level (file-level) diagnostics need `check`.
 - **Vale's alerts need the `prose` tag.** Its adapter runs a stand-in for Vale that flags a word written twice in a row outside code spans, so the cases show what reaches Vale and where an alert lands, not Vale's rules.

@@ -248,7 +248,9 @@ fn frontmatter_passes_through_with_phrases_substituted() {
     // what the resolved page holds.
     let out = site(&project, "site", "index.md");
     assert!(
-        out.starts_with("---\ntype: guide\ntitle: Quill guide\ntags:\n- a\n- b\nauthor:\n  name: Ann\n"),
+        out.starts_with(
+            "---\ntype: guide\ntitle: Quill guide\ntags:\n- a\n- b\nauthor:\n  name: Ann\n"
+        ),
         "{out}"
     );
 }
