@@ -351,6 +351,13 @@
           "description": "Its name.",
           "type": "string"
         },
+        "purpose": {
+          "description": "What a page of the type is for, as the content model says; absent\nwhen it says nothing.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "template": {
           "description": "The page a page of the type starts from, from the folder\n`ascribe.toml` is in; absent when the type names none.",
           "type": [

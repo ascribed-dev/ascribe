@@ -14,6 +14,7 @@ ascribe-model.workspace = true
 ascribe-resolve.workspace = true
 ascribe-check.workspace = true
 ascribe-emit.workspace = true
+ascribe-templates.workspace = true
 serde.workspace = true
 serde_yaml_ng.workspace = true
 thiserror.workspace = true

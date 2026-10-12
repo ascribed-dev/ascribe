@@ -119,6 +119,10 @@ pub struct ModelType {
     pub files: Vec<String>,
     /// Whether it applies to pages no type's `files` match.
     pub default: bool,
+    /// What a page of the type is for, as the content model says; absent
+    /// when it says nothing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub purpose: Option<String>,
     /// The page a page of the type starts from, from the folder
     /// `ascribe.toml` is in; absent when the type names none.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -381,6 +385,7 @@ fn types(model: &ContentModel) -> Vec<ModelType> {
             name: t.name.clone(),
             files: t.files.iter().map(|p| p.as_str().to_owned()).collect(),
             default: t.default,
+            purpose: t.purpose.clone(),
             template: t.template.as_ref().map(|f| f.path.clone()),
             guide: t.guide.iter().map(|f| f.path.clone()).collect(),
             fields: t.frontmatter.fields.iter().map(field).collect(),
@@ -557,6 +562,23 @@ pub(crate) fn entries(model: &ContentModel, section: Section) -> Vec<String> {
     lines(&self::model(model, Some(section)), section)
 }
 
+/// A line of Markdown for each page type, as the summary lists them, saying
+/// what the type is for: its own `purpose`, else its entry in `summaries`.
+pub(crate) fn type_entries(
+    model: &ContentModel,
+    summaries: &std::collections::BTreeMap<String, String>,
+) -> Vec<String> {
+    types(model)
+        .into_iter()
+        .map(|mut t| {
+            if t.purpose.is_none() {
+                t.purpose = summaries.get(&t.name).cloned();
+            }
+            type_line(&t)
+        })
+        .collect()
+}
+
 /// The summary with the first `taken[i]` lines of section `i`.
 fn render(sections: &[(Section, Vec<String>)], taken: &[usize]) -> String {
     let mut out = String::from("# Content model\n");
@@ -701,6 +723,12 @@ fn type_line(t: &ModelType) -> String {
         text.push_str(": no frontmatter fields");
     } else {
         text.push_str(&format!(": frontmatter {}", fields.join(", ")));
+    }
+    if let Some(purpose) = &t.purpose {
+        // One line, so a `purpose` written over several can't end the list
+        // item it's in.
+        let purpose = purpose.split_whitespace().collect::<Vec<_>>().join(" ");
+        text.push_str(&format!(". {}", purpose.trim_end_matches('.')));
     }
     text
 }

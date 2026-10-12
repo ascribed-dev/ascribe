@@ -691,6 +691,8 @@ pub struct ContentType {
     pub default: bool,
     /// The frontmatter schema.
     pub frontmatter: FrontmatterSchema,
+    /// What a page of the type is for, in a few words, `purpose`.
+    pub purpose: Option<String>,
     /// The page a page of the type starts from, `template`.
     pub template: Option<TypeFile>,
     /// What to read before writing a page of the type, `guide`, in the order
