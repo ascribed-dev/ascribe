@@ -92,7 +92,7 @@ match = "marked"
 term = "dimension"
 aliases = ["dimensions"]
 definition = "An axis content varies along, such as a package manager or a deployment, declared in ascribe.toml."
-link = "reference/content-model/content.md#6-dimensionsname"
+link = "reference/content-model/content.md#dimensions"
 
 [glossary.terms.fragment]
 term = "fragment"

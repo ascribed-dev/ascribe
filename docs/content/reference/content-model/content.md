@@ -6,7 +6,7 @@ description: "The content model's dimensions, versions, lifecycle states, featur
 Part of the [`ascribe.toml` reference](../content-model.md), whose [contents](../content-model.md#contents) list every section.
 
 ## 6. `[dimensions.<name>]`
-@id {permalink=true}: 6-dimensionsname
+@id {permalink=true}: dimensions
 
 @include: ../../_fragments/content-model/dimensions.md
 
@@ -50,7 +50,7 @@ No other scheme is defined. The table exists so a later spec version can add one
 ---
 
 ## 11. `[phrases]`
-@id {permalink=true}: 11-phrases
+@id {permalink=true}: phrases
 
 @include: ../../_fragments/content-model/phrases.md
 

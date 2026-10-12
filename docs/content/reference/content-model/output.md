@@ -6,7 +6,7 @@ description: "How the content model sets the site's consumer, the builds, the ed
 Part of the [`ascribe.toml` reference](../content-model.md), whose [contents](../content-model.md#contents) list every section.
 
 ## 15. `[consumer]`
-@id {permalink=true}: 15-consumer
+@id {permalink=true}: consumer
 
 @include: ../../_fragments/content-model/consumer.md
 

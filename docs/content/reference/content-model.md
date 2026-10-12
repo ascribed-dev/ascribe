@@ -21,16 +21,16 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics/c
 3. [`[project]`](#3-project)
 4. [`[types.<name>]` and `[fragments]`](#4-typesname-and-fragments)
 5. [Field and attribute types](#5-field-and-attribute-types)
-6. [`[dimensions.<name>]`](content-model/content.md#6-dimensionsname)
+6. [`[dimensions.<name>]`](content-model/content.md#dimensions)
 7. [`[versions]`](content-model/content.md#7-versions)
 8. [`[lifecycle.<state>]`](content-model/content.md#8-lifecyclestate)
 9. [`[features.<key>]`](content-model/content.md#9-featureskey)
 10. [`[notes.<type>]`](content-model/content.md#10-notestype)
-11. [`[phrases]`](content-model/content.md#11-phrases)
+11. [`[phrases]`](content-model/content.md#phrases)
 12. [`[glossary]`](content-model/content.md#12-glossary)
 13. [`[images]`](content-model/content.md#13-images)
 14. [`[widgets.<name>]`](content-model/content.md#14-widgetsname)
-15. [`[consumer]`](content-model/output.md#15-consumer)
+15. [`[consumer]`](content-model/output.md#consumer)
 16. [`[builds.<name>]`](content-model/output.md#16-buildsname)
 17. [`[editor]`](content-model/output.md#17-editor)
 18. [`[sources.<name>]`](content-model/output.md#18-sourcesname)
@@ -102,13 +102,13 @@ listing: unlisted
 ---
 ```
 
-Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. In an Astro site, `@ascribed/astro` writes the page's head, the sitemap, and `robots.txt` from it too ([the Astro guide](../guides/astro.md#search-engines-and-crawlers)). The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](content-model/output.md#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
+Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. In an Astro site, `@ascribed/astro` writes the page's head, the sitemap, and `robots.txt` from it too ([the Astro guide](../guides/astro.md#search-engines-and-crawlers)). The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](content-model/output.md#consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
 
 A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](content-model/checks.md#22-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
 
 What isn't handled yet:
 
-- **The Markdown version of a page that isn't listed can still be indexed** unless the host sends it with `X-Robots-Tag: noindex`, since only a response header keeps a file that isn't HTML out of a search index. With [`[consumer] headers`](content-model/output.md#15-consumer) set, the build gives the host the header; without it, the header is in `_ascribe/headers.json`, and the host sends it only if a deploy step gives it the list.
+- **The Markdown version of a page that isn't listed can still be indexed** unless the host sends it with `X-Robots-Tag: noindex`, since only a response header keeps a file that isn't HTML out of a search index. With [`[consumer] headers`](content-model/output.md#consumer) set, the build gives the host the header; without it, the header is in `_ascribe/headers.json`, and the host sends it only if a deploy step gives it the list.
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 

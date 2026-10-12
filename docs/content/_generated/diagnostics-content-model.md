@@ -270,7 +270,7 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `phrases = true`, or make the field a `string` or `list(string)`.
 
-**Read more:** [`[phrases]`](../reference/content-model/content.md#11-phrases) in the `ascribe.toml` reference.
+**Read more:** [`[phrases]`](../reference/content-model/content.md#phrases) in the `ascribe.toml` reference.
 
 ### ASC081 `model-pattern-syntax`
 @id {permalink=true}: ASC081
@@ -371,7 +371,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Add the dimension's values, or remove the dimension.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC085 `model-dimension-value-duplicate`
 @id {permalink=true}: ASC085
@@ -382,7 +382,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the repeated value.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC086 `model-dimension-value-shared`
 @id {permalink=true}: ASC086
@@ -393,7 +393,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the value in one of the dimensions.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC087 `model-label-undeclared`
 @id {permalink=true}: ASC087
@@ -404,7 +404,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the label's key, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC088 `model-versionless-undeclared`
 @id {permalink=true}: ASC088
@@ -415,7 +415,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the entry, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#dimensions) in the `ascribe.toml` reference.
 
 ### ASC089 `model-lifecycle-available-required`
 @id {permalink=true}: ASC089
@@ -516,7 +516,7 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Quote the value.
 
-**Read more:** [`[phrases]`](../reference/content-model/content.md#11-phrases) in the `ascribe.toml` reference.
+**Read more:** [`[phrases]`](../reference/content-model/content.md#phrases) in the `ascribe.toml` reference.
 
 ### ASC098 `model-glossary-duplicate-term`
 @id {permalink=true}: ASC098
@@ -619,7 +619,7 @@ Error · file level · next step: choose · [SPEC §9.5]({repo}/blob/main/SPEC.m
 
 **Fix:** Use one of the values the message lists.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC107 `model-consumer-site`
 @id {permalink=true}: ASC107
@@ -630,7 +630,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `site` to the origin alone, such as `"https://docs.example.com"`, and put any path in `base-path`.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC108 `model-consumer-base-path`
 @id {permalink=true}: ASC108
@@ -641,7 +641,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Start `base-path` with `/`: `"/docs/"`.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC109 `model-build-name-case`
 @id {permalink=true}: ASC109
@@ -762,7 +762,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `site` in `[consumer]` to the published site's origin, such as `"https://docs.example.com"`, or remove `agents`.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ### ASC174 `model-consumer-permalink-path`
 @id {permalink=true}: ASC174
@@ -773,7 +773,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Start `permalink-path` with `/`: `"/go/"`. It's a path from the site's root, not from `base-path`.
 
-**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#consumer) in the `ascribe.toml` reference.
 
 ## `[permalinks]`
 
