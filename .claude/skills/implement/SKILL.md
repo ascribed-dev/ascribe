@@ -16,7 +16,7 @@ An implementor gets one card, already moved to **In progress** by the coordinato
 3. **Build the change** on the thread's branch, with its tests, its conformance case for a behavior change, its docs page, and its changelog entry in `changes/` (never an edit to `CHANGELOG.md`), as AGENTS.md says. Run every check AGENTS.md lists before pushing.
 4. **Open the pull request** with the repository's template. Put `Closes #N` in the description, so the merge closes the issue and GitHub moves the card to Done.
 5. **Watch the pull request:** subscribe to its activity. Fix CI until it's green.
-6. **Move the card to In review** once CI is green. Not before: a red pull request in review wastes the reviewer's pass.
+6. **Move the card to In review** once CI is green. Not before: a red pull request in review wastes the reviewer's pass. Then say so in a new reply in your thread, with the pull request's link, and don't only edit an earlier message: an edit notifies no one, so no reviewer is started for the card.
 7. **Answer the review.** The reviewer's comments arrive as pull request events. Fix what's blocking, push, and reply on each thread. Say in a reply when you don't make a change, and why. Leave the card in In review; the reviewer looks again at each push.
 
 ## When it's not one pull request
