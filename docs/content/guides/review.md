@@ -72,7 +72,7 @@ npx astro dev
 
 Open the site in your browser and choose the **Ascribe review** app in Astro's dev toolbar, at the bottom of the page: opening it starts review. Its panel has the same controls as the page preview's header: the pull request and its base, the changes on the page, **Changes / As it will be / As it was**, next and previous change, **Comments**, **Refresh**, and **More review actions** (**⋯**). **Prompt agent** copies its prompt to the clipboard. Comments, replies, resolving, and submitting work as in the page preview, and go into the same review on GitHub. Close the panel to read the page; review stays on, on every page, until **Stop Review** or until `astro dev` stops.
 
-In VS Code, **Ascribe: Open Site Preview** opens the page you're editing on the dev server, and the page preview's **Page | Site** switch shows the dev server's page in the preview panel. From a mark or a thread in either preview, **Open source** opens the file at its lines. [Review in the site preview](astro.md#review-in-the-site-preview) has the details.
+In VS Code, **Ascribe: Open Site Preview** opens the page you're editing on the dev server, and the page preview's **Page | Site** switch shows the dev server's page in the preview panel. From a mark or a thread in either preview, **Open source** opens the file at its lines. [Review in the site preview](../reference/astro.md#review-in-the-site-preview) has the details.
 
 ## What you need for each part
 

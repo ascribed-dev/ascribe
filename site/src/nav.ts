@@ -48,6 +48,7 @@ export const nav: NavGroup[] = [
       "reference/diagnostics/content-model.md",
       "reference/diagnostics/content-checks.md",
       "reference/elements.md",
+      "reference/astro.md",
       "reference/project-files.md",
     ],
   },
