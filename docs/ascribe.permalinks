@@ -2,6 +2,9 @@
 version = 1
 
 [permalinks]
+11-phrases = "reference/content-model/content.md#11-phrases"
+15-consumer = "reference/content-model/output.md#15-consumer"
+6-dimensionsname = "reference/content-model/content.md#6-dimensionsname"
 7-source-anchors = "contracts/site-render.md#7-source-anchors"
 ASC001 = "_generated/diagnostics-directives.md#ASC001"
 ASC002 = "_generated/diagnostics-directives.md#ASC002"
@@ -215,6 +218,7 @@ cli-diff = "reference/cli/diff.md#cli-diff"
 cli-drift = "reference/cli/diff.md#cli-drift"
 cli-explain = "reference/cli/questions.md#cli-explain"
 cli-fmt = "reference/cli/check.md#cli-fmt"
+cli-init = "reference/cli/sources.md#cli-init"
 cli-link = "reference/cli/questions.md#cli-link"
 cli-lsp = "reference/cli/agents.md#cli-lsp"
 cli-mcp = "reference/cli/agents.md#cli-mcp"

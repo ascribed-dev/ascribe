@@ -251,6 +251,41 @@ fn every_address_the_binary_builds_is_a_permalink_of_the_docs() {
     assert!(checked > 150, "only {checked} addresses");
 }
 
+/// Each address in the `ascribe.toml` that `ascribe init` writes, and the
+/// one its last line gives, is a permalink of the docs, in the committed
+/// list: the file is the first of Ascribe's a new user opens, and its links
+/// must keep working. Each comment's link leads to a section of the
+/// `ascribe.toml` reference.
+#[test]
+fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
+    let text = docs_list();
+    let list = ascribe_model::PermalinkList::parse(&text, ascribe_core::FileId::new(0)).unwrap();
+    let names: Vec<&str> = ascribe_templates::MODEL_TEXT
+        .split(crate::cli::DOCS_PERMALINKS)
+        .skip(1)
+        .map(|rest| rest.split_once('/').unwrap().0)
+        .collect();
+    assert_eq!(names.len(), 4, "{names:?}");
+    for name in &names {
+        let place = &list
+            .permalinks
+            .get(*name)
+            .unwrap_or_else(|| {
+                panic!("the first ascribe.toml links to {name}, which the docs don't publish")
+            })
+            .place;
+        assert!(
+            place.starts_with("reference/content-model"),
+            "{name} leads to {place}, not the ascribe.toml reference"
+        );
+    }
+    let next = ascribe_templates::init::NEXT
+        .strip_prefix(crate::cli::DOCS_PERMALINKS)
+        .and_then(|rest| rest.strip_suffix('/'))
+        .unwrap();
+    assert_eq!(list.permalinks[next].place, "guides/astro.md");
+}
+
 /// The docs' committed list is what `ascribe permalinks sync` writes for
 /// them, so a permalink they add is in it, and so is every one they had.
 #[test]

@@ -7,6 +7,7 @@ pub mod diff;
 pub mod drift;
 pub mod explain;
 pub mod fmt;
+pub mod init;
 pub mod link;
 pub mod lsp;
 pub mod mcp;
