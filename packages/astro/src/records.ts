@@ -58,12 +58,40 @@ export interface Step {
   title: string;
 }
 
+/** What a kind of crawler is for: gathering training data, building an AI search index, or fetching at a person's request. */
+type Purpose = "training" | "search" | "on-request";
+
+/** The group of `robots.txt` a disallowed purpose writes. */
+export interface RobotsGroup {
+  purpose: Purpose;
+  /** Every token of the purpose the binary knows, each a `User-agent` line. */
+  user_agents: string[];
+  /** The group's rules: `Disallow: /`. */
+  lines: string[];
+}
+
+/** What a project says to crawlers. */
+export interface Robots {
+  /** The project's own lines, with paths from the host's root. */
+  lines: string[];
+  /** What the project says of each purpose it sets. */
+  purposes?: Partial<Record<Purpose, "allow" | "disallow">>;
+  /** A group for each purpose the project disallows. */
+  groups?: RobotsGroup[];
+}
+
 /** `_ascribe/pages.json`. */
 export interface PageRecords {
   version: number;
   site?: string;
   pages: Record<string, Omit<PageRecord, "route">>;
-  robots: { lines: string[] };
+  robots: Robots;
+}
+
+/** What one project says to crawlers, by the name of its first entry. */
+export interface ProjectRobots {
+  name: string;
+  robots: Robots;
 }
 
 function recordsFile(siteRoot: string): string {
@@ -204,28 +232,58 @@ export function sitemapXml(addresses: readonly string[]): string {
 const USER_AGENT = /^\s*user-agent\s*:/i;
 
 /**
- * A site's `robots.txt` from each project's lines: a `User-agent: *` group
- * with every project's lines before its first `User-agent` line, which are
- * for every crawler, then the groups each project wrote whole, then the
- * sitemap's address. `undefined` when it would say nothing.
+ * A site's `robots.txt` from what each project says to crawlers: a group for
+ * each purpose a project disallows, once for the site, then a
+ * `User-agent: *` group with every project's lines before its first
+ * `User-agent` line, which are for every crawler, then the groups each
+ * project wrote whole, then the sitemap's address. `undefined` when it would
+ * say nothing.
  */
 export function robotsText(
-  projects: readonly (readonly string[])[],
+  projects: readonly Robots[],
   sitemap: string | undefined,
 ): string | undefined {
+  const purposes = new Map<Purpose, string[]>();
   const everyone: string[] = [];
   const groups: string[][] = [];
-  for (const lines of projects) {
+  for (const robots of projects) {
+    for (const group of robots.groups ?? []) {
+      if (purposes.has(group.purpose)) continue;
+      purposes.set(group.purpose, [
+        ...group.user_agents.map((agent) => `User-agent: ${agent}`),
+        ...group.lines,
+      ]);
+    }
+    const lines = robots.lines;
     const first = lines.findIndex((line) => USER_AGENT.test(line));
     everyone.push(...(first === -1 ? lines : lines.slice(0, first)));
-    if (first !== -1) groups.push(lines.slice(first) as string[]);
+    if (first !== -1) groups.push(lines.slice(first));
   }
-  const blocks: string[][] = [];
+  const blocks: string[][] = [...purposes.values()];
   if (everyone.length > 0) blocks.push(["User-agent: *", ...everyone]);
   blocks.push(...groups);
   if (sitemap !== undefined) blocks.push([`Sitemap: ${sitemap}`]);
   if (blocks.length === 0) return undefined;
   return `${blocks.map((block) => block.join("\n")).join("\n\n")}\n`;
+}
+
+/**
+ * Two projects that say contradictory things about one purpose, as
+ * sentences: one allows it and the other disallows it. A site has one
+ * `robots.txt`, so they must agree. A project that says nothing of a purpose
+ * agrees with either.
+ */
+export function purposeConflicts(projects: readonly ProjectRobots[]): string[] {
+  const problems: string[] = [];
+  for (const purpose of ["training", "search", "on-request"] as const) {
+    const allow = projects.find((p) => p.robots.purposes?.[purpose] === "allow");
+    const disallow = projects.find((p) => p.robots.purposes?.[purpose] === "disallow");
+    if (allow === undefined || disallow === undefined) continue;
+    problems.push(
+      `"${disallow.name}" has [crawlers] ${purpose} = "disallow" and "${allow.name}" has ${purpose} = "allow". The site has one robots.txt, so its projects must agree: make them the same, or remove one.`,
+    );
+  }
+  return problems;
 }
 
 /** Where the sitemap is, from the host's root: at Astro's `base`. */

@@ -672,6 +672,21 @@ fn cases() -> Vec<Case> {
         case(
             "model-invalid-value",
             None,
+            "spec = \"0.1\"\n[crawlers]\ntraining = \"block\" #!\n",
+        ),
+        case(
+            "model-crawlers-named-twice",
+            Some("purpose"),
+            "spec = \"0.1\"\n[crawlers]\ntraining = \"disallow\"\nlines = [\n\"User-agent: gptbot\", #!\n\"Disallow: /a/\",\n]\n",
+        ),
+        case(
+            "model-crawlers-named-twice",
+            None,
+            "spec = \"0.1\"\n[crawlers]\nlines = [\n\"User-agent: Bot\",\n\"Disallow: /a/\",\n\"User-agent: bot\", #!\n\"Disallow: /b/\",\n]\n",
+        ),
+        case(
+            "model-invalid-value",
+            None,
             "spec = \"0.1\"\n[listing]\ndefault = \"hidden\" #!\n",
         ),
         case(

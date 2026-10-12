@@ -16,6 +16,7 @@ afterAll(async () => {
 
 /** `_ascribe/pages.json`, as much as these tests read. */
 interface Records {
+  robots: { groups: { user_agents: string[]; lines: string[] }[] };
   pages: Record<
     string,
     {
@@ -229,20 +230,38 @@ describe("a site at the host's root", () => {
 });
 
 describe("two projects", () => {
-  async function site(name: string): Promise<string> {
+  /**
+   * Both projects disallow training, and the home page's project allows
+   * search too, which the docs don't mention: they agree. `on-request` is
+   * `home`'s alone, as given.
+   */
+  async function site(name: string, onRequest = "allow"): Promise<string> {
     const root = await withUnlisted(await twoProjects(name));
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.replace("[crawlers]\n", '[crawlers]\ntraining = "disallow"\n'),
+    );
     await edit(
       path.join(root, "home", "ascribe.toml"),
       (text) =>
-        `${text}\n[crawlers]\nlines = ["Disallow: /private/", "User-agent: ExampleBot", "Disallow: /"]\n`,
+        `${text}\n[crawlers]\ntraining = "disallow"\nsearch = "allow"\non-request = "${onRequest}"\n` +
+        `lines = ["Disallow: /private/", "User-agent: ExampleBot", "Disallow: /"]\n`,
     );
     return root;
   }
 
-  const ROBOTS =
-    "User-agent: *\nDisallow: /docs/drafts/\nDisallow: /private/\n\n" +
-    "User-agent: ExampleBot\nDisallow: /\n\n" +
-    "Sitemap: https://docs.example.com/sitemap.xml\n";
+  /** The training group, from the docs' records, then the lines. */
+  async function robots(root: string): Promise<string> {
+    const [group] = (await records(root)).robots.groups;
+    expect(group?.user_agents.length).toBeGreaterThan(0);
+    return (
+      [...(group?.user_agents ?? []).map((agent) => `User-agent: ${agent}`), ...(group?.lines ?? [])]
+        .map((line) => `${line}\n`)
+        .join("") +
+      "\nUser-agent: *\nDisallow: /docs/drafts/\nDisallow: /private/\n\n" +
+      "User-agent: ExampleBot\nDisallow: /\n\n" +
+      "Sitemap: https://docs.example.com/sitemap.xml\n"
+    );
+  }
   const SITEMAP = [
     "https://docs.example.com/",
     "https://docs.example.com/docs",
@@ -256,7 +275,9 @@ describe("two projects", () => {
     expect(locations(await readFile(path.join(root, "dist", "sitemap.xml"), "utf8"))).toEqual(
       SITEMAP,
     );
-    expect(await readFile(path.join(root, "dist", "robots.txt"), "utf8")).toBe(ROBOTS);
+    expect(await readFile(path.join(root, "dist", "robots.txt"), "utf8")).toBe(
+      await robots(root),
+    );
   });
 
   it("make them in astro dev", async () => {
@@ -264,11 +285,19 @@ describe("two projects", () => {
     const server = await serveDev(root);
     try {
       expect(locations(await text(server.origin, "/sitemap.xml"))).toEqual(SITEMAP);
-      expect(await text(server.origin, "/robots.txt")).toBe(ROBOTS);
+      expect(await text(server.origin, "/robots.txt")).toBe(await robots(root));
     } finally {
       await server.stop();
     }
   }, 90_000);
+
+  it("fail a build when they disagree on a purpose, naming both", async () => {
+    const root = await site("records-two-disagree", "disallow");
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.replace("[crawlers]\n", '[crawlers]\non-request = "allow"\n'),
+    );
+    await expect(buildSite(root)).rejects.toThrow(/on-request = "disallow" and "docs"/);
+  });
 });
 
 describe("what a site leaves out", () => {

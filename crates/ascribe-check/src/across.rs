@@ -11,7 +11,7 @@
 //!   the image files under the content root, through the project's
 //!   [`FileSystem`](ascribe_resolve::FileSystem); and
 //!   `availability-left-behind` compares each feature's versions with
-//!   `[versions] current`.
+//!   `[versions] current`; and `crawlers-disallowed` reads `[crawlers]`.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, and `title-duplicate`, two pages the build publishes with one
@@ -28,7 +28,9 @@ use std::sync::Arc;
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::{CheckLevel, Checks, GlossaryMatch};
+use ascribe_model::{
+    CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission, Purpose,
+};
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
 use crate::page::Found;
@@ -54,6 +56,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::IMAGE_UNUSED,
     diagnostics::IMAGE_LARGE,
     diagnostics::AVAILABILITY_LEFT_BEHIND,
+    diagnostics::CRAWLERS_DISALLOWED,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -167,6 +170,10 @@ pub(crate) fn for_every_build(
         }
     }
 
+    if on(diagnostics::CRAWLERS_DISALLOWED) {
+        crawlers_disallowed(project.model(), &mut issues);
+    }
+
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
         self::images(project, index, &on, &mut issues);
     }
@@ -181,6 +188,35 @@ pub(crate) fn for_every_build(
         list.sort_by_key(|d| d.location.span);
     }
     out
+}
+
+/// `crawlers-disallowed`: `search` or `on-request` disallowed in
+/// `[crawlers]`, at the choice, when the site's pages are listed unless they
+/// say otherwise. With `[listing] default = "unlisted"` nothing is listed,
+/// so keeping AI search out costs nothing more.
+fn crawlers_disallowed(model: &ContentModel, issues: &mut Vec<Issue>) {
+    let listed = model
+        .listing
+        .default
+        .as_ref()
+        .is_none_or(|rule| rule.listing != Listing::Unlisted);
+    if !listed {
+        return;
+    }
+    for choice in &model.crawlers.purposes {
+        if choice.permission != Permission::Disallow || choice.purpose == Purpose::Training {
+            continue;
+        }
+        let mut issue = Issue::new(
+            diagnostics::CRAWLERS_DISALLOWED,
+            Location::new(FileId::new(0), choice.span),
+        )
+        .with_arg("purpose", choice.purpose.name());
+        if choice.purpose == Purpose::OnRequest {
+            issue = issue.with_variant("on-request");
+        }
+        issues.push(issue);
+    }
 }
 
 /// `image-unused` and `image-large`, for each image file under the content

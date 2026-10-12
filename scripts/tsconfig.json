@@ -22,6 +22,7 @@
     "compare/**/*.ts",
     "project-docs/**/*.ts",
     "design/**/*.ts",
-    "surface/**/*.ts"
+    "surface/**/*.ts",
+    "crawlers/**/*.ts"
   ]
 }

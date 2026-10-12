@@ -107,7 +107,17 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
       ]
     }
   },
-  "robots": { "lines": ["Disallow: /drafts/"] }
+  "robots": {
+    "lines": ["Disallow: /drafts/"],
+    "purposes": { "training": "disallow", "search": "allow" },
+    "groups": [
+      {
+        "purpose": "training",
+        "user_agents": ["GPTBot", "ClaudeBot"],
+        "lines": ["Disallow: /"]
+      }
+    ]
+  }
 }
 ```
 
@@ -127,6 +137,8 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 | `pages.*.breadcrumbs` | The page's place in the site, from the top down to the page itself: one step for each folder of its route that is the route of a page the build publishes, then the page. Each step has `route`, from the host's root as the page keys have it, and `title`, that page's title. A folder with no page at its route isn't a step, and neither is a page with no title. The folders are the route's within the build, so under a base path the first step is the page at the base path. The content model has no navigation, so the steps are drawn from the route alone. |
 | `robots` | What the project says to crawlers. |
 | `robots.lines` | The project's `[crawlers] lines` (content-model contract §21), in order, each path in an `Allow` or `Disallow` line with the base path before it, so that each is from the host's root, and every other line as written. Lines before any `User-agent` line are for every crawler. Empty when the project has none. |
+| `robots.purposes` | What the project says of each purpose in `[crawlers]` (content-model contract §21), keyed by `training`, `search`, or `on-request`, each `allow` or `disallow`. Only the purposes it sets; empty when it sets none. A site whose projects share one `robots.txt` reads it to find two that disagree. |
+| `robots.groups` | A group of `robots.txt` for each purpose the project disallows, in the order `training`, `search`, `on-request`: `purpose`; `user_agents`, every crawler of that purpose Ascribe knows, each to be written as a `User-agent` line; and `lines`, the group's rules, `Disallow: /`. Empty when the project disallows none. A site writes these groups before the `*` group, and each purpose once. |
 
 A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
 
