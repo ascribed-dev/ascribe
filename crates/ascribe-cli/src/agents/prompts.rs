@@ -278,24 +278,17 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
 /// directory, or, when nothing is there, from the content root. `None` when
 /// it names the project, or the content root itself.
 fn page_path(project: &Project, given: &Path) -> Option<RelPath> {
-    let absolute = |p: &Path| normalize(&std::path::absolute(p).unwrap_or_else(|_| p.to_owned()));
-    let content = absolute(project.root()).join(project.content_root().as_str());
-    let content = normalize(&content);
-    let inside = |path: &Path| {
-        relative_path(&content, path)
-            .filter(RelPath::is_inside)
-            .filter(|rel| !rel.is_root())
-    };
-    let from_here = absolute(given);
-    if let Some(rel) = inside(&from_here) {
+    let [from_here, as_content] = answer::content_path_readings(project, given);
+    let page = |rel: RelPath| Some(rel).filter(|r| r.is_inside() && !r.is_root());
+    if let Some(rel) = from_here.and_then(page) {
         return Some(rel);
     }
     // Outside FileSystem: whether the argument names something that's there,
     // which makes it the project's file or folder, not the page's.
-    if given.is_absolute() || from_here.exists() {
+    if given.is_absolute() || given.exists() {
         return None;
     }
-    inside(&normalize(&content.join(given)))
+    as_content.and_then(page)
 }
 
 /// A title in double quotes, its own double quotes escaped.
@@ -331,7 +324,7 @@ fn guide(page_type: &ContentType, context: &Context) -> Option<String> {
 /// What the page starts with: the type's template with the title set, or,
 /// for a type with none, its frontmatter.
 fn start_with(page_type: &ContentType, text: &str) -> String {
-    let fence = "`".repeat(longest_run(text, '`').max(2) + 1);
+    let fence = answer::fence(text);
     let lead = if page_type.template.is_some() {
         "Start the file with this text, the type's template with the title set. Write over \
          each placeholder, the text in `{curly brackets}`, and each quoted instruction, and \
@@ -346,16 +339,6 @@ fn start_with(page_type: &ContentType, text: &str) -> String {
         "yaml"
     };
     format!("{lead}\n{fence}{info}\n{text}{fence}")
-}
-
-/// The most times `c` is repeated in a row in `text`.
-fn longest_run(text: &str, c: char) -> usize {
-    let (mut longest, mut run) = (0, 0);
-    for ch in text.chars() {
-        run = if ch == c { run + 1 } else { 0 };
-        longest = longest.max(run);
-    }
-    longest
 }
 
 /// One line per field: its name, type, whether it's required, the values it
