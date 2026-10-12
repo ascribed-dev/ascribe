@@ -1,17 +1,22 @@
 //! `ascribe templates`: the page templates Ascribe carries. `list` shows the
-//! set, and `eject` writes templates into the project, as its own files, and
-//! declares their types (`ascribe_templates::eject`).
+//! set, `eject` writes templates into the project, as its own files, and
+//! declares their types (`ascribe_templates::eject`), and `status` says
+//! what's changed in the set since the project's copy
+//! (`ascribe_templates::status`).
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{LocateError, Project};
+use ascribe_check::{LoadError, LocateError, Project};
 use ascribe_core::Coded;
 use ascribe_core::RelPath;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_resolve::{DiskFs, Layout};
-use ascribe_templates::{EjectAnswer, TEMPLATES_DIR};
+use ascribe_templates::{
+    Change, EjectAnswer, FileStatus, Record, SectionChangeKind, StatusAnswer, TEMPLATES_DIR,
+    TemplateStatus, Upstream, UpstreamChange,
+};
 use clap::{Args as ClapArgs, Subcommand};
 
 use crate::answer::{self, Format, from_here};
@@ -40,6 +45,14 @@ pub enum Command {
     /// one would be written.
     #[command(after_help = docs_link!("cli-templates-eject"))]
     Eject(EjectArgs),
+    /// Say what's changed in the templates since the project's copy: for
+    /// each template it took, whether the set has changed it and whether
+    /// the project has, and each template it doesn't have.
+    ///
+    /// Compares the project's files and templates.lock with the set this
+    /// ascribe carries, and reads nothing else. Changes no file.
+    #[command(after_help = docs_link!("cli-templates-status"))]
+    Status(StatusArgs),
 }
 
 /// Arguments of `ascribe templates list`.
@@ -65,6 +78,25 @@ pub struct EjectArgs {
     pub format: Format,
 }
 
+/// Arguments of `ascribe templates status`.
+#[derive(Debug, ClapArgs)]
+pub struct StatusArgs {
+    /// How to show what's changed.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
+
+    /// Exit with 1 when the set has changed a template the project took
+    /// since the copy.
+    #[arg(long)]
+    pub exit_code: bool,
+
+    /// Print the change to one template, by name, as a unified diff from
+    /// the project's files to the set's, instead of the status. It applies
+    /// nothing.
+    #[arg(long, value_name = "NAME", conflicts_with = "format")]
+    pub diff: Option<String>,
+}
+
 /// Why `ascribe templates eject` couldn't do its work, before the library's
 /// own errors.
 #[derive(Debug, thiserror::Error)]
@@ -82,6 +114,14 @@ pub enum TemplatesError {
         /// The project's folder.
         root: PathBuf,
     },
+    /// `--diff` names a template neither the set nor the project has.
+    #[error("there's no template named `{name}`; the set has {known}")]
+    Unknown {
+        /// The name given.
+        name: String,
+        /// The set's names.
+        known: String,
+    },
 }
 
 impl Coded for TemplatesError {
@@ -89,6 +129,7 @@ impl Coded for TemplatesError {
         match self {
             TemplatesError::NoProject(e) => e.code(),
             TemplatesError::ToOutside { .. } => "templates_folder_refused",
+            TemplatesError::Unknown { .. } => "unknown_template",
         }
     }
 }
@@ -102,6 +143,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let code = match args.command {
         Command::List(_) => run_list(&mut out, &mut err),
         Command::Eject(args) => run_eject(global, &args, &mut out, &mut err),
+        Command::Status(args) => run_status(global, &args, &mut out, &mut err),
     };
     let _ = out.flush();
     exit::code(code)
@@ -262,4 +304,235 @@ pub(crate) fn write_added(
         )?,
     }
     Ok(())
+}
+
+/// Exit codes: 0 whatever it finds; 1 with `--exit-code` when the set has
+/// changed a template the project took, or when `--diff` names one of the
+/// set's the project hasn't taken; 2 when it couldn't run, or `--diff` names
+/// a template the set doesn't have.
+fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let config = match locate(global) {
+        Ok(config) => config,
+        Err(e) => return answer::fail(err, &Failure::Config(e)),
+    };
+    let root = match config.parent() {
+        Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
+        _ => PathBuf::from("."),
+    };
+    // A template or guide that's gone is something status reports, so the
+    // model's own check of its files doesn't stop it: what's written in
+    // ascribe.toml must still load.
+    let model = match Project::load_model(&config) {
+        Ok(file) => file.model,
+        Err(LoadError::Model { text, diagnostics }) => {
+            match ascribe_model::load_str(&text, ascribe_core::FileId::new(0)) {
+                Ok(model) => model,
+                Err(_) => {
+                    let failure = Failure::Load(LoadError::Model { text, diagnostics });
+                    return answer::report_failure(err, &failure);
+                }
+            }
+        }
+        Err(e) => return answer::report_failure(err, &Failure::Load(e)),
+    };
+    let fs = DiskFs::new(&root, &Layout::from_model(&model));
+    let upstream = Upstream::carried();
+    let status = ascribe_templates::status(
+        &ascribe_templates::Status {
+            model: &model,
+            upstream: &upstream,
+        },
+        &fs,
+    );
+    if let Some(name) = &args.diff {
+        return run_diff(args, &root, &status, name, &upstream, &fs, out, err);
+    }
+    let result = match args.format {
+        Format::Json => answer::write_json(out, &status),
+        Format::Text => write_status(out, &root, &status),
+    };
+    if let Some(code) = answer::written(result, err) {
+        return code;
+    }
+    if args.exit_code && status.upstream_changed {
+        exit::PROBLEMS
+    } else {
+        exit::OK
+    }
+}
+
+/// `--diff`: the change to one template.
+#[allow(clippy::too_many_arguments)]
+fn run_diff(
+    args: &StatusArgs,
+    root: &Path,
+    status: &StatusAnswer,
+    name: &str,
+    upstream: &Upstream,
+    fs: &DiskFs,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> u8 {
+    let Some(diffs) = ascribe_templates::diff(status, name, upstream, fs) else {
+        if status.not_taken.iter().any(|t| t.name == name) {
+            let _ = writeln!(
+                err,
+                "error: the project hasn't taken `{name}`: `ascribe templates eject {name}` writes it"
+            );
+            return exit::PROBLEMS;
+        }
+        let known: Vec<String> = upstream
+            .set
+            .templates
+            .iter()
+            .map(|t| format!("`{}`", t.name))
+            .collect();
+        let error = TemplatesError::Unknown {
+            name: name.to_owned(),
+            known: known.join(", "),
+        };
+        return answer::fail(err, &error);
+    };
+    let result = (|| {
+        if diffs.is_empty() {
+            return writeln!(
+                err,
+                "{name}: nothing has changed in the set since the copy; this ascribe's set is at {}",
+                status.set.tag
+            );
+        }
+        for diff in &diffs {
+            let path = from_here(root, &diff.path);
+            match diff.project {
+                Change::Changed => writeln!(
+                    err,
+                    "note: {path} isn't as eject wrote it, so the diff undoes the project's changes too"
+                )?,
+                Change::Unknown => writeln!(
+                    err,
+                    "note: templates.lock remembers nothing of {path}, so the diff may undo changes the project made"
+                )?,
+                Change::Unchanged | Change::Deleted => {}
+            }
+            write!(out, "{}", diff.diff)?;
+        }
+        Ok(())
+    })();
+    if let Some(code) = answer::written(result, err) {
+        return code;
+    }
+    let changed = status
+        .templates
+        .iter()
+        .any(|t| t.name == name && t.upstream == UpstreamChange::Changed);
+    if args.exit_code && changed {
+        exit::PROBLEMS
+    } else {
+        exit::OK
+    }
+}
+
+/// The status, for people: the set's release, then each template the
+/// project took, with each file that has something to say, then the ones it
+/// didn't take.
+fn write_status(out: &mut dyn Write, root: &Path, status: &StatusAnswer) -> io::Result<()> {
+    writeln!(
+        out,
+        "This ascribe's templates are The Good Docs Project's, {}, at {}.",
+        status.set.repository, status.set.tag
+    )?;
+    for template in &status.templates {
+        writeln!(out, "{}: {}", template.name, template_line(root, template))?;
+        for file in &template.files {
+            let Some(line) = file_line(template.record, file) else {
+                continue;
+            };
+            writeln!(out, "  {}: {line}", from_here(root, &file.path))?;
+            for section in file.sections.iter().flatten() {
+                let heading = section
+                    .heading
+                    .as_deref()
+                    .map_or_else(|| "the start".to_owned(), |h| format!("\"{h}\""));
+                let change = match section.change {
+                    SectionChangeKind::Added => "added",
+                    SectionChangeKind::Removed => "removed",
+                    SectionChangeKind::Changed => "changed",
+                };
+                writeln!(out, "    {change}: {heading}")?;
+            }
+        }
+    }
+    if !status.not_taken.is_empty() {
+        let names: Vec<&str> = status.not_taken.iter().map(|t| t.name.as_str()).collect();
+        writeln!(
+            out,
+            "Not taken: {}. `ascribe templates eject <NAME>` writes one.",
+            names.join(", ")
+        )?;
+    }
+    if status.upstream_changed {
+        writeln!(
+            out,
+            "To see a change, run `ascribe templates status --diff <NAME>`. Nothing was changed."
+        )?;
+    }
+    Ok(())
+}
+
+/// What's said of a template, after its name.
+fn template_line(root: &Path, template: &TemplateStatus) -> String {
+    let lock = from_here(root, &template.lock);
+    let unknown = "so what changed in the set can't be told from what changed here";
+    match template.record {
+        Record::NoLock => format!("there's no {lock}, {unknown}"),
+        Record::NoEntry => format!("{lock} has no entry for it, {unknown}"),
+        Record::InvalidLock => format!(
+            "{lock} can't be read ({}), {unknown}",
+            template
+                .lock_problem
+                .as_deref()
+                .unwrap_or("it isn't one eject wrote")
+        ),
+        Record::Entry => {
+            let from = template
+                .copied_from
+                .as_deref()
+                .map_or_else(String::new, |tag| format!(" from {tag}"));
+            let upstream = match template.upstream {
+                UpstreamChange::Changed => format!("changed in the set since the copy{from}"),
+                UpstreamChange::Removed => "the set no longer has it".to_owned(),
+                UpstreamChange::Unchanged | UpstreamChange::Unknown => {
+                    format!("unchanged in the set since the copy{from}")
+                }
+            };
+            let project = if template.project == Change::Unchanged {
+                "the project's copy is as written"
+            } else {
+                "the project has changed its copy"
+            };
+            format!("{upstream}; {project}")
+        }
+    }
+}
+
+/// What's said of a file, when there's anything to say.
+fn file_line(record: Record, file: &FileStatus) -> Option<String> {
+    if file.project == Change::Deleted {
+        return Some("deleted".to_owned());
+    }
+    if record != Record::Entry {
+        return Some(match file.matches_set {
+            Some(true) => "the same as the set's".to_owned(),
+            Some(false) => "different from the set's".to_owned(),
+            None => "not in the set".to_owned(),
+        });
+    }
+    let upstream = file.upstream == UpstreamChange::Changed;
+    let here = file.project == Change::Changed;
+    match (upstream, here) {
+        (true, true) => Some("changed in the set, and here".to_owned()),
+        (true, false) => Some("changed in the set".to_owned()),
+        (false, true) => Some("changed here".to_owned()),
+        (false, false) => None,
+    }
 }

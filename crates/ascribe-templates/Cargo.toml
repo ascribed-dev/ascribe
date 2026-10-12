@@ -16,6 +16,7 @@ ascribe-resolve.workspace = true
 schemars = { workspace = true, optional = true }
 serde.workspace = true
 serde_yaml_ng.workspace = true
+similar = "3.2"
 thiserror.workspace = true
 toml.workspace = true
 toml_edit.workspace = true

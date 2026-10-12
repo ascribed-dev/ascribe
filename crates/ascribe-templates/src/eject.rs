@@ -39,7 +39,7 @@ pub const LOCK_VERSION: i64 = 1;
 pub const SCHEMA_VERSION: u32 = 1;
 
 /// The version of Ascribe, which the answer carries.
-const ASCRIBE_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub(crate) const ASCRIBE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The first lines of a new `templates.lock`.
 const LOCK_HEADER: &str = "# Written by `ascribe templates eject`, which adds to it. Don't edit it: it\n# records what each template was copied from, and a hash of it as written.\n";
@@ -513,24 +513,30 @@ fn read_lock(path: &RelPath, fs: &dyn FileSystem) -> Result<DocumentMut, EjectEr
             .map_err(|e: toml_edit::TomlError| invalid(e.message().to_owned()));
     }
     let bytes = fs.read_file(path).map_err(|e| invalid(e.to_string()))?;
-    let text = String::from_utf8(bytes).map_err(|_| invalid("it isn't valid UTF-8".to_owned()))?;
+    parse_lock(bytes).map_err(invalid)
+}
+
+/// A `templates.lock`'s bytes, as a document of the version eject writes,
+/// or why they aren't one.
+pub(crate) fn parse_lock(bytes: Vec<u8>) -> Result<DocumentMut, String> {
+    let text = String::from_utf8(bytes).map_err(|_| "it isn't valid UTF-8".to_owned())?;
     let doc: DocumentMut = text
         .parse()
-        .map_err(|e: toml_edit::TomlError| invalid(format!("it isn't TOML: {}", e.message())))?;
+        .map_err(|e: toml_edit::TomlError| format!("it isn't TOML: {}", e.message()))?;
     match doc.get("version").and_then(Item::as_integer) {
         Some(LOCK_VERSION) => {}
         Some(other) => {
-            return Err(invalid(format!(
+            return Err(format!(
                 "its version is {other}, and this Ascribe writes version {LOCK_VERSION}"
-            )));
+            ));
         }
-        None => return Err(invalid("it has no `version`".to_owned())),
+        None => return Err("it has no `version`".to_owned()),
     }
     if doc
         .get("template")
         .is_some_and(|t| t.as_array_of_tables().is_none())
     {
-        return Err(invalid("its `template` isn't a list of tables".to_owned()));
+        return Err("its `template` isn't a list of tables".to_owned());
     }
     Ok(doc)
 }
