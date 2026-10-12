@@ -8,15 +8,18 @@
 //! [`set`] reads it. [`NOTES`] is Ascribe's notes on each type, written by hand
 //! in `notes/`, which the conversion never opens. [`eject()`] writes templates
 //! into a project, as `ascribe templates eject` does, and [`summaries`]
-//! reads back what it recorded in `templates.lock`.
+//! reads back what it recorded in `templates.lock`. [`start()`] starts a page
+//! from its type's template, in a project.
 
 pub mod eject;
 pub mod lock;
+pub mod start;
 
 pub use eject::{
     Added, Eject, EjectAnswer, EjectError, LOCK_FILE, Refusal, RefusalReason, TEMPLATES_DIR, eject,
 };
 pub use lock::summaries;
+pub use start::{NewPage, StartError, start};
 
 /// A file of the set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

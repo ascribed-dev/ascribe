@@ -13,6 +13,7 @@ ascribe-check.workspace = true
 ascribe-core.workspace = true
 ascribe-model.workspace = true
 ascribe-resolve.workspace = true
+ascribe-syntax.workspace = true
 schemars = { workspace = true, optional = true }
 serde.workspace = true
 serde_yaml_ng.workspace = true
@@ -29,7 +30,6 @@ json-schema = ["dep:schemars"]
 # The tests check what `ascribe check` and `ascribe fmt` say of the copies,
 # and eject into a project in a temporary folder.
 ascribe-fmt.workspace = true
-ascribe-syntax.workspace = true
 tempfile = "3"
 
 [lints]
