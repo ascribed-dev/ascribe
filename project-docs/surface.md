@@ -713,7 +713,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` |  |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions |  |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` |  |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe permalinks`, and `ascribe templates` |  |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, and `ascribe permalinks` |  |
+| `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` |  |
 | `contracts/output-layout.md` | Output-layout contract |  |
 | `contracts/permalinks-list.md` | The permalinks list |  |
 | `contracts/site-render.md` | Site-render contract |  |

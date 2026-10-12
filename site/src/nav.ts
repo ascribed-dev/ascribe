@@ -70,6 +70,7 @@ export const nav: NavGroup[] = [
       "contracts/json-reports/diff.md",
       "contracts/json-reports/report.md",
       "contracts/json-reports/sources.md",
+      "contracts/json-reports/templates.md",
       "contracts/json-reports/questions.md",
       "contracts/permalinks-list.md",
     ],
