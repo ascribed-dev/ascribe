@@ -4,6 +4,7 @@
   - `problems`: What `ascribe check` finds, counted by check, by file, and by kind of next step; and every acknowledgement, with its reason.
   - `inventory`: Pages by type and by owner; overdue reviews, orphan pages, and unused entries.
   - `builds`: What each build leaves out that another keeps.
+  - `pages`: Every page's record, sorted by address: its title, description, canonical address, and listing, and where the listing comes from.
   - `links`: External links that fail, redirect, or time out. Needs a link checker, lychee, and the network.
   - `agents`: The delivery spec's checks on a built site. Needs `afdocs`, the network, and `--site`.
 - `--format <FORMAT>`: How to show the report.
@@ -11,7 +12,8 @@
   - `markdown`: Markdown, for a CI job's summary or an issue's body.
   - `json`: One JSON document, for tools.
   - `prompt`: A prompt for an agent that acts on one section's problems: only with one section, `problems`, `links`, or `agents`. Nothing when it finds nothing.
-- `--build <NAME>`: Report only on this build: its problems, and what it leaves out. Repeat it for several. By default, every build in `ascribe.toml`. An unknown build name is a usage error, and the message lists the builds.
+- `--build <NAME>`: Report only on this build: its problems, what it leaves out, and its pages. Repeat it for several. By default, every build in `ascribe.toml`. An unknown build name is a usage error, and the message lists the builds.
+- `--not-listed`: For `pages`: list only the pages that aren't `listed`, those `unquoted` and `unlisted`, with where each one's listing comes from.
 - `--site <URL>`: The address of a built site, for `agents`: the published site, or a preview of it.
 - `--limit <N>`: List at most this many items in each list. By default, 20 in text and Markdown and 500 in JSON. What's left out is counted, with the command that lists it.
 - `--recheck`: For `links`: ask about every address, reusing no answer from an earlier run, and keep what this run gets. By default, an address that answered within `[checks.links] reuse-days` isn't asked about again.

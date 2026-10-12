@@ -8,7 +8,11 @@ use std::io::{self, Write};
 use ascribe_check::links::{Answer, Unconfirmed};
 use ascribe_check::{Acknowledged, Diagnostic, Next};
 use ascribe_core::Date;
-use ascribe_query::report::{Agents, Builds, Inventory, Links, NotRun, Problems, Ran, Report};
+use ascribe_model::{ListingFrom, ListingLevel};
+use ascribe_query::report::{
+    Agents, Builds, Inventory, Links, NotRun, Pages, Problems, Ran, Report,
+};
+use ascribe_resolve::pages::PageRecord;
 
 use crate::report::{Counts, FileTable};
 
@@ -86,6 +90,10 @@ fn write_sections(
     if let Some(b) = &report.builds {
         gap(&mut w)?;
         w.builds(b)?;
+    }
+    if let Some(p) = &report.pages {
+        gap(&mut w)?;
+        w.pages(p)?;
     }
     if let Some(l) = &report.links {
         gap(&mut w)?;
@@ -326,6 +334,116 @@ impl Writer<'_> {
         Ok(())
     }
 
+    fn pages(&mut self, p: &Pages) -> io::Result<()> {
+        self.heading("Pages")?;
+        for build in &p.builds {
+            let name = self.code(&build.build);
+            let on = build
+                .site
+                .as_deref()
+                .map(|site| format!(" on {}", self.code(site)))
+                .unwrap_or_default();
+            let shown_all = build.records.len() == build.published;
+            let line = if shown_all {
+                let hidden = match build.not_listed {
+                    0 => "every one listed".to_owned(),
+                    n => format!("{n} of them not listed"),
+                };
+                format!(
+                    "{name} publishes {}{on}, {hidden}",
+                    counted(build.published, "page", "pages")
+                )
+            } else {
+                let hidden = match build.not_listed {
+                    0 => "every one listed".to_owned(),
+                    1 => "and 1 isn't listed".to_owned(),
+                    n => format!("and {n} aren't listed"),
+                };
+                format!(
+                    "{name} publishes {}{on}, {hidden}",
+                    counted(build.published, "page", "pages"),
+                )
+            };
+            if build.records.is_empty() {
+                self.line(&format!("{line}."))?;
+                continue;
+            }
+            self.line(&format!("{line}:"))?;
+            let rows: Vec<[String; 5]> = build.records.iter().map(row).collect();
+            if self.style.markdown {
+                self.table(&rows)?;
+            } else {
+                self.columns(&rows)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// The page table as text: a heading, then up to the limit of rows,
+    /// each column as wide as its widest cell, then how many are left out.
+    fn columns(&mut self, rows: &[[String; 5]]) -> io::Result<()> {
+        let shown = &rows[..rows.len().min(self.style.limit)];
+        let mut widths = HEADINGS.map(|h| h.chars().count());
+        for row in shown {
+            for (width, cell) in widths.iter_mut().zip(row) {
+                *width = (*width).max(cell.chars().count());
+            }
+        }
+        let line = |cells: [&str; 5]| -> String {
+            let mut text = String::new();
+            for (i, (cell, width)) in cells.iter().zip(widths).enumerate() {
+                if i + 1 == cells.len() {
+                    text.push_str(cell);
+                } else {
+                    text.push_str(&format!("{cell:<width$}  "));
+                }
+            }
+            text.trim_end().to_owned()
+        };
+        let heading = line(
+            HEADINGS
+                .map(|h| h.to_uppercase())
+                .each_ref()
+                .map(String::as_str),
+        );
+        self.item(&heading)?;
+        let lines: Vec<String> = rows
+            .iter()
+            .map(|r| line(r.each_ref().map(String::as_str)))
+            .collect();
+        self.items(&lines, |_, l| l.clone())
+    }
+
+    /// The page table as Markdown: a table of up to the limit of rows, then
+    /// how many are left out.
+    fn table(&mut self, rows: &[[String; 5]]) -> io::Result<()> {
+        let cell = |text: &str| text.replace('|', "\\|");
+        writeln!(self.out, "| {} |", HEADINGS.join(" | "))?;
+        writeln!(self.out, "|{}", "---|".repeat(HEADINGS.len()))?;
+        for r in rows.iter().take(self.style.limit) {
+            let [route, listing, from, title, description] = r;
+            writeln!(
+                self.out,
+                "| `{}` | {} | {} | {} | {} |",
+                route,
+                cell(listing),
+                cell(from),
+                cell(title),
+                cell(description)
+            )?;
+        }
+        writeln!(self.out)?;
+        if rows.len() > self.style.limit {
+            let more = rows.len() - self.style.limit;
+            let line = match self.about.next_command {
+                Some(command) => format!("And {more} more: {}", self.code(command)),
+                None => format!("And {more} more."),
+            };
+            self.line(&line)?;
+        }
+        Ok(())
+    }
+
     fn links(&mut self, l: &Ran<Links>) -> io::Result<()> {
         self.heading("External links")?;
         let links = match l {
@@ -483,6 +601,39 @@ impl Writer<'_> {
             ))?;
         }
         Ok(())
+    }
+}
+
+/// The page table's columns.
+const HEADINGS: [&str; 5] = ["Address", "Listing", "From", "Title", "Description"];
+
+/// A page's row of the table: its address, its listing, where that comes
+/// from, its title, and its description.
+fn row(r: &PageRecord) -> [String; 5] {
+    [
+        r.route.clone(),
+        r.listing.name().to_owned(),
+        listing_from(&r.listing_from),
+        r.title.clone().unwrap_or_default(),
+        r.description.clone().unwrap_or_default(),
+    ]
+}
+
+/// Where a listing comes from, in a few words: `default`, `page`, or a rule
+/// of `[listing]` and its line in `ascribe.toml`, such as `folder internal/,
+/// line 12`.
+fn listing_from(from: &ListingFrom) -> String {
+    match from {
+        ListingFrom::Default => "default".to_owned(),
+        ListingFrom::Page => "page".to_owned(),
+        ListingFrom::Rule(rule) => {
+            let level = match &rule.level {
+                ListingLevel::Site => "site".to_owned(),
+                ListingLevel::Folder(folder) => format!("folder {folder}"),
+                ListingLevel::Type(name) => format!("type {name}"),
+            };
+            format!("{level}, line {}", rule.line)
+        }
     }
 }
 

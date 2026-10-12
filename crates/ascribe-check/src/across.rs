@@ -14,8 +14,8 @@
 //!   `[versions] current`; and `crawlers-disallowed` reads `[crawlers]`.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
-//!   includes, and `title-duplicate`, two pages the build publishes with one
-//!   title. [`PageChecker`](crate::PageChecker) runs them on each build it
+//!   includes, and `title-duplicate` and `description-duplicate`, two pages
+//!   the build publishes with one title, or one description. [`PageChecker`](crate::PageChecker) runs them on each build it
 //!   resolves.
 //!
 //! Each is advice, and a project can set its level or turn it off in
@@ -341,7 +341,7 @@ fn trimmed(value: f64) -> String {
     text.strip_suffix(".0").unwrap_or(&text).to_owned()
 }
 
-/// `page-orphan` and `title-duplicate` for one build, from every page it
+/// `page-orphan`, `title-duplicate`, and `description-duplicate` for one build, from every page it
 /// publishes, in path order, and with `errors_only` only those `[checks]`
 /// raises to an error. Issues are located with the index's file ids.
 pub(crate) fn for_build(
@@ -356,6 +356,9 @@ pub(crate) fn for_build(
     }
     if runs(checks, diagnostics::TITLE_DUPLICATE, errors_only) {
         duplicate_titles(index, resolved, &mut found);
+    }
+    if runs(checks, diagnostics::DESCRIPTION_DUPLICATE, errors_only) {
+        duplicate_descriptions(index, resolved, &mut found);
     }
     found
 }
@@ -406,49 +409,83 @@ fn duplicate_titles(
     resolved: &[&ResolvedPage],
     out: &mut Vec<Found>,
 ) {
-    let mut by_title: HashMap<String, Vec<usize>> = HashMap::new();
-    for (i, page) in resolved.iter().enumerate() {
-        let Some(title) = page.title.as_deref() else {
-            continue;
-        };
-        let key = title
+    let titled = resolved.iter().filter_map(|page| {
+        let title = page.title.clone()?;
+        Some((*page, title, title_span(index.file(&page.path)?)))
+    });
+    duplicates(
+        diagnostics::TITLE_DUPLICATE,
+        "a page with the same title",
+        titled.collect(),
+        out,
+    );
+}
+
+/// The pages of the build that share a description, ignoring case and runs
+/// of spaces: each is reported at its own description, naming the others.
+/// A description is the field the page's type marks `role =
+/// "description"`, as its line in `llms.txt` has it.
+fn duplicate_descriptions(
+    index: &ascribe_resolve::Project,
+    resolved: &[&ResolvedPage],
+    out: &mut Vec<Found>,
+) {
+    let model = index.model();
+    let described = resolved.iter().filter_map(|page| {
+        let text = ascribe_resolve::llms::description(model, page)?;
+        let field = ascribe_resolve::llms::description_field(model, page.path.as_str())?;
+        let span = field_span(index.file(&page.path)?, &field.name)?;
+        Some((*page, text, span))
+    });
+    duplicates(
+        diagnostics::DESCRIPTION_DUPLICATE,
+        "a page with the same description",
+        described.collect(),
+        out,
+    );
+}
+
+/// Each group of `pages` whose text is the same, ignoring case and runs of
+/// spaces: each page is reported as `slug` at its span, with `title` its
+/// text and `others` the other pages' paths, and the others related to it
+/// as `related`.
+fn duplicates(
+    slug: DiagnosticSlug,
+    related: &'static str,
+    pages: Vec<(&ResolvedPage, String, Span)>,
+    out: &mut Vec<Found>,
+) {
+    let mut by_text: HashMap<String, Vec<usize>> = HashMap::new();
+    for (i, (_, text, _)) in pages.iter().enumerate() {
+        let key = text
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")
             .to_lowercase();
         if !key.is_empty() {
-            by_title.entry(key).or_default().push(i);
+            by_text.entry(key).or_default().push(i);
         }
     }
-    let mut groups: Vec<Vec<usize>> = by_title.into_values().filter(|g| g.len() > 1).collect();
+    let mut groups: Vec<Vec<usize>> = by_text.into_values().filter(|g| g.len() > 1).collect();
     groups.sort();
     for group in groups {
-        let pages: Vec<(&ResolvedPage, Span)> = group
-            .iter()
-            .filter_map(|&i| {
-                let page = *resolved.get(i)?;
-                Some((page, title_span(index.file(&page.path)?)))
-            })
-            .collect();
-        for (page, span) in &pages {
-            let others: Vec<&(&ResolvedPage, Span)> =
-                pages.iter().filter(|(p, _)| p.path != page.path).collect();
+        let shared: Vec<&(&ResolvedPage, String, Span)> =
+            group.iter().filter_map(|&i| pages.get(i)).collect();
+        for (page, text, span) in &shared {
+            let others: Vec<&&(&ResolvedPage, String, Span)> = shared
+                .iter()
+                .filter(|(p, _, _)| p.path != page.path)
+                .collect();
             let named = others
                 .iter()
-                .map(|(p, _)| format!("`{}`", p.path))
+                .map(|(p, _, _)| format!("`{}`", p.path))
                 .collect::<Vec<_>>()
                 .join(", ");
-            let mut issue = Issue::new(
-                diagnostics::TITLE_DUPLICATE,
-                Location::new(page.file, *span),
-            )
-            .with_arg("title", page.title.clone().unwrap_or_default())
-            .with_arg("others", named);
-            for (other, other_span) in others {
-                issue = issue.with_related(
-                    Location::new(other.file, *other_span),
-                    "a page with the same title",
-                );
+            let mut issue = Issue::new(slug, Location::new(page.file, *span))
+                .with_arg("title", text.clone())
+                .with_arg("others", named);
+            for (other, _, other_span) in others {
+                issue = issue.with_related(Location::new(other.file, *other_span), related);
             }
             out.push(Found {
                 issue,
@@ -458,17 +495,18 @@ fn duplicate_titles(
     }
 }
 
+/// Where a frontmatter field's value is, when the page writes it.
+fn field_span(file: &FileIndex, name: &str) -> Option<Span> {
+    let source: &str = &file.source;
+    let fm = file.document.frontmatter.as_ref()?;
+    let text = source.get(fm.content.range())?;
+    Some(YamlIndex::build(text, fm.content.start()).get(name)?.value)
+}
+
 /// Where a page's title is: its frontmatter `title` value, or the file's
 /// first line when that can't be found.
-fn title_span(file: &FileIndex) -> Span {
-    let source: &str = &file.source;
-    if let Some(fm) = &file.document.frontmatter
-        && let Some(text) = source.get(fm.content.range())
-        && let Some(node) = YamlIndex::build(text, fm.content.start()).get("title")
-    {
-        return node.value;
-    }
-    first_line(source)
+pub(crate) fn title_span(file: &FileIndex) -> Span {
+    field_span(file, "title").unwrap_or_else(|| first_line(&file.source))
 }
 
 /// A file's first line, without its line break.

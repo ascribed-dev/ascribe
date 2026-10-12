@@ -1,5 +1,5 @@
 // The files that map the repository for someone starting cold (ARCHITECTURE.md,
-// AGENTS.md, the crates' READMEs, the decisions, and the change checklists) name paths and commands, and each one
+// AGENTS.md, the crates' READMEs, the decisions and their folder, and the change checklists) name paths and commands, and each one
 // must exist: a map that points at a moved file sends its reader nowhere.
 //
 // A path is a relative link, or a code span whose first segment is a file or
@@ -49,6 +49,9 @@ function files(): string[] {
     "README.md",
     "tests/zod/README.md",
     "project-docs/decisions.md",
+    ...readdirSync(path.join(root, "project-docs/decisions"))
+      .filter((name) => name.endsWith(".md"))
+      .map((name) => `project-docs/decisions/${name}`),
     "project-docs/checklists.md",
     ...crates,
   ];

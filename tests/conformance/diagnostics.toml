@@ -2863,7 +2863,7 @@ configurable = true
 area = "pages"
 message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
 messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
-fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`."
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size."
 
 [[diagnostic]]
 code = "ASC150"
@@ -3118,7 +3118,7 @@ configurable = true
 area = "outputs"
 message = "{file} is {size} characters in build `{build}`, over the {limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions"
 messages.builds = "{file} is over the {limit} characters an agent reads in one fetch in builds {builds}; move some of its pages into folders of their own, or shorten their descriptions"
-fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions."
+fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it."
 
 [[diagnostic]]
 code = "ASC165"
@@ -3550,3 +3550,56 @@ when = "`[crawlers]` disallows `search` or `on-request`, and the site's pages ar
 message = "`{purpose} = \"disallow\"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine"
 messages.on-request = "`{purpose} = \"disallow\"` asks assistants not to fetch the site's pages when a person asks about them, so they answer from what they already have, or from another site, while the pages are listed for every other search engine"
 fix = "Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`."
+
+[[diagnostic]]
+code = "ASC191"
+slug = "description-duplicate"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "9.4"
+reference = "content-model.md#54-field-roles"
+when = "Two pages the build publishes have the same description, ignoring case"
+message = "this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want"
+fix = "Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."
+
+[[diagnostic]]
+code = "ASC192"
+slug = "title-heading-differs"
+severity = "advice"
+level = "page"
+next = "review"
+evidence = []
+configurable = true
+place = "page"
+area = "pages"
+spec = "2.1"
+reference = "content-model.md#19-checks"
+when = "A page writes its own level-1 heading, and neither it nor the page's title contains the other, ignoring case. A page without a level-1 heading, which most pages are, since the layout draws the title as one, isn't looked at"
+message = "the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another"
+fix = "Make the two agree: change the title or the heading so one says what the other does, or remove the heading and let the layout draw the title, as it does on most pages. When they differ on purpose, as a landing page's title is often the site's name and its heading a tagline, acknowledge it in the page's `intended` frontmatter, saying why."
+example.wrong = '''
+---
+title: Install
+---
+
+# Get started in five minutes
+
+Download the installer.
+'''
+example.right = '''
+---
+title: Install
+---
+
+# Install in five minutes
+
+Download the installer.
+'''
+example.model = '''
+[checks]
+heading-level-skipped = "off"
+'''

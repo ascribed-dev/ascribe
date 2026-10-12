@@ -102,7 +102,7 @@ test("each page outside the docs names its own social card, which is served", as
   // Generated into public/cards/ by ../design: one per page of home/, by its
   // entry id, and the changelog's.
   const cards = readdirSync(path.join(siteDir, "public", "cards")).map((f) => f.slice(0, -4));
-  expect(cards.sort()).toEqual(["changelog", "index", "why"]);
+  expect(cards.sort()).toEqual(["changelog", "credits", "index", "why"]);
   for (const name of cards) {
     const page = await open(name === "index" ? "/" : `/${name}/`);
     const card = await page.locator('meta[property="og:image"]').getAttribute("content");
@@ -511,6 +511,27 @@ test("Why Ascribe shows its examples, marks what no release has, and links to th
     "https://github.com/ascribed-dev/ascribe/tree/main/examples/comparison",
   );
   expect(await page.getByRole("heading", { name: "What it doesn’t do" }).isVisible()).toBe(true);
+  await page.close();
+});
+
+test("the landing page links to Credits, which names comrak's release and fits a phone", async () => {
+  const landing = await open("/");
+  const link = landing.locator("article").getByRole("link", { name: "Credits", exact: true });
+  expect(await link.getAttribute("href")).toBe("/credits/");
+  await link.click();
+  await landing.waitForURL(`${server.url}/credits/`);
+  expect(await landing.title()).toBe("Credits · Ascribe");
+  expect(await landing.locator("hero-banner h1").textContent()).toBe("Credits");
+  expect(await landing.locator("hero-banner[status]").count()).toBe(0);
+  // The `comrak-release` phrase, which scripts/docs-site/credits.test.ts holds to FORK.md.
+  expect(await landing.locator("article").textContent()).toMatch(/at its release v\d+\.\d+\.\d+ /);
+  await landing.close();
+
+  const page = await open("/credits/", 390);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(0);
   await page.close();
 });
 

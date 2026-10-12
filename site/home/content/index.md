@@ -1,6 +1,9 @@
 ---
 title: Ascribe
 description: Documentation written as code, checked like code, and built into a website, plain Markdown, and JSON.
+intended:
+  - check: title-heading-differs
+    reason: The home page's title is the site's name, and its top heading is the tagline in the hero.
 ---
 
 @hero-banner {status=early}:
@@ -91,4 +94,4 @@ Then [read getting started]({site}/go/getting-started/): it sets up a project, w
 
 ## Early, and open source
 
-Ascribe is before 1.0, so what it writes and what it accepts can still change between releases. The latest release is {version}. The code, the docs, and the plans are on [GitHub](https://github.com/ascribed-dev/ascribe), under the Mozilla Public License 2.0.
+Ascribe is before 1.0, so what it writes and what it accepts can still change between releases. The latest release is {version}. The code, the docs, and the plans are on [GitHub](https://github.com/ascribed-dev/ascribe), under the Mozilla Public License 2.0. [Credits](credits.md) says who builds it, and what it's built on.

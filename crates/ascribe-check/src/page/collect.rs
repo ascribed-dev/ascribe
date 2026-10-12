@@ -40,6 +40,7 @@ pub(super) fn check_page(index: &Project, page: &ResolvedPage, links: &LinkProbl
     recorded(index, page, &mut found);
     headings(index, page, &mut found);
     heading_levels(index, page, &mut found);
+    title_heading(index, page, &mut found);
     link_ids(index, page, links, &mut found);
     let mut seen = Vec::new();
     found.retain(|f| {
@@ -190,6 +191,58 @@ fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
             }
         }
     }
+}
+
+/// `title-heading-differs`: a page whose own top heading, the first level-1
+/// heading it publishes, says something its title doesn't. A page's layout
+/// draws its title as the top heading, so most pages write none and aren't
+/// looked at; one that writes its own, as a landing page does in its hero,
+/// is. They agree when either contains the other, ignoring case and runs of
+/// spaces, so a heading that adds to the title, or a title that adds the
+/// product's name, isn't reported. Reported at the title, with the heading
+/// as related.
+fn title_heading(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    if index
+        .model()
+        .checks
+        .is_off(diagnostics::TITLE_HEADING_DIFFERS)
+    {
+        return;
+    }
+    let Some(title) = page.title.as_deref() else {
+        return;
+    };
+    let Some((block, ids)) = page.headings().into_iter().find(|(_, ids)| ids.level == 1) else {
+        return;
+    };
+    let words = |text: &str| {
+        text.split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    };
+    let (said, heading) = (words(title), words(&ids.text));
+    if said.is_empty() || heading.is_empty() || said.contains(&heading) || heading.contains(&said) {
+        return;
+    }
+    let Some(file) = index.file(&page.path) else {
+        return;
+    };
+    let span = crate::across::title_span(file);
+    let issue = Issue::new(
+        diagnostics::TITLE_HEADING_DIFFERS,
+        Location::new(page.file, span),
+    )
+    .with_arg("title", title.to_owned())
+    .with_arg("heading", ids.text.clone())
+    .with_related(
+        Location::new(block.file, block.span),
+        "the page's own top heading",
+    );
+    out.push(Found {
+        issue,
+        cause: (page.file, span, Arc::from([])),
+    });
 }
 
 /// `heading-level-skipped`: a heading more than one level below the one

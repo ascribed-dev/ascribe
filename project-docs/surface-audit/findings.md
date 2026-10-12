@@ -252,7 +252,7 @@ Two that should land before the [website plan](https://github.com/ascribed-dev/a
 - **Evidence:** "`check` says `docs/install-agent.md:93:90`, and `link`, given `--from docs/install-agent.md`, answers "doesn't work from install-agent.md"." In the MCP session: `"file":"docs/install-agent.md"` from one tool, and `"from":"install-agent.md"` from the next, for `"from": "docs/install-agent.md"` given.
 - **Cost:** An agent that takes a path from one answer and gives it to the next command is using two bases without being told. Both work as input today, so nothing broke.
 - **Seen since:** the two names are deliberate in one place. `outline`'s JSON has both, and the reference says "`page` is the path from the content root, as links write it, and `file` is from the project root, as `ascribe check` reports it." So `link`'s `from` is a `page` under a name that doesn't say so, answering an input given as a `file`. `permalinks retire --to`, `--page`, and `--under` take the `page` form only (finding 26).
-- **Recommendation:** rename, so a command names a page back as it was given, from the project's folder. It changes a value in `link`'s JSON; the maintainer agreed to that on 10 October 2026, and the change records it in `project-docs/decisions.md`.
+- **Recommendation:** rename, so a command names a page back as it was given, from the project's folder. It changes a value in `link`'s JSON; the maintainer agreed to that on 10 October 2026, and the change records it as a file in `project-docs/decisions/`.
 - **Size:** small.
 
 ### 14. `check`'s text gives a next step only when there's a fix to apply
@@ -325,7 +325,7 @@ Two that should land before the [website plan](https://github.com/ascribed-dev/a
 - **Where:** `ascribe mcp`'s tools, their output schemas; Claude Code 2.1.296.
 - **Evidence:** On standard error while the tools loaded: `unknown format "uint32" ignored in schema at path "#/$defs/Pos/properties/line"`, `unknown format "uint" ignored in schema at path "#/$defs/CodeCount/properties/count"`, and 92 more.
 - **Cost:** Nothing fails. A person who starts the client in a terminal sees a screen of warnings about Ascribe.
-- **Recommendation:** remove the number formats from the generated schemas, which say nothing a client uses. They're there because the generator writes each Rust integer type's name as a `format` (`uint`, `uint32`, `uint8`, `int32`, 121 times in `schemas/`), not because anyone chose them; `"type": "integer"` and `"minimum": 0` stay, and the generated TypeScript types them as `number` either way. What's lost is a width hint for someone generating typed code from the schemas, which nobody does. The schemas are a contract; the maintainer agreed to the removal on 10 October 2026, and the change records it in `project-docs/decisions.md`.
+- **Recommendation:** remove the number formats from the generated schemas, which say nothing a client uses. They're there because the generator writes each Rust integer type's name as a `format` (`uint`, `uint32`, `uint8`, `int32`, 121 times in `schemas/`), not because anyone chose them; `"type": "integer"` and `"minimum": 0` stay, and the generated TypeScript types them as `number` either way. What's lost is a width hint for someone generating typed code from the schemas, which nobody does. The schemas are a contract; the maintainer agreed to the removal on 10 October 2026, and the change records it as a file in `project-docs/decisions/`.
 - **Size:** small.
 
 ### 22. Command titles in the palette are in two styles

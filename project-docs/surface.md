@@ -34,7 +34,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe render` | Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
-| `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
+| `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--exit-code advice\|warning\|error]` | `text`, `markdown`, `json`, `prompt` |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]...` |  |
 | `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
@@ -94,7 +94,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-189 in use, and 1 retired. By severity: 25 advice, 142 error, 22 warning. By level: 172 file, 17 page. By kind of next step: 42 choose, 13 fix, 3 outside, 10 review, 121 write.
+191 in use, and 1 retired. By severity: 27 advice, 142 error, 22 warning. By level: 172 file, 19 page. By kind of next step: 42 choose, 13 fix, 3 outside, 11 review, 122 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -288,6 +288,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC188` | `listing-loosened` | error | fix | this page is `{listing}`, looser than `{rule}` on line {line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter |
 | `ASC189` | `model-crawlers-named-twice` | error | write | `{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one |
 | `ASC190` | `crawlers-disallowed` | advice | choose | `{purpose} = "disallow"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine |
+| `ASC191` | `description-duplicate` | advice | write | this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want |
+| `ASC192` | `title-heading-differs` | advice | review | the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another |
 
 ## The VS Code extension
 
@@ -699,6 +701,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/astro.md` | Astro |  |
 | `guides/drift.md` | Drift |  |
 | `guides/editor.md` | Editing |  |
+| `guides/measuring.md` | What to measure |  |
 | `guides/permalinks.md` | Permalinks |  |
 | `guides/report.md` | The project report |  |
 | `guides/review.md` | Review |  |

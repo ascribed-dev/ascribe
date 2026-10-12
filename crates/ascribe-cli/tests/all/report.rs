@@ -490,3 +490,169 @@ fn the_site_s_checks_say_who_changes_what() {
     );
     assert!(agents["diagnostics"]["items"].as_array().unwrap().len() == 2);
 }
+
+const PAGES_MODEL: &str = r#"spec = "0.1"
+
+[consumer]
+site = "https://docs.example.com"
+base-path = "/docs/"
+agents = true
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }
+
+[listing.folders]
+"internal/" = "unlisted"
+"#;
+
+/// A project whose records have every field: a description, a canonical
+/// address, a Markdown version, breadcrumbs, and listings from a page and
+/// from a folder's rule.
+fn pages_project() -> TempDir {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(dir.path(), "ascribe.toml", PAGES_MODEL);
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\ndescription: Where to start.\n---\n\nRead [install](guides/install.md), [roadmap](roadmap.md), and [notes](internal/notes.md).\n",
+    );
+    write(
+        dir.path(),
+        "docs/guides/install.md",
+        "---\ntitle: Install\ndescription: Install the product.\n---\n\nDownload it.\n",
+    );
+    write(
+        dir.path(),
+        "docs/roadmap.md",
+        "---\ntitle: Roadmap\nlisting: unquoted\n---\n\nWhat's next.\n",
+    );
+    write(
+        dir.path(),
+        "docs/internal/notes.md",
+        "---\ntitle: Notes\n---\n\nFor the team.\n",
+    );
+    dir
+}
+
+#[test]
+fn pages_lists_every_record_by_address() {
+    let dir = pages_project();
+    let out = ascribe(dir.path(), &["report", "pages", "--limit", "3"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.starts_with(
+            "Pages\n  site publishes 4 pages on https://docs.example.com, 2 of them not listed:\n"
+        ),
+        "{text}"
+    );
+    let rows: Vec<&str> = text.lines().skip(2).collect();
+    assert!(rows[0].trim_start().starts_with("ADDRESS"), "{text}");
+    assert!(rows[1].trim_start().starts_with("/docs/ "), "{text}");
+    assert!(rows[2].contains("/docs/guides/install/"), "{text}");
+    assert!(
+        rows[3].contains("unlisted") && rows[3].contains("folder internal/, line 16"),
+        "{text}"
+    );
+    assert_eq!(
+        rows[4].trim(),
+        "and 1 more: ascribe report pages --limit 4",
+        "{text}"
+    );
+
+    let out = ascribe(dir.path(), &["report", "pages", "--not-listed"]);
+    let text = stdout(&out);
+    assert!(
+        text.contains("site publishes 4 pages on https://docs.example.com, and 2 aren't listed:"),
+        "{text}"
+    );
+    assert!(text.contains("/docs/internal/notes/"), "{text}");
+    assert!(
+        text.lines()
+            .any(|l| l.contains("/docs/roadmap/") && l.contains("unquoted  page")),
+        "{text}"
+    );
+    assert!(!text.contains("/docs/guides/install/"), "{text}");
+}
+
+/// `pages` as JSON has each entry of the build's `_ascribe/pages.json`, by
+/// the same names, with the route it's keyed by there; and the report's
+/// schema names exactly those fields.
+#[test]
+fn pages_as_json_are_the_build_s_records() {
+    let dir = pages_project();
+    let built = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code_of(&built), 0, "{}", stderr(&built));
+    let file = dir
+        .path()
+        .join(".ascribe/build/site/site/_ascribe/pages.json");
+    let list: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(file).expect("pages.json")).expect("its JSON");
+
+    let out = ascribe(dir.path(), &["report", "pages", "--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let report = json(&out);
+    assert_eq!(report["sections"], serde_json::json!(["pages"]));
+    let build = &report["pages"][0];
+    assert_eq!(build["build"], "site");
+    assert_eq!(build["site"], list["site"]);
+    assert_eq!(
+        (build["published"].clone(), build["not_listed"].clone()),
+        (4.into(), 2.into())
+    );
+    let mut routes = Vec::new();
+    let mut fields = std::collections::BTreeSet::new();
+    let entries = list["pages"].as_object().expect("pages");
+    for item in build["records"]["items"].as_array().expect("records") {
+        let mut item = item.as_object().expect("a record").clone();
+        let route = item.remove("route").expect("a route");
+        let route = route.as_str().expect("a string").to_owned();
+        assert_eq!(
+            serde_json::Value::Object(item.clone()),
+            entries[&route],
+            "{route}"
+        );
+        fields.extend(item.keys().cloned());
+        routes.push(route);
+    }
+    let keyed: Vec<&String> = entries.keys().collect();
+    assert_eq!(
+        routes.iter().collect::<Vec<_>>(),
+        keyed,
+        "sorted by address, every page"
+    );
+
+    let schema: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../schemas/report.schema.json"),
+        )
+        .expect("the report's schema"),
+    )
+    .expect("its JSON");
+    let properties = |name: &str| -> std::collections::BTreeSet<String> {
+        schema["$defs"][name]["properties"]
+            .as_object()
+            .unwrap_or_else(|| panic!("{name} in the schema"))
+            .keys()
+            .cloned()
+            .collect()
+    };
+    fields.insert("route".to_owned());
+    assert_eq!(properties("PageRecordJson"), fields);
+    let from: std::collections::BTreeSet<String> = entries
+        .values()
+        .flat_map(|e| {
+            e["listing_from"]
+                .as_object()
+                .expect("listing_from")
+                .keys()
+                .cloned()
+        })
+        .chain(["type".to_owned()])
+        .collect();
+    assert_eq!(properties("ListingFromJson"), from);
+}

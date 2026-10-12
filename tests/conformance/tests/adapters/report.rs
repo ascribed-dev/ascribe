@@ -123,6 +123,7 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
     let options = Options {
         sections: &[section],
         builds: &[],
+        not_listed: false,
         site: site.as_deref(),
         tools: &tools,
         link_cache: store.as_ref().map(|(_, cache)| cache),

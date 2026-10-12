@@ -9,7 +9,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Message:** this page's Markdown is \{size} characters in build `{build}`, and an agent reads under \{limit} in one piece; split the page, or move long tables and code below the prose
 
-**Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`.
+**Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size.
 
 **Read more:** [`[checks]`](../reference/content-model.md#19-checks) in the `ascribe.toml` reference.
 
@@ -56,6 +56,19 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project.
 
 **Read more:** [Field roles](../reference/content-model.md#54-field-roles) in the `ascribe.toml` reference.
+
+#### ASC192 `title-heading-differs`
+@id {permalink=true}: ASC192
+
+Advice · page level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** A page writes its own level-1 heading, and neither it nor the page's title contains the other, ignoring case. A page without a level-1 heading, which most pages are, since the layout draws the title as one, isn't looked at.
+
+**Message:** the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another
+
+**Fix:** Make the two agree: change the title or the heading so one says what the other does, or remove the heading and let the layout draw the title, as it does on most pages. When they differ on purpose, as a landing page's title is often the site's name and its heading a tagline, acknowledge it in the page's `intended` frontmatter, saying why.
+
+**Read more:** [`[checks]`](../reference/content-model.md#19-checks) in the `ascribe.toml` reference.
 
 ### Across the project
 
@@ -176,6 +189,19 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Read more:** [`[versions]`](../reference/content-model.md#7-versions) in the `ascribe.toml` reference.
 
+#### ASC191 `description-duplicate`
+@id {permalink=true}: ASC191
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**When:** Two pages the build publishes have the same description, ignoring case.
+
+**Message:** this is also the description of \{others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want
+
+**Fix:** Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
+
+**Read more:** [Field roles](../reference/content-model.md#54-field-roles) in the `ascribe.toml` reference.
+
 ### Outputs
 
 #### ASC163 `description-too-long`
@@ -196,7 +222,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Message:** \{file} is \{size} characters in build `{build}`, over the \{limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions
 
-**Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions.
+**Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it.
 
 **Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
 
