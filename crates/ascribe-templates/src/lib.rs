@@ -22,7 +22,7 @@ pub use eject::{
 };
 pub use init::{Init, InitAnswer, InitError, MODEL_TEXT, init};
 pub use lock::summaries;
-pub use start::{NewPage, StartError, start};
+pub use start::{NewPage, StartError, start, takes_folder};
 
 /// A file of the set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

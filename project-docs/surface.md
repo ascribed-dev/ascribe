@@ -301,7 +301,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-64 commands, 35 of them actions.
+66 commands, 35 of them actions.
 
 Commands that aren't actions:
 
@@ -314,7 +314,9 @@ Commands that aren't actions:
 | Ascribe: Prompt Agent: Fix This Problem | `ascribe.promptAgent` |
 | Ascribe: Prompt Agent to Fix This File | `ascribe.promptAgentFile` |
 | Ascribe: Prompt Agent to Fix This Project | `ascribe.promptAgentProject` |
+| Ascribe: New Page | `ascribe.newPage` |
 | Ascribe: Actions for the Cursor | `ascribe.actions` |
+| Ascribe: Go to Next Placeholder | `ascribe.nextPlaceholder` |
 | Ascribe: Switch Build | `ascribe.switchBuild` |
 | Ascribe: Check Every Build | `ascribe.checkEveryBuild` |
 | Ascribe: Project Menu | `ascribe.projectMenu` |
@@ -421,12 +423,13 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 64 |
+| `commandPalette` | 66 |
 | `editor/title` | 5 |
-| `view/title` | 1 |
+| `view/title` | 2 |
 | `view/item/context` | 2 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
+| `explorer/context` | 1 |
 | `editor/context` | 1 |
 | `ascribe.actions` | 36 |
 

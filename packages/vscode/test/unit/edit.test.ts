@@ -64,6 +64,24 @@ describe("converting a server's edit", () => {
     await expect(convertEdit(edit, c)).rejects.toThrow(/invalid edit/);
   });
 
+  it("converts a new page's edit: the file to create, then its text", async () => {
+    const page = "file:///C:/docs/how-to/rotate-keys.md";
+    const created: LspWorkspaceEdit = {
+      documentChanges: [
+        { kind: "create", uri: page, options: { overwrite: false, ignoreIfExists: false } },
+        {
+          textDocument: { uri: page, version: null },
+          edits: [{ range: range(0, 0, 0), newText: "---\ntitle: x\n---\n" }],
+        },
+      ],
+    };
+    const c = converter();
+    expect(await convertEdit({ edit: created, select: range(2, 14, 30) }, c)).toEqual({
+      edit: { converted: created },
+      select: { converted: range(2, 14, 30) },
+    });
+  });
+
   it.each([
     ["nothing", null],
     ["a list", []],
@@ -74,6 +92,17 @@ describe("converting a server's edit", () => {
       { edit: { changes: { "file:///a.md": [{ range: range(-1, 0, 0), newText: "" }] } } },
     ],
     ["a select that isn't a range", { edit, select: { line: 1 } }],
+    [
+      "a document change that's neither a file to create nor edits",
+      { edit: { documentChanges: [{ kind: "delete", uri: "file:///a.md" }] }, select: null },
+    ],
+    [
+      "a document change whose edits aren't text edits",
+      {
+        edit: { documentChanges: [{ textDocument: { uri: "file:///a.md" }, edits: [{}] }] },
+        select: null,
+      },
+    ],
   ])("rejects %s", async (_name, value) => {
     await expect(convertEdit(value, converter())).rejects.toThrow(/invalid edit/);
   });

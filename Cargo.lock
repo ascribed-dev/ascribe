@@ -254,6 +254,7 @@ dependencies = [
  "ascribe-resolve",
  "ascribe-syntax",
  "ascribe-synthetic",
+ "ascribe-templates",
  "crossbeam-channel",
  "lsp-server",
  "lsp-types",
