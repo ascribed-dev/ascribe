@@ -12,13 +12,13 @@ Putting pages in order is done by dragging them, in the editor.
 
 Ascribe's content model has no order and no grouping. Five things work around that, each in its own way:
 
-- **Ascribe's own site** lists every page by hand in `site/src/nav.ts`: four groups, and a test that fails when a published page is missing, when the list names a page that doesn't exist, or when it names one twice (`site/test/nav.test.ts`).
+- **Ascribe's own site** lists every page by hand in `site/src/nav.ts`: eight groups, one for each content type and two more (**Start** for the home page, **Contracts** for the reference pages kept apart), and a test that fails when a published page is missing, when the list names a page that doesn't exist, or when it names one twice (`site/test/nav.test.ts`). Since the docs took the page types, a group crosses folders: **Tutorials** holds `getting-started.md` from the root and `guides/variants.md`, and **Reference** holds `guides/editor.md`.
 - **`npx @ascribed/astro init`** writes a site's first `src/nav.ts` from the project's pages, "the root's under **Start** and a group for each folder", once. From then on the site keeps it. `sidebar()`, in `@ascribed/astro/content`, joins that list to the collection. The comment at the top of `packages/astro/src/nav.ts` says the list is the site's because "Ascribe's content model has no page order or grouping yet".
 - **`llms.txt`** makes a section of each folder, named by the title of its `index.md` when it has one, with the pages outside every folder first, under "Pages". It has no order to follow but paths.
 - **The [versions plan](../versions/README.md)'s archive** has to write a sidebar and a contents page for itself, "from the folders, the pages' titles, and their headings, in path order", and says it will use navigation when the model has it.
 - **The editor's Pages view** lists pages by content type, and says of its orphans: "Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error."
 
-All five already treat a folder as a section. Three of the four groups in `site/src/nav.ts` are exactly `guides/`, `reference/`, and `contracts/`, and the fourth is the pages at the root. `[listing.folders]` sets rules by folder too.
+Four of the five treat a folder as a section, and `[listing.folders]` sets rules by folder too. The fifth, Ascribe's own site, grouped by folder until the docs took the page types, and now groups by type across folders: the one sidebar in the repository that the rule below can't write as it stands. Either the docs' files move into a folder for each type, as the [page templates plan](../page-templates/README.md)'s `files = ["<name>/**"]` has it, or a section has to be something other than a folder. That's decided before a plan, not here.
 
 The surface audit found the docs' own structure wanting (its finding 28) and left this proposal owed.
 
@@ -52,8 +52,7 @@ version = 1
 
 [[sections]]
 folder = ""
-label = "Start"
-pages = ["index.md", "getting-started.md"]
+pages = ["getting-started.md"]
 
 [[sections]]
 folder = "guides/"
@@ -163,10 +162,12 @@ Renaming or moving a page, from the editor or with `ascribe rename`, updates `as
 - **Generated pages,** such as an API reference built from a spec. They'd need a place in a section, and that waits for something to generate them.
 - **A version switcher, or any selector.** The versions plan has its own, and a selector for a whole site is in the [brainstorm](../brainstorm.md).
 
-## Open questions
+## Settled
 
-1. **Is the file `ascribe.nav`?** It follows `ascribe.permalinks` and `ascribe.lock`. It's TOML with no `.toml` in its name, as they are, which an editor that doesn't know Ascribe won't highlight.
-2. **Is a page that isn't listed advice, or nothing at all?** Advice keeps a hand-ordered section from growing a tail of pages nobody placed. It also means every project with a file sees a report each time a page is added, until someone drags it.
-3. **How deep may sections nest?** Folders nest without limit. A sidebar three levels deep is a design a site may not want, and Ascribe could cap it, report it, or leave it to the site.
-4. **Does a section's `index.md` appear as a page in its section, or is it the section's own link?** Sites do both. It decides what a section's heading in a sidebar links to.
-5. **Does the root section need its label written?** "Start" is what the starter and Ascribe's site both use, and what `llms.txt` calls "Pages". One default would settle all three.
+The five questions this proposal left open, answered by the maintainer on 12 October 2026.
+
+1. **The file is `ascribe.nav`.** It follows `ascribe.permalinks` and `ascribe.lock`: TOML, beside `ascribe.toml`, named for what it holds. Highlighting is the extension's to give, not the name's: it contributes none of the three to the TOML language today, and one `filenames` entry fixes all three at once. An editor without the extension shows them plain, as it does the other two, and that's accepted.
+2. **A page that isn't listed is advice, in a section that lists pages, and the fix is safe.** Appending the page at the end of the list, in title order among the unlisted, gives exactly the order the default already shows, so applying the fix changes nothing a reader sees: `ascribe check --fix` and the agents' hook settle it, and nobody has to drag. A section with no `pages` reports nothing, so a project that never orders a section never hears about it. Without the advice, a hand-ordered section grows a tail nobody placed and nothing says so.
+3. **Sections nest as folders do, with no cap and nothing reported.** The outputs carry the tree, `sidebar()` hands it to a site whole, and how deep a sidebar draws it is the site's design, which Ascribe doesn't hold an opinion on. `llms.txt` keeps its one level, a section for each top folder as today, with nested sections folded into their parent in navigation order, since an index is a list.
+4. **A section's `index.md` is the section's own page.** It's carried as the section's `page`, never in `pages`, always first, and its title is the section's default label. Whether a sidebar links the section's heading to it or lists it first is the site's drawing, and `sidebar()` gives a site what it needs for either. The root section's `index.md` is the home page, by the same rule. Naming it in `pages` is the error any name that isn't a page of the folder gets.
+5. **The root section's label is "Start" unless `label` says otherwise.** Every other section takes its `index.md`'s title, and the root can't: a home page's title names the whole site, not a group. "Start" is what the starter and Ascribe's site use. `llms.txt` takes the same word, so its "Pages" heading becomes "Start" for every project with a plain output: an output change accepted with the change and named file by file, since one label from one place is the point.

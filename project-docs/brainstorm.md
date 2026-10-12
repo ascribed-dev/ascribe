@@ -5,8 +5,8 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
 - **Built.** The guides say what exists: the [editor](../docs/content/guides/editor.md), [agents](../docs/content/guides/agents.md) that write docs and the outputs agents read, [review](../docs/content/guides/review.md), [snippets and drift](../docs/content/guides/drift.md), [Vale](../docs/content/guides/vale.md), [reports](../docs/content/guides/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/guides/permalinks.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/guides/astro.md).
-- **Planned.** [Versions](versions/README.md) and [page templates](page-templates/README.md).
-- **Proposed.** [Tested examples](proposals/tested-examples.md), [memos](proposals/memos.md), [search](proposals/search.md), [the glossary as pages](proposals/glossary-pages.md), and [navigation](proposals/navigation.md).
+- **Planned.** [Versions](versions/README.md), [page templates](page-templates/README.md), and [tested examples](tested-examples/README.md).
+- **Proposed.** [Memos](proposals/memos.md), [search](proposals/search.md), [the glossary as pages](proposals/glossary-pages.md), and [navigation](proposals/navigation.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
@@ -30,9 +30,9 @@ Three groups of ideas:
 
 ## 1. Code snippets: what's left
 
-`@snippet`, sources, and `ascribe drift` are built ([Drift](../docs/content/guides/drift.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is the [tested examples proposal](proposals/tested-examples.md). Three things from the first idea are in neither:
+`@snippet`, sources, and `ascribe drift` are built ([Drift](../docs/content/guides/drift.md)), and Ascribe's own docs take their examples that way. Knowing whether an example's code was tested, and with what, is the [tested examples plan](tested-examples/README.md). Three things from the first idea are in neither:
 
-- **The rest of Bluehawk's tags.** `snippet` and `remove` work as they are. `replace`, `uncomment`, `state`, and `emphasize` are reserved and do nothing. States are the interesting one: versions of one example, such as a tutorial's start and finish, which map onto Ascribe's own model as `@snippet {state=start}` inside a `@variant` arm, or a build that picks a state for a whole tutorial. The tested examples proposal would design tags fresh for a project starting clean, so whether to finish Bluehawk's set is a question about who's migrating.
+- **The rest of Bluehawk's tags.** `snippet` and `remove` work as they are. `replace`, `uncomment`, `state`, and `emphasize` are reserved and do nothing. States are the interesting one: versions of one example, such as a tutorial's start and finish, which map onto Ascribe's own model as `@snippet {state=start}` inside a `@variant` arm, or a build that picks a state for a whole tutorial. The tested examples plan leaves new tags to a proposal of their own, designed fresh for a project starting clean, so whether to finish Bluehawk's set is a question about who's migrating.
 - **A preview that follows the code.** A snippet is read again when its page changes, not when its code file does, so the preview and a page's problems don't follow an edit to the code. The editor guide says so.
 - **Moving between a page and its code.** Go to definition from a `@snippet` line to the region in the code, a hover showing the extracted code, a lens in the code file saying "Used by 3 pages", and problems with the tags reported in the code file and not only on the page.
 
@@ -252,7 +252,7 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 
 # Suggested order
 
-Ahead of everything here are the two plans in progress and the five proposals named at the top. Navigation is the one of those with the most waiting on it: the docs' own sidebar, `llms.txt`'s sections, the archive's way around, and generated pages each work around its absence. Of what's left in this document:
+Ahead of everything here are the three plans in progress and the four proposals named at the top. Navigation is the one of those with the most waiting on it: the docs' own sidebar, `llms.txt`'s sections, the archive's way around, and generated pages each work around its absence. Of what's left in this document:
 
 1. **Redirects** (section 6), once something records what was published. The versions plan's `retire` gives it a first input.
 2. **OpenAPI links and embeds** (section 3, levels 1 and 2).

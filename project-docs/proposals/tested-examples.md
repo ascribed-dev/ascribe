@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Code examples tied to tested code](../reports/Code%20examples%20tied%20to%20tested%20code.md).
 
+The plan for building it is in [tested-examples/](../tested-examples/README.md).
+
 ## The goal
 
 A code example in an Ascribe site says what it was tested with, and Ascribe knows when that stops being true.
