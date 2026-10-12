@@ -2,7 +2,15 @@
 // The page shell: the header and a slot for the page. Every page, the 404
 // included, uses it. A docs page's frame (`docs`) adds the sidebar, the menu
 // that opens it at narrow widths, and search, which covers the docs only.
+//
+// A page of a project, a docs page or one of home/'s, has its title,
+// description, canonical link, and robots rule from its record, through
+// `Head.astro`, as the sitemap and llms.txt do. A page with no record, the
+// changelog and the 404 page, writes its own title and description, and the
+// changelog its canonical link. The rest of the head, the icons, the theme color, and what
+// a shared link shows, is the site's own either way.
 import Elements from "@ascribed/astro/Elements.astro";
+import Head from "@ascribed/astro/Head.astro";
 import Search from "../components/Search.astro";
 import Sidebar from "../components/Sidebar.astro";
 import Logo from "../assets/logo.svg";
@@ -11,6 +19,8 @@ import { themeColor } from "../theme.ts";
 import "../styles/site.css";
 
 interface Props {
+  /** The page's collection entry, when it's a project's page. */
+  entry?: { filePath?: string | undefined; data?: unknown } | undefined;
   title: string;
   description?: string | undefined;
   /** The current docs page's entry id, to mark it in the sidebar. */
@@ -25,9 +35,20 @@ interface Props {
    * docs page, shares public/social-card.png.
    */
   card?: { name: string; alt: string } | undefined;
+  /** Whether a page with no record has a canonical link: the 404 page has no address of its own. */
+  canonical?: boolean;
 }
 
-const { title, description, current, docs = false, home = false, card: own } = Astro.props;
+const {
+  entry,
+  title,
+  description,
+  current,
+  docs = false,
+  home = false,
+  card: own,
+  canonical: linked = true,
+} = Astro.props;
 const base = import.meta.env.BASE_URL;
 const docsHome = `${base}${docsPath}`;
 const why = `${base}why/`;
@@ -46,8 +67,20 @@ const canonical = new URL(Astro.url.pathname, site).href;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>{pageTitle}</title>
-    {description && <meta name="description" content={description} />}
+    {
+      entry ? (
+        <Head
+          entry={entry}
+          title={(page, record) => (record.route === base ? name : `${page} · ${name}`)}
+        />
+      ) : (
+        <>
+          <title>{pageTitle}</title>
+          {description && <meta name="description" content={description} />}
+          {linked && <link rel="canonical" href={canonical} />}
+        </>
+      )
+    }
     <link rel="icon" href={`${base}favicon.ico`} sizes="32x32" />
     <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`} />

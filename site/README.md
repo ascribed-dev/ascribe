@@ -3,7 +3,7 @@
 Ascribe's website: a landing page at the root and Why Ascribe at `/why/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md` with the entries in `../changes/` not yet gathered into it, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
-astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]
+astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]; the sitemap's exclusions
 home/                       the site's own pages, an Ascribe project: ascribe.toml (a page type, the pages' widgets, the screenshots' `scheme`, the docs' release tables) and content/
 home/content/screenshots/   the pictures of review and the editor, light and dark, each with the release it was taken at (see Screenshots)
 demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
@@ -17,19 +17,20 @@ src/content.config.ts       a collection per project, `docs`, `home`, and `demo`
 src/changelog.ts            the changelog's collection, and how its links and headings are pointed
 src/demo.ts                 where the landing page's demonstration draws demo/'s page: inside its widget, after the source
 src/nav.ts                  the docs' sidebar: every page, grouped and in order
-src/site.ts                 the site's name, repository, and the docs' route
+src/site.ts                 the site's name, repository, the docs' route, and the site's own pages left out of the sitemap
 src/pages/[...slug].astro   a route per page of home/, at the root, through render() so its images are Astro's, with demo/'s page drawn in each demonstration (src/components/Demonstrations.astro)
 src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
 src/pages/changelog.astro   the changelog, in the frame of home/'s pages
 src/pages/404.astro         the 404 page, in the docs' frame
-src/layouts/                the shell (header; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
+src/layouts/                the shell (the head, with each project page's from its record; header; the docs' sidebar and search), a docs page (title, availability, edit link, contents), and a page of home/ (wide, no title of its own)
 src/components/             search, the sidebar, the table of contents, the page's availability badge, and a page of home/ with its demonstrations
 src/styles/site.css         light and dark, following the system, the element library's theme, and the landing page's widgets; its colors and type are generated from ../design/tokens.toml
 src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
 scripts/screenshot.ts       the review picture: a pull request on the docs in astro dev (see Screenshots)
-test/                       navigation, links and anchors, redirects, the projects, the demonstration, content negotiation, and the built site in Chromium
+test/                       navigation, links and anchors, redirects, the projects, the demonstration, content negotiation, the sitemap and robots.txt, and the built site in Chromium
+test/fixtures/crawled/      a small built site with a page that says noindex, for the sitemap's rules
 ```
 
 ## Publishing
@@ -74,6 +75,7 @@ npm test              # after a build
 - `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, and a page of `home/`, which has none, with the page.
 - `test/changelog.test.ts`: the changelog's rules for links and anchors, on Markdown made in the test, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
+- `test/crawlers.test.ts`: the sitemap lists every built page that doesn't say `noindex`, other than a permalink's forwarding page, the 404 page, and `unindexed` in `src/site.ts`, and nothing else; a page that says `noindex` is in neither the sitemap nor `llms.txt`; `robots.txt` names the sitemap; and the changelog has its canonical link. No docs page is marked `listing: unlisted`, so the rules are also run on `test/fixtures/crawled/`, which has such a page.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
 - `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the header's link to the changelog, and the changelog's link to a docs page; and Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's.
 
@@ -111,6 +113,12 @@ Anything else, a docs file that isn't a published page, or a file that isn't in 
 Each release's heading is anchored by `v` and its version, its tag (`/changelog/#v0.2.0`), so a release's notes can link to it; a heading inside a release is anchored by both (`#v0.2.0-the-language`). The unreleased section, `## Unreleased` or a version marked `(unreleased)`, is `#unreleased`, and says under its heading that it's in `main` and not yet released.
 
 The header links to it. On a docs page at phone width, where the menu and search fill the header, the link is on the site's own pages only; and below 26rem, those pages' header leaves out GitHub to fit Docs, Why Ascribe, and Changelog beside the mark.
+
+## Search engines
+
+Each page of a project, the docs' and home/'s, has its `<title>`, description, canonical link, and robots rule from its record in its build's `_ascribe/pages.json`, through `@ascribed/astro/Head.astro` in `src/layouts/Base.astro`; the layout keeps the rest of the head, the icons, the theme color, and what a shared link shows. A docs page marked `listing: unlisted` says `noindex`, and is in neither the sitemap nor `llms.txt`. The changelog and the 404 page have no record and write their own title and description, and the changelog its canonical link.
+
+The integration writes one `sitemap.xml` and one `robots.txt` at the site's root, from the three projects together ([the Astro guide](https://ascribed-dev.com/docs/guides/astro/#search-engines-and-crawlers)): the docs' listed pages, home/'s, and every other page Astro built, the changelog among them, but not a permalink's forwarding page, the 404 page, or `unindexed` in `src/site.ts`. A page of the site's own that should say `noindex` writes it and goes in `unindexed`, since the integration reads no HTML. The demo's page has no route, so it isn't in the sitemap. The Report workflow's `--site` stays at `/docs/`: the delivery spec's checks are about the docs' pages.
 
 ## Search
 

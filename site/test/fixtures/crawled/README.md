@@ -1,0 +1,1 @@
+A built site as test/crawlers.test.ts reads one, for the rules a real build may not exercise: `docs/hidden/` says `noindex`, as a docs page marked `listing: unlisted` would, and is in neither the sitemap nor `llms.txt`; `go/start/` is a forwarding page; and `404.html` is the not-found page. Its site is `https://example.com`.
