@@ -42,12 +42,18 @@ pub struct Args {
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
 
-    /// Report only on this build: its problems, and what it leaves out.
+    /// Report only on this build: its problems, what it leaves out, and its
+    /// pages.
     ///
     /// Repeat it for several. By default, every build in `ascribe.toml`. An
     /// unknown build name is a usage error, and the message lists the builds.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
+
+    /// For `pages`: list only the pages that aren't `listed`, those
+    /// `unquoted` and `unlisted`, with where each one's listing comes from.
+    #[arg(long)]
+    pub not_listed: bool,
 
     /// The address of a built site, for `agents`: the published site, or a
     /// preview of it.
@@ -106,6 +112,9 @@ pub enum SectionArg {
     Inventory,
     /// What each build leaves out that another keeps.
     Builds,
+    /// Every page's record, sorted by address: its title, description,
+    /// canonical address, and listing, and where the listing comes from.
+    Pages,
     /// External links that fail, redirect, or time out. Needs a link
     /// checker, lychee, and the network.
     Links,
@@ -120,6 +129,7 @@ impl SectionArg {
             SectionArg::Problems => Section::Problems,
             SectionArg::Inventory => Section::Inventory,
             SectionArg::Builds => Section::Builds,
+            SectionArg::Pages => Section::Pages,
             SectionArg::Links => Section::Links,
             SectionArg::Agents => Section::Agents,
         }
@@ -248,6 +258,7 @@ pub(crate) fn report(
     let options = Options {
         sections: &sections,
         builds: &args.build,
+        not_listed: args.not_listed,
         site: args.site.as_deref(),
         tools,
         link_cache: link_cache.as_ref(),
@@ -390,6 +401,9 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
         words.extend(sections.iter().map(|s| s.as_str().to_owned()));
     }
     words.extend(options(global, args));
+    if args.not_listed {
+        words.push("--not-listed".to_owned());
+    }
     if let Some(site) = &args.site {
         words.push("--site".to_owned());
         words.push(quote(site));

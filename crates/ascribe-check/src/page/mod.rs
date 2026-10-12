@@ -182,7 +182,7 @@ impl<'p> PageChecker<'p> {
     /// The page-level diagnostics of `build` for these resolved pages alone:
     /// what [`PageChecker::check`] reports for them, and nothing about the
     /// rest of the project, so not the content checks that need every page
-    /// of the build (`page-orphan`, `title-duplicate`). A diagnostic is located in the page's own file,
+    /// of the build (`page-orphan`, `title-duplicate`, `description-duplicate`). A diagnostic is located in the page's own file,
     /// except an `include-cycle`, which is located where the cycle closes (in
     /// a fragment), so the diagnostics located in a file are those of the
     /// pages that are the file or include it, transitively.
@@ -311,7 +311,7 @@ impl<'p> PageChecker<'p> {
     }
 
     /// The checks across the project that the editor reports, for `build`:
-    /// `permalink-duplicate`, `page-orphan`, and `title-duplicate` from `pages`, which must
+    /// `permalink-duplicate`, `page-orphan`, `title-duplicate`, and `description-duplicate` from `pages`, which must
     /// be every page the build publishes, in path order, and the checks
     /// that hold for every build apart from the image checks
     /// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)). The language server runs

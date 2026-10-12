@@ -1,6 +1,9 @@
 ---
 title: Ascribe
 description: Documentation written as code, checked like code, and built into a website, plain Markdown, and JSON.
+intended:
+  - check: title-heading-differs
+    reason: The home page's title is the site's name, and its top heading is the tagline in the hero.
 ---
 
 @hero-banner {status=early}:

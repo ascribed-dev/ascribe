@@ -608,6 +608,12 @@ pub const MODEL_CRAWLERS_NAMED_TWICE: DiagnosticSlug = DiagnosticSlug("model-cra
 /// `ASC190`, advice, file level: a content check (area `outputs`).
 pub const CRAWLERS_DISALLOWED: DiagnosticSlug = DiagnosticSlug("crawlers-disallowed");
 
+/// `ASC191`, advice, page level: a content check (area `project`).
+pub const DESCRIPTION_DUPLICATE: DiagnosticSlug = DiagnosticSlug("description-duplicate");
+
+/// `ASC192`, advice, page level: a content check (area `pages`).
+pub const TITLE_HEADING_DIFFERS: DiagnosticSlug = DiagnosticSlug("title-heading-differs");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -800,6 +806,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     LISTING_LOOSENED,
     MODEL_CRAWLERS_NAMED_TWICE,
     CRAWLERS_DISALLOWED,
+    DESCRIPTION_DUPLICATE,
+    TITLE_HEADING_DIFFERS,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -830,6 +838,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     AVAILABILITY_LEFT_BEHIND,
     LISTING_DISALLOWED,
     CRAWLERS_DISALLOWED,
+    DESCRIPTION_DUPLICATE,
+    TITLE_HEADING_DIFFERS,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
@@ -846,4 +856,5 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (IMAGE_LARGE, crate::Place::Entry),
     (LINK_EXTERNAL_BROKEN, crate::Place::Block),
     (AVAILABILITY_LEFT_BEHIND, crate::Place::Entry),
+    (TITLE_HEADING_DIFFERS, crate::Place::Page),
 ];

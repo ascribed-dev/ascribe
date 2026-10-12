@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[checks]
+# The pages here write their own top heading, as a landing page does.
+heading-level-skipped = "off"
+
+[builds.site]
