@@ -205,11 +205,24 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
-**When:** A page is `unlisted`, and the project's own `[crawlers] lines` disallow its address for every crawler.
+**When:** A page is `unlisted`, and what the project says in `[crawlers]` keeps a search crawler from fetching it: its own lines, for every crawler or in a group that names the crawler, or a disallowed purpose.
 
 **Message:** this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone
 
-**Fix:** Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`.
+**Fix:** Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page, or allow the purpose. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`.
+
+**Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
+
+#### ASC190 `crawlers-disallowed`
+@id {permalink=true}: ASC190
+
+Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** `[crawlers]` disallows `search` or `on-request`, and the site's pages are listed unless they say otherwise.
+
+**Message:** `{purpose} = "disallow"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine
+
+**Fix:** Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`.
 
 **Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
 

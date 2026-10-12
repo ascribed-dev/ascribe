@@ -602,6 +602,12 @@ pub const MODEL_LISTING_LOOSER: DiagnosticSlug = DiagnosticSlug("model-listing-l
 /// `ASC188`, error, file level: SPEC §8.2, "Frontmatter | `listing` looser than a rule of the content model the page is under".
 pub const LISTING_LOOSENED: DiagnosticSlug = DiagnosticSlug("listing-loosened");
 
+/// `ASC189`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CRAWLERS_NAMED_TWICE: DiagnosticSlug = DiagnosticSlug("model-crawlers-named-twice");
+
+/// `ASC190`, advice, file level: a content check (area `outputs`).
+pub const CRAWLERS_DISALLOWED: DiagnosticSlug = DiagnosticSlug("crawlers-disallowed");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -792,6 +798,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_LISTING_TYPE,
     MODEL_LISTING_LOOSER,
     LISTING_LOOSENED,
+    MODEL_CRAWLERS_NAMED_TWICE,
+    CRAWLERS_DISALLOWED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -821,6 +829,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     DELIVERY_OUTPUT,
     AVAILABILITY_LEFT_BEHIND,
     LISTING_DISALLOWED,
+    CRAWLERS_DISALLOWED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

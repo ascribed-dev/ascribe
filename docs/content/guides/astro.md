@@ -262,7 +262,7 @@ The files are static, so any host serves them. A few things the spec asks are th
 ## Search engines and crawlers
 @available: next
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../reference/content-model.md#listing-a-page), whether the page set it or a rule of [`[listing]`](../reference/content-model.md#22-listing) did, for a folder, a type, or the whole site, and the project's own `robots.txt` lines from [`[crawlers]`](../reference/content-model.md#21-crawlers). The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
+Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../reference/content-model.md#listing-a-page), whether the page set it or a rule of [`[listing]`](../reference/content-model.md#22-listing) did, for a folder, a type, or the whole site, and what the project says to crawlers in [`[crawlers]`](../reference/content-model.md#21-crawlers): what each kind of AI crawler may do, and its own `robots.txt` lines. The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
 
 ### The head
 
@@ -300,6 +300,11 @@ A sitemap needs absolute addresses, so a site with no `site` (`[consumer] site`,
 At the host's root, the integration writes one `robots.txt` for the site, and `astro dev` serves it:
 
 ```text
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+Disallow: /
+
 User-agent: *
 Disallow: /docs/drafts/
 
@@ -309,8 +314,9 @@ Disallow: /
 Sitemap: https://docs.example.com/sitemap.xml
 ```
 
-It opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file.
+It writes a group for each purpose a project disallows, such as `training = "disallow"`, naming every crawler of that purpose Ascribe knows ([crawlers by purpose](../reference/content-model.md#crawlers-by-purpose)), each purpose once. Then it opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file: a project with no `[crawlers]` and an address gets the sitemap's line alone.
 
+- **Projects of one site must agree on each purpose,** since they share the file. One that allows a purpose and one that disallows it fail `astro build`, naming both, and `astro dev` serves no `robots.txt` until they agree. A project that leaves a purpose out agrees with either.
 - **A site with its own `robots.txt`** in `public/` keeps it, and the integration writes none. The build says so, with the lines Ascribe would have written; copy them into your file.
 - **A site whose Astro `base` isn't `/`** has no host root to write to, and a crawler reads `robots.txt` only there. The sitemap goes under the base, no `robots.txt` is written, and the build prints the lines the host's own `robots.txt` needs, the sitemap's address among them.
 

@@ -102,7 +102,17 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
       "markdown": "/guides/install.md"
     }
   },
-  "robots": { "lines": ["Disallow: /drafts/"] }
+  "robots": {
+    "lines": ["Disallow: /drafts/"],
+    "purposes": { "training": "disallow", "search": "allow" },
+    "groups": [
+      {
+        "purpose": "training",
+        "user_agents": ["GPTBot", "ClaudeBot"],
+        "lines": ["Disallow: /"]
+      }
+    ]
+  }
 }
 ```
 
@@ -121,6 +131,8 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 | `pages.*.markdown` | The address of the page's Markdown version, from the host's root, when the build publishes one (`[consumer] agents = true`). Absent otherwise. |
 | `robots` | What the project says to crawlers. |
 | `robots.lines` | The project's `[crawlers] lines` (content-model contract §21), in order, each path in an `Allow` or `Disallow` line with the base path before it, so that each is from the host's root, and every other line as written. Lines before any `User-agent` line are for every crawler. Empty when the project has none. |
+| `robots.purposes` | What the project says of each purpose in `[crawlers]` (content-model contract §21), keyed by `training`, `search`, or `on-request`, each `allow` or `disallow`. Only the purposes it sets; empty when it sets none. A site whose projects share one `robots.txt` reads it to find two that disagree. |
+| `robots.groups` | A group of `robots.txt` for each purpose the project disallows, in the order `training`, `search`, `on-request`: `purpose`; `user_agents`, every crawler of that purpose Ascribe knows, each to be written as a `User-agent` line; and `lines`, the group's rules, `Disallow: /`. Empty when the project disallows none. A site writes these groups before the `*` group, and each purpose once. |
 
 A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
 

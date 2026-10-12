@@ -167,6 +167,14 @@ agents = true
 # its help links against it.
 permalink-path = "/go/"
 
+# What each kind of AI crawler may do. Docs for a tool are for people to
+# find through any assistant, so every kind may read them; `allow` writes no
+# lines, and keeps each of them under the lines for every crawler.
+[crawlers]
+training = "allow"
+search = "allow"
+on-request = "allow"
+
 [builds.site]
 variants = "switch"
 availability = "badge"

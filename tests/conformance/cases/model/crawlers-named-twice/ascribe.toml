@@ -1,0 +1,19 @@
+spec = "0.1"
+
+[crawlers]
+training = "disallow"
+lines = [
+  "Disallow: /drafts/",
+  "User-agent: claudebot",
+  "Disallow: /a/",
+  "User-agent: Bot",
+  "User-agent: Bot",
+  "Disallow: /b/",
+  "User-agent: *",
+  "Disallow: /c/",
+  "User-agent: Other",
+  "User-agent: bot",
+  "Disallow: /d/",
+  "User-agent: *",
+  "Disallow: /e/",
+]

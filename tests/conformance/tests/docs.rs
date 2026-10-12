@@ -293,6 +293,43 @@ fn check_fragments(prefix: &str, fragments: &[(String, String)]) {
     );
 }
 
+/// The `ascribe.toml` reference's table of the crawlers Ascribe knows, by
+/// purpose, `docs/content/_generated/crawlers.md`, from the data file the
+/// binary carries.
+#[test]
+fn the_crawlers_table_is_current() {
+    let mut text = String::from(
+        "<!-- Generated from crates/ascribe-model/data/crawlers.toml by \
+         tests/conformance/tests/docs.rs. Edit the data, then run \
+         `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n\n\
+         | Purpose | Token | Operator | What the operator says of `robots.txt` | Read |\n\
+         |---|---|---|---|---|\n",
+    );
+    for purpose in ascribe_model::Purpose::ALL {
+        for c in ascribe_model::known_crawlers()
+            .iter()
+            .filter(|c| c.purpose == Some(purpose))
+        {
+            let robots = match c.robots.as_str() {
+                "follows" => "Follows it",
+                _ => "May not follow it",
+            };
+            let note = c.note.as_deref().map_or(String::new(), |n| format!(" {n}"));
+            writeln!(
+                text,
+                "| `{}` | `{}` | {} | {robots}.{note} | [{}]({}) |",
+                purpose.name(),
+                c.token,
+                c.operator,
+                c.read,
+                c.source
+            )
+            .unwrap();
+        }
+    }
+    check_fragments("crawlers", &[("crawlers.md".to_owned(), text)]);
+}
+
 /// The groups loader rules are listed in, as they're titled in the
 /// diagnostics reference.
 const RULE_GROUPS: &[(&str, &str)] = &[

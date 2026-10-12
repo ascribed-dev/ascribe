@@ -118,6 +118,8 @@ node scripts/release/changes.ts gather
 
 Then the unreleased section lists what the release ships, and nothing in it is unfinished. Group its entries under the release's `###` headings (the language, the `ascribe` command, the editor, and so on), as earlier releases do.
 
+Reread the sources of the crawlers Ascribe knows, by purpose, in `crates/ascribe-model/data/crawlers.toml`. Open each entry's `source` and check that its operator still names the token, for the same purpose, and says the same of `robots.txt`; add a token an operator has added for one of the three purposes, and remove one it no longer documents. Set `read` to the day you read the page, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite the reference's table, and add a `changes/` entry for a token added or removed: a project's `robots.txt` changes with it. **Check:** `node scripts/crawlers/sources.ts` says every source answers and was read within a year.
+
 Reread the landing page's "Where it's going" (`site/home/content/index.md`): an item the release ships, or a plan that was dropped, comes off the list, and nothing checks it but you. Its claims' availability marks are checked: `ascribe check` on `site/home` reports `availability-left-behind` once the docs' release tables move past them.
 
 ### 2. Set the version

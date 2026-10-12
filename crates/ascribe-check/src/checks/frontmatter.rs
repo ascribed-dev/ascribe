@@ -10,7 +10,8 @@
 use ascribe_core::Router;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{
-    FieldRole, FrontmatterSchema, Listing, ListingLevel, TypeMatch, validate_frontmatter,
+    FieldRole, FrontmatterSchema, Listing, ListingLevel, Purpose, TypeMatch, crawler_tokens,
+    validate_frontmatter,
 };
 use ascribe_resolve::{AstroRouter, llms, pages};
 use ascribe_syntax::Frontmatter;
@@ -314,23 +315,41 @@ impl Ctx<'_> {
         })
     }
 
-    /// A page that's `unlisted` at an address the project's own `[crawlers]
-    /// lines` disallow for every crawler, which then never reads that it
-    /// isn't to be listed (`listing-disallowed`). The fix removes `listing`.
+    /// A page that's `unlisted` at an address a search crawler may not fetch,
+    /// which then never reads that it isn't to be listed
+    /// (`listing-disallowed`). Each search crawler reads the one group that
+    /// applies to it: `*` for every search engine Ascribe doesn't name, and
+    /// for each search token Ascribe knows, the group a disallowed `search`
+    /// writes, or the project's own that names it, or `*`. The first found is
+    /// reported, in that order. The fix removes `listing`.
     fn check_listing_fetched(&mut self, node: &Node) {
         let lines = pages::robots_lines(self.model);
         let route = AstroRouter::from_consumer(&self.model.consumer).route(&self.file.path);
-        let Some(at) = pages::disallowing(&lines, &route) else {
-            return;
-        };
-        let Some(line) = self.model.crawlers.lines.get(at) else {
-            return;
-        };
+        let line_text = |at: usize| self.model.crawlers.lines.get(at).map(|l| l.text.clone());
         let mut issue = Issue::new(
             diagnostics::LISTING_DISALLOWED,
             Location::new(self.id, node.value),
-        )
-        .with_arg("line", line.text.clone());
+        );
+        if let Some(line) = pages::disallowing(&lines, &route).and_then(line_text) {
+            issue = issue.with_arg("line", line);
+        } else if self.model.crawlers.disallows(Purpose::Search) {
+            let tokens: Vec<&str> = crawler_tokens(Purpose::Search).collect();
+            issue = issue
+                .with_variant("purpose")
+                .with_arg("purpose", Purpose::Search.name())
+                .with_arg("crawler", quoted_and(&tokens));
+        } else if let Some((token, line)) = crawler_tokens(Purpose::Search).find_map(|token| {
+            pages::disallowing_for(&lines, token, &route)
+                .and_then(line_text)
+                .map(|line| (token, line))
+        }) {
+            issue = issue
+                .with_variant("crawler")
+                .with_arg("line", line)
+                .with_arg("crawler", quoted_and(&[token]));
+        } else {
+            return;
+        }
         // It lists the page, which may not be what was meant.
         if let Some(fix) = self.remove_listing(node, "Remove `listing: unlisted`", false) {
             issue = issue.with_fix(fix);

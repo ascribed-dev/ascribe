@@ -94,6 +94,8 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "Allow: *.md",
                     "Sitemap: https://docs.example.com/x.xml",
                 ],
+                "purposes": {},
+                "groups": [],
             },
         })
     );
@@ -115,7 +117,7 @@ fn without_a_site_or_agents_a_record_has_no_addresses_but_its_route() {
                     "listing_from": { "level": "default" },
                 },
             },
-            "robots": { "lines": [] },
+            "robots": { "lines": [], "purposes": {}, "groups": [] },
         })
     );
 }
@@ -125,7 +127,35 @@ fn a_build_with_no_pages_has_an_empty_table() {
     let project = memory_project("spec = \"0.1\"\n", &[]);
     assert_eq!(
         records(&project),
-        json!({ "version": 1, "pages": {}, "robots": { "lines": [] } })
+        json!({ "version": 1, "pages": {}, "robots": { "lines": [], "purposes": {}, "groups": [] } })
+    );
+}
+
+#[test]
+fn a_disallowed_purpose_is_a_group_of_every_token_ascribe_knows_of_it() {
+    let model = "spec = \"0.1\"\n\
+        [crawlers]\ntraining = \"disallow\"\nsearch = \"allow\"\non-request = \"disallow\"\n\
+        lines = [\"Disallow: /drafts/\"]\n";
+    let project = memory_project(model, &[]);
+    let tokens = |purpose| -> Vec<&str> { ascribe_model::crawler_tokens(purpose).collect() };
+    assert_eq!(
+        records(&project)["robots"],
+        json!({
+            "lines": ["Disallow: /drafts/"],
+            "purposes": { "training": "disallow", "search": "allow", "on-request": "disallow" },
+            "groups": [
+                {
+                    "purpose": "training",
+                    "user_agents": tokens(ascribe_model::Purpose::Training),
+                    "lines": ["Disallow: /"],
+                },
+                {
+                    "purpose": "on-request",
+                    "user_agents": tokens(ascribe_model::Purpose::OnRequest),
+                    "lines": ["Disallow: /"],
+                },
+            ],
+        })
     );
 }
 

@@ -94,7 +94,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-187 in use, and 1 retired. By severity: 24 advice, 141 error, 22 warning. By level: 170 file, 17 page. By kind of next step: 41 choose, 13 fix, 3 outside, 10 review, 120 write.
+189 in use, and 1 retired. By severity: 25 advice, 142 error, 22 warning. By level: 172 file, 17 page. By kind of next step: 42 choose, 13 fix, 3 outside, 10 review, 121 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -286,6 +286,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC186` | `model-listing-type` | error | choose | `{type}` in `[listing.types]` isn't a content type; use one of: {values} |
 | `ASC187` | `model-listing-looser` | error | write | `{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict |
 | `ASC188` | `listing-loosened` | error | fix | this page is `{listing}`, looser than `{rule}` on line {line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter |
+| `ASC189` | `model-crawlers-named-twice` | error | write | `{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one |
+| `ASC190` | `crawlers-disallowed` | advice | choose | `{purpose} = "disallow"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine |
 
 ## The VS Code extension
 
