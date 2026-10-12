@@ -18,6 +18,7 @@ import {
   readRules,
   stale,
   Unreachable,
+  upstream,
   write,
 } from "./convert.ts";
 
@@ -195,6 +196,46 @@ test("the pin is a tag and its commit, and every template converted has its rule
     "release-notes",
   ]);
 });
+
+test("a template's table without a description stops the script", () => {
+  expect(() =>
+    readRules('[t]\n\n[[t.directives]]\ndirective = "@steps"\nbefore = "1. Do it."\n'),
+  ).toThrow("rules.toml: [t] has no `description`");
+});
+
+test(
+  "every rule of rules.toml is used, at one place, and the script stops without it",
+  { timeout: 60_000 },
+  async (context) => {
+    // A directive or an `about` paragraph finds its line exactly once, or the
+    // conversion throws. Taken away, each changes what the script writes, so
+    // `convert.ts --check` stops on the committed copies.
+    const pin = readPin();
+    for (const [name, all] of readRules()) {
+      let source: string;
+      try {
+        source = await upstream(pin, `${name}/template_${name}.md`);
+      } catch (error) {
+        if (!(error instanceof Unreachable)) throw error;
+        context.skip(`their repository can't be reached: ${error.message}`);
+        return;
+      }
+      const converted = convertTemplate(name, source, all);
+      const without: [string, typeof all][] = [
+        ...all.directives.map((rule, i): [string, typeof all] => [
+          `${rule.directive} before \`${rule.before}\``,
+          { ...all, directives: all.directives.filter((_, j) => j !== i) },
+        ]),
+        ...all.about.map((first, i): [string, typeof all] => [
+          `about \`${first}\``,
+          { ...all, about: all.about.filter((_, j) => j !== i) },
+        ]),
+      ];
+      for (const [rule, rules] of without)
+        expect(convertTemplate(name, source, rules), `${name}: ${rule}`).not.toBe(converted);
+    }
+  },
+);
 
 const ascribe = binary();
 

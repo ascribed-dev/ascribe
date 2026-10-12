@@ -61,11 +61,10 @@ export function readPin(): Pin {
   return pin;
 }
 
-export function readRules(): Map<string, Rules> {
-  const tables = parse(readFileSync(path.join(here, "rules.toml"), "utf8")) as Record<
-    string,
-    Partial<Rules>
-  >;
+export function readRules(
+  text = readFileSync(path.join(here, "rules.toml"), "utf8"),
+): Map<string, Rules> {
+  const tables = parse(text) as Record<string, Partial<Rules>>;
   return new Map(
     Object.entries(tables).map(([name, table]) => {
       if (typeof table.description !== "string")
@@ -300,7 +299,7 @@ interface IndexEntry {
 }
 
 /** A file of theirs at the pinned commit, fetched once into .upstream/. */
-async function upstream(pin: Pin, file: string): Promise<string> {
+export async function upstream(pin: Pin, file: string): Promise<string> {
   const cached = path.join(here, ".upstream", pin.commit, file);
   if (existsSync(cached)) return readFileSync(cached, "utf8");
   const url = `${pin.repository}/-/raw/${pin.commit}/${file}`;
