@@ -25,14 +25,14 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (785925596122)"
+ascribe = "0.3.0+dev (4d214d27a2cf)"
 
 [template.files]
 "templates/how-to.md" = "sha256:70860ffd6474827816216caa943484ba8c0932eac07920d91c7489503c6e4c59"
 "templates/how-to.guide.md" = "sha256:df5131d0547ae2c4d164f6078ecb87170e36d86676a7f22a6ed858775e7196ff"
 
 [template.ascribe-files]
-"templates/how-to.ascribe.md" = "sha256:91af995488a6b244acc9acb964a1536c6f56ee79014407777db34336316bed4c"
+"templates/how-to.ascribe.md" = "sha256:3a1e2b04130d64840fcbf4a7cc0765ab662971d55ab1e1d991ee014ad98c2dcb"
 
 [[template]]
 name = "tutorial"
@@ -41,14 +41,14 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (785925596122)"
+ascribe = "0.3.0+dev (4d214d27a2cf)"
 
 [template.files]
 "templates/tutorial.md" = "sha256:5139d5ba97fe14c68693ce56aeb55c3c320ff2fa01474076f0b86f9f2f5cbe60"
 "templates/tutorial.guide.md" = "sha256:f6fd7a466c461645eb3c5fcb97124c9c28006ff2b1fa070c49cfa6443355d18b"
 
 [template.ascribe-files]
-"templates/tutorial.ascribe.md" = "sha256:c556c9618364353bf38c965cb5c51bb1a67ec4aaa7243a919c2302bc4b1b8f8c"
+"templates/tutorial.ascribe.md" = "sha256:bac35eef8aae52f1937ff0fb02c1d64b05b7aeff49a580e46e983cc22a454c44"
 
 [[template]]
 name = "concept"
@@ -73,11 +73,11 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (785925596122)"
+ascribe = "0.3.0+dev (4ae2156006a8)"
 
 [template.files]
 "templates/troubleshooting.md" = "sha256:8fca20d6613bf94451abf52cd161ac554f2dd0ba1d76f043d0f61b8dbaf5ad17"
 "templates/troubleshooting.guide.md" = "sha256:8a80f32d8e4c4cf68ac051dfa38b58ba71a2a4b144f80dc159040f8ab46844a6"
 
 [template.ascribe-files]
-"templates/troubleshooting.ascribe.md" = "sha256:8f22cdb16353d8db320e30bd35099ddf816867f4611686dda371cf87bc7be5c3"
+"templates/troubleshooting.ascribe.md" = "sha256:837e05c0bf18e2295603c60e568f1a40ff3090ab1c258247e93238ef7a240893"

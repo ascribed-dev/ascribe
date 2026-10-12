@@ -10,6 +10,7 @@ Ascribe's notes on the tutorial, to read after its guide: only what's particular
 
   The page then shows what the project has, and a change that breaks the project breaks its CI, not the reader.
 - **Each list of steps is a procedure.** The template's numbered list starts with `@steps`, which tells the site and agents it's a procedure. Write it directly above any other list of steps you add.
+- **A step that shows a file and its output can be a heading.** A tutorial's steps often each hold a file, a command, and what it prints, which a list item holds badly. Then make each step a heading of its own, numbered, `## 1. Declare a dimension`, with no `@steps`: it marks a list, and these steps aren't one.
 - **One path, with the platform as tabs.** A tutorial follows one path. Where only a step's command differs by platform, write a variant group in that step, and the site shows the arms as tabs, keeping the reader's choice on every page.
 - **Versions are phrases.** Write `You need {product} {version} or later`, with both in `[phrases]`, and the next release changes one line in `ascribe.toml` rather than every page.
 - **Output to expect comes from a run too.** When your tests record a command's output, take it with `@snippet` rather than pasting it.

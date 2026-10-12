@@ -3,6 +3,7 @@
 Ascribe's notes on the how-to, to read after its guide: only what's particular to writing one in an Ascribe project. They're yours to change, as the template is.
 
 - **The steps are one procedure.** The template's numbered list starts with `@steps`, which tells the site and agents it's a procedure. Keep the task's steps in that one list, with a sub-step inside the step it belongs to.
+- **A step that shows a file and its output can be a heading.** A list item holds a code block badly. When each step holds a file, a command, and what it prints, number the steps as headings of their own, `### 1. Install`, with no `@steps`: it marks a list, and these steps aren't one.
 - **Alternatives by platform are a variant group.** Where a step differs on Windows, don't write "if you're on Windows". Write an arm for each value of a dimension your `ascribe.toml` declares:
 
   ````markdown
