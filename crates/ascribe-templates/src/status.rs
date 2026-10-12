@@ -61,7 +61,9 @@ impl Upstream {
     }
 }
 
-/// What `ascribe templates status` found.
+/// What `ascribe templates status` found: for each template the project
+/// took, whether the set and the project have changed it since the copy, and
+/// each template of the set it doesn't have.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct StatusAnswer {
