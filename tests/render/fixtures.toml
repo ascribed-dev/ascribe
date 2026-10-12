@@ -94,3 +94,8 @@ description = "A paragraph in a list item in steps in a variant arm, and a list 
 name = "anchors-fragment"
 covers = ["anchor-via"]
 description = "Blocks from a fragment, and from a fragment it includes, carry the includes they came through."
+
+[[fixture]]
+name = "availability-row"
+covers = ["availability-row"]
+description = "A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` that make its text the plain output's."

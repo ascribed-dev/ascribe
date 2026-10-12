@@ -412,8 +412,21 @@ fn a_rows_availability_ends_its_first_cell() {
     assert_eq!(
         out,
         "| Key | Meaning |\n| --- | --- |\n| `a` | All. |\n\
-         | `b` <ascribe-availability scope=\"row\"><ascribe-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview\" versions=\"3.4\">Self-managed (preview, 3.4+)</ascribe-availability-target></ascribe-availability> | New. |\n\
-         | <ascribe-availability scope=\"row\"><ascribe-availability-target target=\"cloud\" dimension=\"deployment\" states=\"ga\">Quill Cloud (GA)</ascribe-availability-target></ascribe-availability> | Empty. |\n"
+         | `b` <ascribe-availability scope=\"row\"><span class=\"ascribe-availability-lead-in\">(Available: </span><ascribe-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview\" versions=\"3.4\">Self-managed (preview, 3.4+)</ascribe-availability-target><span class=\"ascribe-availability-lead-in\">)</span></ascribe-availability> | New. |\n\
+         | <ascribe-availability scope=\"row\"><span class=\"ascribe-availability-lead-in\">(Available: </span><ascribe-availability-target target=\"cloud\" dimension=\"deployment\" states=\"ga\">Quill Cloud (GA)</ascribe-availability-target><span class=\"ascribe-availability-lead-in\">)</span></ascribe-availability> | Empty. |\n"
+    );
+    // Without its tags, a row reads as the plain output writes it, so the
+    // delivery spec's parity check finds the HTML's text in the Markdown.
+    let text: String = out
+        .lines()
+        .nth(3)
+        .unwrap_or_default()
+        .split('<')
+        .map(|part| part.split_once('>').map_or(part, |(_, text)| text))
+        .collect();
+    assert_eq!(
+        text,
+        "| `b` (Available: Self-managed (preview, 3.4+)) | New. |"
     );
     // A filter build drops the rows that aren't available, and badges the
     // rest.

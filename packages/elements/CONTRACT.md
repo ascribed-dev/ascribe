@@ -143,7 +143,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 |---|---|---|
 | `scope` | yes | What the annotation applies to: `section` (an `@available` at the top of a section), `block` (one bound to a block), `row` (a table row's `available`), or `page`. |
 
-**Children:** one `<ascribe-availability-target>` per target of the effective spec (feature keys resolved), in the spec's order, separated by the text `; `. No markdown.
+**Children:** one `<ascribe-availability-target>` per target of the effective spec (feature keys resolved), in the spec's order, separated by the text `; `. No markdown. With `scope="row"`, the targets are between `<span class="ascribe-availability-lead-in">(Available: </span>` and `<span class="ascribe-availability-lead-in">)</span>`, so the cell's text is the plain-markdown output's, `(Available: …)` (decision [#430](../../project-docs/decisions/430-row-availability-lead-in.md)).
 
 **Where it goes:**
 
@@ -178,7 +178,7 @@ That is: the target's label, then in parentheses either one state's label, follo
 </ascribe-availability>
 ```
 
-**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`.
+**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in in sight: the `ascribe-availability-lead-in` spans are visually hidden, and a screen reader reads them. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`, and a row's as `(Available: Quill Cloud (GA))`.
 
 ## 5. `<details>`
 

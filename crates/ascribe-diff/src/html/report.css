@@ -401,8 +401,11 @@ ascribe-group {
 /* <ascribe-for-agents> --------------------------------------------------- */
 
 /* The pointer to llms.txt: out of sight, but in the page for an agent (and a
-   screen reader) to read. Not `display: none`, which some readers skip. */
-ascribe-for-agents {
+   screen reader) to read. Not `display: none`, which some readers skip. A
+   table row's "(Available: " and ")" around its badges are hidden the same
+   way, so a screen reader says what the badges are, as the Markdown does. */
+ascribe-for-agents,
+.ascribe-availability-lead-in {
   position: absolute;
   width: 1px;
   height: 1px;

@@ -23,6 +23,12 @@ export const ELEMENT_AVAILABILITY = "ascribe-availability";
  */
 export const ELEMENT_AVAILABILITY_TARGET = "ascribe-availability-target";
 
+/**
+ * On the visually hidden `(Available: ` and `)` around a table row's
+ * `<ascribe-availability>` targets (packages/elements/CONTRACT.md §4).
+ */
+export const CLASS_AVAILABILITY_LEAD_IN = "ascribe-availability-lead-in";
+
 /** `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6). */
 export const ELEMENT_GROUP = "ascribe-group";
 
