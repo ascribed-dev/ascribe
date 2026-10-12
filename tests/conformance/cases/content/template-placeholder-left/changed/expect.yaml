@@ -1,0 +1,9 @@
+description: >-
+  The comparison is exact: a placeholder with one word changed, or with the
+  space before its closing brace taken out, as an editor might, isn't the
+  template's and isn't reported. The check finds only what was never
+  touched.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

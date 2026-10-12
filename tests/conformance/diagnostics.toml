@@ -3636,3 +3636,20 @@ group = "content-types"
 message = "can't read `{path}`, the template of content type `{type}`: {reason}"
 messages.parse = "`{path}`, the template of content type `{type}`, isn't a page Ascribe can read: on its line {line}, {detail}"
 fix = "Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it."
+
+[[diagnostic]]
+code = "ASC195"
+slug = "template-placeholder-left"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model.md#41-page-types"
+configurable = true
+area = "pages"
+when = "A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped; a paragraph the template quotes as an instruction; or a frontmatter field with the template's value. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found"
+message = "this page still has its template's placeholder `{placeholder}`; write what it asks for in its place"
+messages.field = "`{field}` is still the template's `{value}`; write this page's own"
+messages.instruction = "this page still has its template's instruction, \"{instruction}\"; do what it says, then remove it"
+fix = "Write the page's own text where the template's placeholder is, the text in braces, and remove each instruction the template quotes once you've followed it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it."

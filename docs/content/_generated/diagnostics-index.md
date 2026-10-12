@@ -195,3 +195,4 @@
 | [ASC192](../reference/diagnostics/content-checks.md#ASC192) | `title-heading-differs` | Advice | Page | review |
 | [ASC193](../reference/diagnostics/content-model.md#ASC193) | `model-type-file` | Error | File | write |
 | [ASC194](../reference/diagnostics/content-model.md#ASC194) | `model-type-template` | Error | File | write |
+| [ASC195](../reference/diagnostics/content-checks.md#ASC195) | `template-placeholder-left` | Advice | File | write |

@@ -1,0 +1,8 @@
+description: >-
+  How a placeholder's lines are wrapped doesn't matter: one a writer's
+  editor has wrapped differently from the template is still the template's.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 12, severity: advice}

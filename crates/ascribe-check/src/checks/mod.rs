@@ -14,6 +14,7 @@
 //! | `content` | A page's description and review date, code blocks' languages |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
+//! | `template` | What a page still has of its type's template, never filled in |
 
 mod acknowledge;
 mod attrs;
@@ -22,6 +23,7 @@ mod content;
 mod frontmatter;
 mod refs;
 mod sources;
+pub(crate) mod template;
 mod text;
 
 use ascribe_core::{
@@ -101,6 +103,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
     cx.blocks(&doc.blocks);
+    cx.check_template_body(&doc.blocks);
     cx.parser_fixes();
     // A stable sort keeps the parser's issues before a check's at one place.
     let mut issues = cx.issues;

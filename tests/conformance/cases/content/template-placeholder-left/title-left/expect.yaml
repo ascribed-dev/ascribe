@@ -1,0 +1,8 @@
+description: >-
+  A frontmatter field whose value is the template's was never filled in, and
+  is reported at its value.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 2, severity: advice}

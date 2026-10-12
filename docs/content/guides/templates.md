@@ -51,3 +51,22 @@ cp templates/how-to.md docs/how-to/rotate-keys.md
 ```
 
 Then replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
+
+## What's left to fill in
+
+`ascribe check` compares a page with its type's template, and reports what it still has of it as advice (`template-placeholder-left`):
+
+- **A placeholder,** the template's text from a `\{` to its closing brace, that the page still has word for word. One that runs across blocks, as the how-to's "See also" opens a brace in a paragraph and closes it at the end of a list, is reported once, where it starts, when the page has all of it.
+- **A frontmatter field** with the value the template gives it, such as `title: "Title"`.
+- **An instruction,** a paragraph the template has in a block quote, that the page still has whole. A block quote of your own isn't one.
+
+How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
+
+The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Read a page through before publishing it. The check compares a page with the template as it is now, so a placeholder you remove from your template is no longer looked for.
+
+To turn it off, or make it a warning, set its level in [`[checks]`](../reference/content-model/checks.md#19-checks):
+
+```toml
+[checks]
+template-placeholder-left = "warning"
+```
