@@ -13,16 +13,16 @@ interface Props {
 }
 
 const { entry, headings } = Astro.props;
-// `title` is plain text, for <title>; `formatted.title` is the title as HTML,
-// with its code spans as <code> (`inline = "code"` in ../docs/ascribe.toml).
+// `formatted.title` is the title as HTML, with its code spans as <code>
+// (`inline = "code"` in ../docs/ascribe.toml); <title> is the record's.
 // `source` is the page's path from the content root.
-const { title, formatted, description, available, source } = entry.data;
+const { formatted, description, available, source } = entry.data;
 const edit = `${repo}/edit/main/${contentDir}/${source}`;
 // The description is in llms.txt and not in the page's Markdown, so it's
 // marked for the delivery spec's parity check (`data-markdown-ignore`).
 ---
 
-<Base entry={entry} title={title} description={description} current={entry.id} docs>
+<Base entry={entry} current={entry.id} docs>
   <main id="content" class="page">
     <article data-pagefind-body>
       <h1 set:html={formatted.title} />
