@@ -82,6 +82,7 @@ mod tests {
             html: true,
             agents: false,
             permalink_path: None,
+            headers: None,
         });
         assert_eq!(profile.name(), "astro");
         assert!(profile.html_passthrough());

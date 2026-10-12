@@ -26,12 +26,14 @@
 //! Alongside the pages the emitter writes `_ascribe/schema.ts`, the Zod
 //! schema of every content type ([`crate::zod`]), and
 //! `_ascribe/permalinks.json`, the build's permalinks (output-layout
-//! contract §1.2), and `_ascribe/pages.json`, its page records (§1.3).
+//! contract §1.2), `_ascribe/pages.json`, its page records (§1.3), and
+//! `_ascribe/headers.json`, the response headers its files need (§1.4).
 
 mod anchor;
 mod blocks;
 mod element;
 mod frontmatter;
+mod headers;
 mod inline;
 mod pages;
 mod permalinks;
@@ -58,6 +60,10 @@ pub const PERMALINKS_PATH: &str = "_ascribe/permalinks.json";
 
 /// The path of the build's page records in the emitter root.
 pub const PAGES_PATH: &str = "_ascribe/pages.json";
+
+/// The path of the response headers the build's files need, in the emitter
+/// root.
+pub const HEADERS_PATH: &str = "_ascribe/headers.json";
 
 /// The directory in the emitter root that holds link targets, which the
 /// consumer serves as static files.
@@ -172,6 +178,7 @@ impl Emitter for SiteEmitter {
             })
         };
         Ok(vec![
+            generated(HEADERS_PATH, headers::list(cx.model, build))?,
             generated(PAGES_PATH, pages::list(cx.model, build))?,
             generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,
             generated(SCHEMA_PATH, crate::zod::generate(cx.model))?,

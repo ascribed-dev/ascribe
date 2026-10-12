@@ -10,8 +10,8 @@ mod links;
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use ascribe_model::{
-    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, Listing, ListingFrom,
-    ListingLevel, SourceBound, TrailingSlash, TypeMatch, VariantMode, load, load_str,
+    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, HeadersFormat, Listing,
+    ListingFrom, ListingLevel, SourceBound, TrailingSlash, TypeMatch, VariantMode, load, load_str,
     load_str_bounded, load_str_in,
 };
 
@@ -86,6 +86,24 @@ fn permalinks_are_under_the_base_path_unless_a_path_is_set() {
         "/go/"
     );
     assert_eq!(path("permalink-path = \"/links\"\n"), "/links/");
+}
+
+#[test]
+fn headers_name_the_hosts_format_and_nothing_else() {
+    let load = |consumer: &str| {
+        load_str(
+            &format!("spec = \"0.1\"\n[consumer]\n{consumer}"),
+            FileId::new(0),
+        )
+    };
+    assert_eq!(load("").unwrap().consumer.headers, None);
+    assert_eq!(
+        load("headers = \"netlify\"\n").unwrap().consumer.headers,
+        Some(HeadersFormat::Netlify)
+    );
+    let issues = load("headers = \"apache\"\n").unwrap_err();
+    assert_eq!(issues.len(), 1, "{issues:#?}");
+    assert_eq!(issues[0].slug.as_str(), "model-invalid-value");
 }
 
 #[test]

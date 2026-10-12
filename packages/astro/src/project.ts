@@ -23,6 +23,8 @@ export interface ProjectInfo {
     trailingSlash: "always" | "never";
     /** Whether builds publish what agents read: `llms.txt` and each page's Markdown, in the plain output. */
     agents: boolean;
+    /** The host whose format the site's response headers are written in: `"netlify"`, or none. */
+    headers: "netlify" | undefined;
   };
   /** The names of `[builds]`'s tables, in order: empty when there are none, and the one build is `site`. */
   builds: string[];
@@ -62,6 +64,7 @@ export function readProject(dir: string): ProjectInfo {
       ),
       trailingSlash,
       agents: consumer["agents"] === true,
+      headers: consumer["headers"] === "netlify" ? "netlify" : undefined,
     },
     builds: Object.keys(section(table, "builds")),
     siteRoot: (build) => path.resolve(dir, outputDir, build, "site"),

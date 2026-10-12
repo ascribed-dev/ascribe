@@ -95,7 +95,9 @@ describe("agentsMiddleware", () => {
   let agentsOrigin: string;
 
   beforeAll(async () => {
-    const middleware = agentsMiddleware(plainRoot, "/docs/");
+    const middleware = agentsMiddleware(plainRoot, "/docs/", (pathname) =>
+      pathname === "/docs/guides/my-setup.md" ? { "X-Robots-Tag": "noindex" } : {},
+    );
     agents = createServer((req, res) =>
       middleware(req, res, () => {
         res.statusCode = 404;
@@ -115,6 +117,13 @@ describe("agentsMiddleware", () => {
     const page = await fetch(`${agentsOrigin}/docs/guides/my-setup.md`);
     expect(page.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
     expect(await page.text()).toBe("# Set up\n");
+  });
+
+  it("sends each file the headers its path is given", async () => {
+    const page = await fetch(`${agentsOrigin}/docs/guides/my-setup.md`, { method: "HEAD" });
+    expect(page.headers.get("x-robots-tag")).toBe("noindex");
+    const index = await fetch(`${agentsOrigin}/docs/llms.txt`);
+    expect(index.headers.get("x-robots-tag")).toBeNull();
   });
 
   it("passes on the pages themselves and anything outside the base path", async () => {

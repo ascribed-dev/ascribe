@@ -1,8 +1,9 @@
 // Content negotiation, the host's part of the Web Documentation Delivery Spec:
 // a page asked for with `Accept: text/markdown` is answered with its Markdown,
 // which the build publishes at the page's address with `.md` (`[consumer]
-// agents = true` in ../docs/ascribe.toml). Any other request, and a page
-// without a Markdown file, goes on to the page as it is.
+// agents = true` in ../docs/ascribe.toml), with the `.md` file's headers that
+// say how it's listed. Any other request, and a page without a Markdown file,
+// goes on to the page as it is.
 //
 // Netlify runs this before its cache, on every request it matches, so the
 // cache holds only the pages and their `.md` files, never an answer of this.
@@ -82,8 +83,13 @@ export default async function markdown(request: Request, context: Context): Prom
     // Where the Markdown itself is, for an agent to cite or fetch again.
     "content-location": target,
   });
-  const cacheControl = source.headers.get("cache-control");
-  if (cacheControl !== null) headers.set("cache-control", cacheControl);
+  // The Markdown version's own headers, which Netlify gives the `.md` path
+  // from `_headers` and never gives a function's answer: the rule its page's
+  // head has (`x-robots-tag`) and its page as canonical (`link`).
+  for (const name of ["cache-control", "x-robots-tag", "link"]) {
+    const value = source.headers.get(name);
+    if (value !== null) headers.set(name, value);
+  }
   return new Response(request.method === "HEAD" ? null : source.body, { status: 200, headers });
 }
 

@@ -1,11 +1,12 @@
 //! `_ascribe/pages.json`: each build's page records, in the site output
-//! (output-layout contract §1.3), and `llms.txt` read against them.
+//! (output-layout contract §1.3), and `llms.txt` and `_ascribe/headers.json`
+//! (§1.4) read against them.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
 use std::path::Path;
 
-use ascribe_emit::site::PAGES_PATH;
+use ascribe_emit::site::{HEADERS_PATH, PAGES_PATH};
 use ascribe_emit::{PlainEmitter, SiteEmitter};
 use ascribe_resolve::Project;
 use serde_json::{Value, json};
@@ -41,6 +42,14 @@ fn records(project: &Project) -> Value {
         .remove(PAGES_PATH)
         .expect("the site output has the records");
     serde_json::from_str(&text).expect("the records are JSON")
+}
+
+fn headers(project: &Project) -> Value {
+    let emitter = SiteEmitter::new(project.model());
+    let text = emit_build(Path::new("/nowhere"), project, "site", &emitter)
+        .remove(HEADERS_PATH)
+        .expect("the site output has the headers");
+    serde_json::from_str(&text).expect("the headers are JSON")
 }
 
 #[test]
@@ -403,4 +412,93 @@ fn llms_txt_agrees_with_the_records(project: &Project) {
     }
     let lines = llms.lines().filter(|l| l.starts_with("- [")).count();
     assert_eq!(lines, listed, "llms.txt has a line with no record:\n{llms}");
+}
+
+#[test]
+fn each_markdown_version_has_its_headers() {
+    let project = memory_project(MODEL, FILES);
+    assert_eq!(
+        headers(&project),
+        json!({
+            "version": 1,
+            "headers": [
+                {
+                    "path": "/docs/faq.md",
+                    "headers": {
+                        "Link": "<https://docs.example.com/docs/faq/>; rel=\"canonical\"",
+                        "X-Robots-Tag": "nosnippet",
+                    },
+                },
+                {
+                    "path": "/docs/guides/drafts.md",
+                    "headers": {
+                        "Link": "<https://docs.example.com/docs/guides/drafts/>; rel=\"canonical\"",
+                        "X-Robots-Tag": "noindex",
+                    },
+                },
+                {
+                    "path": "/docs/guides/install.md",
+                    "headers": {
+                        "Link": "<https://docs.example.com/docs/guides/install/>; rel=\"canonical\"",
+                    },
+                },
+                {
+                    "path": "/docs/index.md",
+                    "headers": {
+                        "Link": "<https://docs.example.com/docs/>; rel=\"canonical\"",
+                    },
+                },
+            ],
+        })
+    );
+}
+
+#[test]
+fn without_markdown_versions_the_headers_are_an_empty_list() {
+    let project = memory_project(
+        "spec = \"0.1\"\n",
+        &[("a.md", "---\ntitle: A\nlisting: unlisted\n---\n")],
+    );
+    assert_eq!(headers(&project), json!({ "version": 1, "headers": [] }));
+}
+
+#[test]
+fn the_headers_agree_with_the_records() {
+    let project = memory_project(&with_rules(), &files_with_rules());
+    let records = records(&project);
+    let headers = headers(&project);
+    let rules = headers["headers"].as_array().expect("a list");
+    let pages = records["pages"].as_object().expect("pages");
+    // Every page with a Markdown version has a rule, and nothing else does.
+    let markdown: Vec<&str> = pages
+        .values()
+        .filter_map(|record| record["markdown"].as_str())
+        .collect();
+    let paths: Vec<&str> = rules
+        .iter()
+        .map(|rule| rule["path"].as_str().expect("a path"))
+        .collect();
+    let mut sorted = markdown.clone();
+    sorted.sort_unstable();
+    assert_eq!(paths, sorted, "one rule for each Markdown version, sorted");
+    for (route, record) in pages {
+        let path = record["markdown"].as_str().expect("markdown");
+        let rule = rules
+            .iter()
+            .find(|rule| rule["path"] == path)
+            .unwrap_or_else(|| panic!("{route}'s Markdown version has no rule"));
+        let canonical = record["canonical"].as_str().expect("canonical");
+        assert_eq!(
+            rule["headers"]["Link"],
+            format!("<{canonical}>; rel=\"canonical\""),
+            "{route}"
+        );
+        let robots = match record["listing"].as_str() {
+            Some("listed") => Value::Null,
+            Some("unquoted") => json!("nosnippet"),
+            Some("unlisted") => json!("noindex"),
+            other => panic!("{route}: listing {other:?}"),
+        };
+        assert_eq!(rule["headers"]["X-Robots-Tag"], robots, "{route}");
+    }
 }

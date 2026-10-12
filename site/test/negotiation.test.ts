@@ -1,8 +1,8 @@
 // The content negotiation edge function, netlify/edge-functions/markdown.ts:
-// which requests it answers with Markdown, and that every page of the built
-// site has the Markdown it would answer with.
+// which requests it answers with Markdown, with the headers of the Markdown it
+// answers with, and that every page of the built site has that Markdown.
 import { readFile } from "node:fs/promises";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import markdown, { markdownPaths, prefersMarkdown } from "../netlify/edge-functions/markdown.ts";
 import { distDir, fileFor, filesUnder, forwardingPages, requireBuild, serve } from "./built.ts";
 
@@ -37,6 +37,40 @@ test("a page's Markdown is at its address with .md, or its index.md", () => {
   ]);
   expect(markdownPaths("/guides/astro")).toEqual([]);
   expect(markdownPaths("/llms.txt")).toEqual([]);
+});
+
+describe("the Markdown version's headers", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  /** The function's answer to `pathname` asked for as Markdown, its `.md` answering with `headers`. */
+  async function answerWith(pathname: string, headers: Record<string, string>): Promise<Response> {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      return Promise.resolve(
+        url.pathname === `${pathname.slice(0, -1)}.md`
+          ? new Response("# A page\n", { headers: { "content-type": "text/markdown", ...headers } })
+          : new Response("not found", { status: 404 }),
+      );
+    });
+    const request = new Request(new URL(pathname, "https://ascribed-dev.com"), {
+      headers: { accept: "text/markdown" },
+    });
+    return markdown(request, { next: () => Promise.resolve(new Response("the page")) });
+  }
+
+  test("an unlisted page asked for as Markdown says noindex, and names its page as canonical", async () => {
+    const link = '<https://ascribed-dev.com/docs/internal/>; rel="canonical"';
+    const response = await answerWith("/docs/internal/", { "x-robots-tag": "noindex", link });
+    expect(await response.text()).toBe("# A page\n");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex");
+    expect(response.headers.get("link")).toBe(link);
+  });
+
+  test("a listed page asked for as Markdown says nothing of how it's listed", async () => {
+    const response = await answerWith("/docs/guides/astro/", {});
+    expect(await response.text()).toBe("# A page\n");
+    expect(response.headers.get("x-robots-tag")).toBeNull();
+  });
 });
 
 describe("the built site", () => {
