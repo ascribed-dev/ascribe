@@ -23,7 +23,7 @@ Elsewhere this is the most expensive step in versioned docs: the research found 
 - The [proposal](../proposals/versions.md): "Then clean up".
 - Phase 3's checks: the marks that no longer do anything, which this phase gives fixes.
 - Phase 7's `versions release`: how a command rewrites marks, proves no output changed, and refuses a dirty tree.
-- The [search and answers plan](../search-and-answers/README.md)'s host phase: the shape of the headers list, which the redirects list follows.
+- The [search and answers plan](https://github.com/ascribed-dev/ascribe/blob/5b22286fd2f370e796219e68a7c9d7cdb2ba8acc/project-docs/search-and-answers/README.md)'s host phase: the shape of the headers list, which the redirects list follows.
 - `ascribe check --fix`: what makes a fix `safe`.
 
 ## Design

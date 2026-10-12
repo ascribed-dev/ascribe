@@ -160,13 +160,21 @@ test("the landing page's link to getting started opens it under /docs/", async (
   await page.close();
 });
 
-test("the footer links to the changelog, the license, and the repository, on every kind of page", async () => {
+test("the footer links to Credits, the changelog, the license, and the repository, on every kind of page", async () => {
   for (const path of ["/", "/docs/guides/astro/", "/changelog/", "/no/such/page/"]) {
     const page = await open(path);
     const footer = page.locator("footer.site-footer");
     expect(await footer.count(), path).toBe(1);
     const links = footer.getByRole("link");
-    expect(await links.allTextContents(), path).toEqual(["Changelog", "License", "Repository"]);
+    expect(await links.allTextContents(), path).toEqual([
+      "Credits",
+      "Changelog",
+      "License",
+      "Repository",
+    ]);
+    expect(await footer.getByRole("link", { name: "Credits" }).getAttribute("href")).toBe(
+      "/credits/",
+    );
     expect(await footer.getByRole("link", { name: "Changelog" }).getAttribute("href")).toBe(
       "/changelog/",
     );
@@ -514,7 +522,7 @@ test("Why Ascribe shows its examples, marks what no release has, and links to th
   await page.close();
 });
 
-test("the landing page links to Credits, which names comrak's release and fits a phone", async () => {
+test("the landing page and the footer link to Credits, which names comrak's release and fits a phone", async () => {
   const landing = await open("/");
   const link = landing.locator("article").getByRole("link", { name: "Credits", exact: true });
   expect(await link.getAttribute("href")).toBe("/credits/");
@@ -526,6 +534,15 @@ test("the landing page links to Credits, which names comrak's release and fits a
   // The `comrak-release` phrase, which scripts/docs-site/credits.test.ts holds to FORK.md.
   expect(await landing.locator("article").textContent()).toMatch(/at its release v\d+\.\d+\.\d+ /);
   await landing.close();
+
+  const footer = await open("/");
+  const fromFooter = footer
+    .locator("footer.site-footer")
+    .getByRole("link", { name: "Credits", exact: true });
+  await fromFooter.click();
+  await footer.waitForURL(`${server.url}/credits/`);
+  expect(await fromFooter.getAttribute("aria-current")).toBe("page");
+  await footer.close();
 
   const page = await open("/credits/", 390);
   const overflow = await page.evaluate(

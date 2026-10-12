@@ -12,7 +12,7 @@ The best-documented reader problem in the research is a search engine sending pe
 
 - The [proposal](../proposals/versions.md): "What every line knows about the others".
 - Phase 1's decision 9.
-- The [search and answers plan](../search-and-answers/README.md): decisions 5, 15, 17, 19, 20, and 21. A record's keys are added and none change.
+- The [search and answers plan](https://github.com/ascribed-dev/ascribe/blob/5b22286fd2f370e796219e68a7c9d7cdb2ba8acc/project-docs/search-and-answers/README.md): decisions 5, 15, 17, 19, 20, and 21. A record's keys are added and none change.
 - `docs/content/contracts/output-layout.md`: `_ascribe/pages.json`.
 - `packages/astro/src/Head.astro`, `records.ts`, and `root-files.ts`: the head, the sitemap, and `robots.txt`.
 - `crates/ascribe-resolve/src/llms.rs` and `crates/ascribe-emit/src/plain/`: `llms.txt` and the Markdown version's first lines.
