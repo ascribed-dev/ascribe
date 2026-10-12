@@ -1,6 +1,6 @@
 # Decisions
 
-Decisions 1 to 123, in one list. Each has a number, the decision, the reason, and where it was made. Numbers don't change and aren't reused: a decision that's replaced stays, struck through, with a pointer to the one that replaced it.
+The numbered decisions, in one list. Each has a number, the decision, the reason, and where it was made. Numbers don't change and aren't reused: a decision that's replaced stays, struck through, with a pointer to the one that replaced it.
 
 **This file takes no new decisions.** Since decision #381, a decision made in an issue, a review, or a conversation is a file of its own in [decisions/](decisions/README.md), added in the pull request that acts on it and numbered by its issue. A plan's own decisions bind the work in that plan while it runs, and stay in its `README.md`; those that still bind the work after the plan finishes become files in [decisions/](decisions/README.md) when it closes. Each file names one of the sections below, and `node scripts/repo-docs/decisions.ts list` prints them under their sections.
 

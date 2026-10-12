@@ -14,7 +14,7 @@ const good =
   "---\nsection: The language\n---\n\n**A thing.** More. _Why:_ a reason. _From:_ the maintainer.\n";
 
 describe("checkDecision", () => {
-  const log: Log = { sections: ["The binary", "The language"], last: 123 };
+  const log: Log = { sections: ["The binary", "The language"], last: 2 };
   const exists = (file: string): boolean =>
     ["SPEC.md", "project-docs/decisions.md", "project-docs/decisions/400-other.md"].includes(file);
   const check = (text: string, name = "381-a-thing.md"): string[] =>
@@ -34,7 +34,7 @@ describe("checkDecision", () => {
     expect(check(good, "decision-files.md")).toEqual([expect.stringMatching(/issue's number/)]);
     expect(check(good, "381-Decision_Files.md")).toEqual([expect.stringMatching(/issue's number/)]);
     expect(check(good, "381ab-x.md")).toEqual([expect.stringMatching(/issue's number/)]);
-    expect(check(good, "74-old.md")).toEqual([expect.stringMatching(/isn't above 123/)]);
+    expect(check(good, "74-old.md")).toEqual([expect.stringMatching(/isn't above 128/)]);
   });
 
   test("names missing frontmatter, an unknown section, and another field", () => {
@@ -92,6 +92,17 @@ describe("a folder of decisions", () => {
     }
     return dir;
   }
+
+  test("refuses a new number in decisions.md", () => {
+    const dir = project({ "381-a.md": good });
+    writeFileSync(
+      path.join(dir, "project-docs", "decisions.md"),
+      "# Decisions\n\n## The binary\n\n1. **One.**\n129. **New.**\n\n## The language\n",
+    );
+    expect(checkDecisions(dir)).toEqual([
+      expect.stringMatching(/^project-docs\/decisions\.md: decision 129 is above 128,.* move it/),
+    ]);
+  });
 
   test("asks for a letter on each of an issue's decisions", () => {
     const dir = project({ "381-a.md": good, "381b-b.md": good, "382a-c.md": good });

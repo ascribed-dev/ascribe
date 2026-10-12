@@ -1,8 +1,8 @@
 // The decisions recorded one file each, in project-docs/decisions/: each new
 // decision is `<number>-<slug>.md`, numbered by the issue it was made for (or
 // its pull request's, with no issue), so two branches never claim the same
-// number or edit the same lines. project-docs/decisions.md keeps decisions 1
-// to 123 and takes no new ones.
+// number or edit the same lines. project-docs/decisions.md keeps the
+// numbered decisions made before, up to `lastNumbered`, and takes no new ones.
 //
 //   node scripts/repo-docs/decisions.ts check             say what's wrong with any file
 //   node scripts/repo-docs/decisions.ts list [section]    the files' decisions, under their sections
@@ -26,6 +26,13 @@ export const decisionsDir = "project-docs/decisions";
 
 /** The file of the numbered decisions before the folder, relative to the root. */
 export const decisionsLog = "project-docs/decisions.md";
+
+/**
+ * The last number decisions.md gives a decision. It takes no new ones, so a
+ * higher number there is a decision that belongs in a file of the folder,
+ * such as one from a branch opened before the folder was.
+ */
+export const lastNumbered = 128;
 
 /** The file in the folder that says what it is, which isn't a decision. */
 const readme = "README.md";
@@ -116,9 +123,9 @@ export function checkDecision(
     problems.push(
       "its name isn't its issue's number, a letter if the issue made more than one, and lowercase words joined by `-`, such as `381-decision-files.md`",
     );
-  } else if (Number(match[1]) <= log.last) {
+  } else if (Number(match[1]) <= lastNumbered) {
     problems.push(
-      `its number isn't above ${log.last}, the last in decisions.md, so it would read as one of those`,
+      `its number isn't above ${lastNumbered}, the last in decisions.md, so it would read as one of those`,
     );
   }
   const { text } = decision;
@@ -176,6 +183,11 @@ export function checkDecisions(root: string = repository): string[] {
       (problem) => `${decisionsDir}/${decision.name}: ${problem}`,
     ),
   );
+  if (log.last > lastNumbered) {
+    problems.push(
+      `${decisionsLog}: decision ${log.last} is above ${lastNumbered}, and decisions.md takes no new decisions; move it into a file of its own in ${decisionsDir}/, named by its issue (see its README.md)`,
+    );
+  }
   // Two files can't share an id, and an issue that made more than one
   // decision letters all of them, so "decision #381" names one file.
   const byNumber = new Map<string, string[]>();
