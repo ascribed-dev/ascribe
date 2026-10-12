@@ -1,8 +1,8 @@
-// The built site in Chromium: the landing page, the changelog, the head and the header,
-// each page's social card, variants, availability, code titles, links between
-// pages, search, the edit link, the 404 page, the narrow layout, the landing
-// page's demonstration, marks, phone width, and reading without a script, and
-// Why Ascribe, with its screenshots.
+// The built site in Chromium: the landing page, the changelog, the head, the
+// header and the footer, each page's social card, variants, availability, code
+// titles, links between pages, search, the edit link, the 404 page, the narrow
+// layout, the landing page's demonstration, marks, phone width, and reading
+// without a script, and Why Ascribe, with its screenshots.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync } from "node:fs";
@@ -160,9 +160,33 @@ test("the landing page's link to getting started opens it under /docs/", async (
   await page.close();
 });
 
-test("the header's Changelog opens the changelog, in the frame of the site's own pages", async () => {
+test("the footer links to the changelog, the license, and the repository, on every kind of page", async () => {
+  for (const path of ["/", "/docs/guides/astro/", "/changelog/", "/no/such/page/"]) {
+    const page = await open(path);
+    const footer = page.locator("footer.site-footer");
+    expect(await footer.count(), path).toBe(1);
+    const links = footer.getByRole("link");
+    expect(await links.allTextContents(), path).toEqual(["Changelog", "License", "Repository"]);
+    expect(await footer.getByRole("link", { name: "Changelog" }).getAttribute("href")).toBe(
+      "/changelog/",
+    );
+    expect(await footer.getByRole("link", { name: "License" }).getAttribute("href")).toBe(
+      "https://github.com/ascribed-dev/ascribe/blob/main/LICENSE",
+    );
+    expect(await footer.getByRole("link", { name: "Repository" }).getAttribute("href")).toBe(
+      "https://github.com/ascribed-dev/ascribe",
+    );
+    // The header keeps the site's main pages, and the changelog isn't one.
+    expect(await page.locator("header").getByRole("link", { name: "Changelog" }).count()).toBe(0);
+    await page.close();
+  }
+});
+
+test("the footer's Changelog opens the changelog, in the frame of the site's own pages", async () => {
   const page = await open("/");
-  const link = page.getByRole("link", { name: "Changelog", exact: true });
+  const link = page
+    .locator("footer.site-footer")
+    .getByRole("link", { name: "Changelog", exact: true });
   expect(await link.getAttribute("href")).toBe("/changelog/");
   await link.click();
   await page.waitForURL(`${server.url}/changelog/`);
