@@ -13,15 +13,25 @@
 //! declares already, or a file in the way, is refused, and then nothing is
 //! written. From then on the files are the project's, and nothing here writes
 //! over them.
+//!
+//! Asked to keep a declared type ([`Eject::keep_type`]), eject takes the
+//! template for it instead of refusing it: it writes the same files and adds
+//! only `template` and `guide` to the type's table, in place, after its last
+//! entry, leaving its other keys and every comment as they were. A type
+//! written as an inline or dotted table, one that names a template or a guide
+//! already, and one whose frontmatter doesn't take the template's are
+//! refused.
 
 use std::path::Path;
 
 use ascribe_check::MODEL_FILE;
 use ascribe_core::RelPath;
+use ascribe_core::{TextEdit, apply_edits};
 use ascribe_model::{ContentModel, file_hash};
+use ascribe_model::{ContentType, FieldType};
 use ascribe_resolve::{FileSystem, Layout, Probe};
 use serde::Serialize;
-use toml_edit::{ArrayOfTables, DocumentMut, Item, Table, value};
+use toml_edit::{ArrayOfTables, Document, DocumentMut, Item, Table, value};
 
 use crate::{Set, Template, set};
 
@@ -63,6 +73,11 @@ pub struct EjectAnswer {
     /// The types added to `ascribe.toml`, in the order they were named.
     /// Empty when anything was refused.
     pub added: Vec<Added>,
+    /// The types `ascribe.toml` declared already and kept, with `--keep-type`,
+    /// in the order they were named: each was given its `template` and
+    /// `guide`, and nothing else in it changed. Empty when anything was
+    /// refused.
+    pub kept: Vec<Kept>,
     /// What was refused, in the order it was named. When it isn't empty,
     /// nothing was written.
     pub refused: Vec<Refusal>,
@@ -92,6 +107,25 @@ pub struct Added {
     pub guide: Vec<String>,
 }
 
+/// A type `ascribe.toml` declared already, which eject kept, adding only
+/// its `template` and `guide`.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct Kept {
+    /// The type's name, `[types.<name>]`, which is the template's.
+    pub name: String,
+    /// Their index's summary of it.
+    pub summary: String,
+    /// The `template` added, from the folder `ascribe.toml` is in.
+    pub template: String,
+    /// The `guide` added, from the folder `ascribe.toml` is in, in the order
+    /// to read them: their guide, then Ascribe's notes on the type.
+    pub guide: Vec<String>,
+    /// The type's keys left as they were, in the order `ascribe.toml` has
+    /// them, such as `files` and `frontmatter`.
+    pub left: Vec<String>,
+}
+
 /// A template eject refused, and why.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
@@ -118,6 +152,14 @@ pub enum RefusalReason {
     Declared,
     /// A file is where one of its files would be written.
     FileInTheWay,
+    /// Asked to keep the type, `ascribe.toml` writes it as an inline or a
+    /// dotted table, which eject doesn't add to.
+    TypeNotTable,
+    /// Asked to keep the type, it names a `template` or a `guide` already.
+    TypeHasTemplate,
+    /// Asked to keep the type, its frontmatter doesn't declare a field the
+    /// template's has, or declares it as something other than a string.
+    FrontmatterDiffers,
 }
 
 /// Why eject couldn't do its work. Nothing was written, except after a
@@ -189,12 +231,16 @@ pub struct Eject<'a> {
     pub to: &'a RelPath,
     /// The version of Ascribe `templates.lock` records.
     pub ascribe_version: &'a str,
+    /// Whether a type `ascribe.toml` declares already is kept, given only
+    /// its `template` and `guide`, rather than refused.
+    pub keep_type: bool,
 }
 
 /// Writes the templates `request` names into the project, with their guides,
 /// Ascribe's notes on their types, and `templates.lock`, and adds their types
-/// to `ascribe.toml`. What's there is looked at through `fs`, the project's
-/// [`FileSystem`].
+/// to `ascribe.toml`, or, for a type it declares already and `request` keeps,
+/// adds the type's `template` and `guide`. What's there is looked at through
+/// `fs`, the project's [`FileSystem`].
 ///
 /// # Errors
 ///
@@ -210,6 +256,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         ascribe_version: ASCRIBE_VERSION,
         written: Vec::new(),
         added: Vec::new(),
+        kept: Vec::new(),
         refused: Vec::new(),
         page_declared: false,
     };
@@ -222,32 +269,47 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         });
     }
     let lock_path = at(request.to, LOCK_FILE);
-    let lock = read_lock(&lock_path, fs)?;
+    let mut lock = read_lock(&lock_path, fs)?;
+    let doc = Document::parse(request.model_text).ok();
     for template in &chosen {
-        refusals(request, fs, template, &mut answer.refused);
+        refusals(request, doc.as_ref(), fs, template, &mut answer.refused);
     }
     if !answer.refused.is_empty() {
         return Ok(answer);
     }
-    answer.added = chosen
-        .iter()
-        .map(|t| added(t, request.to, &layout))
-        .collect();
+    let mut placed: Vec<(String, Vec<String>)> = Vec::new();
+    let mut new: Vec<Template> = Vec::new();
+    for template in &chosen {
+        if request.model.types.iter().any(|t| t.name == template.name) {
+            let kept = kept(template, request.to, doc.as_ref());
+            placed.push((kept.template.clone(), kept.guide.clone()));
+            answer.kept.push(kept);
+        } else {
+            let added = added(template, request.to, &layout);
+            placed.push((added.template.clone(), added.guide.clone()));
+            answer.added.push(added);
+            new.push(template.clone());
+        }
+    }
     answer.page_declared = !declares_types(request.model_text);
+    let model_text = with_kept(request.model_text, doc.as_ref(), &answer.kept)?;
     let model_text = with_types(
-        request.model_text,
+        &model_text,
         answer.page_declared,
-        &chosen,
+        &new,
         &answer.added,
+        &Before {
+            model: request.model,
+            kept: &answer.kept,
+        },
     )?;
-    let mut lock = lock;
     let mut files: Vec<(String, &'static str)> = Vec::new();
-    for (template, added) in chosen.iter().zip(&answer.added) {
+    for (template, (template_path, guide)) in chosen.iter().zip(&placed) {
         let theirs = [
-            (added.template.clone(), template.text(&template.template)),
-            (added.guide[0].clone(), template.text(&template.guide)),
+            (template_path.clone(), template.text(&template.template)),
+            (guide[0].clone(), template.text(&template.guide)),
         ];
-        let ours: Vec<(String, &'static str)> = added.guide[1..]
+        let ours: Vec<(String, &'static str)> = guide[1..]
             .iter()
             .cloned()
             .zip(template.notes().map(|n| n.text))
@@ -308,21 +370,33 @@ fn chosen(set: &Set, names: &[String], refused: &mut Vec<Refusal>) -> Vec<Templa
     out
 }
 
-/// Why `template` can't be written, if it can't, in `refused`.
+/// Why `template` can't be written, if it can't, in `refused`. `doc` is
+/// `ascribe.toml`, parsed with its spans.
 fn refusals(
     request: &Eject<'_>,
+    doc: Option<&Document<&str>>,
     fs: &dyn FileSystem,
     template: &Template,
     refused: &mut Vec<Refusal>,
 ) {
     let name = &template.name;
-    if request.model.types.iter().any(|t| &t.name == name) {
-        refused.push(Refusal {
+    if let Some(declared) = request.model.types.iter().find(|t| &t.name == name) {
+        let refuse = |reason: RefusalReason, message: String| Refusal {
             name: name.clone(),
-            reason: RefusalReason::Declared,
+            reason,
             path: None,
-            message: format!("ascribe.toml declares [types.{name}] already"),
-        });
+            message,
+        };
+        if !request.keep_type {
+            refused.push(refuse(
+                RefusalReason::Declared,
+                format!(
+                    "ascribe.toml declares [types.{name}] already; `ascribe templates eject {name} --keep-type` takes the template for it"
+                ),
+            ));
+        } else if let Some((reason, message)) = not_kept(declared, template, doc) {
+            refused.push(refuse(reason, message));
+        }
     }
     let notes = template.notes().map(|n| n.name);
     for file in [template.template.as_str(), template.guide.as_str()]
@@ -343,6 +417,99 @@ fn refusals(
     }
 }
 
+/// Why `declared` can't be kept and given `template`'s `template` and
+/// `guide`, if it can't: it isn't a `[types.<name>]` table of its own, it
+/// names a template or a guide already, or its frontmatter doesn't take the
+/// template's.
+fn not_kept(
+    declared: &ContentType,
+    template: &Template,
+    doc: Option<&Document<&str>>,
+) -> Option<(RefusalReason, String)> {
+    let name = &declared.name;
+    if header_table(doc, name).is_none() {
+        return Some((
+            RefusalReason::TypeNotTable,
+            format!(
+                "ascribe.toml doesn't write [types.{name}] as a table of its own, so eject can't add `template` and `guide` to it; write it as one, under a [types.{name}] header, or add them by hand"
+            ),
+        ));
+    }
+    let named = if declared.template.is_some() {
+        Some("template")
+    } else if !declared.guide.is_empty() {
+        Some("guide")
+    } else {
+        None
+    };
+    if let Some(key) = named {
+        return Some((
+            RefusalReason::TypeHasTemplate,
+            format!(
+                "[types.{name}] names a `{key}` already, and eject never changes one; take it out first to replace it"
+            ),
+        ));
+    }
+    frontmatter_differs(declared, template)
+        .map(|message| (RefusalReason::FrontmatterDiffers, message))
+}
+
+/// Why a page started from `template` wouldn't be of `declared`, if it
+/// wouldn't: the template's frontmatter has a field the type doesn't
+/// declare, or declares as something other than a string.
+fn frontmatter_differs(declared: &ContentType, template: &Template) -> Option<String> {
+    let name = &declared.name;
+    for field in frontmatter_fields(template.text(&template.template)) {
+        let found = declared.frontmatter.fields.iter().find(|f| f.name == field);
+        match found {
+            None => {
+                return Some(format!(
+                    "the template's frontmatter has `{field}`, which [types.{name}] doesn't declare, so no page started from it would check; declare `{field}` as a string first"
+                ));
+            }
+            Some(f) if f.ty != FieldType::String => {
+                return Some(format!(
+                    "[types.{name}] declares `{field}` as {}, and the template's is a string, so no page started from it would check",
+                    f.ty.describe()
+                ));
+            }
+            Some(_) => {}
+        }
+    }
+    None
+}
+
+/// The `[types.<name>]` table in `doc`, when it's written with a header of
+/// its own: not inline, not dotted, and not only the parent of
+/// `[types.<name>.frontmatter]`.
+fn header_table<'d>(doc: Option<&'d Document<&str>>, name: &str) -> Option<&'d Table> {
+    match doc?.get("types")?.get(name)? {
+        Item::Table(t) if !t.is_dotted() && !t.is_implicit() => Some(t),
+        _ => None,
+    }
+}
+
+/// The type `template` keeps, given its `template` and `guide`.
+fn kept(template: &Template, to: &RelPath, doc: Option<&Document<&str>>) -> Kept {
+    Kept {
+        name: template.name.clone(),
+        summary: template.summary.clone(),
+        template: at(to, &template.template).to_string(),
+        guide: guide(template, to),
+        left: header_table(doc, &template.name)
+            .map(|t| t.iter().map(|(k, _)| k.to_owned()).collect())
+            .unwrap_or_default(),
+    }
+}
+
+/// The paths of `template`'s guide and Ascribe's notes, in `to`.
+fn guide(template: &Template, to: &RelPath) -> Vec<String> {
+    std::iter::once(template.guide.as_str())
+        .chain(template.notes().map(|n| n.name))
+        .map(|file| at(to, file).to_string())
+        .collect()
+}
+
 /// The type `template` is added as.
 fn added(template: &Template, to: &RelPath, layout: &Layout) -> Added {
     let folder = layout
@@ -355,10 +522,7 @@ fn added(template: &Template, to: &RelPath, layout: &Layout) -> Added {
         files: format!("{}/**", template.name),
         folder: folder.to_string(),
         template: at(to, &template.template).to_string(),
-        guide: std::iter::once(template.guide.as_str())
-            .chain(template.notes().map(|n| n.name))
-            .map(|file| at(to, file).to_string())
-            .collect(),
+        guide: guide(template, to),
     }
 }
 
@@ -397,14 +561,88 @@ const PAGE_TYPE: &[&str] = &[
     "title = \"string\"",
 ];
 
+/// `ascribe.toml`'s text with the `template` and `guide` of each type kept
+/// added to its table, after its last entry, each a line of its own, and
+/// nothing else changed. [`with_types`] checks the result.
+fn with_kept(
+    text: &str,
+    doc: Option<&Document<&str>>,
+    kept: &[Kept],
+) -> Result<String, EjectError> {
+    let newline = if text.contains("\r\n") { "\r\n" } else { "\n" };
+    let mut edits = Vec::new();
+    for kept in kept {
+        let refuse = |reason: &str| EjectError::Model {
+            types: format!("`template` and `guide` of [types.{}]", kept.name),
+            reason: reason.to_owned(),
+        };
+        let table =
+            header_table(doc, &kept.name).ok_or_else(|| refuse("its table can't be found"))?;
+        let (at, indent) = after_entries(text, table);
+        let lines = format!(
+            "{indent}template = {}{newline}{indent}guide = {}{newline}",
+            toml_string(&kept.template),
+            toml_list(&kept.guide)
+        );
+        let edit = if at == text.len() && !text.is_empty() && !text.ends_with('\n') {
+            TextEdit::insert(at, format!("{newline}{}", lines.trim_end()))
+        } else {
+            TextEdit::insert(at, lines)
+        };
+        edits.push(edit);
+    }
+    apply_edits(text, &edits).map_err(|_| EjectError::Model {
+        types: "`template` and `guide`".to_owned(),
+        reason: "the edits overlap".to_owned(),
+    })
+}
+
+/// Where a line goes after `table`'s last value, the start of the line after
+/// it, or after the header when it has no values; and the white space
+/// before that value's key, when it's all white space.
+fn after_entries<'t>(text: &'t str, table: &Table) -> (usize, &'t str) {
+    let last = table
+        .iter()
+        .filter_map(|(k, _)| table.get_key_value(k))
+        .filter(|(_, item)| item.is_value())
+        .max_by_key(|(_, item)| item.span().map_or(0, |s| s.end));
+    let end = last
+        .and_then(|(_, item)| item.span())
+        .or_else(|| table.span())
+        .map_or(text.len(), |s| s.end);
+    let at = text
+        .get(end..)
+        .and_then(|rest| rest.find('\n'))
+        .map_or(text.len(), |i| end + i + 1);
+    let indent = last
+        .and_then(|(key, _)| key.span())
+        .and_then(|span| {
+            let start = text[..span.start].rfind('\n').map_or(0, |i| i + 1);
+            text.get(start..span.start)
+        })
+        .filter(|indent| indent.trim().is_empty())
+        .unwrap_or("");
+    (at, indent)
+}
+
+/// What the content model was before eject, to check the types kept against.
+struct Before<'a> {
+    /// The content model `ascribe.toml` loaded as.
+    model: &'a ContentModel,
+    /// The types kept.
+    kept: &'a [Kept],
+}
+
 /// `ascribe.toml`'s text with a table for each type added at its end, and
 /// nothing before it changed; with `page` first, when the file declared no
-/// types. The result must load as a content model with the types in it.
+/// types. The result must load as a content model with the types in it, and
+/// with each type kept as it was, but for its `template` and `guide`.
 fn with_types(
     text: &str,
     page: bool,
     templates: &[Template],
     added: &[Added],
+    before: &Before<'_>,
 ) -> Result<String, EjectError> {
     let newline = if text.contains("\r\n") { "\r\n" } else { "\n" };
     let mut out = text.to_owned();
@@ -430,6 +668,12 @@ fn with_types(
     let types = added
         .iter()
         .map(|a| format!("[types.{}]", a.name))
+        .chain(
+            before
+                .kept
+                .iter()
+                .map(|k| format!("`template` and `guide` of [types.{}]", k.name)),
+        )
         .collect::<Vec<_>>()
         .join(", ");
     let refuse = |reason: String| EjectError::Model {
@@ -452,7 +696,46 @@ fn with_types(
             missing.name
         )));
     }
+    for kept in before.kept {
+        let was = before.model.types.iter().find(|t| t.name == kept.name);
+        let is = model.types.iter().find(|t| t.name == kept.name);
+        if !is
+            .zip(was)
+            .is_some_and(|(is, was)| same_but_template(is, was, kept))
+        {
+            return Err(refuse(format!(
+                "[types.{}] wouldn't be read as it was with them added",
+                kept.name
+            )));
+        }
+    }
     Ok(out)
+}
+
+/// Whether `is` is `was` with `kept`'s `template` and `guide`, and nothing
+/// else changed.
+fn same_but_template(is: &ContentType, was: &ContentType, kept: &Kept) -> bool {
+    is.files == was.files
+        && is.default == was.default
+        && is.frontmatter == was.frontmatter
+        && is.purpose == was.purpose
+        && is.template.as_ref().map(|t| t.path.as_str()) == Some(kept.template.as_str())
+        && is
+            .guide
+            .iter()
+            .map(|g| g.path.as_str())
+            .eq(kept.guide.iter().map(String::as_str))
+}
+
+/// `s` as a TOML string.
+fn toml_string(s: &str) -> String {
+    toml_edit::Value::from(s).to_string()
+}
+
+/// `items` as a TOML array of strings, on one line.
+fn toml_list(items: &[String]) -> String {
+    let items: Vec<String> = items.iter().map(|s| toml_string(s)).collect();
+    format!("[{}]", items.join(", "))
 }
 
 /// The lines of a type's tables: its files, template, and guide, then its
@@ -460,17 +743,12 @@ fn with_types(
 /// frontmatter has, as a string the page must have, `title` first.
 fn type_table(template: &Template, added: &Added) -> Vec<String> {
     let key = |k: &str| toml_edit::Key::new(k).to_string();
-    let string = |s: &str| toml_edit::Value::from(s).to_string();
-    let list = |items: &[String]| {
-        let items: Vec<String> = items.iter().map(|s| string(s)).collect();
-        format!("[{}]", items.join(", "))
-    };
     let name = key(&added.name);
     let mut lines = vec![
         format!("[types.{name}]"),
-        format!("files = {}", list(std::slice::from_ref(&added.files))),
-        format!("template = {}", string(&added.template)),
-        format!("guide = {}", list(&added.guide)),
+        format!("files = {}", toml_list(std::slice::from_ref(&added.files))),
+        format!("template = {}", toml_string(&added.template)),
+        format!("guide = {}", toml_list(&added.guide)),
         String::new(),
         format!("[types.{name}.frontmatter]"),
     ];
@@ -618,11 +896,17 @@ mod tests {
             output_dir: RelPath::parse("dist").unwrap(),
         };
         let added = added(template, &RelPath::parse("templates").unwrap(), &layout);
+        let model =
+            ascribe_model::load_str("spec = \"0.1\"\n", ascribe_core::FileId::new(0)).unwrap();
         let text = with_types(
             "spec = \"0.1\"\r\n",
             false,
             std::slice::from_ref(template),
             &[added],
+            &Before {
+                model: &model,
+                kept: &[],
+            },
         )
         .unwrap();
         assert!(

@@ -16,11 +16,11 @@ default = true
 title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
-# The reference is the set's, from `ascribe templates eject reference`: its
-# template and guide are in templates/, with Ascribe's notes on it. What the
-# set's type doesn't have is put back here: the contracts, which are written
-# for implementers but shaped as references, the editor's pages, which are
-# its reference though they're with the guides, and the same frontmatter as
+# The reference is the set's, from `ascribe templates eject reference
+# --keep-type`: its template and guide are in templates/, with Ascribe's notes
+# on it. The type is the docs' own: the contracts, which are written for
+# implementers but shaped as references, the editor's pages, which are its
+# reference though they're with the guides, and the same frontmatter as
 # guides.
 [types.reference]
 files = ["reference/**", "contracts/**", "guides/editor.md", "guides/editor/**"]

@@ -25,6 +25,19 @@ fn project(model: &str) -> tempfile::TempDir {
 }
 
 fn run(dir: &Path, names: &[&str], to: &str) -> Result<EjectAnswer, EjectError> {
+    run_with(dir, names, to, false)
+}
+
+fn keeping(dir: &Path, names: &[&str]) -> Result<EjectAnswer, EjectError> {
+    run_with(dir, names, "templates", true)
+}
+
+fn run_with(
+    dir: &Path,
+    names: &[&str],
+    to: &str,
+    keep_type: bool,
+) -> Result<EjectAnswer, EjectError> {
     let file = Project::load_model(&dir.join("ascribe.toml")).expect("the model loads");
     let names: Vec<String> = names.iter().map(|n| (*n).to_owned()).collect();
     let to = RelPath::parse(to).expect("a relative path");
@@ -37,6 +50,7 @@ fn run(dir: &Path, names: &[&str], to: &str) -> Result<EjectAnswer, EjectError> 
             names: &names,
             to: &to,
             ascribe_version: "9.9.9",
+            keep_type,
         },
         &fs,
     )
@@ -182,9 +196,191 @@ fn a_type_declared_already_is_refused_and_nothing_is_written() {
     let answer = run(dir.path(), &["how-to"], "templates").expect("answered");
     assert_eq!(answer.refused.len(), 1);
     assert_eq!(answer.refused[0].reason, RefusalReason::Declared);
+    assert!(
+        answer.refused[0]
+            .message
+            .ends_with("`ascribe templates eject how-to --keep-type` takes the template for it"),
+        "{}",
+        answer.refused[0].message
+    );
     assert!(answer.written.is_empty() && answer.added.is_empty());
     assert_eq!(files(dir.path()), before);
     assert_eq!(read(dir.path(), "ascribe.toml"), model);
+}
+
+/// A model with `how-to` declared as `table`, after `[types.guide]`, and a
+/// comment and a type after it.
+fn declared(table: &str) -> String {
+    format!(
+        "{MODEL}\n# How-tos.\n{table}\n# Last.\n[types.concept]\nfiles = [\"concept/**\"]\n\n[types.concept.frontmatter]\ntitle = \"string\"\n"
+    )
+}
+
+#[test]
+fn a_type_kept_gets_its_template_and_guide_and_nothing_else_changes() {
+    let model = declared(
+        "[types.how-to]\nfiles = [\"how-to/**\", \"tasks/**\"] # both\npurpose = \"Doing a task.\"\n\n[types.how-to.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n",
+    );
+    let dir = project(&model);
+    let answer = keeping(dir.path(), &["how-to"]).expect("ejected");
+    assert!(answer.refused.is_empty() && answer.added.is_empty());
+    assert_eq!(
+        answer.written,
+        [
+            "templates/how-to.md",
+            "templates/how-to.guide.md",
+            "templates/how-to.ascribe.md",
+            "templates/templates.lock",
+            "ascribe.toml"
+        ]
+    );
+    let kept = &answer.kept[0];
+    assert_eq!(kept.name, "how-to");
+    assert_eq!(kept.template, "templates/how-to.md");
+    assert_eq!(
+        kept.guide,
+        ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
+    );
+    assert_eq!(kept.left, ["files", "purpose", "frontmatter"]);
+    assert_eq!(
+        read(dir.path(), "ascribe.toml"),
+        model.replace(
+            "purpose = \"Doing a task.\"\n",
+            "purpose = \"Doing a task.\"\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n"
+        )
+    );
+    let lock = read(dir.path(), "templates/templates.lock");
+    assert!(lock.contains("name = \"how-to\""), "{lock}");
+    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let how_to = file.model.types.iter().find(|t| t.name == "how-to");
+    assert!(how_to.is_some_and(|t| t.template.is_some() && t.files.len() == 2));
+}
+
+#[test]
+fn keeping_a_type_adds_the_ones_not_declared_as_eject_does() {
+    let model = declared(
+        "[types.how-to]\nfiles = [\"how-to/**\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n",
+    );
+    let dir = project(&model);
+    let answer = keeping(dir.path(), &["tutorial", "how-to"]).expect("ejected");
+    assert_eq!(answer.kept.len(), 1);
+    assert_eq!(answer.added.len(), 1);
+    assert_eq!(answer.added[0].name, "tutorial");
+    let text = read(dir.path(), "ascribe.toml");
+    assert!(
+        text.ends_with(
+            "[types.tutorial.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("files = [\"how-to/**\"]\ntemplate = \"templates/how-to.md\"\n"),
+        "{text}"
+    );
+    // Written in the order named.
+    assert_eq!(answer.written[0], "templates/tutorial.md");
+}
+
+#[test]
+fn the_docs_reference_is_what_keeping_the_type_writes_apart_from_its_purpose() {
+    let docs = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/ascribe.toml"),
+    )
+    .expect("the docs' ascribe.toml");
+    let start = docs
+        .find("[types.reference]\n")
+        .expect("the docs declare the reference");
+    let end = docs[start..]
+        .find("\n\n#")
+        .map_or(docs.len(), |i| start + i + 1);
+    let table: String = docs[start..end]
+        .lines()
+        .filter(|l| !l.starts_with("purpose = "))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    let without: String = table
+        .lines()
+        .filter(|l| !l.starts_with("template = ") && !l.starts_with("guide = "))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    let model = format!("{MODEL}\n{without}");
+    let dir = project(&model);
+    keeping(dir.path(), &["reference"]).expect("ejected");
+    assert_eq!(
+        read(dir.path(), "ascribe.toml"),
+        format!("{MODEL}\n{table}")
+    );
+}
+
+#[test]
+fn a_type_kept_must_be_a_table_of_its_own() {
+    for table in [
+        "[types]\nhow-to = { files = [\"how-to/**\"], frontmatter = { title = \"string\", description = \"string\" } }\n",
+        "[types]\nhow-to.files = [\"how-to/**\"]\nhow-to.frontmatter.title = \"string\"\nhow-to.frontmatter.description = \"string\"\n",
+    ] {
+        let model = declared(table);
+        let dir = project(&model);
+        let answer = keeping(dir.path(), &["how-to"]).expect("answered");
+        assert_eq!(answer.refused.len(), 1, "{table}");
+        assert_eq!(answer.refused[0].reason, RefusalReason::TypeNotTable);
+        assert!(answer.written.is_empty() && answer.kept.is_empty());
+        assert!(!dir.path().join("templates").exists());
+        assert_eq!(read(dir.path(), "ascribe.toml"), model);
+    }
+}
+
+#[test]
+fn a_type_kept_with_a_template_or_guide_already_is_refused() {
+    for key in [
+        "template = \"ours/how-to.md\"",
+        "guide = [\"ours/how-to.guide.md\"]",
+    ] {
+        let model = declared(&format!(
+            "[types.how-to]\nfiles = [\"how-to/**\"]\n{key}\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+        ));
+        let dir = project(&model);
+        std::fs::create_dir(dir.path().join("ours")).expect("made");
+        std::fs::write(
+            dir.path().join("ours/how-to.md"),
+            "---\ntitle: T\n---\n\nText.\n",
+        )
+        .expect("written");
+        std::fs::write(dir.path().join("ours/how-to.guide.md"), "Read me.\n").expect("written");
+        let answer = keeping(dir.path(), &["how-to"]).expect("answered");
+        assert_eq!(answer.refused.len(), 1, "{key}");
+        assert_eq!(answer.refused[0].reason, RefusalReason::TypeHasTemplate);
+        assert!(!dir.path().join("templates").exists());
+        assert_eq!(read(dir.path(), "ascribe.toml"), model);
+    }
+}
+
+#[test]
+fn a_type_kept_whose_frontmatter_doesn_t_take_the_template_s_is_refused() {
+    for (frontmatter, field) in [
+        (
+            "title = \"string\"\n",
+            "`description`, which [types.how-to] doesn't declare",
+        ),
+        (
+            "title = \"string\"\ndescription = \"list(string)\"\n",
+            "declares `description` as list(string)",
+        ),
+    ] {
+        let model = declared(&format!(
+            "[types.how-to]\nfiles = [\"how-to/**\"]\n\n[types.how-to.frontmatter]\n{frontmatter}"
+        ));
+        let dir = project(&model);
+        let answer = keeping(dir.path(), &["how-to"]).expect("answered");
+        assert_eq!(answer.refused.len(), 1, "{frontmatter}");
+        assert_eq!(answer.refused[0].reason, RefusalReason::FrontmatterDiffers);
+        assert!(
+            answer.refused[0].message.contains(field),
+            "{}",
+            answer.refused[0].message
+        );
+        assert!(!dir.path().join("templates").exists());
+        assert_eq!(read(dir.path(), "ascribe.toml"), model);
+    }
 }
 
 #[test]
