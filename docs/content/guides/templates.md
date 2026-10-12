@@ -64,6 +64,14 @@ cp templates/how-to.md docs/how-to/rotate-keys.md
 
 Then replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
+An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](agents.md#from-the-command-line)), and the prompt gives it the template with the title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
+
+```sh
+ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
+```
+
+There's no command that writes the page for you at the terminal: copying the file is one line, and the prompt is for the agent.
+
 ## What's left to fill in
 
 `ascribe check` compares a page with its type's template, and reports what it still has of it as advice (`template-placeholder-left`):

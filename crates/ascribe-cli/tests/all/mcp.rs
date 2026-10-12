@@ -935,7 +935,7 @@ fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
     assert!(text.contains("Write a new page of type `guide`"), "{text}");
     assert!(text.contains("`guides/**`"), "{text}");
     assert!(text.contains("title: \"Rotate your keys\""), "{text}");
-    assert!(text.contains("audience: …"), "{text}");
+    assert!(text.contains("\naudience:\n---\n"), "{text}");
 }
 
 #[test]
