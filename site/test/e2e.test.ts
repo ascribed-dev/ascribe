@@ -230,8 +230,9 @@ test("the changelog's entries open one at a time or all at once, and can be only
   await page.getByRole("button", { name: "Expand all" }).click();
   expect(await page.locator(".entry > details:not([open])").count()).toBe(0);
 
-  // Each area's heading counts its entries.
-  const area = page.locator(".release").first().locator(".area").first();
+  // Each area's heading counts its entries. Just after a release the
+  // unreleased section has none, so this is the newest release that has some.
+  const area = page.locator(".release:has(.area)").first().locator(".area").first();
   const count = Number(await area.locator("h3 .count").textContent());
   expect(await area.locator(".entry").count()).toBe(count);
 
@@ -260,7 +261,7 @@ test("the changelog's entries open one at a time or all at once, and can be only
     .filter({ hasText: /^Fixes/ })
     .first()
     .click();
-  await page.waitForURL(/#unreleased-fixes$/);
+  await page.waitForURL(/#(unreleased|v\d+\.\d+\.\d+)-fixes$/);
   expect(await contents.getByRole("link", { name: /^0\.1\.0/ }).isVisible()).toBe(true);
   await page.close();
 });
