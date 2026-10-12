@@ -17,7 +17,7 @@ Someone starting a page of a known kind (a how-to, a concept, a troubleshooting 
 - **`\{` is a literal brace** (SPEC §3, the escapes table), so `\{Task name}` is ordinary text that shows as `{Task name}`.
 - **Checks about quality are advice** a project can raise, turn off, or acknowledge, each with a kind of next step.
 - **Generated files have a pattern:** a test fails when one is stale, and `ASCRIBE_BLESS=1` rewrites it (`ARCHITECTURE.md`). A scheduled job that follows another repository and opens a pull request exists too, in `examples/docs-repository/.github/workflows/update-sources.yml`.
-- **No construct holds text that's never published.** The [notes proposal](../proposals/notes.md) designs one, `@comment`, and it isn't built.
+- **No construct holds text that's never published.** The [memos proposal](../proposals/memos.md) designs one, `@memo`, and it isn't built.
 - **Nothing starts a project or a page for a person** (the surface audit's finding 53), and every Astro site rewrites the same four files (finding 29).
 
 **In The Good Docs Project,** release v1.6.0, tagged 11 June 2026: 25 templates in three packs, a guide with each, an `index.json` naming each template's files, and the MIT No Attribution license. Their repository is on GitLab, `gitlab.com/tgdp/templates`. The copy under their GitHub organisation is archived, with tags only to v0.2.0, and isn't the source. GitLab's tags can be read without signing in, and its releases can't. Checked unchanged, six Core templates gave 5 errors and 18 warnings, from two causes: placeholders in curly brackets, and each template's relative link to its guide.
@@ -43,7 +43,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 15. **The copied files go in `templates/`, beside `ascribe.toml`,** or where `--to <DIR>` says, a path from the current folder. Not under `.ascribe/`, which the docs say can be deleted: these are files the team edits and commits.
 16. **`ascribe templates eject [NAME]...` checks everything first and writes nothing when anything is refused.** A type declared already or a file in the way is named, nothing is written, and it exits 2, as `ascribe vale eject` does. With no name it takes the whole set. It edits `ascribe.toml` in place, keeping comments and order, giving each type `files = ["<name>/**"]`, `template`, `guide`, and its frontmatter, and says so. `--format text|json`. `ascribe templates list` reads only the binary.
 17. **A placeholder is a run of literal text that an escaped brace opens and its closing brace ends,** found by reading the template as any page is read. The check, `template-placeholder-left`, is advice, configurable, next step `write`, comparing canonical form and ignoring how a line was wrapped. A placeholder changed by a word isn't found: the check finds what was never touched.
-18. **A template's instructions stay as quoted paragraphs until `@comment` exists,** and the same check reports one left whole in a page, with a message that says it's an instruction. Nothing waits on the notes plan, and a forgotten instruction is reported before it's published.
+18. **A template's instructions stay as quoted paragraphs until `@memo` exists,** and the same check reports one left whole in a page, with a message that says it's an instruction. Nothing waits on the memos plan, and a forgotten instruction is reported before it's published.
 19. **Their release is pinned in one file the script and the test both read; their source is fetched into an ignored folder, never committed; Ascribe's copies are committed in the crate that carries them,** each with a first line saying it's generated, from what, and at which release; the structural rules are a data file beside the script; and Ascribe's notes are hand-written files the script never opens.
 
 The options each of 14 to 19 was chosen from are in [phase 1](phase-1-decisions.md).
@@ -90,7 +90,7 @@ After phase 2, a page is started from a template by copying the file. The comman
 
 | Phase | Result |
 |---|---|
-| [1: Decisions](phase-1-decisions.md) | The maintainer settles the keys on a type, where the files go, what counts as a placeholder, and what carries a template's instructions until `@comment` exists. |
+| [1: Decisions](phase-1-decisions.md) | The maintainer settles the keys on a type, where the files go, what counts as a placeholder, and what carries a template's instructions until `@memo` exists. |
 | [2: The thread](phase-2-thread.md) | `ascribe templates eject how-to` gives a project a how-to template and guide, and `ascribe check` reports a placeholder left in a page. |
 | [3: The six](phase-3-six.md) | The whole starter set: six templates, six guides, Ascribe's notes on each, and a content model that declares the six types. |
 | [4: Starting a page](phase-4-start.md) | A person starts a page from a type in the editor, and an agent gets the template and is sent to the guide. |
@@ -104,7 +104,7 @@ Each phase's result is something a person can run or open. None builds a layer f
 
 ## Carved out, and waiting
 
-- **A template's instructions as text that's never published.** They wait for `@comment`, which the [notes proposal](../proposals/notes.md) designs and nothing has built. Until it exists they're carried as phase 1 decides. When it does, the conversion gains one rule, the set is regenerated, and a project's existing copies are its own to change or not. That's a small change to this plan's output and not a phase of it.
+- **A template's instructions as text that's never published.** They wait for `@memo`, which the [memos proposal](../proposals/memos.md) designs and nothing has built. Until it exists they're carried as phase 1 decides. When it does, the conversion gains one rule, the set is regenerated, and a project's existing copies are its own to change or not. That's a small change to this plan's output and not a phase of it.
 - **A site's starter files** (the surface audit's finding 29): the collection, the route, a layout that loads the elements, and the sidebar's list. They'd be written by `@ascribed/astro`, not the binary, into an Astro project, which is a different package, a different seam, and a design that depends on navigation, which has no proposal. It has an issue of its own, [#344](https://github.com/ascribed-dev/ascribe/issues/344), and this plan's command is named so a second thing to eject fits beside it.
 - **Checking a page's shape against its type** ("a how-to has a procedure"). It needs a way to describe a page's outline in the content model. Later, as the proposal says.
 
@@ -112,7 +112,7 @@ Each phase's result is something a person can run or open. None builds a layer f
 
 - **The surface audit.** Its conventions name the command and its verb, say what `--format` words it takes and what it exits with, and say a path given to a command is from the current folder. Its finding 53 is phase 5, and its finding 59, the plugin's `new-page` command, is in phase 4's way and should be read first.
 - **Search and answers.** A template's page has a title and a description from its first line of frontmatter, so pages made from one start with what that plan's checks ask for.
-- **Notes.** This plan is the first user of `@comment`, and doesn't wait for it.
+- **Memos.** This plan is the first user of `@memo`, and doesn't wait for it.
 
 ## Rules for every phase
 

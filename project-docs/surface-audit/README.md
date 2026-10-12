@@ -1,6 +1,6 @@
 # The surface audit
 
-One look at everything a person or an agent touches in Ascribe, to find where it has stopped being one thing, and to say what to change. The reasons, and what "the surface" covers, are in the [proposal](../proposals/surface-audit.md). This is the plan for doing it.
+One look at everything a person or an agent touches in Ascribe, to find where it has stopped being one thing, and to say what to change. The reasons, and what "the surface" covers, are in the [proposal](https://github.com/ascribed-dev/ascribe/blob/460259f6529f9e7d5a8e06e600a9f28b43ae03f5/project-docs/proposals/surface-audit.md). This is the plan for doing it.
 
 It's done once. It finds and recommends; every change it leads to is separate work.
 

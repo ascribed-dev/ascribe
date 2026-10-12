@@ -2,7 +2,7 @@
 
 Part of [The surface audit](README.md), [phase 4](phase-4-docs-site.md). The docs site is looked at twice (README decision 7): as the first site built with Ascribe, and as the way people find the surface. Section 1 is the first; sections 2 and 3 are the second. What's certain is written as findings 28 to 44 in [findings.md](findings.md#the-docs-site).
 
-Everything here is from `main` at `a138d68b`, the published site at <https://ascribed-dev.com>, and a binary built from that code (`ascribe 0.2.0`), on 10 October 2026. Phase 2's generated inventory wasn't done, so "the surface" is the fifteen rows of the [proposal's table](../proposals/surface-audit.md#what-the-surface-is), with [phase 1's tables](inventory-slice.md) and the sources they were built from.
+Everything here is from `main` at `a138d68b`, the published site at <https://ascribed-dev.com>, and a binary built from that code (`ascribe 0.2.0`), on 10 October 2026. Phase 2's generated inventory wasn't done, so "the surface" is the fifteen rows of the [proposal's table](https://github.com/ascribed-dev/ascribe/blob/460259f6529f9e7d5a8e06e600a9f28b43ae03f5/project-docs/proposals/surface-audit.md#what-the-surface-is), with [phase 1's tables](inventory-slice.md) and the sources they were built from.
 
 ## 1. What the site built for itself
 
@@ -179,7 +179,7 @@ Where a page describes more than is released, it says so. 106 marks say `next`, 
 - **`reference/cli.md` has tasks inside `ascribe check`.** Its subsections are "Checking some files", "Checking text before it's saved", "Checking the prose", "A quick check after each edit", and "Output for agents", before "Exit codes" and "Text output". The other commands' sections are what the command takes and writes.
 - **`reference/content-model.md` is called a guide by the pages that link to it.** The home page: "The [reference] above is the guide for writing one." The contract: "For a guide to writing one, see the [`ascribe.toml` reference]". It's a numbered section for each table with every key, which is a reference, and there is no guide to writing a content model beyond getting started's one section, "Create `ascribe.toml`".
 
-**Where a reader with a task lands on a specification.** Taking the eight tasks of the [proposal's journeys](../proposals/surface-audit.md#2-journeys):
+**Where a reader with a task lands on a specification.** Taking the eight tasks of the [proposal's journeys](https://github.com/ascribed-dev/ascribe/blob/460259f6529f9e7d5a8e06e600a9f28b43ae03f5/project-docs/proposals/surface-audit.md#2-journeys):
 
 | Task | Where the docs take it |
 |---|---|

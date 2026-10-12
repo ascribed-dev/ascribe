@@ -117,7 +117,7 @@ The command reference says, while each is true: the set has one template; a page
 
 ## Out of scope
 
-The other five templates. Starting a page any other way than copying. A project with no `ascribe.toml`. Following a new release. `ascribe templates status`. `@comment`.
+The other five templates. Starting a page any other way than copying. A project with no `ascribe.toml`. Following a new release. `ascribe templates status`. `@memo`.
 
 ## Acceptance criteria
 

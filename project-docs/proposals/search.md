@@ -1,6 +1,6 @@
 # Proposal: search
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and notes. Those are proposals of their own ([notes](notes.md), and the cache's): the three share no layer, and this one mentions the others only where it touches them.
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and notes. Those are proposals of their own ([memos](memos.md), and the cache's): the three share no layer, and this one mentions the others only where it touches them.
 
 ## The goal
 
@@ -275,7 +275,7 @@ A real inverted index, and the engine that comes with it, would be worth weighin
 - **A persistent index,** as above.
 - **A search view in the sidebar.** The quick pick first; a view if people keep results open.
 
-Later: [notes](notes.md), once they exist, could be searched alongside pages.
+Later: [memos](memos.md), once they exist, could be searched alongside pages.
 
 ## The thread
 
@@ -290,9 +290,11 @@ For a later plan, by the repository's [steel threads](../../.claude/skills/steel
 
 **What the command is called.** `ascribe search`, with the tool `ascribe_search` and the request `ascribe/search`. The [surface audit](../surface-audit/findings.md#the-proposals-against-the-findings) checked the names against its conventions: a verb alone, and a tool named for its command. A path given to it is a path from the current folder, as the audit's findings 13 and 26 ask of every command.
 
-## Open questions
+## Settled
 
-- **Is one map from a reader's text to its source worth building for all three users?** Search could have its own, beside Vale's and `diff`'s block text. Or the plan could build one that Vale's extraction and `diff`'s tree are then moved onto, which is more work and three fewer ways for "what a reader sees" to disagree.
-- **Is a regular expression worth linking an engine for?** The binary has none today. Words, phrases, `--case`, and `--word` need only a substring search. A pattern such as `v3\.[0-9]+` needs an engine, and without one in `search`, the way to run it is `ascribe build --emit plain` and `grep`, which loses the source lines.
-- **Which frontmatter fields count as what a reader sees?** The proposal searches the title and the field marked `role = "description"`, since those are the two Ascribe itself publishes. A site may show others. Should a type be able to mark more fields as searched, or is that the site's business?
-- **When nothing matches, should search say that the source has the words?** A query can come up empty because every build drops the text, or because `--build` named one that does. Saying so needs a second scan, of the source, and it would tell an agent the difference between "not written" and "not published".
+Four questions this proposal left open, answered by the maintainer on 11 October 2026.
+
+- **Search gets its own map, and `diff` moves onto it; Vale keeps its own.** The map is built by the Vale map's method, as the seam section says, with the property test that every character has a place, and held to the plain output by test. `ascribe diff` reads the same input, a resolved page for a build, and needs less of it, so once search's map exists `diff`'s block text is drawn from it, as the plan's last widening and under the clean-up rule: `node scripts/compare/outputs.ts` shows the diff's text and JSON unchanged, or the move waits. Vale's map stays where it is: it reads one source file as parsed, with markup kept and every arm present, which is what prose checks need, and moving it onto a build's resolved text would change which text Vale sees and report each shared line once per build. So two of the three readings become one, and the third differs on purpose and is said to. _Why:_ a map shared by two readers that want the same thing removes a way for them to disagree; one shared by a third that wants something else adds a flag to it.
+- **No regular expressions.** Words, a phrase, `--case`, and `--word` are a substring search, and the binary links no engine today: the only crate that pulls one in is `proptest`, for tests. A pattern is the one query that needs an engine, and an agent, the user this is for, gets what a pattern gives by trying words in turn at milliseconds each. The way to run a real pattern over resolved text stays `ascribe build --emit plain` and `grep`, and the reference says so, with what it loses. If a second use for an engine arrives, `--regex` is additive and the option's name is reserved for it. _Why:_ a dependency is paid for by every build of the binary, and this one would serve a query the audit's sessions never made.
+- **The title and the field with `role = "description"`, and no more.** They're the two fields a build itself publishes: in the site output's frontmatter, `llms.txt`, and the page record the [search and answers plan](../search-and-answers/README.md) writes. A field a site shows on its own is the site's business, as the site's navigation and footer are, and search says in its reference that it sees what a build publishes. No new key on a type: if a field ever needs to be marked as shown to readers, that's a fourth role, added when a second consumer of it exists, since a role changes nothing in the outputs today and this would. _Why:_ what a reader sees is what Ascribe writes, and search's claim stops where Ascribe's does.
+- **When nothing matches, search says whether the source has the words as written.** The source index already holds every file's text, so a substring scan of it costs milliseconds and resolves nothing. The summary then reads one of three ways: the words are in no page; they're in the source at `file:line` and no searched build publishes them; or, with `--build`, they're published by builds the query didn't name, which are listed. A phrase's value isn't the source's text, so the scan can miss what resolution made, and the sentence says "as written". The exit code stays `1`, and the JSON carries `source_places`, cut at three, beside the empty `places`. _Why:_ "not written" and "not published" are different answers, an agent acts differently on each, and the second scan is the cheap part of a query that already resolved every page.
