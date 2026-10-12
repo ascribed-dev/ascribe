@@ -44,6 +44,7 @@ export interface Pin {
 /** One template's rules: its table in rules.toml. */
 export interface Rules {
   description: string;
+  about: string[];
   directives: { directive: string; before: string }[];
 }
 
@@ -60,16 +61,22 @@ export function readPin(): Pin {
   return pin;
 }
 
-export function readRules(): Map<string, Rules> {
-  const tables = parse(readFileSync(path.join(here, "rules.toml"), "utf8")) as Record<
-    string,
-    Partial<Rules>
-  >;
+export function readRules(
+  text = readFileSync(path.join(here, "rules.toml"), "utf8"),
+): Map<string, Rules> {
+  const tables = parse(text) as Record<string, Partial<Rules>>;
   return new Map(
     Object.entries(tables).map(([name, table]) => {
       if (typeof table.description !== "string")
         throw new Error(`rules.toml: [${name}] has no \`description\``);
-      return [name, { description: table.description, directives: table.directives ?? [] }];
+      return [
+        name,
+        {
+          description: table.description,
+          about: table.about ?? [],
+          directives: table.directives ?? [],
+        },
+      ];
     }),
   );
 }
@@ -110,15 +117,17 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
   const title = heading[1] ?? "";
   start++;
 
-  // What the template says about itself: the block quote after the title, and
+  // What the template says about itself: the block quotes after the title, and
   // the one it closes with, with the thematic break that sets it off (decision 22).
   skipBlank();
   if (!quoteLine.test(lines[start] ?? ""))
     throw new ConversionError(
       `${name}: no block quote about the template after its title (line ${start + 1})`,
     );
-  while (start < end && quoteLine.test(lines[start] ?? "")) start++;
-  skipBlank();
+  while (start < end && quoteLine.test(lines[start] ?? "")) {
+    while (start < end && quoteLine.test(lines[start] ?? "")) start++;
+    skipBlank();
+  }
   trimBlank();
   if (end <= start || !quoteLine.test(lines[end - 1] ?? ""))
     throw new ConversionError(`${name}: the template doesn't close with a block quote`);
@@ -129,7 +138,24 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     trimBlank();
   }
 
-  const body = lines.slice(start, end);
+  // What the template says about itself elsewhere: each paragraph a rule names
+  // by its first line, removed whole, with the blank lines after it.
+  let body = lines.slice(start, end);
+  for (const first of rules.about) {
+    const code = codeLines(body);
+    const found = body.flatMap((line, i) =>
+      !code[i] && line.trim() === first && (i === 0 || blank(body[i - 1] ?? "")) ? [i] : [],
+    );
+    if (found.length !== 1)
+      throw new ConversionError(
+        `${name}: the rule \`about\` found ${found.length} paragraphs opening \`${first}\`, not one`,
+      );
+    const from = found[0] ?? 0;
+    let to = from;
+    while (to < body.length && !blank(body[to] ?? "")) to++;
+    while (to < body.length && blank(body[to] ?? "")) to++;
+    body = [...body.slice(0, from), ...body.slice(to)];
+  }
   const code = codeLines(body);
 
   // The structural rules, each at the one line of theirs it names.
@@ -273,7 +299,7 @@ interface IndexEntry {
 }
 
 /** A file of theirs at the pinned commit, fetched once into .upstream/. */
-async function upstream(pin: Pin, file: string): Promise<string> {
+export async function upstream(pin: Pin, file: string): Promise<string> {
   const cached = path.join(here, ".upstream", pin.commit, file);
   if (existsSync(cached)) return readFileSync(cached, "utf8");
   const url = `${pin.repository}/-/raw/${pin.commit}/${file}`;
