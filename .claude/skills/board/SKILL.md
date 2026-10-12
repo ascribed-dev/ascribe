@@ -54,14 +54,14 @@ A move doesn't read the board, so `board.json` stays as it was; add `-f read=tru
 Agents post as the maintainer, who also authors their pull requests, and GitHub doesn't let a pull request's author approve it. Approve posts the approval as `github-actions[bot]`, for the commit you reviewed:
 
 ```sh
-gh workflow run approve.yml --ref main -f pr=123 -f sha="$(gh api repos/ascribed-dev/ascribe/pulls/123 --jq .head.sha)"
+gh workflow run approve.yml --ref main -f pr=123 -f sha=<the head commit you reviewed>
 ```
 
-Take the commit from what you reviewed, not from a fresh fetch, when the two could differ: Approve refuses when the pull request's head has moved past the commit you give it, so new commits always get a review first. Wait for the run and check that it passed before you merge.
+Give the full commit you reviewed, written out, not a fresh fetch or a `$(…)`: Approve refuses when the pull request's head has moved past the commit you give it, so new commits always get a review first. Run the command on its own, in exactly this form, with nothing before or after it in the same call. The allow rules in [`.claude/settings.json`](../../settings.json) match this command and the merge below, so auto mode runs them without its safety check, which otherwise blocks them as self-approval; joined to another command, or written another way, they don't match and are blocked. Then wait for the run, in a separate call, and check that it passed before you merge.
 
 ## Everything else on GitHub
 
-Use the GitHub MCP tools, or `gh api` with a REST path, for issues and pull requests: reading them, commenting, reviewing, and opening a pull request. Merging is a REST call too, and this repository merges with a merge commit:
+Use the GitHub MCP tools, or `gh api` with a REST path, for issues and pull requests: reading them, commenting, reviewing, and opening a pull request. Merging is a REST call too, and this repository merges with a merge commit. Run it on its own, in this form, for the allow rule to match:
 
 ```sh
 gh api -X PUT repos/ascribed-dev/ascribe/pulls/123/merge -f merge_method=merge -f sha=<the head you approved>
