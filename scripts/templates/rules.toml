@@ -11,6 +11,9 @@
 # - `description`: the placeholder for the page's description in its
 #   frontmatter. Their templates have none, and a type asks for one, so these
 #   are the only words in a template that are Ascribe's (decision 21).
+# - `about`: paragraphs of theirs that are about the template, not the page,
+#   each named by its first line and removed whole (decision 22), for what a
+#   template says about itself outside the block quotes that open and close it.
 # - `directives`: a directive line put before a line of theirs, at that line's
 #   indentation, such as `@steps` before a numbered procedure's first step.
 
@@ -21,3 +24,29 @@ description = "{One sentence that says what a reader can do once they've followe
 [[how-to.directives]]
 directive = "@steps"
 before = "1. {Write the step here. Use a verb to start.}"
+
+[concept]
+description = "{One sentence that says what the concept is and why a reader needs it.}"
+
+[tutorial]
+description = "{One sentence that says what a reader will have learned by the end of this tutorial.}"
+
+# Their procedure: the numbered steps under "{Task name}".
+[[tutorial.directives]]
+directive = "@steps"
+before = "1. {Write the step here. Use a verb to start.}"
+
+[reference]
+description = "{One sentence that says what this page lists and what a reader looks up in it.}"
+
+[troubleshooting]
+description = "{One sentence that says which problems this page helps a reader solve.}"
+
+[release-notes]
+description = "{One sentence that says what's new in this release.}"
+
+# Their notes on the template, which they write as placeholders, not quotes.
+about = [
+  "{If you need more information about how to fill in this template, read the accompanying [Release notes process](process_release-notes.md) document}",
+  "{This template includes writing instructions and boilerplate text that you can customize, use as-is, or completely replace with your own text. This text is indicated in {curly brackets}. Make sure you replace the placeholders with your own text.}",
+]

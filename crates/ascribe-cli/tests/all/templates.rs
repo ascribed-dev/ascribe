@@ -55,10 +55,16 @@ fn list_shows_each_template_with_its_summary_and_where_the_set_is_from() {
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let text = stdout(&output);
     let set = ascribe_templates::set();
-    assert!(
-        text.starts_with(&format!("how-to  {}\n", set.templates[0].summary)),
-        "{text}"
-    );
+    let width = set.templates.iter().map(|t| t.name.len()).max().unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), set.templates.len() + 1, "{text}");
+    for (line, template) in lines.iter().zip(&set.templates) {
+        assert_eq!(
+            *line,
+            format!("{:width$}  {}", template.name, template.summary),
+            "{text}"
+        );
+    }
     assert!(text.contains("The Good Docs Project"), "{text}");
 }
 
@@ -101,11 +107,45 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(answer["schema_version"], 1);
-    assert_eq!(answer["written"][3], "ascribe.toml");
-    assert_eq!(answer["added"][0]["name"], "how-to");
-    assert_eq!(answer["added"][0]["folder"], "docs/how-to");
+    let set = ascribe_templates::set();
+    let written = answer["written"].as_array().unwrap();
+    assert_eq!(written.len(), set.templates.len() * 2 + 2, "{written:#?}");
+    assert_eq!(written.last().unwrap(), "ascribe.toml");
+    let added = answer["added"].as_array().unwrap();
+    assert_eq!(added.len(), set.templates.len());
+    for (added, template) in added.iter().zip(&set.templates) {
+        assert_eq!(added["name"], template.name.as_str());
+        assert_eq!(added["folder"], format!("docs/{}", template.name).as_str());
+    }
     assert_eq!(answer["refused"], Value::Array(Vec::new()));
     assert_eq!(answer["page_declared"], true);
+}
+
+#[test]
+fn eject_with_no_name_gives_six_types_whose_templates_check_and_are_formatted() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    for template in ascribe_templates::set().templates {
+        let folder = dir.path().join("docs").join(&template.name);
+        fs::create_dir(&folder).unwrap();
+        fs::copy(
+            dir.path().join("templates").join(&template.template),
+            folder.join("page.md"),
+        )
+        .unwrap();
+    }
+    let check = ascribe(dir.path(), &["check", "--format", "json"]);
+    let report: Value = serde_json::from_slice(&check.stdout).unwrap();
+    let errors: Vec<&Value> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["severity"] != "advice")
+        .collect();
+    assert!(errors.is_empty(), "{errors:#?}");
+    let fmt = ascribe(dir.path(), &["fmt", "--check"]);
+    assert_eq!(code_of(&fmt), 0, "{}{}", stdout(&fmt), stderr(&fmt));
 }
 
 #[test]

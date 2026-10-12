@@ -12,7 +12,7 @@ The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/tem
 
 Ascribe converts each one into an Ascribe page, with a script, and changes nothing of their wording: what the template says about itself is taken out, its title moves into the frontmatter, and each `{placeholder}` is written as `\{placeholder}`, so it shows as written and isn't read as a phrase. Each guide says at its top where it came from. `ascribe templates list` shows the set, and which release it's from.
 
-The set has one template for now, the how-to.
+The set has six templates, for a how-to, a concept, a tutorial, a reference, a troubleshooting page, and release notes. Each is one of theirs, and has a type of the same name.
 
 ## Write a template into your project
 

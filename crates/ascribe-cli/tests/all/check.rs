@@ -364,15 +364,15 @@ fn the_templates_example_has_no_problems_and_holds_what_eject_writes() {
     }
     // The example was made by `ascribe templates eject how-to`; when the set
     // changes, it's made again.
-    for template in ascribe_templates::set().templates {
-        for name in [&template.template, &template.guide] {
-            let copy = fs::read_to_string(example.join("templates").join(name)).unwrap();
-            assert_eq!(
-                copy,
-                template.text(name),
-                "examples/templates/templates/{name} isn't what `ascribe templates eject` writes; run it again in a copy of the example without its templates and types"
-            );
-        }
+    let set = ascribe_templates::set();
+    let how_to = set.templates.iter().find(|t| t.name == "how-to").unwrap();
+    for name in [&how_to.template, &how_to.guide] {
+        let copy = fs::read_to_string(example.join("templates").join(name)).unwrap();
+        assert_eq!(
+            copy,
+            how_to.text(name),
+            "examples/templates/templates/{name} isn't what `ascribe templates eject how-to` writes; run it again in a copy of the example without its templates and types"
+        );
     }
 }
 

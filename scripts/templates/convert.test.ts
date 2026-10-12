@@ -18,10 +18,11 @@ import {
   readRules,
   stale,
   Unreachable,
+  upstream,
   write,
 } from "./convert.ts";
 
-const rules = { description: "{Say what it's for.}", directives: [] };
+const rules = { description: "{Say what it's for.}", about: [], directives: [] };
 
 function template(body: string): string {
   return `# {Product} title\n\n> Read the [guide](./guide.md).\n>\n> Text in {curly brackets}.\n\n${body}\n\n---\n\n> Explore other templates.\n`;
@@ -38,6 +39,24 @@ test("the title goes to frontmatter, and what the template says about itself goe
       "## Overview",
       "",
       "This explains \\{the task}.",
+      "",
+    ].join("\n"),
+  );
+});
+
+test("every block quote the template opens with goes, however many", () => {
+  const source =
+    "# T\n\n> Read the [guide](link to the guide).\n\n> Text in {curly brackets}.\n\n## Overview\n\nText.\n\n---\n\n> Explore other templates.\n";
+  expect(convertTemplate("t", source, rules)).toBe(
+    [
+      "---",
+      'title: "T"',
+      `description: "{Say what it's for.}"`,
+      "---",
+      "",
+      "## Overview",
+      "",
+      "Text.",
       "",
     ].join("\n"),
   );
@@ -106,6 +125,37 @@ test("a rule that doesn't find its place stops the conversion, naming the templa
   expect(convert("```\n1. {Do it.}\n```")).toThrow(ConversionError);
 });
 
+test("a paragraph a rule says is about the template goes whole, and one it doesn't find stops the conversion", () => {
+  const about = {
+    ...rules,
+    about: ["{Read the [process](process_t.md)", "{Text in {curly brackets}.}"],
+  };
+  expect(
+    convertTemplate(
+      "t",
+      template(
+        "{Read the [process](process_t.md)\ndocument.}\n\n{Text in {curly brackets}.}\n\n{Release date}",
+      ),
+      about,
+    ),
+  ).toBe(
+    [
+      "---",
+      'title: "{Product} title"',
+      `description: "{Say what it's for.}"`,
+      "---",
+      "",
+      "\\{Release date}",
+      "",
+    ].join("\n"),
+  );
+  expect(() => convertTemplate("t", template("{Release date}"), about)).toThrow(
+    new ConversionError(
+      "t: the rule `about` found 0 paragraphs opening `{Read the [process](process_t.md)`, not one",
+    ),
+  );
+});
+
 test("a template without the shape the steps expect stops the conversion", () => {
   expect(() => convertTemplate("t", "Text.\n", rules)).toThrow(
     new ConversionError("t: the template doesn't open with a level-1 heading (line 1)"),
@@ -137,8 +187,55 @@ test("the pin is a tag and its commit, and every template converted has its rule
   const pin = readPin();
   expect(pin.tag).toMatch(/^v\d+\.\d+\.\d+$/);
   expect(pin.commit).toMatch(/^[0-9a-f]{40}$/);
-  expect([...readRules().keys()]).toEqual(["how-to"]);
+  expect([...readRules().keys()]).toEqual([
+    "how-to",
+    "concept",
+    "tutorial",
+    "reference",
+    "troubleshooting",
+    "release-notes",
+  ]);
 });
+
+test("a template's table without a description stops the script", () => {
+  expect(() =>
+    readRules('[t]\n\n[[t.directives]]\ndirective = "@steps"\nbefore = "1. Do it."\n'),
+  ).toThrow("rules.toml: [t] has no `description`");
+});
+
+test(
+  "every rule of rules.toml is used, at one place, and the script stops without it",
+  { timeout: 60_000 },
+  async (context) => {
+    // A directive or an `about` paragraph finds its line exactly once, or the
+    // conversion throws. Taken away, each changes what the script writes, so
+    // `convert.ts --check` stops on the committed copies.
+    const pin = readPin();
+    for (const [name, all] of readRules()) {
+      let source: string;
+      try {
+        source = await upstream(pin, `${name}/template_${name}.md`);
+      } catch (error) {
+        if (!(error instanceof Unreachable)) throw error;
+        context.skip(`their repository can't be reached: ${error.message}`);
+        return;
+      }
+      const converted = convertTemplate(name, source, all);
+      const without: [string, typeof all][] = [
+        ...all.directives.map((rule, i): [string, typeof all] => [
+          `${rule.directive} before \`${rule.before}\``,
+          { ...all, directives: all.directives.filter((_, j) => j !== i) },
+        ]),
+        ...all.about.map((first, i): [string, typeof all] => [
+          `about \`${first}\``,
+          { ...all, about: all.about.filter((_, j) => j !== i) },
+        ]),
+      ];
+      for (const [rule, rules] of without)
+        expect(convertTemplate(name, source, rules), `${name}: ${rule}`).not.toBe(converted);
+    }
+  },
+);
 
 const ascribe = binary();
 
