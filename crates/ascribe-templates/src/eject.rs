@@ -21,6 +21,13 @@
 //! written as an inline or dotted table, one that names a template or a guide
 //! already, and one whose frontmatter doesn't take the template's are
 //! refused.
+//!
+//! A type added takes its frontmatter from the template, and each field the
+//! project's default type declares as a string is declared as the default
+//! type declares it, `inline` and `role` with it, rather than as a plain
+//! string. Eject then says, for each type added, how many of the project's
+//! pages its `files` match, and, when one matches none, which pages are of
+//! the default type, so the writer knows `files` is theirs to change.
 
 use std::path::Path;
 
@@ -28,8 +35,8 @@ use ascribe_check::MODEL_FILE;
 use ascribe_core::RelPath;
 use ascribe_core::{TextEdit, apply_edits};
 use ascribe_model::{ContentModel, file_hash};
-use ascribe_model::{ContentType, FieldType};
-use ascribe_resolve::{FileSystem, Layout, Probe};
+use ascribe_model::{ContentType, FieldType, TypeMatch};
+use ascribe_resolve::{FileSystem, Layout, Probe, in_nested_project};
 use serde::Serialize;
 use toml_edit::{ArrayOfTables, Document, DocumentMut, Item, Table, value};
 
@@ -85,6 +92,13 @@ pub struct EjectAnswer {
     /// the implicit type `page`, and `[types.page]` was written out first,
     /// as it was, so the pages outside the types added keep it.
     pub page_declared: bool,
+    /// The project's default type, with the types added: the one a page no
+    /// type's `files` match is of. Null when it has none.
+    pub default_type: Option<String>,
+    /// The pages of the default type, with the types added, from the folder
+    /// `ascribe.toml` is in, in order, when a type added matches no page;
+    /// otherwise empty. A type's pages are listed in its `files`.
+    pub default_pages: Vec<String>,
 }
 
 /// A type eject added to `ascribe.toml`.
@@ -105,6 +119,13 @@ pub struct Added {
     /// Its `guide`, from the folder `ascribe.toml` is in, in the order to
     /// read them: their guide, then Ascribe's notes on the type.
     pub guide: Vec<String>,
+    /// The fields of its frontmatter declared as the project's default type
+    /// declares them, rather than as plain strings, in order.
+    pub copied: Vec<String>,
+    /// How many of the project's pages its `files` match. When it's 0 and the
+    /// project has pages, they're elsewhere, and its `files` is the writer's
+    /// to change.
+    pub pages: usize,
 }
 
 /// A type `ascribe.toml` declared already, which eject kept, adding only
@@ -259,6 +280,8 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         kept: Vec::new(),
         refused: Vec::new(),
         page_declared: false,
+        default_type: None,
+        default_pages: Vec::new(),
     };
     let chosen = chosen(&set, request.names, &mut answer.refused);
     let layout = Layout::from_model(request.model);
@@ -277,6 +300,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
     if !answer.refused.is_empty() {
         return Ok(answer);
     }
+    let defaults = Defaults::of(request.model, request.model_text);
     let mut placed: Vec<(String, Vec<String>)> = Vec::new();
     let mut new: Vec<Template> = Vec::new();
     for template in &chosen {
@@ -285,7 +309,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
             placed.push((kept.template.clone(), kept.guide.clone()));
             answer.kept.push(kept);
         } else {
-            let added = added(template, request.to, &layout);
+            let added = added(template, request.to, &layout, &defaults);
             placed.push((added.template.clone(), added.guide.clone()));
             answer.added.push(added);
             new.push(template.clone());
@@ -293,7 +317,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
     }
     answer.page_declared = !declares_types(request.model_text);
     let model_text = with_kept(request.model_text, doc.as_ref(), &answer.kept)?;
-    let model_text = with_types(
+    let (model_text, model) = with_types(
         &model_text,
         answer.page_declared,
         &new,
@@ -301,8 +325,10 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         &Before {
             model: request.model,
             kept: &answer.kept,
+            defaults: &defaults,
         },
     )?;
+    pages_found(&mut answer, &model, &layout, fs);
     let mut files: Vec<(String, &'static str)> = Vec::new();
     for (template, (template_path, guide)) in chosen.iter().zip(&placed) {
         let theirs = [
@@ -510,8 +536,9 @@ fn guide(template: &Template, to: &RelPath) -> Vec<String> {
         .collect()
 }
 
-/// The type `template` is added as.
-fn added(template: &Template, to: &RelPath, layout: &Layout) -> Added {
+/// The type `template` is added as. Its `pages` are counted once it's in the
+/// content model.
+fn added(template: &Template, to: &RelPath, layout: &Layout, defaults: &Defaults) -> Added {
     let folder = layout
         .content_root
         .join(&template.name)
@@ -523,7 +550,138 @@ fn added(template: &Template, to: &RelPath, layout: &Layout) -> Added {
         folder: folder.to_string(),
         template: at(to, &template.template).to_string(),
         guide: guide(template, to),
+        copied: frontmatter(template, defaults)
+            .into_iter()
+            .filter(|(_, declared)| declared.is_some())
+            .map(|(field, _)| field)
+            .collect(),
+        pages: 0,
     }
+}
+
+/// The pages of the project, as `model` types them: for each type added, how
+/// many its `files` match, and the default type; and, when a type added
+/// matches none, the pages of the default type. A fragment, and a file in a
+/// project nested in the content root, is no page.
+fn pages_found(
+    answer: &mut EjectAnswer,
+    model: &ContentModel,
+    layout: &Layout,
+    fs: &dyn FileSystem,
+) {
+    let sources = fs.sources();
+    let mut pages: Vec<&RelPath> = sources
+        .paths
+        .iter()
+        .filter(|p| !in_nested_project(p, &sources.nested) && !model.is_fragment(p.as_str()))
+        .collect();
+    pages.sort();
+    let default = model.types.iter().find(|t| t.default);
+    answer.default_type = default.map(|t| t.name.clone());
+    for added in &mut answer.added {
+        let Some(t) = model.types.iter().find(|t| t.name == added.name) else {
+            continue;
+        };
+        added.pages = pages
+            .iter()
+            .filter(|p| t.files.iter().any(|f| f.matches(p.as_str())))
+            .count();
+    }
+    if !answer.added.iter().any(|a| a.pages == 0) {
+        return;
+    }
+    let Some(default) = default else {
+        return;
+    };
+    answer.default_pages = pages
+        .into_iter()
+        .filter(
+            |p| matches!(model.type_for(p.as_str()), TypeMatch::One(t) if t.name == default.name),
+        )
+        .map(|p| {
+            layout
+                .content_root
+                .join(p.as_str())
+                .unwrap_or_else(|_| p.clone())
+                .to_string()
+        })
+        .collect();
+}
+
+/// The project's default type, as `ascribe.toml` declares it, which a type
+/// added takes its frontmatter's declarations from.
+struct Defaults {
+    /// The default type, when there's one.
+    default: Option<ContentType>,
+    /// `ascribe.toml`, parsed, when it parses.
+    doc: Option<DocumentMut>,
+}
+
+impl Defaults {
+    fn of(model: &ContentModel, text: &str) -> Defaults {
+        Defaults {
+            default: model.types.iter().find(|t| t.default).cloned(),
+            doc: text.parse().ok(),
+        }
+    }
+
+    /// How the default type declares `field`, as TOML, when it declares it
+    /// as a string, which every field of a template's frontmatter is, and
+    /// other than as a plain `"string"`.
+    fn declared(&self, field: &str) -> Option<String> {
+        let default = self.default.as_ref()?;
+        let declared = default
+            .frontmatter
+            .fields
+            .iter()
+            .find(|f| f.name == field)?;
+        if declared.ty != FieldType::String {
+            return None;
+        }
+        let item = self
+            .doc
+            .as_ref()?
+            .get("types")?
+            .get(&default.name)?
+            .get("frontmatter")?
+            .get(field)?;
+        let text = match item {
+            Item::Value(v) => {
+                let mut v = v.clone();
+                v.decor_mut().clear();
+                v.to_string()
+            }
+            Item::Table(t) => {
+                let mut t = t.clone().into_inline_table();
+                t.fmt();
+                t.to_string()
+            }
+            _ => return None,
+        };
+        (text != toml_string("string")).then_some(text)
+    }
+
+    /// The default type's name, when there's one.
+    fn name(&self) -> Option<&str> {
+        self.default.as_ref().map(|t| t.name.as_str())
+    }
+}
+
+/// The fields of the frontmatter of the type `template` is added as, in
+/// order, `title` first when the template's has none, each with how the
+/// default type declares it, when it's copied from there.
+fn frontmatter(template: &Template, defaults: &Defaults) -> Vec<(String, Option<String>)> {
+    let mut fields = frontmatter_fields(template.text(&template.template));
+    if !fields.iter().any(|f| f == "title") {
+        fields.insert(0, "title".to_owned());
+    }
+    fields
+        .into_iter()
+        .map(|field| {
+            let declared = defaults.declared(&field);
+            (field, declared)
+        })
+        .collect()
 }
 
 /// `file` in the folder `to`.
@@ -631,19 +789,22 @@ struct Before<'a> {
     model: &'a ContentModel,
     /// The types kept.
     kept: &'a [Kept],
+    /// The default type, which the types added take their frontmatter from.
+    defaults: &'a Defaults,
 }
 
 /// `ascribe.toml`'s text with a table for each type added at its end, and
 /// nothing before it changed; with `page` first, when the file declared no
 /// types. The result must load as a content model with the types in it, and
-/// with each type kept as it was, but for its `template` and `guide`.
+/// with each type kept as it was, but for its `template` and `guide`; it's
+/// returned with the text.
 fn with_types(
     text: &str,
     page: bool,
     templates: &[Template],
     added: &[Added],
     before: &Before<'_>,
-) -> Result<String, EjectError> {
+) -> Result<(String, ContentModel), EjectError> {
     let newline = if text.contains("\r\n") { "\r\n" } else { "\n" };
     let mut out = text.to_owned();
     let mut tables: Vec<Vec<String>> = Vec::new();
@@ -651,7 +812,7 @@ fn with_types(
         tables.push(PAGE_TYPE.iter().map(|l| (*l).to_owned()).collect());
     }
     for (template, added) in templates.iter().zip(added) {
-        tables.push(type_table(template, added));
+        tables.push(type_table(template, added, before.defaults));
     }
     for table in tables {
         if !out.is_empty() && !out.ends_with('\n') {
@@ -709,7 +870,17 @@ fn with_types(
             )));
         }
     }
-    Ok(out)
+    for (template, added) in templates.iter().zip(added) {
+        let is = model.types.iter().find(|t| t.name == added.name);
+        if let Some(message) = is.and_then(|is| frontmatter_differs(is, template)) {
+            return Err(refuse(format!(
+                "with the frontmatter [types.{}] takes from [types.{}], {message}",
+                added.name,
+                before.defaults.name().unwrap_or("page"),
+            )));
+        }
+    }
+    Ok((out, model))
 }
 
 /// Whether `is` is `was` with `kept`'s `template` and `guide`, and nothing
@@ -740,8 +911,9 @@ fn toml_list(items: &[String]) -> String {
 
 /// The lines of a type's tables: its files, template, and guide, then its
 /// frontmatter, which is the template's own: each field the template's
-/// frontmatter has, as a string the page must have, `title` first.
-fn type_table(template: &Template, added: &Added) -> Vec<String> {
+/// frontmatter has, as a string the page must have, `title` first, declared
+/// as the default type declares it when it's a string there.
+fn type_table(template: &Template, added: &Added, defaults: &Defaults) -> Vec<String> {
     let key = |k: &str| toml_edit::Key::new(k).to_string();
     let name = key(&added.name);
     let mut lines = vec![
@@ -752,12 +924,9 @@ fn type_table(template: &Template, added: &Added) -> Vec<String> {
         String::new(),
         format!("[types.{name}.frontmatter]"),
     ];
-    let mut fields = frontmatter_fields(template.text(&template.template));
-    if !fields.iter().any(|f| f == "title") {
-        fields.insert(0, "title".to_owned());
-    }
-    for field in fields {
-        lines.push(format!("{} = \"string\"", key(&field)));
+    for (field, declared) in frontmatter(template, defaults) {
+        let declared = declared.unwrap_or_else(|| toml_string("string"));
+        lines.push(format!("{} = {declared}", key(&field)));
     }
     lines
 }
@@ -895,10 +1064,16 @@ mod tests {
             content_root: RelPath::parse("docs").unwrap(),
             output_dir: RelPath::parse("dist").unwrap(),
         };
-        let added = added(template, &RelPath::parse("templates").unwrap(), &layout);
         let model =
             ascribe_model::load_str("spec = \"0.1\"\n", ascribe_core::FileId::new(0)).unwrap();
-        let text = with_types(
+        let defaults = Defaults::of(&model, "spec = \"0.1\"\n");
+        let added = added(
+            template,
+            &RelPath::parse("templates").unwrap(),
+            &layout,
+            &defaults,
+        );
+        let (text, _) = with_types(
             "spec = \"0.1\"\r\n",
             false,
             std::slice::from_ref(template),
@@ -906,6 +1081,7 @@ mod tests {
             &Before {
                 model: &model,
                 kept: &[],
+                defaults: &defaults,
             },
         )
         .unwrap();

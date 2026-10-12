@@ -84,7 +84,9 @@ fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
          wrote ascribe.toml\n\
          added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and the pages outside the new types keep it\n\
          added [types.how-to] to ascribe.toml, for pages under docs/how-to/\n\
-         A type's folder is only a start: to keep its pages elsewhere, change the type's `files` in ascribe.toml.\n\
+         [types.how-to] matches no page yet: no page is under docs/how-to/\n\
+         1 page is of [types.page], the default type. To make one of a type added, list it in the type's `files` in ascribe.toml, or move it into the type's folder:\n  \
+         docs/index.md\n\
          To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.\n"
     );
     fs::create_dir(dir.path().join("docs/how-to")).unwrap();
@@ -130,6 +132,53 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     }
     assert_eq!(answer["refused"], Value::Array(Vec::new()));
     assert_eq!(answer["page_declared"], true);
+    assert_eq!(answer["default_type"], "page");
+    assert_eq!(
+        answer["default_pages"],
+        serde_json::json!(["docs/index.md"])
+    );
+    assert_eq!(added[0]["pages"], 0);
+    assert_eq!(added[0]["copied"], serde_json::json!([]));
+}
+
+/// A project whose pages are elsewhere, as Ascribe's docs' were: each type
+/// added takes the default type's declarations, says it matches no page, and
+/// the default type's pages are listed, up to ten.
+#[test]
+fn eject_says_which_types_match_no_page_and_lists_the_default_type_s() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\n",
+    )
+    .unwrap();
+    fs::create_dir_all(dir.path().join("docs/guides")).unwrap();
+    for n in 0..12 {
+        fs::write(
+            dir.path().join(format!("docs/guides/{n:02}.md")),
+            "---\ntitle: A\n---\n",
+        )
+        .unwrap();
+    }
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to", "concept"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    let after = text.split("wrote ascribe.toml\n").nth(1).unwrap();
+    let listed: String = (0..10)
+        .map(|n| format!("  docs/guides/{n:02}.md\n"))
+        .collect();
+    assert_eq!(
+        after,
+        format!(
+            "added [types.how-to] to ascribe.toml, for pages under docs/how-to/, with `title` declared as [types.guide] declares it\n\
+             added [types.concept] to ascribe.toml, for pages under docs/concept/, with `title` declared as [types.guide] declares it\n\
+             [types.how-to] matches no page yet: no page is under docs/how-to/\n\
+             [types.concept] matches no page yet: no page is under docs/concept/\n\
+             12 pages are of [types.guide], the default type. To make one of a type added, list it in the type's `files` in ascribe.toml, or move it into the type's folder:\n\
+             {listed}  and 2 more, which `--format json` lists\n\
+             To start a page, copy its type's template into the type's folder, and read its guide and Ascribe's notes on it first.\n"
+        )
+    );
 }
 
 #[test]

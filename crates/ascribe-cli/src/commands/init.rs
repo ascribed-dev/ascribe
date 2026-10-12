@@ -109,7 +109,7 @@ fn write_init(
         )?;
     }
     if let Some(ejected) = &started.templates {
-        write_added(out, root, ejected)?;
+        write_added(out, root, ejected, false)?;
     }
     writeln!(
         out,

@@ -254,7 +254,7 @@ fn write_eject(
     for path in &ejected.written {
         writeln!(out, "wrote {}", from_here(root, path))?;
     }
-    write_added(out, root, ejected)
+    write_added(out, root, ejected, true)
 }
 
 /// What eject refused, on standard error.
@@ -265,11 +265,18 @@ pub(crate) fn write_refused(err: &mut dyn Write, ejected: &EjectAnswer) -> io::R
     writeln!(err, "wrote nothing")
 }
 
-/// The types eject added, and how to start a page of one.
+/// The most pages of the default type the text lists; `--format json` lists
+/// them all.
+const PAGES_LISTED: usize = 10;
+
+/// The types eject added, and how to start a page of one. With `unmatched`,
+/// each type added that matches no page says so, with the pages of the
+/// default type; a project just started has none to say it of.
 pub(crate) fn write_added(
     out: &mut dyn Write,
     root: &Path,
     ejected: &EjectAnswer,
+    unmatched: bool,
 ) -> io::Result<()> {
     if ejected.page_declared {
         writeln!(
@@ -278,14 +285,66 @@ pub(crate) fn write_added(
             from_here(root, ascribe_check::MODEL_FILE)
         )?;
     }
+    let default = ejected.default_type.as_deref().unwrap_or("page");
     for added in &ejected.added {
-        writeln!(
+        write!(
             out,
             "added [types.{}] to {}, for pages under {}/",
             added.name,
             from_here(root, ascribe_check::MODEL_FILE),
             from_here(root, &added.folder)
         )?;
+        if added.copied.is_empty() {
+            writeln!(out)?;
+        } else {
+            writeln!(
+                out,
+                ", with {} declared as [types.{default}] declares {}",
+                listed(&added.copied),
+                if added.copied.len() == 1 {
+                    "it"
+                } else {
+                    "them"
+                }
+            )?;
+        }
+    }
+    let unmatched: Vec<_> = ejected
+        .added
+        .iter()
+        .filter(|a| unmatched && a.pages == 0)
+        .collect();
+    for added in &unmatched {
+        writeln!(
+            out,
+            "[types.{}] matches no page yet: no page is under {}/",
+            added.name,
+            from_here(root, &added.folder)
+        )?;
+    }
+    let pages = &ejected.default_pages;
+    let listing = !unmatched.is_empty() && !pages.is_empty();
+    if listing {
+        writeln!(
+            out,
+            "{} of [types.{default}], the default type. To make one of a type added, list it in the type's `files` in {}, or move it into the type's folder:",
+            if pages.len() == 1 {
+                "1 page is".to_owned()
+            } else {
+                format!("{} pages are", pages.len())
+            },
+            from_here(root, ascribe_check::MODEL_FILE)
+        )?;
+        for page in pages.iter().take(PAGES_LISTED) {
+            writeln!(out, "  {}", from_here(root, page))?;
+        }
+        if pages.len() > PAGES_LISTED {
+            writeln!(
+                out,
+                "  and {} more, which `--format json` lists",
+                pages.len() - PAGES_LISTED
+            )?;
+        }
     }
     for kept in &ejected.kept {
         writeln!(
@@ -301,7 +360,7 @@ pub(crate) fn write_added(
             }
         )?;
     }
-    if !ejected.added.is_empty() {
+    if !ejected.added.is_empty() && !listing {
         writeln!(
             out,
             "A type's folder is only a start: to keep its pages elsewhere, change the type's `files` in {}.",
