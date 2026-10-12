@@ -49,6 +49,18 @@ From then on the files are your project's, and nothing in Ascribe writes over th
 
 A change to a template changes what the check looks for, since it compares a page with the template as it is now. A placeholder you take out of the template isn't looked for in pages any more, and one you add is.
 
+## In a project that has pages
+
+A project that takes the set late is one with pages written already. Ascribe's own docs took it that way, with 46 pages, and it showed what to expect:
+
+- **A type you declare already is refused,** and nothing is written. To take its template, take the type out of `ascribe.toml`, take the template, then put back what your type had. Until you do, its pages fall to your default type, and `ascribe check` doesn't say so.
+- **The new types match no page** until you change their `files`. Eject puts each type's pages in a folder of its name, and yours are somewhere else; a type that matches nothing isn't reported either.
+- **Each type's frontmatter is the set's,** a plain `title` and `description`. Put back what your own types declare, such as a title drawn as code (`inline = "code"`), on each one.
+- **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. The two it reported in the docs weren't left from a template: a phrase named `product`, which the tutorial's template has as a placeholder, and the how-to's own placeholder, quoted in code on this page. The check doesn't tell those apart from a placeholder yet; the docs say the two sentences another way.
+- **Not every page fits.** A home page that lists the other pages is none of the six: give it a type of your own, with no template. The troubleshooting template's "Cause" and "Solution" headings repeat under every symptom, and the check warns about headings with the same name on a page, so the docs write them as bold paragraphs instead.
+
+The docs didn't change a page that already did its job to match its template heading for heading: a guide says what a kind of page is for, and the template is one way to get there.
+
 ## Ascribe's notes
 
 Their guide says what belongs in a page of each kind, and it's written for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../reference/directives.md#variant) group, and a step's command taken from tested code with [`@snippet`](../reference/directives.md#snippet). They're the only words in the set that are Ascribe's, and `templates.lock` records them apart from their files.
