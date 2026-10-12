@@ -1,0 +1,9 @@
+# The release of The Good Docs Project's templates that Ascribe's page
+# templates are converted from: a tag of their repository and the commit it
+# names (project-docs/page-templates/README.md, decisions 19 and 25).
+# scripts/templates/convert.ts reads it, and so does its test. Taking a new
+# release is a change to `tag` and `commit`, then
+# `node scripts/templates/convert.ts`, then reading the diff of the copies.
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"

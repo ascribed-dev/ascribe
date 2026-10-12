@@ -23,6 +23,7 @@
     "project-docs/**/*.ts",
     "design/**/*.ts",
     "surface/**/*.ts",
+    "templates/**/*.ts",
     "crawlers/**/*.ts"
   ]
 }

@@ -14,6 +14,7 @@ members = [
     "crates/ascribe-lsp",
     "crates/ascribe-query",
     "crates/ascribe-mcp",
+    "crates/ascribe-templates",
     "crates/ascribe-cli",
     "tests/conformance",
     "tests/commonmark",
@@ -43,6 +44,7 @@ ascribe-fmt = { path = "crates/ascribe-fmt" }
 ascribe-lsp = { path = "crates/ascribe-lsp" }
 ascribe-query = { path = "crates/ascribe-query" }
 ascribe-mcp = { path = "crates/ascribe-mcp" }
+ascribe-templates = { path = "crates/ascribe-templates" }
 # The synthetic project the benchmarks share. A dev-dependency only.
 ascribe-synthetic = { path = "tests/corpora/synthetic" }
 # The comrak fork. Depend on it as `comrak-ascribe.workspace = true`.
