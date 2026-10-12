@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 
 use ascribe_check::Diagnostic;
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{FileId, LineIndex, RelPath, Visited};
+use ascribe_core::{LineIndex, RelPath, Visited};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{
     Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
@@ -294,7 +294,7 @@ impl Core {
         } else {
             ascribe_model::SourceBound::Anywhere
         };
-        match ascribe_model::load_str_bounded(&text, FileId::new(0), &root, bound) {
+        match ascribe_check::type_files::load_model(&text, &root, bound) {
             Err(issues) => {
                 // The project keeps the last model that
                 // loaded, and the problems go on `ascribe.toml`.

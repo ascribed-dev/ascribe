@@ -1,0 +1,7 @@
+description: >-
+  A content type with neither `template` nor `guide` is as it was: nothing
+  outside the content root is looked for.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics: []

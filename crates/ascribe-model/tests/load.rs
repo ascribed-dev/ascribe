@@ -725,3 +725,15 @@ fn with_no_repository_a_source_is_bounded_by_what_was_opened() {
     assert!(load("../code", std::slice::from_ref(&project)).is_ok());
     let _ = std::fs::remove_dir_all(&outer);
 }
+
+#[test]
+fn full_names_a_template_and_a_guide_for_reference_pages() {
+    let m = example("full.toml");
+    let reference = m.types.iter().find(|t| t.name == "reference").unwrap();
+    let template = reference.template.as_ref().map(|t| t.path.as_str());
+    assert_eq!(template, Some("templates/reference.md"));
+    let guide: Vec<&str> = reference.guide.iter().map(|g| g.path.as_str()).collect();
+    assert_eq!(guide, ["templates/reference.guide.md"]);
+    let guide_type = m.types.iter().find(|t| t.name == "guide").unwrap();
+    assert!(guide_type.template.is_none() && guide_type.guide.is_empty());
+}

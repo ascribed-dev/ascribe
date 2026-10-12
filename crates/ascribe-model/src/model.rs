@@ -691,6 +691,24 @@ pub struct ContentType {
     pub default: bool,
     /// The frontmatter schema.
     pub frontmatter: FrontmatterSchema,
+    /// The page a page of the type starts from, `template`.
+    pub template: Option<TypeFile>,
+    /// What to read before writing a page of the type, `guide`, in the order
+    /// to read it.
+    pub guide: Vec<TypeFile>,
+}
+
+/// A file a content type names, its `template` or one of its `guide`, from
+/// the folder `ascribe.toml` is in. Loading checks only what's written: that
+/// the file is there, outside the content root, and that a template reads as
+/// a page, is checked where the project's files are read
+/// (`ascribe_check::type_files`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypeFile {
+    /// The path, as written.
+    pub path: String,
+    /// The path's string in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// `[fragments]`.

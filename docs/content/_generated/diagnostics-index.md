@@ -193,3 +193,5 @@
 | [ASC190](../reference/diagnostics/content-checks.md#ASC190) | `crawlers-disallowed` | Advice | File | choose |
 | [ASC191](../reference/diagnostics/content-checks.md#ASC191) | `description-duplicate` | Advice | Page | write |
 | [ASC192](../reference/diagnostics/content-checks.md#ASC192) | `title-heading-differs` | Advice | Page | review |
+| [ASC193](../reference/diagnostics/content-model.md#ASC193) | `model-type-file` | Error | File | write |
+| [ASC194](../reference/diagnostics/content-model.md#ASC194) | `model-type-template` | Error | File | write |
