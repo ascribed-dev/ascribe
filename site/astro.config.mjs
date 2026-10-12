@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
+import { unindexed } from "./src/site.ts";
 
 // Three Ascribe projects in one site: the site's own pages (home/, at the
 // root), the docs (../docs, under /docs/), and the landing page's
@@ -24,6 +25,10 @@ export default defineConfig({
       ],
       // Review in `astro dev` covers the docs, the pages that get reviewed.
       review: "docs",
+      // One sitemap for the site, and robots.txt: the docs' pages and home/'s
+      // that are listed, and the site's own, the changelog among them. The
+      // demo's page has no route, so it isn't in it.
+      sitemap: { exclude: unindexed },
     }),
   ],
 });

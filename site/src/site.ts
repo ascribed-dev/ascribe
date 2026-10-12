@@ -14,3 +14,11 @@ export const contentDir = "docs/content";
  * checks it against the base path.
  */
 export const docsPath = "docs/";
+
+/**
+ * Routes of the site's own pages, from the host's root, to leave out of the
+ * sitemap (`sitemap.exclude` in astro.config.mjs): a page that isn't a
+ * project's and carries `noindex` goes here, since the integration reads no
+ * HTML. test/crawlers.test.ts holds the built site to it.
+ */
+export const unindexed: string[] = [];
