@@ -82,7 +82,7 @@ There's no command that writes the page for you at the terminal: copying the fil
 
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
 
-The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
+The check finds only what was never touched. A placeholder with one word changed, or with a space taken out, such as the one after `Task name` in the how-to's task heading, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
 
 To turn it off, or make it a warning, set its level in [`[checks]`](../reference/content-model/checks.md#19-checks):
 
