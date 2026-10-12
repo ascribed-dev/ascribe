@@ -1,4 +1,4 @@
-Generated from [The Good Docs Project's guide](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/how-to/guide_how-to.md), in their repository on GitLab at the tag v1.5.0, under the MIT No Attribution License.
+Generated from [The Good Docs Project's guide](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/how-to/guide_how-to.md), in their repository on GitLab at the tag v1.6.0, under the MIT No Attribution License.
 
 # How-to guide
 
@@ -158,7 +158,7 @@ If you're including code samples in your steps, make sure they are also indented
 * Use plain language and define the terminology of any technical term next to it.
 * Include one action in a step.
 
-For additional tips on writing steps, see [Writing Procedural Steps](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/writing-tips.md#writing-procedural-steps) from The Good Docs Project.
+For additional tips on writing steps, see [Writing Procedural Steps](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/writing-tips.md#writing-procedural-steps) from The Good Docs Project.
 
 ## About the "See also" section
 
