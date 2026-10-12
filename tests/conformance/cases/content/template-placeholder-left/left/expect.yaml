@@ -1,0 +1,8 @@
+description: >-
+  A placeholder of the template that a page of its type still has, word for
+  word, is reported where it starts, with its opening words quoted.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 8, severity: advice}

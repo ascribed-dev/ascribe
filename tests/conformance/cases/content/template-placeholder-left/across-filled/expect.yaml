@@ -1,0 +1,6 @@
+description: >-
+  A placeholder that runs across blocks, all written over, isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

@@ -14,6 +14,7 @@ use ascribe_model::{
 use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
+use crate::checks::template::Template;
 
 pub use ascribe_model::MODEL_FILE;
 
@@ -244,6 +245,9 @@ pub struct Project {
     link_index: OnceLock<Arc<ascribe_resolve::Project>>,
     /// The day the checks run on, which `review-overdue` compares with.
     today: Option<Date>,
+    /// The templates the content types name, by type, read the first time a
+    /// page of one is checked.
+    templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -553,6 +557,7 @@ impl Project {
             images: OnceLock::new(),
             link_index: OnceLock::new(),
             today: None,
+            templates: Arc::default(),
         }
     }
 
@@ -787,6 +792,43 @@ impl Project {
             Some(self.fs.0.clone()),
         )
         .with_today(self.today)
+        .with_templates(self.templates.clone())
+    }
+
+    /// This project, with the templates another read of the same project
+    /// has, since a page's text doesn't change them.
+    fn with_templates(self, templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>) -> Project {
+        Project { templates, ..self }
+    }
+
+    /// The template content type `name` names, read through the project's
+    /// [`FileSystem`]. None when it names none, or when the file can't be
+    /// read, which is the content model's error (`model-type-template`).
+    pub(crate) fn template(&self, name: &str) -> Option<Arc<Template>> {
+        let templates = self.templates.get_or_init(|| {
+            let mut out = HashMap::new();
+            for t in &self.model.types {
+                let Some(path) = t
+                    .template
+                    .as_ref()
+                    .and_then(|f| RelPath::parse(&f.path).ok())
+                else {
+                    continue;
+                };
+                let Some(text) = self
+                    .fs
+                    .0
+                    .read_file(&path)
+                    .ok()
+                    .and_then(|bytes| String::from_utf8(bytes).ok())
+                else {
+                    continue;
+                };
+                out.insert(t.name.clone(), Arc::new(Template::read(&text, &self.model)));
+            }
+            out
+        });
+        templates.get(name).cloned()
     }
 
     /// This project, checked as on `today`: the day `review-overdue`

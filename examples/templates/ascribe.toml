@@ -1,0 +1,19 @@
+spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[types.how-to]
+files = ["how-to/**"]
+template = "templates/how-to.md"
+guide = ["templates/how-to.guide.md"]
+
+[types.how-to.frontmatter]
+title = "string"
+description = "string"

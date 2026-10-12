@@ -620,6 +620,9 @@ pub const MODEL_TYPE_FILE: DiagnosticSlug = DiagnosticSlug("model-type-file");
 /// `ASC194`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_TEMPLATE: DiagnosticSlug = DiagnosticSlug("model-type-template");
 
+/// `ASC195`, advice, file level: a content check (area `pages`).
+pub const TEMPLATE_PLACEHOLDER_LEFT: DiagnosticSlug = DiagnosticSlug("template-placeholder-left");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -816,6 +819,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     TITLE_HEADING_DIFFERS,
     MODEL_TYPE_FILE,
     MODEL_TYPE_TEMPLATE,
+    TEMPLATE_PLACEHOLDER_LEFT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -848,6 +852,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     CRAWLERS_DISALLOWED,
     DESCRIPTION_DUPLICATE,
     TITLE_HEADING_DIFFERS,
+    TEMPLATE_PLACEHOLDER_LEFT,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

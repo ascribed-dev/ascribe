@@ -1,0 +1,8 @@
+description: >-
+  A paragraph the template quotes is an instruction, and one a page still
+  has whole is reported, with a message saying it's an instruction.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 10, severity: advice}

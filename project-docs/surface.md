@@ -96,7 +96,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-193 in use, and 1 retired. By severity: 27 advice, 144 error, 22 warning. By level: 174 file, 19 page. By kind of next step: 42 choose, 13 fix, 3 outside, 11 review, 124 write.
+194 in use, and 1 retired. By severity: 28 advice, 144 error, 22 warning. By level: 175 file, 19 page. By kind of next step: 42 choose, 13 fix, 3 outside, 11 review, 125 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -294,6 +294,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC192` | `title-heading-differs` | advice | review | the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another |
 | `ASC193` | `model-type-file` | error | write | `{path}`, the {key} of content type `{type}`, doesn't exist |
 | `ASC194` | `model-type-template` | error | write | can't read `{path}`, the template of content type `{type}`: {reason} |
+| `ASC195` | `template-placeholder-left` | advice | write | this page still has its template's placeholder `{placeholder}`; write what it asks for in its place |
 
 ## The VS Code extension
 

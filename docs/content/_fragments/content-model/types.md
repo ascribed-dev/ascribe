@@ -48,3 +48,6 @@ guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 ```
 
 Each file must be there, with its name's case as it is on disk, inside the folder `ascribe.toml` is in, and outside the content root, where it would be read as a page, and the output directory, which a build writes and removes. A symbolic link is followed to where it leads (`model-type-file`). `guide` is always a list, as `files` is, even with one file in it (`model-wrong-type`). The template is read when the content model loads, and must read as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax (`model-type-template`). Either is a problem with the content model, reported at the path, once, rather than on every page made from the template. A type with neither key is as it is without them.
+
+@available: next
+**A page that still has its template's text.** On a page of a type with a template, `ascribe check` reports as advice each of the template's placeholders the page still has word for word, a frontmatter field with the template's value, and a paragraph the template quotes as an instruction (`template-placeholder-left`). The [guide to page templates](../../guides/templates.md#whats-left-to-fill-in) says what it finds and what it can't.
