@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "site": "https://example.com",
+  "pages": {
+    "/docs/": {
+      "source": "index.md",
+      "canonical": "https://example.com/docs/",
+      "listing": "listed",
+      "markdown": "/docs/index.md"
+    },
+    "/docs/guide/": {
+      "source": "guide.md",
+      "canonical": "https://example.com/docs/guide/",
+      "listing": "listed",
+      "markdown": "/docs/guide.md"
+    },
+    "/docs/hidden/": {
+      "source": "hidden.md",
+      "canonical": "https://example.com/docs/hidden/",
+      "listing": "unlisted",
+      "markdown": "/docs/hidden.md"
+    },
+    "/docs/quoted/": {
+      "source": "quoted.md",
+      "canonical": "https://example.com/docs/quoted/",
+      "listing": "unquoted",
+      "markdown": "/docs/quoted.md"
+    }
+  }
+}
