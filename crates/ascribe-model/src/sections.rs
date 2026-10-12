@@ -681,6 +681,7 @@ impl Loader<'_> {
             html: true,
             agents: false,
             permalink_path: None,
+            headers: None,
         };
         let Some(v) = v else { return c };
         let Some(t) = self.as_table("consumer", v) else {
@@ -698,6 +699,7 @@ impl Loader<'_> {
                 "html",
                 "agents",
                 "permalink-path",
+                "headers",
             ],
         );
         if let Some(p) = t.get("profile")
@@ -771,6 +773,12 @@ impl Loader<'_> {
             } else {
                 c.agents = value;
             }
+        }
+        if let Some(h) = t.get("headers")
+            && let Some(text) = self.choice("consumer.headers", h, &["netlify"])
+            && text == "netlify"
+        {
+            c.headers = Some(HeadersFormat::Netlify);
         }
         c
     }

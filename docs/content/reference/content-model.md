@@ -108,7 +108,7 @@ A project can set `listing` for the whole site, a folder, or a content type, in 
 
 What isn't handled yet:
 
-- **The Markdown version of a page that isn't listed can still be indexed,** since only a response header keeps a file that isn't HTML out of a search index, and Ascribe doesn't write one yet.
+- **The Markdown version of a page that isn't listed can still be indexed** unless the host sends it with `X-Robots-Tag: noindex`, since only a response header keeps a file that isn't HTML out of a search index. With [`[consumer] headers`](#15-consumer) set, the build gives the host the header; without it, the header is in `_ascribe/headers.json`, and the host sends it only if a deploy step gives it the list.
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
@@ -285,6 +285,7 @@ What a widget can't say is the site's to do: Ascribe doesn't know that `page` na
 | `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
 | `agents` {available=next} | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays it out: `llms.txt`, the index of every page, and each page's Markdown at its URL with `.md`. It needs `site`, since every link agents read is absolute. See below. |
 | `permalink-path` {available=next} | string | `go/` under `base-path` | **Permalinks.** Where each [permalink](directives.md#permalinks)'s address is published, as a path from the site's root, such as `"/go/"`: `/go/cli-check/` forwards to the heading marked `cli-check`. It must start with `/`. Set it when the addresses a product prints shouldn't move when `base-path` does. Under the `astro` profile it must be under `base-path`, since an Astro site serves nothing outside it. |
+| `headers` {available=next} | string | none | **Response headers.** The host whose format a build's response headers are written in, so that the Markdown version of a page that isn't listed isn't indexed either. Supported: `"netlify"`, the `_headers` file Netlify reads. `@ascribed/astro` writes it into the built site ([the Astro guide](../guides/astro.md#response-headers)). Without it, nothing is written for a host, and the headers are in `_ascribe/headers.json` for a deploy step to read. See below. |
 
 **Heading ids, image attributes, and assets** ([SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)) are part of the profile, not keys. The `astro` profile has exactly one way to do each:
 
@@ -300,6 +301,8 @@ A later profile that offers a choice will add a key for it.
 - **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site: each page at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`), each opening with a line pointing at `llms.txt`; the files they link to under `_ascribe/files/`, linked by absolute URL; and `llms.txt`.
 - **`llms.txt`** lists every page the build publishes as `- [Title](url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Pages in a folder are a section named after the folder (the title of its `index.md`, when it has one); pages outside every folder come first, under "Pages". An index over 50,000 characters is split into one `llms.txt` per folder, which the root file links to. A page's description is the field its type marks [`role = "description"`](#54-field-roles), as plain text; a type without one lists its pages without descriptions.
 - **Each page of the site output** opens with a pointer to `llms.txt` and the page's Markdown, which the element library hides from sight ([element contract §8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents)).
+
+**The headers of a Markdown version.** A Markdown version has no head, so what its page's head says is a response header, which the host sends. Each build lists them in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)), a rule for each Markdown version's path: `X-Robots-Tag: noindex` for a page that's `unlisted`, `nosnippet` for one that's `unquoted`, and `Link: <page>; rel="canonical"` on every one, so a search engine lists the page and not its Markdown copy, while an agent can still find either. With `headers = "netlify"`, `@ascribed/astro` writes them into `_headers`.
 
 `@ascribed/astro` publishes the plain output with the site, and serves it in `astro dev`. With another generator, copy `<output-dir>/<build>/plain/` to the site's `base-path`. `ascribe check` then reports two advice checks: a description too long for its line in `llms.txt` (`description-too-long`), and an `llms.txt` still over the limit when it's split (`llms-section-large`).
 

@@ -92,13 +92,27 @@ export function filesMiddleware(siteRoot: string, base: string): Middleware {
   return directoryMiddleware(publishedDir(siteRoot), `${base}_ascribe/files/`);
 }
 
-/** A dev-server middleware serving the plain output for agents at `<base>`: `llms.txt`, each page's `.md`, and their files. */
-export function agentsMiddleware(plainRoot: string, base: string): Middleware {
-  return directoryMiddleware(plainRoot, base);
+/**
+ * A dev-server middleware serving the plain output for agents at `<base>`: `llms.txt`, each page's
+ * `.md`, and their files, each with the headers `headers` gives its path from the host's root.
+ */
+export function agentsMiddleware(
+  plainRoot: string,
+  base: string,
+  headers: (pathname: string) => Record<string, string> = () => ({}),
+): Middleware {
+  return directoryMiddleware(plainRoot, base, headers);
 }
 
-/** A middleware serving the files in `root` at the URL path `prefix`, which ends in `/`. */
-function directoryMiddleware(root: string, prefix: string): Middleware {
+/**
+ * A middleware serving the files in `root` at the URL path `prefix`, which ends in `/`, each with
+ * the headers `headers` gives its path.
+ */
+function directoryMiddleware(
+  root: string,
+  prefix: string,
+  headers: (pathname: string) => Record<string, string> = () => ({}),
+): Middleware {
   // Only under the base path, as in the build. Vite strips the base from
   // `req.url` before a plugin's middleware runs, but connect keeps the original in `originalUrl`.
   return (req, res, next) => {
@@ -122,6 +136,7 @@ function directoryMiddleware(root: string, prefix: string): Middleware {
           TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream",
         );
         res.setHeader("Content-Length", info.size);
+        for (const [name, value] of Object.entries(headers(pathname))) res.setHeader(name, value);
         if (req.method === "HEAD") return void res.end();
         createReadStream(file).pipe(res);
       },

@@ -14,11 +14,15 @@
 //! disallows in `[crawlers]` is a group of its own ([`robots_groups`]),
 //! naming every token of that purpose Ascribe knows, with `Disallow: /`.
 //!
+//! [`header_rules`] are the response headers each page's Markdown version
+//! needs from the host, since a file that isn't HTML has no head to carry a
+//! rule.
+//!
 //! [`disallowing`] and [`disallowing_for`] read the lines as RFC 9309 says a
 //! crawler does, for the check that a page that isn't listed can be fetched,
 //! so that the crawler reads that.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use ascribe_core::{RelPath, Router};
 use ascribe_model::{
@@ -147,6 +151,47 @@ pub fn records<'a>(
             .collect(),
         robots_groups: robots_groups(model),
     }
+}
+
+/// The headers a host sends with one path.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HeaderRule {
+    /// The path, from the host's root, matched exactly.
+    pub path: String,
+    /// Each header's name and value, in the order they're written.
+    pub headers: Vec<(&'static str, String)>,
+}
+
+/// The response headers the pages' Markdown versions need, one rule for each
+/// page that has a Markdown version, sorted by path: `Link` to the page's own
+/// address as canonical, when it has one, and `X-Robots-Tag` with the rule
+/// its head gives a crawler ([`Listing::robots`]), when it isn't listed. A
+/// path two records share, which the site output refuses, has the first's.
+pub fn header_rules(records: &PageRecords) -> Vec<HeaderRule> {
+    let mut rules: BTreeMap<&str, Vec<(&'static str, String)>> = BTreeMap::new();
+    for record in &records.pages {
+        let Some(path) = &record.markdown else {
+            continue;
+        };
+        rules.entry(path).or_insert_with(|| {
+            let mut headers = Vec::new();
+            if let Some(canonical) = &record.canonical {
+                headers.push(("Link", format!("<{canonical}>; rel=\"canonical\"")));
+            }
+            if let Some(robots) = record.listing.robots() {
+                headers.push(("X-Robots-Tag", robots.to_owned()));
+            }
+            headers
+        });
+    }
+    rules
+        .into_iter()
+        .filter(|(_, headers)| !headers.is_empty())
+        .map(|(path, headers)| HeaderRule {
+            path: path.to_owned(),
+            headers,
+        })
+        .collect()
 }
 
 /// Each page's breadcrumbs, in `pages` order: its route's folders from the

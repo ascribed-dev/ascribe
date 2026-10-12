@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[types.guide]
+default = true
+
+[types.guide.frontmatter]
+title = "string"
+
+[consumer]
+site = "https://docs.example.com"
+agents = true
+headers = "apache"

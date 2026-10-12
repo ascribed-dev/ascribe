@@ -8,7 +8,7 @@ home/                       the site's own pages, an Ascribe project: ascribe.to
 home/content/screenshots/   the pictures of review and the editor, light and dark, each with the release it was taken at (see Screenshots)
 demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
 netlify.toml                production's build on Netlify
-netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md
+netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md, and the .md's headers
 public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
 public/cards/               a social card for each page outside the docs, generated (../design/README.md)
@@ -72,7 +72,7 @@ npm test              # after a build
 
 - `test/nav.test.ts`: every published docs page is in `src/nav.ts`, and it names nothing else.
 - `test/projects.test.ts`: the docs' route is their base path; every permalink `home/`'s pages link to is one the docs publish, by `ascribe permalinks verify`, which also fails on a retired name; and the landing page's install commands are getting started's.
-- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, and a page of `home/`, which has none, with the page.
+- `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, passing on the `.md` file's `x-robots-tag` and `link`, and a page of `home/`, which has none, with the page.
 - `test/changelog.test.ts`: the changelog's rules for links and anchors, on Markdown made in the test, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/crawlers.test.ts`: the sitemap lists every built page that doesn't say `noindex`, other than a permalink's forwarding page, the 404 page, and `unindexed` in `src/site.ts`, and nothing else; a page that says `noindex` is in neither the sitemap nor `llms.txt`; `robots.txt` names the sitemap; and the changelog has its canonical link. No docs page is marked `listing: unlisted`, so the rules are also run on `test/fixtures/crawled/`, which has such a page.

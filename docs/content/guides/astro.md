@@ -145,6 +145,8 @@ npx astro build
   **Gives each permalink an address** that forwards to its page or heading, in `astro dev` and in the built site ([Permalinks](#permalinks)).
 - @available: next
   **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([search engines and crawlers](#search-engines-and-crawlers)), in `astro dev` and in the built site.
+- @available: next
+  **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](#response-headers)).
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
 - @available: ascribe 0.2.0
@@ -257,7 +259,7 @@ Nothing is written at the host's root for a project under a path. With docs at `
 The files are static, so any host serves them. A few things the spec asks are the server's, not the build's:
 
 - **The `.md` files' type.** Serve them as `text/markdown; charset=utf-8`, and `llms.txt` as `text/plain; charset=utf-8`, as `astro dev` does. Check what your host sends (`curl -I` a page's `.md`), and set the header in its configuration if it's something else.
-- **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer. On Netlify, an edge function does it: this site's is [`markdown.ts`]({repo}/blob/main/site/netlify/edge-functions/markdown.ts).
+- **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer. On Netlify, an edge function does it: this site's is [`markdown.ts`]({repo}/blob/main/site/netlify/edge-functions/markdown.ts). Whatever answers that way passes on the `.md` file's [response headers](#response-headers), `X-Robots-Tag` and `Link`: the answer is at the page's own address, where no rule for the `.md` path applies, and on Netlify a function's response gets none of `_headers` at all.
 - **Status codes and caching.** A missing page should answer 404, not 200 with a page saying so, and the `.md` files and `llms.txt` should be cached no longer than the pages.
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
 
@@ -354,6 +356,58 @@ It writes a group for each purpose a project disallows, such as `training = "dis
 - **Projects of one site must agree on each purpose,** since they share the file. One that allows a purpose and one that disallows it fail `astro build`, naming both, and `astro dev` serves no `robots.txt` until they agree. A project that leaves a purpose out agrees with either.
 - **A site with its own `robots.txt`** in `public/` keeps it, and the integration writes none. The build says so, with the lines Ascribe would have written; copy them into your file.
 - **A site whose Astro `base` isn't `/`** has no host root to write to, and a crawler reads `robots.txt` only there. The sitemap goes under the base, no `robots.txt` is written, and the build prints the lines the host's own `robots.txt` needs, the sitemap's address among them.
+
+### Response headers
+
+A page's Markdown version is a file with no head, so the rule its page's head gives a crawler has to be a response header, and only the host sends those. Each build lists what each Markdown version needs in `_ascribe/headers.json` ([output-layout contract](../contracts/output-layout.md#14-the-headers)):
+
+- `X-Robots-Tag: noindex` for a page that's `unlisted`, and `nosnippet` for one that's `unquoted`, the same rule as its head;
+- `Link: <https://docs.example.com/docs/guides/install/>; rel="canonical"` on every one, naming the page, so a search engine lists the page and not its Markdown copy, while an agent can still fetch either.
+
+`astro dev` sends them with each `.md` file, so you can try them with no host:
+
+```sh
+$ curl -sI http://localhost:4321/docs/internal/runbook.md | grep -i x-robots-tag
+x-robots-tag: noindex
+```
+
+**On Netlify,** set `headers = "netlify"` in `[consumer]`, and `astro build` writes the rules into `_headers` at the root of the built site, which Netlify reads:
+
+```toml
+[consumer]
+site = "https://docs.example.com"
+base-path = "/docs/"
+agents = true
+headers = "netlify"
+```
+
+```text
+/docs/internal/runbook.md
+  Link: <https://docs.example.com/docs/internal/runbook/>; rel="canonical"
+  X-Robots-Tag: noindex
+```
+
+Each rule is for one exact path, never a pattern, so a rule for a page can't reach its neighbor. With several projects, the file holds the rules of each project that sets `headers`.
+
+- **A site with its own `_headers`** in `public/` keeps it, and the integration never rewrites it. The build checks that it has Ascribe's lines, and fails when it doesn't, with the lines to add as its message. A line counts when it's under the same path, with the same value; the case of a header's name doesn't matter.
+- **A site whose Astro `base` isn't `/`** has no root to write `_headers` to, so the build prints the lines instead.
+
+**On another host,** read the list after the build and give each path its headers in the host's own configuration. For nginx, a script that writes a `location` block for each rule, for the server's configuration to include:
+
+```js
+// After `astro build`: headers.conf, with a block for each Markdown version.
+import { readFileSync, writeFileSync } from "node:fs";
+const { headers } = JSON.parse(
+  readFileSync(".ascribe/build/site/site/_ascribe/headers.json", "utf8"),
+);
+const blocks = headers.map(({ path, headers }) => {
+  const lines = Object.entries(headers).map(([name, value]) => `  add_header ${name} '${value}';`);
+  return `location = ${path} {\n${lines.join("\n")}\n}\n`;
+});
+writeFileSync("headers.conf", blocks.join(""));
+```
+
+Cloudflare Pages reads a `_headers` file in the same form as Netlify's, but takes at most 100 rules, one for each Markdown version here; a larger site gives the rules to a Worker instead.
 
 ## Permalinks
 @available: next
