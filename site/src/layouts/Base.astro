@@ -53,6 +53,7 @@ const {
 const base = import.meta.env.BASE_URL;
 const docsHome = `${base}${docsPath}`;
 const why = `${base}why/`;
+const credits = `${base}credits/`;
 const changelog = `${base}changelog/`;
 const pageTitle = title === undefined ? name : `${title} · ${name}`;
 // Shared links need absolute addresses: the site's, which a preview's build changes.
@@ -149,6 +150,9 @@ const canonical = new URL(Astro.url.pathname, site).href;
     }
     <footer class="site-footer">
       <nav aria-label="More">
+        <a href={credits} aria-current={Astro.url.pathname === credits ? "page" : undefined}
+          >Credits</a
+        >
         <a href={changelog} aria-current={Astro.url.pathname === changelog ? "page" : undefined}
           >Changelog</a
         >
