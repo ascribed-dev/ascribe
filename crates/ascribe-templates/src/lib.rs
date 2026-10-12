@@ -54,6 +54,14 @@ pub const FILES: &[File] = &[
         text: include_str!("../set/reference.md"),
     },
     File {
+        name: "release-notes.guide.md",
+        text: include_str!("../set/release-notes.guide.md"),
+    },
+    File {
+        name: "release-notes.md",
+        text: include_str!("../set/release-notes.md"),
+    },
+    File {
         name: "troubleshooting.guide.md",
         text: include_str!("../set/troubleshooting.guide.md"),
     },

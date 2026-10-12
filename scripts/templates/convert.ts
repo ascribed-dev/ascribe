@@ -44,6 +44,7 @@ export interface Pin {
 /** One template's rules: its table in rules.toml. */
 export interface Rules {
   description: string;
+  about: string[];
   directives: { directive: string; before: string }[];
 }
 
@@ -69,7 +70,14 @@ export function readRules(): Map<string, Rules> {
     Object.entries(tables).map(([name, table]) => {
       if (typeof table.description !== "string")
         throw new Error(`rules.toml: [${name}] has no \`description\``);
-      return [name, { description: table.description, directives: table.directives ?? [] }];
+      return [
+        name,
+        {
+          description: table.description,
+          about: table.about ?? [],
+          directives: table.directives ?? [],
+        },
+      ];
     }),
   );
 }
@@ -131,7 +139,24 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     trimBlank();
   }
 
-  const body = lines.slice(start, end);
+  // What the template says about itself elsewhere: each paragraph a rule names
+  // by its first line, removed whole, with the blank lines after it.
+  let body = lines.slice(start, end);
+  for (const first of rules.about) {
+    const code = codeLines(body);
+    const found = body.flatMap((line, i) =>
+      !code[i] && line.trim() === first && (i === 0 || blank(body[i - 1] ?? "")) ? [i] : [],
+    );
+    if (found.length !== 1)
+      throw new ConversionError(
+        `${name}: the rule \`about\` found ${found.length} paragraphs opening \`${first}\`, not one`,
+      );
+    const from = found[0] ?? 0;
+    let to = from;
+    while (to < body.length && !blank(body[to] ?? "")) to++;
+    while (to < body.length && blank(body[to] ?? "")) to++;
+    body = [...body.slice(0, from), ...body.slice(to)];
+  }
   const code = codeLines(body);
 
   // The structural rules, each at the one line of theirs it names.

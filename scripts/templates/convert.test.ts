@@ -21,7 +21,7 @@ import {
   write,
 } from "./convert.ts";
 
-const rules = { description: "{Say what it's for.}", directives: [] };
+const rules = { description: "{Say what it's for.}", about: [], directives: [] };
 
 function template(body: string): string {
   return `# {Product} title\n\n> Read the [guide](./guide.md).\n>\n> Text in {curly brackets}.\n\n${body}\n\n---\n\n> Explore other templates.\n`;
@@ -124,6 +124,37 @@ test("a rule that doesn't find its place stops the conversion, naming the templa
   expect(convert("```\n1. {Do it.}\n```")).toThrow(ConversionError);
 });
 
+test("a paragraph a rule says is about the template goes whole, and one it doesn't find stops the conversion", () => {
+  const about = {
+    ...rules,
+    about: ["{Read the [process](process_t.md)", "{Text in {curly brackets}.}"],
+  };
+  expect(
+    convertTemplate(
+      "t",
+      template(
+        "{Read the [process](process_t.md)\ndocument.}\n\n{Text in {curly brackets}.}\n\n{Release date}",
+      ),
+      about,
+    ),
+  ).toBe(
+    [
+      "---",
+      'title: "{Product} title"',
+      `description: "{Say what it's for.}"`,
+      "---",
+      "",
+      "\\{Release date}",
+      "",
+    ].join("\n"),
+  );
+  expect(() => convertTemplate("t", template("{Release date}"), about)).toThrow(
+    new ConversionError(
+      "t: the rule `about` found 0 paragraphs opening `{Read the [process](process_t.md)`, not one",
+    ),
+  );
+});
+
 test("a template without the shape the steps expect stops the conversion", () => {
   expect(() => convertTemplate("t", "Text.\n", rules)).toThrow(
     new ConversionError("t: the template doesn't open with a level-1 heading (line 1)"),
@@ -155,7 +186,14 @@ test("the pin is a tag and its commit, and every template converted has its rule
   const pin = readPin();
   expect(pin.tag).toMatch(/^v\d+\.\d+\.\d+$/);
   expect(pin.commit).toMatch(/^[0-9a-f]{40}$/);
-  expect([...readRules().keys()]).toEqual(["how-to", "concept", "tutorial", "reference", "troubleshooting"]);
+  expect([...readRules().keys()]).toEqual([
+    "how-to",
+    "concept",
+    "tutorial",
+    "reference",
+    "troubleshooting",
+    "release-notes",
+  ]);
 });
 
 const ascribe = binary();

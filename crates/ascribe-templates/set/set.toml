@@ -33,3 +33,9 @@ name = "troubleshooting"
 summary = "A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue."
 template = "troubleshooting.md"
 guide = "troubleshooting.guide.md"
+
+[[template]]
+name = "release-notes"
+summary = "Release notes communicate new features, improvements, bug fixes, and known issues about a product to users and stakeholders."
+template = "release-notes.md"
+guide = "release-notes.guide.md"
