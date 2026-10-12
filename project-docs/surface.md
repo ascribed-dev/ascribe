@@ -692,7 +692,15 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 |---|---|---|
 | `contracts/assets.md` | Asset contract |  |
 | `contracts/content-model.md` | `ascribe.toml` format contract |  |
+| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing |  |
+| `contracts/content-model/content.md` | `ascribe.toml` format contract: dimensions, phrases, and widgets |  |
+| `contracts/content-model/output.md` | `ascribe.toml` format contract: consumer, builds, and sources |  |
+| `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules |  |
 | `contracts/json-reports.md` | JSON report contract |  |
+| `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` |  |
+| `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions |  |
+| `contracts/json-reports/report.md` | JSON reports: `ascribe report` |  |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe sources` and `ascribe permalinks` |  |
 | `contracts/output-layout.md` | Output-layout contract |  |
 | `contracts/permalinks-list.md` | The permalinks list |  |
 | `contracts/site-render.md` | Site-render contract |  |
@@ -701,6 +709,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/astro.md` | Astro |  |
 | `guides/drift.md` | Drift |  |
 | `guides/editor.md` | Editing |  |
+| `guides/editor/settings.md` | Editor workspaces, settings, and commands |  |
 | `guides/measuring.md` | What to measure |  |
 | `guides/permalinks.md` | Permalinks |  |
 | `guides/report.md` | The project report |  |
@@ -709,8 +718,20 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/variants.md` | Content that varies |  |
 | `index.md` | Ascribe documentation |  |
 | `reference/cli.md` | Command reference |  |
+| `reference/cli/agents.md` | `ascribe agents`, `mcp`, and `lsp` |  |
+| `reference/cli/check.md` | `ascribe check`, `build`, and `fmt` |  |
+| `reference/cli/diff.md` | `ascribe diff`, `drift`, and `report` |  |
+| `reference/cli/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` |  |
+| `reference/cli/sources.md` | `ascribe sources`, `permalinks`, and `vale` |  |
 | `reference/content-model.md` | `ascribe.toml` reference |  |
+| `reference/content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing |  |
+| `reference/content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets |  |
+| `reference/content-model/output.md` | `ascribe.toml`: consumer, builds, and sources |  |
 | `reference/diagnostics.md` | Diagnostics |  |
+| `reference/diagnostics/content-checks.md` | Diagnostics: content checks |  |
+| `reference/diagnostics/content-model.md` | Diagnostics: the content model |  |
+| `reference/diagnostics/directives.md` | Diagnostics: directives |  |
+| `reference/diagnostics/pages.md` | Diagnostics: links, pages, and sources |  |
 | `reference/directives.md` | Directive reference |  |
 | `reference/elements.md` | Element library reference |  |
 | `reference/project-files.md` | Files Ascribe writes |  |
