@@ -29,7 +29,7 @@ The extension includes an `ascribe` binary for your platform, so it works immedi
 A project that installs `@ascribed/cli` gets exactly the version it pins, in the editor as in CI, and two projects in one workspace can pin different versions. When a version is older than the extension expects, the extension warns you to update it. **Ascribe: Show Server Output** shows which binary a project uses.
 
 ### The walkthrough
-@available: next
+@available: ascribe 0.3.0
 
 After you install the extension, VS Code opens its walkthrough, **Get Started with Ascribe**, which goes through what a writer does first: open a project, preview a page, use the actions bar, look at the Ascribe sidebar, see what a build leaves out, and check the project in CI. To see it again, open **Help → Welcome**, or run **Welcome: Open Walkthrough…** and choose it. Its buttons act on the page you last had open.
 
@@ -58,13 +58,13 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 
 ### Prompt agent
 
-@available: next
+@available: ascribe 0.3.0
 On a problem, the lightbulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](agents.md#prompt-your-agent).
 
 ### Agents in VS Code
 @id {permalink=true}: agents-in-vs-code
 
-@available: next
+@available: ascribe 0.3.0
 An agent in VS Code, such as GitHub Copilot in agent mode, gets Ascribe's tools with nothing to set up. In a workspace with an Ascribe project, the extension offers [`ascribe mcp`](agents.md#the-mcp-server) as an MCP server, named **Ascribe** in VS Code's list of MCP servers. It runs the binary the first project uses (see [Which `ascribe` it runs](#which-ascribe-it-runs)), in the workspace folder, and VS Code starts it when an agent first needs it. When the workspace's projects use different binaries, the project's output says which one the server runs.
 
 The extension also gives agents three tools of its own, for what only the editor knows: text that isn't saved, and the review that's open. Name one in chat with `#`, or let the agent pick it.
@@ -134,14 +134,14 @@ The preview shows images and files from the content root, and from directories e
 A [`@snippet`](../reference/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
 
 ### Site preview
-@available: next
+@available: ascribe 0.3.0
 
 The page preview is the page alone. The **site preview** is the same page in the real site, with its layout, navigation, and styles, from the site's dev server. With [`@ascribed/astro`](astro.md), `astro dev` writes where it's running to `.ascribe/dev.json` in the project, and removes the file when it stops.
 
 **Ascribe: Open Site Preview** opens the active page on the dev server in your browser, at the heading the editor shows. It's also the globe button in a Markdown editor's title bar while a dev server is running. With no dev server, or one that stopped without removing `dev.json`, it says to start one. It only opens an address on your machine (`localhost`, `127.0.0.1`, or `[::1]`), so a `dev.json` committed to a repository can't send it elsewhere, and it doesn't contact that address until you ask for the site preview. In a remote workspace, VS Code forwards the dev server's port first. The page preview's **Page | Site** switch, at the end of its toolbar, shows the site preview in the panel instead: the dev server's page for the same file, following the active file as **Page** does. Links you follow inside it stay until you open another file. The panel takes no messages from the dev server's page: only the extension changes what it shows. With no dev server, it says to start one, with **Try again**. In VS Code for the Web, where the panel can't show the dev server, **Site** opens the browser instead. [Review in the site preview](astro.md#review-in-the-site-preview) has the toolbar app that marks changes and shows comments there; each block's and thread's **Open source** brings you back to the file, at the line.
 
 ### Actions
-@available: next
+@available: ascribe 0.3.0
 
 Actions write Ascribe for you: wrap a paragraph in a note, turn a numbered list into steps, link the selected text to a page, insert content that varies by a dimension, mark where a section is available. Each one asks what it needs in short steps, choosing from what the project has (its note types, pages and headings, phrases, dimensions and their values, features, images, fragments, sources, and widgets), so you never type a path, a key, or attribute syntax. What it writes is in canonical form, and one **Undo** takes it back.
 
@@ -169,7 +169,7 @@ The actions in the bar's **Content model** group change `ascribe.toml` from a pa
 These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename that changes other files lists every change in the refactor preview first, where you check the changes to make and **Apply** them, or **Discard** them all.
 
 ### The Ascribe sidebar
-@available: next
+@available: ascribe 0.3.0
 
 The Ascribe icon in the activity bar opens the Ascribe sidebar, with four views: **Projects**, **Used by**, **Pages**, and **Content model**.
 
@@ -199,7 +199,7 @@ Click it for a menu of the project: **Switch build**, **Check every build**, **S
 Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
 
 ### The build lens
-@available: next
+@available: ascribe 0.3.0
 
 **Ascribe: Dim What the Build Leaves Out** (also in the [status bar](#the-status-bar) item's menu) turns the build lens on for the active file's project. The editor then dims what the build you're looking at leaves out of each page: the variant arms the build doesn't select, and the sections, blocks, and table rows its availability filter removes, from the directive line through `@end`. Hover over dimmed text for why, such as **Left out of self-hosted.** Shows only edition=self-hosted. When the build doesn't publish the page at all, a line at its top says so, and the whole page is dimmed. "What will self-hosted readers see?" is answered in the source, without opening the preview.
 

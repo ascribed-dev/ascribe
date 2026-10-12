@@ -18,10 +18,10 @@ The text output lists each build's changed pages with counts, and where a change
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
-@available: next
+@available: ascribe 0.3.0
 Name a page to see its changes: every changed block, as it was (`-`) and as it is (`+`), with where it's written. In changed prose, the words removed are marked `[-like this-]` and the words added `{+like this+}`, as `git diff --word-diff` marks them; a block that isn't prose, such as a code block, shows its lines on both sides, and a moved block shows its lines once. A build the page didn't change in says so. Name a fragment, or another file pages take text from, to see the pages that changed through it. `--format json` and `--format html` are narrowed the same way, with the same shape and fewer pages, and `--exit-code` exits with `1` only when what's shown changed. A PAGE that isn't a file of the project, at the base or now, is a usage error.
 
-@available: next
+@available: ascribe 0.3.0
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-page.txt
 
 Pages with errors are compared as they are, since comparing work in progress is useful, but a broken page can render oddly and read as part of the change. So when `ascribe check` would find errors for the builds compared, `ascribe diff` says so on standard error, and the [HTML report](#the-html-report) and review in the editor's preview and the site preview show a notice:
@@ -184,7 +184,7 @@ Each example:
 
 ## `ascribe report`
 @id {permalink=true}: cli-report
-@available: next
+@available: ascribe 0.3.0
 
 Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. Every problem in it carries its kind of next step, as in the editor. It's for a scheduled job, or for a look at the whole project; [Reading the report](../../guides/report.md) says how to act on each section.
 

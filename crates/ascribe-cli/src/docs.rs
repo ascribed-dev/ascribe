@@ -29,17 +29,17 @@ const HEADER: &str = "<!-- Generated from the help text in crates/ascribe-cli/sr
 /// the same.
 const AVAILABLE: &[(&str, &str, &str)] = &[
     ("build", "anchors", "ascribe 0.2.0"),
-    ("check", "paths", "next"),
-    ("check", "stdin", "next"),
-    ("check", "path", "next"),
-    ("check", "editor_build", "next"),
-    ("check", "code", "next"),
-    ("check", "summary", "next"),
-    ("check", "vale", "next"),
-    ("check", "fix", "next"),
-    ("diff", "page", "next"),
-    ("diff", "pages_only", "next"),
-    ("fmt", "format", "next"),
+    ("check", "paths", "ascribe 0.3.0"),
+    ("check", "stdin", "ascribe 0.3.0"),
+    ("check", "path", "ascribe 0.3.0"),
+    ("check", "editor_build", "ascribe 0.3.0"),
+    ("check", "code", "ascribe 0.3.0"),
+    ("check", "summary", "ascribe 0.3.0"),
+    ("check", "vale", "ascribe 0.3.0"),
+    ("check", "fix", "ascribe 0.3.0"),
+    ("diff", "page", "ascribe 0.3.0"),
+    ("diff", "pages_only", "ascribe 0.3.0"),
+    ("fmt", "format", "ascribe 0.3.0"),
 ];
 
 fn repo() -> PathBuf {

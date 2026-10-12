@@ -24,6 +24,6 @@ The schemas of `ascribe check`, `ascribe build`, and `ascribe fmt` are on this p
 @include: ../_generated/json-check.md
 
 ## `ascribe fmt`
-@available: next
+@available: ascribe 0.3.0
 
 @include: ../_generated/json-fmt.md

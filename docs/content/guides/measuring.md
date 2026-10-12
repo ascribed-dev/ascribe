@@ -1,7 +1,7 @@
 ---
 title: What to measure
 description: Where a team sees how search engines and AI agents treat its docs, since Ascribe sees no traffic, and which of the advice about them has evidence behind it.
-available: next
+available: ascribe 0.3.0
 ---
 
 Ascribe builds your docs and checks them before they're deployed. It runs no server, sees no traffic, and calls no model, so it can't tell you how many people found a page through a search engine, or whether an assistant answered a question about your product correctly. This guide says where a team looks for those, and how much each piece of the advice you'll read about search and AI is worth.

@@ -6,7 +6,7 @@ description: "The normative contract for the content model's checks, permalinks,
 Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section.
 
 ## 19. `[checks]`
-@available: next
+@available: ascribe 0.3.0
 
 How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. The two forms a key's value takes are:
 
@@ -37,7 +37,7 @@ A level changes how a diagnostic is reported everywhere: by `ascribe check` and 
 **Rules** (§24.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, `page-size`'s `limit` a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### 19.1 `[[intended]]`
-@available: next
+@available: ascribe 0.3.0
 
 Acknowledges a review check's problem with a content model entry or an image as intended (SPEC §4.9): the problem isn't reported, and is counted and listed with the reason instead. Each table is one acknowledgement.
 
@@ -57,7 +57,7 @@ Exactly one of `phrase`, `feature`, `term`, and `image`. The acknowledgement cov
 **Rules** (§24.9): the check exists, with a did-you-mean suggestion for one that doesn't, is a review check, and is reported at an entry (`model-intended-check`); the table names exactly one declared entry (`model-intended-entry`); `check` and `reason` are present (`model-missing-key`) and `reason` isn't empty (`model-empty-text`); and the table has no other key (`model-unknown-key`).
 
 ### 19.2 `[checks.vale]`
-@available: next
+@available: ascribe 0.3.0
 
 How the prose is checked with Vale, a program the project installs. Ascribe runs it; it isn't linked or downloaded.
 
@@ -86,7 +86,7 @@ Each alert is a `prose` diagnostic (`ASC165`) on the source file, with the rule 
 **Rules** (§24.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
 
 ### 19.3 `[checks.links]`
-@available: next
+@available: ascribe 0.3.0
 
 How `ascribe report links` checks external links: with lychee, a program the project installs, which Ascribe runs with the addresses on its standard input. `ascribe check` never reaches the network.
 
@@ -114,7 +114,7 @@ The links checked are every link whose destination is an `http` or `https` URL, 
 ---
 
 ## 20. `[permalinks]`
-@available: next
+@available: ascribe 0.3.0
 
 Names for something outside the docs to link to that no heading or page declares (SPEC §7.6): a permalink ended on purpose, and a second name for one.
 
@@ -139,7 +139,7 @@ No other key is allowed in `[permalinks]` or in a retired permalink's table. A n
 ---
 
 ## 21. `[crawlers]`
-@available: next
+@available: ascribe 0.3.0
 
 @include: ../../_fragments/content-model/crawlers.md
 
@@ -150,7 +150,7 @@ The crawlers of each purpose are data Ascribe ships, each with its operator, the
 ---
 
 ## 22. `[listing]`
-@available: next
+@available: ascribe 0.3.0
 
 @include: ../../_fragments/content-model/listing.md
 

@@ -221,7 +221,7 @@ Gives a heading an explicit, stable id, used for its anchor and by links and inc
 Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to a heading whose text contains a phrase or duplicates another heading's: Ascribe warns about both, because their ids can change without the heading being edited.
 
 #### Permalinks
-@available: next
+@available: ascribe 0.3.0
 
 `{permalink=true}` makes the id a **permalink** as well: a name for the section that something outside the docs can link to, which keeps working when the page is renamed, moved, or rewritten.
 
@@ -265,7 +265,7 @@ Includes another file, or one heading's section of it, in place.
 - Included headings keep the levels they're written with.
 - An include cycle is an error.
 
-@available: next
+@available: ascribe 0.3.0
 A page's includes can make it only so large: far larger than any real page, but not as large as a few files that each include the next twice make it, doubling the page at every step. The include in the page's own file that takes the page past the limit is an error, `include-limit`, whose message gives the limit, and it and every include after it on the page are left out.
 
 Links target pages, not fragments: link to the page that includes a fragment.
@@ -480,7 +480,7 @@ labels = { macos = "macOS" }  # :remove:
 Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](diagnostics/directives.md) in the diagnostics reference.
 
 ### `@intended`
-@available: next
+@available: ascribe 0.3.0
 
 ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
 
