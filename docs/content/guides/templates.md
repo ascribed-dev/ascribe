@@ -71,7 +71,7 @@ ascribe templates status --diff how-to
 
 A project that takes the set late is one with pages written already. Ascribe's own docs took it that way, with 46 pages, and it showed what to expect:
 
-- **A type you declare already is refused,** and nothing is written. To take its template, take the type out of `ascribe.toml`, take the template, then put back what your type had. Until you do, its pages fall to your default type, and `ascribe check` doesn't say so.
+- **A type you declare already is refused,** and nothing is written. To take its template and keep your type as it is, add `--keep-type`.
 - **The new types match no page** until you change their `files`. Eject puts each type's pages in a folder of its name, and yours are somewhere else; a type that matches nothing isn't reported either.
 - **Each type's frontmatter is the set's,** a plain `title` and `description`. Put back what your own types declare, such as a title drawn as code (`inline = "code"`), on each one.
 - **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. A phrase with a placeholder's name, such as `{product}`, which the tutorial's template has, isn't reported, since the template's brace is escaped and the phrase's isn't.
