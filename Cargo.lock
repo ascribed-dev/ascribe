@@ -293,6 +293,7 @@ dependencies = [
  "ascribe-emit",
  "ascribe-model",
  "ascribe-resolve",
+ "ascribe-templates",
  "schemars",
  "serde",
  "serde_yaml_ng",

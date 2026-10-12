@@ -67,13 +67,15 @@ ascribe agents sync
 
 It writes:
 
-- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types and their frontmatter, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest.
+- **`AGENTS.md`** beside `ascribe.toml`: the check to run after each edit and before finishing, your page types with what each is for and its frontmatter, your phrases, the directives your pages use, and how to link. It's at most 4,000 characters, and long lists are cut with the command that shows the rest, the page types first.
 - **A short block in the repository's root `AGENTS.md`,** when your project is in a subfolder: where its pages are, the check to run, and where its full rules are. Some agents, such as Codex, read no `AGENTS.md` below the folder they start in.
 - **The skill,** in `.agents/skills/ascribe/` at the repository's root. See [The skill](#the-skill).
 
 Beside each file it writes, `sync` says which agents read it, and when an agent doesn't read one, the target that writes it where that agent does. Claude Code doesn't read the skill in `.agents/skills/`, so without the `claude` target, `sync` says so:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
+
+What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](templates.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../reference/content-model.md#41-page-types)).
 
 Here's what it writes for the Quill example:
 

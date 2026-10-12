@@ -737,3 +737,15 @@ fn full_names_a_template_and_a_guide_for_reference_pages() {
     let guide_type = m.types.iter().find(|t| t.name == "guide").unwrap();
     assert!(guide_type.template.is_none() && guide_type.guide.is_empty());
 }
+
+#[test]
+fn full_says_what_reference_pages_are_for() {
+    let m = example("full.toml");
+    let reference = m.types.iter().find(|t| t.name == "reference").unwrap();
+    assert_eq!(
+        reference.purpose.as_deref(),
+        Some("What each command, option, and setting does, to look up.")
+    );
+    let guide = m.types.iter().find(|t| t.name == "guide").unwrap();
+    assert_eq!(guide.purpose, None);
+}

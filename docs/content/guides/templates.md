@@ -35,7 +35,7 @@ title = "string"
 description = "string"
 ```
 
-Each type's page has a title and a description, as every template's frontmatter has. The folders are only a start: to keep a type's pages somewhere else, change its `files`, the line that says which pages are of it. Commit the files, with `templates/templates.lock`, which records what each was copied from.
+Each type's page has a title and a description, as every template's frontmatter has. The folders are only a start: to keep a type's pages somewhere else, change its `files`, the line that says which pages are of it. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](agents.md#agent-instructions) writes say what each type is for with their summary of it, from that file; to say it your own way, give the type a [`purpose`](../reference/content-model.md#41-page-types).
 
 To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
 

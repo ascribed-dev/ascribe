@@ -1,0 +1,7 @@
+description: >-
+  A type's `purpose` is a string saying what a page of the type is for, and
+  a page of the type checks as it does without it.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics: []

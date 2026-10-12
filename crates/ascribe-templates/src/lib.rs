@@ -7,13 +7,16 @@
 //! summary of it, and its template and guide, with their tag and the license;
 //! [`set`] reads it. [`NOTES`] is Ascribe's notes on each type, written by hand
 //! in `notes/`, which the conversion never opens. [`eject()`] writes templates
-//! into a project, as `ascribe templates eject` does.
+//! into a project, as `ascribe templates eject` does, and [`summaries`]
+//! reads back what it recorded in `templates.lock`.
 
 pub mod eject;
+pub mod lock;
 
 pub use eject::{
     Added, Eject, EjectAnswer, EjectError, LOCK_FILE, Refusal, RefusalReason, TEMPLATES_DIR, eject,
 };
+pub use lock::summaries;
 
 /// A file of the set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

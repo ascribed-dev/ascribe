@@ -12,22 +12,27 @@ use ascribe_check::prompt::shell_word;
 use ascribe_core::RelPath;
 use ascribe_core::schema::{Attributes, Builtin, DirectiveSchema, Primary};
 use ascribe_model::ContentModel;
-use ascribe_resolve::{Layout, Project};
+use ascribe_resolve::{FileSystem, Layout, Project};
 
-use crate::model::{Section, entries, fit};
+use crate::model::{Section, entries, fit, type_entries};
 
 /// The most characters [`rules`] takes.
 pub const RULES_BUDGET: usize = 4_000;
 
-/// The most characters the page types and phrases take within the rules.
+/// The most characters the phrases take within the rules.
 pub const MODEL_BUDGET: usize = 2_000;
 
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
 /// the project's folder as seen from the repository's root, where the
-/// commands are run from.
-pub fn rules(project: &Project, dir: &RelPath, root: &RelPath) -> String {
+/// commands are run from. `fs` is the project's [`FileSystem`], which the
+/// summary of each type ejected from the set is read through, from its
+/// `templates.lock`.
+///
+/// When the whole is longer than [`RULES_BUDGET`], the page types' lines are
+/// cut first, and the cut says where the full list is; then the directives'.
+pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPath) -> String {
     let model = project.model();
     let at = At::new(project, dir, root);
     let mut head = String::from("## Ascribe documentation\n\n");
@@ -36,7 +41,8 @@ pub fn rules(project: &Project, dir: &RelPath, root: &RelPath) -> String {
     head.push_str(&at.check());
     head.push('\n');
 
-    let model_part = model_sections(model, &at);
+    let types = type_entries(model, &ascribe_templates::summaries(model, fs));
+    let phrases = phrases_section(model, &at);
     let tail = format!(
         "\n### Links\n\nLink to the source file, with a relative path such as \
          `../guides/install.md#configure`, not to the site's address. `ascribe outline \
@@ -63,11 +69,22 @@ pub fn rules(project: &Project, dir: &RelPath, root: &RelPath) -> String {
         }
         out
     };
-    let fixed = head.chars().count() + model_part.chars().count() + tail.chars().count();
-    let taken = fit(&[lines.len()], |taken| {
-        fixed + directives(taken[0]).chars().count() <= RULES_BUDGET
-    });
-    format!("{head}{model_part}{}{tail}", directives(taken[0]))
+    let render = |types_taken: usize, directives_taken: usize| -> String {
+        format!(
+            "{head}{}{phrases}{}{tail}",
+            section(Section::Types, TYPES_INTRO, &types, types_taken, &at),
+            directives(directives_taken)
+        )
+    };
+    let fits = |t: usize, d: usize| render(t, d).chars().count() <= RULES_BUDGET;
+    let every_directive = lines.len();
+    let types_taken = fit(&[types.len()], |taken| fits(taken[0], every_directive))[0];
+    let directives_taken = if fits(types_taken, every_directive) {
+        every_directive
+    } else {
+        fit(&[lines.len()], |taken| fits(0, taken[0]))[0]
+    };
+    render(types_taken, directives_taken)
 }
 
 /// A short text for a file above a project's folder (the repository's root
@@ -221,53 +238,53 @@ impl At {
     }
 }
 
-/// The page types and phrases, cut together to [`MODEL_BUDGET`].
-fn model_sections(model: &ContentModel, at: &At) -> String {
-    let sections: Vec<(Section, Vec<String>)> = [Section::Types, Section::Phrases]
-        .into_iter()
-        .map(|s| (s, entries(model, s)))
-        .filter(|(_, lines)| !lines.is_empty())
-        .collect();
-    let first_phrase = model.phrases.first().map(|p| p.key.as_str());
-    let render = |taken: &[usize]| -> String {
-        let mut out = String::new();
-        for ((section, lines), &n) in sections.iter().zip(taken) {
-            out.push_str(&format!("\n### {}\n\n", section.heading()));
-            match section {
-                Section::Types => out.push_str(
-                    "A page's frontmatter is its type's. A file or folder whose name starts with \
-                     `_` is a fragment, which pages `@include`, not a page.\n\n",
-                ),
-                Section::Phrases => {
-                    if let Some(key) = first_phrase {
-                        out.push_str(&format!(
-                            "Write the phrase (`{{{key}}}`), not the text it stands for.\n\n"
-                        ));
-                    }
-                }
-                _ => {}
-            }
-            for line in &lines[..n] {
-                out.push_str(&format!("- {line}\n"));
-            }
-            if n < lines.len() {
-                out.push_str(&format!(
-                    "- …and {} more: `ascribe model{} --section {}`\n",
-                    lines.len() - n,
-                    at.path_arg(),
-                    section.name()
-                ));
-            }
-        }
-        out
-    };
-    let all: Vec<usize> = sections.iter().map(|(_, lines)| lines.len()).collect();
-    if render(&all).chars().count() <= MODEL_BUDGET {
-        return render(&all);
+/// What the page types' section says before its lines.
+const TYPES_INTRO: &str = "A page's frontmatter is its type's. A file or folder whose name starts \
+                           with `_` is a fragment, which pages `@include`, not a page.";
+
+/// The phrases, cut to [`MODEL_BUDGET`].
+fn phrases_section(model: &ContentModel, at: &At) -> String {
+    let lines = entries(model, Section::Phrases);
+    let intro = model
+        .phrases
+        .first()
+        .map(|p| {
+            format!(
+                "Write the phrase (`{{{}}}`), not the text it stands for.",
+                p.key
+            )
+        })
+        .unwrap_or_default();
+    let render = |n: usize| section(Section::Phrases, &intro, &lines, n, at);
+    let taken = fit(&[lines.len()], |taken| {
+        render(taken[0]).chars().count() <= MODEL_BUDGET
+    });
+    render(taken[0])
+}
+
+/// A section of the content model: its heading, `intro`, and its first `n`
+/// lines, then where the rest are when that isn't all of them. Nothing when
+/// it has no lines.
+fn section(section: Section, intro: &str, lines: &[String], n: usize, at: &At) -> String {
+    if lines.is_empty() {
+        return String::new();
     }
-    render(&fit(&all, |taken| {
-        render(taken).chars().count() <= MODEL_BUDGET
-    }))
+    let mut out = format!("\n### {}\n\n", section.heading());
+    if !intro.is_empty() {
+        out.push_str(&format!("{intro}\n\n"));
+    }
+    for line in &lines[..n] {
+        out.push_str(&format!("- {line}\n"));
+    }
+    if n < lines.len() {
+        out.push_str(&format!(
+            "- …and {} more: `ascribe model{} --section {}`\n",
+            lines.len() - n,
+            at.path_arg(),
+            section.name()
+        ));
+    }
+    out
 }
 
 /// A line for each directive the project's pages use: the built-ins in
@@ -375,4 +392,127 @@ fn widget_line(schema: &DirectiveSchema) -> String {
         line.push_str(&format!(": {}", description.trim_end_matches('.')));
     }
     line
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use std::sync::Arc;
+
+    use ascribe_core::FileId;
+    use ascribe_resolve::MemoryFs;
+
+    use super::*;
+
+    const SIX: &str = include_str!("../../../examples/templates/ascribe.toml");
+    const SIX_LOCK: &str = include_str!("../../../examples/templates/templates/templates.lock");
+
+    /// The rules for a project with the content model `model`, and the
+    /// files `files` beside it, read from the repository's root.
+    fn rules_of(model: &str, files: &[(&str, &str)]) -> String {
+        let model = Arc::new(ascribe_model::load_str(model, FileId::new(0)).unwrap());
+        let layout = Layout::from_model(&model);
+        let fs = files
+            .iter()
+            .fold(MemoryFs::new(&layout), |fs, (path, text)| {
+                fs.with_file(path, text)
+            });
+        let project = Project::load(model, layout, &fs);
+        rules(&project, &fs, &RelPath::root(), &RelPath::root())
+    }
+
+    /// The line of the rules for the type `name`.
+    fn line<'a>(rules: &'a str, name: &str) -> &'a str {
+        let start = format!("- `{name}` ");
+        rules
+            .lines()
+            .find(|l| l.starts_with(&start))
+            .unwrap_or_else(|| panic!("no line for `{name}`:\n{rules}"))
+    }
+
+    #[test]
+    fn a_project_with_the_six_types_says_what_each_is_for_within_the_budget() {
+        let rules = rules_of(SIX, &[("templates/templates.lock", SIX_LOCK)]);
+        assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
+        assert!(
+            !rules.contains("more: `ascribe model --section types`"),
+            "{rules}"
+        );
+        assert!(
+            line(&rules, "how-to").ends_with(
+                ". A how-to is a concise set of numbered steps to do one task with the product"
+            ),
+            "{rules}"
+        );
+        for name in [
+            "concept",
+            "tutorial",
+            "reference",
+            "troubleshooting",
+            "release-notes",
+        ] {
+            let summary = SIX_LOCK
+                .split("[[template]]")
+                .find(|entry| entry.contains(&format!("name = \"{name}\"")))
+                .and_then(|entry| entry.lines().find_map(|l| l.strip_prefix("summary = \"")))
+                .map(|s| s.trim_end_matches('"').trim_end_matches('.'))
+                .unwrap();
+            assert!(line(&rules, name).ends_with(summary), "{name}:\n{rules}");
+        }
+        assert_eq!(
+            line(&rules, "page"),
+            "- `page` (the default): frontmatter `title` (string, required)"
+        );
+    }
+
+    #[test]
+    fn a_type_s_purpose_comes_before_the_summary() {
+        let model = SIX.replacen(
+            "[types.how-to]\n",
+            "[types.how-to]\npurpose = \"One task, step by step.\"\n",
+            1,
+        );
+        let rules = rules_of(&model, &[("templates/templates.lock", SIX_LOCK)]);
+        let how_to = line(&rules, "how-to");
+        assert!(how_to.ends_with(". One task, step by step"), "{rules}");
+        assert!(!how_to.contains("concise set"), "{rules}");
+    }
+
+    #[test]
+    fn without_a_lock_a_type_from_the_set_says_only_its_purpose() {
+        let rules = rules_of(SIX, &[]);
+        assert!(
+            line(&rules, "how-to").ends_with("`description` (string, required)"),
+            "{rules}"
+        );
+    }
+
+    #[test]
+    fn the_type_lines_are_cut_first_and_say_where_the_rest_are() {
+        let mut model = String::from("spec = \"0.1\"\n");
+        for i in 0..30 {
+            model.push_str(&format!(
+                "\n[types.kind-{i}]\nfiles = [\"kind-{i}/**\"]\npurpose = \"A page about the \
+                 {i}th kind of thing this product does, with every detail a reader asks for.\"\n\n\
+                 [types.kind-{i}.frontmatter]\ntitle = \"string\"\n"
+            ));
+        }
+        model.push_str("\n[phrases]\nproduct = \"Lantern\"\n");
+        let page = "---\ntitle: Steps\n---\n\n@steps\n1. One.\n2. Two.\n";
+        let rules = rules_of(&model, &[("docs/kind-0/steps.md", page)]);
+        assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
+        let kept = rules.lines().filter(|l| l.starts_with("- `kind-")).count();
+        assert!(kept > 0 && kept < 30, "{kept} kept:\n{rules}");
+        assert!(
+            rules.contains(&format!(
+                "- …and {} more: `ascribe model --section types`",
+                30 - kept
+            )),
+            "{rules}"
+        );
+        // What's after the types is whole.
+        assert!(rules.contains("- `{product}`: Lantern"), "{rules}");
+        assert!(rules.contains("- `@steps` on the line above"), "{rules}");
+    }
 }

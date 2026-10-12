@@ -739,6 +739,17 @@ fn cases() -> Vec<Case> {
             Some("off-rule"),
             "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Nope\"] #!\n",
         ),
+        // A type's `purpose` is text.
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\npurpose = [\"One task\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-empty-text",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\npurpose = \" \" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
         // A type's `guide` is always a list, as `files` is.
         case(
             "model-wrong-type",
