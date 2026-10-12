@@ -1,4 +1,5 @@
-// The editor guide, docs/content/guides/editor.md, includes four fragments
+// The editor guide, docs/content/guides/editor.md and its page of settings and
+// commands, docs/content/guides/editor/settings.md, includes four fragments
 // generated from package.json and the action registry: the settings, the
 // commands in the command palette, the actions, and the tools for agents. This test renders them
 // and fails when one is out of date; run it with ASCRIBE_BLESS=1 to rewrite
@@ -40,7 +41,7 @@ const commands: Record<string, string> = {
   "ascribe.switchBuild":
     "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar).",
   "ascribe.checkEveryBuild":
-    "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../guides/editor.md#the-problems-panel).",
+    "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../guides/editor/settings.md#the-problems-panel).",
   "ascribe.projectMenu":
     "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, restart its server, dim what the build leaves out, or open the preview.",
   "ascribe.toggleBuildLens":
@@ -240,6 +241,12 @@ describe("the editor guide", () => {
   });
 
   it.each(fragments)("includes _generated/%s", (name) => {
-    expect(read("docs/content/guides/editor.md")).toContain(`@include: ../_generated/${name}\n`);
+    const guide = read("docs/content/guides/editor.md");
+    const settings = read("docs/content/guides/editor/settings.md");
+    expect(
+      guide.includes(`@include: ../_generated/${name}\n`) ||
+        settings.includes(`@include: ../../_generated/${name}\n`),
+      `neither docs/content/guides/editor.md nor guides/editor/settings.md includes _generated/${name}`,
+    ).toBe(true);
   });
 });

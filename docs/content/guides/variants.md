@@ -24,7 +24,7 @@ A dimension is an axis your content varies along, with the values it takes. Decl
 - `labels` and `label` are what readers see: a tab reads **macOS**, not `macos`.
 - `versionless` says the platforms have no versions of their own, so a mark names a platform and nothing more. A product whose releases matter leaves it out, and marks content with the version it arrived in, such as `self-managed 3.3`. See [availability specs](../reference/directives.md#availability-specs).
 
-See [`[dimensions.<name>]`](../reference/content-model.md#6-dimensionsname) for every key.
+See [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) for every key.
 
 ## 2. Write the page
 
@@ -47,7 +47,7 @@ A build is a named set of choices about what the output keeps. Every page goes t
 - **`site`** keeps every arm of the group, for readers to switch between (`variants = "switch"`), and every section, with its availability shown (`availability = "badge"`). It's what a project without builds gets.
 - **`windows`** keeps the arms for Windows (`variants = { platform = "windows" }`), and removes what isn't available on Windows (`availability = { filter = "windows" }`).
 
-A build can do one and not the other: select a platform and still badge, or keep every arm and filter for an older release. See [`[builds.<name>]`](../reference/content-model.md#16-buildsname).
+A build can do one and not the other: select a platform and still badge, or keep every arm and filter for an older release. See [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname).
 
 ## 4. Build it
 
@@ -84,5 +84,5 @@ A site publishes one build: `ascribe({ build: "site" })` in Astro's configuratio
 - **A whole page that differs.** When most of a page is different, write a page for each value, with `variant` in its frontmatter. A build that selects another value leaves the page out. See [whole-page variants](../reference/directives.md#whole-page-variants).
 - **Alternatives that aren't a dimension.** For a one-off choice, such as two ways to do the same thing, give each arm a title instead of a value. See [`@variant`](../reference/directives.md#variant).
 - **A word that differs.** `@variant` varies whole blocks. For a name or a version in a sentence, use a [phrase](../reference/directives.md#phrases).
-- **Versions and lifecycle.** Availability can say when content arrived and what state it's in, such as `self-managed preview 3.4`, and a feature can be named once in `[features]` so going GA is one edit. See [availability specs](../reference/directives.md#availability-specs), [`[lifecycle.<state>]`](../reference/content-model.md#8-lifecyclestate), and [`[features.<key>]`](../reference/content-model.md#9-featureskey).
+- **Versions and lifecycle.** Availability can say when content arrived and what state it's in, such as `self-managed preview 3.4`, and a feature can be named once in `[features]` so going GA is one edit. See [availability specs](../reference/directives.md#availability-specs), [`[lifecycle.<state>]`](../reference/content-model/content.md#8-lifecyclestate), and [`[features.<key>]`](../reference/content-model/content.md#9-featureskey).
 - **A table row.** A row takes `{available=...}` at the end of its first cell. See [table rows](../reference/directives.md#table-rows).

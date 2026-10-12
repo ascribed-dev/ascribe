@@ -99,7 +99,7 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 
 ## The report in CI
 
-`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same marks as the previews and **Show: Changes / As it will be / As it was**, and **Copy prompt** for an agent that reviews the page. It shows the changes only, not comments. The [command reference](../reference/cli.md#the-html-report) describes it in full.
+`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same marks as the previews and **Show: Changes / As it will be / As it was**, and **Copy prompt** for an agent that reviews the page. It shows the changes only, not comments. The [command reference](../reference/cli/diff.md#the-html-report) describes it in full.
 
 ```sh
 ascribe diff --format html > review.html

@@ -1,8 +1,8 @@
 <!-- Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs. Edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->
 
-### The file
+## The file
 
-#### ASC060 `model-toml-syntax`
+### ASC060 `model-toml-syntax`
 @id {permalink=true}: ASC060
 
 Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
@@ -13,7 +13,7 @@ Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
-#### ASC061 `model-unknown-key`
+### ASC061 `model-unknown-key`
 @id {permalink=true}: ASC061
 
 Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
@@ -24,7 +24,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
-#### ASC062 `model-missing-key`
+### ASC062 `model-missing-key`
 @id {permalink=true}: ASC062
 
 Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
@@ -35,7 +35,7 @@ Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
-#### ASC063 `model-wrong-type`
+### ASC063 `model-wrong-type`
 @id {permalink=true}: ASC063
 
 Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
@@ -46,7 +46,7 @@ Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
-#### ASC064 `model-invalid-value`
+### ASC064 `model-invalid-value`
 @id {permalink=true}: ASC064
 
 Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
@@ -57,7 +57,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
-#### ASC065 `model-spec-unsupported`
+### ASC065 `model-spec-unsupported`
 @id {permalink=true}: ASC065
 
 Error · file level · next step: choose · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
@@ -68,7 +68,7 @@ Error · file level · next step: choose · [SPEC §11]({repo}/blob/main/SPEC.md
 
 **Read more:** [Top level: `spec`](../reference/content-model.md#2-top-level-spec) in the `ascribe.toml` reference.
 
-#### ASC066 `model-invalid-name`
+### ASC066 `model-invalid-name`
 @id {permalink=true}: ASC066
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -79,7 +79,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Names](../reference/content-model.md#12-names) in the `ascribe.toml` reference.
 
-#### ASC067 `model-empty-text`
+### ASC067 `model-empty-text`
 @id {permalink=true}: ASC067
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -90,9 +90,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
-### `[project]`
+## `[project]`
 
-#### ASC068 `model-path-absolute`
+### ASC068 `model-path-absolute`
 @id {permalink=true}: ASC068
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
@@ -103,7 +103,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Paths and patterns](../reference/content-model.md#13-paths-and-patterns) in the `ascribe.toml` reference.
 
-#### ASC069 `model-content-root-missing`
+### ASC069 `model-content-root-missing`
 @id {permalink=true}: ASC069
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
@@ -114,7 +114,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[project]`](../reference/content-model.md#3-project) in the `ascribe.toml` reference.
 
-#### ASC070 `model-output-overlaps-content`
+### ASC070 `model-output-overlaps-content`
 @id {permalink=true}: ASC070
 
 Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
@@ -125,9 +125,9 @@ Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[project]`](../reference/content-model.md#3-project) in the `ascribe.toml` reference.
 
-### `[sources]`
+## `[sources]`
 
-#### ASC133 `model-source-path-missing`
+### ASC133 `model-source-path-missing`
 @id {permalink=true}: ASC133
 
 Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
@@ -136,9 +136,9 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix `path`, which is relative to the folder ascribe.toml is in, or create the folder.
 
-**Read more:** [`[sources.<name>]`](../reference/content-model.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../reference/content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
 
-#### ASC134 `model-source-outside-repository`
+### ASC134 `model-source-outside-repository`
 @id {permalink=true}: ASC134
 
 Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
@@ -147,9 +147,9 @@ Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source.
 
-**Read more:** [`[sources.<name>]`](../reference/content-model.md#18-sourcesname) in the `ascribe.toml` reference.
+**Read more:** [`[sources.<name>]`](../reference/content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
 
-#### ASC135 `model-source-remote`
+### ASC135 `model-source-remote`
 @id {permalink=true}: ASC135
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
@@ -158,11 +158,11 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Give each source either `path`, a folder in this repository, or `git`, the URL of another repository, with `branch` only beside `git`. A source with `git` keeps its copies in `sources/<name>/`, which must be outside the content root.
 
-**Read more:** [A source in another repository](../reference/content-model.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
-### Content types, fields, and attributes
+## Content types, fields, and attributes
 
-#### ASC071 `model-type-multiple-defaults`
+### ASC071 `model-type-multiple-defaults`
 @id {permalink=true}: ASC071
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -173,7 +173,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
-#### ASC072 `model-type-unreachable`
+### ASC072 `model-type-unreachable`
 @id {permalink=true}: ASC072
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -184,7 +184,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
-#### ASC073 `model-type-title`
+### ASC073 `model-type-title`
 @id {permalink=true}: ASC073
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -195,7 +195,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
-#### ASC074 `model-field-reserved`
+### ASC074 `model-field-reserved`
 @id {permalink=true}: ASC074
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
@@ -206,7 +206,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
-#### ASC075 `model-type-syntax`
+### ASC075 `model-type-syntax`
 @id {permalink=true}: ASC075
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -217,7 +217,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Short form](../reference/content-model.md#51-short-form) in the `ascribe.toml` reference.
 
-#### ASC076 `model-type-fields`
+### ASC076 `model-type-fields`
 @id {permalink=true}: ASC076
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -228,7 +228,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Table form](../reference/content-model.md#52-table-form) in the `ascribe.toml` reference.
 
-#### ASC077 `model-enum-values`
+### ASC077 `model-enum-values`
 @id {permalink=true}: ASC077
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -239,7 +239,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Short form](../reference/content-model.md#51-short-form) in the `ascribe.toml` reference.
 
-#### ASC078 `model-set-token`
+### ASC078 `model-set-token`
 @id {permalink=true}: ASC078
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
@@ -250,7 +250,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 **Read more:** [Short form](../reference/content-model.md#51-short-form) in the `ascribe.toml` reference.
 
-#### ASC079 `model-default-type`
+### ASC079 `model-default-type`
 @id {permalink=true}: ASC079
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -261,7 +261,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Table form](../reference/content-model.md#52-table-form) in the `ascribe.toml` reference.
 
-#### ASC080 `model-phrases-field-type`
+### ASC080 `model-phrases-field-type`
 @id {permalink=true}: ASC080
 
 Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
@@ -270,9 +270,9 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `phrases = true`, or make the field a `string` or `list(string)`.
 
-**Read more:** [`[phrases]`](../reference/content-model.md#11-phrases) in the `ascribe.toml` reference.
+**Read more:** [`[phrases]`](../reference/content-model/content.md#11-phrases) in the `ascribe.toml` reference.
 
-#### ASC081 `model-pattern-syntax`
+### ASC081 `model-pattern-syntax`
 @id {permalink=true}: ASC081
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
@@ -283,7 +283,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Paths and patterns](../reference/content-model.md#13-paths-and-patterns) in the `ascribe.toml` reference.
 
-#### ASC119 `model-attribute-reserved`
+### ASC119 `model-attribute-reserved`
 @id {permalink=true}: ASC119
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -292,9 +292,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the attribute.
 
-**Read more:** [`[images]`](../reference/content-model.md#13-images) in the `ascribe.toml` reference.
+**Read more:** [`[images]`](../reference/content-model/content.md#13-images) in the `ascribe.toml` reference.
 
-#### ASC141 `model-inline-field`
+### ASC141 `model-inline-field`
 @id {permalink=true}: ASC141
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -305,7 +305,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Code in a field](../reference/content-model.md#53-code-in-a-field) in the `ascribe.toml` reference.
 
-#### ASC148 `model-field-role`
+### ASC148 `model-field-role`
 @id {permalink=true}: ASC148
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -316,9 +316,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Field roles](../reference/content-model.md#54-field-roles) in the `ascribe.toml` reference.
 
-### Dimensions, names, lifecycle states, notes, and features
+## Dimensions, names, lifecycle states, notes, and features
 
-#### ASC082 `model-name-multiple-roles`
+### ASC082 `model-name-multiple-roles`
 @id {permalink=true}: ASC082
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -329,7 +329,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [Names](../reference/content-model.md#12-names) in the `ascribe.toml` reference.
 
-#### ASC083 `model-name-case`
+### ASC083 `model-name-case`
 @id {permalink=true}: ASC083
 
 Warning · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -340,7 +340,7 @@ Warning · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.
 
 **Read more:** [Names](../reference/content-model.md#12-names) in the `ascribe.toml` reference.
 
-#### ASC084 `model-dimension-empty`
+### ASC084 `model-dimension-empty`
 @id {permalink=true}: ASC084
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -349,9 +349,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Add the dimension's values, or remove the dimension.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
 
-#### ASC085 `model-dimension-value-duplicate`
+### ASC085 `model-dimension-value-duplicate`
 @id {permalink=true}: ASC085
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -360,9 +360,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the repeated value.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
 
-#### ASC086 `model-dimension-value-shared`
+### ASC086 `model-dimension-value-shared`
 @id {permalink=true}: ASC086
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -371,9 +371,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename the value in one of the dimensions.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
 
-#### ASC087 `model-label-undeclared`
+### ASC087 `model-label-undeclared`
 @id {permalink=true}: ASC087
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -382,9 +382,9 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the label's key, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
 
-#### ASC088 `model-versionless-undeclared`
+### ASC088 `model-versionless-undeclared`
 @id {permalink=true}: ASC088
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -393,9 +393,9 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the entry, or add the value to the dimension's `values`.
 
-**Read more:** [`[dimensions.<name>]`](../reference/content-model.md#6-dimensionsname) in the `ascribe.toml` reference.
+**Read more:** [`[dimensions.<name>]`](../reference/content-model/content.md#6-dimensionsname) in the `ascribe.toml` reference.
 
-#### ASC089 `model-lifecycle-available-required`
+### ASC089 `model-lifecycle-available-required`
 @id {permalink=true}: ASC089
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -404,9 +404,9 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Add `available = true` or `available = false` to the state.
 
-**Read more:** [`[lifecycle.<state>]`](../reference/content-model.md#8-lifecyclestate) in the `ascribe.toml` reference.
+**Read more:** [`[lifecycle.<state>]`](../reference/content-model/content.md#8-lifecyclestate) in the `ascribe.toml` reference.
 
-#### ASC090 `model-lifecycle-ga-unavailable`
+### ASC090 `model-lifecycle-ga-unavailable`
 @id {permalink=true}: ASC090
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -415,9 +415,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `available = false` from `[lifecycle.ga]`.
 
-**Read more:** [`[lifecycle.<state>]`](../reference/content-model.md#8-lifecyclestate) in the `ascribe.toml` reference.
+**Read more:** [`[lifecycle.<state>]`](../reference/content-model/content.md#8-lifecyclestate) in the `ascribe.toml` reference.
 
-#### ASC091 `model-note-label-required`
+### ASC091 `model-note-label-required`
 @id {permalink=true}: ASC091
 
 Error · file level · next step: write · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
@@ -426,9 +426,9 @@ Error · file level · next step: write · [SPEC §4.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the note type a `label`.
 
-**Read more:** [`[notes.<type>]`](../reference/content-model.md#10-notestype) in the `ascribe.toml` reference.
+**Read more:** [`[notes.<type>]`](../reference/content-model/content.md#10-notestype) in the `ascribe.toml` reference.
 
-#### ASC092 `model-availability-syntax`
+### ASC092 `model-availability-syntax`
 @id {permalink=true}: ASC092
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
@@ -437,9 +437,9 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the feature's `available` spec. Its syntax is in the [directive reference](../reference/directives.md#availability-specs).
 
-**Read more:** [`[features.<key>]`](../reference/content-model.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../reference/content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
 
-#### ASC093 `model-availability-unknown-name`
+### ASC093 `model-availability-unknown-name`
 @id {permalink=true}: ASC093
 
 Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
@@ -448,9 +448,9 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Use a declared dimension value, dimension, or lifecycle state, or declare the name.
 
-**Read more:** [`[features.<key>]`](../reference/content-model.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../reference/content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
 
-#### ASC094 `model-availability-versionless`
+### ASC094 `model-availability-versionless`
 @id {permalink=true}: ASC094
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
@@ -459,9 +459,9 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the version. A versionless target, or a dimension name, takes a state but no version.
 
-**Read more:** [`[features.<key>]`](../reference/content-model.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../reference/content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
 
-#### ASC095 `model-availability-history-order`
+### ASC095 `model-availability-history-order`
 @id {permalink=true}: ASC095
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
@@ -470,9 +470,9 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** List the target's states oldest first.
 
-**Read more:** [`[features.<key>]`](../reference/content-model.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../reference/content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
 
-#### ASC096 `model-feature-nested`
+### ASC096 `model-feature-nested`
 @id {permalink=true}: ASC096
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
@@ -481,11 +481,11 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the feature's availability out in full. One feature can't refer to another.
 
-**Read more:** [`[features.<key>]`](../reference/content-model.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../reference/content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
 
-### Phrases and the glossary
+## Phrases and the glossary
 
-#### ASC097 `model-phrase-value-type`
+### ASC097 `model-phrase-value-type`
 @id {permalink=true}: ASC097
 
 Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
@@ -494,9 +494,9 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Quote the value.
 
-**Read more:** [`[phrases]`](../reference/content-model.md#11-phrases) in the `ascribe.toml` reference.
+**Read more:** [`[phrases]`](../reference/content-model/content.md#11-phrases) in the `ascribe.toml` reference.
 
-#### ASC098 `model-glossary-duplicate-term`
+### ASC098 `model-glossary-duplicate-term`
 @id {permalink=true}: ASC098
 
 Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
@@ -505,9 +505,9 @@ Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the text from one of the terms, or make the terms distinct.
 
-**Read more:** [Terms](../reference/content-model.md#122-terms) in the `ascribe.toml` reference.
+**Read more:** [Terms](../reference/content-model/content.md#122-terms) in the `ascribe.toml` reference.
 
-#### ASC099 `model-glossary-link`
+### ASC099 `model-glossary-link`
 @id {permalink=true}: ASC099
 
 Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
@@ -516,11 +516,11 @@ Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the link, or link to a page that includes the fragment.
 
-**Read more:** [Terms](../reference/content-model.md#122-terms) in the `ascribe.toml` reference.
+**Read more:** [Terms](../reference/content-model/content.md#122-terms) in the `ascribe.toml` reference.
 
-### Widgets
+## Widgets
 
-#### ASC100 `model-widget-reserved-name`
+### ASC100 `model-widget-reserved-name`
 @id {permalink=true}: ASC100
 
 Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
@@ -529,9 +529,9 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Rename the widget, for example with your project's name as its prefix: `quill-aside`.
 
-**Read more:** [`[widgets.<name>]`](../reference/content-model.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../reference/content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
 
-#### ASC101 `model-widget-forms`
+### ASC101 `model-widget-forms`
 @id {permalink=true}: ASC101
 
 Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
@@ -540,9 +540,9 @@ Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#
 
 **Fix:** Set `forms` to `["line"]`, `["container"]`, or `["line", "container"]`.
 
-**Read more:** [`[widgets.<name>]`](../reference/content-model.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../reference/content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
 
-#### ASC102 `model-widget-binding`
+### ASC102 `model-widget-binding`
 @id {permalink=true}: ASC102
 
 Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
@@ -551,9 +551,9 @@ Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#
 
 **Fix:** Give a widget with a line form a `binding`. Remove `binding` from a container-only widget.
 
-**Read more:** [`[widgets.<name>]`](../reference/content-model.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../reference/content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
 
-#### ASC103 `model-widget-container-primary`
+### ASC103 `model-widget-container-primary`
 @id {permalink=true}: ASC103
 
 Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
@@ -562,9 +562,9 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Make the primary optional (`"text?"`), or remove the widget's container form. A container-only widget takes no primary.
 
-**Read more:** [`[widgets.<name>]`](../reference/content-model.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../reference/content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
 
-#### ASC104 `model-widget-groupable-form`
+### ASC104 `model-widget-groupable-form`
 @id {permalink=true}: ASC104
 
 Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
@@ -573,9 +573,9 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Set `forms = ["container"]`, or remove `groupable`.
 
-**Read more:** [`[widgets.<name>]`](../reference/content-model.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../reference/content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
 
-#### ASC105 `model-widget-plain-content`
+### ASC105 `model-widget-plain-content`
 @id {permalink=true}: ASC105
 
 Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
@@ -584,11 +584,11 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Remove `plain-content`.
 
-**Read more:** [`[widgets.<name>]`](../reference/content-model.md#14-widgetsname) in the `ascribe.toml` reference.
+**Read more:** [`[widgets.<name>]`](../reference/content-model/content.md#14-widgetsname) in the `ascribe.toml` reference.
 
-### The consumer, builds, and the editor
+## The consumer, builds, and the editor
 
-#### ASC106 `model-consumer-unsupported`
+### ASC106 `model-consumer-unsupported`
 @id {permalink=true}: ASC106
 
 Error · file level · next step: choose · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
@@ -597,9 +597,9 @@ Error · file level · next step: choose · [SPEC §9.5]({repo}/blob/main/SPEC.m
 
 **Fix:** Use one of the values the message lists.
 
-**Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
 
-#### ASC107 `model-consumer-site`
+### ASC107 `model-consumer-site`
 @id {permalink=true}: ASC107
 
 Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
@@ -608,9 +608,9 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `site` to the origin alone, such as `"https://docs.example.com"`, and put any path in `base-path`.
 
-**Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
 
-#### ASC108 `model-consumer-base-path`
+### ASC108 `model-consumer-base-path`
 @id {permalink=true}: ASC108
 
 Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
@@ -619,9 +619,9 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Start `base-path` with `/`: `"/docs/"`.
 
-**Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
 
-#### ASC109 `model-build-name-case`
+### ASC109 `model-build-name-case`
 @id {permalink=true}: ASC109
 
 Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -630,9 +630,9 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Rename one of the builds.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC110 `model-build-variants`
+### ASC110 `model-build-variants`
 @id {permalink=true}: ASC110
 
 Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -641,9 +641,9 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `variants` to `"switch"`, or to a selection that names at least one dimension.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC111 `model-build-unknown-dimension`
+### ASC111 `model-build-unknown-dimension`
 @id {permalink=true}: ASC111
 
 Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -652,9 +652,9 @@ Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Correct the dimension's name, or declare the dimension in `[dimensions]`.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC112 `model-build-unknown-value`
+### ASC112 `model-build-unknown-value`
 @id {permalink=true}: ASC112
 
 Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -663,9 +663,9 @@ Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Use one of the values the message lists.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC113 `model-build-availability`
+### ASC113 `model-build-availability`
 @id {permalink=true}: ASC113
 
 Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -674,9 +674,9 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `availability` to `"badge"`, or to `{ filter = "<target> <version>" }`.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC114 `model-build-filter-target`
+### ASC114 `model-build-filter-target`
 @id {permalink=true}: ASC114
 
 Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -685,9 +685,9 @@ Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Filter for a declared dimension value, not a dimension name.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC115 `model-build-filter-version`
+### ASC115 `model-build-filter-version`
 @id {permalink=true}: ASC115
 
 Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -696,9 +696,9 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give a versioned target a version (`"self-managed 3.3"`), and a versionless target none.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC116 `model-build-filter-excluded`
+### ASC116 `model-build-filter-excluded`
 @id {permalink=true}: ASC116
 
 Warning · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
@@ -707,9 +707,9 @@ Warning · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.
 
 **Fix:** Make the build's `variants` selection keep the target it filters for, or filter for a target it keeps.
 
-**Read more:** [`[builds.<name>]`](../reference/content-model.md#16-buildsname) in the `ascribe.toml` reference.
+**Read more:** [`[builds.<name>]`](../reference/content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-#### ASC117 `model-editor-build-unknown`
+### ASC117 `model-editor-build-unknown`
 @id {permalink=true}: ASC117
 
 Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
@@ -718,9 +718,9 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to one of the builds the message lists.
 
-**Read more:** [`[editor]`](../reference/content-model.md#17-editor) in the `ascribe.toml` reference.
+**Read more:** [`[editor]`](../reference/content-model/output.md#17-editor) in the `ascribe.toml` reference.
 
-#### ASC118 `model-editor-build-required`
+### ASC118 `model-editor-build-required`
 @id {permalink=true}: ASC118
 
 Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
@@ -729,9 +729,9 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to the build the editor should check, or name one of the builds `site`.
 
-**Read more:** [`[editor]`](../reference/content-model.md#17-editor) in the `ascribe.toml` reference.
+**Read more:** [`[editor]`](../reference/content-model/output.md#17-editor) in the `ascribe.toml` reference.
 
-#### ASC162 `model-consumer-agents-site`
+### ASC162 `model-consumer-agents-site`
 @id {permalink=true}: ASC162
 
 Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
@@ -740,9 +740,9 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `site` in `[consumer]` to the published site's origin, such as `"https://docs.example.com"`, or remove `agents`.
 
-**Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
 
-#### ASC174 `model-consumer-permalink-path`
+### ASC174 `model-consumer-permalink-path`
 @id {permalink=true}: ASC174
 
 Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
@@ -751,11 +751,11 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Start `permalink-path` with `/`: `"/go/"`. It's a path from the site's root, not from `base-path`.
 
-**Read more:** [`[consumer]`](../reference/content-model.md#15-consumer) in the `ascribe.toml` reference.
+**Read more:** [`[consumer]`](../reference/content-model/output.md#15-consumer) in the `ascribe.toml` reference.
 
-### `[permalinks]`
+## `[permalinks]`
 
-#### ASC178 `model-permalinks`
+### ASC178 `model-permalinks`
 @id {permalink=true}: ASC178
 
 Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
@@ -764,11 +764,11 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Fix:** Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it.
 
-**Read more:** [`[permalinks]`](../reference/content-model.md#20-permalinks) in the `ascribe.toml` reference.
+**Read more:** [`[permalinks]`](../reference/content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
 
-### `[crawlers]`
+## `[crawlers]`
 
-#### ASC183 `model-crawlers-line`
+### ASC183 `model-crawlers-line`
 @id {permalink=true}: ASC183
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -777,9 +777,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Split the string into one string per line: `lines = ["User-agent: *", "Disallow: /drafts/"]`.
 
-**Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../reference/content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
 
-#### ASC189 `model-crawlers-named-twice`
+### ASC189 `model-crawlers-named-twice`
 @id {permalink=true}: ASC189
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -788,11 +788,11 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`.
 
-**Read more:** [`[crawlers]`](../reference/content-model.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../reference/content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
 
-### `[listing]`
+## `[listing]`
 
-#### ASC185 `model-listing-folder`
+### ASC185 `model-listing-folder`
 @id {permalink=true}: ASC185
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -801,9 +801,9 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the folder's path from the content root, ending in `/`, with its name's case as it is on disk: `"internal/" = "unlisted"`. A rule is for a folder and everything under it; patterns aren't read.
 
-**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../reference/content-model/checks.md#22-listing) in the `ascribe.toml` reference.
 
-#### ASC186 `model-listing-type`
+### ASC186 `model-listing-type`
 @id {permalink=true}: ASC186
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -812,9 +812,9 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Name a content type the project declares in `[types]`, or `page` when it declares none.
 
-**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../reference/content-model/checks.md#22-listing) in the `ascribe.toml` reference.
 
-#### ASC187 `model-listing-looser`
+### ASC187 `model-listing-looser`
 @id {permalink=true}: ASC187
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
@@ -823,11 +823,11 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own.
 
-**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../reference/content-model/checks.md#22-listing) in the `ascribe.toml` reference.
 
-### `[checks]`
+## `[checks]`
 
-#### ASC142 `model-check-not-configurable`
+### ASC142 `model-check-not-configurable`
 @id {permalink=true}: ASC142
 
 Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
@@ -836,9 +836,9 @@ Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](../reference/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity.
 
-**Read more:** [`[checks]`](../reference/content-model.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../reference/content-model/checks.md#19-checks) in the `ascribe.toml` reference.
 
-#### ASC146 `model-intended-check`
+### ASC146 `model-intended-check`
 @id {permalink=true}: ASC146
 
 Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
@@ -847,9 +847,9 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 **Fix:** Name a check whose next step is review and whose problems are about a phrase, feature, glossary term, or image, by its name in the [diagnostics reference](../reference/diagnostics.md). A page's or a block's problem is acknowledged in the page itself.
 
-**Read more:** [`[[intended]]`: acknowledgements](../reference/content-model.md#intended-acknowledgements) in the `ascribe.toml` reference.
+**Read more:** [`[[intended]]`: acknowledgements](../reference/content-model/checks.md#intended-acknowledgements) in the `ascribe.toml` reference.
 
-#### ASC147 `model-intended-entry`
+### ASC147 `model-intended-entry`
 @id {permalink=true}: ASC147
 
 Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
@@ -858,9 +858,9 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 **Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes.
 
-**Read more:** [`[[intended]]`: acknowledgements](../reference/content-model.md#intended-acknowledgements) in the `ascribe.toml` reference.
+**Read more:** [`[[intended]]`: acknowledgements](../reference/content-model/checks.md#intended-acknowledgements) in the `ascribe.toml` reference.
 
-#### ASC167 `model-checks-vale`
+### ASC167 `model-checks-vale`
 @id {permalink=true}: ASC167
 
 Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
@@ -869,4 +869,4 @@ Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Give `[checks.vale]` one of `preset = "quiet"` or `config = "<path to .vale.ini>"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset.
 
-**Read more:** [`[checks.vale]`](../reference/content-model.md#checksvale) in the `ascribe.toml` reference.
+**Read more:** [`[checks.vale]`](../reference/content-model/checks.md#checksvale) in the `ascribe.toml` reference.

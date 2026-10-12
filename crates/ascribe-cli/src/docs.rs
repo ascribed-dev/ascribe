@@ -1,5 +1,6 @@
-//! The command reference, `docs/content/reference/cli.md`, includes fragments
-//! generated from the `clap` definitions: the synopsis, the options every
+//! The command reference, `docs/content/reference/cli.md` and its pages in
+//! `docs/content/reference/cli/`, includes fragments generated from the
+//! `clap` definitions: the synopsis, the options every
 //! command accepts, and each command's own, in
 //! `docs/content/_generated/cli-*.md`. This test renders them and fails when
 //! one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite them. To
@@ -62,7 +63,9 @@ fn docs_permalinks(base: &str) -> Vec<ascribe_resolve::Permalink> {
 /// Every address of the docs the binary builds, each with the page and the
 /// heading, as written, it must lead to: each command's help, each
 /// diagnostic's entry (in `check`'s JSON, `explain`, and the editor), the
-/// agents' rules, and the plugin's homepage.
+/// agents' rules, and the plugin's homepage. A page with a folder of the same
+/// name, as `reference/cli.md` has `reference/cli/`, stands for itself and
+/// the pages in that folder.
 fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     let mut helps = Vec::new();
     let mut cli = Cli::command();
@@ -145,6 +148,36 @@ fn the_docs_site_is_where_the_binary_links() {
     );
 }
 
+/// The pages `page` stands for: itself, and the pages in the folder of its
+/// name.
+fn pages_of(page: &str) -> Vec<String> {
+    let mut pages = vec![page.to_owned()];
+    let folder = page.trim_end_matches(".md");
+    if let Ok(dir) = std::fs::read_dir(repo().join("docs/content").join(folder)) {
+        let mut more: Vec<String> = dir
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|name| name.ends_with(".md"))
+            .map(|name| format!("{folder}/{name}"))
+            .collect();
+        more.sort();
+        pages.extend(more);
+    }
+    pages
+}
+
+/// Which of the pages `page` stands for publishes what's declared in
+/// `file`: the page that is `file`, or the one that includes it.
+fn publishing_page(page: &str, file: &str) -> Option<String> {
+    let file_name = file.rsplit('/').next().unwrap_or(file);
+    pages_of(page).into_iter().find(|candidate| {
+        candidate == file
+            || std::fs::read_to_string(repo().join("docs/content").join(candidate))
+                .unwrap()
+                .lines()
+                .any(|l| l.starts_with("@include: ") && l.ends_with(&format!("/{file_name}")))
+    })
+}
+
 /// The docs' committed list of permalinks, `docs/ascribe.permalinks`.
 fn docs_list() -> String {
     std::fs::read_to_string(repo().join("docs").join(ascribe_model::PERMALINKS_FILE)).unwrap()
@@ -188,16 +221,12 @@ fn every_address_the_binary_builds_is_a_permalink_of_the_docs() {
             Some((file, id)) => (file, Some(id)),
             None => (place.as_str(), None),
         };
-        let page_text = std::fs::read_to_string(repo().join("docs/content").join(page)).unwrap();
         // A heading in a fragment the page includes, as the diagnostics
         // reference's are.
-        let file_name = file.rsplit('/').next().unwrap_or(file);
         assert!(
-            file == *page
-                || page_text
-                    .lines()
-                    .any(|l| l.starts_with("@include: ") && l.ends_with(&format!("/{file_name}"))),
-            "{address}: declared in {file}, which isn't {page} or a fragment it includes"
+            publishing_page(page, file).is_some(),
+            "{address}: declared in {file}, which isn't {} or a fragment one includes",
+            pages_of(page).join(", ")
         );
         let Some(heading) = heading else {
             assert_eq!(id, None, "{address}: leads to a heading, not the page");
@@ -265,9 +294,15 @@ fn the_binary_s_addresses_dont_move_with_the_docs() {
             .iter()
             .find(|p| p.name == name)
             .unwrap_or_else(|| panic!("{address}: not published under /docs/"));
+        let on = found.page.to_string();
+        assert!(
+            pages_of(page).contains(&on),
+            "{address}: on {on}, not on {}",
+            pages_of(page).join(", ")
+        );
         assert_eq!(
             found.route,
-            format!("/docs/{}/", page.trim_end_matches(".md"))
+            format!("/docs/{}/", on.trim_end_matches(".md"))
         );
     }
     let mut model = ascribe_model::load(repo().join("docs/ascribe.toml")).unwrap();
@@ -286,11 +321,17 @@ fn the_binary_s_addresses_dont_move_with_the_docs() {
 fn the_command_reference_is_current() {
     let fragments = render();
     check_fragments("cli-", &fragments);
-    let page = std::fs::read_to_string(repo().join("docs/content/reference/cli.md")).unwrap();
+    let pages = pages_of("reference/cli.md");
     for (name, _) in &fragments {
         assert!(
-            page.contains(&format!("@include: ../_generated/{name}\n")),
-            "docs/content/reference/cli.md doesn't include _generated/{name}"
+            pages.iter().any(|page| {
+                let depth = "../".repeat(page.matches('/').count());
+                std::fs::read_to_string(repo().join("docs/content").join(page))
+                    .unwrap()
+                    .contains(&format!("@include: {depth}_generated/{name}\n"))
+            }),
+            "no page of the command reference ({}) includes _generated/{name}",
+            pages.join(", ")
         );
     }
 }

@@ -9,9 +9,16 @@ Every problem Ascribe reports, with its code, its name, and how to fix it. `ascr
 A *problem* is what Ascribe found in your project, at one place. A *diagnostic* is the kind of problem, with a code, that this page and `ascribe explain` describe. An error, a warning, and advice are how severe a problem is.
 
 - An **error** makes `ascribe check` fail, and stops `ascribe build` from writing anything. A **warning** doesn't, unless you pass `--deny-warnings`. **Advice** never does, even with `--deny-warnings`: `ascribe check` lists it after the errors and warnings and counts it apart, and the editor shows it as information.
-- A **file-level** diagnostic is about one file on its own. A **page-level** diagnostic is about a page after its includes are expanded and a build's modes are applied, so it can depend on the [build](content-model.md#16-buildsname); the message names the builds it appears in.
+- A **file-level** diagnostic is about one file on its own. A **page-level** diagnostic is about a page after its includes are expanded and a build's modes are applied, so it can depend on the [build](content-model/output.md#16-buildsname); the message names the builds it appears in.
 - A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops everything else when it's an error: every other check depends on the content model.
 - In the messages below, `{name}` stands for a value filled in from your source.
+
+The diagnostics are on four pages, by what they're about:
+
+- [Directives](diagnostics/directives.md): attributes, directives and their containers, titles, ids, includes, variants, availability, and widgets.
+- [Links, pages, and sources](diagnostics/pages.md): links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, acknowledgements, and permalinks.
+- [The content model](diagnostics/content-model.md): `ascribe.toml`.
+- [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of.
 
 Each entry ends with the section of the [directive reference](directives.md) or the [`ascribe.toml` reference](content-model.md) about what it checks, which has examples, and links to its part of the specification.
 
@@ -31,39 +38,10 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 ## Setting a check's level
 
-A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Those checks are listed under [Content checks](#content-checks), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
+A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model/checks.md#19-checks) in `ascribe.toml`. Those checks are listed under [Content checks](diagnostics/content-checks.md), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
 ## Index
 
 @include: ../_generated/diagnostics-index.md
-
-## Source files
-
-@include: ../_generated/diagnostics-source-files.md
-
-## The content model
-
-@include: ../_generated/diagnostics-content-model.md
-
-## Content checks
-
-@available: next
-Checks of the content's quality: advice unless a project sets another level in [`[checks]`](content-model.md#19-checks). A check with settings takes a table, and its entry names them.
-
-```toml
-[checks]
-code-language-missing = "warning"     # so --deny-warnings fails on it
-heading-level-skipped = "off"
-
-[checks.page-size]
-level = "warning"
-limit = 40_000
-```
-
-`review-overdue` depends on the day, so `ascribe check` can report it on one day and not the day before. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day; Ascribe otherwise uses today's date in UTC.
-
-The checks across the project need every page, so the editor reports a page's orphan and duplicate title, and what's unused, when you save, and the checks of image files run only in `ascribe check`.
-
-@include: ../_generated/diagnostics-content-checks.md
 
 @include: ../_generated/diagnostics-retired.md

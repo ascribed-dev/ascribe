@@ -230,11 +230,11 @@ Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to 
 @id {permalink=true}: cli-check
 ```
 
-- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](content-model.md#15-consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../guides/permalinks.md#with-astro), `/go/cli-check/` sends the reader to `/docs/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
-- **An address can say what its reader uses,** with the content model's [dimensions](content-model.md#6-dimensionsname) as parameters: `/go/install-agent/?pm=pnpm` opens the section with the `pnpm` tab showing, as if the reader had picked it. A parameter the docs don't know is ignored. [Linking from a product](../guides/permalinks.md#linking-from-a-product) has more.
+- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](content-model/output.md#15-consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../guides/permalinks.md#with-astro), `/go/cli-check/` sends the reader to `/docs/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
+- **An address can say what its reader uses,** with the content model's [dimensions](content-model/content.md#6-dimensionsname) as parameters: `/go/install-agent/?pm=pnpm` opens the section with the `pnpm` tab showing, as if the reader had picked it. A parameter the docs don't know is ignored. [Linking from a product](../guides/permalinks.md#linking-from-a-product) has more.
 - **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `cli.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
 - **A build can publish a permalink in one place only,** and `ascribe check` reports one it publishes twice (`permalink-duplicate`). Names that differ only in case, such as `Setup` and `setup`, are one name, since a site may serve every spelling of an address at one. A heading in a fragment is published on every page that includes it, so a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
-- **A permalink that's removed is reported when the project commits its list,** `ascribe.permalinks`, which [`ascribe permalinks sync`](cli.md#cli-permalinks-sync) writes. Delete the id or the attribute, and `ascribe check` warns (`permalink-removed`), since the address stops working and something outside the docs may still link to it. Without the list, nothing reports it. Moving the heading to another page isn't removing it: run `sync` again, and the list follows. A permalink removed on purpose is retired, with a reason its address shows, and one name can lead to another as an alias, both in [`[permalinks]`](content-model.md#20-permalinks). [The permalinks list](../contracts/permalinks-list.md) has the details.
+- **A permalink that's removed is reported when the project commits its list,** `ascribe.permalinks`, which [`ascribe permalinks sync`](cli/sources.md#cli-permalinks-sync) writes. Delete the id or the attribute, and `ascribe check` warns (`permalink-removed`), since the address stops working and something outside the docs may still link to it. Without the list, nothing reports it. Moving the heading to another page isn't removing it: run `sync` again, and the list follows. A permalink removed on purpose is retired, with a reason its address shows, and one name can lead to another as an alias, both in [`[permalinks]`](content-model/checks.md#20-permalinks). [The permalinks list](../contracts/permalinks-list.md) has the details.
 
 A whole page can have a permalink too, in its frontmatter, and its address leads to the top of the page:
 
@@ -260,7 +260,7 @@ Includes another file, or one heading's section of it, in place.
 
 - **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed, but only to another source file: a source file whose link leads out of the content root, or to a hidden, non-Markdown, or other project's file, can't be read, so no other file on disk ends up in a page.
 - `#id` includes only the section of the heading with that id. `{heading=false}` leaves out that section's own heading; it has no effect without `#id`, and Ascribe warns.
-- Included content becomes part of the page: phrases and [builds](content-model.md#16-buildsname) apply to it, and its ids must not collide with the page's.
+- Included content becomes part of the page: phrases and [builds](content-model/output.md#16-buildsname) apply to it, and its ids must not collide with the page's.
 - **Relative paths inside a fragment resolve from the fragment**, not the page including it, so a fragment's links and images work wherever it's included.
 - Included headings keep the levels they're written with.
 - An include cycle is an error.
@@ -312,7 +312,7 @@ pnpm add -g @quill/agent
 - The arms of a group share at least one dimension.
 - `@variant` varies whole blocks. For a single term that differs, use a [phrase](#phrases).
 
-Each build decides what happens to a group: `switch` keeps every arm, for readers to switch between (the site shows tabs), and a selection such as `{ deployment = "cloud" }` keeps only the matching arms. See [builds](content-model.md#16-buildsname).
+Each build decides what happens to a group: `switch` keeps every arm, for readers to switch between (the site shows tabs), and a selection such as `{ deployment = "cloud" }` keeps only the matching arms. See [builds](content-model/output.md#16-buildsname).
 
 #### Whole-page variants
 
@@ -455,7 +455,7 @@ Takes a code example from a file outside the content, and puts it in the page as
 @snippet {lang=shell, title="Install"}: code:scripts/install.sh
 ```
 
-- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a source declared in `ascribe.toml` ([`[sources.<name>]`](content-model.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](content-model.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
+- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a source declared in `ascribe.toml` ([`[sources.<name>]`](content-model/output.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](content-model/output.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
 - The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text. A symbolic link is followed, but only to a file in the source's folder that `include` and `ignore` take in.
 - Without `#<region>`, the snippet is the whole file.
 - **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([Phrases](#phrases)).
@@ -477,7 +477,7 @@ labels = { macos = "macOS" }  # :remove:
 - A tag counts only in a line comment: `//` (C, Go, Java, JavaScript, Rust, TypeScript, and others), `#` (Python, Ruby, shell, TOML, YAML, and others), `--` (Lua, SQL, Haskell, Elm), `;` (INI, Lisp), or `<!-- -->` (HTML, XML, Markdown). Astro, Svelte, and Vue components take either `//` or `<!-- -->`, so a region can be marked in the frontmatter or script and in the markup. A file whose extension isn't in the [table in the spec]({repo}/blob/main/SPEC.md#48-snippet) can be used whole, but not by region.
 - Bluehawk's other tags (`state`, `replace`, `uncomment`, and `emphasize`) are reserved. A file that uses one can't be used by a snippet yet, so its code is never shown with a tag left in.
 
-Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](diagnostics.md#source-files) in the diagnostics reference.
+Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](diagnostics/directives.md) in the diagnostics reference.
 
 ### `@intended`
 @available: next
@@ -502,7 +502,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
         reason: Linked from the site's sidebar, which Ascribe can't see.
     ```
 
-  - **A content model entry or an image:** an [`[[intended]]` table](content-model.md#intended-acknowledgements) in `ascribe.toml`.
+  - **A content model entry or an image:** an [`[[intended]]` table](content-model/checks.md#intended-acknowledgements) in `ascribe.toml`.
 - **The reason is required,** and is the rest of the line. It's for the next person who reads the page, and `ascribe check` lists it with the problem it covers.
 - **It changes no output.** Nothing renders for `@intended`, and the `intended` key isn't in any output's frontmatter.
 
@@ -520,7 +520,7 @@ A project widget is a directive a project declares in `ascribe.toml`, for needs 
 @quill-labspace {lab=first-sync}
 ```
 
-A declared widget works exactly like a built-in directive: its declaration sets its forms, primary, attributes, binding, title, and whether it's grouped. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](content-model.md#14-widgetsname).
+A declared widget works exactly like a built-in directive: its declaration sets its forms, primary, attributes, binding, title, and whether it's grouped. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](content-model/content.md#14-widgetsname).
 
 ## Phrases
 
@@ -581,7 +581,7 @@ Every heading has an id: its `@id` if it has one, and otherwise a slug of its te
 
 ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms))
 
-When `ascribe.toml` declares a glossary, Ascribe links terms to their definitions in each built page. Authors don't mark terms in source. See [`[glossary]`](content-model.md#12-glossary).
+When `ascribe.toml` declares a glossary, Ascribe links terms to their definitions in each built page. Authors don't mark terms in source. See [`[glossary]`](content-model/content.md#12-glossary).
 
 ## Escapes
 

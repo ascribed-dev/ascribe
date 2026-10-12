@@ -10,7 +10,7 @@
 //
 // scripts/surface/inventory.test.ts fails when the map is stale.
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
@@ -81,11 +81,26 @@ interface Section {
   body: string;
 }
 
+/**
+ * A docs page and the pages in the folder of its name, as `reference/cli.md`
+ * has `reference/cli/`, in order.
+ */
+function pagesOf(file: string): string[] {
+  const folder = file.replace(/\.md$/, "");
+  return [
+    file,
+    ...readdirSync(path.join(root, folder))
+      .filter((name) => name.endsWith(".md"))
+      .sort()
+      .map((name) => `${folder}/${name}`),
+  ];
+}
+
 // The command line.
 
 function commands(): Section {
   const synopsis = read("docs/content/_generated/cli-synopsis.md");
-  const reference = read("docs/content/reference/cli.md");
+  const reference = pagesOf("docs/content/reference/cli.md").map(read).join("\n");
   const rows = all(synopsis, /^ascribe (\S+(?: [a-z]+)?) *(.*)$/gm, "commands").flatMap(
     ([, name = "", rest = ""]) => {
       // `ascribe build [--build <NAME>]`: the name is one word, and the rest its arguments.
@@ -123,6 +138,7 @@ function commands(): Section {
       "docs/content/_generated/cli-synopsis.md",
       "docs/content/_generated/cli-global-options.md",
       "docs/content/reference/cli.md",
+      "docs/content/reference/cli/",
     ],
     body: [
       table(["Command", "What it's for", "Arguments and options", "`--format`"], rows),
@@ -166,7 +182,7 @@ function expanded(file: string): string {
 
 function model(): Section {
   // The reference takes what it shares with the contract from fragments.
-  const reference = expanded("docs/content/reference/content-model.md");
+  const reference = pagesOf("docs/content/reference/content-model.md").map(expanded).join("\n");
   const sections = reference.split(/^(?=## )/m);
   const rows = sections.flatMap((section) => {
     const heading = /^## (\d+)\. (.*`.*)\n/.exec(section);
@@ -179,10 +195,16 @@ function model(): Section {
       .find((line) => /^[A-Z`*]/.test(line));
     return [[heading[2] ?? "", sentence(prose ?? ""), `§${heading[1] ?? ""}`]];
   });
+  // The reference's pages, in section order.
+  rows.sort((a, b) => Number(a[2]?.slice(1)) - Number(b[2]?.slice(1)));
   return {
     title: "`ascribe.toml`",
     for: "authors",
-    from: ["docs/content/reference/content-model.md", "docs/content/_fragments/content-model/"],
+    from: [
+      "docs/content/reference/content-model.md",
+      "docs/content/reference/content-model/",
+      "docs/content/_fragments/content-model/",
+    ],
     body: table(["Section", "What it's for", "In the reference"], rows),
   };
 }
@@ -622,7 +644,7 @@ const UNDECLARED: { surface: string; what: string; where: string }[] = [
     surface: "The command line",
     what: "What each command's exit codes mean",
     where:
-      "The prose of `docs/content/reference/cli.md`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs`",
+      "The prose of the command reference's pages in `docs/content/reference/cli/`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs`",
   },
   {
     surface: "The language",

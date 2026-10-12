@@ -1,5 +1,6 @@
-//! The diagnostics reference, `docs/content/reference/diagnostics.md`, includes
-//! fragments generated from the diagnostics registry, in
+//! The diagnostics reference, `docs/content/reference/diagnostics.md` and its
+//! pages in `docs/content/reference/diagnostics/`, includes fragments
+//! generated from the diagnostics registry, in
 //! `docs/content/_generated/diagnostics-*.md`. This test renders them and
 //! fails when one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite
 //! them.
@@ -72,14 +73,16 @@ fn every_diagnostic_has_its_next_step() {
             Some(section) if !pages.sections.contains_key(section) => wrong.push(format!(
                 "{}: `reference` is `{section}`, which isn't a heading of {}",
                 e.code,
-                REFERENCES.map(|(file, _)| file).join(" or ")
+                REFERENCES
+                    .map(|(name, _)| format!("{name}.md"))
+                    .join(" or ")
             )),
             Some(_) => {}
         }
         if e.fix.as_deref().is_none_or(str::is_empty) {
             wrong.push(format!("{}: no `fix`", e.code));
         }
-        if !reference.contains(&format!("#### {} `{}`", e.code, e.slug)) {
+        if !reference.contains(&format!("### {} `{}`", e.code, e.slug)) {
             wrong.push(format!("{}: no entry in the reference", e.code));
         }
         let review = e.next == Some(Next::Review);
@@ -136,15 +139,36 @@ fn the_diagnostics_reference_is_current() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
     let fragments = render(&registry, &Pages::load());
     check_fragments("diagnostics-", &fragments);
-    let page =
-        std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
     for (name, _) in &fragments {
+        let page = match DIAGNOSTICS_PAGES
+            .iter()
+            .find(|(_, fragment)| fragment == name)
+        {
+            Some((page, _)) => format!("reference/diagnostics/{page}.md"),
+            None => "reference/diagnostics.md".to_owned(),
+        };
+        let depth = "../".repeat(page.matches('/').count());
         assert!(
-            page.contains(&format!("@include: ../_generated/{name}\n")),
-            "docs/content/reference/diagnostics.md doesn't include _generated/{name}"
+            read(&format!("docs/content/{page}"))
+                .contains(&format!("@include: {depth}_generated/{name}\n")),
+            "docs/content/{page} doesn't include _generated/{name}"
         );
     }
 }
+
+/// The pages of the diagnostics reference, in `docs/content/reference/diagnostics/`,
+/// each with the fragment it lists the diagnostics of. The reference's own page has
+/// the index and the retired diagnostics.
+const DIAGNOSTICS_PAGES: [(&str, &str); 4] = [
+    ("directives", "diagnostics-directives.md"),
+    ("pages", "diagnostics-pages.md"),
+    ("content-model", "diagnostics-content-model.md"),
+    ("content-checks", "diagnostics-content-checks.md"),
+];
+
+/// The first construct of the source-file diagnostics listed on the `pages`
+/// page; those before it are on the `directives` page.
+const FIRST_ON_PAGES: &str = "Links";
 
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
 /// has the value that file has.
@@ -199,7 +223,8 @@ fn the_docs_phrases_match_their_sources() {
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
 }
 
-/// The `ascribe.toml` reference and its contract take what they say alike
+/// The `ascribe.toml` reference and its contract, each a page and the pages in
+/// the folder of its name, take what they say alike
 /// from the fragments in `docs/content/_fragments/content-model/`, so no
 /// paragraph, list, table, or example is written in both. Headings, rules,
 /// and the includes themselves are the pages' shape, and alike on purpose.
@@ -226,9 +251,26 @@ fn the_content_model_pages_share_text_only_through_fragments() {
         });
         blocks
     };
-    let contract = blocks("docs/content/contracts/content-model.md");
-    let twice: Vec<String> = blocks("docs/content/reference/content-model.md")
-        .into_iter()
+    // Each page, with the pages in the folder of its name.
+    let pages = |page: &str| -> Vec<String> {
+        let folder = page.trim_end_matches(".md");
+        let mut more: Vec<String> = std::fs::read_dir(repo().join(folder))
+            .map(|dir| {
+                dir.map(|e| format!("{folder}/{}", e.unwrap().file_name().to_string_lossy()))
+                    .filter(|f| f.ends_with(".md"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        more.sort();
+        std::iter::once(page.to_owned()).chain(more).collect()
+    };
+    let contract: Vec<String> = pages("docs/content/contracts/content-model.md")
+        .iter()
+        .flat_map(|page| blocks(page))
+        .collect();
+    let twice: Vec<String> = pages("docs/content/reference/content-model.md")
+        .iter()
+        .flat_map(|page| blocks(page))
         .filter(|block| contract.contains(block))
         .collect();
     assert!(
@@ -367,9 +409,10 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics, the content model's, the content checks, and the
-/// retired ones (empty when there are none). The index links to entries in the other fragments
-/// through the page that includes them all (SPEC §4.2).
+/// source-file diagnostics in two (directives, and links, pages, and
+/// sources), the content model's, the content checks, and the retired ones
+/// (empty when there are none). The index links to each entry on the page
+/// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry
         .entries
@@ -388,30 +431,43 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             None => constructs.push((construct, vec![(entry, condition)])),
         }
     }
-    let all = index(active.iter().copied());
-    let mut source_files = HEADER.to_owned();
-    for (construct, entries) in constructs {
-        let _ = write!(source_files, "\n### {construct}\n");
+    let split = constructs
+        .iter()
+        .position(|(construct, _)| *construct == FIRST_ON_PAGES)
+        .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
+    let mut directives = HEADER.to_owned();
+    let mut source_pages = HEADER.to_owned();
+    let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
+    for (i, (construct, entries)) in constructs.into_iter().enumerate() {
+        let (out, page) = if i < split {
+            (&mut directives, "directives")
+        } else {
+            (&mut source_pages, "pages")
+        };
+        let _ = write!(out, "\n## {construct}\n");
         for (entry, condition) in entries {
-            write_entry(&mut source_files, entry, Some(condition), pages);
+            page_of.insert(&entry.code, page);
+            write_entry(out, entry, Some(condition), pages);
         }
     }
 
     let mut content_model = HEADER.to_owned();
     for (group, title) in RULE_GROUPS {
-        let _ = write!(content_model, "\n### {title}\n");
+        let _ = write!(content_model, "\n## {title}\n");
         for entry in active
             .iter()
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
+            page_of.insert(&entry.code, "content-model");
             write_entry(&mut content_model, entry, None, pages);
         }
     }
 
     let mut content_checks = HEADER.to_owned();
     for (area, title) in AREAS {
-        let _ = write!(content_checks, "\n### {title}\n");
+        let _ = write!(content_checks, "\n## {title}\n");
         for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
+            page_of.insert(&entry.code, "content-checks");
             write_entry(&mut content_checks, entry, entry.when.as_deref(), pages);
         }
     }
@@ -443,9 +499,11 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
+    let all = index(active.iter().copied(), &page_of);
     vec![
         ("diagnostics-index.md".to_owned(), all),
-        ("diagnostics-source-files.md".to_owned(), source_files),
+        ("diagnostics-directives.md".to_owned(), directives),
+        ("diagnostics-pages.md".to_owned(), source_pages),
         ("diagnostics-content-model.md".to_owned(), content_model),
         ("diagnostics-content-checks.md".to_owned(), content_checks),
         ("diagnostics-retired.md".to_owned(), retired),
@@ -453,16 +511,17 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
 }
 
 /// The index: a table of the diagnostics, in code order, each linked to its
-/// entry on the reference page, whose anchor is its code.
-fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
+/// entry on its page of the reference, whose anchor is its code.
+fn index<'a>(entries: impl Iterator<Item = &'a Entry>, page_of: &BTreeMap<&str, &str>) -> String {
     let mut out = format!(
         "{HEADER}\n| Code | Name | Severity | Level | Next step |\n|---|---|---|---|---|\n"
     );
     for entry in entries {
         let _ = writeln!(
             out,
-            "| [{code}](../reference/diagnostics.md#{anchor}) | `{slug}` | {severity} | {level} | {next} |",
+            "| [{code}](../reference/diagnostics/{page}.md#{anchor}) | `{slug}` | {severity} | {level} | {next} |",
             code = entry.code,
+            page = page_of[entry.code.as_str()],
             anchor = entry.code,
             slug = entry.slug,
             severity = severity(entry.severity),
@@ -505,7 +564,7 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n#### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         entry.code,
@@ -544,11 +603,32 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
 }
 
 /// The reference pages a diagnostic's entry can send its reader on to, and
-/// what the entry calls each.
+/// what the entry calls each: a page, and the pages in the folder of its
+/// name, as `content-model/checks.md`.
 const REFERENCES: [(&str, &str); 2] = [
-    ("directives.md", "directive reference"),
-    ("content-model.md", "`ascribe.toml` reference"),
+    ("directives", "directive reference"),
+    ("content-model", "`ascribe.toml` reference"),
 ];
+
+/// The files of the reference pages, relative to `docs/content/reference/`,
+/// each with what an entry calls it.
+fn reference_files() -> Vec<(String, &'static str)> {
+    let mut files = Vec::new();
+    for (name, page) in REFERENCES {
+        files.push((format!("{name}.md"), page));
+        let Ok(dir) = std::fs::read_dir(repo().join("docs/content/reference").join(name)) else {
+            continue;
+        };
+        let mut more: Vec<String> = dir
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|f| f.ends_with(".md"))
+            .map(|f| format!("{name}/{f}"))
+            .collect();
+        more.sort();
+        files.extend(more.into_iter().map(|f| (f, page)));
+    }
+    files
+}
 
 /// What an entry links to: SPEC.md's numbered sections, and the reference
 /// pages' headings.
@@ -563,7 +643,7 @@ struct Pages {
 impl Pages {
     fn load() -> Pages {
         let mut sections = BTreeMap::new();
-        for (file, page) in REFERENCES {
+        for (file, page) in reference_files() {
             let text = expanded(&format!("docs/content/reference/{file}"));
             for (id, heading) in headings(&text) {
                 sections.insert(format!("{file}#{id}"), (heading, page));

@@ -112,7 +112,7 @@ Nothing outside the docs links to a page's path. The binary, the extension, the 
 
 | For | Name | Declared on |
 |---|---|---|
-| A command | `cli-` and its name, with `-` for a space: `cli-check`, `cli-sources-update` | Its heading in `docs/content/reference/cli.md`, `@id {permalink=true}: cli-check` |
+| A command | `cli-` and its name, with `-` for a space: `cli-check`, `cli-sources-update` | Its heading in its page under `docs/content/reference/cli/`, `@id {permalink=true}: cli-check` |
 | The command reference | `cli-reference` | The page's frontmatter |
 | A diagnostic | Its code, `ASC036`, retired ones too | Its heading in the diagnostics reference, which the generator writes |
 | Another page | Its subject, with `-guide` for a guide and `-contract` for a contract: `diagnostics`, `directives`, `getting-started`, `agents-guide`, `editor-guide`, `output-layout-contract` | The page's frontmatter, `permalink: agents-guide` |
