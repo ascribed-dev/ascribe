@@ -2,7 +2,7 @@
 
 What a change has to touch, as lists a reviewer can tick. Each list was built from the code; when the code grows a new surface, the list changes in the same pull request. Not every line applies to every change: a reviewer ticks a line or says why it doesn't apply.
 
-The rules every change follows (the checks to run, conformance cases, the fork, the docs) are in [CONTRIBUTING.md](../CONTRIBUTING.md). The decisions behind them are in [decisions.md](decisions.md).
+The rules every change follows (the checks to run, conformance cases, the fork, the docs) are in [CONTRIBUTING.md](../CONTRIBUTING.md). The decisions behind them are in [decisions.md](decisions.md) and [decisions/](decisions/README.md).
 
 ## A change to the language
 

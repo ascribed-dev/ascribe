@@ -21,7 +21,7 @@ name: CI
 #   base's (scripts/compare/outputs.ts): a clean-up must change none. Adding
 #   or removing a label starts a run, so the label counts as soon as it's
 #   added, and stops counting as soon as it's removed. A change to the
-#   outputs that a decision in project-docs/decisions.md accepts adds the
+#   outputs that a recorded decision (project-docs/decisions/) accepts adds the
 #   label `outputs changed` too, and lists the files it accepts in the
 #   description (see the job): those still show, but only another difference
 #   fails.
@@ -73,11 +73,11 @@ jobs:
           fi
 
           # Plans and reports are prose nothing builds or tests; only the formatter reads them.
-          # The decision log and the change checklists are the exception: a test checks them.
+          # The decisions and the change checklists are the exception: tests check them.
           code=true
           if [ "$files" != all ] && [ -n "$files" ] &&
             ! printf '%s\n' "$files" | grep -qvE '^project-docs/' &&
-            ! printf '%s\n' "$files" | grep -qE '^project-docs/(decisions|checklists)\.md$'; then
+            ! printf '%s\n' "$files" | grep -qE '^project-docs/((decisions|checklists)\.md|decisions/)'; then
             code=false
           fi
 

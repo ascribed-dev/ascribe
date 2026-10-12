@@ -35,7 +35,7 @@
 // compared, not built outputs.
 //
 // --accept, given once per pattern, accepts a difference a decision in
-// project-docs/decisions.md accepts: a file whose heading line
+// project-docs/decisions/ or decisions.md accepts: a file whose heading line
 // (`<project>: <file>`) matches a pattern still prints its diff, marked
 // `(accepted)`, but doesn't make the exit 1. In a pattern `*` stands for
 // anything, `/` and spaces included; the rest is matched as it is, whole. A
