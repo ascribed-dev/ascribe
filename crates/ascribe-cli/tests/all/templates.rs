@@ -77,11 +77,12 @@ fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
         stdout(&output),
         "wrote templates/how-to.md\n\
          wrote templates/how-to.guide.md\n\
+         wrote templates/how-to.ascribe.md\n\
          wrote templates/templates.lock\n\
          wrote ascribe.toml\n\
          added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and the pages outside the new types keep it\n\
          added [types.how-to] to ascribe.toml, for pages under docs/how-to/\n\
-         To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md first.\n"
+         To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.\n"
     );
     fs::create_dir(dir.path().join("docs/how-to")).unwrap();
     fs::copy(
@@ -109,13 +110,20 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     assert_eq!(answer["schema_version"], 1);
     let set = ascribe_templates::set();
     let written = answer["written"].as_array().unwrap();
-    assert_eq!(written.len(), set.templates.len() * 2 + 2, "{written:#?}");
+    assert_eq!(written.len(), set.templates.len() * 3 + 2, "{written:#?}");
     assert_eq!(written.last().unwrap(), "ascribe.toml");
     let added = answer["added"].as_array().unwrap();
     assert_eq!(added.len(), set.templates.len());
     for (added, template) in added.iter().zip(&set.templates) {
         assert_eq!(added["name"], template.name.as_str());
         assert_eq!(added["folder"], format!("docs/{}", template.name).as_str());
+        assert_eq!(
+            added["guide"],
+            serde_json::json!([
+                format!("templates/{}", template.guide),
+                format!("templates/{}.ascribe.md", template.name)
+            ])
+        );
     }
     assert_eq!(answer["refused"], Value::Array(Vec::new()));
     assert_eq!(answer["page_declared"], true);

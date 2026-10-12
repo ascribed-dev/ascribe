@@ -12,7 +12,7 @@
           "type": "string"
         },
         "guide": {
-          "description": "Its `guide`, from the folder `ascribe.toml` is in.",
+          "description": "Its `guide`, from the folder `ascribe.toml` is in, in the order to\nread them: their guide, then Ascribe's notes on the type.",
           "items": {
             "type": "string"
           },
@@ -124,7 +124,7 @@
       "type": "integer"
     },
     "written": {
-      "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template and its\nguide, then `templates.lock`, then `ascribe.toml`. Empty when anything\nwas refused.",
+      "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`. Empty when anything was refused.",
       "items": {
         "type": "string"
       },

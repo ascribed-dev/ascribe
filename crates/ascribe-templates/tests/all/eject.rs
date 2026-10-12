@@ -66,7 +66,7 @@ fn files(dir: &Path) -> Vec<String> {
 }
 
 #[test]
-fn a_clean_project_gets_the_template_its_guide_the_lock_and_the_type() {
+fn a_clean_project_gets_the_template_its_guide_ascribe_s_notes_the_lock_and_the_type() {
     let dir = project(MODEL);
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert!(answer.refused.is_empty());
@@ -76,6 +76,7 @@ fn a_clean_project_gets_the_template_its_guide_the_lock_and_the_type() {
         [
             "templates/how-to.md",
             "templates/how-to.guide.md",
+            "templates/how-to.ascribe.md",
             "templates/templates.lock",
             "ascribe.toml"
         ]
@@ -85,6 +86,17 @@ fn a_clean_project_gets_the_template_its_guide_the_lock_and_the_type() {
     assert_eq!(added.folder, "docs/how-to");
     assert_eq!(added.files, "how-to/**");
     assert_eq!(
+        added.guide,
+        ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
+    );
+    assert_eq!(
+        read(dir.path(), "templates/how-to.ascribe.md"),
+        ascribe_templates::set().templates[0]
+            .notes()
+            .expect("the how-to has notes")
+            .text
+    );
+    assert_eq!(
         read(dir.path(), "templates/how-to.md"),
         ascribe_templates::set().templates[0].text("how-to.md")
     );
@@ -93,7 +105,7 @@ fn a_clean_project_gets_the_template_its_guide_the_lock_and_the_type() {
     assert_eq!(
         model,
         format!(
-            "{MODEL}\n[types.how-to]\nfiles = [\"how-to/**\"]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+            "{MODEL}\n[types.how-to]\nfiles = [\"how-to/**\"]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
         )
     );
     // The project loads with its files checked, and a page copied from the
@@ -132,12 +144,20 @@ fn the_lock_records_each_file_and_a_second_eject_adds_to_it() {
         how_to["files"]["templates/how-to.md"].as_str(),
         Some(ascribe_model::file_hash(template.as_bytes()).as_str())
     );
-    assert!(
-        how_to["files"]
-            .as_table()
-            .expect("a table")
-            .contains_key("templates/how-to.guide.md")
-    );
+    let mut theirs: Vec<&String> = how_to["files"]
+        .as_table()
+        .expect("a table")
+        .keys()
+        .collect();
+    theirs.sort();
+    assert_eq!(theirs, ["templates/how-to.guide.md", "templates/how-to.md"]);
+    // Ascribe's notes are recorded as Ascribe's, apart from their files.
+    let ours: Vec<&String> = how_to["ascribe-files"]
+        .as_table()
+        .expect("a table")
+        .keys()
+        .collect();
+    assert_eq!(ours, ["templates/how-to.ascribe.md"]);
 }
 
 #[test]
@@ -186,6 +206,20 @@ fn a_file_in_the_way_is_refused_and_nothing_is_written() {
 }
 
 #[test]
+fn ascribe_s_notes_in_the_way_are_refused_too() {
+    let dir = project(MODEL);
+    std::fs::create_dir(dir.path().join("templates")).expect("made");
+    std::fs::write(dir.path().join("templates/how-to.ascribe.md"), "Ours.\n").expect("written");
+    let answer = run(dir.path(), &["how-to"], "templates").expect("answered");
+    assert_eq!(answer.refused.len(), 1);
+    assert_eq!(
+        answer.refused[0].path.as_deref(),
+        Some("templates/how-to.ascribe.md")
+    );
+    assert!(!dir.path().join("templates/how-to.md").exists());
+}
+
+#[test]
 fn several_named_with_one_refused_write_nothing() {
     let dir = project(MODEL);
     let before = files(dir.path());
@@ -208,7 +242,7 @@ fn another_folder_is_written_into_and_named_from_the_project_s_folder() {
     let dir = project(MODEL);
     let answer = run(dir.path(), &["how-to"], "writing/starters").expect("ejected");
     assert_eq!(answer.written[0], "writing/starters/how-to.md");
-    assert_eq!(answer.written[2], "writing/starters/templates.lock");
+    assert_eq!(answer.written[3], "writing/starters/templates.lock");
     assert!(
         read(dir.path(), "ascribe.toml").contains("template = \"writing/starters/how-to.md\"\n")
     );

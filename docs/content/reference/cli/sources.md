@@ -144,7 +144,7 @@ Shows each template the set has, in a line, with what it's for, and which releas
 ### `ascribe templates eject`
 @id {permalink=true}: cli-templates-eject
 
-Writes each template named, with its guide, into the project, and adds its type to `ascribe.toml`. With no name, it takes every template of the set.
+Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. With no name, it takes every template of the set.
 
 ```sh
 ascribe templates eject how-to
@@ -152,20 +152,20 @@ ascribe templates eject how-to
 
 @include: ../../_generated/cli-templates-eject-options.md
 
-For each template, it writes the template and its guide into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output directory, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are. The paths in it are from the folder `ascribe.toml` is in, whatever folder `--to` was given from:
+For each template, it writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output directory, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are. The paths in it are from the folder `ascribe.toml` is in, whatever folder `--to` was given from:
 
 ```toml
 [types.how-to]
 files = ["how-to/**"]
 template = "templates/how-to.md"
-guide = ["templates/how-to.guide.md"]
+guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
 [types.how-to.frontmatter]
 title = "string"
 description = "string"
 ```
 
-The type covers the pages in a folder of its name in the content root, and its frontmatter has the fields the template's has, each a string a page must have. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, and the project's other pages keep it:
+The type's `guide` lists their guide, then Ascribe's notes, in the order to read them. The type covers the pages in a folder of its name in the content root, and its frontmatter has the fields the template's has, each a string a page must have. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, and the project's other pages keep it:
 
 ```toml
 [types.page]
@@ -175,13 +175,13 @@ default = true
 title = "string"
 ```
 
-Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
+Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
 
 It checks everything before it writes anything. A type `ascribe.toml` declares already, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so and what to write by hand: a file with the line `spec = "0.1"`, beside the folder the pages go in.
 
 It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; and how to start a page.
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, and `guide`; `refused`, each with `name`, `reason` (`unknown`, `declared`, or `file_in_the_way`), `path` (the file in the way, or null), and `message`; and `page_declared`, whether `[types.page]` was written out. When `refused` isn't empty, `written` and `added` are.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, and `guide` (their guide, then Ascribe's notes); `refused`, each with `name`, `reason` (`unknown`, `declared`, or `file_in_the_way`), `path` (the file in the way, or null), and `message`; and `page_declared`, whether `[types.page]` was written out. When `refused` isn't empty, `written` and `added` are.
 
 | Code | Meaning |
 |---|---|

@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use ascribe_check::{Project, check_all_builds};
 use ascribe_core::{FileId, RelPath};
 use ascribe_syntax::{Block, BlockKind, parse};
-use ascribe_templates::FILES;
+use ascribe_templates::{FILES, NOTES};
 
 /// A template of `set.toml`.
 #[derive(serde::Deserialize)]
@@ -80,6 +80,78 @@ fn files_lists_every_file_in_the_set_and_set_toml_names_each_template_s_files() 
     }
     named.sort();
     assert_eq!(named, on_disk, "set.toml and set/ differ");
+}
+
+#[test]
+fn notes_lists_every_file_in_notes_and_every_template_has_ascribe_s_notes() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("notes");
+    let mut on_disk: Vec<String> = std::fs::read_dir(&dir)
+        .expect("notes/ is there")
+        .map(|e| {
+            e.expect("an entry")
+                .file_name()
+                .into_string()
+                .expect("UTF-8")
+        })
+        .collect();
+    on_disk.sort();
+    let listed: Vec<&str> = NOTES.iter().map(|f| f.name).collect();
+    assert_eq!(
+        listed, on_disk,
+        "NOTES and notes/ differ, or NOTES isn't by name"
+    );
+    let templates = ascribe_templates::set().templates;
+    for note in NOTES {
+        assert!(
+            templates
+                .iter()
+                .any(|t| format!("{}.ascribe.md", t.name) == note.name),
+            "{} names no template of the set",
+            note.name
+        );
+    }
+    for template in templates {
+        assert!(
+            template.notes().is_some(),
+            "{} has no notes/{}.ascribe.md",
+            template.name,
+            template.name
+        );
+    }
+}
+
+/// Ascribe's notes are guides, not pages, but each reads as one with nothing
+/// for `ascribe check` to say, so its examples are written as Ascribe reads
+/// them.
+#[test]
+fn ascribe_s_notes_check_clean_read_as_pages() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[checks]\npage-orphan = \"off\"\n";
+    for note in NOTES {
+        let (heading, body) = note
+            .text
+            .split_once('\n')
+            .unwrap_or_else(|| panic!("{} is one line", note.name));
+        let title = heading
+            .strip_prefix("# ")
+            .unwrap_or_else(|| panic!("{} doesn't open with a level-1 heading", note.name));
+        let page = format!("---\ntitle: \"{title}\"\n---\n{body}");
+        let project = Project::from_parts(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
+            model.to_owned(),
+            Project::from_sources([(RelPath::parse("page.md").expect("a path"), page)]),
+        );
+        let found: Vec<_> = check_all_builds(&project)
+            .into_iter()
+            .map(|d| format!("{}: {}", d.slug, d.message))
+            .collect();
+        assert!(
+            found.is_empty(),
+            "{} has diagnostics: {found:#?}",
+            note.name
+        );
+    }
 }
 
 #[test]
