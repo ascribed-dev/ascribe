@@ -134,7 +134,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages; [Page templates](../../guides/templates.md) says where they come from, and how to use them.
 
-The set has one template for now, the how-to. A page is started by copying the template's file into the type's folder, and a project's first `ascribe.toml` is written by hand: `eject` adds to a project, and never starts one.
+The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file into the type's folder, and a project's first `ascribe.toml` is written by hand: `eject` adds to a project, and never starts one.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list

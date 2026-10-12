@@ -31,12 +31,52 @@ pub const FILES: &[File] = &[
         text: include_str!("../set/set.toml"),
     },
     File {
+        name: "concept.guide.md",
+        text: include_str!("../set/concept.guide.md"),
+    },
+    File {
+        name: "concept.md",
+        text: include_str!("../set/concept.md"),
+    },
+    File {
         name: "how-to.guide.md",
         text: include_str!("../set/how-to.guide.md"),
     },
     File {
         name: "how-to.md",
         text: include_str!("../set/how-to.md"),
+    },
+    File {
+        name: "reference.guide.md",
+        text: include_str!("../set/reference.guide.md"),
+    },
+    File {
+        name: "reference.md",
+        text: include_str!("../set/reference.md"),
+    },
+    File {
+        name: "release-notes.guide.md",
+        text: include_str!("../set/release-notes.guide.md"),
+    },
+    File {
+        name: "release-notes.md",
+        text: include_str!("../set/release-notes.md"),
+    },
+    File {
+        name: "troubleshooting.guide.md",
+        text: include_str!("../set/troubleshooting.guide.md"),
+    },
+    File {
+        name: "troubleshooting.md",
+        text: include_str!("../set/troubleshooting.md"),
+    },
+    File {
+        name: "tutorial.guide.md",
+        text: include_str!("../set/tutorial.guide.md"),
+    },
+    File {
+        name: "tutorial.md",
+        text: include_str!("../set/tutorial.md"),
     },
 ];
 

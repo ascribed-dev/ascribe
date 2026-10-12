@@ -100,7 +100,17 @@ fn notes_lists_every_file_in_notes_and_every_template_has_ascribe_s_notes() {
         listed, on_disk,
         "NOTES and notes/ differ, or NOTES isn't by name"
     );
-    for template in ascribe_templates::set().templates {
+    let templates = ascribe_templates::set().templates;
+    for note in NOTES {
+        assert!(
+            templates
+                .iter()
+                .any(|t| format!("{}.ascribe.md", t.name) == note.name),
+            "{} names no template of the set",
+            note.name
+        );
+    }
+    for template in templates {
         assert!(
             template.notes().is_some(),
             "{} has no notes/{}.ascribe.md",

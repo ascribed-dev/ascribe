@@ -1,9 +1,10 @@
 //! Writing templates into a project: `ascribe templates eject`.
 //!
 //! Each template of the set named is written as the project's own file, with
-//! its guide and Ascribe's notes on its type, under a folder beside `ascribe.toml` (`templates/`, unless the
-//! caller names another), and its type is added to `ascribe.toml`, at its
-//! end, so the rest of the file stays as it was, comments and order with it.
+//! its guide and Ascribe's notes on its type, under a folder beside
+//! `ascribe.toml` (`templates/`, unless the caller names another), and its
+//! type is added to `ascribe.toml`, at its end, so the rest of the file stays
+//! as it was, comments and order with it.
 //! `templates.lock`, in the same folder, records what each file was copied
 //! from and a hash of it as written, with Ascribe's notes apart from their
 //! files; a second eject adds to it.
@@ -191,8 +192,9 @@ pub struct Eject<'a> {
 }
 
 /// Writes the templates `request` names into the project, with their guides,
-/// Ascribe's notes on their types, and `templates.lock`, and adds their types to `ascribe.toml`. What's there
-/// is looked at through `fs`, the project's [`FileSystem`].
+/// Ascribe's notes on their types, and `templates.lock`, and adds their types
+/// to `ascribe.toml`. What's there is looked at through `fs`, the project's
+/// [`FileSystem`].
 ///
 /// # Errors
 ///

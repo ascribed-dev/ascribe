@@ -1,0 +1,1 @@
+- **Five more page templates: concept, tutorial, reference, troubleshooting, and release notes.** They're The Good Docs Project's, converted from their v1.6.0 release as the how-to is, each with its guide. `ascribe templates eject` with no name writes all six and declares their types, and `ascribe templates list` shows them. See `docs/content/guides/templates.md`.

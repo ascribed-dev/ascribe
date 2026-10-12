@@ -9,3 +9,33 @@ name = "how-to"
 summary = "A how-to is a concise set of numbered steps to do one task with the product."
 template = "how-to.md"
 guide = "how-to.guide.md"
+
+[[template]]
+name = "concept"
+summary = "An explanation of a concept, context, or background information about a product or its features."
+template = "concept.md"
+guide = "concept.guide.md"
+
+[[template]]
+name = "tutorial"
+summary = "Instructions for setting up an example project using the product, intended for the purpose of hands-on learning."
+template = "tutorial.md"
+guide = "tutorial.guide.md"
+
+[[template]]
+name = "reference"
+summary = "A reference article provides users with descriptions of specific components or characteristics of an application."
+template = "reference.md"
+guide = "reference.guide.md"
+
+[[template]]
+name = "troubleshooting"
+summary = "A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue."
+template = "troubleshooting.md"
+guide = "troubleshooting.guide.md"
+
+[[template]]
+name = "release-notes"
+summary = "Release notes communicate new features, improvements, bug fixes, and known issues about a product to users and stakeholders."
+template = "release-notes.md"
+guide = "release-notes.guide.md"
