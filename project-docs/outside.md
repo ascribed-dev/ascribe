@@ -18,7 +18,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Repository secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` | `site.yml`: a pull request's docs preview | Maintainer |
 | Repository secret `SITE_BUILD_HOOK` | `canary.yml`'s `site` job: rebuilds the docs site after a canary | Maintainer |
 | Repository secret `PROJECT_BOARD_TOKEN`: a fine-grained token of the maintainer's, owned by `ascribed-dev`, with Organization → Projects: read and write | `board.yml`: reads [the project board](https://github.com/orgs/ascribed-dev/projects/1) into `board.json` on the branch `board`, and moves issues on it, for agents that can't reach the board | Maintainer; it stops working when the token expires |
-| Repository setting Actions → General → "Allow GitHub Actions to create and approve pull requests" | `approve.yml`: approves a pull request as `github-actions[bot]` for a reviewing agent, since agents post as the pull request's author | Maintainer |
+| Repository setting Actions → General → "Allow GitHub Actions to create and approve pull requests" | `approve.yml`: approves a pull request as `github-actions[bot]` for a reviewing agent, since agents post as the pull request's author; `templates.yml`: opens the templates' update pull request | Maintainer |
 | Environment `release` (required reviewer; `v*` tags only) | `release.yml`'s `npm`, `marketplace`, and `github` jobs | Maintainer |
 | Variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, on `release` | `release.yml`'s `azure/login`: the Marketplace managed identity below. Not secrets | Maintainer |
 | Environment `canary` (no reviewers; `main` only) | `canary.yml`'s `npm` job | Maintainer |
@@ -28,6 +28,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Third-party actions | 8 in this repository's workflows (`actions/cache`, `checkout`, `download-artifact`, `setup-node`, `upload-artifact`; `Swatinem/rust-cache`, `pnpm/action-setup`, `azure/login`), plus `actions/create-github-app-token` in `examples/docs-repository`. Each pinned to a commit | Anyone, by pull request; Dependabot moves them |
 | Vale's Linux release, from `vale-cli/vale` on GitHub | `rust.yml`'s `check` job downloads it, at the version and checksum written there, for the tests that run a real Vale (`crates/ascribe-check/tests/all/vale.rs`). Ascribe itself never downloads Vale | Anyone, by pull request: a new version needs its checksum from the release's `checksums.txt` |
 | lychee's Linux release, from `lycheeverse/lychee` on GitHub | `report.yml` downloads it, at the version and checksum written there, for the weekly `ascribe report links` on the docs. Ascribe itself never downloads it | Anyone, by pull request: a new version needs its checksum, worked out from the release's archive |
+| Pull requests from the branch `templates/update` | `templates.yml` opens one when The Good Docs Project releases, with the page templates written again, and updates it while it's open, with the job's own token, so its checks wait for someone to close and reopen it. A GitHub App's token would start them, and would be one more secret | Anyone: read it and merge or close it. The token is the maintainer's to change |
 | Issues titled "Docs report: links and the published site" | `report.yml` opens one when the weekly report finds something, and updates it while it's open, with the job's own token | Anyone: close it once it's dealt with |
 
 ## npm
@@ -48,6 +49,12 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | VS Code Marketplace publisher `Ascribe`, extension `Ascribe.ascribe-vscode` | Users of the extension | Maintainer, through a personal Microsoft account |
 | Managed identity `ascribe-vscode-publisher` (Azure, resource group `ascribe-release`, East US), with a federated credential trusting this repository's `release` environment | `release.yml`'s `marketplace` job | Maintainer |
 | An Azure DevOps organization connected to that tenant | Gives the identity the profile the Marketplace needs. No projects or pipelines | Maintainer |
+
+## The Good Docs Project
+
+| Thing | What uses it | Who can change it |
+|---|---|---|
+| Their templates' repository, <https://gitlab.com/tgdp/templates>, public on GitLab | `scripts/templates/convert.ts` fetches the release `scripts/templates/upstream.toml` pins, from their raw files, to write Ascribe's page templates, and `rust.yml` runs it. `templates.yml` reads their tags and the diff between two through GitLab's API every week (`scripts/templates/update.ts`). Neither signs in: their tags and files answer without it, and their releases answer 403 | The Good Docs Project. A moved or renamed repository is a change to `repository` in `upstream.toml` |
 
 ## Netlify and the domain
 

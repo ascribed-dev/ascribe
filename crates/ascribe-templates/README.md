@@ -13,7 +13,7 @@ The page templates Ascribe ships: The Good Docs Project's, converted into Ascrib
 
 ## Rules
 
-- **Nobody edits a file in `set/`.** A change to one is a change to the script, to a rule in `scripts/templates/rules.toml`, or to their repository. `node scripts/templates/convert.ts` rewrites them, and `--check` lists the stale ones.
+- **Nobody edits a file in `set/`.** A change to one is a change to the script, to a rule in `scripts/templates/rules.toml`, or to their repository. `node scripts/templates/convert.ts` rewrites them, and `--check` lists the stale ones. When they release, the Templates workflow (`.github/workflows/templates.yml`) opens a pull request with them written again at the new tag, by `scripts/templates/update.ts`, for a person to read.
 - **The notes are the only words in the set that are Ascribe's,** so they're held to the docs' standard, and each reads in about a minute. A change to one is read by the maintainer.
 - **A template carries no line saying where it came from:** a page copied from it would carry the line too. Its guide says it, `set.toml` does, and in a project, `templates.lock` does.
 - **Eject never writes over a file of the project's,** and writes nothing when it refuses anything. Once written, the files are the project's.
@@ -23,3 +23,4 @@ The page templates Ascribe ships: The Good Docs Project's, converted into Ascrib
 - `tests/all/set.rs`, with no network: `FILES` and `set.toml` list what `set/` holds, `NOTES` lists what `notes/` holds, and every template has notes, each of which `ascribe check` has nothing to say about read as a page; each template is a page `ascribe check` has nothing to say about, in a project that declares its type, and that `ascribe fmt` leaves as it is; and none has a level-1 heading or a block quote.
 - `tests/all/eject.rs`: eject in a project in a temporary folder: what it writes and adds, `templates.lock` written and added to, each case it refuses with nothing written, a project with no types, and `--to`'s folder. `crates/ascribe-cli/tests/all/templates.rs` runs the command.
 - `scripts/templates/convert.test.ts`: the conversion's steps, and the copies being what the pinned release gives, which needs their repository and an `ascribe` binary. CI runs that comparison after its build, in `rust.yml`.
+- `scripts/templates/update.test.ts`: taking their newest release: which tag is newest, moving the pin, what changed between two tags, and the pull request's description.
