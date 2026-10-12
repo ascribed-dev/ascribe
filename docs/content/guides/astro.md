@@ -246,6 +246,8 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
 - **Each page's Markdown** at its URL with `.md`: `/docs/guides/setup` is also `/docs/guides/setup.md`.
 - **A pointer** at the top of each page to both, which the elements' stylesheet hides from sight but not from an agent reading the page.
 
+Nothing is written at the host's root for a project under a path. With docs at `/docs/`, an agent reaches `/docs/llms.txt` through each page's pointer, and the spec's checker looks there as well as at `/llms.txt`. A site that wants a file at the root, such as one whose docs are somewhere else, puts its own in Astro's `public/`.
+
 `site` is required, because everything an agent reads links by absolute URL. The integration builds the plain output too, copies it into the built site, and serves it in `astro dev`. The [`ascribe.toml` reference](../reference/content-model.md#15-consumer) says how `llms.txt` is put together.
 
 `ascribe check` then adds two pieces of advice: a page whose description is too long for its line in `llms.txt`, and an `llms.txt` that's still too long when split. Write each page's `description` as one sentence saying what the page is for; it's what an agent picks a page by.
