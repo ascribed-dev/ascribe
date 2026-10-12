@@ -110,13 +110,13 @@ The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access t
 
 ### 1. Check what's published
 
-Gather the changelog's entries first: each change since the last release wrote its entry as a file in `changes/` (decision 123), and this moves them all to the top of `CHANGELOG.md`'s unreleased section and deletes their files.
+Gather the changelog's entries first: each change since the last release wrote its entry as a file in its area's folder of `changes/` (decisions 123 and 129), and this moves each to the top of its area's `###` heading in `CHANGELOG.md`'s unreleased section and deletes their files.
 
 ```sh
 node scripts/release/changes.ts gather
 ```
 
-Then the unreleased section lists what the release ships, and nothing in it is unfinished. Group its entries under the release's `###` headings (the language, the `ascribe` command, the editor, and so on), as earlier releases do.
+Then the unreleased section lists what the release ships, under its areas' `###` headings, and nothing in it is unfinished.
 
 Reread the sources of the crawlers Ascribe knows, by purpose, in `crates/ascribe-model/data/crawlers.toml`. Open each entry's `source` and check that its operator still names the token, for the same purpose, and says the same of `robots.txt`; add a token an operator has added for one of the three purposes, and remove one it no longer documents. Set `read` to the day you read the page, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite the reference's table, and add a `changes/` entry for a token added or removed: a project's `robots.txt` changes with it. **Check:** `node scripts/crawlers/sources.ts` says every source answers and was read within a year.
 

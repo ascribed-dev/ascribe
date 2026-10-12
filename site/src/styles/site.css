@@ -483,7 +483,28 @@ pre {
   max-width: var(--measure);
 }
 
-/* The changelog: a long path in code wraps rather than widening the page. */
+/*
+ * The changelog: its title, then the releases, with their contents beside
+ * them where they fit and above them where they don't.
+ */
+.changelog {
+  display: grid;
+  grid-template-areas: "intro contents" "body contents";
+  grid-template-columns: minmax(0, var(--measure)) var(--toc-width);
+  grid-template-rows: auto 1fr;
+  column-gap: 3rem;
+  justify-content: center;
+}
+
+.changelog-intro {
+  grid-area: intro;
+}
+
+.changelog article {
+  grid-area: body;
+}
+
+/* A long path in code wraps rather than widening the page. */
 .changelog :not(pre) > code {
   overflow-wrap: anywhere;
 }
@@ -493,6 +514,170 @@ pre {
   margin-top: -0.25rem;
   color: var(--muted);
   font: var(--type-small) var(--font);
+}
+
+.changelog .count {
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The contents: each release, and the newest ones' areas. */
+.changelog .contents {
+  grid-area: contents;
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  max-height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+  padding-block: 2rem;
+  font: var(--type-small) var(--font);
+}
+
+.changelog .contents > summary {
+  display: none;
+}
+
+.changelog .contents ul {
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--border);
+  list-style: none;
+}
+
+.changelog .contents ul ul {
+  border-left: 0;
+}
+
+.changelog .contents a {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.changelog .contents ul ul a {
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.changelog .contents a:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Expand all, Collapse all, and Behavior changes only. */
+.changelog-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.changelog-controls[hidden] {
+  display: none;
+}
+
+.changelog-controls button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--text);
+  font: var(--type-small) var(--font);
+  cursor: pointer;
+}
+
+.changelog-controls button:hover {
+  background: var(--surface);
+}
+
+.changelog-controls button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  color: var(--accent);
+}
+
+/* An entry: what it says first, and the rest a click away. */
+.changelog .entries {
+  padding-left: 0;
+  list-style: none;
+}
+
+.changelog .entry {
+  border-bottom: 1px solid var(--border);
+}
+
+.changelog .entry > p.summary,
+.changelog .entry > details > summary {
+  margin: 0;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+}
+
+.changelog .entry > details > summary {
+  position: relative;
+  list-style: none;
+  cursor: pointer;
+}
+
+.changelog .entry > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The disclosure triangle, drawn so it lines up with an entry that has none. */
+.changelog .entry > details > summary::before {
+  position: absolute;
+  top: 0.95rem;
+  left: 0.25rem;
+  border-block: 0.3rem solid transparent;
+  border-left: 0.4rem solid var(--muted);
+  content: "";
+  transition: transform 0.1s;
+}
+
+.changelog .entry > details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.changelog .entry > details > summary:hover::before {
+  border-left-color: var(--accent);
+}
+
+.changelog .entry-body {
+  padding: 0 0 0.5rem 1.25rem;
+}
+
+.changelog .entry-body > :first-child {
+  margin-top: 0;
+}
+
+.changelog .badge {
+  display: inline-block;
+  margin-right: 0.25rem;
+  padding: 0 0.375rem;
+  border-radius: var(--radius);
+  background: var(--ascribe-warning-background);
+  color: var(--ascribe-warning-color);
+  font: var(--type-caption) var(--font);
+  vertical-align: 0.1em;
+}
+
+/* Behavior changes only: the rest, and areas and releases without any, are hidden. */
+.changelog .no-behavior {
+  display: none;
+  color: var(--muted);
+}
+
+.changelog.behavior-only .entry:not(.behavior),
+.changelog.behavior-only .area[data-behavior="0"] {
+  display: none;
+}
+
+.changelog.behavior-only .release[data-behavior="0"] .no-behavior {
+  display: block;
 }
 
 /*
@@ -634,6 +819,32 @@ claim-example > :not(pre, figure, ascribe-tabs) {
 }
 
 /* Narrower screens ------------------------------------------------------------ */
+
+@media (max-width: 60rem) {
+  .changelog {
+    grid-template-areas: "intro" "contents" "body";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .changelog .contents {
+    position: static;
+    max-height: none;
+    padding-block: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .changelog .contents > summary {
+    display: list-item;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .changelog .contents nav {
+    padding: 0 0.75rem 0.75rem;
+  }
+}
 
 @media (max-width: 75rem) {
   .site-body {

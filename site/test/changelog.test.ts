@@ -4,6 +4,7 @@ import { expect, test } from "vitest";
 import {
   ChangelogLinkError,
   anchorReleases,
+  collapseEntries,
   firstParagraph,
   pointLinks,
   type Targets,
@@ -111,4 +112,93 @@ test("the description is the first paragraph's text", () => {
   expect(
     firstParagraph("<h1>Changelog</h1>\n<p>Every <code>ascribe</code> release &amp; more.</p>"),
   ).toBe("Every ascribe release & more.");
+});
+
+/** A changelog as Astro renders it, anchored: one release, with two areas. */
+const rendered = anchorReleases(
+  [
+    "<h1>Changelog</h1>",
+    "<p>Intro.</p>",
+    "<h2>Unreleased</h2>",
+    "<h3>The editor</h3>",
+    "<ul>",
+    "<li><strong>A bold sentence.</strong> The rest. More.</li>",
+    "<li><strong>Behavior change: <code>x</code> is gone.</strong> Use y.</li>",
+    "<li><strong>Just this.</strong></li>",
+    "</ul>",
+    "<h3>Fixes</h3>",
+    "<ul>",
+    "<li>",
+    "<p><strong>Fixed:</strong> <code>a. b</code> works again. It didn't.</p>",
+    "<details><summary>Old</summary><p>x</p></details>",
+    "</li>",
+    "<li><strong><code>@snippet</code></strong> puts code in a page. <strong>Behavior change:</strong> more.</li>",
+    "</ul>",
+    "<h2>0.1.0 (2026-10-01)</h2>",
+    "<ul>",
+    "<li>A plain entry. With more.</li>",
+    "</ul>",
+  ].join("\n"),
+);
+
+/** Each entry's summary, as the page shows it closed. */
+function summaries(html: string): string[] {
+  return Array.from(
+    html.matchAll(
+      /<li class="entry[^"]*">(?:<details><summary>|<p class="summary">)([\s\S]*?)<\/(?:summary|p)>/g,
+    ),
+    (match) => match[1] ?? "",
+  );
+}
+
+test("an entry shows its bold sentence, or else its first sentence, and the rest when opened", () => {
+  const { html } = collapseEntries(rendered);
+  expect(summaries(html)).toEqual([
+    "<strong>A bold sentence.</strong>",
+    '<strong><span class="badge">Behavior change:</span> <code>x</code> is gone.</strong>',
+    "<strong>Just this.</strong>",
+    "<strong>Fixed:</strong> <code>a. b</code> works again.",
+    '<span class="badge">Behavior change</span> <strong><code>@snippet</code></strong> puts code in a page.',
+    "A plain entry.",
+  ]);
+  // The rest is under the summary, the entry's own blocks included.
+  expect(html).toContain(
+    '<summary><strong>A bold sentence.</strong></summary>\n<div class="entry-body">\n<p>The rest. More.</p>\n</div>',
+  );
+  expect(html).toContain("<p>It didn't.</p>\n<details><summary>Old</summary>");
+  // An entry with nothing more isn't collapsed.
+  expect(html).toContain(
+    '<li class="entry"><p class="summary"><strong>Just this.</strong></p></li>',
+  );
+});
+
+test("each release and area is a section, an area's heading counts its entries, and behavior changes are marked", () => {
+  const { html } = collapseEntries(rendered);
+  expect(html).toContain('<section class="release" data-behavior="2">\n<h2 id="unreleased">');
+  expect(html).toContain(
+    '<section class="area" data-behavior="1">\n<h3 id="unreleased-the-editor">The editor <span class="count">3</span></h3>',
+  );
+  expect(html.match(/<li class="entry behavior">/g)).toHaveLength(2);
+  // A release with none says so, for "Behavior changes only".
+  expect(html).toContain(
+    '<section class="release" data-behavior="0">\n<h2 id="v0.1.0">0.1.0 (2026-10-01)</h2>\n<p class="no-behavior">',
+  );
+  // What comes before the first release stays as it was.
+  expect(html.startsWith("<h1>Changelog</h1>\n<p>Intro.</p>\n<section")).toBe(true);
+});
+
+test("the contents list each release and its areas, with their counts", () => {
+  const { contents } = collapseEntries(rendered);
+  expect(contents).toEqual([
+    {
+      id: "unreleased",
+      html: "Unreleased",
+      count: 5,
+      areas: [
+        { id: "unreleased-the-editor", html: "The editor", count: 3 },
+        { id: "unreleased-fixes", html: "Fixes", count: 2 },
+      ],
+    },
+    { id: "v0.1.0", html: "0.1.0 (2026-10-01)", count: 1, areas: [] },
+  ]);
 });

@@ -1,4 +1,4 @@
-// The built site in Chromium: the landing page, the changelog, the head and the header,
+// The built site in Chromium: the landing page, the changelog and its entries, the head and the header,
 // each page's social card, variants, availability, code titles, links between
 // pages, search, the edit link, the 404 page, the narrow layout, the landing
 // page's demonstration, marks, phone width, and reading without a script, and
@@ -175,10 +175,73 @@ test("the header's Changelog opens the changelog, in the frame of the site's own
   // The unreleased section says so, and each release has its version's anchor.
   expect(await page.locator("#unreleased + .unreleased-note").isVisible()).toBe(true);
   expect(await page.locator("h2[id^='v0.']").count()).toBeGreaterThan(1);
-  // A link to a docs page's source opens the page.
+  // A link to a docs page's source opens the page, once its entry is open.
+  await page.getByRole("button", { name: "Expand all" }).click();
   await page.locator("article a[href^='/docs/']").first().click();
   await page.waitForURL(new RegExp(`^${server.url}/docs/.+`));
   expect(await page.locator("h1").count()).toBe(1);
+  await page.close();
+});
+
+test("the changelog's entries open one at a time or all at once, and can be only behavior changes", async () => {
+  const page = await open("/changelog/");
+  const entries = page.locator(".entry > details");
+  const first = entries.first();
+  expect(await entries.count()).toBeGreaterThan(50);
+  // Each entry shows what it says first, and the rest when it's opened.
+  expect(await first.evaluate((details) => (details as HTMLDetailsElement).open)).toBe(false);
+  expect(await first.locator(".entry-body").isVisible()).toBe(false);
+  await first.locator("summary").click();
+  expect(await first.locator(".entry-body").isVisible()).toBe(true);
+  await page.getByRole("button", { name: "Collapse all" }).click();
+  expect(await page.locator(".entry > details[open]").count()).toBe(0);
+  await page.getByRole("button", { name: "Expand all" }).click();
+  expect(await page.locator(".entry > details:not([open])").count()).toBe(0);
+
+  // Each area's heading counts its entries.
+  const area = page.locator(".release").first().locator(".area").first();
+  const count = Number(await area.locator("h3 .count").textContent());
+  expect(await area.locator(".entry").count()).toBe(count);
+
+  // Behavior changes only hides the rest, and the areas with none.
+  const filter = page.getByRole("button", { name: "Behavior changes only" });
+  await filter.click();
+  expect(await filter.getAttribute("aria-pressed")).toBe("true");
+  const shown = await page
+    .locator(".entry")
+    .evaluateAll((all) =>
+      all
+        .filter((entry) => (entry as HTMLElement).offsetParent !== null)
+        .map((entry) => entry.className),
+    );
+  expect(shown.length).toBeGreaterThan(0);
+  expect(shown.every((name) => name.includes("behavior"))).toBe(true);
+  expect(await page.locator(".badge").first().isVisible()).toBe(true);
+  await filter.click();
+  expect(await page.locator(".entry:not(.behavior)").first().isVisible()).toBe(true);
+
+  // The contents beside the page lead to each release and the newest ones' areas.
+  const contents = page.locator(".contents");
+  expect(await contents.locator("summary").isVisible()).toBe(false);
+  await contents
+    .getByRole("link")
+    .filter({ hasText: /^Fixes/ })
+    .first()
+    .click();
+  await page.waitForURL(/#unreleased-fixes$/);
+  expect(await contents.getByRole("link", { name: /^0\.1\.0/ }).isVisible()).toBe(true);
+  await page.close();
+});
+
+test("at phone width, the changelog's contents are above it, behind a button", async () => {
+  const page = await open("/changelog/", 390);
+  const contents = page.locator(".contents");
+  const box = await contents.boundingBox();
+  const release = await page.locator("#unreleased").boundingBox();
+  expect(box && release && box.y < release.y).toBe(true);
+  expect(await contents.getByRole("link").first().isVisible()).toBe(false);
+  await contents.locator("summary").click();
+  expect(await contents.getByRole("link").first().isVisible()).toBe(true);
   await page.close();
 });
 
