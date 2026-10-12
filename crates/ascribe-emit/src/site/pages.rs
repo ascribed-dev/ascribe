@@ -34,6 +34,14 @@ struct Entry<'a> {
     listing_from: Origin<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
     markdown: Option<&'a str>,
+    breadcrumbs: Vec<Step<'a>>,
+}
+
+/// A step of a page's breadcrumbs: its route and its page's title.
+#[derive(Serialize)]
+struct Step<'a> {
+    route: &'a str,
+    title: &'a str,
 }
 
 /// Where a page's listing comes from: `level`, and for a rule of
@@ -93,6 +101,14 @@ fn entry(record: &PageRecord) -> Entry<'_> {
         listing: record.listing.name(),
         listing_from: origin(&record.listing_from),
         markdown: record.markdown.as_deref(),
+        breadcrumbs: record
+            .breadcrumbs
+            .iter()
+            .map(|step| Step {
+                route: &step.route,
+                title: &step.title,
+            })
+            .collect(),
     }
 }
 

@@ -99,7 +99,12 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
       "canonical": "https://docs.example.com/guides/install/",
       "listing": "listed",
       "listing_from": { "level": "default" },
-      "markdown": "/guides/install.md"
+      "markdown": "/guides/install.md",
+      "breadcrumbs": [
+        { "route": "/", "title": "Loom documentation" },
+        { "route": "/guides/", "title": "Guides" },
+        { "route": "/guides/install/", "title": "Install the agent" }
+      ]
     }
   },
   "robots": { "lines": ["Disallow: /drafts/"] }
@@ -119,6 +124,7 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 | `pages.*.listing` | The page's `listing` (SPEC §2.1): `listed`, `unquoted`, or `unlisted`, the strictest of its own and the rules of `[listing]` it's under. Every page has one; a page that nothing sets is `listed`. |
 | `pages.*.listing_from` | Where `listing` comes from. `level` is `default` when nothing sets it, `page` for the page's own `listing`, and for a rule of `[listing]` (content-model contract §22), its level: `site` for `default`, `folder`, or `type`. A rule's has `folder` or `type`, the key it's under; `rule`, the rule as written in `ascribe.toml`, `key = value`; and `line`, its line there, from 1. Of the rules a page is under, the strictest is named, and of rules as strict, the narrowest: the deepest folder, then the type, then `default`. A page as strict as its rule, or stricter, has `page`. |
 | `pages.*.markdown` | The address of the page's Markdown version, from the host's root, when the build publishes one (`[consumer] agents = true`). Absent otherwise. |
+| `pages.*.breadcrumbs` | The page's place in the site, from the top down to the page itself: one step for each folder of its route that is the route of a page the build publishes, then the page. Each step has `route`, from the host's root as the page keys have it, and `title`, that page's title. A folder with no page at its route isn't a step, and neither is a page with no title. The folders are the route's within the build, so under a base path the first step is the page at the base path. The content model has no navigation, so the steps are drawn from the route alone. |
 | `robots` | What the project says to crawlers. |
 | `robots.lines` | The project's `[crawlers] lines` (content-model contract §21), in order, each path in an `Allow` or `Disallow` line with the base path before it, so that each is from the host's root, and every other line as written. Lines before any `User-agent` line are for every crawler. Empty when the project has none. |
 

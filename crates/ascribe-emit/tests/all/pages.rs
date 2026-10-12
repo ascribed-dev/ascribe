@@ -60,6 +60,7 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "listing": "listed",
                     "listing_from": { "level": "default" },
                     "markdown": "/docs/index.md",
+                    "breadcrumbs": [{ "route": "/docs/", "title": "Home" }],
                 },
                 "/docs/faq/": {
                     "source": "faq.md",
@@ -68,6 +69,10 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "listing": "unquoted",
                     "listing_from": { "level": "page" },
                     "markdown": "/docs/faq.md",
+                    "breadcrumbs": [
+                        { "route": "/docs/", "title": "Home" },
+                        { "route": "/docs/faq/", "title": "FAQ" },
+                    ],
                 },
                 "/docs/guides/drafts/": {
                     "source": "guides/drafts.md",
@@ -76,6 +81,10 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "listing": "unlisted",
                     "listing_from": { "level": "page" },
                     "markdown": "/docs/guides/drafts.md",
+                    "breadcrumbs": [
+                        { "route": "/docs/", "title": "Home" },
+                        { "route": "/docs/guides/drafts/", "title": "Drafts" },
+                    ],
                 },
                 "/docs/guides/install/": {
                     "source": "guides/install.md",
@@ -85,6 +94,10 @@ fn each_page_has_a_record_keyed_by_its_route() {
                     "listing": "listed",
                     "listing_from": { "level": "default" },
                     "markdown": "/docs/guides/install.md",
+                    "breadcrumbs": [
+                        { "route": "/docs/", "title": "Home" },
+                        { "route": "/docs/guides/install/", "title": "Install the agent" },
+                    ],
                 },
             },
             "robots": {
@@ -113,6 +126,7 @@ fn without_a_site_or_agents_a_record_has_no_addresses_but_its_route() {
                     "title": "A",
                     "listing": "listed",
                     "listing_from": { "level": "default" },
+                    "breadcrumbs": [{ "route": "/a/", "title": "A" }],
                 },
             },
             "robots": { "lines": [] },
@@ -126,6 +140,106 @@ fn a_build_with_no_pages_has_an_empty_table() {
     assert_eq!(
         records(&project),
         json!({ "version": 1, "pages": {}, "robots": { "lines": [] } })
+    );
+}
+
+/// Each page's breadcrumbs, as `route title` lines, by route.
+fn steps(records: &Value) -> Vec<(String, Vec<String>)> {
+    let pages = records["pages"].as_object().expect("pages");
+    pages
+        .iter()
+        .map(|(route, page)| {
+            let steps = page["breadcrumbs"].as_array().expect("breadcrumbs");
+            let steps = steps
+                .iter()
+                .map(|step| {
+                    format!(
+                        "{} {}",
+                        step["route"].as_str().unwrap_or(""),
+                        step["title"].as_str().unwrap_or("")
+                    )
+                })
+                .collect();
+            (route.clone(), steps)
+        })
+        .collect()
+}
+
+#[test]
+fn breadcrumbs_are_the_pages_at_a_routes_folders() {
+    // A folder with an index page is a step, and one without isn't; a page
+    // with no title isn't either. The base path's page is the first step.
+    let model = "spec = \"0.1\"\n[consumer]\nbase-path = \"/docs/\"\n";
+    let files: &[(&str, &str)] = &[
+        ("index.md", "---\ntitle: Docs\n---\n"),
+        ("guides/index.md", "---\ntitle: Guides\n---\n"),
+        (
+            "guides/Setup/Install Agent.md",
+            "---\ntitle: Install\n---\n",
+        ),
+        ("reference/cli.md", "---\ntitle: CLI\n---\n"),
+        ("untitled/index.md", "Untitled.\n"),
+        ("untitled/page.md", "---\ntitle: Page\n---\n"),
+    ];
+    let project = memory_project(model, files);
+    assert_eq!(
+        steps(&records(&project)),
+        vec![
+            ("/docs/".to_owned(), vec!["/docs/ Docs".to_owned()]),
+            (
+                "/docs/guides/".to_owned(),
+                vec!["/docs/ Docs".to_owned(), "/docs/guides/ Guides".to_owned()],
+            ),
+            (
+                "/docs/guides/setup/install-agent/".to_owned(),
+                vec![
+                    "/docs/ Docs".to_owned(),
+                    "/docs/guides/ Guides".to_owned(),
+                    "/docs/guides/setup/install-agent/ Install".to_owned(),
+                ],
+            ),
+            (
+                "/docs/reference/cli/".to_owned(),
+                vec![
+                    "/docs/ Docs".to_owned(),
+                    "/docs/reference/cli/ CLI".to_owned()
+                ],
+            ),
+            ("/docs/untitled/".to_owned(), vec!["/docs/ Docs".to_owned()]),
+            (
+                "/docs/untitled/page/".to_owned(),
+                vec![
+                    "/docs/ Docs".to_owned(),
+                    "/docs/untitled/page/ Page".to_owned()
+                ],
+            ),
+        ]
+    );
+}
+
+#[test]
+fn breadcrumbs_at_the_root_and_without_a_trailing_slash() {
+    // At the host's root, the root page is the first step; without a
+    // trailing slash, each route has none.
+    let model = "spec = \"0.1\"\n[consumer]\ntrailing-slash = \"never\"\n";
+    let files: &[(&str, &str)] = &[
+        ("index.md", "---\ntitle: Home\n---\n"),
+        ("a/index.md", "---\ntitle: A\n---\n"),
+        ("a/b.md", "---\ntitle: B\n---\n"),
+    ];
+    assert_eq!(
+        steps(&records(&memory_project(model, files))),
+        vec![
+            ("/".to_owned(), vec!["/ Home".to_owned()]),
+            (
+                "/a".to_owned(),
+                vec!["/ Home".to_owned(), "/a A".to_owned()]
+            ),
+            (
+                "/a/b".to_owned(),
+                vec!["/ Home".to_owned(), "/a A".to_owned(), "/a/b B".to_owned()],
+            ),
+        ]
     );
 }
 
