@@ -1310,7 +1310,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/388"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Search and answers: checks before a deploy, and every page's record in the report"
     },
     {
@@ -1343,8 +1343,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/390"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Give the site a footer"
     },
     {
@@ -1360,8 +1363,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/391"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Add a credits page to the site"
     },
     {
@@ -1377,8 +1383,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/389"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Record each new decision as a file of its own, numbered by its issue"
     },
     {
@@ -1394,8 +1403,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/392"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Make the changelog page scannable: collapsed entries, grouped by area, with a contents list"
     },
     {
@@ -1408,9 +1420,26 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/386"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAFZ00",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/393"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "Search and answers: give Ascribe's site its Markdown versions' headers"
+    },
+    {
+      "content": {
+        "body": "`ascribe check docs` reports `page-size` (ASC149) advice on six pages, each over the delivery spec's limit of 50,000 characters of Markdown:\n\n- `content/contracts/content-model.md`\n- `content/contracts/json-reports.md`\n- `content/guides/editor.md`\n- `content/reference/cli.md`\n- `content/reference/content-model.md`\n- `content/reference/diagnostics.md`\n\nThese pages run from about 54,000 to 145,000 characters. Agents' fetch tools cut a page off at around 100,000 characters, so an agent reading three of them never sees their end.\n\nThis was split out of #366. That issue's \"done when\" asked for `ascribe check` on the docs to be clean, and #388 left these six for this issue (Kyle's call in the review). `page-size` can't be acknowledged, and raising the docs' limit would hide what the check is for.\n\n## What to build\n\nFor each page, either split it into pages that each answer one question, or move its long tables, lists, and code below the prose so an agent that stops early loses the least. Generated pages (`_generated/`) change at their generator, not by hand. Links, permalinks (`docs/ascribe.permalinks`), and the nav follow any page that moves.\n\n## Done when\n\n- `ascribe check docs` reports no `page-size` advice.\n- No permalink breaks, and every link into a page that was split still lands where it should.",
+        "number": 394,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs: six pages over the delivery spec's page size",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/394"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAGH6w",
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Search and answers: give Ascribe's site its Markdown versions' headers"
+      "title": "Docs: six pages over the delivery spec's page size"
     }
   ]
 }
