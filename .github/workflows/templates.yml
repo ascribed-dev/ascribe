@@ -1,0 +1,131 @@
+name: Templates
+
+# Follows The Good Docs Project's releases (project-docs/page-templates,
+# phase 6). Every week it reads their tags at gitlab.com/tgdp/templates, and
+# when the newest release is newer than the pin in
+# scripts/templates/upstream.toml, scripts/templates/update.ts moves the pin
+# and writes Ascribe's copies of their templates again. The job runs the tests
+# that read the copies, and opens one pull request saying what changed, or
+# updates the one that's open. When a rule no longer finds its place, the pull
+# request moves the pin, changes no template, and says which rule. Nothing
+# merges itself: their words ship in Ascribe's binary.
+#
+# Run by hand from Actions → Templates → Run workflow, with `from` set to an
+# older tag of theirs to try it: the branch's first commit sets the pin back to
+# that tag, and the second is the update, so the pull request's diff from
+# `main` is empty and its second commit is the one to read. Close that pull
+# request rather than merging it.
+#
+# The job's own token opens the pull request, so the pull request's checks
+# don't start by themselves; its description says how to start them. It runs
+# as `github-actions[bot]`, which the repository's setting "Allow GitHub
+# Actions to create and approve pull requests" lets open one
+# (project-docs/outside.md).
+on:
+  schedule:
+    - cron: "37 7 * * 1" # Mondays, 07:37 UTC
+  workflow_dispatch:
+    inputs:
+      from:
+        description: A tag of theirs to set the pin back to first, such as v1.5.0, to try the update; empty for the pin as it is
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# One run at a time, so two never push the branch at once.
+concurrency:
+  group: templates
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  update:
+    name: take their newest release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BRANCH: templates/update
+      BOT: github-actions[bot]
+      FROM: ${{ inputs.from }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: check
+          save-if: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile
+      - name: Start the branch
+        run: |
+          git config user.name "$BOT"
+          git config user.email "41898282+$BOT@users.noreply.github.com"
+          git switch --quiet --create "$BRANCH"
+          if [ -n "$FROM" ]; then
+            node scripts/templates/update.ts --pin "$FROM"
+            git add --all scripts/templates/upstream.toml crates/ascribe-templates/set examples/templates
+            git commit --quiet --message "Set the templates' pin back to $FROM, to try the update"
+          fi
+      - name: Take the newest release
+        id: update
+        run: |
+          node scripts/templates/update.ts --body "$RUNNER_TEMP/body.md" > "$RUNNER_TEMP/outcome.json"
+          cat "$RUNNER_TEMP/outcome.json"
+          echo "status=$(jq --raw-output .status "$RUNNER_TEMP/outcome.json")" >> "$GITHUB_OUTPUT"
+      - name: Run the tests that read the copies
+        if: steps.update.outputs.status == 'updated'
+        run: |
+          if {
+            node scripts/templates/convert.ts --check &&
+            pnpm exec vitest run scripts/templates &&
+            cargo test --locked -p ascribe-templates &&
+            cargo test --locked -p ascribe-cli --test all templates
+          } > "$RUNNER_TEMP/tests.txt" 2>&1; then
+            printf '\nThe tests that read the copies pass: `convert.ts --check`, the script'"'"'s tests, `ascribe-templates`'"'"' tests, and `ascribe-cli`'"'"'s tests of templates and of `examples/templates`.\n' >> "$RUNNER_TEMP/body.md"
+          else
+            printf '\n### The tests fail\n\nFix them on this branch before merging. The end of their output:\n\n```text\n' >> "$RUNNER_TEMP/body.md"
+            tail -n 100 "$RUNNER_TEMP/tests.txt" >> "$RUNNER_TEMP/body.md"
+            printf '```\n' >> "$RUNNER_TEMP/body.md"
+          fi
+      - name: Open or update the pull request
+        if: steps.update.outputs.status != 'current'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title=$(jq --raw-output .title "$RUNNER_TEMP/outcome.json")
+          {
+            cat "$RUNNER_TEMP/body.md"
+            if [ -n "$FROM" ]; then
+              printf '\nThis is a trial, run by hand from %s: the first commit sets the pin back, and the second is the update. Read the second commit, then close this pull request.\n' "$FROM"
+            fi
+            printf '\n---\n\nThe [Templates workflow](%s) opened this with its own token, so its checks don'"'"'t start by themselves: close this pull request and reopen it to start them, or push a commit to it. While it is open, each weekly run updates it, until someone else pushes to it.\n' \
+              "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > "$RUNNER_TEMP/description.md"
+          # The open pull request from this repository's own branch, not a fork's.
+          open=$(gh pr list --head "$BRANCH" --state open --json number,isCrossRepository \
+            --jq 'map(select(.isCrossRepository | not)) | .[0].number // empty')
+          if [ -n "$open" ] && git fetch --quiet --depth=1 origin "$BRANCH" &&
+            [ "$(git log -1 --format=%an FETCH_HEAD)" != "$BOT" ]; then
+            # Someone pushed to it, to fix a rule or a test: leave it alone.
+            echo "$BRANCH has commits from someone else, so it's left as it is." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git add --all scripts/templates/upstream.toml crates/ascribe-templates/set examples/templates
+          git commit --quiet --message "$title"
+          git push --quiet --force origin "$BRANCH"
+          if [ -n "$open" ]; then
+            gh pr edit "$open" --title "$title" --body-file "$RUNNER_TEMP/description.md"
+          else
+            gh pr create --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/description.md"
+          fi
+          cat "$RUNNER_TEMP/description.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Say nothing's newer
+        if: steps.update.outputs.status == 'current'
+        run: echo "Nothing newer than $(jq --raw-output .from "$RUNNER_TEMP/outcome.json") in their repository." >> "$GITHUB_STEP_SUMMARY"
