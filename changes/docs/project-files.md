@@ -1,1 +1,0 @@
-- **A page lists every file Ascribe writes into a project.** [Files Ascribe writes](docs/content/reference/project-files.md) says, in one table, which command writes each file Ascribe puts in a project, from `.ascribe/` to `ascribe.lock`, `ascribe.permalinks`, and the agents' files, and whether to commit it or leave it to `.gitignore`.

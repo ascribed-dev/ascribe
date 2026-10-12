@@ -56,7 +56,7 @@ available = "ascribe unreleased"
 [phrases]
 # The latest release: the workspace version in Cargo.toml, and every
 # package.json under packages/.
-version = "0.2.0"
+version = "0.3.0"
 # `engines.node` in package.json. scripts/docs-site/facts.test.ts checks it,
 # and every other file that names the Node version.
 node = "24"
