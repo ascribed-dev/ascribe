@@ -118,17 +118,6 @@ This GitHub Actions job writes the report on each pull request, uploads it, and 
 
 This repository runs this job on these docs, when a pull request changes them or the code their examples come from, and the same job on `examples/quill`, in [`.github/workflows/review.yml`]({repo}/blob/main/.github/workflows/review.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
 
-## When something's missing
-
-- **No pull request found.** Review shows the changes against the base you picked, and no comments. Review finds the pull request whose head is the branch you're on, in the repository the branch is pushed to (or in a remote named `upstream`, for a fork). Check that the branch is pushed and tracks its remote branch (`git status` names it), that the pull request is open, and then choose **Ascribe: Refresh Comments**, or **Refresh** in the site preview.
-- **Not signed in.** The page preview says "Showing changes only. Comments need GitHub." with **Sign in to see comments** and, when `gh` is signed in, **Use GitHub CLI**. When the remote isn't on `github.com` or the server `github-enterprise.uri` names, it says so instead of offering a sign-in. The site preview says to run `gh auth login` (with `--hostname` for GitHub Enterprise Server), then **Refresh**.
-- **Comments are off in the site preview.** When `astro dev` listens on the network (`--host`), or your Vite config lets other pages talk to the dev server (`server.cors: true`, `server.allowedHosts: true`, or `legacy.skipWebSocketTokenCheck`), the panel shows the changes only and names the setting. Anyone who could reach the dev server could otherwise comment as you.
-- **Nothing is marked in the site preview.** The marks are placed by the `data-ascribe-source` attribute on each block. If your layout or a component rebuilds the content without it, the panel says the blocks carry no source anchors, and lists the page's changes and threads instead, each with **Open source**. A route that isn't an Ascribe page says so, and lists the changed pages.
-- **The project has errors.** Review still compares the pages, but a page with an error can render oddly, and that oddity isn't the change. The page preview says how many errors the project has, with **Show problems**; the site preview, the HTML report, and `ascribe diff` (on standard error) say so too, and `ascribe check` lists them. The numbers can differ: the page preview counts what VS Code's Problems panel shows, which checks pages for the editor's build only, while the others count what `ascribe check` finds for the builds compared.
-- **A thread is detached.** Its lines are no longer on the page: the text was deleted, the block moved to another page, or the thread is on a whole file. It's listed above the page with the text it was on, where you can reply to it or resolve it. **View on GitHub** opens it in the pull request.
-- **Your checkout is behind or ahead of the pull request.** Comments are placed on the pull request's latest commit. Behind, some comments may be on lines you don't have yet, and the page preview offers **Pull**. Ahead, with commits you haven't pushed, you can comment only on lines that are on GitHub: a block that changed locally says to push first, and the page preview offers **Push**. In VS Code, a block with unsaved changes says to save the file first.
-- **Review won't start.** Review needs `git` on the path, and the project in a git repository. A base that doesn't exist, or a shallow clone without the merge base, stops it with a message that says which. In VS Code, the project's language server must be running: open one of its pages first.
-
 ## Privacy and security
 
 - **Review is the only time Ascribe contacts GitHub,** and only once you start it. Nothing runs `git` for a comparison, and nothing talks to GitHub, before you choose **Start Review** in VS Code or open the **Ascribe review** app in the site preview. After that, in the same workspace, VS Code asks GitHub whether a branch has a pull request when you open one of its pages, to offer review. The `ascribe` binary itself never uses the network: it runs `git` on your machine.
@@ -136,3 +125,9 @@ This repository runs this job on these docs, when a pull request changes them or
 - **No token reaches a page.** The previews draw the comments but never talk to GitHub: in VS Code the extension makes every request, and in the site preview the dev server does, over Vite's own connection, which only pages from the dev server can open.
 - **Pages and comments can't run code.** The previews and the report take scripts, event handlers, and `javascript:` links out of a page's HTML. Comment bodies are rendered from a safe subset of Markdown: no raw HTML, and an image shows as a link, so nothing loads until you click.
 - **What's sent to GitHub** is what you write, and the file and lines it's on. A comment held in the summary also quotes the block's text and carries a hidden marker naming its block, `<!-- ascribe:anchor guides/install.md:12-14 build=site -->`, so that the previews can put it back on the block.
+
+## See also
+
+- [Troubleshooting review](review/troubleshooting.md): when review shows no pull request, no comments, or no marks, or won't start.
+- [Review in the site preview](../reference/astro.md#review-in-the-site-preview): the site's side of review.
+- [`ascribe diff`](../reference/cli/diff.md#the-html-report): the HTML report, in full.
