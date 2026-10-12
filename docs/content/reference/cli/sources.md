@@ -1,9 +1,9 @@
 ---
-title: "`ascribe sources`, `permalinks`, and `vale`"
-description: "Fetch and update source repositories, keep the list of permalinks, and eject Vale's configuration."
+title: "`ascribe sources`, `permalinks`, `templates`, and `vale`"
+description: "Fetch and update source repositories, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
 ---
 
-The commands that look after what a project keeps beside its pages: its source repositories, its permalinks, and Vale's configuration. The options every command accepts are in the [command reference](../cli.md#options-every-command-accepts).
+The commands that look after what a project keeps beside its pages: its source repositories, its permalinks, its page templates, and Vale's configuration. The options every command accepts are in the [command reference](../cli.md#options-every-command-accepts).
 
 ## `ascribe sources`
 @id {permalink=true}: cli-sources
@@ -127,6 +127,66 @@ It retires a name given only when the content no longer declares it and `ascribe
 @include: ../../_generated/cli-permalinks-retire-options.md
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `retired` (the names, in order), `reason`, `to` (or null), and `list_changed` (whether `ascribe.permalinks` was written). It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be written.
+
+## `ascribe templates`
+@id {permalink=true}: cli-templates
+@available: next
+
+Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages; [Page templates](../../guides/templates.md) says where they come from, and how to use them.
+
+The set has one template for now, the how-to. A page is started by copying the template's file into the type's folder, and a project's first `ascribe.toml` is written by hand: `eject` adds to a project, and never starts one.
+
+### `ascribe templates list`
+@id {permalink=true}: cli-templates-list
+
+Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. It reads only what the binary carries, so it works anywhere, in a project or not. It takes no options, and exits with `0`.
+
+### `ascribe templates eject`
+@id {permalink=true}: cli-templates-eject
+
+Writes each template named, with its guide, into the project, and adds its type to `ascribe.toml`. With no name, it takes every template of the set.
+
+```sh
+ascribe templates eject how-to
+```
+
+@include: ../../_generated/cli-templates-eject-options.md
+
+For each template, it writes the template and its guide into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output directory, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are. The paths in it are from the folder `ascribe.toml` is in, whatever folder `--to` was given from:
+
+```toml
+[types.how-to]
+files = ["how-to/**"]
+template = "templates/how-to.md"
+guide = ["templates/how-to.guide.md"]
+
+[types.how-to.frontmatter]
+title = "string"
+description = "string"
+```
+
+The type covers the pages in a folder of its name in the content root, and its frontmatter has the fields the template's has, each a string a page must have. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, and the project's other pages keep it:
+
+```toml
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+```
+
+Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
+
+It checks everything before it writes anything. A type `ascribe.toml` declares already, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so and what to write by hand: a file with the line `spec = "0.1"`, beside the folder the pages go in.
+
+It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; and how to start a page.
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, and `guide`; `refused`, each with `name`, `reason` (`unknown`, `declared`, or `file_in_the_way`), `path` (the file in the way, or null), and `message`; and `page_declared`, whether `[types.page]` was written out. When `refused` isn't empty, `written` and `added` are.
+
+| Code | Meaning |
+|---|---|
+| `0` | Every template named was written, and its type added |
+| `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, or the types can't be added to `ascribe.toml`. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## `ascribe vale`
 @id {permalink=true}: cli-vale

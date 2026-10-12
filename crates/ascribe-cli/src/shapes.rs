@@ -103,6 +103,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::RetireAnswer>(),
     },
     Shape {
+        file: "templates-eject",
+        title: "TemplatesEjectReport",
+        written_by: "`ascribe templates eject --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_templates::EjectAnswer>(),
+    },
+    Shape {
         file: "fmt",
         title: "FmtReport",
         written_by: "`ascribe fmt --format json`",

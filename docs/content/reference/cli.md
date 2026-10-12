@@ -18,7 +18,7 @@ Each command's options, output, and exit codes are on the page for its kind of w
 - [`ascribe diff`, `drift`, and `report`](cli/diff.md): compare a project with another revision, find what drifted from its sources, and report on its health.
 - [`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render`](cli/questions.md): answer questions about a project, and rename what pages link to.
 - [`ascribe agents`, `mcp`, and `lsp`](cli/agents.md): set a repository up for agents, and serve a project to agents and editors.
-- [`ascribe sources`, `permalinks`, and `vale`](cli/sources.md): look after source repositories, permalinks, and Vale's configuration.
+- [`ascribe sources`, `permalinks`, `templates`, and `vale`](cli/sources.md): look after source repositories, permalinks, page templates, and Vale's configuration.
 
 ## Options every command accepts
 

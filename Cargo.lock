@@ -114,6 +114,7 @@ dependencies = [
  "ascribe-query",
  "ascribe-resolve",
  "ascribe-sources",
+ "ascribe-templates",
  "clap",
  "insta",
  "schemars",
@@ -349,9 +350,15 @@ dependencies = [
  "ascribe-core",
  "ascribe-fmt",
  "ascribe-model",
+ "ascribe-resolve",
  "ascribe-syntax",
+ "schemars",
  "serde",
+ "serde_yaml_ng",
+ "tempfile",
+ "thiserror",
  "toml",
+ "toml_edit",
 ]
 
 [[package]]

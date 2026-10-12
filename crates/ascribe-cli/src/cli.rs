@@ -169,6 +169,10 @@ pub enum Command {
     /// Copy code from sources in other repositories, and move their pins.
     #[command(after_help = docs_link!("cli-sources"))]
     Sources(commands::sources::Args),
+    /// Write a page template, and its guide, into the project, and declare
+    /// its type; or list the templates Ascribe carries.
+    #[command(after_help = docs_link!("cli-templates"))]
+    Templates(commands::templates::Args),
     /// Set up Vale, which checks the prose: write a preset out as the
     /// project's own configuration.
     #[command(after_help = docs_link!("cli-vale"))]
@@ -196,6 +200,7 @@ impl Command {
             Command::Render(args) => commands::render::run(global, args),
             Command::Report(args) => commands::report::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),
+            Command::Templates(args) => commands::templates::run(global, args),
             Command::Vale(args) => commands::vale::run(global, args),
         }
     }

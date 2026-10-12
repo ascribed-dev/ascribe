@@ -1,6 +1,6 @@
 ---
-title: "JSON reports: `ascribe sources` and `ascribe permalinks`"
-description: "The JSON Schemas of what ascribe sources and ascribe permalinks write with --format json."
+title: "JSON reports: `ascribe sources`, `ascribe permalinks`, and `ascribe templates`"
+description: "The JSON Schemas of what ascribe sources, ascribe permalinks, and ascribe templates write with --format json."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
@@ -34,3 +34,8 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 @available: ascribe 0.3.0
 
 @include: ../../_generated/json-permalinks-retire.md
+
+## `ascribe templates eject`
+@available: next
+
+@include: ../../_generated/json-templates-eject.md
