@@ -1,4 +1,4 @@
-Generated from [The Good Docs Project's guide](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/concept/guide_concept.md), in their repository on GitLab at the tag v1.6.0, under the MIT No Attribution License.
+Generated from [The Good Docs Project's guide](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/concept/guide_concept.md), in their repository on GitLab at the tag v1.5.0, under the MIT No Attribution License.
 
 # Concept template guide
 
@@ -129,10 +129,10 @@ In addition, you can describe the alternatives.
 
 ### About the "Use cases" section
 
-The use cases section is a good place to apply the StoryBrand framework (referred in the [Resources document](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/concept/resources_concept.md)) to engage readers and add more storytelling elements.
+The use cases section is a good place to apply the StoryBrand framework (referred in the [Resources document](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/concept/resources_concept.md)) to engage readers and add more storytelling elements.
 Storytelling helps engage users and memorize concepts by association with the story.
 Research in neuroscience has revealed that narratives, such as those applied in the StoryBrand framework, engage multiple areas of the brain and the distinction between reading and real-life gets blurred.
-Read more regarding that in the [Resources document](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/concept/resources_concept.md).
+Read more regarding that in the [Resources document](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/concept/resources_concept.md).
 
 The Storybrand technique is a specific approach to storytelling that involves framing the story in terms of a protagonist who has a problem and needs a guide to help them solve it.
 The concept or solution being presented is positioned as the guide that can help the protagonist overcome their challenges and achieve their goals.
@@ -229,7 +229,7 @@ When using them:
 * **When to use metaphors and analogies**: Use them when they enhance understanding, align with your audience's background, and bring clarity and context.
 * **When to be cautious**: Exercise caution when there's a potential lack of understanding due to cultural, age, or background differences or when they might complicate the concept.
 
-A List Apart style guide (referred in the [Resources document](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/concept/resources_concept.md)) advises avoiding extended metaphors if possible, so think case by case whether your audience will understand them and if it adds anything to their understanding.
+A List Apart style guide (referred in the [Resources document](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/concept/resources_concept.md)) advises avoiding extended metaphors if possible, so think case by case whether your audience will understand them and if it adds anything to their understanding.
 
 Best practices for metaphors and analogies:
 

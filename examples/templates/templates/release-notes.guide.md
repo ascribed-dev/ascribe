@@ -1,4 +1,4 @@
-Generated from [The Good Docs Project's guide](https://gitlab.com/tgdp/templates/-/blob/v1.6.0/release-notes/guide_release-notes.md), in their repository on GitLab at the tag v1.6.0, under the MIT No Attribution License.
+Generated from [The Good Docs Project's guide](https://gitlab.com/tgdp/templates/-/blob/v1.5.0/release-notes/guide_release-notes.md), in their repository on GitLab at the tag v1.5.0, under the MIT No Attribution License.
 
 # Release Notes Template Guide
 
