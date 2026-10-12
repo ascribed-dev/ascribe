@@ -39,7 +39,7 @@
 //     review: "docs",
 //   })
 //   ascribeCollection({ schema, name: "docs" })
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,6 +54,7 @@ import {
   filesMiddleware,
   folderUnder,
 } from "./files.js";
+import { headersFor, headersOutcome, mergeRules, readHeaders } from "./headers.js";
 import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
 import {
   consumerMismatches,
@@ -181,7 +182,8 @@ function fail(problems: string[], what: string): void {
  * Runs `ascribe build` for each project, checks the site's routing, adds the markdown plugin, adds a
  * page for each permalink's address, and serves published files, and, with `[consumer] agents = true`,
  * `llms.txt` and each page's Markdown, each at its project's base path; and writes the site's one
- * sitemap and `robots.txt` from every project's page records.
+ * sitemap and `robots.txt` from every project's page records, and, with `[consumer] headers =
+ * "netlify"`, its `_headers` from their headers lists.
  */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   /** With `projects`; otherwise the one entry has no name a collection gives. */
@@ -448,8 +450,14 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                   for (const entry of entries) {
                     const base = entry.project.consumer.basePath;
                     server.middlewares.use(filesMiddleware(entry.siteRoot, base));
-                    if (entry.agentsRoot !== undefined)
-                      server.middlewares.use(agentsMiddleware(entry.agentsRoot, base));
+                    if (entry.agentsRoot !== undefined) {
+                      const siteRoot = entry.siteRoot;
+                      server.middlewares.use(
+                        agentsMiddleware(entry.agentsRoot, base, (pathname) =>
+                          headersFor(siteRoot, pathname),
+                        ),
+                      );
+                    }
                   }
                   // The sitemap and robots.txt, as the build would write them now.
                   server.middlewares.use(
@@ -562,6 +570,23 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         if (files.robots !== undefined) {
           await writeFile(path.join(out, "robots.txt"), files.robots);
           logger.info("wrote /robots.txt");
+        }
+        // The host's headers, from the projects that name its format.
+        const ownHeaders = path.join(publicDir, "_headers");
+        const headers = headersOutcome({
+          rules: mergeRules(
+            entries
+              .filter((entry) => entry.project.consumer.headers === "netlify")
+              .map((entry) => readHeaders(entry.siteRoot) ?? []),
+          ),
+          base,
+          own: existsSync(ownHeaders) ? readFileSync(ownHeaders, "utf8") : undefined,
+        });
+        if (headers.kind === "fail") throw new Error(`@ascribed/astro: ${headers.text}`);
+        if (headers.kind === "note") logger.info(headers.text);
+        if (headers.kind === "write") {
+          await writeFile(path.join(out, "_headers"), headers.text);
+          logger.info("wrote /_headers");
         }
         // Entries of one project publish at one base path: the first entry's copies go last, so they win.
         for (const entry of [...entries].reverse()) {
