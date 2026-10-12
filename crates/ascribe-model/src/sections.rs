@@ -10,7 +10,7 @@ use ascribe_core::{
 };
 use toml::de::DeValue;
 
-use crate::loader::{Loader, NameRule};
+use crate::loader::{Loader, NameRule, is_absolute};
 use crate::model::*;
 use crate::names::{is_version, list};
 use crate::pattern::{Pattern, PatternError};
@@ -117,10 +117,21 @@ impl Loader<'_> {
                 let Some(tt) = self.as_table(&path, item) else {
                     continue;
                 };
-                self.check_keys(&path, tt, &["files", "default", "frontmatter"]);
+                self.check_keys(
+                    &path,
+                    tt,
+                    &["files", "default", "frontmatter", "template", "guide"],
+                );
                 let files = tt
                     .get("files")
                     .map(|f| self.patterns(&format!("{path}.files"), f))
+                    .unwrap_or_default();
+                let template = tt
+                    .get("template")
+                    .and_then(|t| self.type_file(&format!("{path}.template"), t));
+                let guide = tt
+                    .get("guide")
+                    .map(|g| self.type_files(&format!("{path}.guide"), g))
                     .unwrap_or_default();
                 let default_v = tt.get("default");
                 let default = default_v
@@ -192,6 +203,8 @@ impl Loader<'_> {
                         owner: SchemaOwner::Type(name.to_owned()),
                         fields,
                     },
+                    template,
+                    guide,
                 });
             }
         }
@@ -213,9 +226,47 @@ impl Loader<'_> {
                         description: None,
                     }],
                 },
+                template: None,
+                guide: Vec::new(),
             });
         }
         out
+    }
+
+    /// A type's `template`, or one entry of its `guide`: a path from the
+    /// folder `ascribe.toml` is in. Where it leads is checked with the
+    /// project's files (`TypeFile`).
+    fn type_file(&mut self, path: &str, v: &V<'_>) -> Option<TypeFile> {
+        let text = self.string(path, v, true)?;
+        self.relative(path, text, sp(v))
+    }
+
+    /// A type's `guide`: an array of paths, as `files` is.
+    fn type_files(&mut self, path: &str, v: &V<'_>) -> Vec<TypeFile> {
+        let Some(items) = self.strings(path, v) else {
+            return Vec::new();
+        };
+        let key = format!("{path}[]");
+        items
+            .into_iter()
+            .filter_map(|(text, span)| {
+                if text.trim().is_empty() {
+                    let issue = self.issue(diagnostics::MODEL_EMPTY_TEXT, span);
+                    self.push(issue.with_arg("key", key.as_str()));
+                    return None;
+                }
+                self.relative(&key, text, span)
+            })
+            .collect()
+    }
+
+    fn relative(&mut self, key: &str, text: String, span: Span) -> Option<TypeFile> {
+        if is_absolute(&text) {
+            let issue = self.issue(diagnostics::MODEL_PATH_ABSOLUTE, span);
+            self.push(issue.with_arg("key", key));
+            return None;
+        }
+        Some(TypeFile { path: text, span })
     }
 
     /// Every page type declares `title` as a required string.

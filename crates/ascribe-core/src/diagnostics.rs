@@ -614,6 +614,12 @@ pub const DESCRIPTION_DUPLICATE: DiagnosticSlug = DiagnosticSlug("description-du
 /// `ASC192`, advice, page level: a content check (area `pages`).
 pub const TITLE_HEADING_DIFFERS: DiagnosticSlug = DiagnosticSlug("title-heading-differs");
 
+/// `ASC193`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_TYPE_FILE: DiagnosticSlug = DiagnosticSlug("model-type-file");
+
+/// `ASC194`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_TYPE_TEMPLATE: DiagnosticSlug = DiagnosticSlug("model-type-template");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -808,6 +814,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     CRAWLERS_DISALLOWED,
     DESCRIPTION_DUPLICATE,
     TITLE_HEADING_DIFFERS,
+    MODEL_TYPE_FILE,
+    MODEL_TYPE_TEMPLATE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

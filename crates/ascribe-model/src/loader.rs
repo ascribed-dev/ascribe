@@ -1371,7 +1371,7 @@ pub(crate) fn is_branch_name(branch: &str) -> bool {
         && !branch.split('/').any(|s| s.starts_with('.'))
 }
 
-fn is_absolute(s: &str) -> bool {
+pub(crate) fn is_absolute(s: &str) -> bool {
     let b = s.as_bytes();
     s.starts_with('/')
         || s.starts_with('\\')

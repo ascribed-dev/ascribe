@@ -1,0 +1,11 @@
+description: >-
+  A template is read and parsed when the content model loads, so one that
+  isn't a page is reported once, at the type's `template`, and not on every
+  page made from it: here a container that's never closed, and frontmatter
+  that isn't valid YAML.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-type-template, file: ascribe.toml, line: 8}
+  - {slug: model-type-template, file: ascribe.toml, line: 15}

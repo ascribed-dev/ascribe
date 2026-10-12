@@ -94,8 +94,9 @@ pub trait FileSystem {
     fn probe(&self, project_path: &RelPath) -> Probe;
 
     /// The bytes of a file at a path relative to the project root: a code
-    /// file a snippet reads through a source (SPEC §4.8). The path may start
-    /// with `..`; the source has already decided it may be read.
+    /// file a snippet reads through a source (SPEC §4.8), `ascribe.lock`, or
+    /// a content type's template. The path may start with `..`; the caller
+    /// has already decided it may be read.
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>>;
 
     /// Where a file or folder is once every symbolic link on the way to it is

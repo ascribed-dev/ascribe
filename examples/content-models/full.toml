@@ -32,6 +32,10 @@ related = { type = "list(object)?", fields = { title = "string", url = "string" 
 
 [types.reference]
 files = ["reference/**", "api/**/*.md"]
+# The page a reference page starts from, and what to read before writing
+# one, in order: files from this folder, outside the content root.
+template = "templates/reference.md"
+guide = ["templates/reference.guide.md"]
 
 [types.reference.frontmatter]
 # Code spans in the title, as in "`ascribe.toml` reference".

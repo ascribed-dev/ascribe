@@ -119,6 +119,15 @@ pub struct ModelType {
     pub files: Vec<String>,
     /// Whether it applies to pages no type's `files` match.
     pub default: bool,
+    /// The page a page of the type starts from, from the folder
+    /// `ascribe.toml` is in; absent when the type names none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub template: Option<String>,
+    /// What to read before writing a page of the type, in the order to read
+    /// it, from the folder `ascribe.toml` is in; absent when the type names
+    /// none.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub guide: Vec<String>,
     /// Its frontmatter fields, in declaration order.
     pub fields: Vec<ModelField>,
 }
@@ -372,6 +381,8 @@ fn types(model: &ContentModel) -> Vec<ModelType> {
             name: t.name.clone(),
             files: t.files.iter().map(|p| p.as_str().to_owned()).collect(),
             default: t.default,
+            template: t.template.as_ref().map(|f| f.path.clone()),
+            guide: t.guide.iter().map(|f| f.path.clone()).collect(),
             fields: t.frontmatter.fields.iter().map(field).collect(),
         })
         .collect()
@@ -667,6 +678,13 @@ fn type_line(t: &ModelType) -> String {
     if !t.files.is_empty() {
         let files: Vec<String> = t.files.iter().map(|f| format!("`{f}`")).collect();
         notes.push(format!("files {}", files.join(", ")));
+    }
+    if let Some(template) = &t.template {
+        notes.push(format!("template `{template}`"));
+    }
+    if !t.guide.is_empty() {
+        let guide: Vec<String> = t.guide.iter().map(|g| format!("`{g}`")).collect();
+        notes.push(format!("guide {}", guide.join(", ")));
     }
     if !notes.is_empty() {
         text.push_str(&format!(" ({})", notes.join("; ")));

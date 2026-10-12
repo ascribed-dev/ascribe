@@ -739,6 +739,22 @@ fn cases() -> Vec<Case> {
             Some("off-rule"),
             "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Nope\"] #!\n",
         ),
+        // A type's `guide` is always a list, as `files` is.
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\nguide = \"templates/how-to.guide.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-path-absolute",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\ntemplate = \"/templates/how-to.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-empty-text",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\nguide = [\"\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
     ]
 }
 
@@ -805,6 +821,10 @@ fn every_registered_rule_is_covered() {
             "model-glossary-link",
             "model-source-path-missing",
             "model-source-outside-repository",
+            // Checked with the project's files, where they're read:
+            // crates/ascribe-check/tests/all/type_files.rs.
+            "model-type-file",
+            "model-type-template",
         ]
         .map(String::from),
     );

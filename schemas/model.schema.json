@@ -336,9 +336,23 @@
           },
           "type": "array"
         },
+        "guide": {
+          "description": "What to read before writing a page of the type, in the order to read\nit, from the folder `ascribe.toml` is in; absent when the type names\nnone.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "name": {
           "description": "Its name.",
           "type": "string"
+        },
+        "template": {
+          "description": "The page a page of the type starts from, from the folder\n`ascribe.toml` is in; absent when the type names none.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
