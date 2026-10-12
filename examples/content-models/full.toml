@@ -32,6 +32,8 @@ related = { type = "list(object)?", fields = { title = "string", url = "string" 
 
 [types.reference]
 files = ["reference/**", "api/**/*.md"]
+# What a reference page is for, which the rules for agents say.
+purpose = "What each command, option, and setting does, to look up."
 # The page a reference page starts from, and what to read before writing
 # one, in order: files from this folder, outside the content root.
 template = "templates/reference.md"

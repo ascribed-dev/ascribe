@@ -120,12 +120,22 @@ impl Loader<'_> {
                 self.check_keys(
                     &path,
                     tt,
-                    &["files", "default", "frontmatter", "template", "guide"],
+                    &[
+                        "files",
+                        "default",
+                        "frontmatter",
+                        "purpose",
+                        "template",
+                        "guide",
+                    ],
                 );
                 let files = tt
                     .get("files")
                     .map(|f| self.patterns(&format!("{path}.files"), f))
                     .unwrap_or_default();
+                let purpose = tt
+                    .get("purpose")
+                    .and_then(|p| self.string(&format!("{path}.purpose"), p, true));
                 let template = tt
                     .get("template")
                     .and_then(|t| self.type_file(&format!("{path}.template"), t));
@@ -203,6 +213,7 @@ impl Loader<'_> {
                         owner: SchemaOwner::Type(name.to_owned()),
                         fields,
                     },
+                    purpose,
                     template,
                     guide,
                 });
@@ -226,6 +237,7 @@ impl Loader<'_> {
                         description: None,
                     }],
                 },
+                purpose: None,
                 template: None,
                 guide: Vec::new(),
             });
