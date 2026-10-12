@@ -1,6 +1,6 @@
 # site/
 
-Ascribe's website: a landing page at the root and Why Ascribe at `/why/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md` with the entries in `../changes/` not yet gathered into it, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+Ascribe's website: a landing page at the root, Why Ascribe at `/why/`, and Credits at `/credits/`, from `home/`, the user docs, `../docs`, under `/docs/`, and the changelog, `../CHANGELOG.md` with the entries in `../changes/` not yet gathered into it, at `/changelog/`. Plain Astro with `@ascribed/astro`, building both projects into one site, and no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/go/getting-started/) and [Astro](https://ascribed-dev.com/docs/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
 astro.config.mjs            ascribe({ projects: [docs, home, demo] }); routing as in each project's [consumer]; the sitemap's exclusions
@@ -96,7 +96,9 @@ For the content model to give a site its navigation, it would need:
 
 ## The site's own pages
 
-`home/` is a second Ascribe project, at the site's root: one page type, a hero widget (`@hero-banner {status=early}:` around the page's heading and first paragraph, drawn by `src/styles/site.css` with no script), `content/index.md`, the landing page, and `content/why.md`, Why Ascribe, whose hero has no status. It copies the docs' release tables and `[sources.code]`, so a claim there can be marked as the docs mark one; `scripts/docs-site/facts.test.ts` fails until the copies agree. It publishes nothing for agents.
+`home/` is a second Ascribe project, at the site's root: one page type, a hero widget (`@hero-banner {status=early}:` around the page's heading and first paragraph, drawn by `src/styles/site.css` with no script), `content/index.md`, the landing page, `content/why.md`, Why Ascribe, and `content/credits.md`, Credits, whose heroes have no status. It copies the docs' release tables and `[sources.code]`, so a claim there can be marked as the docs mark one; `scripts/docs-site/facts.test.ts` fails until the copies agree. It publishes nothing for agents.
+
+Credits names who builds Ascribe, the projects it's built on, and where its ideas came from. `scripts/docs-site/credits.test.ts`, in the repository's tests, holds it to what it's about: each project it names as a dependency is one, in a `Cargo.toml` or a `package.json`, so a dependency that's removed fails until the page follows; comrak's release, the `comrak-release` phrase, is the one in `../crates/comrak-ascribe/FORK.md`; and each link to a file of the repository on GitHub, which `test/links.test.ts` doesn't follow, leads to the file and the heading. Who builds it nothing can test, so the maintainer reads the page when it changes.
 
 A link into the docs is to a permalink, written `{site}/go/<name>/` with the `site` phrase: a link that starts with `/` names a file of `home/` itself, which `ascribe check` would report. `test/links.test.ts` follows it in the built site, and `test/projects.test.ts` runs `ascribe permalinks verify` on its name.
 

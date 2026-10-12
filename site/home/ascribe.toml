@@ -75,6 +75,10 @@ version = "0.2.0"
 # link that starts with `/` names a file in this one. Write a docs page by its
 # permalink, `{site}/go/<name>/`; the site's tests check each name.
 site = "https://ascribed-dev.com"
+# The release of comrak the parser is forked from, for the credits page. Its
+# home is ../../crates/comrak-ascribe/FORK.md, which a page can't read prose
+# from: scripts/docs-site/credits.test.ts fails until the two agree.
+comrak-release = "v0.55.0"
 
 [sources.code]
 path = "../.."                            # relative to the folder ascribe.toml is in

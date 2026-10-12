@@ -1,0 +1,1 @@
+- **The site has a credits page.** [Credits](https://ascribed-dev.com/credits/) says who builds Ascribe, the projects it's built on, from the comrak fork its parser is to the programs its reports run, and where its ideas came from, each linked to where Ascribe says so. The landing page links to it.

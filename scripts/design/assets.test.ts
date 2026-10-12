@@ -125,6 +125,7 @@ test("every source is read", () => {
     "design/mark.svg",
     "design/tagline.svg",
     "design/wordmark.svg",
+    "site/home/content/credits.md#heading",
     "site/home/content/index.md#heading",
     "site/home/content/why.md#heading",
   ]);
@@ -132,7 +133,7 @@ test("every source is read", () => {
 
 describe("the social cards", () => {
   test("are one for each page of home/ and the changelog", () => {
-    expect(CARDS.map((c) => c.name)).toEqual(["index", "why", "changelog"]);
+    expect(CARDS.map((c) => c.name)).toEqual(["credits", "index", "why", "changelog"]);
   });
 
   test("take a page's level-1 heading, so the rest of the page can change without them", () => {
