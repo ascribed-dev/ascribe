@@ -1,6 +1,7 @@
 ---
 title: Site-render contract
 description: The markers the site output writes and how a consumer renders them.
+listing: unlisted
 ---
 
 The site output (SPEC §9.4) is CommonMark with raw HTML: custom elements for Ascribe's constructs, and ordinary markdown for everything else. A consumer renders most of it with its own markdown pipeline and needs nothing from Ascribe. Three things need more than CommonMark (SPEC §9.5):
