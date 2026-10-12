@@ -1573,8 +1573,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/406"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-Rw",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/432"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Page templates: start a page from its type's template, for an agent"
     },
     {
@@ -1604,8 +1607,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/408"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-SU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/438"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: start a page from the editor"
     },
     {
@@ -1635,8 +1641,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/410"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-TM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/433"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Page templates: start getting started from ascribe init"
     },
     {
@@ -1666,8 +1675,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/412"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-TU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/435"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Page templates: say what's changed in the templates with ascribe templates status"
     },
     {
@@ -1697,8 +1709,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/414"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-VI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/437"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Page templates: the docs take the set's reference type"
     },
     {
@@ -1711,8 +1726,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/415"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-U4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/442"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Page templates: the docs take the other types, and say what it showed"
     },
     {
@@ -1739,8 +1757,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/429"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAOxaM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/431"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Docs: point five moved links at their new addresses"
     },
     {
@@ -1753,9 +1774,68 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/430"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAOxac",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/434"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Site: pass the delivery spec's content-position and Markdown-parity checks"
+    },
+    {
+      "content": {
+        "body": "Part of [the page templates plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/README.md), found by [phase 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/phase-7-docs.md) in #414: what a command would have to do to take a template for a type a project already declares, in one step.\n\n## What happened\n\nAscribe's docs declared `reference` already, for `reference/**` and `contracts/**`, with `title` drawn as code (`inline = \"code\"`) and `description` marked `role = \"description\"`. Taking the set's reference took three steps:\n\n1. `ascribe templates eject reference` refused, as decision 16 says, and wrote nothing:\n\n   ```text\n   Error: reference: ascribe.toml declares [types.reference] already\n   wrote nothing\n   ```\n\n2. With `[types.reference]` taken out of `docs/ascribe.toml` by hand, eject wrote the template, its guide, Ascribe's notes, and `templates.lock`, and appended a new `[types.reference]` at the end of the file: `files = [\"reference/**\"]`, `template`, `guide`, and `title = \"string\"` and `description = \"string\"`.\n3. By hand: the type moved back beside the docs' `guide` type, `contracts/**` put back in `files`, and `inline = \"code\"` and `role = \"description\"` put back on the fields. Only `template` and `guide` were kept from what eject added.\n\nBetween steps 1 and 3 the project was broken, and nothing said so: `ascribe check docs` was clean at each step. The contracts had fallen to the default type, and every reference page's title would have shown its backticks as text, since `title` was a plain string. A project that takes the set late is the only kind that has pages, so it's the one where that matters.\n\n## What a command would have to do\n\nTake a template for a type that exists and leave the type's own keys alone:\n\n- **Write the files as eject does,** the template, its guide, and Ascribe's notes, refusing a file in the way, and record them in `templates.lock`.\n- **Add only `template` and `guide`** to the existing `[types.<name>]`, in place, keeping its `files`, its frontmatter, its other keys, and every comment. That's an edit inside a table eject didn't write, which decision 28 avoids by only ever appending; it needs the same guarantee, that the result loads with the type in it or nothing is written. A type declared as an inline table, or one with `template` or `guide` already, is refused and named.\n- **Check the type's frontmatter against the template's,** since the type keeps its own: a field the template's frontmatter has that the type doesn't declare, or declares with another type, would make every page started from the template fail. Refuse it and name the field, or say so, before writing.\n- **Say what it left alone,** in the text and the JSON, as eject says what it added.\n\nWhether that's a flag on `eject` (such as `--keep-type`, or `--existing`) or another verb is the decision this issue needs. Decision 16's refusal could then name it: \"declares [types.reference] already; `<command>` takes the template for it\".\n\n## Done when\n\n- One command takes a template for a declared type, writing the files and the two keys and nothing else in `ascribe.toml`, and `docs/ascribe.toml`'s reference is what it would have written, apart from `purpose`.\n- Eject's refusal of a declared type names that command.\n- The decision is recorded in `project-docs/page-templates/README.md` or `project-docs/decisions/`.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 436,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Page templates: take a template for a type the project declares already",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/436"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAPCvE",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Page templates: take a template for a type the project declares already"
+    },
+    {
+      "content": {
+        "body": "Part of [the page templates plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/README.md), found by [phase 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/phase-7-docs.md) in #415.\n\n## What happened\n\nAfter Ascribe's docs took the how-to, tutorial, and concept types, `ascribe check docs` reported two placeholders that the pages don't have:\n\n```text\n[ASC195] Advice: this page still has its template's placeholder `{product}`; write what it asks for in its place\n    ╭─[ content/getting-started.md:77:3 ]\n 77 │ - `{product}` and `{version}` are phrases from `ascribe.toml`.\n```\n\n```text\n[ASC195] Advice: this page still has its template's placeholder `{Task name }`; write what it asks for in its place\n    ╭─[ content/guides/templates.md:85:153 ]\n 85 │ ... or with the space before its closing brace taken out, as the how-to's `\\{Task name }` has, isn't the template's any more ...\n```\n\nThe first is worse than it looks. A phrase named `product` is reported on a page of the tutorial type wherever it's used, in prose too, since the tutorial template's Background has `\\{product}` as a placeholder. In a project from `ascribe init --templates` with `product` and `version` in `[phrases]`, this page gets the advice twice:\n\n```markdown\n---\ntitle: Learn\ndescription: Learn it.\n---\n\nYou need {product} {version} or later.\n\nQuote `{product}` here.\n```\n\nThat's the sentence Ascribe's own notes on the tutorial tell a writer to write (\"Versions are phrases. Write `You need {product} {version} or later`\").\n\nThe second is a page about templates quoting a placeholder in inline code. #415 reworded both of the docs' sentences rather than acknowledging them.\n\n## What to change\n\n- **A phrase isn't a placeholder.** The template's placeholder is written `\\{product}`, escaped, so it shows as text; a page's `{product}` is a phrase, and isn't the template's text. Compare what the page shows, or match only the escaped form.\n- **Text in code isn't the page's own words.** Skip inline code and code blocks, where a page writes text as it is. The conversion never puts a template's placeholder in code.\n\n## Done when\n\n- A phrase with a placeholder's name, and a placeholder quoted in inline code or a code block, aren't reported; an untouched `\\{product}` in a paragraph, a list item, or a heading still is.\n- A conformance case shows each.\n- The diagnostic's entry in `tests/conformance/diagnostics.toml` says so, and the templates guide's \"What's left to fill in\" if it needs it.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 439,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Page templates: a phrase or a quote in code is reported as a placeholder",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/439"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAPmSQ",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Page templates: a phrase or a quote in code is reported as a placeholder"
+    },
+    {
+      "content": {
+        "body": "Part of [the page templates plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/README.md), found by [phase 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/phase-7-docs.md) in #415. #436 is the other half: a type the project declares already.\n\n## What happened\n\nAscribe's docs took four types they didn't declare, in one step:\n\n```text\n$ ascribe templates eject how-to tutorial concept troubleshooting\n...\nadded [types.how-to] to ascribe.toml, for pages under content/how-to/\nadded [types.tutorial] to ascribe.toml, for pages under content/tutorial/\nadded [types.concept] to ascribe.toml, for pages under content/concept/\nadded [types.troubleshooting] to ascribe.toml, for pages under content/troubleshooting/\n```\n\nThen every key it wrote but `template` and `guide` was rewritten by hand:\n\n- **`files`.** The docs' 14 pages for those types are under `guides/`, plus `getting-started.md`, so each type's `files` became a list of the pages it holds. Until then, each type matched no page, every page stayed of the default type, and `ascribe check docs` was clean: nothing said four types had no pages.\n- **The frontmatter.** Eject wrote `title = \"string\"` and `description = \"string\"` on each. The docs' types all have `title = { type = \"string\", inline = \"code\" }` and `description = { type = \"string\", role = \"description\" }`, so the same two lines went on four types by hand. Without them, the site would have shown backticks in those pages' titles.\n\nA project that takes the set late is the one that has pages, and its pages aren't in folders named for the set's types.\n\n## What a command could do\n\nTwo things, either of which would have saved the hand edits:\n\n- **Say when a type it added matches no page,** with the pages that are of the default type, so the writer knows `files` is theirs to change. The check could say it too, as advice on a type with `files` that match nothing.\n- **Take the project's frontmatter for the new types,** when the project has a default type: copy its `title` and `description` declarations rather than writing plain strings, as long as they're still strings the template's frontmatter fits.\n\nA `--files` option, naming each type's pages at eject, is the third, and probably too much for one command line.\n\n## Done when\n\n- Eject in a project with pages says, for a type it added, that it matches no page yet.\n- The decision on the frontmatter is recorded in `project-docs/page-templates/README.md` or `project-docs/decisions/`, and done if it's yes.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 440,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Page templates: eject into a project whose pages are elsewhere",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/440"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAPn1I",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Page templates: eject into a project whose pages are elsewhere"
+    },
+    {
+      "content": {
+        "body": "Part of [the page templates plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/README.md), found by [phase 7](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/phase-7-docs.md) in #415: what Ascribe's notes on the set got wrong or left out, fitting the docs' pages to the templates.\n\n## What happened\n\n**Troubleshooting: the template's headings warn.** The template has a `###` heading for each cause and its solution under each symptom (`Cause 1 of symptom 1`, `Solution or workaround to cause 1 of symptom 1`). Filled in the obvious way, with \"Cause\" and \"Solution\" under each symptom, the review guide's troubleshooting page got 14 warnings:\n\n```text\n[ASC046] Warning: this heading's text gives the same slug as another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`\n    ╭─[ content/guides/review/troubleshooting.md:28:1 ]\n 28 │ ### Cause\n```\n\nThe docs wrote them as bold paragraphs, `**Cause.**` and `**Solution.**`, instead. `troubleshooting.ascribe.md` says nothing about it, though it's the first thing a writer meets.\n\n**How-to and tutorial: steps that are headings.** The notes on both say the steps are one `@steps` list. Three of the docs' pages, getting started, content that varies, and the Astro guide's set-up, number their steps as headings (`## 1. Declare a dimension`, `### 1. Install`), since each step holds a file, a command, and its output, which a list item holds badly. The table in [docs-types.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/page-templates/docs-types.md) kept them as headings. The notes don't say when that's the better shape, or that `@steps` doesn't apply to it.\n\n## What to change\n\n- `troubleshooting.ascribe.md`: a line saying to write each cause and solution as a bold paragraph, or to give each heading an `@id`, since `heading-duplicate-without-id` warns about the same heading under every symptom.\n- `how-to.ascribe.md` and `tutorial.ascribe.md`: a line saying that a step holding a file and its output can be a heading of its own, numbered, with no `@steps`.\n\nThe notes are copied into a project by `eject` and recorded in `templates.lock`, so the docs' copies in `docs/templates/` change with them.\n\n## Done when\n\n- The three notes say so, in `crates/ascribe-templates/notes/`.\n- The docs' copies are taken again, and `templates.lock` records them.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 441,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Page templates: what the notes miss about troubleshooting headings and steps as headings",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/441"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAPn1k",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Page templates: what the notes miss about troubleshooting headings and steps as headings"
     }
   ]
 }
