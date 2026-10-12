@@ -21,7 +21,15 @@ const groups = await Promise.all(
         const id = entryId(file);
         const entry = await getEntry("docs", id);
         if (!entry) throw new Error(`src/nav.ts names ${file}, which isn't a page of the site`);
-        return { id, title: entry.data.formatted.title, href: id === "index" ? docs : `${docs}${id}/` };
+        // A page in the folder of another page listed, as reference/cli/check.md
+        // is in reference/cli.md's, is listed under it.
+        const nested = nav.some((g) => g.pages.some((other) => id.startsWith(`${entryId(other)}/`)));
+        return {
+          id,
+          title: entry.data.formatted.title,
+          href: id === "index" ? docs : `${docs}${id}/`,
+          nested,
+        };
       }),
     ),
   })),
@@ -35,7 +43,7 @@ const groups = await Promise.all(
         <h2>{group.label}</h2>
         <ul>
           {group.pages.map((page) => (
-            <li>
+            <li class={page.nested ? "nested" : undefined}>
               <a href={page.href} aria-current={page.id === current ? "page" : undefined}>
                 <Fragment set:html={page.title} />
               </a>

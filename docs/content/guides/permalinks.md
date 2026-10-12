@@ -23,7 +23,7 @@ So it works on any static host.
 
 [`@ascribed/astro`](astro.md) adds the route itself, from the list, in `astro build` and in `astro dev`, where a permalink you add or remove is served on the next rebuild, with no restart. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents.
 
-[`permalink-path`](../reference/content-model.md#15-consumer) moves them, as a path from the site's root, such as `"/go/"` when the docs move under `/docs/` but the addresses your product prints shouldn't. It must be under Astro's `base`, since that's all an Astro site serves; the integration fails the build when it isn't.
+[`permalink-path`](../reference/content-model/output.md#15-consumer) moves them, as a path from the site's root, such as `"/go/"` when the docs move under `/docs/` but the addresses your product prints shouldn't. It must be under Astro's `base`, since that's all an Astro site serves; the integration fails the build when it isn't.
 
 ### With another generator
 
@@ -31,7 +31,7 @@ Read `_ascribe/permalinks.json` from the build's site output and publish a page 
 
 ## Linking from a product
 
-A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../reference/content-model.md#6-dimensionsname):
+A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../reference/content-model/content.md#6-dimensionsname):
 
 ```ts
 // The docs' permalinks, as `[consumer]` publishes them.
@@ -70,7 +70,7 @@ jobs:
       - run: npx @ascribed/cli permalinks verify --against docs.permalinks --from docs-links.txt
 ```
 
-`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](../reference/cli.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
+`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](../reference/cli/sources.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
 
 In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change; `ascribe permalinks sync --check` fails in CI when it wasn't. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-removed`), which `sync` doesn't clear: restore the name, or retire it ([Moving, aliasing, and retiring](#moving-aliasing-and-retiring)).
 
@@ -79,7 +79,7 @@ In the docs, `ascribe check` reports a list that's behind the content (`permalin
 A permalink is a promise to whatever links to it, so what to do when its section changes depends on what happened to the section:
 
 - **It moved,** to another page or under another heading: move the `@id` with it, and run `ascribe permalinks sync`. The address leads to the new place, and nothing else changes.
-- **It has a second name,** such as one an older release of the product prints: add an alias in [`[permalinks.aliases]`](../reference/content-model.md#20-permalinks), `config = "weave-config"`. The alias's address leads where the permalink's does, and `verify` accepts both names.
+- **It has a second name,** such as one an older release of the product prints: add an alias in [`[permalinks.aliases]`](../reference/content-model/checks.md#20-permalinks), `config = "weave-config"`. The alias's address leads where the permalink's does, and `verify` accepts both names.
 - **It's gone,** merged into another section or removed with the feature it described: retire it, with a reason a reader can understand.
 
 ```sh
@@ -87,7 +87,7 @@ ascribe permalinks retire rotate-keys --reason "Merged into the security guide" 
 ascribe permalinks retire legacy-sync --reason "The sync agent was removed in 4.0"
 ```
 
-[`ascribe permalinks retire`](../reference/cli.md#cli-permalinks-retire) writes each to `[permalinks.retired]` in `ascribe.toml`, keeping the file's comments, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. With `--to`, its address leads there; without it, the address is a page that says what was there was removed from the docs, gives the reason, and links to the docs' home page. A product's `verify` then fails on the name, with the reason, so the product changes its link. In the editor, the quick fix on `permalink-removed` writes the entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page.
+[`ascribe permalinks retire`](../reference/cli/sources.md#cli-permalinks-retire) writes each to `[permalinks.retired]` in `ascribe.toml`, keeping the file's comments, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. With `--to`, its address leads there; without it, the address is a page that says what was there was removed from the docs, gives the reason, and links to the docs' home page. A product's `verify` then fails on the name, with the reason, so the product changes its link. In the editor, the quick fix on `permalink-removed` writes the entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page.
 
 Retire rather than delete the line from the list: a deleted line makes the address a 404 with nothing to say why, and a product's `verify` says only that the name is missing.
 

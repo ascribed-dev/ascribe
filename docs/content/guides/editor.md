@@ -6,6 +6,8 @@ permalink: editor-guide
 
 The Ascribe extension for VS Code turns the editor into an Ascribe authoring environment. Its features come from the language server, `ascribe lsp`, which runs the same checks as `ascribe check`: what the editor reports is what CI reports.
 
+Every setting and command the extension adds, and how it works in a workspace with several projects, are on [their own page](editor/settings.md).
+
 ## Install
 
 Install **Ascribe** (`Ascribe.ascribe-vscode`) from the Visual Studio Marketplace: search for "Ascribe" in the Extensions view, or run:
@@ -14,7 +16,7 @@ Install **Ascribe** (`Ascribe.ascribe-vscode`) from the Visual Studio Marketplac
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](#workspaces-with-several-projects)). It needs VS Code {vscode} or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
+The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](editor/settings.md#workspaces-with-several-projects)). It needs VS Code {vscode} or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
 
 ### Which `ascribe` it runs
 
@@ -35,11 +37,11 @@ After you install the extension, VS Code opens its walkthrough, **Get Started wi
 
 ### Diagnostics
 
-Every [diagnostic](../reference/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../reference/content-model.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
+Every [diagnostic](../reference/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../reference/content-model/output.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
 
-The [content checks](../reference/diagnostics.md#content-checks) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
+The [content checks](../reference/diagnostics/content-checks.md) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
 
-In a workspace with several projects, the Problems panel lists only the projects whose language server is running. See [The Problems panel](#the-problems-panel).
+In a workspace with several projects, the Problems panel lists only the projects whose language server is running. See [The Problems panel](editor/settings.md#the-problems-panel).
 
 ### Quick fixes
 
@@ -106,7 +108,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
-- From the command line, [`ascribe rename`](../reference/cli.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.
+- From the command line, [`ascribe rename`](../reference/cli/questions.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.
 
 ### Formatting
 
@@ -188,7 +190,7 @@ Pages and Content model update when you save a file of the project, when a page 
 ### The status bar
 @available: ascribe 0.2.0
 
-While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. While the project has several builds and the Problems panel holds the problems of the editor build alone, it adds what the panel covers, such as **docs · site · problems: this build only**, or **docs · cloud · problems: site only** while you look at another build; once you [check every build](#the-problems-panel), and until something changes, it doesn't. A project's language server starts when one of its pages opens, so until then nothing has checked it: while no page of a project is active, the status bar says so, such as **docs: not checked yet**, or **2 projects: not checked yet**, and its tooltip names them. Otherwise a file that isn't in a project shows nothing.
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. While the project has several builds and the Problems panel holds the problems of the editor build alone, it adds what the panel covers, such as **docs · site · problems: this build only**, or **docs · cloud · problems: site only** while you look at another build; once you [check every build](editor/settings.md#the-problems-panel), and until something changes, it doesn't. A project's language server starts when one of its pages opens, so until then nothing has checked it: while no page of a project is active, the status bar says so, such as **docs: not checked yet**, or **2 projects: not checked yet**, and its tooltip names them. Otherwise a file that isn't in a project shows nothing.
 
 In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The status bar shows **Ascribe: not checking**, and the Problems panel's "No problems" doesn't mean the project is clean. Click it to manage the folder's trust; once you trust it, Ascribe starts.
 
@@ -206,7 +208,7 @@ The lens has no build of its own: it dims by the [build you're looking at](#the-
 ### Review in the preview
 @available: ascribe 0.2.0
 
-The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](../reference/cli.md#cli-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md) walks through reviewing a pull request, start to finish; this section and the next are the reference for the editor's part.
+The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](../reference/cli/diff.md#cli-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md) walks through reviewing a pull request, start to finish; this section and the next are the reference for the editor's part.
 
 **Ascribe: Start Review** turns it on for the active page's project. It asks for the base: the base of your branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit you type. Either way it compares with the point where your branch left it, as a pull request does. The status bar shows **Review: off**, or the base, while an Ascribe page or the preview is active; click it to start review, or to list the changed pages once it's on. While review is off, the preview has no review header and looks as it always does; its title bar has a **Start Review** button, which becomes **Changed Pages** once review is on. Review stays on for the project until **Ascribe: Stop Review**, or until the window closes. The tooltips on the base, in the header and the status bar, give the commit compared with. When that point moves (you pull, rebase, or fetch a newer base branch), review follows it the next time the preview regains focus, and says so.
 
@@ -233,61 +235,6 @@ Comments need GitHub. Review asks to sign in to GitHub in VS Code when you start
 The comments are read when review starts, on **Ascribe: Refresh Comments** (the refresh button in the preview's title bar), and after your own actions. When your checkout isn't the pull request's latest commit, the header says so: behind, with **Pull**, since some comments may be on lines you don't have; ahead, with **Push**, since you can comment only on lines that are on GitHub.
 
 Review runs `git` once you start it. Before that, only the offer does: once you've used review in a workspace, opening a page runs `git` to find its branch, and asks GitHub whether the branch has an open pull request, to offer review ([Review](review.md) describes the offer). A project that isn't in a git repository, a revision that doesn't exist, or `git` missing from the path stops it from starting, with a message that says which; the preview works as before. Starting review reads the project as it was at the base, which takes about as much memory again as the project; stopping review frees it.
-
-## Workspaces with several projects
-@id {permalink=true}: workspaces-with-several-projects
-
-Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
-
-A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
-
-Each project runs its own `ascribe`, found as [Which `ascribe` it runs](#which-ascribe-it-runs) describes.
-
-### When servers start
-
-A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when one of its files changes on disk while the window is open, so an agent or a script that writes the project's files without opening them still gets their problems in the Problems panel. A file counts if it's the project's `ascribe.toml`, is under its content root (not in a project nested there), or is in the folder of one of its [sources](../reference/content-model.md#18-sourcesname), and isn't in its output directory, `node_modules`, or `.git`. Changes are gathered for up to a second, so a `git checkout` that touches hundreds of files starts each project's server once. Opening the window starts nothing, and neither does adding an `ascribe.toml`. A server runs until you close the window or delete its `ascribe.toml`. A project nothing opens or changes costs nothing.
-
-To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
-
-An `ascribe.toml` you add or delete is picked up as you work. If the editor misses a new one, opening or switching to one of the new project's files picks it up. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so.
-
-Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
-
-### The Problems panel
-
-The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened or changed shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
-
-A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](#the-status-bar) says so: **docs · site · problems: this build only**.
-
-@available: next
-**Ascribe: Check Every Build** (also **Check every build** in the status bar's menu) runs `ascribe check` over every build of the active file's project, as it reads the files on disk, and adds the problems the server doesn't show to the Problems panel: those of other builds, each naming the builds it's in (`only in build cloud`), and those of the checks the editor doesn't run, such as `image-unused`. It says how many problems it found in all, and how many it added. When a file changes, the problems it added to that file go, since they may have moved, and the status bar says the panel covers the editor's build alone again, until you run it again. In a workspace with several projects and no file of one active, it asks which project to check.
-
-An agent that reads the Problems panel sees the same: before calling a project clean, check every build, or run `ascribe check`, which checks every build.
-
-`ascribe check` checks a project whether or not the editor has it open. Run it in the project's folder, or from anywhere with `--config` naming the project's folder or its `ascribe.toml`:
-
-```sh
-npx ascribe check --config handbook
-```
-
-### Commands and output
-
-Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](#the-status-bar) names that project, and the [Projects view](#the-projects-view) lists them all. **Restart Language Server** restarts every project's server that has started. [Commands](#commands) has the details.
-
-Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
-
-A channel's name is set when the channel is first needed, usually when its project's server first starts. So if a workspace with one project gains a second, the first project's channel keeps the name `Ascribe`, beside `Ascribe (<other project>)`, until you reload the window.
-
-When it starts, a server logs its version and the `ascribe.toml` it uses: `ascribe-lsp <version>: using the project at <path>`.
-
-## Settings
-@id {permalink=true}: editor-settings
-
-@include: ../_generated/editor-settings.md
-
-## Commands
-
-@include: ../_generated/editor-commands.md
 
 ## Other editors
 

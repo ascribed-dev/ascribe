@@ -13,7 +13,7 @@ ascribe report links                 # external links, with lychee
 ascribe report agents --site https://docs.example.com
 ```
 
-Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages`, the table of every page's record, needs nothing outside it either, and runs when it's named. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli.md#cli-report) lists every option, and the JSON.
+Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages`, the table of every page's record, needs nothing outside it either, and runs when it's named. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli/diff.md#cli-report) lists every option, and the JSON.
 
 ## Problems
 
@@ -49,7 +49,7 @@ For each build, the pages it doesn't publish and the content it takes out of the
 
 ## Pages
 
-Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../reference/content-model.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
+Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../reference/content-model/checks.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
 
 ```text
 Pages

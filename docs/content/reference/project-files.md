@@ -18,22 +18,22 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 
 | File | What writes it | Commit it |
 |---|---|---|
-| `.ascribe/build/` | [`ascribe build`](cli.md#cli-build), and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere ([output layout](../contracts/output-layout.md)). | No |
+| `.ascribe/build/` | [`ascribe build`](cli/check.md#cli-build), and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere ([output layout](../contracts/output-layout.md)). | No |
 | `.ascribe/vale/` {available=next} | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words ([Prose, through Vale](../guides/vale.md#the-projects-own-words)). | No |
-| `.ascribe/cache/` {available=next} | [`ascribe report links`](cli.md#cli-report), which keeps the answers it reuses in `.ascribe/cache/links/` ([Answers it reuses](../guides/report.md#answers-it-reuses)). | No |
+| `.ascribe/cache/` {available=next} | [`ascribe report links`](cli/diff.md#cli-report), which keeps the answers it reuses in `.ascribe/cache/links/` ([Answers it reuses](../guides/report.md#answers-it-reuses)). | No |
 | `.ascribe/history/` {available=next} | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported ([Links that answered before](../guides/report.md#links-that-answered-before)). | No |
 | `.ascribe/dev.json` | `astro dev` with `@ascribed/astro`, for the editor's site preview. It's removed when `astro dev` stops ([In `astro dev`](../guides/astro.md#in-astro-dev)). | No |
-| `ascribe.lock` | [`ascribe sources fetch`](cli.md#cli-sources-fetch) and [`ascribe sources update`](cli.md#cli-sources-update): the commit each source in another repository is pinned to ([Drift](../guides/drift.md)). | Yes |
+| `ascribe.lock` | [`ascribe sources fetch`](cli/sources.md#cli-sources-fetch) and [`ascribe sources update`](cli/sources.md#cli-sources-update): the commit each source in another repository is pinned to ([Drift](../guides/drift.md)). | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
-| `ascribe.permalinks` {available=next} | [`ascribe permalinks sync`](cli.md#cli-permalinks-sync) and [`ascribe permalinks retire`](cli.md#cli-permalinks-retire): the list of the docs' permalinks a product checks its links against ([The permalinks list](../contracts/permalinks-list.md)). | Yes |
-| `.vale.ini` and `.vale/` {available=next} | [`ascribe vale eject`](cli.md#cli-vale-eject), once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
-| `AGENTS.md` {available=next} | [`ascribe agents sync`](cli.md#cli-agents-sync), between its markers, beside `ascribe.toml`, and at the repository's root when that's another folder. The rest of the file is yours ([Agent instructions](../guides/agents.md#agent-instructions)). | Yes |
+| `ascribe.permalinks` {available=next} | [`ascribe permalinks sync`](cli/sources.md#cli-permalinks-sync) and [`ascribe permalinks retire`](cli/sources.md#cli-permalinks-retire): the list of the docs' permalinks a product checks its links against ([The permalinks list](../contracts/permalinks-list.md)). | Yes |
+| `.vale.ini` and `.vale/` {available=next} | [`ascribe vale eject`](cli/sources.md#cli-vale-eject), once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
+| `AGENTS.md` {available=next} | [`ascribe agents sync`](cli/agents.md#cli-agents-sync), between its markers, beside `ascribe.toml`, and at the repository's root when that's another folder. The rest of the file is yours ([Agent instructions](../guides/agents.md#agent-instructions)). | Yes |
 | `CLAUDE.md` {available=next} | `ascribe agents sync`, an import of `AGENTS.md` between its markers, in each `CLAUDE.md` there is; it creates one only with `--target claude`. | Yes |
 | `.agents/skills/ascribe/` and `.claude/skills/ascribe/` {available=next} | `ascribe agents sync`, at the repository's root: the skill, the second with `--target claude` ([The skill](../guides/agents.md#the-skill)). | Yes |
 | `.claude/rules/ascribe*.md` and `.github/instructions/ascribe*.instructions.md` {available=next} | `ascribe agents sync`, at the repository's root, with `--target claude-rules` and `--target copilot` ([Other agents' files](../guides/agents.md#other-agents-files)). | Yes |
 | `.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`, and `.github/hooks/ascribe.json` {available=next} | `ascribe agents sync --with-hook`, at the repository's root: the hooks' entries and the MCP server, beside your own ([Hooks](../guides/agents.md#hooks)). | Yes |
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` {available=next} | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent ([GitHub Copilot](../guides/agents.md#github-copilot)). | Yes |
-| The files you name with `--into` and `--pages` {available=next} | [`ascribe agents index`](cli.md#cli-agents-index): the index of the docs between its markers in the `--into` file, such as your product's `AGENTS.md`, and the pages' Markdown versions in the `--pages` folder ([Index your docs for your product's agents](../guides/agents.md#index-your-docs-for-your-products-agents)). | Yes |
+| The files you name with `--into` and `--pages` {available=next} | [`ascribe agents index`](cli/agents.md#cli-agents-index): the index of the docs between its markers in the `--into` file, such as your product's `AGENTS.md`, and the pages' Markdown versions in the `--pages` folder ([Index your docs for your product's agents](../guides/agents.md#index-your-docs-for-your-products-agents)). | Yes |
 | `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours ([Set up a site](../guides/astro.md#set-up-a-site)). | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
 
@@ -45,6 +45,6 @@ A file you commit is a record, not a cache. Without `ascribe.lock` and `sources/
 
 ## Files of yours that Ascribe changes
 
-A few commands change files you wrote, in place, and only when you run them: `ascribe permalinks retire` and `ascribe vale eject` change `ascribe.toml`, keeping its comments; [`ascribe fmt`](cli.md#cli-fmt), [`ascribe rename`](cli.md#cli-rename), and `ascribe check --fix` change your pages; and the editor's quick fixes change the file the problem is in.
+A few commands change files you wrote, in place, and only when you run them: `ascribe permalinks retire` and `ascribe vale eject` change `ascribe.toml`, keeping its comments; [`ascribe fmt`](cli/check.md#cli-fmt), [`ascribe rename`](cli/questions.md#cli-rename), and `ascribe check --fix` change your pages; and the editor's quick fixes change the file the problem is in.
 
 Outside the project, Ascribe keeps the repositories `ascribe sources` fetches, and the agents' hooks keep a check server's files, in a folder of your user's cache folder. Nothing there needs committing or keeping.

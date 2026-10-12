@@ -12,95 +12,18 @@ Every document follows these rules:
 - A field the schema doesn't list as required is left out when it has no value. A required field that can be `null` is always written.
 - Keys are snake_case.
 
+The schemas of `ascribe check`, `ascribe build`, and `ascribe fmt` are on this page, and the rest on four more:
+
+- [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
+- [`ascribe report`](json-reports/report.md)
+- [`ascribe sources` and `ascribe permalinks`](json-reports/sources.md)
+- [`ascribe explain`, `model`, `outline`, `link`, `refs`, `render`, and `agents index`](json-reports/questions.md)
+
 ## `ascribe check` and `ascribe build`
 
 @include: ../_generated/json-check.md
-
-## `ascribe diff`
-@available: next
-
-@include: ../_generated/json-diff.md
-
-## `ascribe drift`
-@available: next
-
-@include: ../_generated/json-drift.md
-
-## `ascribe report`
-@available: next
-
-@include: ../_generated/json-report.md
-
-## `ascribe sources status`
-@available: next
-
-@include: ../_generated/json-sources-status.md
-
-## `ascribe sources update`
-@available: next
-
-@include: ../_generated/json-sources-update.md
-
-## `ascribe permalinks sync`
-@available: next
-
-@include: ../_generated/json-permalinks-sync.md
-
-## `ascribe permalinks list`
-@available: next
-
-@include: ../_generated/json-permalinks-list.md
-
-## `ascribe permalinks verify`
-@available: next
-
-@include: ../_generated/json-permalinks-verify.md
-
-## `ascribe permalinks retire`
-@available: next
-
-@include: ../_generated/json-permalinks-retire.md
 
 ## `ascribe fmt`
 @available: next
 
 @include: ../_generated/json-fmt.md
-
-## `ascribe explain`
-@available: next
-
-@include: ../_generated/json-explain.md
-
-With `--list`:
-
-@include: ../_generated/json-explain-list.md
-
-## `ascribe model`
-@available: next
-
-@include: ../_generated/json-model.md
-
-## `ascribe outline`
-@available: next
-
-@include: ../_generated/json-outline.md
-
-## `ascribe link`
-@available: next
-
-@include: ../_generated/json-link.md
-
-## `ascribe refs`
-@available: next
-
-@include: ../_generated/json-refs.md
-
-## `ascribe render`
-@available: next
-
-@include: ../_generated/json-render.md
-
-## `ascribe agents index`
-@available: next
-
-@include: ../_generated/json-agents-index.md

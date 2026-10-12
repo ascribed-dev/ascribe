@@ -10,7 +10,7 @@ Ascribe builds your docs and checks them before they're deployed. It runs no ser
 
 Everything Ascribe knows about a page is in its record: its address, title, description, and listing, and where the listing comes from. The head of each page, the sitemap, `robots.txt`, and `llms.txt` are all written from the records, so they can't disagree with each other.
 
-- **`ascribe check`** reports what would go wrong for a reader that isn't a person: two pages with the same title or description, a title its page's own heading contradicts, a page kept out of search whose address `robots.txt` won't let a crawler fetch, a page too long for an agent to read in one fetch. Each is advice you can raise or turn off in [`[checks]`](../reference/content-model.md#19-checks).
+- **`ascribe check`** reports what would go wrong for a reader that isn't a person: two pages with the same title or description, a title its page's own heading contradicts, a page kept out of search whose address `robots.txt` won't let a crawler fetch, a page too long for an agent to read in one fetch. Each is advice you can raise or turn off in [`[checks]`](../reference/content-model/checks.md#19-checks).
 - **`ascribe report pages`** lists every page's record, and `--not-listed` the ones kept out of search, with why. It's what a team would otherwise crawl its own site to see. See [the project report](report.md#pages).
 - **`ascribe report agents --site <URL>`** runs the delivery spec's checker on the published site, for what only a running server can answer. See [the site and agents](report.md#the-site-and-agents).
 
@@ -30,7 +30,7 @@ Your host's request logs are the only place agents reading your docs show up. Lo
 
 - **Requests for the Markdown versions,** the `.md` address of each page, which a site publishes with `[consumer] agents = true`. A browser never asks for them, so they're the cleanest sign of an agent reading, and the address says which page it read.
 - **Requests for `llms.txt`,** which an agent reads to choose a page.
-- **The user agents** of the crawlers you've made a choice about in [`[crawlers]`](../reference/content-model.md#21-crawlers): the tokens of each purpose are listed there, with where each operator documents its own. An assistant fetching a page because a person asked often sends no token of its own, so these counts are low, never high.
+- **The user agents** of the crawlers you've made a choice about in [`[crawlers]`](../reference/content-model/checks.md#21-crawlers): the tokens of each purpose are listed there, with where each operator documents its own. An assistant fetching a page because a person asked often sends no token of its own, so these counts are low, never high.
 
 ## Whether the answers are right
 

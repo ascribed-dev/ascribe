@@ -375,7 +375,7 @@ mod tests {
         );
         for page in [
             "docs/content/guides/report.md",
-            "docs/content/reference/cli.md",
+            "docs/content/reference/cli/diff.md",
         ] {
             assert!(
                 read(page).contains(&format!("npm install -g afdocs@{VERSION}`")),

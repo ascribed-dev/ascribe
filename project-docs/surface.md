@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/reference/cli.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/reference/cli.md`, `docs/content/reference/cli/`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -30,7 +30,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
 | `ascribe permalinks verify` | Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. | `[NAME]... [--from <FILE>] [--against <PATH>]` | `text`, `json` |
-| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](content-model.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
+| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](../content-model/checks.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... --reason <TEXT> [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>]` | `text`, `json` |
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW` |  |
 | `ascribe render` | Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--frontmatter]` | `text`, `json` |
@@ -65,7 +65,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 
 ## `ascribe.toml`
 
-For authors. Read from `docs/content/reference/content-model.md`, `docs/content/_fragments/content-model/`.
+For authors. Read from `docs/content/reference/content-model.md`, `docs/content/reference/content-model/`, `docs/content/_fragments/content-model/`.
 
 | Section | What it's for | In the reference |
 |---|---|---|
@@ -774,7 +774,7 @@ These are part of the surface, and no file a script can read lists them, so they
 
 | Surface | What | Where it lives instead |
 |---|---|---|
-| The command line | What each command's exit codes mean | The prose of `docs/content/reference/cli.md`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs` |
+| The command line | What each command's exit codes mean | The prose of the command reference's pages in `docs/content/reference/cli/`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs` |
 | The language | The reserved frontmatter keys: `available`, `variant`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile | Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1 |
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | `ascribe.toml` | Each section's keys | The loader, `crates/ascribe-model/src/`, and the reference's prose |

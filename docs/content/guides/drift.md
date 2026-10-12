@@ -21,7 +21,7 @@ include = ["service/**", "examples/**"]
 ignore = ["**/node_modules/**"]
 ```
 
-The folder must be in the same git repository as the project. When the code is in another repository, see [Docs kept apart from the code](#docs-kept-apart-from-the-code). See [`[sources.<name>]`](../reference/content-model.md#18-sourcesname) for every key.
+The folder must be in the same git repository as the project. When the code is in another repository, see [Docs kept apart from the code](#docs-kept-apart-from-the-code). See [`[sources.<name>]`](../reference/content-model/output.md#18-sourcesname) for every key.
 
 ### 2. Mark a region in the code
 
@@ -58,7 +58,7 @@ Leave out `#connect` to show the whole file. The [directive reference](../refere
 
 - **Check.** `ascribe check` and the editor report a snippet whose file, source, or region doesn't exist, and a file whose tags don't balance, at the `@snippet` line. Renaming a region or moving a file breaks the build instead of the example.
 - **Build.** Every output has the code as it is now. In the JSON output, the code block names its address and the lines of the file it came from.
-- **Diff and review.** [`ascribe diff`](../reference/cli.md#cli-diff) and review list every page whose snippet's code changed, with its address as what the change comes from: `install.md: 1 changed (through code:service/client.py#connect)`. The base revision's code is read from git, the same way the pages are.
+- **Diff and review.** [`ascribe diff`](../reference/cli/diff.md#cli-diff) and review list every page whose snippet's code changed, with its address as what the change comes from: `install.md: 1 changed (through code:service/client.py#connect)`. The base revision's code is read from git, the same way the pages are.
 
 ## Docs kept apart from the code
 
@@ -86,7 +86,7 @@ Everything else reads the copies: `ascribe check`, `ascribe build`, the editor, 
   git config --global url."https://x-access-token:${CODE_TOKEN}@github.com/".insteadOf "https://github.com/"
   ```
 
-See [a source in another repository](../reference/content-model.md#a-source-in-another-repository) and [`ascribe sources`](../reference/cli.md#cli-sources).
+See [a source in another repository](../reference/content-model/output.md#a-source-in-another-repository) and [`ascribe sources`](../reference/cli/sources.md#cli-sources).
 
 ### The update pull request
 
@@ -143,4 +143,4 @@ This GitHub Actions job writes the report to the run's summary on each pull requ
 
 This repository runs this job on these docs, in [`.github/workflows/drift.yml`]({repo}/blob/main/.github/workflows/drift.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
 
-See [`ascribe drift`](../reference/cli.md#cli-drift) for its options and JSON.
+See [`ascribe drift`](../reference/cli/diff.md#cli-drift) for its options and JSON.
