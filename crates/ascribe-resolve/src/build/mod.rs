@@ -42,7 +42,7 @@
 //! let layout = Layout::from_model(&model);
 //! let fs = MemoryFs::new(&layout).with_source(
 //!     "index.md",
-//!     "---\ntype: page\ntitle: Home\n---\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\nServer.\n@end\n",
+//!     "---\ntitle: Home\n---\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\nServer.\n@end\n",
 //! );
 //! let project = Project::load(Arc::new(model.clone()), layout, &fs);
 //! let build = model.build("cloud").expect("a build");
