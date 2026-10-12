@@ -726,6 +726,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `guides/vale.md` | Prose, through Vale |  |
 | `guides/variants.md` | Content that varies |  |
 | `index.md` | Ascribe documentation |  |
+| `reference/astro.md` | `@ascribed/astro` reference |  |
 | `reference/cli.md` | Command reference |  |
 | `reference/cli/agents.md` | `ascribe agents`, `mcp`, and `lsp` |  |
 | `reference/cli/check.md` | `ascribe check`, `build`, and `fmt` |  |
