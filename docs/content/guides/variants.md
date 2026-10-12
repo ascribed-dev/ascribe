@@ -12,7 +12,7 @@ It takes four parts:
 - an **availability mark**, in the page: where a section applies;
 - **builds**, in `ascribe.toml`: what each output keeps.
 
-The example is the project in [`examples/platforms`]({repo}/tree/main/examples/platforms), and every example below is taken from it.
+The example is the project in [`examples/platforms`]({repo}/tree/main/examples/platforms), and every example below is taken from it. It's for a reader who has a project already, as [Getting started](../getting-started.md) sets one up, and hasn't yet written a page that differs by reader.
 
 ## 1. Declare a dimension
 
@@ -79,7 +79,12 @@ In VS Code, the preview's **Build** picker shows a page as any build has it, and
 
 A site publishes one build: `ascribe({ build: "site" })` in Astro's configuration names it (see [Astro](astro.md)). Another build is for another output: a second site, a PDF, or plain Markdown for a product's help panel, built from the same pages. Run `ascribe build --build windows` to build one alone.
 
-## Where to go from here
+## Summary
+
+You declared a dimension, the platform, and wrote a page with a variant group for its install command and an availability mark on a section one platform doesn't have. Then you declared two builds and built the page for each: the site, with a tab for every platform, and one for Windows readers alone, with only what applies to them.
+
+## Next steps
+
 
 - **A whole page that differs.** When most of a page is different, write a page for each value, with `variant` in its frontmatter. A build that selects another value leaves the page out. See [whole-page variants](../reference/directives.md#whole-page-variants).
 - **Alternatives that aren't a dimension.** For a one-off choice, such as two ways to do the same thing, give each arm a title instead of a value. See [`@variant`](../reference/directives.md#variant).

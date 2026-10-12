@@ -6,6 +6,10 @@ permalink: getting-started
 
 Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](guides/astro.md), publishes the page as a site.
 
+It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor and CI check as you write it, and a build of it ready for a site.
+
+## Before you start
+
 You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later (2.39 for 0.1.1 and earlier), which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
 
 ## Install the command
@@ -138,26 +142,11 @@ Run the same command the editor runs, and the formatting check, on every pull re
 
 It installs the latest release. To run the version your `package.json` pins instead, replace that step with `npm ci`, and run each command with `npx`.
 
-## Work with an AI agent
+## Summary
 
-@available: ascribe 0.3.0
-If you write with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, give it your project's rules:
+You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, built its site output, plain Markdown, and JSON, formatted it, and set CI to check every pull request the same way.
 
-@available: ascribe 0.3.0
-@variant {pm=npm}:
-```sh
-npx ascribe agents sync
-```
-@variant {pm=pnpm}:
-```sh
-pnpm exec ascribe agents sync
-```
-@end
-
-@available: ascribe 0.3.0
-That writes `AGENTS.md`, with your page types, phrases, and the check to run after each edit, and a skill that teaches the agent to check and fix its own work. Most agents read both on their own. [Agents](guides/agents.md) covers the rest: the commands an agent uses, prompts you hand it, the MCP server, and hooks that check each edit.
-
-## Next
+## Next steps
 
 - [Content that varies](guides/variants.md): alternatives by platform or product, availability, and builds.
 - [Directive reference](reference/directives.md): the language.
@@ -167,4 +156,4 @@ That writes `AGENTS.md`, with your page types, phrases, and the check to run aft
 - [Editing](guides/editor.md): the VS Code extension.
 - [Astro](guides/astro.md): publishing a site.
 - @available: ascribe 0.3.0
-  [Agents](guides/agents.md): working with an AI coding agent.
+  [Agents](guides/agents.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.
