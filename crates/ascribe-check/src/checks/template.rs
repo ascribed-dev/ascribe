@@ -10,7 +10,9 @@
 //! of the page templates plan): one that doesn't close in its block runs to
 //! the block's end, takes each block after it whole, and ends in the block
 //! with its closing brace. A page has a placeholder when it has each of its
-//! pieces, in order, exactly. An instruction is a paragraph inside one of
+//! pieces, in order, exactly, and its opening brace is escaped there too:
+//! a phrase of the same name, or the placeholder quoted in code, is the
+//! page's own text. An instruction is a paragraph inside one of
 //! the template's block quotes, and a page has it when one of its paragraphs
 //! is the same text. A frontmatter field is left when its value is the
 //! template's.
@@ -487,6 +489,13 @@ fn occurrences(units: &[Unit], pieces: &[Vec<char>]) -> Vec<Occurrence> {
             from = 0;
             continue;
         };
+        // Only a brace escaped in the page's source opens the template's
+        // placeholder: a phrase of the same name is the page's own, and so
+        // is text in code, which keeps its backslash.
+        if !units[unit].escaped[start] {
+            from = start + 1;
+            continue;
+        }
         // Each later piece, in a later block than the one before it.
         let mut at = unit;
         let mut at_start = start;
