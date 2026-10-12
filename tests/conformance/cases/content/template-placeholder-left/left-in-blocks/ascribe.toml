@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.tutorial]
+files = ["tutorials/**"]
+template = "templates/tutorial.md"
+
+[types.tutorial.frontmatter]
+title = "string"
+description = "string"

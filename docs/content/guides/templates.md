@@ -96,7 +96,7 @@ There's no command that writes the page for you at the terminal: copying the fil
 
 `ascribe check` compares a page with its type's template, and reports what it still has of it as advice (`template-placeholder-left`):
 
-- **A placeholder,** the template's text from a `\{` to its closing brace, that the page still has word for word. One that runs across blocks, as the how-to's "See also" opens a brace in a paragraph and closes it at the end of a list, is reported once, where it starts, when the page has all of it.
+- **A placeholder,** the template's text from a `\{` to its closing brace, that the page still has word for word. Its brace has to be escaped on the page too, as it is in the template: a phrase with a placeholder's name, such as `{product}`, is the page's own, and so is a placeholder quoted in inline code or a code block. One that runs across blocks, as the how-to's "See also" opens a brace in a paragraph and closes it at the end of a list, is reported once, where it starts, when the page has all of it.
 - **A frontmatter field** with the value the template gives it, such as `title: "Title"`.
 - **An instruction,** a paragraph the template has in a block quote, that the page still has whole. A block quote of your own isn't one.
 
