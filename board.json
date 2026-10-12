@@ -1761,7 +1761,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/431"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Docs: point five moved links at their new addresses"
     },
     {
@@ -1791,8 +1791,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/436"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAPCvE",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/444"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: take a template for a type the project declares already"
     },
     {
@@ -1805,8 +1808,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/439"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAPmSQ",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/443"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: a phrase or a quote in code is reported as a placeholder"
     },
     {
@@ -1820,7 +1826,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAPn1I",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Page templates: eject into a project whose pages are elsewhere"
     },
     {
