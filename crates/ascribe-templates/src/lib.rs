@@ -30,6 +30,14 @@ pub const FILES: &[File] = &[
         text: include_str!("../set/set.toml"),
     },
     File {
+        name: "concept.guide.md",
+        text: include_str!("../set/concept.guide.md"),
+    },
+    File {
+        name: "concept.md",
+        text: include_str!("../set/concept.md"),
+    },
+    File {
         name: "how-to.guide.md",
         text: include_str!("../set/how-to.guide.md"),
     },

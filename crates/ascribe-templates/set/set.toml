@@ -9,3 +9,9 @@ name = "how-to"
 summary = "A how-to is a concise set of numbered steps to do one task with the product."
 template = "how-to.md"
 guide = "how-to.guide.md"
+
+[[template]]
+name = "concept"
+summary = "An explanation of a concept, context, or background information about a product or its features."
+template = "concept.md"
+guide = "concept.guide.md"

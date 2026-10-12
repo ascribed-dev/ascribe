@@ -21,3 +21,6 @@ description = "{One sentence that says what a reader can do once they've followe
 [[how-to.directives]]
 directive = "@steps"
 before = "1. {Write the step here. Use a verb to start.}"
+
+[concept]
+description = "{One sentence that says what the concept is and why a reader needs it.}"

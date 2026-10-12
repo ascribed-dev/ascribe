@@ -137,7 +137,7 @@ test("the pin is a tag and its commit, and every template converted has its rule
   const pin = readPin();
   expect(pin.tag).toMatch(/^v\d+\.\d+\.\d+$/);
   expect(pin.commit).toMatch(/^[0-9a-f]{40}$/);
-  expect([...readRules().keys()]).toEqual(["how-to"]);
+  expect([...readRules().keys()]).toEqual(["how-to", "concept"]);
 });
 
 const ascribe = binary();
