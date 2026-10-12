@@ -30,6 +30,7 @@ fn project() -> tempfile::TempDir {
             names: &names,
             to: &RelPath::parse("templates").expect("a relative path"),
             ascribe_version: "9.9.9",
+            keep_type: false,
         },
         &fs,
     )

@@ -211,15 +211,23 @@ title = "string"
 
 Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
 
-It checks everything before it writes anything. A type `ascribe.toml` declares already, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
+A project that declares a template's type already, with its own `files` and frontmatter, takes the template for it with `--keep-type`:
 
-It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; that a type's `files` is the line to change to keep its pages elsewhere; and how to start a page.
+```sh
+ascribe templates eject reference --keep-type
+```
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, and `guide` (their guide, then Ascribe's notes); `refused`, each with `name`, `reason` (`unknown`, `declared`, or `file_in_the_way`), `path` (the file in the way, or null), and `message`; and `page_declared`, whether `[types.page]` was written out. When `refused` isn't empty, `written` and `added` are.
+It writes the same files and `templates.lock`, and adds only `template` and `guide` to the type's table, after its last entry, leaving its `files`, its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
+
+It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
+
+It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; each type it kept, with the keys it left as they were; that a type's `files` is the line to change to keep its pages elsewhere; and how to start a page.
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, and `guide` (their guide, then Ascribe's notes); `kept`, the types `--keep-type` kept, each with `name`, `summary`, `template`, `guide`, and `left` (the type's keys left as they were, in the order `ascribe.toml` has them); `refused`, each with `name`, `reason` (`unknown`, `declared`, `file_in_the_way`, or, with `--keep-type`, `type_not_table`, `type_has_template`, or `frontmatter_differs`), `path` (the file in the way, or null), and `message`; and `page_declared`, whether `[types.page]` was written out. When `refused` isn't empty, `written`, `added`, and `kept` are.
 
 | Code | Meaning |
 |---|---|
-| `0` | Every template named was written, and its type added |
+| `0` | Every template named was written, and its type added, or kept with its `template` and `guide` added |
 | `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, or the types can't be added to `ascribe.toml`. Or a file couldn't be written; the files it wrote before that stay. |
 
 ### `ascribe templates status`

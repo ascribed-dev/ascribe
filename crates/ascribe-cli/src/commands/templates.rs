@@ -41,8 +41,8 @@ pub enum Command {
     /// Write templates into the project, with their guides, as its own
     /// files, and declare each one's type in ascribe.toml.
     ///
-    /// Writes nothing when a type is declared already, or a file is where
-    /// one would be written.
+    /// Writes nothing when a type is declared already, unless --keep-type
+    /// keeps it, or a file is where one would be written.
     #[command(after_help = docs_link!("cli-templates-eject"))]
     Eject(EjectArgs),
     /// Say what's changed in the templates since the project's copy: for
@@ -72,6 +72,14 @@ pub struct EjectArgs {
     /// templates/ beside ascribe.toml.
     #[arg(long, value_name = "DIR")]
     pub to: Option<PathBuf>,
+
+    /// When ascribe.toml declares a template's type already, keep the type
+    /// and add only its template and guide to it, leaving its files,
+    /// frontmatter, other keys, and comments as they are. Refuses a type
+    /// whose frontmatter doesn't declare the template's fields as strings,
+    /// or that names a template or guide already.
+    #[arg(long)]
+    pub keep_type: bool,
 
     /// How to show what was written.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -206,6 +214,7 @@ fn run_eject(global: &Global, args: &EjectArgs, out: &mut dyn Write, err: &mut d
         names: &args.names,
         to: &to,
         ascribe_version: env!("ASCRIBE_VERSION"),
+        keep_type: args.keep_type,
     };
     let ejected = match ascribe_templates::eject(&request, &fs) {
         Ok(ejected) => ejected,
@@ -278,6 +287,20 @@ pub(crate) fn write_added(
             from_here(root, &added.folder)
         )?;
     }
+    for kept in &ejected.kept {
+        writeln!(
+            out,
+            "added `template` and `guide` to [types.{}] in {}, and left {} as {}",
+            kept.name,
+            from_here(root, ascribe_check::MODEL_FILE),
+            listed(&kept.left),
+            if kept.left.len() <= 1 {
+                "it was"
+            } else {
+                "they were"
+            }
+        )?;
+    }
     if !ejected.added.is_empty() {
         writeln!(
             out,
@@ -285,9 +308,20 @@ pub(crate) fn write_added(
             from_here(root, ascribe_check::MODEL_FILE)
         )?;
     }
-    match ejected.added.as_slice() {
-        [] => {}
-        [one] => writeln!(
+    match (ejected.added.as_slice(), ejected.kept.as_slice()) {
+        ([], []) => {}
+        ([], [one]) => writeln!(
+            out,
+            "To start a page, copy {} to where [types.{}]'s `files` cover, and read {} first.",
+            from_here(root, &one.template),
+            one.name,
+            one.guide
+                .iter()
+                .map(|g| from_here(root, g))
+                .collect::<Vec<_>>()
+                .join(" and ")
+        )?,
+        ([one], []) => writeln!(
             out,
             "To start a page, copy {} into {}/, and read {} first.",
             from_here(root, &one.template),
@@ -304,6 +338,18 @@ pub(crate) fn write_added(
         )?,
     }
     Ok(())
+}
+
+/// `keys` as a person reads a list of them: "`files`, `purpose`, and
+/// `frontmatter`".
+fn listed(keys: &[String]) -> String {
+    let keys: Vec<String> = keys.iter().map(|k| format!("`{k}`")).collect();
+    match keys.as_slice() {
+        [] => "the rest".to_owned(),
+        [one] => one.clone(),
+        [a, b] => format!("{a} and {b}"),
+        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
+    }
 }
 
 /// Exit codes: 0 whatever it finds; 1 with `--exit-code` when the set has

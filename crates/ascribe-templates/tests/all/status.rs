@@ -33,6 +33,7 @@ fn project(names: &[&str]) -> tempfile::TempDir {
             names: &names,
             to: &RelPath::parse("templates").expect("a path"),
             ascribe_version: "9.9.9",
+            keep_type: false,
         },
         &fs,
     )

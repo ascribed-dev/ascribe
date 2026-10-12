@@ -20,7 +20,8 @@ pub mod start;
 pub mod status;
 
 pub use eject::{
-    Added, Eject, EjectAnswer, EjectError, LOCK_FILE, Refusal, RefusalReason, TEMPLATES_DIR, eject,
+    Added, Eject, EjectAnswer, EjectError, Kept, LOCK_FILE, Refusal, RefusalReason, TEMPLATES_DIR,
+    eject,
 };
 pub use init::{Init, InitAnswer, InitError, MODEL_TEXT, init};
 pub use lock::summaries;

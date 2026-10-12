@@ -169,7 +169,7 @@ fn eject_refused_writes_nothing_and_exits_2() {
     assert_eq!(stdout(&output), "");
     let err = stderr(&output);
     assert!(
-        err.starts_with("error: how-to: ascribe.toml declares [types.how-to] already\n"),
+        err.starts_with("error: how-to: ascribe.toml declares [types.how-to] already; `ascribe templates eject how-to --keep-type` takes the template for it\n"),
         "{err}"
     );
     assert!(err.ends_with("wrote nothing\n"), "{err}");
@@ -184,6 +184,86 @@ fn eject_refused_writes_nothing_and_exits_2() {
     assert_eq!(answer["refused"][0]["reason"], "declared");
     assert_eq!(answer["refused"][1]["reason"], "file_in_the_way");
     assert_eq!(answer["refused"][1]["path"], "templates/how-to.md");
+}
+
+#[test]
+fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
+    let dir = project();
+    let model = format!(
+        "{MODEL}\n[types.reference]\nfiles = [\"reference/**\", \"contracts/**\"]\n\n# Titles show code.\n[types.reference.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\ndescription = {{ type = \"string\", role = \"description\" }}\n"
+    );
+    fs::write(dir.path().join("ascribe.toml"), &model).unwrap();
+    let output = ascribe(
+        dir.path(),
+        &["templates", "eject", "reference", "--keep-type"],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert_eq!(
+        stdout(&output),
+        "wrote templates/reference.md\n\
+         wrote templates/reference.guide.md\n\
+         wrote templates/reference.ascribe.md\n\
+         wrote templates/templates.lock\n\
+         wrote ascribe.toml\n\
+         added `template` and `guide` to [types.reference] in ascribe.toml, and left `files` and `frontmatter` as they were\n\
+         To start a page, copy templates/reference.md to where [types.reference]'s `files` cover, and read templates/reference.guide.md and templates/reference.ascribe.md first.\n"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
+        model.replace(
+            "\"contracts/**\"]\n",
+            "\"contracts/**\"]\ntemplate = \"templates/reference.md\"\nguide = [\"templates/reference.guide.md\", \"templates/reference.ascribe.md\"]\n"
+        )
+    );
+    let again = ascribe(
+        dir.path(),
+        &[
+            "templates",
+            "eject",
+            "reference",
+            "--keep-type",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(code_of(&again), 2);
+    let answer: Value = serde_json::from_slice(&again.stdout).unwrap();
+    assert_eq!(answer["refused"][0]["reason"], "type_has_template");
+    assert_eq!(answer["kept"], Value::Array(Vec::new()));
+}
+
+#[test]
+fn eject_s_json_lists_what_it_kept() {
+    let dir = project();
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        format!("{MODEL}\n[types.how-to]\nfiles = [\"tasks/**\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"),
+    )
+    .unwrap();
+    let output = ascribe(
+        dir.path(),
+        &[
+            "templates",
+            "eject",
+            "how-to",
+            "--keep-type",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(answer["added"], Value::Array(Vec::new()));
+    assert_eq!(
+        answer["kept"],
+        serde_json::json!([{
+            "name": "how-to",
+            "summary": ascribe_templates::set().templates[0].summary,
+            "template": "templates/how-to.md",
+            "guide": ["templates/how-to.guide.md", "templates/how-to.ascribe.md"],
+            "left": ["files", "frontmatter"],
+        }])
+    );
 }
 
 #[test]
