@@ -250,7 +250,7 @@ export interface ContentsRelease extends ContentsEntry {
  * The anchored changelog made to scan: each release and each of its areas a
  * `<section>`, each area's heading with its count of entries, and each entry
  * a `<details>` whose `<summary>` is what the entry says first, with the rest
- * under it (decision 131):
+ * under it (decision #382c):
  *
  * - its bold text, when that's a sentence of its own;
  * - otherwise its first sentence: an entry whose bold text is only `Fixed:`,

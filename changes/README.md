@@ -2,7 +2,7 @@
 
 Each change a user would notice adds its changelog entry here, as a file of its own, instead of editing [CHANGELOG.md](../CHANGELOG.md): pull requests then never change the same lines of the changelog, so they don't conflict there. A release gathers the files into the changelog's unreleased section and deletes them (decision 123 in [project-docs/decisions.md](../project-docs/decisions.md)).
 
-**Put** the file in the folder of the change's area (decision 129). A release gathers it under that area's heading, and the site's changelog page groups the entries by them:
+**Put** the file in the folder of the change's area (decision #382a in [project-docs/decisions/](../project-docs/decisions/382a-changelog-areas.md)). A release gathers it under that area's heading, and the site's changelog page groups the entries by them:
 
 | Folder | Heading | For |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ A change that spans areas goes where a reader would look for it first. A new are
 - **`ascribe check --fix` applies the safe fixes.** Every fix `ascribe check` marks `safe` is applied, then the check reports what's left.
 ```
 
-**Keep the bold sentence to 100 characters** as it reads, without the Markdown (decision 130). The changelog page shows each entry closed, as its bold sentence alone, so that sentence says what changed, and the rest goes after it. A fix's bold text is **Fixed:**, and the page shows it with the sentence after it, which the limit counts too (decision 131):
+**Keep the bold sentence to 100 characters** as it reads, without the Markdown (decision #382b). The changelog page shows each entry closed, as its bold sentence alone, so that sentence says what changed, and the rest goes after it. A fix's bold text is **Fixed:**, and the page shows it with the sentence after it, which the limit counts too (decision #382c):
 
 ```markdown
 - **Fixed:** `ascribe fmt` no longer follows a symbolic link out of the content root. A file that's a link…

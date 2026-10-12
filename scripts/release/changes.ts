@@ -53,7 +53,7 @@ export const AREAS: readonly { folder: string; heading: string }[] = [
 /**
  * The most characters an entry's summary has, as a reader sees it, with no
  * Markdown: about two lines of the changelog page, where an entry shows its
- * summary until it's opened (decision 130).
+ * summary until it's opened (decision #382b).
  */
 export const SUMMARY_LIMIT = 100;
 
@@ -259,7 +259,7 @@ export function checkChange(change: Change, exists: (file: string) => boolean): 
  * What an entry shows while it's closed on the changelog page, as plain text:
  * its bold text, when that's a sentence of its own, and otherwise its first
  * sentence, as for an entry whose bold text is only `Fixed:` or starts a
- * sentence (`**`@snippet`** puts…`), or that has none (decision 131). `item`
+ * sentence (`**`@snippet`** puts…`), or that has none (decision #382c). `item`
  * is one list item, from its `- `. The page finds the same in the rendered
  * HTML (`site/src/changelog.ts`).
  */

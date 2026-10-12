@@ -110,7 +110,7 @@ The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access t
 
 ### 1. Check what's published
 
-Gather the changelog's entries first: each change since the last release wrote its entry as a file in its area's folder of `changes/` (decisions 123 and 129), and this moves each to the top of its area's `###` heading in `CHANGELOG.md`'s unreleased section and deletes their files.
+Gather the changelog's entries first: each change since the last release wrote its entry as a file in its area's folder of `changes/` (decisions 123 and #382a), and this moves each to the top of its area's `###` heading in `CHANGELOG.md`'s unreleased section and deletes their files.
 
 ```sh
 node scripts/release/changes.ts gather
