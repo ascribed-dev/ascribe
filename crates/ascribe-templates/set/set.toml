@@ -15,3 +15,9 @@ name = "concept"
 summary = "An explanation of a concept, context, or background information about a product or its features."
 template = "concept.md"
 guide = "concept.guide.md"
+
+[[template]]
+name = "tutorial"
+summary = "Instructions for setting up an example project using the product, intended for the purpose of hands-on learning."
+template = "tutorial.md"
+guide = "tutorial.guide.md"

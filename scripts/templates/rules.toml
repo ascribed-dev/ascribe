@@ -24,3 +24,11 @@ before = "1. {Write the step here. Use a verb to start.}"
 
 [concept]
 description = "{One sentence that says what the concept is and why a reader needs it.}"
+
+[tutorial]
+description = "{One sentence that says what a reader will have learned by the end of this tutorial.}"
+
+# Their procedure: the numbered steps under "{Task name}".
+[[tutorial.directives]]
+directive = "@steps"
+before = "1. {Write the step here. Use a verb to start.}"

@@ -45,6 +45,14 @@ pub const FILES: &[File] = &[
         name: "how-to.md",
         text: include_str!("../set/how-to.md"),
     },
+    File {
+        name: "tutorial.guide.md",
+        text: include_str!("../set/tutorial.guide.md"),
+    },
+    File {
+        name: "tutorial.md",
+        text: include_str!("../set/tutorial.md"),
+    },
 ];
 
 /// The set, as `set.toml` lists it.
