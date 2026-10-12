@@ -47,7 +47,7 @@ export interface PageRecord {
 }
 
 /** What a kind of crawler is for: gathering training data, building an AI search index, or fetching at a person's request. */
-export type Purpose = "training" | "search" | "on-request";
+type Purpose = "training" | "search" | "on-request";
 
 /** The group of `robots.txt` a disallowed purpose writes. */
 export interface RobotsGroup {
