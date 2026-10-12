@@ -1,0 +1,22 @@
+description: >-
+  A page that sets a looser value than a rule it's under is an error at the
+  value, naming the rule; the page keeps the rule's value.
+spec: ["2.1", "7.2"]
+tags: [resolve, check]
+
+diagnostics:
+  - {slug: listing-loosened, file: internal/plan.md, line: 3}
+  - {slug: listing-loosened, file: internal/faq.md, line: 3}
+  - {slug: listing-loosened, file: changes/one.md, line: 3}
+
+builds:
+  site:
+    pages:
+      changes/one.md:
+        listing: unquoted
+      internal/changes.md:
+        listing: unlisted
+      internal/faq.md:
+        listing: unlisted
+      internal/plan.md:
+        listing: unlisted

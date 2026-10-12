@@ -1,5 +1,6 @@
 //! Hover (SPEC §10): what a link or include points at, a phrase's value, the
-//! availability a spec resolves to, and what a directive is.
+//! availability a spec resolves to, the rule of `[listing]` a page is
+//! under, and what a directive is.
 
 use ascribe_core::schema::{
     AttributeSchema, AttributeType, Attributes, DefaultValue, DirectiveSchema, Origin, Primary,
@@ -52,6 +53,7 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
         }
         Hit::Availability(text, span) => (span, availability_markdown(&ctx.model, text)?),
         Hit::Frontmatter(text, span) => (span, availability_markdown(&ctx.model, &text)?),
+        Hit::Listing(span) => (span, listing_markdown(&ctx.model, ctx.path.as_str())),
         Hit::Directive(d) => {
             let schema = ctx
                 .model
@@ -291,5 +293,25 @@ pub(crate) fn type_name(ty: &AttributeType) -> String {
         AttributeType::Set(SetMember::String) => "set of strings".to_owned(),
         AttributeType::Set(SetMember::Enum(values)) => format!("set of {}", values.join(" | ")),
         AttributeType::NoteType => "note type".to_owned(),
+    }
+}
+
+/// The rule of `[listing]` a page at `path` is under, for its `listing:`
+/// line.
+fn listing_markdown(model: &ContentModel, path: &str) -> String {
+    let values = "`listed`, then `unquoted`, then `unlisted`";
+    match model.listing_rule(path) {
+        Some(rule) => format!(
+            "**Under `{}`**, line {} of `ascribe.toml`.\n\n\
+             This page is at least `{}`. It can set that or a stricter value, \
+             from {values}, and not a looser one.",
+            rule.text,
+            rule.line,
+            rule.listing.name()
+        ),
+        None => format!(
+            "**No rule of `[listing]` applies to this page.**\n\n\
+             Its own value says how it's listed, from {values}."
+        ),
     }
 }

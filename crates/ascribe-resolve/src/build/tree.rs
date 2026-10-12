@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::AvailabilitySpec;
 use ascribe_core::{FileId, Location, RelPath, Span};
-use ascribe_model::{Listing, Segment};
+use ascribe_model::{Listing, ListingFrom, Segment};
 use ascribe_syntax::{Block, Bound, DirectiveLine, EndLine};
 
 use crate::expand::{IncludeSite, PageProblem};
@@ -60,9 +60,12 @@ pub struct ResolvedPage {
     /// The page's own permalink, its frontmatter `permalink` (SPEC §2.1),
     /// when that's a string.
     pub permalink: Option<PagePermalink>,
-    /// The page's `listing` (SPEC §2.1): its frontmatter's, or `listed`
-    /// when it sets none or a value that isn't one.
+    /// The page's `listing` (SPEC §2.1): the strictest of its frontmatter's
+    /// and the rules of `[listing]` it's under, or `listed` when nothing sets
+    /// one.
     pub listing: Listing,
+    /// Where [`ResolvedPage::listing`] comes from.
+    pub listing_from: ListingFrom,
     /// The blocks that survived the build, includes expanded.
     pub blocks: Vec<ResolvedBlock>,
     /// The assets the surviving content references, in document order, each

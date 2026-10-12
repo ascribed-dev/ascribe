@@ -1,0 +1,19 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.guide]
+default = true
+
+[types.guide.frontmatter]
+title = "string"
+
+[types.changelog]
+files = ["changes/**"]
+
+[types.changelog.frontmatter]
+title = "string"
+
+[listing.folders]
+"internal/" = "unlisted"

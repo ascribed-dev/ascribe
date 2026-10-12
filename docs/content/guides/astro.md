@@ -86,7 +86,7 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
 
 @available: next
-`<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes what the page's head says about it to search engines and other crawlers: its `<title>`, its description, its canonical link, and a robots rule for a page that isn't listed, from the page's record ([search engines and crawlers](#search-engines-and-crawlers)).
+`<Head entry={entry} />`, from `@ascribed/astro/Head.astro`, writes what the page's head says about it to search engines and other crawlers: its `<title>`, its description, its canonical link, and a robots rule for a page that isn't listed or isn't to be quoted, from the page's record ([search engines and crawlers](#search-engines-and-crawlers)).
 
 @available: ascribe 0.2.0
 The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`, and the layout shows `title`. See [code in a field](../reference/content-model.md#53-code-in-a-field).
@@ -262,7 +262,7 @@ The files are static, so any host serves them. A few things the spec asks are th
 ## Search engines and crawlers
 @available: next
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../reference/content-model.md#listing-a-page), and the project's own `robots.txt` lines from [`[crawlers]`](../reference/content-model.md#21-crawlers). The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
+Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](../reference/content-model.md#listing-a-page), whether the page set it or a rule of [`[listing]`](../reference/content-model.md#22-listing) did, for a folder, a type, or the whole site, and the project's own `robots.txt` lines from [`[crawlers]`](../reference/content-model.md#21-crawlers). The integration writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page.
 
 ### The head
 
@@ -278,7 +278,7 @@ const { entry } = Astro.props;
 </head>
 ```
 
-It writes the page's `<title>`, `<meta name="description">`, `<link rel="canonical">` when `[consumer] site` is set, and `<meta name="robots" content="noindex">` for a page that's `unlisted`. `title` is a function from the page's title and its record to the whole title; the record has the page's `route`, so a site can title its home page differently. Without `title`, the title is the page's own. A page whose title is missing gets no `<title>` from it.
+It writes the page's `<title>`, `<meta name="description">`, `<link rel="canonical">` when `[consumer] site` is set, `<meta name="robots" content="noindex">` for a page that's `unlisted`, and `<meta name="robots" content="nosnippet">` for one that's `unquoted`, which asks a search engine to show no text from it in a result, or in an AI answer inside its search product; it asks nothing of a crawler gathering training data. `title` is a function from the page's title and its record to the whole title; the record has the page's `route`, so a site can title its home page differently. Without `title`, the title is the page's own. A page whose title is missing gets no `<title>` from it.
 
 A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro`, and writes its own `<title>`, description, and canonical link. A page that isn't an Ascribe page and shouldn't be listed writes its own `<meta name="robots" content="noindex">`, and goes in the `sitemap` option's `exclude`, since the integration reads no HTML and can't see the rule.
 

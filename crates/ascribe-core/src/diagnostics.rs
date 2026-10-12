@@ -590,6 +590,18 @@ pub const MODEL_CRAWLERS_LINE: DiagnosticSlug = DiagnosticSlug("model-crawlers-l
 /// `ASC184`, advice, file level: a content check (area `outputs`).
 pub const LISTING_DISALLOWED: DiagnosticSlug = DiagnosticSlug("listing-disallowed");
 
+/// `ASC185`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_LISTING_FOLDER: DiagnosticSlug = DiagnosticSlug("model-listing-folder");
+
+/// `ASC186`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_LISTING_TYPE: DiagnosticSlug = DiagnosticSlug("model-listing-type");
+
+/// `ASC187`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_LISTING_LOOSER: DiagnosticSlug = DiagnosticSlug("model-listing-looser");
+
+/// `ASC188`, error, file level: SPEC §8.2, "Frontmatter | `listing` looser than a rule of the content model the page is under".
+pub const LISTING_LOOSENED: DiagnosticSlug = DiagnosticSlug("listing-loosened");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -776,6 +788,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     INCLUDE_LIMIT,
     MODEL_CRAWLERS_LINE,
     LISTING_DISALLOWED,
+    MODEL_LISTING_FOLDER,
+    MODEL_LISTING_TYPE,
+    MODEL_LISTING_LOOSER,
+    LISTING_LOOSENED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

@@ -32,7 +32,7 @@ import {
 } from "./nav.js";
 
 export type { NavGroup, SidebarGroup, SidebarPage } from "./nav.js";
-export type { Listing, PageRecord } from "./records.js";
+export type { Listing, ListingFrom, PageRecord } from "./records.js";
 
 /**
  * The collection's loader and schema: the `glob` loader on the site output's

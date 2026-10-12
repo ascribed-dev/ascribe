@@ -93,7 +93,7 @@ An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY
   permalink: cli-reference
   ---
   ```
-- `listing` says whether a page is offered to readers that aren't people, such as search engines and AI agents. Its value is one of `listed`, `unquoted`, and `unlisted`, in that order from open to closed; a page that doesn't set it is `listed`. A `listed` page is offered: a compiler lists it in `llms.txt` (§9.4). An `unquoted` page is listed and asks not to be quoted. An `unlisted` page asks not to be listed, and isn't offered: a compiler leaves it out of `llms.txt`, and out of anything else it writes that offers pages. It is still built, at its address.
+- `listing` says whether a page is offered to readers that aren't people, such as search engines and AI agents. Its value is one of `listed`, `unquoted`, and `unlisted`, in that order from open to closed; a page that doesn't set it is `listed`. A `listed` page is offered: a compiler lists it in `llms.txt` (§9.4). An `unquoted` page is listed and asks not to be quoted. An `unlisted` page asks not to be listed, and isn't offered: a compiler leaves it out of `llms.txt`, and out of anything else it writes that offers pages. It is still built, at its address. The content model MAY set a listing for the whole site, for the pages under a folder, or for the pages of a content type (§7.2). A page's listing is then the strictest of its own and the content model's that apply to it: a page MAY set a stricter value than they do, or the same, and a page that sets a looser one is an error (§8.2).
 
   ```yaml
   ---
@@ -816,6 +816,7 @@ A content model declares the following.
 | Sources | Named sets of files outside the content that pages may take code from: each one's folder or repository, and which of its files are readable | §4.8, §7.3, §7.4 |
 | Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
 | Crawlers | The project's own `robots.txt` lines, with paths from the project's base path | §9.4 |
+| Listing | How pages are listed (§2.1): the site's default, and a value for the pages under a folder, by its path from the content root, or of a content type. A folder's value MUST NOT be looser than that of a folder it's under, and neither a folder's nor a type's looser than the default; processors reject a content model that does when loading it | §2.1 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -1015,6 +1016,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
 | Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment | Error |
+| Frontmatter | `listing` looser than a rule of the content model the page is under | Error |
 | Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |
 | Files | Source file that can't be read, or isn't valid UTF-8 | Error |
@@ -1139,7 +1141,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 **Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid.
 
-**Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
+**Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1) and where it comes from (the page, a rule of the content model, or neither), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
 
 **JSON output.** The resolved tree, for custom consumers.
 

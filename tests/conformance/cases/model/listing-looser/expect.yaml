@@ -1,0 +1,11 @@
+description: >-
+  A rule can only restrict: a folder under a stricter folder, and a folder
+  or a type under a stricter `default`, are errors at the narrower rule. A
+  rule as strict as the one it's under, or stricter, is fine.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-listing-looser, file: ascribe.toml, line: 8}
+  - {slug: model-listing-looser, file: ascribe.toml, line: 9}
+  - {slug: model-listing-looser, file: ascribe.toml, line: 13}

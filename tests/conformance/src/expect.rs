@@ -115,6 +115,10 @@ pub struct PageExpect {
         serialize_with = "serialize_outline"
     )]
     pub outline: Option<Outline>,
+    /// The page's `listing` (SPEC §2.1), after the content model's rules:
+    /// `listed`, `unquoted`, or `unlisted`.
+    #[serde(default)]
+    pub listing: Option<String>,
     /// Expected outputs, by emitter.
     #[serde(default)]
     pub outputs: BTreeMap<OutputKind, OutputSlot>,

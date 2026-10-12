@@ -6,7 +6,7 @@ permalink: content-model
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
-A file containing only `spec = "0.1"` is valid; every section has a default ([§22](#22-defaults-what-an-absent-section-means)). Example files:
+A file containing only `spec = "0.1"` is valid; every section has a default ([§23](#23-defaults-what-an-absent-section-means)). Example files:
 
 - [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
@@ -37,8 +37,9 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 19. [`[checks]`](#19-checks)
 20. [`[permalinks]`](#20-permalinks)
 21. [`[crawlers]`](#21-crawlers)
-22. [Defaults: what an absent section means](#22-defaults-what-an-absent-section-means)
-23. [Validation](#23-validation)
+22. [`[listing]`](#22-listing)
+23. [Defaults: what an absent section means](#23-defaults-what-an-absent-section-means)
+24. [Validation](#24-validation)
 
 ---
 
@@ -91,7 +92,7 @@ A page says whether readers that aren't people are offered it with `listing` ([S
 | Value | What it means |
 |---|---|
 | `listed` | The default, when a page doesn't set it. Search engines may list it, and agents are offered it in `llms.txt`. |
-| `unquoted` | Listed, and asks not to be quoted. Accepted, and in the page's record, but nothing else acts on it yet. |
+| `unquoted` | Listed, and asks not to be quoted (`nosnippet`): a search result, or an AI answer inside a search product, shows no text from it. It's in `llms.txt` and the sitemap. |
 | `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt` and the sitemap. It's still built, at its address, with its Markdown version. |
 
 ```yaml
@@ -103,10 +104,10 @@ listing: unlisted
 
 Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output, and `llms.txt` is written from the record. In an Astro site, `@ascribed/astro` writes the page's head, the sitemap, and `robots.txt` from it too ([the Astro guide](../guides/astro.md#search-engines-and-crawlers)). The site output's frontmatter doesn't carry `listing`, since the record does. A record's canonical address needs [`[consumer] site`](#15-consumer): without it, a site gets no canonical links and no sitemap, which needs absolute addresses. Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
 
+A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](#22-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
+
 What isn't handled yet:
 
-- **The setting is made on a page only,** not for a folder, a type, or the whole site.
-- **`unquoted` isn't acted on.** It's listed, as `listed` is.
 - **A project says nothing to crawlers by purpose,** such as the ones that gather training data. Its own `robots.txt` lines are [`[crawlers]`](#21-crawlers).
 - **The Markdown version of a page that isn't listed can still be indexed,** since only a response header keeps a file that isn't HTML out of a search index, and Ascribe doesn't write one yet.
 
@@ -515,12 +516,30 @@ A project doesn't yet say anything about crawlers by purpose, such as the ones t
 
 ---
 
-## 22. Defaults: what an absent section means
+## 22. `[listing]`
+@available: next
+
+@include: ../_fragments/content-model/listing.md
+
+`unlisted` pages are out of the sitemap and `llms.txt`, and their head asks not to be listed; `unquoted` pages stay in both, and their head asks not to be quoted (`nosnippet`). That limits what a search result, or an AI answer inside a search product, may quote from the page. It asks nothing of a crawler gathering training data. So a whole folder can be kept out of search without a change to any of its pages:
+
+```toml
+[listing.folders]
+"internal/" = "unlisted"
+```
+
+In the editor, `listing:` in a page's frontmatter completes its three values, and hovering it says which rule the page is under. A page looser than its rule has a quick fix that removes its `listing`.
+
+**Rules.** Each value is one of the three (`model-invalid-value`). A folder is a path from the content root ending in `/`, with no `.` or `..` part or pattern characters, of a folder that's there, with its name's case as on disk (`model-listing-folder`). A type is one the project declares, or `page` when it declares none (`model-listing-type`). A rule isn't looser than a folder's it's under, or than `default` (`model-listing-looser`). A page isn't looser than a rule it's under (`listing-loosened`). No other key is allowed in `[listing]` (`model-unknown-key`).
+
+---
+
+## 23. Defaults: what an absent section means
 
 @include: ../_fragments/content-model/defaults.md
 
 ---
 
-## 23. Validation
+## 24. Validation
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](diagnostics.md#the-content-model), with its code and how to fix it.

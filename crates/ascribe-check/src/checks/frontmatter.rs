@@ -9,7 +9,9 @@
 
 use ascribe_core::Router;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
-use ascribe_model::{FieldRole, FrontmatterSchema, Listing, TypeMatch, validate_frontmatter};
+use ascribe_model::{
+    FieldRole, FrontmatterSchema, Listing, ListingLevel, TypeMatch, validate_frontmatter,
+};
 use ascribe_resolve::{AstroRouter, llms, pages};
 use ascribe_syntax::Frontmatter;
 use serde_yaml_ng::Value;
@@ -243,12 +245,14 @@ impl Ctx<'_> {
             let node = index.get(Listing::KEY);
             let at = node.map_or(first_line, |n| n.value);
             match v.as_str().and_then(Listing::from_name) {
-                Some(Listing::Unlisted) => {
+                Some(listing) => {
                     if let Some(node) = node {
-                        self.check_listing_fetched(node);
+                        self.check_listing_rule(listing, node);
+                        if listing == Listing::Unlisted {
+                            self.check_listing_fetched(node);
+                        }
                     }
                 }
-                Some(_) => {}
                 None => {
                     let values: Vec<&str> = Listing::ALL.iter().map(|l| l.name()).collect();
                     self.mismatch(
@@ -260,6 +264,54 @@ impl Ctx<'_> {
                 }
             }
         }
+    }
+
+    /// A page whose `listing` is looser than the rule of `[listing]` it's
+    /// under (`listing-loosened`). The fix removes `listing`.
+    fn check_listing_rule(&mut self, listing: Listing, node: &Node) {
+        let Some(rule) = self.model.listing_rule(self.file.path.as_str()) else {
+            return;
+        };
+        if listing >= rule.listing {
+            return;
+        }
+        let mut issue = Issue::new(
+            diagnostics::LISTING_LOOSENED,
+            Location::new(self.id, node.value),
+        )
+        .with_arg("listing", listing.name())
+        .with_arg("rule", rule.text.clone())
+        .with_arg("line", rule.line.to_string());
+        if rule.level == ListingLevel::Site {
+            issue = issue
+                .with_variant("default")
+                .with_arg("strict", rule.listing.name());
+        }
+        if let Some(fix) = self.remove_listing(node, "Remove `listing` from the page", true) {
+            issue = issue.with_fix(fix);
+        }
+        self.report(issue);
+    }
+
+    /// A fix that removes the page's `listing` line, line break and all.
+    /// `None` when the key's place isn't known.
+    fn remove_listing(&self, node: &Node, title: &str, safe: bool) -> Option<Fix> {
+        let key = node.key?;
+        let text = &self.file.text;
+        let start = text[..key.start()].rfind('\n').map_or(0, |n| n + 1);
+        let end = text[key.start()..]
+            .find('\n')
+            .map_or(text.len(), |n| key.start() + n + 1);
+        Some(Fix {
+            title: title.to_owned(),
+            file: self.id,
+            edits: vec![TextEdit::replace(Span::new(start, end), String::new())],
+            applicability: if safe {
+                Applicability::Safe
+            } else {
+                Applicability::Unsafe
+            },
+        })
     }
 
     /// A page that's `unlisted` at an address the project's own `[crawlers]
@@ -279,20 +331,9 @@ impl Ctx<'_> {
             Location::new(self.id, node.value),
         )
         .with_arg("line", line.text.clone());
-        if let Some(key) = node.key {
-            // The whole line, its line break included.
-            let text = &self.file.text;
-            let start = text[..key.start()].rfind('\n').map_or(0, |n| n + 1);
-            let end = text[key.start()..]
-                .find('\n')
-                .map_or(text.len(), |n| key.start() + n + 1);
-            issue = issue.with_fix(Fix {
-                title: "Remove `listing: unlisted`".to_owned(),
-                file: self.id,
-                edits: vec![TextEdit::replace(Span::new(start, end), String::new())],
-                // It lists the page, which may not be what was meant.
-                applicability: Applicability::Unsafe,
-            });
+        // It lists the page, which may not be what was meant.
+        if let Some(fix) = self.remove_listing(node, "Remove `listing: unlisted`", false) {
+            issue = issue.with_fix(fix);
         }
         self.report(issue);
     }

@@ -14,6 +14,7 @@
 use ascribe_core::intended::Place;
 use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, SetMember};
 use ascribe_core::{LineIndex, RelPath, percent_decode};
+use ascribe_model::Listing;
 use ascribe_resolve::references::{include_target, reference_target};
 use ascribe_resolve::{FileIndex, RefKind, Target};
 use ascribe_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
@@ -50,6 +51,10 @@ pub(crate) fn complete(ctx: &Ctx, position: Position) -> Option<CompletionRespon
         && frontmatter.content.start() <= offset
         && offset <= frontmatter.content.end()
     {
+        if let Some(value) = prefix.strip_prefix("listing:") {
+            let typed = value.trim_start().trim_start_matches(['"', '\'']);
+            return Some(list(cx.listing(typed), false));
+        }
         let value = prefix.strip_prefix("available:")?;
         let typed = value.trim_start().trim_start_matches(['"', '\'']);
         return Some(list(cx.availability(typed), false));
@@ -113,6 +118,36 @@ impl Cx<'_> {
             })),
             ..CompletionItem::default()
         }
+    }
+
+    /// The values of a page's `listing`, from open to closed, after
+    /// `listing:` with `typed` typed. A value looser than the rule of
+    /// `[listing]` the page is under isn't offered.
+    fn listing(&self, typed: &str) -> Vec<CompletionItem> {
+        let floor = self
+            .ctx
+            .model
+            .listing_rule(self.ctx.path.as_str())
+            .map(|rule| rule.listing)
+            .unwrap_or_default();
+        Listing::ALL
+            .into_iter()
+            .filter(|l| *l >= floor && l.name().starts_with(typed))
+            .enumerate()
+            .map(|(n, l)| {
+                let mut item = self.item(l.name(), CompletionItemKind::ENUM_MEMBER, typed.len(), l.name());
+                item.sort_text = Some(n.to_string());
+                item.documentation = Some(markdown(
+                    match l {
+                        Listing::Listed => "Listed by search engines, and offered to agents in `llms.txt`.",
+                        Listing::Unquoted => "Listed, and asks not to be quoted (`nosnippet`).",
+                        Listing::Unlisted => "Asks not to be listed (`noindex`), and is out of the sitemap and `llms.txt`.",
+                    }
+                    .to_owned(),
+                ));
+                item
+            })
+            .collect()
     }
 
     // -- Directive lines ------------------------------------------------------

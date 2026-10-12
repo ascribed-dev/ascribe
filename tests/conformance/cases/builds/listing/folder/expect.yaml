@@ -1,0 +1,20 @@
+description: >-
+  A folder's rule applies to every page under it, in its folders too, with
+  no change to any page. A page whose path only starts with the folder's
+  name isn't under it.
+spec: ["2.1", "7.2"]
+tags: [resolve, check]
+
+diagnostics: []
+
+builds:
+  site:
+    pages:
+      index.md:
+        listing: listed
+      internal-notes.md:
+        listing: listed
+      internal/old/notes.md:
+        listing: unlisted
+      internal/plan.md:
+        listing: unlisted

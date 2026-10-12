@@ -1,0 +1,7 @@
+spec = "0.1"
+
+[listing.folders]
+"internal" = "unlisted"
+"drafts/**" = "unlisted"
+"../shared/" = "unlisted"
+"ok/" = "unlisted"

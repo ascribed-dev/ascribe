@@ -1204,3 +1204,39 @@ fn no_request_fails_at_any_position() {
         );
     }
 }
+
+// -- listing --------------------------------------------------------------------
+
+#[test]
+fn listing_completes_its_values_and_names_its_rule() {
+    let f = quill();
+    let model = format!(
+        "{}\n[listing]\ndefault = \"unquoted\"\n",
+        read(&f, "ascribe.toml")
+    );
+    f.write("ascribe.toml", &model);
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+
+    // A value looser than the rule isn't offered.
+    let values = complete(&mut client, &page, "---\ntitle: T\nlisting: $0\n---\n");
+    assert_eq!(labels(&values), ["unquoted", "unlisted"]);
+    let typed = complete(&mut client, &page, "---\ntitle: T\nlisting: unl$0\n---\n");
+    assert_eq!(labels(&typed), ["unlisted"]);
+    assert_eq!(new_text(&item(&typed, "unlisted")), "unlisted");
+
+    let text = "---\ntitle: T\nlisting: unlisted\n---\n";
+    client.open(&page, 200, text);
+    let line = model
+        .lines()
+        .position(|l| l == "default = \"unquoted\"")
+        .expect("the rule");
+    let shown = hover_text(&mut client, &page, at(text, "listing:", 2));
+    assert!(
+        shown.contains(&format!("`default = \"unquoted\"`**, line {}", line + 1)),
+        "{shown}"
+    );
+    let got = definition(&mut client, &page, at(text, "unlisted", 2)).expect("a rule");
+    let toml = uri(&f.path("ascribe.toml")).as_str().to_owned();
+    assert_eq!(location(&got), (toml, line as u64, 0));
+}

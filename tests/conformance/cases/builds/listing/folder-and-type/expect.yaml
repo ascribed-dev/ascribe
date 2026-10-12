@@ -1,0 +1,17 @@
+description: >-
+  A page under a folder's rule and of a type with a rule gets the stricter
+  of the two, whichever it is.
+spec: ["2.1", "7.2"]
+tags: [resolve, check]
+
+diagnostics: []
+
+builds:
+  site:
+    pages:
+      changes/beta/two.md:
+        listing: unquoted
+      changes/now.md:
+        listing: unquoted
+      changes/old/one.md:
+        listing: unlisted

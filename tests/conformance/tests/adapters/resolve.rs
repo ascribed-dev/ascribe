@@ -90,6 +90,7 @@ fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, Ad
             page.path.to_string(),
             PageResult {
                 outline: Some(outline(project, &page.blocks)?),
+                listing: Some(page.listing.name().to_owned()),
                 outputs: Default::default(),
             },
         );

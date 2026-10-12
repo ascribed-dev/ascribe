@@ -68,6 +68,8 @@ pub struct ContentModel {
     pub permalinks: ModelPermalinks,
     /// `[crawlers]`: what the project says to crawlers.
     pub crawlers: Crawlers,
+    /// `[listing]`: how the site's, a folder's, or a type's pages are listed.
+    pub listing: ListingRules,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
@@ -271,6 +273,137 @@ impl Listing {
     /// The value written `name`.
     pub fn from_name(name: &str) -> Option<Listing> {
         Listing::ALL.into_iter().find(|l| l.name() == name)
+    }
+}
+
+/// `[listing]`: how pages are listed, set for many at once: the whole site,
+/// a folder, or a content type. A page's listing is the strictest of the
+/// rules it's under and its own, and a page can't be looser than its rules.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ListingRules {
+    /// `default`: the site's, for every page.
+    pub default: Option<ListingRule>,
+    /// `[listing.folders]`, in declaration order.
+    pub folders: Vec<ListingRule>,
+    /// `[listing.types]`, in declaration order.
+    pub types: Vec<ListingRule>,
+}
+
+/// One rule of `[listing]`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ListingRule {
+    /// What it applies to.
+    pub level: ListingLevel,
+    /// Its value.
+    pub listing: Listing,
+    /// The rule as written, `key = value`.
+    pub text: String,
+    /// Its line in `ascribe.toml`, from 1.
+    pub line: usize,
+    /// The rule, `key = value`, in `ascribe.toml`.
+    pub span: Span,
+}
+
+/// What a rule of `[listing]` applies to.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ListingLevel {
+    /// Every page: `default`.
+    Site,
+    /// The pages under a folder, written from the content root and ending in
+    /// `/`: a key of `[listing.folders]`.
+    Folder(String),
+    /// The pages of a content type: a key of `[listing.types]`.
+    Type(String),
+}
+
+/// Where a page's listing comes from.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ListingFrom {
+    /// Nothing sets it: the page is `listed`.
+    #[default]
+    Default,
+    /// The page's own `listing`.
+    Page,
+    /// A rule of `[listing]`.
+    Rule(ListingRule),
+}
+
+impl ListingFrom {
+    /// The level, as the page records write it: `default`, `page`, `site`,
+    /// `folder`, or `type`.
+    pub fn level_name(&self) -> &'static str {
+        match self {
+            ListingFrom::Default => "default",
+            ListingFrom::Page => "page",
+            ListingFrom::Rule(rule) => match rule.level {
+                ListingLevel::Site => "site",
+                ListingLevel::Folder(_) => "folder",
+                ListingLevel::Type(_) => "type",
+            },
+        }
+    }
+}
+
+impl ListingRules {
+    /// Whether the project has no rules.
+    pub fn is_empty(&self) -> bool {
+        self.default.is_none() && self.folders.is_empty() && self.types.is_empty()
+    }
+}
+
+impl ContentModel {
+    /// The strictest rule of `[listing]` a page at `path` (from the content
+    /// root, with `/`) is under, or `None` when it's under none. Of rules
+    /// equally strict, the narrowest is given: the deepest folder, then the
+    /// type, then the site's default. A folder and a type have no order
+    /// between them; the folder is named first.
+    pub fn listing_rule(&self, path: &str) -> Option<&ListingRule> {
+        let type_name = match self.type_for(path) {
+            TypeMatch::One(t) => Some(t.name.as_str()),
+            _ => None,
+        };
+        let mut folders: Vec<&ListingRule> = self
+            .listing
+            .folders
+            .iter()
+            .filter(|r| matches!(&r.level, ListingLevel::Folder(f) if path.starts_with(f.as_str())))
+            .collect();
+        folders.sort_by_key(|r| match &r.level {
+            ListingLevel::Folder(f) => std::cmp::Reverse(f.len()),
+            _ => std::cmp::Reverse(0),
+        });
+        let types =
+            self.listing.types.iter().filter(
+                |r| matches!(&r.level, ListingLevel::Type(t) if Some(t.as_str()) == type_name),
+            );
+        let mut best: Option<&ListingRule> = None;
+        for rule in folders
+            .into_iter()
+            .chain(types)
+            .chain(self.listing.default.iter())
+        {
+            if best.is_none_or(|b| rule.listing > b.listing) {
+                best = Some(rule);
+            }
+        }
+        best
+    }
+
+    /// A page's listing, given its own `listing` (`None` when it sets none
+    /// or a value that isn't one), and where it comes from: the strictest of
+    /// the page's own and the rules it's under. A page as strict as its
+    /// rule, or stricter, has its own; a looser one, which `ascribe check`
+    /// reports, has its rule's.
+    pub fn listing_of(&self, path: &str, own: Option<Listing>) -> (Listing, ListingFrom) {
+        let rule = self.listing_rule(path);
+        match (own, rule) {
+            (Some(own), Some(rule)) if own < rule.listing => {
+                (rule.listing, ListingFrom::Rule(rule.clone()))
+            }
+            (Some(own), _) => (own, ListingFrom::Page),
+            (None, Some(rule)) => (rule.listing, ListingFrom::Rule(rule.clone())),
+            (None, None) => (Listing::Listed, ListingFrom::Default),
+        }
     }
 }
 

@@ -1,0 +1,17 @@
+description: >-
+  A type's rule applies to every page of the type, and not to pages of
+  another.
+spec: ["2.1", "7.2"]
+tags: [resolve, check]
+
+diagnostics: []
+
+builds:
+  site:
+    pages:
+      changes/one.md:
+        listing: unquoted
+      changes/two.md:
+        listing: unquoted
+      index.md:
+        listing: listed

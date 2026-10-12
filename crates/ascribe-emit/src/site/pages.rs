@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, ListingFrom, ListingLevel};
 use ascribe_resolve::ResolvedBuild;
 use ascribe_resolve::pages::{PageRecord, records};
 use serde::Serialize;
@@ -31,8 +31,25 @@ struct Entry<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     canonical: Option<&'a str>,
     listing: &'static str,
+    listing_from: Origin<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
     markdown: Option<&'a str>,
+}
+
+/// Where a page's listing comes from: `level`, and for a rule of
+/// `[listing]`, its folder or type, the rule as written, and its line in
+/// `ascribe.toml`.
+#[derive(Serialize)]
+struct Origin<'a> {
+    level: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    folder: Option<&'a str>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    type_name: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rule: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    line: Option<usize>,
 }
 
 #[derive(Serialize)]
@@ -74,6 +91,27 @@ fn entry(record: &PageRecord) -> Entry<'_> {
         description: record.description.as_deref(),
         canonical: record.canonical.as_deref(),
         listing: record.listing.name(),
+        listing_from: origin(&record.listing_from),
         markdown: record.markdown.as_deref(),
+    }
+}
+
+fn origin(from: &ListingFrom) -> Origin<'_> {
+    let rule = match from {
+        ListingFrom::Rule(rule) => Some(rule),
+        ListingFrom::Default | ListingFrom::Page => None,
+    };
+    Origin {
+        level: from.level_name(),
+        folder: rule.and_then(|r| match &r.level {
+            ListingLevel::Folder(folder) => Some(folder.as_str()),
+            _ => None,
+        }),
+        type_name: rule.and_then(|r| match &r.level {
+            ListingLevel::Type(name) => Some(name.as_str()),
+            _ => None,
+        }),
+        rule: rule.map(|r| r.text.as_str()),
+        line: rule.map(|r| r.line),
     }
 }

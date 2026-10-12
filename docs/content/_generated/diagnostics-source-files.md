@@ -853,6 +853,19 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Read more:** [Files](../reference/directives.md#files) in the directive reference.
 
+#### ASC188 `listing-loosened`
+@id {permalink=true}: ASC188
+
+Error · file level · next step: fix · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** `listing` looser than a rule of the content model the page is under.
+
+**Message:** this page is `{listing}`, looser than `{rule}` on line \{line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter
+
+**Fix:** Remove the page's `listing`, which the rule already sets, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list the page more openly, change the rule in `[listing]`: a page can only restrict what it's under. The editor's quick fix removes `listing`.
+
+**Read more:** [`[listing]`](../reference/content-model.md#22-listing) in the `ascribe.toml` reference.
+
 ### Lists
 
 #### ASC052 `list-ended-by-directive`

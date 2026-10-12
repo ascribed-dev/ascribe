@@ -302,6 +302,7 @@ builds:
     pages:                     # every page the build publishes, exactly
       index.md:
         outline: [...]         # the resolved page
+        listing: unlisted      # its listing, after the content model's rules
         outputs:
           plain: snapshot
           site: {file: expected/cloud-pdf/index.site.md}
@@ -314,6 +315,7 @@ Every key is optional; an omitted key isn't checked.
 
 - **`pages`** lists every page the build publishes, by source path. The set must match exactly, so a page a build drops (§9.3) is checked by leaving it out. Fragments are never pages.
 - A page's **`outline`** describes the **resolved** page (§9.2): includes replaced by their content, the build's variant and availability modes applied (a group reduced to one arm becomes that arm's blocks), and phrases substituted in text. It uses the same schema as the file outline.
+- A page's **`listing`** is its `listing` (§2.1) after the content model's rules (§7.2): `listed`, `unquoted`, or `unlisted`.
 - **`assets`** lists every local file the build copies (§9.4, Assets), by source path. The set must match exactly.
 - **`diagnostics`** holds this build's page-level diagnostics, in the format above. `file` is required in project cases.
 - **`outputs`** maps an emitter (`plain`, `site`, or `json`) to where its expected output is recorded:

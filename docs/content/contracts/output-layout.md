@@ -98,6 +98,7 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
       "description": "Install and connect the sync agent.",
       "canonical": "https://docs.example.com/guides/install/",
       "listing": "listed",
+      "listing_from": { "level": "default" },
       "markdown": "/guides/install.md"
     }
   },
@@ -115,7 +116,8 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 | `pages.*.title` | The page's title, as plain text: the site output's `title`, never its formatted form. Absent when the page has none. |
 | `pages.*.description` | The page's description, the field its type marks `role = "description"`, as plain text on one line, as `llms.txt` shows it. Absent when it has none. |
 | `pages.*.canonical` | The page's own address, absolute: `site`, then the route. Absent when `site` is. |
-| `pages.*.listing` | The page's `listing` (SPEC §2.1): `listed`, `unquoted`, or `unlisted`. Every page has one; a page that doesn't set it is `listed`. |
+| `pages.*.listing` | The page's `listing` (SPEC §2.1): `listed`, `unquoted`, or `unlisted`, the strictest of its own and the rules of `[listing]` it's under. Every page has one; a page that nothing sets is `listed`. |
+| `pages.*.listing_from` | Where `listing` comes from. `level` is `default` when nothing sets it, `page` for the page's own `listing`, and for a rule of `[listing]` (content-model contract §22), its level: `site` for `default`, `folder`, or `type`. A rule's has `folder` or `type`, the key it's under; `rule`, the rule as written in `ascribe.toml`, `key = value`; and `line`, its line there, from 1. Of the rules a page is under, the strictest is named, and of rules as strict, the narrowest: the deepest folder, then the type, then `default`. A page as strict as its rule, or stricter, has `page`. |
 | `pages.*.markdown` | The address of the page's Markdown version, from the host's root, when the build publishes one (`[consumer] agents = true`). Absent otherwise. |
 | `robots` | What the project says to crawlers. |
 | `robots.lines` | The project's `[crawlers] lines` (content-model contract §21), in order, each path in an `Allow` or `Disallow` line with the base path before it, so that each is from the host's root, and every other line as written. Lines before any `User-agent` line are for every crawler. Empty when the project has none. |

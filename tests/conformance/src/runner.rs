@@ -311,6 +311,15 @@ impl Suite {
                         }
                     }
                 }
+                if let Some(listing) = &expect.listing {
+                    match &result.listing {
+                        None => problems.push(format!("{pat}.listing: the adapter produced none")),
+                        Some(actual) if actual != listing => problems.push(format!(
+                            "{pat}.listing: expected `{listing}`, got `{actual}`"
+                        )),
+                        Some(_) => {}
+                    }
+                }
                 for (kind, slot) in &expect.outputs {
                     let Some(output) = result.outputs.get(kind) else {
                         problems.push(format!("{pat}.outputs.{kind}: the adapter produced none"));

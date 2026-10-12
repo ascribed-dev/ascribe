@@ -13,7 +13,7 @@ use std::sync::Arc;
 use ascribe_core::path::normalize;
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_emit::labels::plain_text;
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, Listing};
 use ascribe_resolve::{FileIndex, Heading, Include, PhraseUse, Reference, Snapshot};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, PrimaryValue};
 use lsp_types::{Location, Position, Range, Uri};
@@ -129,6 +129,8 @@ pub(crate) enum Hit<'a> {
     Availability(&'a str, Span),
     /// The value of a frontmatter `available:` key.
     Frontmatter(String, Span),
+    /// A frontmatter `listing:` line, key and value.
+    Listing(Span),
     /// A directive's name, or one of its attribute keys.
     Directive(&'a DirectiveLine),
 }
@@ -169,6 +171,9 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
     if let Some((text, span)) = frontmatter_available(file, offset) {
         offer(&mut best, offset, span, Hit::Frontmatter(text, span));
     }
+    if let Some(span) = frontmatter_listing(file, offset) {
+        offer(&mut best, offset, span, Hit::Listing(span));
+    }
     if let Some((_, hit)) = best {
         return Some(hit);
     }
@@ -180,9 +185,13 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
     (touches(d.name_span, offset) || on_key).then_some(Hit::Directive(d))
 }
 
-/// The value of the frontmatter's `available:` key when `offset` is on its
-/// line, with the span of the value.
-pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(String, Span)> {
+/// The top-level frontmatter line with the key `key` when `offset` is on
+/// it, and where the frontmatter's content starts.
+fn frontmatter_line<'a>(
+    file: &'a FileIndex,
+    offset: usize,
+    key: &str,
+) -> Option<(ascribe_syntax::FrontmatterLine<'a>, usize)> {
     let content = file.document.frontmatter.as_ref()?.content;
     if !(content.start() <= offset && offset <= content.end()) {
         return None;
@@ -192,7 +201,22 @@ pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(
     let line = ascribe_syntax::frontmatter_lines(source.get(content.range())?)
         .into_iter()
         .find(|l| l.start == start && l.indent == 0 && l.item.is_none())
-        .filter(|l| l.key == Some("available") && !l.block)?;
+        .filter(|l| l.key == Some(key) && !l.block)?;
+    Some((line, content.start()))
+}
+
+/// The span of the frontmatter's `listing:` line, its key to the end of its
+/// value, when `offset` is on it.
+pub(crate) fn frontmatter_listing(file: &FileIndex, offset: usize) -> Option<Span> {
+    let (line, base) = frontmatter_line(file, offset, Listing::KEY)?;
+    let end = base + line.value_start + line.value.len();
+    Some(Span::new(base + line.start, end.max(base + line.start)))
+}
+
+/// The value of the frontmatter's `available:` key when `offset` is on its
+/// line, with the span of the value.
+pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(String, Span)> {
+    let (line, base) = frontmatter_line(file, offset, "available")?;
     let text = line.value;
     let unquoted = text
         .strip_prefix('"')
@@ -202,7 +226,7 @@ pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(
         Some(inner) => (inner, 1),
         None => (text, 0),
     };
-    let from = content.start() + line.value_start + quote;
+    let from = base + line.value_start + quote;
     Some((text.to_owned(), Span::new(from, from + text.len())))
 }
 

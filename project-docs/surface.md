@@ -88,12 +88,13 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 | `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
 | `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink ended on purpose, and a second name for one. | §20 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
+| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
 
 ## Diagnostics
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-183 in use, and 1 retired. By severity: 24 advice, 137 error, 22 warning. By level: 166 file, 17 page. By kind of next step: 40 choose, 12 fix, 3 outside, 10 review, 118 write.
+187 in use, and 1 retired. By severity: 24 advice, 141 error, 22 warning. By level: 170 file, 17 page. By kind of next step: 41 choose, 13 fix, 3 outside, 10 review, 120 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -281,6 +282,10 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC182` | `include-limit` | error | write | including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is |
 | `ASC183` | `model-crawlers-line` | error | write | `{key}` has a line break; each string in `lines` is one line of robots.txt |
 | `ASC184` | `listing-disallowed` | advice | fix | this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone |
+| `ASC185` | `model-listing-folder` | error | write | `{folder}` in `[listing.folders]` doesn't exist under the content root |
+| `ASC186` | `model-listing-type` | error | choose | `{type}` in `[listing.types]` isn't a content type; use one of: {values} |
+| `ASC187` | `model-listing-looser` | error | write | `{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict |
+| `ASC188` | `listing-loosened` | error | fix | this page is `{listing}`, looser than `{rule}` on line {line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter |
 
 ## The VS Code extension
 
