@@ -29,6 +29,7 @@ ascribe-model.workspace = true
 ascribe-query.workspace = true
 ascribe-resolve.workspace = true
 ascribe-sources.workspace = true
+ascribe-templates.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
@@ -39,6 +40,7 @@ ascribe-diff = { workspace = true, features = ["json-schema"] }
 ascribe-lsp = { workspace = true, features = ["json-schema"] }
 ascribe-query = { workspace = true, features = ["json-schema"] }
 ascribe-sources = { workspace = true, features = ["json-schema"] }
+ascribe-templates = { workspace = true, features = ["json-schema"] }
 insta.workspace = true
 # Integration tests copy example projects to a temporary directory.
 tempfile = "3"

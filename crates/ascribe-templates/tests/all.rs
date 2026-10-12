@@ -3,5 +3,7 @@
 //! this file. To run one file's tests: `cargo test -p ascribe-templates --test
 //! all set::`.
 
+#[path = "all/eject.rs"]
+mod eject;
 #[path = "all/set.rs"]
 mod set;

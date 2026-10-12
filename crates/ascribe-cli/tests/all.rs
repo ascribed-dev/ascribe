@@ -51,3 +51,5 @@ mod rename;
 mod report;
 #[path = "all/sources.rs"]
 mod sources;
+#[path = "all/templates.rs"]
+mod templates;

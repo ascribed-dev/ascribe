@@ -29,6 +29,8 @@ ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--b
 ascribe sources fetch     [NAME]...
 ascribe sources update    [NAME]... [--to <REV>] [--format text|json|markdown]
 ascribe sources status    [--format text|json]
+ascribe templates list
+ascribe templates eject   [NAME]... [--to <DIR>] [--format text|json]
 ascribe vale eject
 ascribe --version
 ```

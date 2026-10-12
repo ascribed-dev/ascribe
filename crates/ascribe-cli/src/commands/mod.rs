@@ -18,4 +18,5 @@ pub mod rename;
 pub mod render;
 pub mod report;
 pub mod sources;
+pub mod templates;
 pub mod vale;

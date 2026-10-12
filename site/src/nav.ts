@@ -25,6 +25,7 @@ export const nav: NavGroup[] = [
       "guides/report.md",
       "guides/measuring.md",
       "guides/permalinks.md",
+      "guides/templates.md",
     ],
   },
   {

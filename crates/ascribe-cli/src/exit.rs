@@ -58,6 +58,7 @@ mod tests {
     use crate::commands::rename::RenameCommandError;
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
+    use crate::commands::templates::TemplatesError;
     use crate::context::Failure;
 
     /// Every error code, once, with what it means. A tool that wraps a
@@ -220,6 +221,15 @@ mod tests {
         (
             "rename_unwritable",
             "a file rename changes can't be written",
+        ),
+        (
+            "templates_folder_refused",
+            "templates can't be written in that folder",
+        ),
+        ("templates_lock_invalid", "templates.lock can't be added to"),
+        (
+            "templates_unwritable",
+            "a template or templates.lock can't be written",
         ),
     ];
 
@@ -384,6 +394,19 @@ mod tests {
                 RenameError::Missing(_) | RenameError::Refused(_) => {}
             }
         }
+        fn templates(e: &ascribe_templates::EjectError) {
+            match e {
+                ascribe_templates::EjectError::Folder { .. }
+                | ascribe_templates::EjectError::Lock { .. }
+                | ascribe_templates::EjectError::Model { .. }
+                | ascribe_templates::EjectError::Write { .. } => {}
+            }
+        }
+        fn templates_command(e: &TemplatesError) {
+            match e {
+                TemplatesError::NoProject(_) | TemplatesError::ToOutside { .. } => {}
+            }
+        }
         fn rename_command(e: &RenameCommandError) {
             match e {
                 RenameCommandError::BadTarget { .. } | RenameCommandError::Unwritable { .. } => {}
@@ -407,6 +430,8 @@ mod tests {
             permalinks,
             rename,
             rename_command,
+            templates,
+            templates_command,
         );
 
         let store_errors = || {
@@ -553,6 +578,30 @@ mod tests {
                 reason: text(),
             }),
             Box::new(EjectError::Model(text())),
+            Box::new(ascribe_templates::EjectError::Folder {
+                folder: text(),
+                reason: text(),
+            }),
+            Box::new(ascribe_templates::EjectError::Lock {
+                path: text(),
+                reason: text(),
+            }),
+            Box::new(ascribe_templates::EjectError::Model {
+                types: text(),
+                reason: text(),
+            }),
+            Box::new(ascribe_templates::EjectError::Write {
+                path: text(),
+                reason: text(),
+            }),
+            Box::new(TemplatesError::NoProject(LocateError::NotFound {
+                dir: path(),
+                below: Vec::new(),
+            })),
+            Box::new(TemplatesError::ToOutside {
+                to: path(),
+                root: path(),
+            }),
             Box::new(Failure::Config(LocateError::NotFound {
                 dir: path(),
                 below: Vec::new(),

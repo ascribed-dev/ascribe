@@ -158,6 +158,44 @@ impl Place {
     }
 }
 
+/// Why no type can name a file in `folder`, a path from the project's
+/// folder, in words, when none can: it's above the project's folder, a link
+/// on the way leads there, or it's in the content root or the output
+/// directory. The rule [`check`] holds each file to, for a folder that
+/// needn't exist yet: `ascribe templates eject` asks it before writing one.
+pub fn folder_problem(folder: &RelPath, layout: &Layout, fs: &dyn FileSystem) -> Option<String> {
+    let words = |place: Place| match place {
+        Place::Outside => "it's outside the folder ascribe.toml is in".to_owned(),
+        Place::Link => {
+            "a symbolic link on the way leads outside the folder ascribe.toml is in".to_owned()
+        }
+        Place::Content => format!(
+            "it's in the content root, `{}`, where its files would be read as pages",
+            layout.content_root
+        ),
+        Place::Output => format!(
+            "it's in the output directory, `{}`, which a build writes and removes",
+            layout.output_dir
+        ),
+    };
+    if let Some(place) = where_it_is(folder, layout) {
+        return Some(words(place));
+    }
+    let real = fs.real_path(folder)?;
+    let real_layout = Layout {
+        content_root: fs
+            .real_path(&layout.content_root)
+            .unwrap_or_else(|| layout.content_root.clone()),
+        output_dir: fs
+            .real_path(&layout.output_dir)
+            .unwrap_or_else(|| layout.output_dir.clone()),
+    };
+    where_it_is(&real, &real_layout).map(|place| match place {
+        Place::Outside => words(Place::Link),
+        other => words(other),
+    })
+}
+
 fn where_it_is(path: &RelPath, layout: &Layout) -> Option<Place> {
     if path.up_count() > 0 {
         return Some(Place::Outside);
