@@ -471,16 +471,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            crate::edit::METHOD => answer(shared, &request, |p: crate::edit::EditParams| {
-                let uri = p.text_document.uri.clone();
-                (uri.clone(), move |ctx: &Ctx| {
-                    crate::edit::edit(ctx, &uri, &p)
-                })
-            }),
+            // A new page is asked for through any of the project's files.
+            crate::edit::METHOD => edit_request(shared, &request),
             crate::targets::METHOD => {
                 project_answer(shared, &request, |p: crate::targets::TargetsParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {
-                        crate::targets::targets(ctx, &p.kinds, p.range)
+                        crate::targets::targets(ctx, &p.kinds, p.range, p.folder.as_deref())
                     })
                 })
             }
@@ -571,6 +567,27 @@ where
     let (uri, compute) = read(params);
     let target = shared.lock().nav_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// `ascribe/edit`, as [`answer`] answers it, but asked through any of the
+/// project's files for `newPage`, which isn't about a page.
+fn edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    use crate::edit::{EditAction, EditParams, edit};
+    let params: EditParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri.clone();
+    let target = {
+        let core = shared.lock();
+        if params.action == EditAction::NewPage {
+            core.project_target(&uri)
+        } else {
+            core.nav_target(&uri)
+        }
+    };
+    let result = target
+        .map(|ctx| edit(&ctx, &uri, &params))
+        .unwrap_or_default();
     to_json(request, result)
 }
 

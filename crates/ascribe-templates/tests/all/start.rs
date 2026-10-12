@@ -9,7 +9,7 @@ use std::path::Path;
 use ascribe_check::Project;
 use ascribe_core::{Coded, RelPath};
 use ascribe_resolve::{DiskFs, Layout};
-use ascribe_templates::{Eject, NewPage, StartError, eject, set, start};
+use ascribe_templates::{Eject, NewPage, StartError, eject, set, start, takes_folder};
 
 const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = \"string\"\naudience = \"string\"\nowner = \"string?\"\n";
 
@@ -163,4 +163,25 @@ fn an_unknown_type_or_a_title_with_no_name_in_it_is_refused() {
         run(dir.path(), "how-to", "?!", None).expect_err("refused"),
         StartError::NoPath { .. }
     ));
+}
+
+#[test]
+fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
+    let dir = project();
+    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let model = project.model();
+    let takes = |folder: &str| -> Vec<&str> {
+        let folder = RelPath::parse(folder).expect("a relative path");
+        model
+            .types
+            .iter()
+            .filter(|t| takes_folder(model, t, &folder))
+            .map(|t| t.name.as_str())
+            .collect()
+    };
+    assert_eq!(takes("how-to"), ["how-to"]);
+    assert_eq!(takes("how-to/keys"), ["how-to"]);
+    assert_eq!(takes(""), ["guide"]);
+    assert_eq!(takes("guides"), ["guide"]);
+    assert!(takes("../elsewhere").is_empty());
 }

@@ -168,6 +168,15 @@ The actions in the bar's **Content model** group change `ascribe.toml` from a pa
 
 These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename that changes other files lists every change in the refactor preview first, where you check the changes to make and **Apply** them, or **Discard** them all.
 
+### Start a page
+@available: next
+
+**Ascribe: New Page** makes a page from its type's [template](templates.md). Run it from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the page's type, each with what it's for (the type's `purpose`, or for a type from the starter set, their summary of it), then its title. The page is the template with its `title` set, named for the title, in the first folder the type's `files` cover; run on a folder, it lists only the types whose `files` take a page there, and makes the page in that folder. It's saved and opened with the first thing the template left to fill in selected, usually the description, so typing replaces it. A page is never made over a file: with a file of that name there, it says so, and you give another title.
+
+**Ascribe: Go to Next Placeholder** selects the next thing the template left to fill in after the cursor: a frontmatter field still as the template has it, or a `\{placeholder}`, a whole one even when it runs across a paragraph and a list. After the last, it goes back to the first. They're the placeholders and fields [`template-placeholder-left`](templates.md#whats-left-to-fill-in) reports, found the same way; the template's instructions aren't among them, since you read those rather than fill them in. To give it a key, open **Preferences: Open Keyboard Shortcuts** and search for `ascribe.nextPlaceholder`.
+
+A type with no template makes a page with its frontmatter: the title, and each other field the type requires, empty.
+
 ### The Ascribe sidebar
 @available: ascribe 0.3.0
 
@@ -182,7 +191,7 @@ The **Projects** view lists every project in the workspace, started or not, by n
 The other three views show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
 
 - **Used by** lists what links to the active page, grouped by page, then what includes it. For a fragment, that's the files that include it. With the cursor on a heading, it narrows to the links to that heading, whichever page they reach it through. Each item opens the link or include.
-- **Pages** lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
+- **Pages** has **New Page** in its title bar ([Start a page](#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
 
 Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; Used by updates as you move between pages and headings, while it's open.

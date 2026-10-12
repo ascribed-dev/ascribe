@@ -830,6 +830,30 @@ export interface InventoryResult {
   modelUri?: string;
 }
 
+/** A file to create, empty. */
+export interface LspCreateFile {
+  /** `create`. */
+  kind: LspCreateKind;
+  /** The file's URI. */
+  uri: string;
+  /** What to do when it's there already. */
+  options?: LspCreateFileOptions;
+}
+
+/** What to do when a file to create is there already. */
+export interface LspCreateFileOptions {
+  /** Whether to leave it as it is, and go on. */
+  ignoreIfExists?: boolean;
+  /** Whether to write over it. */
+  overwrite?: boolean;
+}
+
+/** The kind of a file to create. */
+export type LspCreateKind = "create";
+
+/** A file to create, or edits to one document. */
+export type LspDocumentChange = LspCreateFile | LspTextDocumentEdit;
+
 /**
  * A position in a document: a zero-based line, and a zero-based column in
  * the position encoding the client and server agreed on.
@@ -849,6 +873,14 @@ export interface LspRange {
   end: LspPosition;
 }
 
+/** Edits to one document. */
+export interface LspTextDocumentEdit {
+  /** The document. */
+  textDocument: LspVersionedDocument;
+  /** Its edits, each to the document as it is before any of them. */
+  edits: LspTextEdit[];
+}
+
 /** A text edit: replace `range` with `newText`. */
 export interface LspTextEdit {
   /** The range to replace, in the document as it is before the edit. */
@@ -857,10 +889,26 @@ export interface LspTextEdit {
   newText: string;
 }
 
-/** Changes to documents. */
+/** A document, and the version an edit is for; `null` for any. */
+export interface LspVersionedDocument {
+  /** Its URI. */
+  uri: string;
+  /** The version. */
+  version: number | null;
+}
+
+/**
+ * Changes to documents: `changes`, or, for an edit that creates a file,
+ * `documentChanges`.
+ */
 export interface LspWorkspaceEdit {
   /** The edits to each document, by its URI. */
-  changes: Record<string, LspTextEdit[]>;
+  changes?: Record<string, LspTextEdit[]>;
+  /**
+   * Files to create and edits to make, in order: each file is created
+   * before the edit that gives it its text.
+   */
+  documentChanges?: LspDocumentChange[];
 }
 
 /** A kind of content model entry. */
@@ -1347,6 +1395,23 @@ export interface TargetSourceFile {
   regions: TargetRegion[];
 }
 
+/** A page type. */
+export interface TargetType {
+  /** Its name. */
+  name: string;
+  /**
+   * What it's for, on one line: its `purpose`, or, for a type ejected
+   * from the set, their index's summary of it, as the rules for agents
+   * say it; `null` when it says neither.
+   */
+  purpose: string | null;
+  /**
+   * Whether it has a template, which a page starts from; without one, a
+   * page starts with its frontmatter.
+   */
+  template: boolean;
+}
+
 /** A project widget. */
 export interface TargetWidget {
   /** Its name. */
@@ -1411,6 +1476,11 @@ export interface TargetsResult {
    * files a snippet can take code from.
    */
   snippets?: TargetSource[];
+  /**
+   * Page types, in declaration order: with a folder, only those a page
+   * started in it would be of.
+   */
+  types?: TargetType[];
   /** Project widgets, in declaration order. */
   widgets?: TargetWidget[];
 }

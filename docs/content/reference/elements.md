@@ -93,6 +93,8 @@ ascribe-availability::before {
 }
 ```
 
+A table row's badges have no lead-in in sight. Their `(Available: ` and `)` are in the HTML, in spans with the class `ascribe-availability-lead-in`, which the stylesheet hides from sight and not from a screen reader, so the row reads as the page's Markdown writes it.
+
 ## Choosing a tab from a script
 
 `choose(dimension, value)` makes a reader's choice for a dimension, as selecting a tab does: it selects the value in every group on the page that syncs on the dimension, and remembers it, so the next page's groups start on it.

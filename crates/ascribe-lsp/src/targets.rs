@@ -37,6 +37,10 @@ pub struct TargetsParams {
     /// (`occurrences`).
     #[serde(default)]
     pub range: Option<Range>,
+    /// A folder in the content root, as a `file:` URI, for the kinds that
+    /// depend on it (`types`).
+    #[serde(default)]
+    pub folder: Option<String>,
 }
 
 /// A kind of target.
@@ -67,6 +71,8 @@ pub enum TargetKind {
     Builds,
     /// The other occurrences of the selected text.
     Occurrences,
+    /// Page types: a page can be started from each.
+    Types,
 }
 
 /// The answer to `ascribe/targets`: a list for each kind asked for, and no
@@ -121,6 +127,26 @@ pub struct TargetsResult {
     /// when the selection isn't text a phrase can take the place of.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub occurrences: Option<Vec<TargetOccurrence>>,
+    /// Page types, in declaration order: with a folder, only those a page
+    /// started in it would be of.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub types: Option<Vec<TargetType>>,
+}
+
+/// A page type.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct TargetType {
+    /// Its name.
+    pub name: String,
+    /// What it's for, on one line: its `purpose`, or, for a type ejected
+    /// from the set, their index's summary of it, as the rules for agents
+    /// say it; `null` when it says neither.
+    pub purpose: Option<String>,
+    /// Whether it has a template, which a page starts from; without one, a
+    /// page starts with its frontmatter.
+    pub template: bool,
 }
 
 /// A page.
@@ -424,7 +450,12 @@ pub struct TargetOccurrence {
 }
 
 /// The targets of the requested kinds, for the requested page and range.
-pub(crate) fn targets(ctx: &Ctx, kinds: &[TargetKind], range: Option<Range>) -> TargetsResult {
+pub(crate) fn targets(
+    ctx: &Ctx,
+    kinds: &[TargetKind],
+    range: Option<Range>,
+    folder: Option<&str>,
+) -> TargetsResult {
     let wants = |kind| kinds.contains(&kind).then_some(());
     let model_index = LineIndex::new(&ctx.model_text);
     let declared = |entry: Entry<'_>| {
@@ -505,7 +536,37 @@ pub(crate) fn targets(ctx: &Ctx, kinds: &[TargetKind], range: Option<Range>) -> 
                 .collect()
         }),
         occurrences: wants(TargetKind::Occurrences).map(|()| occurrences(ctx, range)),
+        types: wants(TargetKind::Types).map(|()| types(ctx, folder)),
     }
+}
+
+/// The page types, and with a folder, only those a page started in it
+/// would be of. A folder outside the content root takes none.
+fn types(ctx: &Ctx, folder: Option<&str>) -> Vec<TargetType> {
+    let folder = match folder.map(|uri| crate::edit::content_folder(ctx, uri)) {
+        Some(Err(_)) => return Vec::new(),
+        Some(Ok(folder)) => Some(folder),
+        None => None,
+    };
+    let summaries = ascribe_templates::summaries(&ctx.model, &*ctx.fs);
+    ctx.model
+        .types
+        .iter()
+        .filter(|t| {
+            folder
+                .as_ref()
+                .is_none_or(|f| ascribe_templates::takes_folder(&ctx.model, t, f))
+        })
+        .map(|t| TargetType {
+            name: t.name.clone(),
+            purpose: t
+                .purpose
+                .clone()
+                .or_else(|| summaries.get(&t.name).cloned())
+                .map(|p| p.split_whitespace().collect::<Vec<_>>().join(" ")),
+            template: t.template.is_some(),
+        })
+        .collect()
 }
 
 fn occurrences(ctx: &Ctx, range: Option<Range>) -> Vec<TargetOccurrence> {

@@ -70,9 +70,13 @@ describe("package.json", () => {
       else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
       // Prompt agent on one problem is a code action on that problem.
       else if (entry.command === "ascribe.promptAgent") expect(entry.when).toBe("false");
-      // An action, and the actions bar, are for a page, so they're shown in a
-      // Markdown file of a project.
-      else if (entry.command === "ascribe.actions" || entry.command.startsWith("ascribe.action.")) {
+      // An action, the actions bar, and Go to Next Placeholder are for a page,
+      // so they're shown in a Markdown file of a project.
+      else if (
+        entry.command === "ascribe.actions" ||
+        entry.command === "ascribe.nextPlaceholder" ||
+        entry.command.startsWith("ascribe.action.")
+      ) {
         expect(entry.when).toBe("ascribe.inProject && editorLangId == markdown");
       } else expect(entry.when).toMatch(/^ascribe\.active\b/);
     }
@@ -132,7 +136,9 @@ describe("package.json", () => {
       "ascribe.openSitePreview",
       "ascribe.selectPreviewBuild",
       ...Object.values(PROMPT_COMMANDS),
+      "ascribe.newPage",
       "ascribe.actions",
+      "ascribe.nextPlaceholder",
       "ascribe.switchBuild",
       "ascribe.checkEveryBuild",
       "ascribe.projectMenu",

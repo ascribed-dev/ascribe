@@ -32,6 +32,8 @@ mod edit_examples;
 mod model_edits;
 #[path = "all/navigation.rs"]
 mod navigation;
+#[path = "all/new_page.rs"]
+mod new_page;
 #[path = "all/preview.rs"]
 mod preview;
 #[path = "all/prose.rs"]

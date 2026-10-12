@@ -371,7 +371,7 @@ impl Ctx<'_> {
         collect(&source, blocks, false, &mut units);
         for pieces in &template.placeholders {
             let pieces: Vec<Vec<char>> = pieces.iter().map(|p| p.chars().collect()).collect();
-            for (unit, start) in occurrences(&units, &pieces) {
+            for Occurrence { unit, start, .. } in occurrences(&units, &pieces) {
                 let unit = &units[unit];
                 let end = start + pieces[0].len();
                 let text = unit.slice(start, end);
@@ -399,11 +399,83 @@ impl Ctx<'_> {
     }
 }
 
-/// Where the page's `units` have every piece of a placeholder, in order:
-/// the unit and the character its first piece starts at, for each time. A
-/// placeholder of one piece is found inside a block; one of several has its
-/// first piece in one block and each piece after it in a later block.
-fn occurrences(units: &[Unit], pieces: &[Vec<char>]) -> Vec<(usize, usize)> {
+/// Where `text`, a page whose type's template is `template`, still has
+/// what the template left to fill in, in source order: each frontmatter
+/// field whose value is the template's, inside its quotes when it has them,
+/// and each placeholder of the body, from its first piece to its last, so
+/// one that runs across blocks is one place. They're found as the check
+/// finds them; an instruction isn't among them, since it's read, not filled
+/// in.
+pub(crate) fn places(template: &Template, text: &str, model: &ContentModel) -> Vec<Span> {
+    let options = ParseOptions::new(model.directive_schemas())
+        .with_note_types(model.notes.iter().map(|n| n.name.clone()).collect());
+    let doc = parse(text, &options);
+    let mut out = Vec::new();
+    if let Some(fm) = &doc.frontmatter
+        && let Some(content) = text.get(fm.content.range())
+        && let Ok(value) = serde_yaml_ng::from_str::<Value>(content)
+    {
+        let index = YamlIndex::build(content, fm.content.start());
+        for (field, expected) in &template.fields {
+            let Some(found) = value.get(field.as_str()) else {
+                continue;
+            };
+            let same = match (value_text(expected), value_text(found)) {
+                (Some(a), Some(b)) => a == b,
+                _ => expected == found,
+            };
+            if let Some(node) = index.get(field).filter(|_| same) {
+                out.push(unquoted(text, node.value));
+            }
+        }
+    }
+    let mut units = Vec::new();
+    collect(text, &doc.blocks, false, &mut units);
+    for pieces in &template.placeholders {
+        let pieces: Vec<Vec<char>> = pieces.iter().map(|p| p.chars().collect()).collect();
+        let Some(last) = pieces.last() else {
+            continue;
+        };
+        for found in occurrences(&units, &pieces) {
+            let first = units[found.unit].span(found.start, found.start + pieces[0].len(), text);
+            let end = found.end_start + last.len();
+            let last = units[found.end_unit].span(found.end_start, end, text);
+            out.push(Span::new(first.start(), last.end().max(first.start())));
+        }
+    }
+    out.sort_by_key(|s| (s.start(), s.end()));
+    out.dedup();
+    out
+}
+
+/// A quoted scalar's span without its quotes.
+fn unquoted(text: &str, span: Span) -> Span {
+    let written = text.get(span.range()).unwrap_or_default();
+    let quoted = written.len() >= 2
+        && ((written.starts_with('"') && written.ends_with('"'))
+            || (written.starts_with('\'') && written.ends_with('\'')));
+    if quoted {
+        Span::new(span.start() + 1, span.end() - 1)
+    } else {
+        span
+    }
+}
+
+/// Where a page has a placeholder: the unit and the character its first
+/// piece starts at, and the unit and the character its last piece starts
+/// at, the same for a placeholder of one piece.
+struct Occurrence {
+    unit: usize,
+    start: usize,
+    end_unit: usize,
+    end_start: usize,
+}
+
+/// Where the page's `units` have every piece of a placeholder, in order,
+/// for each time. A placeholder of one piece is found inside a block; one of
+/// several has its first piece in one block and each piece after it in a
+/// later block.
+fn occurrences(units: &[Unit], pieces: &[Vec<char>]) -> Vec<Occurrence> {
     let mut found = Vec::new();
     let Some((first, rest)) = pieces.split_first() else {
         return found;
@@ -417,12 +489,18 @@ fn occurrences(units: &[Unit], pieces: &[Vec<char>]) -> Vec<(usize, usize)> {
         };
         // Each later piece, in a later block than the one before it.
         let mut at = unit;
+        let mut at_start = start;
         let whole = rest.iter().all(|piece| {
-            let next = (at + 1..units.len()).find(|&u| units[u].find(piece, 0).is_some());
-            next.inspect(|&u| at = u).is_some()
+            let next = (at + 1..units.len()).find_map(|u| units[u].find(piece, 0).map(|s| (u, s)));
+            next.inspect(|&(u, s)| (at, at_start) = (u, s)).is_some()
         });
         if whole {
-            found.push((unit, start));
+            found.push(Occurrence {
+                unit,
+                start,
+                end_unit: at,
+                end_start: at_start,
+            });
         }
         if rest.is_empty() || !whole {
             from = start + first.len();

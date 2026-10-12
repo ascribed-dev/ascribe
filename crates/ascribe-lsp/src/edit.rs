@@ -18,7 +18,9 @@
 //! variant arms), `edit/insert.rs` (blocks inserted on a blank line),
 //! `edit/inline.rs` (links, phrases, images), `edit/page.rs`
 //! (availability and the frontmatter), and `edit/model.rs` (the content
-//! model: phrases, glossary terms, and features). An operation on the content
+//! model: phrases, glossary terms, and features), and `edit/start.rs`
+//! (starting a page, and the next place its template left to fill in). An
+//! operation on the content
 //! model edits `ascribe.toml` in place ([`crate::model_file`]), and may edit
 //! other pages too; it's checked as the whole project, with the model as it
 //! would be.
@@ -28,8 +30,10 @@ mod inline;
 mod insert;
 mod model;
 mod page;
+mod start;
 
 pub(crate) use model::selection_occurrences;
+pub(crate) use start::content_folder;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -132,11 +136,17 @@ pub enum EditAction {
     AddGlossaryTerm,
     /// Changes a feature's availability.
     PromoteFeature,
+    /// Starts a page of a type, from its template: an edit that creates the
+    /// file. Asked through any of the project's files.
+    NewPage,
+    /// Selects the next place on the page its template left to fill in,
+    /// changing nothing.
+    NextPlaceholder,
 }
 
 impl EditAction {
     /// Every action, in the order the README documents them.
-    pub const ALL: [EditAction; 32] = [
+    pub const ALL: [EditAction; 34] = [
         EditAction::WrapNote,
         EditAction::SetNoteType,
         EditAction::UnwrapNote,
@@ -169,6 +179,8 @@ impl EditAction {
         EditAction::MakePhrase,
         EditAction::AddGlossaryTerm,
         EditAction::PromoteFeature,
+        EditAction::NewPage,
+        EditAction::NextPlaceholder,
     ];
 }
 
@@ -222,6 +234,9 @@ pub(crate) fn edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> EditResult {
 }
 
 fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, String> {
+    if params.action == EditAction::NewPage {
+        return start::new_page(ctx, &params.args);
+    }
     let Some(file) = ctx.file() else {
         return Ok(EditResult::default());
     };
@@ -241,6 +256,9 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         .offset(&index, params.range.end)
         .ok_or_else(|| "The range isn't in the page.".to_owned())?
         .max(start);
+    if params.action == EditAction::NextPlaceholder {
+        return start::next_placeholder(ctx, &file.source, end);
+    }
     let mut found = found_at(ctx, file, &index, start);
     found.reverse();
     let page = Page {
@@ -291,6 +309,10 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         EditAction::MakePhrase => model::make_phrase(&page),
         EditAction::AddGlossaryTerm => model::add_glossary_term(&page),
         EditAction::PromoteFeature => model::promote_feature(&page),
+        // Answered above, without a plan.
+        EditAction::NewPage | EditAction::NextPlaceholder => {
+            return Err("The action has no edit to plan here.".to_owned());
+        }
     }?;
     finish(&page, uri, plan)
 }

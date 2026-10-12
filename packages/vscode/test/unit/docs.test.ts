@@ -57,6 +57,10 @@ const commands: Record<string, string> = {
     "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../guides/agents.md#prompt-your-agent).",
   "ascribe.promptAgentProject":
     "Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems.",
+  "ascribe.newPage":
+    "Starts a page from its type's template: asks for the type, each with what it's for, then the title, makes the page in the first folder the type's `files` cover, and opens it with the first thing to fill in selected. Run on a folder in the Explorer, it offers the types whose `files` take a page there, and makes the page in that folder. It's in the Pages view's title bar too. See [Start a page](../guides/editor.md#start-a-page).",
+  "ascribe.nextPlaceholder":
+    "Selects the next thing the page's template left to fill in, after the cursor, so typing replaces it; after the last, it goes back to the first.",
   "ascribe.actions":
     "Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection.",
 };
@@ -97,6 +101,8 @@ const available: Record<string, string> = {
   ascribe_review_threads: "ascribe 0.3.0",
   ascribe_review_changes: "ascribe 0.3.0",
   [ACTIONS_ROW]: "ascribe 0.3.0",
+  "ascribe.newPage": "next",
+  "ascribe.nextPlaceholder": "next",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

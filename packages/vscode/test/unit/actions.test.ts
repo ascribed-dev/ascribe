@@ -23,6 +23,7 @@ import {
   includeSteps,
   KEY_RULE,
   NAME_WORD_RULE,
+  newPageWizard,
   noteTypeStep,
   runWizard,
   ScriptedPrompter,
@@ -271,7 +272,12 @@ describe("the registry", () => {
       "utf8",
     );
     const table = readme.slice(readme.indexOf("| Action | Applies to |"));
-    const operations = [...table.matchAll(/^\| `(\w+)` \|/gm)].map((m) => m[1]);
+    // Two aren't actions: New Page and Go to Next Placeholder are commands
+    // of their own (src/actions/newPage.ts), since neither is about a place in a page.
+    const commands = ["newPage", "nextPlaceholder"];
+    const operations = [...table.matchAll(/^\| `(\w+)` \|/gm)]
+      .map((m) => m[1])
+      .filter((operation) => operation !== undefined && !commands.includes(operation));
     expect(operations.length).toBeGreaterThan(20);
     const done = ACTIONS.flatMap((a) => ("operation" in a.does ? [a.does.operation] : []));
     expect(done.sort(byText)).toEqual(operations.sort(byText));
@@ -1142,5 +1148,51 @@ describe("the content model's actions", () => {
     expect(effects.said).toEqual([
       "Can't find the value self-managed of deployment in ascribe.toml.",
     ]);
+  });
+});
+
+describe("New Page's questions", () => {
+  const types = [
+    { name: "how-to", purpose: "One task, step by step.", template: true },
+    { name: "page", purpose: null, template: false },
+  ];
+
+  it("asks for the type, each with what it's for, then the title", async () => {
+    let choices: unknown[] = [];
+    const asked = await runWizard(
+      "New Page",
+      newPageWizard(types, false),
+      new ScriptedPrompter([
+        (step) => {
+          if (step.kind !== "text") choices = step.choices;
+          return Promise.resolve("how-to");
+        },
+        "Rotate keys",
+      ]),
+    );
+    expect(choices).toEqual([
+      {
+        label: "how-to",
+        description: undefined,
+        detail: "One task, step by step.",
+        value: "how-to",
+      },
+      {
+        label: "page",
+        description: "no template: its frontmatter only",
+        detail: undefined,
+        value: "page",
+      },
+    ]);
+    expect(asked).toEqual({ args: { type: "how-to", title: "Rotate keys" } });
+  });
+
+  it("says when no type takes a page in the folder, and wants a title on one line", async () => {
+    expect(await runWizard("New Page", newPageWizard([], true), new ScriptedPrompter([]))).toEqual({
+      error: "No page type's files take a page in this folder.",
+    });
+    const title = newPageWizard(types, false).steps({})[1];
+    expect(title?.kind === "text" && title.validate(" ")).toBe("Enter a title.");
+    expect(title?.kind === "text" && title.validate("a\nb")).toBe("Write a title on one line.");
   });
 });

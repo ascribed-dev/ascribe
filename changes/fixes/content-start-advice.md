@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe report agents` no longer says `<main>` is enough for `content-start-position`. The checker measures the whole page, so the advice is to put the content before the navigation in the HTML and place the navigation with CSS. See `docs/content/guides/report.md`.

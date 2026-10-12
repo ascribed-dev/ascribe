@@ -10,6 +10,7 @@ import type {
   TargetNote,
   TargetOccurrence,
   TargetsResult,
+  TargetType,
   TargetWidget,
 } from "../shapes.js";
 
@@ -256,6 +257,39 @@ export function noteTypeStep(notes: TargetNote[] = [], except?: string): Step {
       .filter((note) => note.type !== except)
       .map((note) => ({ label: note.label, description: noteSyntax(note.type), value: note.type })),
     empty: "The content model declares no other note types.",
+  };
+}
+
+/**
+ * New Page's questions: the page's type, each with what it's for, then its
+ * title. `inFolder` says the types are those a page in the chosen folder can
+ * be of, for what to say when there are none.
+ */
+export function newPageWizard(types: TargetType[], inFolder: boolean): Wizard {
+  return {
+    steps: () => [
+      {
+        kind: "pick",
+        key: "type",
+        prompt: "Which type of page?",
+        choices: types.map((type) => ({
+          label: type.name,
+          description: type.template ? undefined : "no template: its frontmatter only",
+          detail: type.purpose ?? undefined,
+          value: type.name,
+        })),
+        empty: inFolder
+          ? "No page type's files take a page in this folder."
+          : "The content model declares no page types.",
+      },
+      {
+        kind: "text",
+        key: "title",
+        prompt: "The page's title. Its file is named for it.",
+        validate: oneLine("a title"),
+      },
+    ],
+    args: (answers) => ({ type: text(answers, "type"), title: text(answers, "title") }),
   };
 }
 

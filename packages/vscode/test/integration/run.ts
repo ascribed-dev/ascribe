@@ -31,6 +31,9 @@
 //   lens        a copy of examples/monorepo/docs, the build lens with the
 //               preview and the status bar, against the real `ascribe lsp`.
 //               Needs ASCRIBE_BIN as well.
+//   templates   a copy of examples/templates, the six page types with their
+//               templates, New Page and Go to Next Placeholder, against the
+//               real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -206,6 +209,11 @@ const suites: Suite[] = [
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
   {
+    name: "templates",
+    fixture: path.join(repositoryRoot, "examples/templates"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The file watcher's trace, to see why it missed a file if it does (#56).
@@ -237,6 +245,7 @@ const needsServer = new Set([
   "actions",
   "site",
   "lens",
+  "templates",
   "monorepo",
 ]);
 

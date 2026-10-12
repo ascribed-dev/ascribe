@@ -165,6 +165,20 @@ pub fn text(project: &Project, page_type: &ContentType, title: &str) -> Result<S
     })
 }
 
+/// Whether a page started in `folder`, from the content root, would be of
+/// `page_type`, as [`start`] holds a page it's given a folder for: inside the
+/// content root, not a fragment's, and matched by the type alone. It's tried
+/// with a name a title gives, so a type whose `files` take only some names
+/// in a folder may still refuse a title there.
+pub fn takes_folder(model: &ContentModel, page_type: &ContentType, folder: &RelPath) -> bool {
+    folder
+        .join(TRIED_NAME)
+        .is_ok_and(|path| not_of_type(model, page_type, &path).is_none())
+}
+
+/// The name [`takes_folder`] tries a folder with.
+const TRIED_NAME: &str = "new-page.md";
+
 /// Whether anything is at `path`, from the project's folder: a file, a
 /// folder, a file whose name differs only in case, or a link.
 fn is_there(fs: &dyn FileSystem, path: &RelPath) -> bool {
