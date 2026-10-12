@@ -10,7 +10,7 @@ Part of [The surface audit](README.md). Needs nothing. This is the plan's thread
 
 ## Context
 
-- The [proposal](../proposals/surface-audit.md): the seven questions and the five kinds of finding.
+- The [proposal](https://github.com/ascribed-dev/ascribe/blob/460259f6529f9e7d5a8e06e600a9f28b43ae03f5/project-docs/proposals/surface-audit.md): the seven questions and the five kinds of finding.
 - What fixing a broken link touches. Read each as a user would meet it, not in the code:
   - the editor: the Problems panel, the quick fix, the actions bar, **Prompt agent**;
   - the command line: `ascribe check` and its formats, `ascribe explain`, `ascribe link`;

@@ -14,7 +14,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 - `docs/content/reference/content-model.md` §4: what a type has today, and how a path in `ascribe.toml` is written (from the project's folder).
 - `ascribe vale eject`, in the command reference: what it writes, what it refuses, and its exit codes.
 - `project-docs/checklists.md`, "A new command or option": naming, `--format`, how a command names things, and exit codes.
-- The [notes proposal](../proposals/notes.md): `@comment`, and that nothing has built it.
+- The [memos proposal](../proposals/memos.md): `@memo`, and that nothing has built it.
 - Their repository at v1.6.0: a template's quoted instruction paragraphs, its placeholders, and `index.json`.
 
 ## The decisions
@@ -74,19 +74,19 @@ The check is `template-placeholder-left`, advice, configurable, with the next st
 
 **Decided: a run of literal text an escaped brace opens and its closing brace ends.** It's what decision 4 in the README already makes a placeholder, found by reading the template as any page is read, so the check and the conversion agree by construction. "Any shared text" would report a heading the writer was meant to keep, on every page of the type. The comparison is of canonical form, ignoring wrapping; a placeholder changed by a word isn't found, and that's accepted. `template-placeholder-left`, advice, configurable, next step `write`. README decision 17.
 
-### 5. What carries a template's instructions, until `@comment` exists
+### 5. What carries a template's instructions, until `@memo` exists
 
 Their templates give instructions to the author as quoted paragraphs in the body. Decision 8 says they become text that's never published, by a construct nothing has built.
 
 | Option | Means |
 |---|---|
-| **They stay as quoted paragraphs, and the check reports one left in a page** (recommended) | Nothing is lost, and nothing waits. A forgotten instruction is published, as it would be from their template used anywhere else, and `ascribe check` says so first. When `@comment` exists the conversion gains a rule |
+| **They stay as quoted paragraphs, and the check reports one left in a page** (recommended) | Nothing is lost, and nothing waits. A forgotten instruction is published, as it would be from their template used anywhere else, and `ascribe check` says so first. When `@memo` exists the conversion gains a rule |
 | The conversion drops them from the template, and the guide carries the same advice | A page can't publish one. The hints at the place they apply are gone, which is most of their use |
-| Wait for the notes plan | Clean. This plan is then second in line behind one that hasn't started |
+| Wait for the memos plan | Clean. This plan is then second in line behind one that hasn't started |
 
 Taking the first means decision 4's check covers instructions as well: text in a page that's a whole quoted instruction of its type's template.
 
-**Decided: they stay as quoted paragraphs, and the check reports one left whole in a page.** Nothing is lost and nothing waits on the notes plan; a forgotten instruction is reported before it's published, which is more than their template gets anywhere else. The check matches a whole quoted paragraph of the template, so a writer's own block quote isn't reported. When `@comment` exists the conversion gains one rule and the set is regenerated, as the README's "Carved out" says. README decision 18.
+**Decided: they stay as quoted paragraphs, and the check reports one left whole in a page.** Nothing is lost and nothing waits on the memos plan; a forgotten instruction is reported before it's published, which is more than their template gets anywhere else. The check matches a whole quoted paragraph of the template, so a writer's own block quote isn't reported. When `@memo` exists the conversion gains one rule and the set is regenerated, as the README's "Carved out" says. README decision 18.
 
 ### 6. Where the set lives here, and what's pinned
 
