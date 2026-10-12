@@ -94,7 +94,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-189 in use, and 1 retired. By severity: 25 advice, 142 error, 22 warning. By level: 172 file, 17 page. By kind of next step: 42 choose, 13 fix, 3 outside, 10 review, 121 write.
+190 in use, and 1 retired. By severity: 26 advice, 142 error, 22 warning. By level: 172 file, 18 page. By kind of next step: 42 choose, 13 fix, 3 outside, 10 review, 122 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -288,6 +288,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC188` | `listing-loosened` | error | fix | this page is `{listing}`, looser than `{rule}` on line {line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter |
 | `ASC189` | `model-crawlers-named-twice` | error | write | `{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one |
 | `ASC190` | `crawlers-disallowed` | advice | choose | `{purpose} = "disallow"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine |
+| `ASC191` | `description-duplicate` | advice | write | this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want |
 
 ## The VS Code extension
 

@@ -176,6 +176,19 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Read more:** [`[versions]`](../reference/content-model.md#7-versions) in the `ascribe.toml` reference.
 
+#### ASC191 `description-duplicate`
+@id {permalink=true}: ASC191
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**When:** Two pages the build publishes have the same description, ignoring case.
+
+**Message:** this is also the description of \{others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want
+
+**Fix:** Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
+
+**Read more:** [Field roles](../reference/content-model.md#54-field-roles) in the `ascribe.toml` reference.
+
 ### Outputs
 
 #### ASC163 `description-too-long`

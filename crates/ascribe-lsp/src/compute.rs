@@ -7,7 +7,8 @@
 //! the lock, and only what is still current.
 //!
 //! The content checks across the project (`page-orphan`, the unused
-//! fragments and content model entries, `title-duplicate`) need every page
+//! fragments and content model entries, `title-duplicate`,
+//! `description-duplicate`) need every page
 //! of the build, so they don't run at every round: a round runs them when
 //! the project is loaded, when a file is saved or changes on disk, and when
 //! the content model changes ([`Job::across`]). What they found is kept

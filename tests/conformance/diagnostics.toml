@@ -3550,3 +3550,18 @@ when = "`[crawlers]` disallows `search` or `on-request`, and the site's pages ar
 message = "`{purpose} = \"disallow\"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine"
 messages.on-request = "`{purpose} = \"disallow\"` asks assistants not to fetch the site's pages when a person asks about them, so they answer from what they already have, or from another site, while the pages are listed for every other search engine"
 fix = "Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`."
+
+[[diagnostic]]
+code = "ASC191"
+slug = "description-duplicate"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "9.4"
+reference = "content-model.md#54-field-roles"
+when = "Two pages the build publishes have the same description, ignoring case"
+message = "this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want"
+fix = "Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."
