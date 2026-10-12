@@ -374,11 +374,14 @@ fn shown(folder: &RelPath) -> String {
     }
 }
 
-/// Whether `ascribe.toml`'s text declares a type, or has a `types` key at
-/// all. Without one, every page is of the implicit type `page`.
+/// Whether `ascribe.toml`'s text declares a type: a `types` table with an
+/// entry. An empty `[types]` declares none, and then, as with no `types` at
+/// all, the loader gives every page the implicit type `page`.
 fn declares_types(text: &str) -> bool {
-    text.parse::<DocumentMut>()
-        .map_or(true, |doc| doc.contains_key("types"))
+    text.parse::<DocumentMut>().map_or(true, |doc| {
+        doc.get("types")
+            .is_some_and(|types| types.as_table_like().is_none_or(|t| !t.is_empty()))
+    })
 }
 
 /// The lines of `[types.page]` as a content model with no types has it: the

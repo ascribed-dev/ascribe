@@ -297,3 +297,31 @@ fn a_project_with_no_types_keeps_the_page_type_its_pages_had() {
     let names: Vec<&str> = file.model.types.iter().map(|t| t.name.as_str()).collect();
     assert_eq!(names, ["page", "how-to"]);
 }
+
+#[test]
+fn an_empty_types_table_declares_no_type_and_keeps_the_page_type() {
+    let model = "spec = \"0.1\"\n\n[types]\n";
+    let dir = project(model);
+    let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
+    assert!(answer.page_declared);
+    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let names: Vec<&str> = file.model.types.iter().map(|t| t.name.as_str()).collect();
+    assert_eq!(names, ["page", "how-to"]);
+    // The page outside the new type is still of a type, as it was before.
+    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let errors: Vec<_> = ascribe_check::check_all_builds(&project)
+        .into_iter()
+        .filter(|d| d.slug.as_str() == "content-type-unresolved")
+        .collect();
+    assert!(errors.is_empty(), "{errors:#?}");
+}
+
+#[test]
+fn an_empty_inline_types_table_can_t_be_added_to_and_nothing_is_written() {
+    let model = "spec = \"0.1\"\ntypes = {}\n";
+    let dir = project(model);
+    let error = run(dir.path(), &["how-to"], "templates").expect_err("refused");
+    assert!(matches!(error, EjectError::Model { .. }), "{error}");
+    assert!(!dir.path().join("templates").exists());
+    assert_eq!(read(dir.path(), "ascribe.toml"), model);
+}
