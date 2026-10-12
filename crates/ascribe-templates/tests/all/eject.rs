@@ -603,3 +603,100 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
         );
     }
 }
+
+/// A project whose pages are under `guides/`, of its default type, which
+/// declares its title and description with more than their type.
+const DECLARED: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n";
+
+#[test]
+fn a_type_added_takes_the_default_type_s_declarations_of_its_fields() {
+    let dir = project(DECLARED);
+    let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
+    assert_eq!(answer.added[0].copied, ["title", "description"]);
+    let model = read(dir.path(), "ascribe.toml");
+    assert!(
+        model.ends_with(
+            "[types.how-to.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n"
+        ),
+        "{model}"
+    );
+    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let types = &file.model.types;
+    let field = |ty: &str, name: &str| {
+        types
+            .iter()
+            .find(|t| t.name == ty)
+            .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == name))
+            .cloned()
+    };
+    for name in ["title", "description"] {
+        assert_eq!(field("how-to", name), field("guide", name), "{name}");
+    }
+}
+
+#[test]
+fn a_declaration_under_a_header_of_its_own_is_copied_inline() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter.title]\ntype = \"string\" # the page's\ninline = \"code\"\n";
+    let dir = project(model);
+    let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
+    assert_eq!(answer.added[0].copied, ["title"]);
+    let text = read(dir.path(), "ascribe.toml");
+    assert!(
+        text.ends_with(
+            "[types.how-to.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = \"string\"\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_field_the_default_type_declares_as_something_else_is_a_plain_string() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = \"string\"\ndescription = \"date\"\n";
+    let dir = project(model);
+    let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
+    assert!(answer.added[0].copied.is_empty());
+    let text = read(dir.path(), "ascribe.toml");
+    assert!(
+        text.ends_with(
+            "[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_type_that_matches_no_page_says_so_with_the_default_type_s_pages() {
+    let dir = project(DECLARED);
+    std::fs::create_dir_all(dir.path().join("docs/guides/_parts")).expect("made");
+    std::fs::create_dir_all(dir.path().join("docs/how-to")).expect("made");
+    for page in ["guides/b.md", "guides/a.md", "guides/_parts/note.md"] {
+        std::fs::write(dir.path().join("docs").join(page), "---\ntitle: A\n---\n")
+            .expect("written");
+    }
+    let answer = run(dir.path(), &["how-to", "concept"], "templates").expect("ejected");
+    let pages: Vec<(&str, usize)> = answer
+        .added
+        .iter()
+        .map(|a| (a.name.as_str(), a.pages))
+        .collect();
+    assert_eq!(pages, [("how-to", 0), ("concept", 0)]);
+    assert_eq!(answer.default_type.as_deref(), Some("guide"));
+    // In order, from the folder ascribe.toml is in, and no fragment.
+    assert_eq!(
+        answer.default_pages,
+        ["docs/guides/a.md", "docs/guides/b.md", "docs/index.md"]
+    );
+
+    // A page in a type's folder is the type's, and when every type added has
+    // one, the default type's pages aren't listed.
+    let dir = project(DECLARED);
+    std::fs::create_dir_all(dir.path().join("docs/how-to")).expect("made");
+    std::fs::write(
+        dir.path().join("docs/how-to/fix.md"),
+        "---\ntitle: A\n---\n",
+    )
+    .expect("written");
+    let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
+    assert_eq!(answer.added[0].pages, 1);
+    assert!(answer.default_pages.is_empty());
+}

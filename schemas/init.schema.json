@@ -3,6 +3,13 @@
     "Added": {
       "description": "A type eject added to `ascribe.toml`.",
       "properties": {
+        "copied": {
+          "description": "The fields of its frontmatter declared as the project's default type\ndeclares them, rather than as plain strings, in order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "files": {
           "description": "The pattern its `files` has, from the content root.",
           "type": "string"
@@ -22,6 +29,11 @@
           "description": "The type's name, `[types.<name>]`, which is the template's.",
           "type": "string"
         },
+        "pages": {
+          "description": "How many of the project's pages its `files` match. When it's 0 and the\nproject has pages, they're elsewhere, and its `files` is the writer's\nto change.",
+          "minimum": 0,
+          "type": "integer"
+        },
         "summary": {
           "description": "Their index's summary of it.",
           "type": "string"
@@ -37,7 +49,9 @@
         "files",
         "folder",
         "template",
-        "guide"
+        "guide",
+        "copied",
+        "pages"
       ],
       "type": "object"
     },
@@ -54,6 +68,20 @@
         "ascribe_version": {
           "description": "The version of Ascribe that wrote it.",
           "type": "string"
+        },
+        "default_pages": {
+          "description": "The pages of the default type, with the types added, from the folder\n`ascribe.toml` is in, in order, when a type added matches no page;\notherwise empty. A type's pages are listed in its `files`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "default_type": {
+          "description": "The project's default type, with the types added: the one a page no\ntype's `files` match is of. Null when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "kept": {
           "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each was given its `template` and\n`guide`, and nothing else in it changed. Empty when anything was\nrefused.",
@@ -93,7 +121,9 @@
         "added",
         "kept",
         "refused",
-        "page_declared"
+        "page_declared",
+        "default_type",
+        "default_pages"
       ],
       "type": "object"
     },
