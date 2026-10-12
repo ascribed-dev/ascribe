@@ -1,0 +1,10 @@
+description: >-
+  A placeholder left untouched, its brace still escaped, is reported in a
+  heading, a paragraph, and a list item alike.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 6, severity: advice}
+  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 8, severity: advice}
+  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 10, severity: advice}

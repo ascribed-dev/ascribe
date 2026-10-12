@@ -1,0 +1,8 @@
+description: >-
+  Only a placeholder's escaped brace is the template's: a phrase with a
+  placeholder's name is the page's own, and so is a placeholder quoted in
+  inline code or a code block, which shows text as it's written.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

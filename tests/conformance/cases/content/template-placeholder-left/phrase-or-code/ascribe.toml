@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[phrases]
+product = "Quill"
+version = "2.0"
+
+[types.tutorial]
+files = ["tutorials/**"]
+template = "templates/tutorial.md"
+
+[types.tutorial.frontmatter]
+title = "string"
+description = "string"
