@@ -1730,7 +1730,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/442"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Page templates: the docs take the other types, and say what it showed"
     },
     {
@@ -1825,8 +1825,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/440"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAPn1I",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/446"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Page templates: eject into a project whose pages are elsewhere"
     },
     {
@@ -1840,7 +1843,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAPn1k",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Page templates: what the notes miss about troubleshooting headings and steps as headings"
     },
     {
@@ -1853,8 +1856,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/445"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAQxfQ",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/447"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: split the JSON reports page that's over the page size again"
     }
   ]
