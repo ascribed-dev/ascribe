@@ -2,6 +2,8 @@
 //! each from what the checks, the source index, and the outputs already
 //! compute:
 //!
+//! - [`agents_index`]: a compact index of a build's docs, for a product's
+//!   `AGENTS.md`;
 //! - [`explain`]: what a diagnostic means, how to fix it, and an example;
 //! - [`model`]: what the content model allows, in full or as a short summary;
 //! - [`outline`]: a page's title, type, and headings with their ids;
@@ -19,6 +21,7 @@
 //! `schema_version`, which changes only when a field is removed or changes
 //! meaning.
 
+pub mod agents_index;
 mod error;
 pub mod explain;
 mod lines;
@@ -31,6 +34,7 @@ pub mod render;
 pub mod report;
 pub mod rules;
 
+pub use agents_index::{AgentsIndex, IndexPage, agents_index};
 pub use error::QueryError;
 pub use explain::{
     DiagnosticList, ExampleText, Explanation, ListedDiagnostic, code_of, explain, list,

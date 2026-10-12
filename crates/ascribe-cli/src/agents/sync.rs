@@ -845,7 +845,7 @@ fn absolute(path: &Path) -> PathBuf {
 }
 
 /// A file's text, or `None` when there's no file.
-fn read(path: &Path) -> Result<Option<String>, SyncError> {
+pub(crate) fn read(path: &Path) -> Result<Option<String>, SyncError> {
     // Outside FileSystem: the instruction files agents read, which aren't
     // the project's pages.
     match std::fs::read_to_string(path) {

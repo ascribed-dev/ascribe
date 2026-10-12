@@ -7,6 +7,7 @@
 pub mod checker;
 pub mod copilot;
 pub mod hook;
+pub mod index;
 pub mod markers;
 #[cfg(test)]
 pub(crate) mod plugin;
