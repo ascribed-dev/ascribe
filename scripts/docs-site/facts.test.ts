@@ -268,7 +268,7 @@ test("the site's own pages share the docs' release tables, sources, and address,
   // A preview is built with its own address in each file that names the site's.
   const preview = /^\s*sed -i ".*" (.+)$/m.exec(read(".github/workflows/site.yml"))?.[1];
   expect(preview?.split(" ").sort()).toEqual(
-    ["docs/ascribe.toml", "site/astro.config.mjs", "site/home/ascribe.toml"].sort(),
+    ["docs/ascribe.toml", "site/home/ascribe.toml"].sort(),
   );
 });
 
