@@ -233,7 +233,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzg_6NPw",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs report: links and the published site"
     },
     {
@@ -1119,8 +1119,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/350"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAC6AU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/377"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Drop `site` and `trailingSlash` from `site/astro.config.mjs` once a canary supplies them"
     },
     {
@@ -1167,8 +1170,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/358"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD954",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/378"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search and answers: Ascribe's site takes its sitemap, robots.txt, and head from Ascribe"
     },
     {
@@ -1181,8 +1187,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/359"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD96s",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/376"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search and answers: set how a folder's, a type's, or the site's pages are listed"
     },
     {
@@ -1195,8 +1204,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/360"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD97Y",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/384"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search and answers: say what each kind of crawler may do"
     },
     {
@@ -1209,8 +1221,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/361"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD98Y",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/387"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search and answers: give a page's Markdown version the header its listing needs"
     },
     {
@@ -1223,8 +1238,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/362"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD98w",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/385"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search and answers: write a page's whole head from its record"
     },
     {
@@ -1241,7 +1259,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/374"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Search and answers: write every variant, labeled, in a page's Markdown version"
     },
     {
@@ -1258,7 +1276,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/375"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Search and answers: a compact index of the docs for a product's agents"
     },
     {
@@ -1271,8 +1289,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/365"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD9_k",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/383"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Search and answers: decide what a site's root says about its llms.txt files"
     },
     {
@@ -1285,8 +1306,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/366"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAD9_w",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/388"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Search and answers: checks before a deploy, and every page's record in the report"
     },
     {
@@ -1305,6 +1329,88 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Compare the project files page with the lists that write them"
+    },
+    {
+      "content": {
+        "body": "The site has a header and no footer. A footer is where the links go that are useful and aren't the site's main pages.\n\n## What to do\n\n- Add a footer to the base layout (`site/src/layouts/Base.astro`), under every page of the site: the docs, the site's own pages, and the changelog.\n- It carries four links: **Credits**, **Changelog**, the **license**, and the **repository**.\n- Move the Changelog link out of the header and into the footer. The header keeps Docs, Why Ascribe, and GitHub.\n- Styles come from the design tokens, as the header's do (`design/README.md`); no color is written in a stylesheet.\n- It works at phone width without a horizontal scroll.\n- Update whatever tests name the header's links.\n\nThe Credits link has nothing to point at until the credits page exists (#380). If this lands first, leave that link out and let the page's pull request add it.\n\n**Size:** Small.\n\n## Decided\n\n- The changelog moves to the footer: these are useful links, but not the primary pages of the site.\n- The footer is for those four links. Anything more is its own decision.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 379,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Give the site a footer",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/379"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAFBPg",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Give the site a footer"
+    },
+    {
+      "content": {
+        "body": "A page of the site, `/credits/`, that says who builds Ascribe, what it's built on, and where its ideas came from. Each is said somewhere in the repository today, and none of it in one place a visitor would find.\n\n## What to do\n\nOne Ascribe page in `site/home/content/`, like the landing page and \"Why Ascribe\", in three parts.\n\n### Who builds Ascribe\n\n\"Built by Kyle Rollins with Claude\": Kyle Rollins, with Claude, Anthropic's model, working through Claude Code. A sentence on how the work is divided: the maintainer decides what's built and reads what ships, and most of the code, the tests, and the docs are written by Claude under those decisions.\n\nIt names Claude and not one model, so the page doesn't need editing when the next one arrives.\n\n### What Ascribe is built on\n\nGrouped by what a reader would want to know. Each is a name, a link, and a few words on what Ascribe uses it for. No versions.\n\n- **Inside the binary.** comrak first, with a paragraph of its own: Ascribe's parser is a fork of it, at a named release, with a link to the list of changes (`crates/comrak-ascribe/FORK.md`). Then the libraries that do visible work: clap, ariadne, serde, toml, and schemars.\n- **In the npm packages.** Astro, and the libraries its Markdown goes through.\n- **Programs Ascribe runs and doesn't ship.** Vale, lychee, and the delivery spec's checker, with what each is for.\n- **Building Ascribe and its site.** Pagefind, Playwright, Vitest, and the rest of what a contributor meets.\n\n### Where its ideas came from\n\n| From | What Ascribe took |\n|---|---|\n| CommonMark | The language everything else is added to |\n| Bluehawk | The snippet tags, kept as they are, so code already tagged for it works |\n| AsciiDoc | A title on its own line |\n| Swift's `@available` | Lifecycle states named by the version they start at |\n| HTML's custom elements | A hyphen marks a project's own widgets |\n| Elastic's docs-builder | Empty-text links filled from their target, and a large corpus to measure choices against |\n| Ruby and Lua | A bare `@end` |\n| The Web Documentation Delivery Spec | What a build publishes for AI agents |\n| The Good Docs Project | The page templates, once they're built |\n| Steel threads, by Jade Rubick | How every plan's phases are ordered |\n\nEach row has a sentence on what was taken and a link to where Ascribe says so (`SPEC.md`'s Appendix C and D, the drift guide, the report guide). What the spec's rationale says Ascribe decided against (MDX, colon-fenced directives, GitHub's alerts) isn't a credit and stays in the spec.\n\n## Keeping it true\n\n- **\"Ascribe uses this.\"** A new test compares the page with the manifests: every project the page names as a dependency is one, in `Cargo.toml` or a `package.json`, so a named dependency that's removed fails the test until the page follows. The reverse isn't required.\n- **comrak's release** is read from `FORK.md`, not typed again.\n- **\"Ascribe took this from there.\"** The site's link test follows each row's link. A row with nowhere to link gets its sentence added to the docs first, not to `SPEC.md`: the spec changes only by a recorded decision, and this isn't one.\n- **\"This is who builds it.\"** Nothing can test it. The maintainer reads the page before it merges.\n\n## What else it touches\n\n- The page's social card, and the two tests that list the site's own pages (`site/test/e2e.test.ts`, `scripts/design/assets.test.ts`).\n- The Credits link in the footer (#379). If the footer hasn't landed, the page ships without a way in and the footer's pull request adds it.\n- The landing page's line about status (\"early, and open source\") could link here too.\n\n**Size:** Small. No change to Ascribe itself.\n\n## Decided\n\n- The page is called \"Credits\", at `/credits/`.\n- The wording is \"Built by Kyle Rollins with Claude\".\n- The ideas table is the one above; what the repository already states is enough for now.\n\n## Left out\n\n- Every dependency: a full list is what a license report is for.\n- License texts, and versions.\n- A list of contributors. When there are more than two, the page points at the repository's own list.\n- Thanks to people: projects and ideas only.\n\nFrom the [proposal](https://github.com/ascribed-dev/ascribe/blob/b0d183ec/project-docs/proposals/credits-page.md).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 380,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Add a credits page to the site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/380"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAFBQM",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Add a credits page to the site"
+    },
+    {
+      "content": {
+        "body": "Every pull request that records a decision appends to `project-docs/decisions.md` at the same place and claims the next number, so two of them conflict: on the lines, and on the number. Three commits touched the file on `main` within an hour on 11 October, one of them a merge of `main` into a branch, and #375 moved its decision into a plan to get out of a conflict.\n\nThe changelog had the same problem and #354 fixed it with a file per entry in `changes/`. A decision needs one thing more than a changelog entry: an id that's unique without two branches agreeing on it, because decisions are cited by number from about 30 files outside `project-docs/`.\n\n## What to do\n\nA new decision is a file of its own, identified by the number of the issue it was made for.\n\n- **Where:** `project-docs/decisions/<number>-<slug>.md`, such as `project-docs/decisions/381-decision-files.md`. The number is the issue's. A decision with no issue uses its pull request's number. GitHub numbers issues and pull requests in one sequence, so two branches can't take the same one.\n- **How it's cited:** \"decision #381\", with a link to the file where a link fits. An issue that produces more than one decision adds a letter: `381a-…`, `381b-…`, cited as \"decision #381a\".\n- **What a file holds:** what an entry holds today, the decision in a bold sentence, then _Why:_ and _From:_, and the section it belongs to (The binary, Review, The language, and so on) as frontmatter.\n- **The existing decisions stay where they are.** Decisions 1 to 123 keep their numbers and their place in `decisions.md`; nothing is renumbered and no citation changes. `decisions.md` takes no new numbered entries after this lands, and says so at its top.\n- **A decision that's replaced** stays, as now: its file (or its struck-through entry in `decisions.md`) gains a pointer to the one that replaced it. A file isn't deleted and its number isn't reused.\n- **One view of everything:** reading \"every decision about the language\" must still work. Either `decisions.md` gains a generated index of the files under each section, rewritten with `ASCRIBE_BLESS=1` like the other generated files, or a test holds a hand-kept index to the folder. The generated one must not bring the conflict back: an index every pull request rewrites is the same problem. If it can't be generated without that, a `README.md` in the folder that explains the layout, with the sections read from the files by a script on demand, is enough.\n- **A test** (beside `scripts/release/changes.test.ts`, or in `scripts/repo-docs/`) checks each file: its name, its frontmatter's section is one of the known ones, it has the decision, a _Why:_ and a _From:_, and its links lead to files in the repository.\n- **A `README.md` in the folder,** as `changes/README.md` is for the changelog: how to name a file, what to write, and how it's checked.\n\n## What else changes\n\n- `AGENTS.md` and `CONTRIBUTING.md`: \"a decision … is added to `project-docs/decisions.md`\" becomes the folder. CONTRIBUTING's note that a change to `decisions.md` runs the tests, not only the formatter, covers the folder too, and so does the path filter in `.github/workflows/ci.yml` that it describes.\n- `project-docs/decisions.md`'s opening paragraphs: where a new decision goes, and that a plan's decisions which still bind when it closes move to files in the folder.\n- The skills that say where a decision is recorded (`.claude/skills/`), and `project-docs/checklists.md` where it names the file.\n- `scripts/repo-docs/paths.test.ts`, if it needs to know the folder.\n\n## Not changing\n\n- **A plan's own decisions.** They stay in the plan's `README.md` while it runs, numbered within the plan.\n- **The 123 existing decisions,** and every citation of them.\n\n**Size:** Small to medium. No change to Ascribe itself.\n\n## Decided\n\n- New decisions are identified by issue or pull request number, not the next number in a row. The other two ways were considered and turned down: files named by the next number (two branches can both take it, and nothing notices until the second runs CI again), and unnumbered files numbered when gathered (a pull request couldn't cite its own decision, and something would have to commit to `main` after every merge).\n\nThis issue's own decision is the first one recorded the new way.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 381,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Record each new decision as a file of its own, numbered by its issue",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/381"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAFENI",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Record each new decision as a file of its own, numbered by its issue"
+    },
+    {
+      "content": {
+        "body": "The changelog page is too long to use, and the next release will make it worse. At 1280 wide it is 34 screens, and the unreleased section alone is 93 entries and about 26 of them, in one flat list.\n\nWhat makes it hard:\n\n- **Nothing to navigate by.** Four headings (Unreleased and three releases), no contents list, and no subheadings in Unreleased, though 0.2.0's 12 entries have seven.\n- **Entries are paragraphs.** The median is 65 words and the longest 349; only the bold first sentence can be scanned.\n- **The order is arbitrary.** Entries from `changes/` are gathered by file name.\n- **Everything has one weight.** A behavior change looks like a docs page that moved.\n\n## The mockup\n\n<img width=\"1280\" height=\"900\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/28e9f990-e35b-423e-b6b1-c41483b50db9\" />\n\nBuilt from the real page, all 149 entries, with the site's own styles. It takes the page from 34 screens to about 12, and Unreleased from 26 to about 6.\n\n## What to do\n\nIn `site/src/pages/changelog.astro` and `site/src/changelog.ts`, which already rewrite the rendered HTML (`pointLinks`, `anchorReleases`):\n\n1. **Collapse each entry to its bold sentence.** Each entry becomes a `<details>` whose `<summary>` is the bold sentence and whose body is the rest. No JavaScript is needed for that. \"Expand all\" and \"Collapse all\" buttons above the list.\n2. **Group a release's entries by area,** under a heading with a count: the language and the content model, the `ascribe` command, the editor, Astro and the elements, agents, review, the docs and the site, and fixes. Released sections already have such headings; the page keeps them.\n3. **A contents list beside the page:** each release, with its areas under the newest ones. The docs layout has one to borrow. Below the width where it fits, it goes above the list or behind a button; the mockup just hides it, which isn't enough.\n4. **Badge behavior changes,** which already say \"Behavior change:\" in the bold sentence, and offer \"Behavior changes only\".\n\nFor 2 to work, an entry has to say its area:\n\n- **Each file in `changes/` declares its area,** `scripts/release/changes.ts`'s gather writes it under that area's `###` heading in the unreleased section, and `changes.test.ts` checks the area is a known one. `changes/README.md` says how.\n- **The entries already in `CHANGELOG.md`'s unreleased section** (79 of them, flat) are sorted under the headings once, by hand, with no entry's words changed.\n\n## What the mockup showed that collapsing doesn't fix\n\n- **A third of the bold sentences are long.** 49 of 149 run past two lines collapsed. A limit on the bold sentence's length would be a writing rule, held by `changes.test.ts` for new entries.\n- **14 unreleased entries have \"Fixed:\" as their bold text,** and would all collapse to \"Fixed\". The mockup puts them in a Fixes group and uses each one's first sentence as its summary. The real thing needs that as a stated convention, or those entries get a bold sentence.\n- **The command group is 26 entries.** Grouping finds the group; it doesn't shrink it.\n\n## To decide in the pull request, each recorded as a decision\n\n- **How an entry declares its area.** A folder per area (`changes/editor/check-fix.md`) keeps the files as they are, plain list items; frontmatter changes what every entry file looks like. Recommended: the folder.\n- **Whether the bold sentence gets a length limit,** and what it is.\n- **What a \"Fixed:\" entry's summary is.**\n\n## Constraints\n\n- **`CHANGELOG.md` stays one file, in the form it has.** It's what GitHub and a release show; the page is a rendering of it. Its `###` headings are the only change to it.\n- **Every `#v0.2.0`-style anchor keeps working,** and a link to an entry inside a closed `<details>` opens it.\n- **Finding text in the page still works.** A browser's find-in-page doesn't open a closed `<details>` everywhere; `hidden=\"until-found\"` or opening everything when a search is likely needs checking in Chrome, Firefox, and Safari.\n- **Styles come from the design tokens,** and the page works at phone width without a horizontal scroll.\n- **A bad link still fails the build,** as now.\n\n## Not in this issue\n\n- **A page per release.** It breaks the one-file model and every anchor; hold it until this proves not enough.\n- **Dropping or folding docs-only entries.** About a quarter of the unreleased entries are a guide added or a page moved. Whether those belong in the changelog is its own decision.\n\n**Size:** Medium.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 382,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Make the changelog page scannable: collapsed entries, grouped by area, with a contents list",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/382"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAFM3w",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Make the changelog page scannable: collapsed entries, grouped by area, with a contents list"
+    },
+    {
+      "content": {
+        "body": "Part of [the search and answers plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/search-and-answers/README.md), [phase 5](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/search-and-answers/phase-5-host.md), the rest of #361. Needs the compiler and `@ascribed/astro` part of #361 merged and a canary published to `next` that carries it: production builds the site from `next`, and an Ascribe without `[consumer] headers` rejects the key.\n\n## What to build\n\nAscribe's own site uses the setting #361 added:\n\n- `headers = \"netlify\"` in `docs/ascribe.toml`'s `[consumer]`, so the built site has a `_headers` with a rule for each docs page's Markdown version.\n- A test in `site/test/` that reads the built `dist/_headers` against the docs' `_ascribe/headers.json` and records: every docs page with a Markdown version has its rule (a canonical `Link`, and `X-Robots-Tag` when it isn't `listed`), and no other path has one. No docs page is `unlisted` today, so the test also covers a page that isn't, as `test/crawlers.test.ts` does with `test/fixtures/crawled/`.\n\nThe edge function already passes the `.md` response's `x-robots-tag` and `link` on (#361).\n\n## Done when\n\n- On the pull request's preview, the Markdown version of a page that isn't listed answers with `x-robots-tag: noindex` (`curl -sI`), and a listed one's doesn't; and the page's own address with `Accept: text/markdown` answers with the same header. Said in the pull request, with the `curl` lines.\n- The site's test of `_headers` passes in the Site workflow.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 386,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Search and answers: give Ascribe's site its Markdown versions' headers",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/386"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAFZ00",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Search and answers: give Ascribe's site its Markdown versions' headers"
     }
   ]
 }
