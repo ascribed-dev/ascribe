@@ -8,17 +8,21 @@ available: ascribe 0.3.0
 
 Ascribe gives Vale your prose and nothing else. Frontmatter, directive lines, attribute blocks, and code never reach it, so Vale has nothing to say about Ascribe's syntax, and a phrase's text is checked where you wrote `{key}`. You install Vale; Ascribe never downloads it or anything for it.
 
+## Before you start
+
+Install Vale 3.16 or later: see [Vale's installation page](https://docs.vale.sh/topics/installation). Check that `vale --version` works in the shell you run `ascribe` from.
+
 ## Start from the quiet preset
 
-1. Install Vale 3.16 or later: see [Vale's installation page](https://docs.vale.sh/topics/installation). Check that `vale --version` works in the shell you run `ascribe` from.
-2. Turn it on in `ascribe.toml`:
+@steps
+1. Turn it on in `ascribe.toml`:
 
    ```toml
    [checks.vale]
    preset = "quiet"
    ```
 
-3. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and the files are written again whenever they're needed. Deleting `.ascribe/` costs time, and one noisier link report: the next build writes its output again, and the next `ascribe report links` asks about every address and reports every failure, as a first run does.
+2. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and the files are written again whenever they're needed. Deleting `.ascribe/` costs time, and one noisier link report: the next build writes its output again, and the next `ascribe report links` asks about every address and reports every failure, as a first run does.
 
 That's all: no `.vale.ini` to write, and no `vale sync`. Open a page in VS Code, or save one, and Vale's alerts appear in the Problems panel. In a terminal, `ascribe check --vale` checks every page.
 
@@ -92,4 +96,7 @@ A `command` that's a path is a program in the project, which anyone who can chan
 
 When turning rules off isn't enough, say to add a style package, `ascribe vale eject` writes the preset out as your own configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules in `off` turned off. Then it changes `[checks.vale]` to `config = ".vale.ini"`. From then on, the files are yours to change, and Ascribe never writes them again. It writes nothing when `.vale.ini` or `.vale` is there already. See [`ascribe vale eject`](../reference/cli/sources.md#cli-vale-eject).
 
-Every key of `[checks.vale]` is in the [content model reference](../reference/content-model/checks.md#checksvale), and the two diagnostics are in the [diagnostics reference](../reference/diagnostics/content-checks.md#prose-through-vale).
+## See also
+
+- [`[checks.vale]`](../reference/content-model/checks.md#checksvale): every key.
+- [Prose, through Vale](../reference/diagnostics/content-checks.md#prose-through-vale): the two diagnostics.

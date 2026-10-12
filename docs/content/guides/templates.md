@@ -55,14 +55,16 @@ Their guide says what belongs in a page of each kind, and it's written for any t
 
 ## Start a page
 
-Copy the template into the type's folder, and read the guide and the notes before you write:
+@steps
+1. Copy the template into the type's folder:
 
-```sh
-mkdir -p docs/how-to
-cp templates/how-to.md docs/how-to/rotate-keys.md
-```
+   ```sh
+   mkdir -p docs/how-to
+   cp templates/how-to.md docs/how-to/rotate-keys.md
+   ```
 
-Then replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
+2. Read the type's guide and Ascribe's notes on it, before you write.
+3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
 An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](agents.md#from-the-command-line)), and the prompt gives it the template with the title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
 
@@ -90,3 +92,9 @@ To turn it off, or make it a warning, set its level in [`[checks]`](../reference
 [checks]
 template-placeholder-left = "warning"
 ```
+
+## See also
+
+- [`ascribe templates`](../reference/cli/sources.md#cli-templates-eject): `list` and `eject`, and their options.
+- [Page types](../reference/content-model.md#41-page-types): a type's `template`, `guide`, and `purpose`.
+- [ASC195 `template-placeholder-left`](../reference/diagnostics/content-checks.md#ASC195): what the check reports.
