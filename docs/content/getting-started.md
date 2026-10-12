@@ -48,10 +48,11 @@ After you install it, its walkthrough, **Get Started with Ascribe**, shows the p
 
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and says what each kind of page must have in its frontmatter.
 
+### Start with `ascribe init`
 @available: next
-Start the project with `ascribe init`:
 
-@available: next
+Start the project with the command:
+
 @variant {pm=npm}:
 ```sh
 npx ascribe init
@@ -62,14 +63,23 @@ pnpm exec ascribe init
 ```
 @end
 
-@available: next
 It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the pages go in. The file says what each part is for:
 
-@available: next
 @snippet: code:examples/getting-started/ascribe.toml#init
 
-@available: next
 Every page needs a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](guides/templates.md).
+
+### Write it by hand
+
+For a project that wants nothing written for it, or with Ascribe 0.3.0 or earlier, which don't have `ascribe init`, write `ascribe.toml` yourself, and make `docs/`. The smallest is a single line:
+
+```toml
+spec = "0.1"
+```
+
+With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, there's one build, `site`, and every page needs a `title` and has no other field, so leave out the page's `description` below.
+
+### Add what the page uses
 
 The page below uses what most projects add next: a dimension the content varies by, a few phrases, and the address the site is published at. Add them at the end of `ascribe.toml`:
 
@@ -84,16 +94,6 @@ Add the output directory to `.gitignore`:
 ```
 
 [Files Ascribe writes](reference/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
-
-### Write it by hand
-
-For a project that wants nothing written for it, or with Ascribe 0.3.0 or earlier, which don't have `ascribe init`, write `ascribe.toml` yourself, and make `docs/`. The smallest is a single line:
-
-```toml
-spec = "0.1"
-```
-
-With nothing else declared, pages live in `docs/`, and every page needs a `title` and has no other field, so leave out the page's `description` below. Then add the dimension, the phrases, and the address above.
 
 ## Write a page
 
