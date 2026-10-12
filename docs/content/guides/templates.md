@@ -74,7 +74,7 @@ A project that takes the set late is one with pages written already. Ascribe's o
 - **A type you declare already is refused,** and nothing is written. To take its template, take the type out of `ascribe.toml`, take the template, then put back what your type had. Until you do, its pages fall to your default type, and `ascribe check` doesn't say so.
 - **The new types match no page** until you change their `files`. Eject puts each type's pages in a folder of its name, and yours are somewhere else; a type that matches nothing isn't reported either.
 - **Each type's frontmatter is the set's,** a plain `title` and `description`. Put back what your own types declare, such as a title drawn as code (`inline = "code"`), on each one.
-- **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. The two it reported in the docs weren't left from a template: a phrase named `product`, which the tutorial's template has as a placeholder, and the how-to's own placeholder, quoted in code on this page. The check doesn't tell those apart from a placeholder yet; the docs say the two sentences another way.
+- **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. A phrase with a placeholder's name, such as `{product}`, which the tutorial's template has, isn't reported, since the template's brace is escaped and the phrase's isn't.
 - **Not every page fits.** A home page that lists the other pages is none of the six: give it a type of your own, with no template. The troubleshooting template's "Cause" and "Solution" headings repeat under every symptom, and the check warns about headings with the same name on a page, so the docs write them as bold paragraphs instead.
 
 The docs didn't change a page that already did its job to match its template heading for heading: a guide says what a kind of page is for, and the template is one way to get there.
@@ -118,7 +118,7 @@ There's no command that writes the page for you at the terminal: copying the fil
 
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
 
-The check finds only what was never touched. A placeholder with one word changed, or with a space taken out, such as the one after `Task name` in the how-to's task heading, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
+The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
 
 To turn it off, or make it a warning, set its level in [`[checks]`](../reference/content-model/checks.md#19-checks):
 

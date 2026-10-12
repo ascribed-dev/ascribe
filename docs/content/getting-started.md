@@ -108,7 +108,7 @@ Create `docs/install.md`:
 - `@note` is a callout; `{type=tip}` is its attribute.
 - `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](guides/variants.md).
 - `title` and `description` are the fields `ascribe.toml` asks every page for.
-- The words in braces, such as `{version}`, are phrases from `ascribe.toml`.
+- `{product}` and `{version}` are phrases from `ascribe.toml`.
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
 
