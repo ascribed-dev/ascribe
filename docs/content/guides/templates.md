@@ -4,7 +4,7 @@ description: Starting a page of a known kind, such as a how-to, from a template 
 available: next
 ---
 
-A page of a known kind has a shape: a how-to has what to do before you start, then numbered steps, then what to do next. A template is a page with that shape and things to fill in, and its guide says what belongs in each part. Ascribe carries a set of them, and writes the ones you ask for into your project, where they're your files.
+A page of a known kind has a shape: a how-to has what to do before you start, then numbered steps, then what to do next. A template is a page with that shape and things to fill in, and its guide says what belongs in each part. Ascribe carries a set of six, and writes them into your project with one command, where they're your files.
 
 ## Where the templates come from
 
@@ -14,15 +14,15 @@ Ascribe converts each one into an Ascribe page, with a script, and changes nothi
 
 The set has six templates, for a how-to, a concept, a tutorial, a reference, a troubleshooting page, and release notes. Each is one of theirs, and has a type of the same name.
 
-## Write a template into your project
+## Take the templates
 
-In a project, the folder with its `ascribe.toml`:
+In a project, the folder with its `ascribe.toml`, take the whole set:
 
 ```sh
-ascribe templates eject how-to
+ascribe templates eject
 ```
 
-It writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, and adds the how-to type to `ascribe.toml`, below what's there:
+It writes each template, its guide, and Ascribe's notes on its type into `templates/`, beside `ascribe.toml`, and adds the six types to `ascribe.toml`, below what's there. Each type's pages go in a folder of its name in the content root, and the command says which: `docs/how-to/` for how-tos, `docs/concept/` for concepts, and so on. A type is declared like this:
 
 ```toml
 [types.how-to]
@@ -35,11 +35,17 @@ title = "string"
 description = "string"
 ```
 
-A page in the content root's `how-to/` folder is a how-to now. Commit the files, with `templates/templates.lock`, which records what each was copied from.
+Each type's page has a title and a description, as every template's frontmatter has. The folders are only a start: to keep a type's pages somewhere else, change its `files`, the line that says which pages are of it. Commit the files, with `templates/templates.lock`, which records what each was copied from.
 
-From then on they're your project's. Change the template, add to the guide or the notes, or add a file of your own to the type's `guide` list: nothing in Ascribe writes over them. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
+To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
 
 `eject` adds to a project, and doesn't start one. Without an `ascribe.toml`, write one first: a file named `ascribe.toml`, beside the folder your pages go in (`docs`, unless you say otherwise), with the line `spec = "0.1"`.
+
+## Change a template
+
+From then on the files are your project's, and nothing in Ascribe writes over them. Change a template as you'd change any page: take out a section your project never has, add one it always does, or write your own placeholder as `\{What goes here}`. Add to the guide or the notes, or add a file of your own to the type's `guide` list.
+
+A change to a template changes what the check looks for, since it compares a page with the template as it is now. A placeholder you take out of the template isn't looked for in pages any more, and one you add is.
 
 ## Ascribe's notes
 
@@ -66,7 +72,7 @@ Then replace each `\{placeholder}` with what it asks for, and the title and desc
 
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
 
-The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Read a page through before publishing it. The check compares a page with the template as it is now, so a placeholder you remove from your template is no longer looked for.
+The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
 
 To turn it off, or make it a warning, set its level in [`[checks]`](../reference/content-model/checks.md#19-checks):
 

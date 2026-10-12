@@ -325,3 +325,85 @@ fn an_empty_inline_types_table_can_t_be_added_to_and_nothing_is_written() {
     assert!(!dir.path().join("templates").exists());
     assert_eq!(read(dir.path(), "ascribe.toml"), model);
 }
+
+/// A project with only its home page, which eject with no name gives every
+/// type of the set, and which then checks clean: no errors, warnings, or
+/// advice, the templates and guides being outside the content.
+#[test]
+fn a_project_given_the_whole_set_checks_clean() {
+    let dir = project(MODEL);
+    let answer = run(dir.path(), &[], "templates").expect("ejected");
+    let names: Vec<&str> = answer.added.iter().map(|a| a.name.as_str()).collect();
+    let set: Vec<String> = ascribe_templates::set()
+        .templates
+        .into_iter()
+        .map(|t| t.name)
+        .collect();
+    assert_eq!(names, set);
+    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let types: Vec<&str> = project
+        .model()
+        .types
+        .iter()
+        .map(|t| t.name.as_str())
+        .collect();
+    assert_eq!(types[0], "guide");
+    assert_eq!(&types[1..], names.as_slice());
+    let found: Vec<_> = ascribe_check::check_all_builds(&project)
+        .into_iter()
+        .map(|d| format!("{}: {}", d.slug, d.message))
+        .collect();
+    assert!(found.is_empty(), "{found:#?}");
+}
+
+/// For each type of the set, a page copied from its template whole: `ascribe
+/// check` reports a placeholder left on every line the template opens one
+/// with `\{`, and the title and the description, and nothing else. That a
+/// page filled in reports nothing is `examples/templates`, which has one of
+/// each, and `crates/ascribe-cli/tests/all/check.rs`.
+#[test]
+fn a_page_copied_from_each_template_reports_its_placeholders() {
+    let model = format!("{MODEL}\n[checks]\npage-orphan = \"off\"\n");
+    let dir = project(&model);
+    run(dir.path(), &[], "templates").expect("ejected");
+    for template in ascribe_templates::set().templates {
+        let text = template.text(&template.template);
+        let page = format!("docs/{}/page.md", template.name);
+        std::fs::create_dir_all(dir.path().join("docs").join(&template.name)).expect("made");
+        std::fs::write(dir.path().join(&page), text).expect("written");
+        let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+        let found = ascribe_check::check_all_builds(&project);
+        std::fs::remove_file(dir.path().join(&page)).expect("removed");
+
+        let others: Vec<_> = found
+            .iter()
+            .filter(|d| d.slug.as_str() != "template-placeholder-left")
+            .map(|d| format!("{}: {}", d.slug, d.message))
+            .collect();
+        assert!(others.is_empty(), "{}: {others:#?}", template.name);
+        let lines = ascribe_core::LineIndex::new(text);
+        let mut reported: Vec<u32> = found
+            .iter()
+            .filter_map(|d| lines.line_col(d.location.span.start()))
+            .map(|at| at.line)
+            .collect();
+        reported.sort_unstable();
+        reported.dedup();
+        let mut expected: Vec<u32> = text
+            .lines()
+            .enumerate()
+            .filter(|(_, line)| {
+                line.contains("\\{")
+                    || line.starts_with("title: ")
+                    || line.starts_with("description: ")
+            })
+            .filter_map(|(at, _)| u32::try_from(at).ok())
+            .collect();
+        expected.sort_unstable();
+        assert_eq!(
+            reported, expected,
+            "{}: the lines reported, from 0, aren't those with a placeholder",
+            template.name
+        );
+    }
+}

@@ -362,16 +362,39 @@ fn the_templates_example_has_no_problems_and_holds_what_eject_writes() {
             stderr(&out)
         );
     }
-    // The example was made by `ascribe templates eject how-to`; when the set
-    // changes, it's made again.
-    let set = ascribe_templates::set();
-    let how_to = set.templates.iter().find(|t| t.name == "how-to").unwrap();
-    for name in [&how_to.template, &how_to.guide] {
-        let copy = fs::read_to_string(example.join("templates").join(name)).unwrap();
-        assert_eq!(
-            copy,
-            how_to.text(name),
-            "examples/templates/templates/{name} isn't what `ascribe templates eject how-to` writes; run it again in a copy of the example without its templates and types"
+    // Advice too: each page began as a copy of its type's template, and has
+    // nothing of it left.
+    let out = ascribe(&example, &["check", "--format", "json"]);
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(
+        report["diagnostics"],
+        serde_json::json!([]),
+        "examples/templates has something to report"
+    );
+    // The example was made by `ascribe templates eject`, with no name; when
+    // the set changes, it's made again. It has a page of each type.
+    for template in ascribe_templates::set().templates {
+        let notes = template.notes().map(|n| n.name.to_owned());
+        for name in [template.template.clone(), template.guide.clone()]
+            .into_iter()
+            .chain(notes)
+        {
+            let copy = fs::read_to_string(example.join("templates").join(&name)).unwrap();
+            let text = ascribe_templates::NOTES
+                .iter()
+                .find(|n| n.name == name)
+                .map_or_else(|| template.text(&name), |n| n.text);
+            assert_eq!(
+                copy, text,
+                "examples/templates/templates/{name} isn't what `ascribe templates eject` writes; run it again in a copy of the example without its templates and types"
+            );
+        }
+        let pages =
+            fs::read_dir(example.join("docs").join(&template.name)).map_or(0, Iterator::count);
+        assert!(
+            pages > 0,
+            "examples/templates has no page of the type {}",
+            template.name
         );
     }
 }

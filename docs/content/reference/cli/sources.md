@@ -179,7 +179,7 @@ Beside the templates, it writes `templates.lock`: for each template, the files w
 
 It checks everything before it writes anything. A type `ascribe.toml` declares already, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so and what to write by hand: a file with the line `spec = "0.1"`, beside the folder the pages go in.
 
-It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; and how to start a page.
+It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in; that a type's `files` is the line to change to keep its pages elsewhere; and how to start a page.
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, and `guide` (their guide, then Ascribe's notes); `refused`, each with `name`, `reason` (`unknown`, `declared`, or `file_in_the_way`), `path` (the file in the way, or null), and `message`; and `page_declared`, whether `[types.page]` was written out. When `refused` isn't empty, `written` and `added` are.
 
