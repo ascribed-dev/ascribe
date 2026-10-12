@@ -1,4 +1,5 @@
 ---
+type: tutorial
 title: "Learn"
 description: "Learn it."
 ---

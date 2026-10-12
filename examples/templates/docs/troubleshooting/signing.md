@@ -1,4 +1,5 @@
 ---
+type: troubleshooting
 title: "Troubleshooting signing"
 description: "What to do when Quill can't sign a release, or a signature doesn't check."
 ---

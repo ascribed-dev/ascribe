@@ -1,4 +1,5 @@
 ---
+type: page
 title: Nested
 description: The nested project's home page.
 ---

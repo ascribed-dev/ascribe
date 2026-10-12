@@ -1,4 +1,5 @@
 ---
+type: page
 title: Credits
 description: Who builds Ascribe, the projects it's built on, and where its ideas came from.
 ---

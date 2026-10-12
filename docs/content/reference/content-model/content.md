@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe.toml`: dimensions, phrases, and widgets"
 description: "The content model's dimensions, versions, lifecycle states, features, notes, phrases, glossary, images, and widgets."
 ---

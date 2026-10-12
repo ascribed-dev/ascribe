@@ -1,4 +1,5 @@
 ---
+type: page
 title: Install Quill
 description: Install Quill with your package manager, and set it up.
 ---

@@ -27,7 +27,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilityError, AvailabilitySpec, parse_availability};
 use ascribe_core::{AttributeValue, FileId, RelPath, Slugger, Span};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, ContentType};
 use ascribe_syntax::{
     Block, BlockKind, Bound, DirectiveLine, InlineKind, ParseOptions, ParsedDocument, Phrase,
     PrimaryValue, TableRow, parse,
@@ -86,6 +86,18 @@ pub struct FileIndex {
 }
 
 impl FileIndex {
+    /// The page's content type (SPEC §7.2): the one its frontmatter's `type`
+    /// names, or the implicit `page` type of a project that declares none.
+    /// `None` for a fragment, and for a page whose type isn't declared or
+    /// that names none in a project that declares types, which
+    /// `ascribe check` reports.
+    pub fn content_type<'m>(&self, model: &'m ContentModel) -> Option<&'m ContentType> {
+        match self.kind {
+            FileKind::Fragment => None,
+            FileKind::Page => model.type_of(self.frontmatter.as_ref()).found(),
+        }
+    }
+
     /// The heading with this source id: the first, if a file repeats one
     /// (which page-level checks report). An empty id names nothing.
     pub fn heading_by_id(&self, id: &str) -> Option<&Heading> {
@@ -297,7 +309,11 @@ pub(crate) fn index_parsed(
     };
     walk::walk_blocks(&document.blocks, &mut visit);
     if let Some(fm) = &document.frontmatter {
-        phrases.extend(frontmatter::phrases(text, fm.content, path.as_str(), model));
+        let fields = model
+            .type_of(frontmatter.as_ref())
+            .found()
+            .map(|t| t.frontmatter.fields.as_slice());
+        phrases.extend(frontmatter::phrases(text, fm.content, fields, model));
     }
     // A definition's destination holds phrases too, once, wherever the
     // links that use it are.

@@ -11,7 +11,7 @@ use ascribe_resolve::{AstroRouter, pages};
 use crate::build_support::project_with;
 
 const MODEL: &str = "spec = \"0.1\"\n\
-    [types.page]\ndefault = true\n\
+    [types.page]\n\
     [types.page.frontmatter]\ntitle = \"string\"\n\
     description = { type = \"string?\", role = \"description\" }\n\
     [consumer]\nsite = \"https://docs.example.com\"\nbase-path = \"/docs/\"\n";
@@ -19,23 +19,23 @@ const MODEL: &str = "spec = \"0.1\"\n\
 const FILES: &[(&str, &str)] = &[
     (
         "index.md",
-        "---\ntitle: Quill\ndescription: Everything about Quill.\n---\n",
+        "---\ntype: page\ntitle: Quill\ndescription: Everything about Quill.\n---\n",
     ),
     (
         "guides/install.md",
-        "---\ntitle: Install Quill\ndescription: Install it and connect it.\n---\n",
+        "---\ntype: page\ntitle: Install Quill\ndescription: Install it and connect it.\n---\n",
     ),
     (
         "guides/upgrade.md",
-        "---\ntitle: Upgrade Quill\ndescription: Move to a new release.\n---\n",
+        "---\ntype: page\ntitle: Upgrade Quill\ndescription: Move to a new release.\n---\n",
     ),
     (
         "guides/drafts.md",
-        "---\ntitle: Drafts\nlisting: unlisted\n---\n",
+        "---\ntype: page\ntitle: Drafts\nlisting: unlisted\n---\n",
     ),
     (
         "faq.md",
-        "---\ntitle: FAQ\ndescription: Questions people ask.\nlisting: unquoted\n---\n",
+        "---\ntype: page\ntitle: FAQ\ndescription: Questions people ask.\nlisting: unquoted\n---\n",
     ),
 ];
 
@@ -117,7 +117,7 @@ fn long_files() -> Vec<(String, String)> {
             let description = format!("Step {n}. {}", "Read it. ".repeat(22));
             (
                 format!("guides/step-{n}.md"),
-                format!("---\ntitle: Step {n}\ndescription: {description}\n---\n"),
+                format!("---\ntype: page\ntitle: Step {n}\ndescription: {description}\n---\n"),
             )
         })
         .collect()

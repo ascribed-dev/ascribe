@@ -23,9 +23,6 @@ spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = "string?"

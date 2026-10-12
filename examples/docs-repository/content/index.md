@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Lantern SDK
 description: The Lantern SDK reads feature flags from your Lantern server.
 ---

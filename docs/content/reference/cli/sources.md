@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe init`, `sources`, `permalinks`, `templates`, and `vale`"
 description: "Start a project, fetch and update source repositories, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
 ---

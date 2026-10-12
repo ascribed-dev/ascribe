@@ -1,4 +1,5 @@
 ---
+type: concept
 title: What to measure
 description: Where a team sees how search engines and AI agents treat its docs, since Ascribe sees no traffic, and which of the advice about them has evidence behind it.
 available: ascribe 0.3.0

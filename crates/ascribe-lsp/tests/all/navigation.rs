@@ -998,7 +998,7 @@ fn a_code_lens_names_the_include_and_opens_it() {
         uri(&f.path("docs/keys.md")).as_str()
     );
     assert_eq!(shown[0].params["takeFocus"], true);
-    assert_eq!(shown[0].params["selection"]["start"]["line"], 5);
+    assert_eq!(shown[0].params["selection"]["start"]["line"], 6);
     // Anything else is refused.
     let refused = client.request(
         "workspace/executeCommand",

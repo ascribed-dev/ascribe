@@ -8,9 +8,6 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = "string?"

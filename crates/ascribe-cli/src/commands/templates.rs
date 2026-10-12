@@ -265,41 +265,39 @@ pub(crate) fn write_refused(err: &mut dyn Write, ejected: &EjectAnswer) -> io::R
     writeln!(err, "wrote nothing")
 }
 
-/// The most pages of the default type the text lists; `--format json` lists
+/// The most pages that name no type the text lists; `--format json` lists
 /// them all.
 const PAGES_LISTED: usize = 10;
 
-/// The types eject added, and how to start a page of one. With `unmatched`,
-/// each type added that matches no page says so, with the pages of the
-/// default type; a project just started has none to say it of.
+/// The types eject added, and how to start a page of one. With `untyped`,
+/// the project's pages that name no type are listed; a project just started
+/// has none to list.
 pub(crate) fn write_added(
     out: &mut dyn Write,
     root: &Path,
     ejected: &EjectAnswer,
-    unmatched: bool,
+    untyped: bool,
 ) -> io::Result<()> {
     if ejected.page_declared {
         writeln!(
             out,
-            "added [types.page] to {}: it declared no types, so every page was of this one, and the pages outside the new types keep it",
+            "added [types.page] to {}: it declared no types, so every page was of this one, and a page that isn't of a new type names it, with `type: page`",
             from_here(root, ascribe_check::MODEL_FILE)
         )?;
     }
-    let default = ejected.default_type.as_deref().unwrap_or("page");
     for added in &ejected.added {
         write!(
             out,
-            "added [types.{}] to {}, for pages under {}/",
+            "added [types.{}] to {}",
             added.name,
             from_here(root, ascribe_check::MODEL_FILE),
-            from_here(root, &added.folder)
         )?;
         if added.copied.is_empty() {
             writeln!(out)?;
         } else {
             writeln!(
                 out,
-                ", with {} declared as [types.{default}] declares {}",
+                ", with {} declared as the project's other types declare {}",
                 listed(&added.copied),
                 if added.copied.len() == 1 {
                     "it"
@@ -309,29 +307,15 @@ pub(crate) fn write_added(
             )?;
         }
     }
-    let unmatched: Vec<_> = ejected
-        .added
-        .iter()
-        .filter(|a| unmatched && a.pages == 0)
-        .collect();
-    for added in &unmatched {
+    let pages = &ejected.untyped;
+    if untyped && !ejected.added.is_empty() && !pages.is_empty() {
         writeln!(
             out,
-            "[types.{}] matches no page yet: no page is under {}/",
-            added.name,
-            from_here(root, &added.folder)
-        )?;
-    }
-    let pages = &ejected.default_pages;
-    let listing = !unmatched.is_empty() && !pages.is_empty();
-    if listing {
-        writeln!(
-            out,
-            "{} of [types.{default}], the default type. To make one of a type added, list it in the type's `files` in {}, or move it into the type's folder:",
+            "{} no type. In a project whose {} declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:",
             if pages.len() == 1 {
-                "1 page is".to_owned()
+                "1 page names".to_owned()
             } else {
-                format!("{} pages are", pages.len())
+                format!("{} pages name", pages.len())
             },
             from_here(root, ascribe_check::MODEL_FILE)
         )?;
@@ -360,40 +344,24 @@ pub(crate) fn write_added(
             }
         )?;
     }
-    if !ejected.added.is_empty() && !listing {
-        writeln!(
-            out,
-            "A type's folder is only a start: to keep its pages elsewhere, change the type's `files` in {}.",
-            from_here(root, ascribe_check::MODEL_FILE)
-        )?;
-    }
+    let start = |template: &str, guide: &[String]| {
+        format!(
+            "To start a page, copy {} to where the page goes, and read {} first. The page names its type in its frontmatter, as the template does.",
+            from_here(root, template),
+            guide
+                .iter()
+                .map(|g| from_here(root, g))
+                .collect::<Vec<_>>()
+                .join(" and ")
+        )
+    };
     match (ejected.added.as_slice(), ejected.kept.as_slice()) {
         ([], []) => {}
-        ([], [one]) => writeln!(
-            out,
-            "To start a page, copy {} to where [types.{}]'s `files` cover, and read {} first.",
-            from_here(root, &one.template),
-            one.name,
-            one.guide
-                .iter()
-                .map(|g| from_here(root, g))
-                .collect::<Vec<_>>()
-                .join(" and ")
-        )?,
-        ([one], []) => writeln!(
-            out,
-            "To start a page, copy {} into {}/, and read {} first.",
-            from_here(root, &one.template),
-            from_here(root, &one.folder),
-            one.guide
-                .iter()
-                .map(|g| from_here(root, g))
-                .collect::<Vec<_>>()
-                .join(" and ")
-        )?,
+        ([], [one]) => writeln!(out, "{}", start(&one.template, &one.guide))?,
+        ([one], []) => writeln!(out, "{}", start(&one.template, &one.guide))?,
         _ => writeln!(
             out,
-            "To start a page, copy its type's template into the type's folder, and read its guide and Ascribe's notes on it first."
+            "To start a page, copy its type's template to where the page goes, and read its guide and Ascribe's notes on it first. The page names its type in its frontmatter, as the template does."
         )?,
     }
     Ok(())

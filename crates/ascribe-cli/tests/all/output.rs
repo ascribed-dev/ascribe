@@ -177,10 +177,10 @@ fn check() {
     let text = fs::read_to_string(&keys).unwrap().replace("\r\n", "\n");
     let mut lines: Vec<&str> = text.lines().collect();
     assert_eq!(
-        lines[6], "@id: create-key",
+        lines[7], "@id: create-key",
         "examples/quill/docs/keys.md changed"
     );
-    lines[6] = "See [Install](/install-agent/).";
+    lines[7] = "See [Install](/install-agent/).";
     fs::write(&keys, lines.join("\n") + "\n").unwrap();
 
     expect("check.txt", &stdout(&run(dir.path(), &["check"], 0)));

@@ -8,5 +8,5 @@ spec: ["4.4", "4.9"]
 tags: [check]
 
 diagnostics:
-  - {slug: availability-left-behind, file: ascribe.toml, line: 19}
-  - {slug: availability-left-behind, file: ascribe.toml, line: 23}
+  - {slug: availability-left-behind, file: ascribe.toml, line: 16}
+  - {slug: availability-left-behind, file: ascribe.toml, line: 20}

@@ -10,5 +10,5 @@ spec: ["2.1", "7.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: listing-disallowed, file: answers/page.md, line: 3}
-  - {slug: listing-disallowed, file: drafts/page.md, line: 3}
+  - {slug: listing-disallowed, file: answers/page.md, line: 4}
+  - {slug: listing-disallowed, file: drafts/page.md, line: 4}

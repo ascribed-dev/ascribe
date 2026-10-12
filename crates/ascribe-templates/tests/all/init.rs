@@ -46,14 +46,14 @@ fn entries(dir: &Path) -> Vec<String> {
 }
 
 #[test]
-fn the_first_ascribe_toml_loads_with_nothing_to_say_and_a_default_page_type() {
+fn the_first_ascribe_toml_loads_with_nothing_to_say_and_a_page_type() {
     let model = ascribe_model::load_str(MODEL_TEXT, ascribe_core::FileId::new(0))
         .unwrap_or_else(|issues| panic!("{issues:#?}"));
     assert!(model.warnings.is_empty(), "{:#?}", model.warnings);
     assert_eq!(model.types.len(), 1);
     let page = &model.types[0];
     assert_eq!(page.name, "page");
-    assert!(page.default);
+    assert!(!page.implicit);
     let fields: Vec<&str> = page
         .frontmatter
         .fields

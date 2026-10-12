@@ -9,7 +9,7 @@ tags: [page-check, resolve]
 builds:
   site:
     diagnostics:
-      - {slug: description-duplicate, file: install.md, line: 3}
-      - {slug: description-duplicate, file: server.md, line: 3}
+      - {slug: description-duplicate, file: install.md, line: 4}
+      - {slug: description-duplicate, file: server.md, line: 4}
   cloud:
     diagnostics: []

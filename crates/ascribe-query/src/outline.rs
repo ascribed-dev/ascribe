@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 
 use ascribe_core::RelPath;
-use ascribe_model::{Build, TypeMatch};
+use ascribe_model::Build;
 use ascribe_resolve::{AstroRouter, FileKind, Project};
 use serde::Serialize;
 
@@ -88,10 +88,7 @@ pub fn outline(
         file: project_path(project, path),
         fragment,
         title: file.title.clone(),
-        content_type: match project.model().type_for(path.as_str()) {
-            TypeMatch::One(t) if !fragment => Some(t.name.clone()),
-            _ => None,
-        },
+        content_type: file.content_type(project.model()).map(|t| t.name.clone()),
         build: build.map(|b| b.name.clone()),
         not_published: None,
         headings: Vec::new(),

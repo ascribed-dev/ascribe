@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Guide
 ---
 

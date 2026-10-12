@@ -1,4 +1,5 @@
 ---
+type: page
 title: On call
 description: What being on call means, and what to do when you're paged.
 owner: sre

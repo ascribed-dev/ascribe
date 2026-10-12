@@ -1,6 +1,6 @@
 description: >-
-  A content type's patterns never match a fragment, so a fragment under
-  `reference/` needs no `api-version`.
+  A fragment has no content type: in a project that declares types, a
+  fragment names none, and needs no `api-version` under `reference/`.
 spec: ["2.2", "7.2"]
 tags: [check]
 

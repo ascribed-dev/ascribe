@@ -15,7 +15,7 @@
       "id": "create-key",
       "explicit_id": true,
       "file": "docs/keys.md",
-      "line": 6,
+      "line": 7,
       "fragment": null
     },
     {
@@ -24,7 +24,7 @@
       "id": "rotate-keys",
       "explicit_id": true,
       "file": "docs/keys.md",
-      "line": 11,
+      "line": 12,
       "fragment": null
     }
   ]

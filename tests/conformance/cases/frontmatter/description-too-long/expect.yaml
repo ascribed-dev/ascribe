@@ -5,4 +5,4 @@ spec: ["8.2", "9.4"]
 tags: [check]
 
 diagnostics:
-  - {slug: description-too-long, file: install.md, line: 3}
+  - {slug: description-too-long, file: install.md, line: 4}

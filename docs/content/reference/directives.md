@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Directive reference
 description: "The language: directives, attributes, titles, phrases, links, and images."
 permalink: directives

@@ -7,10 +7,7 @@ content-root = "docs"
 output-dir = ".ascribe/build"
 # :snippet-end:
 
-# `guide` is the default type; `reference` applies to reference/**.
-[types.guide]
-default = true
-
+# Two types, `guide` and `reference`: each page names one, with `type:`.
 # Short forms, then table forms.
 [types.guide.frontmatter]
 title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
@@ -31,7 +28,6 @@ author = { type = "object?", fields = { name = "string", email = "string?" } }
 related = { type = "list(object)?", fields = { title = "string", url = "string" } }
 
 [types.reference]
-files = ["reference/**", "api/**/*.md"]
 # What a reference page is for, which the rules for agents say.
 purpose = "What each command, option, and setting does, to look up."
 # The page a reference page starts from, and what to read before writing

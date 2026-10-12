@@ -69,9 +69,6 @@ base-path = "/"
 trailing-slash = "never"
 permalink-path = "/go/"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 `,

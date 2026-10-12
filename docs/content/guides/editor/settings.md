@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Editor workspaces, settings, and commands
 description: "How the VS Code extension handles a workspace with several projects, and its settings and commands."
 ---

@@ -17,12 +17,6 @@ spec = "0.1"
 content-root = "docs"
 output-dir = ".out"
 
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
-
 [dimensions.pm]
 values = ["npm", "pnpm", "yarn"]
 

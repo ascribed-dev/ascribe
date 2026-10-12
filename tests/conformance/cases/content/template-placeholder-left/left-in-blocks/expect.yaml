@@ -5,6 +5,6 @@ spec: ["7.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 6, severity: advice}
-  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 8, severity: advice}
-  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 10, severity: advice}
+  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 7, severity: advice}
+  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 9, severity: advice}
+  - {slug: template-placeholder-left, file: tutorials/learn.md, line: 11, severity: advice}

@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe agents`, `mcp`, and `lsp`"
 description: "Set a repository up for AI agents, serve a project's tools over MCP, and run the language server."
 ---

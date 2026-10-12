@@ -5,9 +5,9 @@ spec: ["2.1", "7.2"]
 tags: [resolve, check]
 
 diagnostics:
-  - {slug: listing-loosened, file: internal/plan.md, line: 3}
-  - {slug: listing-loosened, file: internal/faq.md, line: 3}
-  - {slug: listing-loosened, file: changes/one.md, line: 3}
+  - {slug: listing-loosened, file: internal/plan.md, line: 4}
+  - {slug: listing-loosened, file: internal/faq.md, line: 4}
+  - {slug: listing-loosened, file: changes/one.md, line: 4}
 
 builds:
   site:

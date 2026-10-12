@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: The project report
 description: Reading ascribe report and acting on each section, from the problems and pages it counts to broken external links and the published site's delivery to agents, and running it every week in CI.
 available: ascribe 0.3.0

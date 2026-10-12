@@ -629,7 +629,7 @@ fn id_rename_in_a_fragment_updates_links_through_the_including_page() {
     write(
         &f,
         "docs/limits.md",
-        "---\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n\nSee [above](#custom).\n",
+        "---\ntype: page\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n\nSee [above](#custom).\n",
     );
     let source_text = format!(
         "{}\n[Limits](limits.md#custom)\n",

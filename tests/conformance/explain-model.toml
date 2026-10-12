@@ -4,14 +4,6 @@
 # `example.model` laid over it. Keep it small: it's printed whole.
 spec = "0.1"
 
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
-description = "string?"
-audience = "enum(admin, developer)?"
-
 [dimensions.pm]
 label = "Package manager"
 values = ["npm", "pnpm"]

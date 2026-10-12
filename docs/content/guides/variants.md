@@ -1,4 +1,5 @@
 ---
+type: tutorial
 title: Content that varies
 description: Writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 ---

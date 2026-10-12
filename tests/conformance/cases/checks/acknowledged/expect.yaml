@@ -7,9 +7,9 @@ spec: ["4.9", "5.1", "5.2"]
 tags: [check, page-check]
 
 diagnostics:
-  - {slug: phrase-unused, file: ascribe.toml, line: 15}
+  - {slug: phrase-unused, file: ascribe.toml, line: 12}
 
 builds:
   site:
     diagnostics:
-      - {slug: page-orphan, file: stray.md, line: 2}
+      - {slug: page-orphan, file: stray.md, line: 3}

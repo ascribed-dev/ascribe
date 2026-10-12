@@ -322,21 +322,10 @@
     "ModelType": {
       "description": "A page type.",
       "properties": {
-        "default": {
-          "description": "Whether it applies to pages no type's `files` match.",
-          "type": "boolean"
-        },
         "fields": {
           "description": "Its frontmatter fields, in declaration order.",
           "items": {
             "$ref": "#/$defs/ModelField"
-          },
-          "type": "array"
-        },
-        "files": {
-          "description": "The patterns of the pages it applies to, relative to the content root.",
-          "items": {
-            "type": "string"
           },
           "type": "array"
         },
@@ -348,7 +337,7 @@
           "type": "array"
         },
         "name": {
-          "description": "Its name.",
+          "description": "Its name, which each page of the type gives as its `type`; the\nimplicit `page` type's pages give none.",
           "type": "string"
         },
         "purpose": {
@@ -368,8 +357,6 @@
       },
       "required": [
         "name",
-        "files",
-        "default",
         "fields"
       ],
       "type": "object"

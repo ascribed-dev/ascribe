@@ -472,8 +472,7 @@ mod tests {
         (diagnostics::CONTAINER_NESTING_DEEP, Place::Page),
     ];
 
-    const MODEL: &str = "spec = \"0.1\"\n[types.page]\ndefault = true\n\
-        [types.page.frontmatter]\ntitle = \"string\"\n";
+    const MODEL: &str = "spec = \"0.1\"\n";
 
     fn project(files: &[(&str, &str)]) -> Project {
         let model = ascribe_model::load_str(MODEL, FileId::new(0)).unwrap();

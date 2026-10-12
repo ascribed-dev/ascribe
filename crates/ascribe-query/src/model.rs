@@ -8,7 +8,11 @@ use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
 use ascribe_model::{AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, VariantMode};
 use serde::Serialize;
 
-use crate::{ASCRIBE_VERSION, SCHEMA_VERSION};
+use crate::ASCRIBE_VERSION;
+
+/// The version of [`ModelReport`]'s schema: 2 since a type has no `files` or
+/// `default` (decision 450).
+pub const MODEL_SCHEMA_VERSION: u32 = 2;
 
 /// A section of the content model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -113,12 +117,9 @@ pub struct ModelReport {
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct ModelType {
-    /// Its name.
+    /// Its name, which each page of the type gives as its `type`; the
+    /// implicit `page` type's pages give none.
     pub name: String,
-    /// The patterns of the pages it applies to, relative to the content root.
-    pub files: Vec<String>,
-    /// Whether it applies to pages no type's `files` match.
-    pub default: bool,
     /// What a page of the type is for, as the content model says; absent
     /// when it says nothing.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -308,7 +309,7 @@ pub struct ModelRemote {
 pub fn model(model: &ContentModel, section: Option<Section>) -> ModelReport {
     let wants = |s: Section| section.is_none_or(|wanted| wanted == s).then_some(());
     ModelReport {
-        schema_version: SCHEMA_VERSION,
+        schema_version: MODEL_SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
         types: wants(Section::Types).map(|()| types(model)),
         dimensions: wants(Section::Dimensions).map(|()| dimensions(model)),
@@ -383,8 +384,6 @@ fn types(model: &ContentModel) -> Vec<ModelType> {
         .iter()
         .map(|t| ModelType {
             name: t.name.clone(),
-            files: t.files.iter().map(|p| p.as_str().to_owned()).collect(),
-            default: t.default,
             purpose: t.purpose.clone(),
             template: t.template.as_ref().map(|f| f.path.clone()),
             guide: t.guide.iter().map(|f| f.path.clone()).collect(),
@@ -694,13 +693,6 @@ fn source_line(s: &ModelSource) -> String {
 fn type_line(t: &ModelType) -> String {
     let mut text = format!("`{}`", t.name);
     let mut notes = Vec::new();
-    if t.default {
-        notes.push("the default".to_owned());
-    }
-    if !t.files.is_empty() {
-        let files: Vec<String> = t.files.iter().map(|f| format!("`{f}`")).collect();
-        notes.push(format!("files {}", files.join(", ")));
-    }
     if let Some(template) = &t.template {
         notes.push(format!("template `{template}`"));
     }

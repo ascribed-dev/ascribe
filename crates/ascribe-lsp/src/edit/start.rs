@@ -11,7 +11,6 @@
 use std::collections::HashMap;
 
 use ascribe_core::{LineIndex, RelPath, Span};
-use ascribe_model::TypeMatch;
 use lsp_types::{
     CreateFile, CreateFileOptions, DocumentChangeOperation, DocumentChanges, OneOf,
     OptionalVersionedTextDocumentIdentifier, Position, Range, ResourceOp, TextDocumentEdit,
@@ -24,7 +23,7 @@ use crate::nav::Ctx;
 
 /// The page a `newPage` asks for: `type`, `title`, and optionally `folder`,
 /// a `file:` URI of a folder in the content root. Without a folder, the page
-/// goes where its type's `files` say.
+/// goes in the content root.
 pub(crate) fn new_page(ctx: &Ctx, args: &Map<String, Value>) -> Result<EditResult, String> {
     let text_arg = |key: &str| match args.get(key) {
         Some(Value::String(s)) if !s.trim().is_empty() => Ok(s.trim().to_owned()),
@@ -82,12 +81,7 @@ pub(crate) fn new_page(ctx: &Ctx, args: &Map<String, Value>) -> Result<EditResul
 /// The next place in the page, after `end`, that its template left to fill
 /// in, or the first when none is after it.
 pub(crate) fn next_placeholder(ctx: &Ctx, source: &str, end: usize) -> Result<EditResult, String> {
-    let page_type = match ctx.model.type_for(ctx.path.as_str()) {
-        _ if ctx.model.is_fragment(ctx.path.as_str()) => None,
-        TypeMatch::One(t) => Some(t),
-        TypeMatch::Ambiguous(_) | TypeMatch::None => None,
-    };
-    let Some(page_type) = page_type.filter(|t| t.template.is_some()) else {
+    let Some(page_type) = ctx.page_type().filter(|t| t.template.is_some()) else {
         return Err(
             "This page's type has no template, so nothing on it is left to fill in.".to_owned(),
         );

@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe check`, `build`, and `fmt`"
 description: "Check a project's sources, build its outputs, and format its Markdown: options, output, and exit codes."
 ---

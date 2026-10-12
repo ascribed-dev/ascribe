@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: "Title"
 description: "{One sentence that says what a reader can do once they've followed this page.}"
 ---

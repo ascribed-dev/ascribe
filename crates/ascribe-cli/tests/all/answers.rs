@@ -20,12 +20,6 @@ const MODEL: &str = r#"spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
-
 [dimensions.deployment]
 values = ["cloud", "self-managed"]
 versionless = ["cloud", "self-managed"]
@@ -138,7 +132,13 @@ fn json(dir: &Path, args: &[&str], code: i32) -> Value {
     args.extend(["--format", "json"]);
     let out = run(dir, &args, code);
     let value: Value = serde_json::from_slice(&out.stdout).expect("the answer is JSON");
-    assert_eq!(value["schema_version"], 1, "{value}");
+    // `model`'s answer is at its own version; every other one here is at 1.
+    let version = if args.contains(&"model") {
+        ascribe_query::model::MODEL_SCHEMA_VERSION
+    } else {
+        1
+    };
+    assert_eq!(value["schema_version"], version, "{value}");
     assert_eq!(value["ascribe_version"], env!("CARGO_PKG_VERSION"));
     value
 }

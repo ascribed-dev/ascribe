@@ -3,14 +3,10 @@ spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
@@ -19,7 +15,6 @@ title = "string"
 description = "string"
 
 [types.concept]
-files = ["concept/**"]
 template = "templates/concept.md"
 guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
 
@@ -28,7 +23,6 @@ title = "string"
 description = "string"
 
 [types.tutorial]
-files = ["tutorial/**"]
 template = "templates/tutorial.md"
 guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
 
@@ -37,7 +31,6 @@ title = "string"
 description = "string"
 
 [types.reference]
-files = ["reference/**"]
 template = "templates/reference.md"
 guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
 
@@ -46,7 +39,6 @@ title = "string"
 description = "string"
 
 [types.troubleshooting]
-files = ["troubleshooting/**"]
 template = "templates/troubleshooting.md"
 guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 
@@ -55,7 +47,6 @@ title = "string"
 description = "string"
 
 [types.release-notes]
-files = ["release-notes/**"]
 template = "templates/release-notes.md"
 guide = ["templates/release-notes.guide.md", "templates/release-notes.ascribe.md"]
 

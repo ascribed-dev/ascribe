@@ -242,13 +242,13 @@ fn page_level_availability_is_a_list_of_targets_in_the_frontmatter() {
 
 #[test]
 fn frontmatter_passes_through_with_phrases_substituted() {
-    let source = "---\ntitle: '{product} guide'\ntags: [a, b]\nauthor:\n  name: Ann\nversion-note: x\n---\n\nBody.\n";
+    let source = "---\ntype: guide\ntitle: '{product} guide'\ntags: [a, b]\nauthor:\n  name: Ann\nversion-note: x\n---\n\nBody.\n";
     let project = memory_project(FULL_MODEL, &[("index.md", source)]);
     // `version-note` isn't declared: the check fails, but the emitter writes
     // what the resolved page holds.
     let out = site(&project, "site", "index.md");
     assert!(
-        out.starts_with("---\ntitle: Quill guide\ntags:\n- a\n- b\nauthor:\n  name: Ann\n"),
+        out.starts_with("---\ntype: guide\ntitle: Quill guide\ntags:\n- a\n- b\nauthor:\n  name: Ann\n"),
         "{out}"
     );
 }

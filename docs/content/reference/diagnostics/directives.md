@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "Diagnostics: directives"
 description: "The diagnostics about attributes, directives, containers, titles, ids, includes, variants, availability, and widgets."
 ---

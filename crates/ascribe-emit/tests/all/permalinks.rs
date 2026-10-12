@@ -12,7 +12,7 @@ use ascribe_emit::site::PERMALINKS_PATH;
 use support::{emit_build, memory_project};
 
 const MODEL: &str = "spec = \"0.1\"\n\
-    [types.page]\ndefault = true\n[types.page.frontmatter]\ntitle = \"string\"\n\
+    [types.page.frontmatter]\ntitle = \"string\"\n\
     [dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\n\
     [builds.site]\n\
     [builds.cloud]\nvariants = { deployment = \"cloud\" }\navailability = \"badge\"\n\

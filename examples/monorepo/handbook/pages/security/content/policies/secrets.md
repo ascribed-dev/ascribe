@@ -1,4 +1,5 @@
 ---
+type: policy
 title: Secrets
 owner: security
 review: yearly

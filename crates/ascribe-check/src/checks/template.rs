@@ -24,7 +24,7 @@
 //! [`FileSystem`]: ascribe_resolve::FileSystem
 
 use ascribe_core::{Issue, Location, Span, diagnostics};
-use ascribe_model::{ContentModel, TypeMatch};
+use ascribe_model::{ContentModel, TYPE_KEY};
 use ascribe_syntax::{Block, BlockKind, Inline, InlineKind, ParseOptions, parse};
 use serde_yaml_ng::Value;
 
@@ -38,7 +38,8 @@ const OPENING_WORDS: usize = 8;
 /// A template, as the check compares a page with it.
 #[derive(Debug, Default)]
 pub(crate) struct Template {
-    /// Each field of its frontmatter with a value, in order.
+    /// Each field of its frontmatter with a value, in order, apart from
+    /// `type`, which a page of the type keeps as the template has it.
     fields: Vec<(String, Value)>,
     /// Each distinct placeholder, as its pieces, in the order they're first
     /// found.
@@ -64,7 +65,9 @@ impl Template {
                     Value::String(s) => !s.trim().is_empty(),
                     _ => true,
                 };
-                if let (Value::String(key), true) = (key, filled) {
+                if let (Value::String(key), true) = (key, filled)
+                    && key != TYPE_KEY
+                {
                     template.fields.push((key, value));
                 }
             }
@@ -328,8 +331,8 @@ impl Ctx<'_> {
         {
             return None;
         }
-        match self.model.type_for(self.file.path.as_str()) {
-            TypeMatch::One(t) if t.template.is_some() => self.project.template(&t.name),
+        match self.page_type() {
+            Some(t) if t.template.is_some() => self.project.template(&t.name),
             _ => None,
         }
     }

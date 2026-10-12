@@ -197,7 +197,7 @@ impl Fingerprints {
             .map(|t| {
                 let mut fields = Vec::new();
                 phrase_fields(&t.frontmatter.fields, "", &mut fields);
-                (&t.name, &t.files, t.default, fields)
+                (&t.name, t.implicit, fields)
             })
             .collect();
         // Where a phrase, a feature, a glossary term, or the current release

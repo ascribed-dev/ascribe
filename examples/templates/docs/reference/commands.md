@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "Quill's commands"
 description: "Every command Quill has, with what it does and an example of each."
 ---

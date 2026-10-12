@@ -1,4 +1,5 @@
 ---
+type: page
 title: Install the Quill agent
 description: Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.
 available: cloud, self-managed preview 3.3

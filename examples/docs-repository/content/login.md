@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Sign in
 description: How the client gets a session.
 ---

@@ -9,9 +9,6 @@ output-dir = ".ascribe/build"
 
 # A page of the site, outside the docs. Its heading is the page's own, in the
 # hero, so `title` is for the <title> only.
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = { type = "string", role = "description" }

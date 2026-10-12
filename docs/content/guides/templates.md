@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Page templates
 description: Starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it, written into your project by ascribe templates eject.
 available: next

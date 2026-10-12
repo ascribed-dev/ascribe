@@ -19,14 +19,14 @@
       "file": "docs/keys.md",
       "range": {
         "start": {
-          "line": 7,
+          "line": 8,
           "column": 15,
-          "offset": 121
+          "offset": 132
         },
         "end": {
-          "line": 7,
+          "line": 8,
           "column": 30,
-          "offset": 136
+          "offset": 147
         }
       },
       "related": [],
@@ -38,14 +38,14 @@
             {
               "range": {
                 "start": {
-                  "line": 7,
+                  "line": 8,
                   "column": 15,
-                  "offset": 121
+                  "offset": 132
                 },
                 "end": {
-                  "line": 7,
+                  "line": 8,
                   "column": 30,
-                  "offset": 136
+                  "offset": 147
                 }
               },
               "new_text": "/install-agent.md"

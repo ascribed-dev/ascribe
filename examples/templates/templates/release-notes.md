@@ -1,4 +1,5 @@
 ---
+type: release-notes
 title: "Release notes - {Product name} {Release number - 0.0.0}"
 description: "{One sentence that says what's new in this release.}"
 ---

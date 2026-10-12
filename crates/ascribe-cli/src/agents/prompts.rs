@@ -206,7 +206,7 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
     } else {
         content_dir
     };
-    let elsewhere = where_it_goes(page_type, &types, &content_dir);
+    let elsewhere = where_it_goes(&content_dir);
     let asked = given.as_deref().and_then(|given| page_path(project, given));
     // Where the page goes, unless a file is there or the title names no
     // file; then the agent picks another path of the type's, and starts from
@@ -215,7 +215,7 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
         Ok(page) if asked.is_some() => (format!("Where: `{}`.", shown(&page.path)), page.text),
         Ok(page) => (
             format!(
-                "Where: `{}`, or, when the request says where the page goes, {elsewhere}.",
+                "Where: where the request says the page goes, {elsewhere}; when it doesn't say, `{}`.",
                 shown(&page.path)
             ),
             page.text,
@@ -238,6 +238,13 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
         known.push(guide);
     }
     known.push(start_with(content_type, &text));
+    if !content_type.implicit {
+        known.push(format!(
+            "The page says what type it is with `type: {}` in its frontmatter, as the text \
+             to start from has it: keep it, wherever the page goes.",
+            content_type.name
+        ));
+    }
     known.push(format!("The type's fields:\n{}", fields(page_type)));
     known.push(
         "A file or folder whose name starts with `_` is a fragment, not a page: don't name \
@@ -296,36 +303,10 @@ fn quoted_title(title: &str) -> String {
     format!("\"{}\"", title.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
-/// The paths the page's path must match: in the content root, at a path
-/// matching the type's `files`, or, for a type with none, at a path no
-/// other type's match.
-fn where_it_goes(page_type: &ModelType, types: &[ModelType], content_dir: &str) -> String {
-    if !page_type.files.is_empty() {
-        let patterns = page_type
-            .files
-            .iter()
-            .map(|p| format!("`{p}`"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        return format!(
-            "in the content root, `{content_dir}/`, at a path matching {patterns} (relative \
-             to it)"
-        );
-    }
-    let others: Vec<String> = types
-        .iter()
-        .filter(|t| t.name != page_type.name)
-        .flat_map(|t| t.files.iter().map(|p| format!("`{p}`")))
-        .collect();
-    if others.is_empty() {
-        format!("anywhere in the content root, `{content_dir}/`")
-    } else {
-        format!(
-            "in the content root, `{content_dir}/`, at a path that matches none of {} (those \
-             are other types' pages)",
-            others.join(", ")
-        )
-    }
+/// Where a page of any type can go: anywhere in the content root, since a
+/// page names its type in its frontmatter (SPEC §7.2).
+fn where_it_goes(content_dir: &str) -> String {
+    format!("anywhere in the content root, `{content_dir}/`")
 }
 
 /// What to read before writing: the type's `guide`, in order, when it has

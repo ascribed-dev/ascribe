@@ -33,7 +33,9 @@ pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
 
 /// The rule of `[listing]` the page is under, in `ascribe.toml`.
 fn listing_rule(ctx: &Ctx) -> Option<Location> {
-    let rule = ctx.model.listing_rule(ctx.path.as_str())?;
+    let rule = ctx
+        .model
+        .listing_rule(ctx.path.as_str(), ctx.page_type_name())?;
     let index = LineIndex::new(&ctx.model_text);
     Some(Location {
         uri: crate::uri::path_to_uri(&ctx.config)?,

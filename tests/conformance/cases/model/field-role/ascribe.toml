@@ -1,8 +1,5 @@
 spec = "0.1"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 updated = { type = "string?", role = "review-date" }

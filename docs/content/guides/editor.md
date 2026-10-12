@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Editing
 description: The VS Code extension, workspaces with several projects, and other editors.
 permalink: editor-guide

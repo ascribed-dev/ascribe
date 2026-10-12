@@ -14,7 +14,7 @@ use ascribe_resolve::AstroRouter;
 use comrak_ascribe::nodes::NodeValue;
 use comrak_ascribe::{Arena, Options, parse_document};
 
-const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[consumer]\nsite = \"https://docs.example.com\"\n";
+const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[consumer]\nsite = \"https://docs.example.com\"\n";
 
 /// A fragment with an image beside it, a page that includes it, an image
 /// beside the page, a downloadable file, and an asset outside the content

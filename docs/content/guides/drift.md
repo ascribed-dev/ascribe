@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Drift
 description: Keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
 available: ascribe 0.2.0

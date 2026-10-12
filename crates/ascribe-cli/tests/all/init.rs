@@ -47,10 +47,9 @@ fn init_says_what_it_wrote_and_where_to_go_next() {
 }
 
 /// The phase's goal: in an empty folder, `ascribe init --templates`, then
-/// `ascribe check`, which is clean; and a page outside the six types'
-/// folders is of the default type.
+/// `ascribe check`, which is clean; and a page is of the type it names.
 #[test]
-fn init_with_the_templates_checks_clean_and_a_page_is_of_the_default_type() {
+fn init_with_the_templates_checks_clean_and_a_page_is_of_the_type_it_names() {
     let dir = tempfile::tempdir().unwrap();
     let output = ascribe(dir.path(), &["init", "--templates"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
@@ -74,7 +73,7 @@ fn init_with_the_templates_checks_clean_and_a_page_is_of_the_default_type() {
 
     fs::write(
         dir.path().join("docs/index.md"),
-        "---\ntitle: Handbook\ndescription: How the team works.\n---\n\nWelcome.\n",
+        "---\ntype: page\ntitle: Handbook\ndescription: How the team works.\n---\n\nWelcome.\n",
     )
     .unwrap();
     let check = ascribe(dir.path(), &["check", "--format", "json"]);
@@ -96,7 +95,10 @@ fn init_s_json_lists_what_it_wrote() {
     let output = ascribe(dir.path(), &["init", "site", "--format", "json"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(answer["schema_version"], 1);
+    assert_eq!(
+        answer["schema_version"],
+        ascribe_templates::init::SCHEMA_VERSION
+    );
     assert_eq!(answer["written"], serde_json::json!(["ascribe.toml"]));
     assert_eq!(answer["content_root"], "docs");
     assert_eq!(answer["content_root_made"], true);

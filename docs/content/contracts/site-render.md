@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Site-render contract
 description: The markers the site output writes and how a consumer renders them.
 ---

@@ -4,7 +4,6 @@ spec = "0.1"
 content-root = "files"
 
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 
 [types.how-to.frontmatter]

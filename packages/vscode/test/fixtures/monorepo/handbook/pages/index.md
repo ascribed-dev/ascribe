@@ -1,4 +1,5 @@
 ---
+type: page
 title: Handbook
 description: The handbook project's home page.
 ---

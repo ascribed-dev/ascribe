@@ -1,4 +1,5 @@
 ---
+type: page
 title: Why Ascribe
 description: The problems teams that keep documentation as code report, what Ascribe does about each, and what it doesn't do.
 ---

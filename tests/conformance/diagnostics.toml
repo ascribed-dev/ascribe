@@ -1325,6 +1325,7 @@ message = "the required field `{field}` is missing; the content type `{type}` ne
 fix = "Add the field to the page's frontmatter, or give it a default in the content type."
 example.wrong = '''
 ---
+type: guide
 description: Install the Quill agent.
 ---
 
@@ -1332,11 +1333,17 @@ Run the installer.
 '''
 example.right = '''
 ---
+type: guide
 title: Install Quill
 description: Install the Quill agent.
 ---
 
 Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+description = "string?"
 '''
 
 [[diagnostic]]
@@ -1354,6 +1361,7 @@ messages.quote = "`{field}` must be a string, but YAML reads {value} as {found};
 fix = "Give a value of the field's type. Quote a string that YAML would read as something else: `version: \"3.10\"`."
 example.wrong = '''
 ---
+type: guide
 title: Install Quill
 audience: everyone
 ---
@@ -1362,11 +1370,17 @@ Run the installer.
 '''
 example.right = '''
 ---
+type: guide
 title: Install Quill
 audience: admin
 ---
 
 Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+audience = "enum(admin, developer)?"
 '''
 
 [[diagnostic]]
@@ -1378,7 +1392,7 @@ next = "write"
 evidence = []
 spec = "2.2"
 reference = "content-model.md#43-fragments"
-row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment"
+row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `type`) on a fragment"
 message = "`{key}` is reserved for pages, and fragments can't use it"
 messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
 fix = "Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it."
@@ -1388,14 +1402,10 @@ code = "ASC051"
 slug = "content-type-unresolved"
 severity = "error"
 level = "file"
-next = "write"
-evidence = []
 spec = "7.2"
-reference = "content-model.md#41-page-types"
-row = "Frontmatter | Page matches more than one content type, or matches none and there's no default type"
 message = "this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive"
 messages.none = "no content type's `files` match this page, and no type is the default; add a pattern, or set `default = true` on a type"
-fix = "Make the content types' `files` patterns match each page once, or mark one type `default = true` for the pages no pattern matches."
+retired = "A page names its content type in its frontmatter, with `type` (SPEC §7.2), so it can't match several types, or none. A page that names none is `content-type-missing`, and one that names a type that isn't declared is `content-type-unknown`."
 
 [[diagnostic]]
 code = "ASC052"
@@ -1604,7 +1614,8 @@ reference = "content-model.md#11-the-file"
 group = "file"
 message = "unknown key `{key}` in `[{table}]`"
 messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
-fix = "Fix the key's spelling, or remove it."
+messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
+fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages."
 
 [[diagnostic]]
 code = "ASC062"
@@ -1732,26 +1743,20 @@ code = "ASC071"
 slug = "model-type-multiple-defaults"
 severity = "error"
 level = "file"
-next = "choose"
-evidence = []
 spec = "7.2"
-reference = "content-model.md#41-page-types"
-group = "content-types"
 message = "only one content type can be the default, but `{a}` and `{b}` both set default = true"
-fix = "Keep `default = true` on one content type only."
+group = "content-types"
+retired = "A page names its content type in its frontmatter (SPEC §7.2), and a type has no `default`. `default` in `[types.<name>]` is `model-unknown-key`."
 
 [[diagnostic]]
 code = "ASC072"
 slug = "model-type-unreachable"
 severity = "error"
 level = "file"
-next = "write"
-evidence = []
 spec = "7.2"
-reference = "content-model.md#41-page-types"
-group = "content-types"
 message = "content type `{type}` has no `files` and isn't the default, so no page can use it"
-fix = "Give the type `files` patterns, make it the default type, or remove it."
+group = "content-types"
+retired = "A page names its content type in its frontmatter (SPEC §7.2), so any declared type can be used, and a type has no `files`. `files` in `[types.<name>]` is `model-unknown-key`."
 
 [[diagnostic]]
 code = "ASC073"
@@ -3083,6 +3088,7 @@ message = "this description is {length} characters, and its line in llms.txt rea
 fix = "Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short."
 example.wrong = '''
 ---
+type: page
 title: Install
 description: This page walks you through everything you need to know about installing the product, from checking that your machine meets the requirements and downloading the right package for your platform, to running the installer, answering each of its prompts, and confirming afterward that everything works as it should before you go on.
 ---
@@ -3091,6 +3097,7 @@ Install the product.
 '''
 example.right = '''
 ---
+type: page
 title: Install
 description: Install the product on your machine and confirm that it works.
 ---
@@ -3103,6 +3110,7 @@ site = "https://docs.example.com"
 agents = true
 
 [types.page.frontmatter]
+title = "string"
 description = { type = "string?", role = "description" }
 '''
 
@@ -3653,3 +3661,71 @@ message = "this page still has its template's placeholder `{placeholder}`; write
 messages.field = "`{field}` is still the template's `{value}`; write this page's own"
 messages.instruction = "this page still has its template's instruction, \"{instruction}\"; do what it says, then remove it"
 fix = "Write the page's own text where the template's placeholder is, the text in braces, and remove each instruction the template quotes once you've followed it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it."
+
+[[diagnostic]]
+code = "ASC196"
+slug = "content-type-missing"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model.md#41-page-types"
+row = "Frontmatter | Page names no content type, in a project that declares types"
+message = "this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values}"
+fix = "Add `type:` to the page's frontmatter, naming one of the content types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+type: guide
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+'''
+
+[[diagnostic]]
+code = "ASC197"
+slug = "content-type-unknown"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model.md#41-page-types"
+row = "Frontmatter | Page's `type` names no declared content type"
+message = "`{type}` isn't a content type; the types are: {values}"
+messages.suggestion = "`{type}` isn't a content type; did you mean `{suggestion}`? The types are: {values}"
+messages.none = "`{type}` isn't a content type: this project declares none, so its pages don't name one"
+messages.not-a-name = "`type` names a content type, so it's a string, but it's {found}; the types are: {values}"
+fix = "Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it."
+example.wrong = '''
+---
+type: giude
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+type: guide
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+'''

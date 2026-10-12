@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Get started with {product}
 description: Install the CLI, add the SDK to an app, and evaluate your first flag.
 ---

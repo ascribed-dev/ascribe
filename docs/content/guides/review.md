@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Review
 description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
 available: ascribe 0.2.0

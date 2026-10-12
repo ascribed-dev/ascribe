@@ -23,7 +23,6 @@ agents = true
 # :snippet-end:
 
 [types.page]
-default = true
 
 # `inline = "code"`: a title can show code, as "`loom.yaml` options".
 [types.page.frontmatter]

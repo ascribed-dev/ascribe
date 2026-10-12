@@ -77,17 +77,17 @@ fn renders_the_quill_page_as_the_site_does() {
     assert!(!html.contains("ascribe-attributes"), "{html}");
     // Every block says where it came from; a fragment's, through its include.
     assert!(
-        html.contains("<h2 data-ascribe-source=\"install-agent.md:13-13\" id=\"prerequisites\">"),
+        html.contains("<h2 data-ascribe-source=\"install-agent.md:14-14\" id=\"prerequisites\">"),
         "{html}"
     );
     assert!(
         html.contains(
-            "<p data-ascribe-source=\"_fragments/prerequisites.md:1-1\" data-ascribe-via=\"install-agent.md:16\">"
+            "<p data-ascribe-source=\"_fragments/prerequisites.md:1-1\" data-ascribe-via=\"install-agent.md:17\">"
         ),
         "{html}"
     );
     assert!(
-        html.contains("<ascribe-steps data-ascribe-source=\"install-agent.md:21-55\">"),
+        html.contains("<ascribe-steps data-ascribe-source=\"install-agent.md:22-56\">"),
         "{html}"
     );
     assert!(!html.contains("ascribe-anchor"), "{html}");
@@ -139,7 +139,7 @@ fn unsaved_edits_are_in_the_answer() {
     assert!(html(&first).contains("Open the playground"));
 
     // Nothing is saved: the file on disk still says "Open the playground".
-    client.change(&page, 2, vec![edit((8, 0), (8, 4), "Launch")]);
+    client.change(&page, 2, vec![edit((9, 0), (9, 4), "Launch")]);
     let second = preview(&mut client, &page, None);
     assert_eq!(second["documentVersion"], 2);
     assert!(

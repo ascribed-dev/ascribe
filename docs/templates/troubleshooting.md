@@ -1,4 +1,5 @@
 ---
+type: troubleshooting
 title: "Troubleshooting {product name, feature, or task}"
 description: "{One sentence that says which problems this page helps a reader solve.}"
 ---

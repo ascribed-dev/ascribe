@@ -38,7 +38,7 @@ fn minimal_gets_every_default() {
     assert_eq!(m.project.output_dir, ".ascribe/build");
     assert_eq!(m.types.len(), 1);
     assert_eq!(m.types[0].name, "page");
-    assert!(m.types[0].default);
+    assert!(m.types[0].implicit && !m.declares_types());
     assert_eq!(m.builds.len(), 1);
     assert_eq!(m.builds[0].name, "site");
     assert_eq!(m.editor_default_build().name, "site");
@@ -166,9 +166,16 @@ fn full_covers_lifecycle_features_notes_widgets_and_fields() {
         .find(|f| f.name == "title")
         .unwrap();
     assert!(title.required && title.phrases);
-    // Which type applies.
-    assert!(matches!(m.type_for("reference/api.md"), TypeMatch::One(t) if t.name == "reference"));
-    assert!(matches!(m.type_for("guides/setup.md"), TypeMatch::One(t) if t.name == "guide"));
+    // Which type applies: the one a page names.
+    assert!(m.declares_types());
+    assert!(matches!(m.type_named(Some("reference")), TypeMatch::One(t) if t.name == "reference"));
+    assert!(matches!(m.type_named(Some("guide")), TypeMatch::One(t) if t.name == "guide"));
+    assert_eq!(m.type_named(Some("guides")), TypeMatch::Unknown);
+    assert_eq!(m.type_named(None), TypeMatch::Missing);
+    let page: serde_yaml_ng::Value = serde_yaml_ng::from_str("type: guide\ntitle: T").unwrap();
+    assert!(matches!(m.type_of(Some(&page)), TypeMatch::One(t) if t.name == "guide"));
+    let number: serde_yaml_ng::Value = serde_yaml_ng::from_str("type: 3\ntitle: T").unwrap();
+    assert_eq!(m.type_of(Some(&number)), TypeMatch::Unknown);
     assert!(
         m.is_fragment("includes/x.md")
             && m.is_fragment("a/_x.md")
@@ -367,8 +374,8 @@ fn a_version_on_a_dimension_name_is_an_error() {
 // ---- listing ----------------------------------------------------------------
 
 const LISTING: &str = "spec = \"0.1\"\n\
-    [types.guide]\ndefault = true\n[types.guide.frontmatter]\ntitle = \"string\"\n\
-    [types.changelog]\nfiles = [\"changes/**\"]\n[types.changelog.frontmatter]\ntitle = \"string\"\n";
+    [types.guide.frontmatter]\ntitle = \"string\"\n\
+    [types.changelog.frontmatter]\ntitle = \"string\"\n";
 
 fn listing_model(rules: &str) -> ContentModel {
     load_str(&format!("{LISTING}{rules}"), FileId::new(0)).unwrap()
@@ -378,13 +385,13 @@ fn listing_model(rules: &str) -> ContentModel {
 fn a_page_is_listed_with_no_rules() {
     let m = listing_model("");
     assert!(m.listing.is_empty());
-    assert_eq!(m.listing_rule("a.md"), None);
+    assert_eq!(m.listing_rule("a.md", None), None);
     assert_eq!(
-        m.listing_of("a.md", None),
+        m.listing_of("a.md", None, None),
         (Listing::Listed, ListingFrom::Default)
     );
     assert_eq!(
-        m.listing_of("a.md", Some(Listing::Unquoted)),
+        m.listing_of("a.md", None, Some(Listing::Unquoted)),
         (Listing::Unquoted, ListingFrom::Page)
     );
 }
@@ -397,46 +404,46 @@ fn the_strictest_rule_a_page_is_under_wins() {
          \"changes/\" = \"unlisted\"\n\
          [listing.types]\nchangelog = \"unquoted\"\n",
     );
-    let level = |path: &str| m.listing_rule(path).map(|r| r.level.clone());
-    assert_eq!(level("a.md"), Some(ListingLevel::Site));
+    let level = |path: &str, ty: Option<&str>| m.listing_rule(path, ty).map(|r| r.level.clone());
+    assert_eq!(level("a.md", Some("guide")), Some(ListingLevel::Site));
     assert_eq!(
-        level("internal/a.md"),
+        level("internal/a.md", Some("guide")),
         Some(ListingLevel::Folder("internal/".into()))
     );
     assert_eq!(
-        level("internal/old/a.md"),
+        level("internal/old/a.md", Some("guide")),
         Some(ListingLevel::Folder("internal/old/".into()))
     );
     // Not a folder's page: the folder's name is a prefix of it only.
-    assert_eq!(level("internal-notes.md"), Some(ListingLevel::Site));
+    assert_eq!(level("internal-notes.md", Some("guide")), Some(ListingLevel::Site));
     // A folder and a type: the stricter, and the folder of two as strict.
     assert_eq!(
-        level("changes/a.md"),
+        level("changes/a.md", Some("changelog")),
         Some(ListingLevel::Folder("changes/".into()))
     );
-    let rule = m.listing_rule("internal/a.md").unwrap();
+    let rule = m.listing_rule("internal/a.md", Some("guide")).unwrap();
     assert_eq!(rule.text, "\"internal/\" = \"unquoted\"");
-    assert_eq!(rule.line, 13);
+    assert_eq!(rule.line, 9);
 }
 
 #[test]
 fn a_page_may_tighten_its_rule_and_never_loosen_it() {
     let m = listing_model("[listing.folders]\n\"internal/\" = \"unquoted\"\n");
-    let rule = ListingFrom::Rule(m.listing_rule("internal/a.md").unwrap().clone());
+    let rule = ListingFrom::Rule(m.listing_rule("internal/a.md", Some("guide")).unwrap().clone());
     assert_eq!(
-        m.listing_of("internal/a.md", None),
+        m.listing_of("internal/a.md", Some("guide"), None),
         (Listing::Unquoted, rule.clone())
     );
     assert_eq!(
-        m.listing_of("internal/a.md", Some(Listing::Unlisted)),
+        m.listing_of("internal/a.md", Some("guide"), Some(Listing::Unlisted)),
         (Listing::Unlisted, ListingFrom::Page)
     );
     assert_eq!(
-        m.listing_of("internal/a.md", Some(Listing::Unquoted)),
+        m.listing_of("internal/a.md", Some("guide"), Some(Listing::Unquoted)),
         (Listing::Unquoted, ListingFrom::Page)
     );
     assert_eq!(
-        m.listing_of("internal/a.md", Some(Listing::Listed)),
+        m.listing_of("internal/a.md", Some("guide"), Some(Listing::Listed)),
         (Listing::Unquoted, rule)
     );
 }

@@ -1,4 +1,5 @@
 ---
+type: page
 title: Ascribe
 description: Documentation written as code, checked like code, and built into a website, plain Markdown, and JSON.
 intended:

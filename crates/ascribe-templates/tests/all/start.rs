@@ -11,7 +11,7 @@ use ascribe_core::{Coded, RelPath};
 use ascribe_resolve::{DiskFs, Layout};
 use ascribe_templates::{Eject, NewPage, StartError, eject, set, start, takes_folder};
 
-const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = \"string\"\naudience = \"string\"\nowner = \"string?\"\n";
+const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\naudience = \"string\"\nowner = \"string?\"\n";
 
 /// A project with the type `guide`, which has no template, and the how-to,
 /// as `ascribe templates eject how-to` gives it.
@@ -54,13 +54,16 @@ fn run(
 fn a_type_with_a_template_starts_from_it_with_the_title_set() {
     let dir = project();
     let page = run(dir.path(), "how-to", "Rotate keys", None).expect("started");
-    assert_eq!(page.path.as_str(), "how-to/rotate-keys.md");
+    // With no path, a page goes in the content root.
+    assert_eq!(page.path.as_str(), "rotate-keys.md");
     let how_to = set()
         .templates
         .into_iter()
         .find(|t| t.name == "how-to")
         .expect("the set has the how-to");
     let template = how_to.text(&how_to.template);
+    // The template names its type already.
+    assert!(template.starts_with("---\ntype: how-to\n"), "{template}");
     assert_eq!(
         page.text,
         template.replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
@@ -76,11 +79,10 @@ fn a_type_with_a_template_starts_from_it_with_the_title_set() {
 fn a_type_without_a_template_starts_with_its_frontmatter() {
     let dir = project();
     let page = run(dir.path(), "guide", "Keys: \"why\"", None).expect("started");
-    // The default type covers the content root.
     assert_eq!(page.path.as_str(), "keys-why.md");
     assert_eq!(
         page.text,
-        "---\ntitle: \"Keys: \\\"why\\\"\"\naudience:\n---\n"
+        "---\ntype: guide\ntitle: \"Keys: \\\"why\\\"\"\naudience:\n---\n"
     );
     assert_eq!(page.template, None);
     assert!(page.guide.is_empty());
@@ -89,9 +91,8 @@ fn a_type_without_a_template_starts_with_its_frontmatter() {
 #[test]
 fn a_page_is_never_started_over_a_file() {
     let dir = project();
-    std::fs::create_dir(dir.path().join("docs/how-to")).expect("made");
     std::fs::write(
-        dir.path().join("docs/how-to/rotate-keys.md"),
+        dir.path().join("docs/rotate-keys.md"),
         "---\ntitle: Mine\ndescription: Mine.\n---\n",
     )
     .expect("written");
@@ -99,20 +100,20 @@ fn a_page_is_never_started_over_a_file() {
     assert_eq!(
         error,
         StartError::FileInTheWay {
-            path: "how-to/rotate-keys.md".to_owned()
+            path: "rotate-keys.md".to_owned()
         }
     );
     assert_eq!(error.code(), "page_exists");
     // Nothing was written over it.
     assert!(
-        std::fs::read_to_string(dir.path().join("docs/how-to/rotate-keys.md"))
+        std::fs::read_to_string(dir.path().join("docs/rotate-keys.md"))
             .expect("read")
             .contains("Mine")
     );
 }
 
 #[test]
-fn a_path_or_a_folder_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
+fn a_path_or_a_folder_given_is_where_the_page_goes_when_it_s_a_page_s() {
     let dir = project();
     let page = run(
         dir.path(),
@@ -122,28 +123,24 @@ fn a_path_or_a_folder_given_is_where_the_page_goes_when_it_s_one_of_the_type() {
     )
     .expect("started");
     assert_eq!(page.path.as_str(), "how-to/keys/rotate.md");
-    assert!(page.text.starts_with("---\ntitle: \"Rotate keys\"\n"));
+    assert!(page.text.starts_with("---\ntype: how-to\ntitle: \"Rotate keys\"\n"));
+    // A page names its type, so any folder takes it.
+    let page = run(dir.path(), "how-to", "Rotate keys", Some("guides/rotate.md")).expect("started");
+    assert_eq!(page.path.as_str(), "guides/rotate.md");
 
     let refused =
         |path: &str| run(dir.path(), "how-to", "Rotate keys", Some(path)).expect_err("refused");
-    assert!(
-        matches!(refused("rotate.md"), StartError::NotTheType { reason, .. } if reason == "it's a page of type `guide`")
-    );
-    assert!(matches!(
+    assert_eq!(
         refused("how-to/_rotate.md"),
-        StartError::NotTheType { .. }
-    ));
+        StartError::NotTheType {
+            path: "how-to/_rotate.md".to_owned(),
+            type_name: "how-to".to_owned(),
+            reason: "it's a fragment's path".to_owned()
+        }
+    );
     // A folder: the page is named for the title in it.
     let page = run(dir.path(), "how-to", "Rotate keys", Some("how-to/keys")).expect("started");
     assert_eq!(page.path.as_str(), "how-to/keys/rotate-keys.md");
-    assert_eq!(
-        refused("guides"),
-        StartError::NotTheType {
-            path: "guides/rotate-keys.md".to_owned(),
-            type_name: "how-to".to_owned(),
-            reason: "it's a page of type `guide`".to_owned()
-        }
-    );
     assert!(matches!(
         refused("../elsewhere"),
         StartError::NotTheType { .. }
@@ -180,9 +177,8 @@ fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
             .map(|t| t.name.as_str())
             .collect()
     };
-    assert_eq!(takes("how-to"), ["how-to"]);
-    assert_eq!(takes("how-to/keys"), ["how-to"]);
-    assert_eq!(takes(""), ["guide"]);
-    assert_eq!(takes("guides"), ["guide"]);
+    assert_eq!(takes("how-to"), ["guide", "how-to"]);
+    assert_eq!(takes("how-to/keys"), ["guide", "how-to"]);
+    assert_eq!(takes(""), ["guide", "how-to"]);
     assert!(takes("../elsewhere").is_empty());
 }

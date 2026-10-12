@@ -166,7 +166,7 @@ pub const FRONTMATTER_TYPE_MISMATCH: DiagnosticSlug = DiagnosticSlug("frontmatte
 pub const FRONTMATTER_RESERVED_IN_FRAGMENT: DiagnosticSlug =
     DiagnosticSlug("frontmatter-reserved-in-fragment");
 
-/// `ASC051`, error, file level: SPEC §8.2, "Frontmatter | Page matches more than one content type, or matches none and there's no default type".
+/// `ASC051`, retired: a page names its content type in its frontmatter (SPEC §7.2).
 pub const CONTENT_TYPE_UNRESOLVED: DiagnosticSlug = DiagnosticSlug("content-type-unresolved");
 
 /// `ASC052`, warning, file level: SPEC §8.2, "Lists | Unindented directive line ends a list".
@@ -227,11 +227,11 @@ pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-con
 pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
     DiagnosticSlug("model-output-overlaps-content");
 
-/// `ASC071`, error, file level: a rule for loading `ascribe.toml`.
+/// `ASC071`, retired: a content type has no `default` (SPEC §7.2).
 pub const MODEL_TYPE_MULTIPLE_DEFAULTS: DiagnosticSlug =
     DiagnosticSlug("model-type-multiple-defaults");
 
-/// `ASC072`, error, file level: a rule for loading `ascribe.toml`.
+/// `ASC072`, retired: a content type has no `files` (SPEC §7.2).
 pub const MODEL_TYPE_UNREACHABLE: DiagnosticSlug = DiagnosticSlug("model-type-unreachable");
 
 /// `ASC073`, error, file level: a rule for loading `ascribe.toml`.
@@ -623,6 +623,12 @@ pub const MODEL_TYPE_TEMPLATE: DiagnosticSlug = DiagnosticSlug("model-type-templ
 /// `ASC195`, advice, file level: a content check (area `pages`).
 pub const TEMPLATE_PLACEHOLDER_LEFT: DiagnosticSlug = DiagnosticSlug("template-placeholder-left");
 
+/// `ASC196`, error, file level: SPEC §8.2, "Frontmatter | Page names no content type, in a project that declares types".
+pub const CONTENT_TYPE_MISSING: DiagnosticSlug = DiagnosticSlug("content-type-missing");
+
+/// `ASC197`, error, file level: SPEC §8.2, "Frontmatter | Page's `type` names no declared content type".
+pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-unknown");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -820,6 +826,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_TYPE_FILE,
     MODEL_TYPE_TEMPLATE,
     TEMPLATE_PLACEHOLDER_LEFT,
+    CONTENT_TYPE_MISSING,
+    CONTENT_TYPE_UNKNOWN,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

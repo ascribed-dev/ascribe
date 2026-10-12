@@ -7,18 +7,12 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = { type = "string?", role = "description" }
 
 # Policies record who owns them, how often they're reviewed, and since when
 # they apply. `ascribe report inventory` counts them by owner.
-[types.policy]
-files = ["policies/**"]
-
 [types.policy.frontmatter]
 title = "string"
 owner = { type = "string", role = "owner" }

@@ -1,4 +1,5 @@
 ---
+type: page
 title: Home
 cover: img/card.svg
 ---

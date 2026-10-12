@@ -1,4 +1,5 @@
 ---
+type: tutorial
 title: "Publish your first release"
 description: "Publish a signed release of a project with Quill, from an empty folder to a release a reader can check."
 ---

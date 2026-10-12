@@ -1,4 +1,5 @@
 ---
+type: guide
 title: "{product} documentation"
 description: Turn features on for the right users, without a deploy.
 ---

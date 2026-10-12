@@ -171,7 +171,7 @@ impl FieldType {
 }
 
 /// How YAML (core schema) reads a value, for messages.
-fn found(v: &Value) -> String {
+pub fn found(v: &Value) -> String {
     match v {
         Value::Null => "empty".into(),
         Value::Bool(_) => "a boolean".into(),
@@ -200,11 +200,12 @@ pub(crate) fn is_calendar_date(s: &str) -> bool {
 ///   field is close;
 /// - `frontmatter-missing-field`;
 /// - `frontmatter-type-mismatch`;
-/// - `frontmatter-reserved-in-fragment`, for `available` and `variant` in a
-///   fragment. On a page, those two keys are accepted here; their values are
+/// - `frontmatter-reserved-in-fragment`, for a page's reserved keys
+///   (`available`, `variant`, `permalink`, `listing`, and `type`) in a
+///   fragment. On a page, those keys are accepted here; their values are
 ///   checked elsewhere (SPEC §4.3).
 ///
-/// Choosing which schema applies to a page is [`crate::ContentModel::type_for`].
+/// Choosing which schema applies to a page is [`crate::ContentModel::type_of`].
 pub fn validate_frontmatter(schema: &FrontmatterSchema, value: &Value, at: Location) -> Vec<Issue> {
     let mut cx = Cx {
         schema,
@@ -287,7 +288,7 @@ impl Cx<'_> {
         if top && key == "intended" {
             return;
         }
-        if top && matches!(key, "available" | "variant" | "permalink" | "listing") {
+        if top && matches!(key, "available" | "variant" | "permalink" | "listing" | "type") {
             match self.schema.owner {
                 SchemaOwner::Type(_) => {}
                 SchemaOwner::Fragment => {

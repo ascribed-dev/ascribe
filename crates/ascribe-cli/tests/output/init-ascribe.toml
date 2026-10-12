@@ -16,11 +16,8 @@ content-root = "docs"
 # - [consumer], the site the pages are published as, and its address:
 #   https://ascribed-dev.com/go/consumer/
 
-# A page that no other type's `files` covers is a `page`, with a title and a
-# description.
-[types.page]
-default = true
-
+# The one kind of page, `page`, with a title and a description. Each page
+# says what type it is in its frontmatter: `type: page`.
 [types.page.frontmatter]
 title = "string"
 description = "string"

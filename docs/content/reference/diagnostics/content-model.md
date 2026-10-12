@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "Diagnostics: the content model"
 description: "The diagnostics about ascribe.toml, the content model, and how to fix each."
 ---

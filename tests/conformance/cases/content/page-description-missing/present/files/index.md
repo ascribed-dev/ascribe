@@ -1,4 +1,5 @@
 ---
+type: page
 title: Described
 summary: What the page is for.
 ---

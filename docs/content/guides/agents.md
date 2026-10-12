@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Agents
 description: Working on an Ascribe project with an AI coding agent, such as Claude Code, GitHub Copilot, or Cursor, and handing it the problems Ascribe finds.
 available: ascribe 0.3.0

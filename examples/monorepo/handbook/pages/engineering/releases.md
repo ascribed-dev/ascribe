@@ -1,4 +1,5 @@
 ---
+type: page
 title: Releases
 description: How a change gets from main to customers.
 owner: platform

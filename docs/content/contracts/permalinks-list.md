@@ -1,4 +1,5 @@
 ---
+type: reference
 title: The permalinks list
 description: The format of ascribe.permalinks, the list of a project's permalinks that something outside the docs can check its links against.
 available: ascribe 0.3.0

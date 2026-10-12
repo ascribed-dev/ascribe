@@ -154,44 +154,49 @@ fn cases() -> Vec<Case> {
         ),
         // 22.3 Content types, fragments, and fields
         case(
-            "model-type-multiple-defaults",
-            None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\n[types.b]\ndefault = true #!\n[types.b.frontmatter]\ntitle = \"string\"\n",
+            "model-unknown-key",
+            Some("type-key"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true #!\n[types.a.frontmatter]\ntitle = \"string\"\n",
         ),
         case(
-            "model-type-unreachable",
+            "model-unknown-key",
+            Some("type-key"),
+            "spec = \"0.1\"\n[types.a]\nfiles = [\"a/**\"] #!\n[types.a.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-field-reserved",
             None,
-            "spec = \"0.1\"\n[types.a.frontmatter] #!\ntitle = \"string\"\n[types.b]\nfiles = [\"b/**\"]\n[types.b.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\ntype = \"string?\" #!\n",
         ),
         case(
             "model-type-title",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter] #!\nother = \"string\"\n",
+            "spec = \"0.1\"\n[types.a.frontmatter] #!\nother = \"string\"\n",
         ),
         case(
             "model-type-title",
             Some("not-string"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\navailable = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\navailable = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             Some("slug"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nslug = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nslug = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             Some("formatted"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nformatted = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nformatted = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             Some("source"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsource = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsource = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
@@ -201,7 +206,7 @@ fn cases() -> Vec<Case> {
         case(
             "model-type-syntax",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nx = \"strng?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nx = \"strng?\" #!\n",
         ),
         case(
             "model-type-syntax",
@@ -276,12 +281,12 @@ fn cases() -> Vec<Case> {
         case(
             "model-inline-field",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\ntags = { type = \"list(string)\", inline = \"code\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\ntags = { type = \"list(string)\", inline = \"code\" } #!\n",
         ),
         case(
             "model-inline-field",
             Some("value"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = { type = \"string\", inline = \"emphasis\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = { type = \"string\", inline = \"emphasis\" } #!\n",
         ),
         case(
             "model-inline-field",
@@ -291,17 +296,17 @@ fn cases() -> Vec<Case> {
         case(
             "model-inline-field",
             Some("nested"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nmeta = { type = \"object\", fields = { label = { type = \"string\", inline = \"code\" } } } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nmeta = { type = \"object\", fields = { label = { type = \"string\", inline = \"code\" } } } #!\n",
         ),
         case(
             "model-field-role",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"date\", role = \"description\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"date\", role = \"description\" } #!\n",
         ),
         case(
             "model-field-role",
             Some("value"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string\", role = \"summary\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string\", role = \"summary\" } #!\n",
         ),
         case(
             "model-field-role",
@@ -311,7 +316,7 @@ fn cases() -> Vec<Case> {
         case(
             "model-field-role",
             Some("duplicate"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string?\", role = \"description\" }\nabout = { type = \"string?\", role = \"description\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string?\", role = \"description\" }\nabout = { type = \"string?\", role = \"description\" } #!\n",
         ),
         case(
             "model-pattern-syntax",
@@ -743,28 +748,28 @@ fn cases() -> Vec<Case> {
         case(
             "model-wrong-type",
             None,
-            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\npurpose = [\"One task\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.how-to]\npurpose = [\"One task\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
         ),
         case(
             "model-empty-text",
             None,
-            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\npurpose = \" \" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.how-to]\npurpose = \" \" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
         ),
         // A type's `guide` is always a list, as `files` is.
         case(
             "model-wrong-type",
             None,
-            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\nguide = \"templates/how-to.guide.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.how-to]\nguide = \"templates/how-to.guide.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
         ),
         case(
             "model-path-absolute",
             None,
-            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\ntemplate = \"/templates/how-to.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.how-to]\ntemplate = \"/templates/how-to.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
         ),
         case(
             "model-empty-text",
             None,
-            "spec = \"0.1\"\n[types.how-to]\nfiles = [\"how-to/**\"]\nguide = [\"\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.how-to]\nguide = [\"\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
         ),
     ]
 }
@@ -821,7 +826,7 @@ fn every_registered_rule_is_covered() {
     let mut registered = BTreeSet::new();
     for d in doc["diagnostic"].as_array().unwrap() {
         let slug = d["slug"].as_str().unwrap();
-        if slug.starts_with("model-") {
+        if slug.starts_with("model-") && d.get("retired").is_none() {
             registered.insert(slug.to_owned());
         }
     }

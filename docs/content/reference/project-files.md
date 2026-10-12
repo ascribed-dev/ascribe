@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Files Ascribe writes
 description: "Every file Ascribe puts in a project, what writes it, and whether to commit it or leave it to `.gitignore`."
 permalink: project-files

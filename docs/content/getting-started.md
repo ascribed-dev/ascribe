@@ -1,4 +1,5 @@
 ---
+type: tutorial
 title: Getting started
 description: Install Ascribe, write a first page, check it, build it, and publish it with Astro.
 permalink: getting-started

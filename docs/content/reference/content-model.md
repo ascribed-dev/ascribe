@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe.toml` reference"
 description: "The content model: content types, dimensions, availability, phrases, widgets, and builds."
 permalink: content-model

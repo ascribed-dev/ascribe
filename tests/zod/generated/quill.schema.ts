@@ -30,6 +30,7 @@ export type Variant = z.infer<typeof variantSchema>;
 
 /** The frontmatter of pages of type `page`. */
 export const pageSchema = z.strictObject({
+  type: z.literal("page"),
   title: z.string(),
   description: z.string().optional(),
   available: availableSchema.optional(),
@@ -42,11 +43,6 @@ export type Page = z.infer<typeof pageSchema>;
 /** Every content type's schema, by the type's name. */
 export const schemas = {
   page: pageSchema,
-} as const;
-
-/** Which pages each content type applies to. */
-export const contentTypes = {
-  page: { default: true, files: [] },
 } as const;
 
 /** A schema that accepts the frontmatter of any content type. */

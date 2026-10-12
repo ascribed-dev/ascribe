@@ -30,6 +30,7 @@ export type Variant = z.infer<typeof variantSchema>;
 
 /** The frontmatter of pages of type `guide`. */
 export const guideSchema = z.strictObject({
+  type: z.literal("guide"),
   title: z.string().describe("The page title, shown in navigation and the browser tab."),
   description: z.string().optional(),
   "review-by": z.coerce.date().optional(),
@@ -59,6 +60,7 @@ export type Guide = z.infer<typeof guideSchema>;
 
 /** The frontmatter of pages of type `reference`. */
 export const referenceSchema = z.strictObject({
+  type: z.literal("reference"),
   title: z.string(),
   "api-version": z.string().optional(),
   available: availableSchema.optional(),
@@ -77,14 +79,8 @@ export const schemas = {
   reference: referenceSchema,
 } as const;
 
-/** Which pages each content type applies to. */
-export const contentTypes = {
-  guide: { default: true, files: [] },
-  reference: { default: false, files: ["reference/**", "api/**/*.md"] },
-} as const;
-
 /** A schema that accepts the frontmatter of any content type. */
-export const schema = z.union([
+export const schema = z.discriminatedUnion("type", [
   guideSchema,
   referenceSchema,
 ]);

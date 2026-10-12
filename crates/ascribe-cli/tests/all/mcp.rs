@@ -19,14 +19,8 @@ const MODEL: &str = r#"spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
-
-[types.guide]
-files = ["guides/**"]
 
 [types.guide.frontmatter]
 title = "string"
@@ -53,6 +47,7 @@ availability = { filter = "self-managed" }
 "#;
 
 const INSTALL: &str = "---
+type: page
 title: Install Quill
 ---
 
@@ -77,6 +72,7 @@ You need {product}.
 ";
 
 const KEYS: &str = "---
+type: page
 title: API keys
 ---
 
@@ -752,7 +748,7 @@ fn files_outside_the_content_root_dont_load_the_project_again() {
     assert_eq!(heading(&mut server), "rotate-keys");
 
     // A file in the content root is.
-    write(&root.join("docs/tokens.md"), "---\ntitle: Tokens\n---\n");
+    write(&root.join("docs/tokens.md"), "---\ntype: page\ntitle: Tokens\n---\n");
     assert_eq!(heading(&mut server), "rotate-keyz");
 }
 
@@ -792,7 +788,7 @@ fn a_project_is_loaded_again_when_its_files_change() {
 
     // A file added.
     assert!(!link(&mut server, "tokens.md"));
-    write(&root.join("docs/tokens.md"), "---\ntitle: Tokens\n---\n");
+    write(&root.join("docs/tokens.md"), "---\ntype: page\ntitle: Tokens\n---\n");
     assert!(link(&mut server, "tokens.md"));
 
     // A file deleted.
@@ -933,8 +929,14 @@ fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
         ],
     );
     assert!(text.contains("Write a new page of type `guide`"), "{text}");
-    assert!(text.contains("`guides/**`"), "{text}");
-    assert!(text.contains("title: \"Rotate your keys\""), "{text}");
+    assert!(
+        text.contains("when it doesn't say, `site/docs/rotate-your-keys.md`"),
+        "{text}"
+    );
+    assert!(
+        text.contains("type: guide\ntitle: \"Rotate your keys\""),
+        "{text}"
+    );
     assert!(text.contains("\naudience:\n---\n"), "{text}");
 }
 
@@ -1132,7 +1134,7 @@ fn project_below_its_source() -> TempDir {
     );
     write(
         &dir.path().join("a/b/project/docs/index.md"),
-        "---\ntitle: Home\n---\n\n@snippet: code:secret.rs#key\n",
+        "---\ntype: page\ntitle: Home\n---\n\n@snippet: code:secret.rs#key\n",
     );
     dir
 }

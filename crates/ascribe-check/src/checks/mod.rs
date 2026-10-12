@@ -29,7 +29,7 @@ mod text;
 use ascribe_core::{
     Applicability, DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics,
 };
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, ContentType};
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Heading, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
 };
@@ -51,6 +51,9 @@ struct Ctx<'a> {
     /// The text of the file's first paragraph, for a prompt about its
     /// description.
     first_paragraph: Option<String>,
+    /// The page's content type, once the frontmatter is checked: `None` for
+    /// a fragment, and for a page whose type is missing or unknown.
+    page_type: Option<&'a ContentType>,
     issues: Vec<Issue>,
 }
 
@@ -69,6 +72,10 @@ impl Ctx<'_> {
 
     fn location(&self, span: Span) -> Location {
         Location::new(self.id, span)
+    }
+
+    fn page_type(&self) -> Option<&ContentType> {
+        self.page_type
     }
 }
 
@@ -99,6 +106,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        page_type: None,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());

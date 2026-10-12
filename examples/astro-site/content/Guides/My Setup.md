@@ -1,4 +1,5 @@
 ---
+type: page
 title: Set up Loom
 description: Install and configure Loom.
 available: cloud, self-managed preview 3.4

@@ -23,16 +23,19 @@
     ],
     "description": "Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.",
     "source": "install-agent.md",
-    "title": "Install the Quill agent"
+    "title": "Install the Quill agent",
+    "type": "page"
   },
   "keys.md": {
     "description": "Create and rotate the API keys the Quill agent uses.",
     "source": "keys.md",
-    "title": "API keys"
+    "title": "API keys",
+    "type": "page"
   },
   "quickstart.md": {
     "description": "Run Quill in the browser with no local setup.",
     "source": "quickstart.md",
-    "title": "Try Quill in the browser"
+    "title": "Try Quill in the browser",
+    "type": "page"
   }
 }

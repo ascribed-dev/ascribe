@@ -7,5 +7,5 @@ spec: ["7.2"]
 tags: [model]
 
 diagnostics:
-  - {slug: model-type-template, file: ascribe.toml, line: 8}
-  - {slug: model-type-template, file: ascribe.toml, line: 15}
+  - {slug: model-type-template, file: ascribe.toml, line: 7}
+  - {slug: model-type-template, file: ascribe.toml, line: 13}

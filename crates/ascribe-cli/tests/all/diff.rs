@@ -448,19 +448,19 @@ fn html_report_formats_a_title_with_code() {
         dir.path(),
         "site/ascribe.toml",
         &format!(
-            "{MODEL}\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\n"
+            "{MODEL}\n[types.page.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\n"
         ),
     );
     write(
         dir.path(),
         "site/docs/keys.md",
-        "---\ntitle: \"`ascribe.toml` keys\"\n---\n\nKeys.\n",
+        "---\ntype: page\ntitle: \"`ascribe.toml` keys\"\n---\n\nKeys.\n",
     );
     commit(dir.path(), "second");
     write(
         dir.path(),
         "site/docs/keys.md",
-        "---\ntitle: \"`ascribe.toml` keys\"\n---\n\nEvery key.\n",
+        "---\ntype: page\ntitle: \"`ascribe.toml` keys\"\n---\n\nEvery key.\n",
     );
     let out = ascribe(
         &site(&dir),

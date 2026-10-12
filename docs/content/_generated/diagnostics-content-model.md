@@ -20,7 +20,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 
 **Message:** unknown key `{key}` in `[{table}]`
 
-**Fix:** Fix the key's spelling, or remove it.
+**Fix:** Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages.
 
 **Read more:** [The file](../reference/content-model.md#11-the-file) in the `ascribe.toml` reference.
 
@@ -161,28 +161,6 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 **Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ## Content types, fields, and attributes
-
-### ASC071 `model-type-multiple-defaults`
-@id {permalink=true}: ASC071
-
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**Message:** only one content type can be the default, but `{a}` and `{b}` both set default = true
-
-**Fix:** Keep `default = true` on one content type only.
-
-**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
-
-### ASC072 `model-type-unreachable`
-@id {permalink=true}: ASC072
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**Message:** content type `{type}` has no `files` and isn't the default, so no page can use it
-
-**Fix:** Give the type `files` patterns, make it the default type, or remove it.
-
-**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
 ### ASC073 `model-type-title`
 @id {permalink=true}: ASC073

@@ -671,9 +671,6 @@ const RENAME_MODEL: &str = r#"spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = { type = "string", phrases = true }
 
@@ -707,7 +704,7 @@ variants.deployment = ["cloud", "self-managed"]
 build = "site"
 "#;
 
-const RENAME_PAGE: &str = "---\ntitle: Use {product}\nvariant:\n  deployment: self-managed\navailable: self-managed 2.4\n---\n# Home\n\nRun {product} from [{product} docs]({api}guide).\n\n```shell phrases=true\n{product} run\n```\n\n@snippet {phrases=true}: code:app.sh\n\n@variant {deployment=cloud|self-managed}:\nBoth.\n@variant {deployment=cloud}:\nCloud.\n@end\n\n@available: cloud, self-managed beta 2.4\nPara.\n\n| A | B |\n|---|---|\n| x {available=\"self-managed 2.4\"} | y |\n";
+const RENAME_PAGE: &str = "---\ntype: page\ntitle: Use {product}\nvariant:\n  deployment: self-managed\navailable: self-managed 2.4\n---\n# Home\n\nRun {product} from [{product} docs]({api}guide).\n\n```shell phrases=true\n{product} run\n```\n\n@snippet {phrases=true}: code:app.sh\n\n@variant {deployment=cloud|self-managed}:\nBoth.\n@variant {deployment=cloud}:\nCloud.\n@end\n\n@available: cloud, self-managed beta 2.4\nPara.\n\n| A | B |\n|---|---|\n| x {available=\"self-managed 2.4\"} | y |\n";
 
 fn rename_fixture() -> Fixture {
     Fixture::new(
@@ -848,7 +845,7 @@ fn a_phrase_rename_reaches_every_kind_of_use() {
 
 #[test]
 fn renames_leave_frontmatter_comments_and_read_block_scalars() {
-    let page_text = "---\ntitle: |\n  Note: {product} # {product}\nvariant:\n  deployment: [self-managed] # self-managed\navailable: self-managed 2.4 # self-managed\n---\n# Home\n";
+    let page_text = "---\ntype: page\ntitle: |\n  Note: {product} # {product}\nvariant:\n  deployment: [self-managed] # self-managed\navailable: self-managed 2.4 # self-managed\n---\n# Home\n";
     let f = Fixture::new(
         RENAME_MODEL,
         &[("docs/index.md", page_text), ("code/app.sh", "echo\n")],

@@ -9,10 +9,10 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (dbbfcb9cd616)"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 
 [template.files]
-"templates/reference.md" = "sha256:5f21fea3961d8cd645e36fe47ca8f2fb66025b3b573ec336ebf0cca4ecc4d097"
+"templates/reference.md" = "sha256:bd0906de737673582c3e371aff56768ff061b097d629ebaf9bc5e51c4e24f784"
 "templates/reference.guide.md" = "sha256:1f7296d6eb5883abffab43d694c82cac7c8f2c2a0b325921caa0a713a137b3ff"
 
 [template.ascribe-files]
@@ -25,10 +25,10 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (4d214d27a2cf)"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 
 [template.files]
-"templates/how-to.md" = "sha256:70860ffd6474827816216caa943484ba8c0932eac07920d91c7489503c6e4c59"
+"templates/how-to.md" = "sha256:eac239e27ac995f752cdf8ad3987d17273cd044251629eb91112c8f431d582ca"
 "templates/how-to.guide.md" = "sha256:df5131d0547ae2c4d164f6078ecb87170e36d86676a7f22a6ed858775e7196ff"
 
 [template.ascribe-files]
@@ -41,10 +41,10 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (4d214d27a2cf)"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 
 [template.files]
-"templates/tutorial.md" = "sha256:5139d5ba97fe14c68693ce56aeb55c3c320ff2fa01474076f0b86f9f2f5cbe60"
+"templates/tutorial.md" = "sha256:f1cc75e56fa2447524b4ff551422339079999ef5d3c2dc162e97ff64b5238b03"
 "templates/tutorial.guide.md" = "sha256:f6fd7a466c461645eb3c5fcb97124c9c28006ff2b1fa070c49cfa6443355d18b"
 
 [template.ascribe-files]
@@ -57,10 +57,10 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (785925596122)"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 
 [template.files]
-"templates/concept.md" = "sha256:d1e126963fa2d53279b8d4f2da7ecd4669f6229abf20453e6329ea9b2697873c"
+"templates/concept.md" = "sha256:f3ae998c53daffb606df627ea2c47dc5cd52be14fef637fbbd58ec0a75f544de"
 "templates/concept.guide.md" = "sha256:f8dbbc7d22767132398444bedd913a83f6cd0cbefa289669f9fb92b6172a008b"
 
 [template.ascribe-files]
@@ -73,10 +73,10 @@ repository = "https://gitlab.com/tgdp/templates"
 tag = "v1.6.0"
 commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
 license = "MIT No Attribution License"
-ascribe = "0.3.0+dev (4ae2156006a8)"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 
 [template.files]
-"templates/troubleshooting.md" = "sha256:8fca20d6613bf94451abf52cd161ac554f2dd0ba1d76f043d0f61b8dbaf5ad17"
+"templates/troubleshooting.md" = "sha256:a93be2803eb96b8ebca2df33357ee9137e0500c362e94a705bc1c625f1fd3120"
 "templates/troubleshooting.guide.md" = "sha256:8a80f32d8e4c4cf68ac051dfa38b58ba71a2a4b144f80dc159040f8ab46844a6"
 
 [template.ascribe-files]

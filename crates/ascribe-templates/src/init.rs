@@ -24,7 +24,7 @@ pub const MODEL_TEXT: &str = include_str!("../first.ascribe.toml");
 pub const NEXT: &str = ascribe_core::docs_permalink!("astro-guide");
 
 /// The version of [`InitAnswer`]'s schema.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 /// What `ascribe init` did.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

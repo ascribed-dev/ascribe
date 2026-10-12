@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe.toml`: checks, permalinks, and listing"
 description: "How the content model sets the checks' levels, permalinks, crawlers, and listing, its defaults, and how it's validated."
 ---
