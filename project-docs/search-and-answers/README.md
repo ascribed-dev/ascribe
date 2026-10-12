@@ -142,7 +142,7 @@ Each phase's result is something a person can run or open. None builds a layer f
 
 - Branch before committing; never commit to `main`.
 - Read the current code before the phase file's pointers. If the phase file and the code disagree, or a decision above can't be met, stop and report instead of choosing silently.
-- **The language and the contracts change only by a recorded decision.** Every phase from 2 on changes at least one. Go through the matching list in `project-docs/checklists.md` first, and add the decision to `project-docs/decisions.md` in the same pull request.
+- **The language and the contracts change only by a recorded decision.** Every phase from 2 on changes at least one. Go through the matching list in `project-docs/checklists.md` first, and add the decision as a file in `project-docs/decisions/` in the same pull request.
 - **A contract's shape doesn't change after it ships.** A later phase may add to the record, the table, or a component's properties. It may not change what an earlier phase wrote. If a phase finds it must, stop and report.
 - **A new diagnostic** is added to `tests/conformance/diagnostics.toml` and `crates/ascribe-core/src/diagnostics.rs`, in the same order, with a conformance case. A check about quality is advice, configurable, with its kind of next step.
 - **Every output is tested against the record,** not against another output: a test reads the record and each thing written from it, and fails on a difference.

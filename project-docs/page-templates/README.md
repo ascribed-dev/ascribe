@@ -119,7 +119,7 @@ Each phase's result is something a person can run or open. None builds a layer f
 - Branch before committing; never commit to `main`.
 - Read the current code before the phase file's pointers. If the phase file and the code disagree, or a decision above can't be met, stop and report instead of choosing silently.
 - **Nobody edits a converted file.** A change to one is a change to the script, to a rule, or to their repository. The test that compares the copies with the pinned release fails otherwise.
-- **The language and the contracts change only by a recorded decision.** Go through the matching list in `project-docs/checklists.md` first, and add the decision to `project-docs/decisions.md` in the same pull request.
+- **The language and the contracts change only by a recorded decision.** Go through the matching list in `project-docs/checklists.md` first, and add the decision as a file in `project-docs/decisions/` in the same pull request.
 - **A new diagnostic** is added to `tests/conformance/diagnostics.toml` and `crates/ascribe-core/src/diagnostics.rs`, in the same order, with a conformance case. A check about quality is advice, configurable, with its kind of next step.
 - **Project files are read through `ascribe_resolve::FileSystem`.** A template is a project file outside the content root, and how it's reached is phase 2's to get right once. Libraries don't print, and don't panic on input.
 - **Every converted page passes `ascribe check` and is unchanged by `ascribe fmt`.** A test runs both on the whole set.
