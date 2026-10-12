@@ -1,8 +1,10 @@
 //! `ascribe templates`, by running the binary in temporary projects: what
 //! `list` shows, what `eject` says it wrote, its JSON, what it exits with
 //! when it refuses, where there's no `ascribe.toml`, and `--to` from another
-//! folder. What eject writes, and every case it refuses, is held by
-//! `crates/ascribe-templates/tests/all/eject.rs`.
+//! folder; and what `status` says, exits with, and prints with `--diff`, with
+//! the network closed. What eject writes, and every case it refuses, is held
+//! by `crates/ascribe-templates/tests/all/eject.rs`, and each state `status`
+//! tells by `crates/ascribe-templates/tests/all/status.rs`.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
@@ -317,6 +319,170 @@ fn a_page_copied_from_the_template_has_an_advice_for_each_placeholder() {
     fs::write(dir.path().join("docs/how-to/rotate-keys.md"), FILLED).unwrap();
     let found = reported_on(dir.path(), "how-to/rotate-keys.md");
     assert!(found.is_empty(), "{found:#?}");
+}
+
+/// A project that took the how-to, with its copy made from an older set:
+/// the template's first section reads otherwise, and `templates.lock`
+/// records the file as it is, so the set has changed it since and the
+/// project hasn't.
+fn copied_from_an_older_set() -> TempDir {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let template = dir.path().join("templates/how-to.md");
+    let was = fs::read_to_string(&template).unwrap();
+    let older = was.replace("\n## Before you start\n", "\n## Before you begin\n");
+    assert_ne!(older, was);
+    fs::write(&template, &older).unwrap();
+    let lock = dir.path().join("templates/templates.lock");
+    let text = fs::read_to_string(&lock).unwrap().replace(
+        &ascribe_model::file_hash(was.as_bytes()),
+        &ascribe_model::file_hash(older.as_bytes()),
+    );
+    fs::write(&lock, text).unwrap();
+    dir
+}
+
+/// Runs `ascribe` with every way out to the network closed: proxies that
+/// lead nowhere, and `git` allowed no protocol.
+fn offline(dir: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(args)
+        .env("NO_COLOR", "1")
+        .env("HTTP_PROXY", "http://127.0.0.1:9")
+        .env("HTTPS_PROXY", "http://127.0.0.1:9")
+        .env("ALL_PROXY", "http://127.0.0.1:9")
+        .env("GIT_ALLOW_PROTOCOL", "none")
+        .output()
+        .expect("run ascribe")
+}
+
+#[test]
+fn status_of_an_untouched_copy_says_nothing_changed_and_exits_0() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to", "concept"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let output = offline(dir.path(), &["templates", "status", "--exit-code"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let tag = ascribe_templates::set().tag;
+    assert_eq!(
+        stdout(&output),
+        format!(
+            "This ascribe's templates are The Good Docs Project's, https://gitlab.com/tgdp/templates, at {tag}.\n\
+             how-to: unchanged in the set since the copy from {tag}; the project's copy is as written\n\
+             concept: unchanged in the set since the copy from {tag}; the project's copy is as written\n\
+             Not taken: tutorial, reference, troubleshooting, release-notes. `ascribe templates eject <NAME>` writes one.\n"
+        )
+    );
+}
+
+/// The acceptance criterion, from the outside: with the network closed, a
+/// copy older than the set is listed with what changed by section, and
+/// exits 0, or 1 with `--exit-code`.
+#[test]
+fn status_names_what_changed_in_the_set_with_the_network_closed() {
+    let dir = copied_from_an_older_set();
+    let output = offline(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    let tag = ascribe_templates::set().tag;
+    assert!(
+        text.contains(&format!(
+            "how-to: changed in the set since the copy from {tag}; the project's copy is as written\n  \
+             templates/how-to.md: changed in the set\n    \
+             added: \"Before you start\"\n    \
+             removed: \"Before you begin\"\n"
+        )),
+        "{text}"
+    );
+    assert!(
+        text.ends_with(
+            "To see a change, run `ascribe templates status --diff <NAME>`. Nothing was changed.\n"
+        ),
+        "{text}"
+    );
+    let output = offline(dir.path(), &["templates", "status", "--exit-code"]);
+    assert_eq!(code_of(&output), 1, "{}", stderr(&output));
+
+    let output = offline(dir.path(), &["templates", "status", "--format", "json"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let json: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["upstream_changed"], true);
+    let how_to = &json["templates"][0];
+    assert_eq!(how_to["name"], "how-to");
+    assert_eq!(how_to["record"], "entry");
+    assert_eq!(how_to["upstream"], "changed");
+    assert_eq!(how_to["project"], "unchanged");
+    assert_eq!(how_to["files"][0]["path"], "templates/how-to.md");
+    assert_eq!(how_to["files"][0]["sections"][0]["change"], "added");
+}
+
+#[test]
+fn status_diff_prints_the_change_to_one_template_and_applies_nothing() {
+    let dir = copied_from_an_older_set();
+    let before = fs::read_to_string(dir.path().join("templates/how-to.md")).unwrap();
+    let output = offline(dir.path(), &["templates", "status", "--diff", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    assert!(
+        text.starts_with("--- a/templates/how-to.md\n+++ b/templates/how-to.md\n@@ "),
+        "{text}"
+    );
+    assert!(
+        text.contains("\n-## Before you begin\n+## Before you start\n"),
+        "{text}"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("templates/how-to.md")).unwrap(),
+        before
+    );
+
+    let output = ascribe(dir.path(), &["templates", "status", "--diff", "concept"]);
+    assert_eq!(code_of(&output), 1, "{}", stdout(&output));
+    assert!(
+        stderr(&output).contains("`ascribe templates eject concept` writes it"),
+        "{}",
+        stderr(&output)
+    );
+    let output = ascribe(dir.path(), &["templates", "status", "--diff", "nope"]);
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(
+        stderr(&output).starts_with("error: there's no template named `nope`"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+#[test]
+fn status_reports_a_deleted_template_the_model_still_names() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::remove_file(dir.path().join("templates/how-to.md")).unwrap();
+    let output = ascribe(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let tag = ascribe_templates::set().tag;
+    assert!(
+        stdout(&output).contains(&format!(
+            "how-to: unchanged in the set since the copy from {tag}; the project has changed its copy\n  \
+             templates/how-to.md: deleted\n"
+        )),
+        "{}",
+        stdout(&output)
+    );
+}
+
+#[test]
+fn status_of_a_model_that_doesn_t_load_exits_2() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::remove_dir_all(dir.path().join("docs")).unwrap();
+    let output = ascribe(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(stdout(&output).is_empty(), "{}", stdout(&output));
 }
 
 /// `ascribe agents prompt new-page` for a type eject gave: the template with

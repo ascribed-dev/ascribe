@@ -44,3 +44,8 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 @available: next
 
 @include: ../../_generated/json-templates-eject.md
+
+## `ascribe templates status`
+@available: next
+
+@include: ../../_generated/json-templates-status.md
