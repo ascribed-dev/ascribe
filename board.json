@@ -1454,8 +1454,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/399"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-PA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/416"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: convert the how-to template from The Good Docs Project"
     },
     {
@@ -1468,8 +1471,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/400"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-PU",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/417"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: let a page type name its template and its guide"
     },
     {
@@ -1482,8 +1488,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/401"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-Pw",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/418"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: write a template into a project with ascribe templates eject"
     },
     {
@@ -1496,8 +1505,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/402"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-QM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/420"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: report a template's placeholder left in a page"
     },
     {
@@ -1510,8 +1522,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/403"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-Qg",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/419"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: convert the other five Core templates"
     },
     {
@@ -1524,8 +1539,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/404"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-Qs",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/421"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: write Ascribe's notes on each page type"
     },
     {
@@ -1538,8 +1556,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/405"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhAG-Q4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/422"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Page templates: give a project the six types with one command"
     },
     {
@@ -1681,6 +1702,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Page templates: the docs take the other types, and say what it showed"
+    },
+    {
+      "content": {
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 7 advice.\n\n### External links\n\nChecked 30 addresses, asking about each. Nothing is remembered from an earlier run, so every failure is reported.\n\n5 links to look at:\n\n- `content/_generated/crawlers.md:7`: [ASC169] `https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers` moved permanently to `https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers`; link to the new address\n- `content/_generated/crawlers.md:12`: [ASC169] `https://docs.perplexity.ai/guides/bots` moved permanently to `https://docs.perplexity.ai/docs/resources/perplexity-crawlers`; link to the new address\n- `content/_generated/crawlers.md:17`: [ASC169] `https://docs.perplexity.ai/guides/bots` moved permanently to `https://docs.perplexity.ai/docs/resources/perplexity-crawlers`; link to the new address\n- `content/_generated/crawlers.md:20`: [ASC169] `https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/` moved permanently to `https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers`; link to the new address\n- `content/reference/content-model/checks.md:168`: [ASC169] `https://developers.google.com/search/docs/crawling-indexing/google-user-triggered-fetchers` moved permanently to `https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers`; link to the new address\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 24 pass, 2 warn, 1 fail, 1 skip.\n\nTo change:\n\n- [ASC170] the site passes the delivery spec's `content-start-position` check with a warning: 23 of 50 sampled pages have content starting at 10–50% (worst 36%). Put each page's content earlier in its HTML than the navigation, or in `<main>`: the site's page template.\n- [ASC171] the site fails the delivery spec's `markdown-content-parity` check, which what Ascribe writes should pass: 2 of 50 pages have substantive content differences between markdown and HTML (avg 2% missing). Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-html`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/38266288051)\n",
+        "number": 423,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/423"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhANgnw",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
     }
   ]
 }
