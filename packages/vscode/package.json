@@ -81,8 +81,19 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.newPage",
+        "title": "New Page",
+        "category": "Ascribe",
+        "icon": "$(new-file)"
+      },
+      {
         "command": "ascribe.actions",
         "title": "Actions for the Cursor",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.nextPlaceholder",
+        "title": "Go to Next Placeholder",
         "category": "Ascribe"
       },
       {
@@ -827,7 +838,15 @@
           "when": "ascribe.active && ascribe.problems.project"
         },
         {
+          "command": "ascribe.newPage",
+          "when": "ascribe.active"
+        },
+        {
           "command": "ascribe.actions",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.nextPlaceholder",
           "when": "ascribe.inProject && editorLangId == markdown"
         },
         {
@@ -1084,6 +1103,11 @@
       ],
       "view/title": [
         {
+          "command": "ascribe.newPage",
+          "when": "view == ascribe.pages",
+          "group": "navigation"
+        },
+        {
           "command": "ascribe.projects.refresh",
           "when": "view == ascribe.projects",
           "group": "navigation"
@@ -1128,6 +1152,13 @@
           "command": "ascribe.review.reopen",
           "when": "commentController == ascribe.review && commentThread =~ /\\bcanUnresolve\\b/",
           "group": "inline"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "ascribe.newPage",
+          "when": "ascribe.active && explorerResourceIsFolder",
+          "group": "navigation@9"
         }
       ],
       "editor/context": [

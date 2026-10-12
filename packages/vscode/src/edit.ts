@@ -1,5 +1,7 @@
 // A server's edit (`ascribe/edit`'s `EditResult`, the requests that answer
-// the same way, and `textDocument/rename`'s `WorkspaceEdit`) turned into the editor's types. `ProjectServer.requestEdit`
+// the same way, and `textDocument/rename`'s `WorkspaceEdit`) turned into the editor's types:
+// plain text edits under `changes`, or, for a new page, the file to create
+// and its text under `documentChanges`. `ProjectServer.requestEdit`
 // converts with its language client's converter; this module checks the
 // answer's shape and routes its parts through that converter, so it can be
 // tested without VS Code.
@@ -63,11 +65,34 @@ function isRange(value: unknown): value is LspRange {
   return isRecord(value) && isPosition(value.start) && isPosition(value.end);
 }
 
+function isTextEdits(edits: unknown): boolean {
+  return (
+    Array.isArray(edits) &&
+    edits.every((e) => isRecord(e) && isRange(e.range) && typeof e.newText === "string")
+  );
+}
+
+/** A file to create, or edits to one document, as `newPage`'s `documentChanges` hold them. */
+function isDocumentChange(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (value.kind === "create") return typeof value.uri === "string";
+  return (
+    isRecord(value.textDocument) &&
+    typeof value.textDocument.uri === "string" &&
+    isTextEdits(value.edits)
+  );
+}
+
+/** Its `changes`, its `documentChanges`, or both, each well formed. */
 function isWorkspaceEdit(value: unknown): value is LspWorkspaceEdit {
-  if (!isRecord(value) || !isRecord(value.changes)) return false;
-  return Object.values(value.changes).every(
-    (edits) =>
-      Array.isArray(edits) &&
-      edits.every((e) => isRecord(e) && isRange(e.range) && typeof e.newText === "string"),
+  if (!isRecord(value)) return false;
+  const { changes, documentChanges } = value;
+  if (changes === undefined && documentChanges === undefined) return false;
+  if (changes !== undefined && !(isRecord(changes) && Object.values(changes).every(isTextEdits))) {
+    return false;
+  }
+  return (
+    documentChanges === undefined ||
+    (Array.isArray(documentChanges) && documentChanges.every(isDocumentChange))
   );
 }

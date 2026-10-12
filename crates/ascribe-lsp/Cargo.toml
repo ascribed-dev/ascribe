@@ -17,6 +17,7 @@ ascribe-resolve.workspace = true
 ascribe-emit.workspace = true
 ascribe-diff.workspace = true
 ascribe-fmt.workspace = true
+ascribe-templates.workspace = true
 lsp-server = "0.10"
 lsp-types = "0.97"
 crossbeam-channel = "0.5"

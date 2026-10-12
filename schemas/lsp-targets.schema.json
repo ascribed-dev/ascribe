@@ -535,6 +535,32 @@
       ],
       "type": "object"
     },
+    "TargetType": {
+      "description": "A page type.",
+      "properties": {
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "purpose": {
+          "description": "What it's for, on one line: its `purpose`, or, for a type ejected\nfrom the set, their index's summary of it, as the rules for agents\nsay it; `null` when it says neither.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "template": {
+          "description": "Whether it has a template, which a page starts from; without one, a\npage starts with its frontmatter.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "purpose",
+        "template"
+      ],
+      "type": "object"
+    },
     "TargetWidget": {
       "description": "A project widget.",
       "properties": {
@@ -711,6 +737,16 @@
       "description": "The content model's sources, in the order it declares them, with the\nfiles a snippet can take code from.",
       "items": {
         "$ref": "#/$defs/TargetSource"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "types": {
+      "description": "Page types, in declaration order: with a folder, only those a page\nstarted in it would be of.",
+      "items": {
+        "$ref": "#/$defs/TargetType"
       },
       "type": [
         "array",

@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath};
+use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
     ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList, SourceBound,
 };
@@ -829,6 +829,19 @@ impl Project {
             out
         });
         templates.get(name).cloned()
+    }
+
+    /// Where `text`, a page of type `type_name`, still has what the type's
+    /// template left to fill in, in source order: each frontmatter field
+    /// whose value is the template's, and each placeholder of the body,
+    /// whole, from the first piece of one that runs across blocks to its
+    /// last. They're found as `template-placeholder-left` finds them, whether
+    /// or not the check is on. Empty when the type has no template, or its
+    /// template can't be read.
+    pub fn template_places(&self, type_name: &str, text: &str) -> Vec<Span> {
+        self.template(type_name)
+            .map(|template| crate::checks::template::places(&template, text, &self.model))
+            .unwrap_or_default()
     }
 
     /// This project, checked as on `today`: the day `review-overdue`

@@ -73,7 +73,9 @@ Their guide says what belongs in a page of each kind, and it's written for any t
 
 ## Start a page
 
-Copy the template into the type's folder, and read the guide and the notes before you write:
+In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with the title set, in the first folder the type's `files` cover, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](editor.md#start-a-page)).
+
+Without the editor, copy the template into the type's folder, and read the guide and the notes before you write:
 
 ```sh
 mkdir -p docs/how-to
@@ -88,7 +90,7 @@ An agent starts from the template too. Ask it for a page, with the plugin's `/as
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
-There's no command that writes the page for you at the terminal: copying the file is one line, and the prompt is for the agent.
+There's no command that writes the page for you at the terminal: copying the file is one line, the editor's **New Page** is for a person, and the prompt is for the agent.
 
 ## What's left to fill in
 

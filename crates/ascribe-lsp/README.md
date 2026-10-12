@@ -276,12 +276,15 @@ client asks for the kinds it needs:
 {
   "textDocument": { "uri": "file:///…/docs/guide/install.md" },
   "kinds": ["pages", "headings", "fragments", "images", "snippets", "phrases",
-            "notes", "dimensions", "widgets", "features", "builds", "occurrences"],
-  "range": { "start": { "line": 8, "character": 4 }, "end": { "line": 8, "character": 15 } }
+            "notes", "dimensions", "widgets", "features", "builds", "occurrences", "types"],
+  "range": { "start": { "line": 8, "character": 4 }, "end": { "line": 8, "character": 15 } },
+  "folder": "file:///…/docs/guide"
 }
 ```
 
 `range`, the cursor or selection, is optional; only `occurrences` reads it.
+`folder`, a folder in the content root as a `file:` URI, is optional too;
+only `types` reads it.
 
 The result has a list for each kind asked for and no others, and `modelUri`,
 the `file:` URI of `ascribe.toml`, which declaration ranges are in. Its
@@ -304,6 +307,7 @@ destination needs it):
 | `features` | `key`, `name`, `availability` (the spec as written), `range` (its table header) |
 | `builds` | `name`, `editor` (whether it's `[editor] build`) |
 | `occurrences` | `path` (content path), `range`: each other whole-word occurrence, in the project's prose, of the text `range` selects, which `makePhrase` with `everywhere` replaces. Empty when the selection isn't text a phrase can take the place of |
+| `types` | `name`, `purpose` (its `purpose`, or for a type ejected from the set their index's summary, on one line, as the rules for agents say it; `null` when neither), `template` (whether it has one). With `folder`, only the types a page started there would be of (`ascribe_templates::takes_folder`); a folder outside the content root takes none |
 
 Images and the files of sources are listed through the project's
 `FileSystem`. A source's files are those its `include` and `ignore` take in,
@@ -347,7 +351,7 @@ TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 
 | Result | Meaning |
 |---|---|
-| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
+| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change; for `newPage`, its `documentChanges` create the page and then give it its text, and `select` is in the new page. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
 | `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
 
 The operations, where each applies, and its arguments (`?` is optional):
@@ -386,6 +390,14 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `makePhrase` | Plain text selected in prose, on one line | `key`, `everywhere?` (default `false`) | `key = "<the text>"` in `[phrases]`, and `{key}` in place of the selection; with `everywhere`, in place of each of its `occurrences` too |
 | `addGlossaryTerm` | Anywhere in a page | `id`, `term`, `definition`, `aliases?` (a list), `link?` (a page from the content root, with `#id`) | A `[glossary.terms.<id>]` table with those keys |
 | `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
+| `newPage` | Any of the project's files: `textDocument` names the project, and `range` is unused | `type`, `title`, `folder?` (a folder in the content root, as a `file:` URI) | A new page, made by `ascribe_templates::start`: the type's template with its `title` set, or its frontmatter when it has none, in `folder` or the first folder its `files` cover, named for the title. Never over a file. `select` is the first thing the template left to fill in |
+| `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
+
+What a template left to fill in is found as `template-placeholder-left`
+finds it (`ascribe_check::Project::template_places`): a frontmatter field
+whose value is still the template's, inside its quotes, and each placeholder
+of the body, whole, so one that runs across blocks is one range. An
+instruction isn't one: it's read, not filled in.
 
 An insertable line is where `ascribe/context` says `insertable`: a blank
 line between blocks. `attributes` is an object of key to value (a string,

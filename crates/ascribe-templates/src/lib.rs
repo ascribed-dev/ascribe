@@ -24,7 +24,7 @@ pub use eject::{
 };
 pub use init::{Init, InitAnswer, InitError, MODEL_TEXT, init};
 pub use lock::summaries;
-pub use start::{NewPage, StartError, start};
+pub use start::{NewPage, StartError, start, takes_folder};
 pub use status::{
     Change, FileDiff, FileKind, FileStatus, NotTaken, Record, SectionChange, SectionChangeKind,
     SetRelease, Status, StatusAnswer, TemplateStatus, Upstream, UpstreamChange, diff, status,

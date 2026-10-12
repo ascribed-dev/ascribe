@@ -1,5 +1,77 @@
 {
   "$defs": {
+    "LspCreateFile": {
+      "description": "A file to create, empty.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/LspCreateKind",
+          "description": "`create`."
+        },
+        "options": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspCreateFileOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What to do when it's there already."
+        },
+        "uri": {
+          "description": "The file's URI.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "uri"
+      ],
+      "type": "object"
+    },
+    "LspCreateFileOptions": {
+      "description": "What to do when a file to create is there already.",
+      "properties": {
+        "ignoreIfExists": {
+          "description": "Whether to leave it as it is, and go on.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "overwrite": {
+          "description": "Whether to write over it.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "LspCreateKind": {
+      "description": "The kind of a file to create.",
+      "oneOf": [
+        {
+          "const": "create",
+          "description": "A file to create.",
+          "type": "string"
+        }
+      ]
+    },
+    "LspDocumentChange": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LspCreateFile",
+          "description": "A file to create."
+        },
+        {
+          "$ref": "#/$defs/LspTextDocumentEdit",
+          "description": "Edits to one document."
+        }
+      ],
+      "description": "A file to create, or edits to one document."
+    },
     "LspPosition": {
       "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
       "properties": {
@@ -38,6 +110,27 @@
       ],
       "type": "object"
     },
+    "LspTextDocumentEdit": {
+      "description": "Edits to one document.",
+      "properties": {
+        "edits": {
+          "description": "Its edits, each to the document as it is before any of them.",
+          "items": {
+            "$ref": "#/$defs/LspTextEdit"
+          },
+          "type": "array"
+        },
+        "textDocument": {
+          "$ref": "#/$defs/LspVersionedDocument",
+          "description": "The document."
+        }
+      },
+      "required": [
+        "textDocument",
+        "edits"
+      ],
+      "type": "object"
+    },
     "LspTextEdit": {
       "description": "A text edit: replace `range` with `newText`.",
       "properties": {
@@ -56,8 +149,29 @@
       ],
       "type": "object"
     },
+    "LspVersionedDocument": {
+      "description": "A document, and the version an edit is for; `null` for any.",
+      "properties": {
+        "uri": {
+          "description": "Its URI.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The version.",
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "uri",
+        "version"
+      ],
+      "type": "object"
+    },
     "LspWorkspaceEdit": {
-      "description": "Changes to documents.",
+      "description": "Changes to documents: `changes`, or, for an edit that creates a file,\n`documentChanges`.",
       "properties": {
         "changes": {
           "additionalProperties": {
@@ -67,12 +181,22 @@
             "type": "array"
           },
           "description": "The edits to each document, by its URI.",
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "documentChanges": {
+          "description": "Files to create and edits to make, in order: each file is created\nbefore the edit that gives it its text.",
+          "items": {
+            "$ref": "#/$defs/LspDocumentChange"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
-      "required": [
-        "changes"
-      ],
       "type": "object"
     }
   },

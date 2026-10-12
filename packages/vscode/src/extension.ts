@@ -4,6 +4,7 @@ import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
+import { NewPage, type NewPageApi } from "./actions/newPage.js";
 import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
 import { McpRegistration, type McpApi } from "./agents/mcp.js";
 import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
@@ -39,6 +40,8 @@ export interface AscribeApi {
   preview: PreviewApi;
   /** The editor's actions, for tests. */
   actions: ActionsApi;
+  /** New Page, for tests. */
+  newPage: NewPageApi;
   /** Prompt agent, for tests. */
   promptAgent: PromptAgentApi;
   /** What agents in VS Code get: the MCP server, the tools, and the terminals' path, for tests. */
@@ -100,6 +103,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
 
   const actions = new ActionsController(projects);
   actions.register();
+  const newPage = new NewPage(projects);
+  newPage.register();
   const walkthrough = new Walkthrough(projects);
   walkthrough.register();
   const formatter = new FormatterOffer(context, projects);
@@ -144,6 +149,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     tools,
     terminals,
     actions,
+    newPage,
     formatter,
     promptAgent,
     chosen,
@@ -206,6 +212,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
     actions: actions.api,
+    newPage: newPage.api,
     promptAgent: promptAgent.api,
     agents: { mcp: mcp.api, tools: tools.api, terminals: terminals.api },
     ui: {
