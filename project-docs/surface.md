@@ -98,7 +98,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-193 in all. By severity: 28 advice, 143 error, 22 warning. By level: 174 file, 19 page. By kind of next step: 43 choose, 13 fix, 3 outside, 11 review, 123 write.
+194 in all. By severity: 29 advice, 143 error, 22 warning. By level: 175 file, 19 page. By kind of next step: 43 choose, 13 fix, 3 outside, 11 review, 124 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -295,6 +295,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC195` | `template-placeholder-left` | advice | write | this page still has its template's placeholder `{placeholder}`; write what it asks for in its place |
 | `ASC196` | `content-type-missing` | error | choose | this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values} |
 | `ASC197` | `content-type-unknown` | error | choose | `{type}` isn't a content type; the types are: {values} |
+| `ASC198` | `description-link` | advice | write | a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it |
 
 ## The VS Code extension
 

@@ -739,7 +739,10 @@ fn a_description_is_measured_as_its_line_in_llms_txt_with_agents_on() {
         "---\ntype: page\ntitle: T\ndescription: See [the guide](https://example.com/{}).\n---\n",
         "x".repeat(400)
     );
-    assert!(found(&described(true, &[("a.md", &linked)])).is_empty());
+    assert_eq!(
+        found(&described(true, &[("a.md", &linked)])),
+        [("description-link".to_owned(), 4)]
+    );
 }
 
 #[test]
@@ -779,4 +782,45 @@ fn a_page_looser_than_its_rule_quotes_the_rule_and_its_line() {
         apply_edits(file.text, &fix.edits).expect("the edits apply"),
         "---\ntitle: Plan\n---\n"
     );
+}
+
+#[test]
+fn a_link_in_a_description_is_found_at_the_link_and_fixed_to_its_text() {
+    let text = "---\ntype: page\ntitle: T\ndescription: Set up **[the server](server.md)** and <https://example.com>.\n---\n";
+    let p = described(false, &[("a.md", text)]);
+    let links: Vec<_> = check_files(&p)
+        .into_iter()
+        .filter(|d| d.slug.as_str() == "description-link")
+        .collect();
+    assert_eq!(links.len(), 2, "{links:#?}");
+    let file = p.file(links[0].location.file).expect("a known file");
+    assert_eq!(
+        &file.text[links[0].location.span.range()],
+        "[the server](server.md)"
+    );
+    let mut fixed = text.to_owned();
+    for d in links.iter().rev() {
+        assert_eq!(d.fixes[0].applicability, Applicability::Unsafe);
+        fixed = apply_edits(&fixed, &d.fixes[0].edits).expect("edits apply");
+    }
+    assert_eq!(
+        fixed,
+        "---\ntype: page\ntitle: T\ndescription: Set up **the server** and https://example.com.\n---\n"
+    );
+    assert!(found(&described(false, &[("a.md", &fixed)])).is_empty());
+
+    // A quoted description is reported at its value, with no fix to apply.
+    let quoted = "---\ntype: page\ntitle: T\ndescription: \"See [the guide](g.md).\"\n---\n";
+    let d = check_files(&described(false, &[("a.md", quoted)]))
+        .into_iter()
+        .find(|d| d.slug.as_str() == "description-link")
+        .expect("description-link");
+    assert!(d.fixes.is_empty());
+    // A fix that would end the value early in YAML isn't offered.
+    let colon = "---\ntype: page\ntitle: T\ndescription: See [the guide:](g.md) it.\n---\n";
+    let d = check_files(&described(false, &[("a.md", colon)]))
+        .into_iter()
+        .find(|d| d.slug.as_str() == "description-link")
+        .expect("description-link");
+    assert!(d.fixes.is_empty());
 }

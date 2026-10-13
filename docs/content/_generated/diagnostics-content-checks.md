@@ -83,6 +83,19 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
+### ASC198 `description-link`
+@id {permalink=true}: ASC198
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**When:** A page's description, the field its type marks `role = "description"`, holds a Markdown link.
+
+**Message:** a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it
+
+**Fix:** Keep the link's text and remove the brackets and the destination; for a description that isn't quoted, the editor's quick fix does it. Link to the page from the page's body instead, where it's a link that's checked and kept up to date.
+
+**Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`

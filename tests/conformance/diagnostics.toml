@@ -3686,3 +3686,41 @@ example.model = '''
 [types.guide.frontmatter]
 title = "string"
 '''
+
+[[diagnostic]]
+code = "ASC198"
+slug = "description-link"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "pages"
+spec = "9.4"
+reference = "content-model/index.md#54-field-roles"
+when = "A page's description, the field its type marks `role = \"description\"`, holds a Markdown link"
+message = "a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it"
+fix = "Keep the link's text and remove the brackets and the destination; for a description that isn't quoted, the editor's quick fix does it. Link to the page from the page's body instead, where it's a link that's checked and kept up to date."
+example.wrong = '''
+---
+type: page
+title: Install
+description: Install the product, then [configure](configure.md) it.
+---
+
+Install the product.
+'''
+example.right = '''
+---
+type: page
+title: Install
+description: Install the product, then configure it.
+---
+
+Install the product.
+'''
+example.model = '''
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }
+'''

@@ -14,7 +14,7 @@ use ascribe_model::{
     crawler_tokens, types, validate_frontmatter,
 };
 use ascribe_resolve::{AstroRouter, llms, pages};
-use ascribe_syntax::Frontmatter;
+use ascribe_syntax::{BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
 use serde_yaml_ng::Value;
 
 use super::Ctx;
@@ -84,6 +84,7 @@ impl Ctx<'_> {
             self.check_reserved_keys(&value, &index, first_line);
             self.check_roles(schema, &value, &index, first_line);
             self.check_description_length(schema, &value, &index);
+            self.check_description_links(schema, &value, &index);
             self.check_template_fields(&value, &index);
         }
         self.check_intended_key(&value, &index, first_line);
@@ -198,6 +199,62 @@ impl Ctx<'_> {
         .with_arg("length", length.to_string())
         .with_arg("limit", llms::DESCRIPTION_LIMIT.to_string());
         self.report(issue);
+    }
+
+    /// A description holding Markdown link syntax, which it shows as
+    /// written: a description is plain text (decision #455).
+    fn check_description_links(
+        &mut self,
+        schema: &FrontmatterSchema,
+        value: &Value,
+        index: &YamlIndex,
+    ) {
+        if self.model.checks.is_off(diagnostics::DESCRIPTION_LINK) {
+            return;
+        }
+        let Some(field) = schema.field_with_role(FieldRole::Description) else {
+            return;
+        };
+        let Some(raw) = value.get(field.name.as_str()).and_then(Value::as_str) else {
+            return;
+        };
+        let Some(node) = index.get(&field.name) else {
+            return;
+        };
+        let parsed = ascribe_syntax::parse(raw, &ParseOptions::default());
+        let mut links = Vec::new();
+        for block in &parsed.blocks {
+            if let BlockKind::Paragraph(p) = &block.kind {
+                collect_links(&p.inlines, &mut links);
+            }
+        }
+        // A plain scalar is written as it is in the file, so a link's place
+        // in the value is its place in the file.
+        let written = node.plain && self.file.text.get(node.value.range()) == Some(raw);
+        for link in links {
+            let source = raw.get(link.span.range()).unwrap_or_default();
+            let text = link_text(raw, link);
+            let mut issue = Issue::new(
+                diagnostics::DESCRIPTION_LINK,
+                Location::new(self.id, node.value),
+            )
+            .with_arg("link", source.to_owned());
+            if written {
+                let base = node.value.start();
+                let at = Span::new(base + link.span.start(), base + link.span.end());
+                issue.location = Location::new(self.id, at);
+                if keeps_plain(raw, link.span, text) {
+                    issue = issue.with_fix(Fix {
+                        title: format!("Keep the link's text, `{text}`"),
+                        file: self.id,
+                        edits: vec![TextEdit::replace(at, text.to_owned())],
+                        // It changes the description's text.
+                        applicability: Applicability::Unsafe,
+                    });
+                }
+            }
+            self.report(issue);
+        }
     }
 
     /// The first line of the file, without its line ending. Never empty
@@ -518,4 +575,42 @@ fn describe(v: &Value) -> String {
         Value::Mapping(_) => "a mapping".into(),
         Value::Tagged(t) => describe(&t.value),
     }
+}
+
+/// The links among `inlines`, outermost first, at any depth.
+fn collect_links<'a>(inlines: &'a [Inline], out: &mut Vec<&'a Inline>) {
+    for inline in inlines {
+        match &inline.kind {
+            InlineKind::Link(_) => out.push(inline),
+            InlineKind::Emphasis(children) | InlineKind::Strong(children) => {
+                collect_links(children, out);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// A link's text as written in `raw`: what's between its brackets, or an
+/// autolink's address.
+fn link_text<'a>(raw: &'a str, link: &Inline) -> &'a str {
+    let InlineKind::Link(l) = &link.kind else {
+        return "";
+    };
+    match (l.children.first(), l.children.last()) {
+        (Some(first), Some(last)) => raw
+            .get(first.span.start()..last.span.end())
+            .unwrap_or_default(),
+        _ => "",
+    }
+}
+
+/// Whether replacing `span` of the plain scalar `raw` with `text` leaves a
+/// plain scalar with the text expected, so the fix can't break the YAML.
+fn keeps_plain(raw: &str, span: Span, text: &str) -> bool {
+    let (Some(before), Some(after)) = (raw.get(..span.start()), raw.get(span.end()..)) else {
+        return false;
+    };
+    let fixed = format!("{before}{text}{after}");
+    let parsed = serde_yaml_ng::from_str::<Value>(&format!("d: {fixed}"));
+    matches!(parsed, Ok(v) if v.get("d").and_then(Value::as_str) == Some(fixed.as_str()))
 }
