@@ -3,38 +3,3 @@
 # is its file's path under docs/content/, so don't move a published page
 # without a reason, and add a line here when one moves. test/redirects.test.ts
 # checks that each target is a page of the built site.
-
-# The docs were grouped by feature: guides/ and reference/ became a folder for
-# each feature, with every type of page about it.
-/docs/guides/variants/ /docs/writing/variants/ 301
-/docs/reference/directives/ /docs/writing/directives/ 301
-/docs/reference/content-model/ /docs/content-model/ 301
-/docs/reference/content-model/checks/ /docs/content-model/checks/ 301
-/docs/reference/content-model/content/ /docs/content-model/content/ 301
-/docs/reference/content-model/output/ /docs/content-model/output/ 301
-/docs/reference/cli/check/ /docs/checks/check/ 301
-/docs/reference/diagnostics/ /docs/checks/diagnostics/ 301
-/docs/reference/diagnostics/content-checks/ /docs/checks/diagnostics/content-checks/ 301
-/docs/reference/diagnostics/content-model/ /docs/checks/diagnostics/content-model/ 301
-/docs/reference/diagnostics/directives/ /docs/checks/diagnostics/directives/ 301
-/docs/reference/diagnostics/pages/ /docs/checks/diagnostics/pages/ 301
-/docs/guides/report/ /docs/checks/report/ 301
-/docs/guides/vale/ /docs/checks/vale/ 301
-/docs/guides/review/ /docs/review/ 301
-/docs/guides/review/troubleshooting/ /docs/review/troubleshooting/ 301
-/docs/reference/cli/diff/ /docs/review/diff/ 301
-/docs/guides/editor/ /docs/editor/ 301
-/docs/guides/editor/settings/ /docs/editor/settings/ 301
-/docs/guides/agents/ /docs/agents/ 301
-/docs/reference/cli/agents/ /docs/agents/commands/ 301
-/docs/guides/measuring/ /docs/agents/measuring/ 301
-/docs/guides/drift/ /docs/examples/ 301
-/docs/reference/cli/sources/ /docs/examples/sources/ 301
-/docs/guides/astro/ /docs/astro/ 301
-/docs/reference/astro/ /docs/astro/reference/ 301
-/docs/reference/elements/ /docs/astro/elements/ 301
-/docs/guides/permalinks/ /docs/permalinks/ 301
-/docs/guides/templates/ /docs/templates/ 301
-/docs/reference/cli/ /docs/command/ 301
-/docs/reference/cli/questions/ /docs/command/questions/ 301
-/docs/reference/project-files/ /docs/command/project-files/ 301

@@ -13,4 +13,4 @@ Ascribe's notes on the reference, to read after its guide: only what's particula
 - **An example comes from tested code.** `@snippet: code:examples/quill.yaml#timeout` puts a region of a file your tests run into the page.
 - **An entry the product links to gets a permalink.** `@id {permalink=true}: config-timeout`, under its heading, gives it an address that keeps working when the page moves or the heading is reworded, so a setting's help in the product can link straight to it.
 
-The directives are in the [directives reference](https://ascribed-dev.com/docs/reference/directives/).
+The directives are in the [directives reference](https://ascribed-dev.com/docs/writing/directives/).

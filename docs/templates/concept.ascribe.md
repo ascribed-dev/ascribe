@@ -8,4 +8,4 @@ Ascribe's notes on the concept, to read after its guide: only what's particular 
 - **The related resources link files, with empty text.** `[](../how-to/create-a-workspace.md)` shows that page's title as it is now, and `ascribe check` reports the link when the page moves. Group them under the template's headings, or under one list when there are only a few.
 - **A concept has no procedure.** When the page starts to need steps, they're a how-to of their own: link to it.
 
-The glossary is in the [content model reference](https://ascribed-dev.com/docs/reference/content-model/content/#12-glossary).
+The glossary is in the [content model reference](https://ascribed-dev.com/docs/content-model/content/#12-glossary).

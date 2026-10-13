@@ -16,7 +16,7 @@ ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 "templates/reference.guide.md" = "sha256:1f7296d6eb5883abffab43d694c82cac7c8f2c2a0b325921caa0a713a137b3ff"
 
 [template.ascribe-files]
-"templates/reference.ascribe.md" = "sha256:73bf4b2651848acd4eacaa012e848835f3a001a3994bcb308e5756d368ccdf63"
+"templates/reference.ascribe.md" = "sha256:f7aa2cc47c90c902378c0a056b48631b7bd63943c47e498d85b0ea40f6c13637"
 
 [[template]]
 name = "how-to"
@@ -32,7 +32,7 @@ ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 "templates/how-to.guide.md" = "sha256:df5131d0547ae2c4d164f6078ecb87170e36d86676a7f22a6ed858775e7196ff"
 
 [template.ascribe-files]
-"templates/how-to.ascribe.md" = "sha256:3a1e2b04130d64840fcbf4a7cc0765ab662971d55ab1e1d991ee014ad98c2dcb"
+"templates/how-to.ascribe.md" = "sha256:a68945ebc6c55dbea89b911081c95598c53f2bef4394047bc5b8799b5eb54075"
 
 [[template]]
 name = "tutorial"
@@ -48,7 +48,7 @@ ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 "templates/tutorial.guide.md" = "sha256:f6fd7a466c461645eb3c5fcb97124c9c28006ff2b1fa070c49cfa6443355d18b"
 
 [template.ascribe-files]
-"templates/tutorial.ascribe.md" = "sha256:bac35eef8aae52f1937ff0fb02c1d64b05b7aeff49a580e46e983cc22a454c44"
+"templates/tutorial.ascribe.md" = "sha256:c86841f0f22e64d9ec65dc10ec1220f211319698fc7d95fa02c44284cf51f84f"
 
 [[template]]
 name = "concept"
@@ -64,7 +64,7 @@ ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 "templates/concept.guide.md" = "sha256:f8dbbc7d22767132398444bedd913a83f6cd0cbefa289669f9fb92b6172a008b"
 
 [template.ascribe-files]
-"templates/concept.ascribe.md" = "sha256:30f35196d39a8473c825785ee2e6fab586057692b3b82d200b97cce5abc37ad0"
+"templates/concept.ascribe.md" = "sha256:9da7fc5e4d0d20b09d2a5125c817636bbc43404de742c7e5ab7b68c9a5155fd0"
 
 [[template]]
 name = "troubleshooting"
@@ -80,4 +80,4 @@ ascribe = "0.3.0+dev (8a2e7e3ba23c)"
 "templates/troubleshooting.guide.md" = "sha256:8a80f32d8e4c4cf68ac051dfa38b58ba71a2a4b144f80dc159040f8ab46844a6"
 
 [template.ascribe-files]
-"templates/troubleshooting.ascribe.md" = "sha256:837e05c0bf18e2295603c60e568f1a40ff3090ab1c258247e93238ef7a240893"
+"templates/troubleshooting.ascribe.md" = "sha256:0182aee0e6da5780f234fc1886a3c6988375418ecbd45e79207e35e178458e25"

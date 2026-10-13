@@ -15,4 +15,4 @@ Ascribe's notes on the tutorial, to read after its guide: only what's particular
 - **Versions are phrases.** Write `You need {product} {version} or later`, with both in `[phrases]`, and the next release changes one line in `ascribe.toml` rather than every page.
 - **Output to expect comes from a run too.** When your tests record a command's output, take it with `@snippet` rather than pasting it.
 
-The directives are in the [directives reference](https://ascribed-dev.com/docs/reference/directives/).
+The directives are in the [directives reference](https://ascribed-dev.com/docs/writing/directives/).

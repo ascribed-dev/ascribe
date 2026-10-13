@@ -8,4 +8,4 @@ Ascribe's notes on release notes, to read after their guide: only what's particu
 - **A known issue links to its fix.** Write the fix once, on a troubleshooting page, and link the release notes to its section.
 - **Leave out a section with nothing in it,** heading and all, rather than keeping it empty.
 
-Availability is in the [directives reference](https://ascribed-dev.com/docs/reference/directives/#available).
+Availability is in the [directives reference](https://ascribed-dev.com/docs/writing/directives/#available).
