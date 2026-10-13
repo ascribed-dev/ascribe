@@ -619,14 +619,15 @@ pub fn shown_text(text: &str) -> String {
             space = true;
             continue;
         }
-        if space && !out.is_empty() {
-            out.push(' ');
-            count += 1;
-        }
+        let pending = usize::from(space && !out.is_empty());
         space = false;
-        if count >= SHOWN_LIMIT {
+        if count + pending >= SHOWN_LIMIT {
             out.push('…');
             return out;
+        }
+        if pending == 1 {
+            out.push(' ');
+            count += 1;
         }
         out.push(c);
         count += 1;
@@ -837,6 +838,9 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
         assert_eq!(shown_text("a\nb\u{1b}[31m c"), "a b [31m c");
         let long = shown_text(&"x".repeat(5000));
         assert_eq!(long.chars().count(), SHOWN_LIMIT + 1);
+        // A space at the limit isn't kept before the ellipsis.
+        let spaced = shown_text(&format!("{} {}", "x".repeat(SHOWN_LIMIT), "y"));
+        assert!(spaced.ends_with("x…"), "{spaced}");
         assert!(long.ends_with('…'));
         assert_eq!(shown_text("<script>"), "<script>");
     }

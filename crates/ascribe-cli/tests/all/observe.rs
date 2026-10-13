@@ -93,6 +93,31 @@ fn a_passing_test_writes_what_it_passed_and_where() {
     );
 }
 
+/// A link to a folder `include` matches, as pnpm's `node_modules` is full
+/// of, is skipped, and a link to a file is read where it leads.
+#[cfg(unix)]
+#[test]
+fn a_link_to_a_folder_is_skipped() {
+    let dir = folder("exit 0");
+    fs::create_dir_all(dir.path().join("other")).unwrap();
+    fs::write(dir.path().join("other/c.ts"), "c\n").unwrap();
+    std::os::unix::fs::symlink("../other", dir.path().join("examples/linked")).unwrap();
+    std::os::unix::fs::symlink("../helper.ts", dir.path().join("examples/helper.ts")).unwrap();
+    let output = ascribe(dir.path(), &["observe"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = fs::read_to_string(dir.path().join(OBSERVATION)).unwrap();
+    let observation = Observation::parse(&text).unwrap();
+    let files: Vec<&str> = observation.files.keys().map(String::as_str).collect();
+    assert_eq!(
+        files,
+        [
+            "examples/a.ts",
+            "examples/helper.ts",
+            "examples/nested/b.txt"
+        ]
+    );
+}
+
 #[test]
 fn a_failing_test_writes_nothing_and_exits_1() {
     let dir = folder("exit 0");

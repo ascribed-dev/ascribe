@@ -406,6 +406,12 @@ fn examples(folder: &Path, config: &ExamplesConfig) -> io::Result<BTreeMap<Strin
             let name = entry.file_name().to_string_lossy().into_owned();
             let path = format!("{prefix}{name}");
             let kind = entry.file_type()?;
+            // A link to a folder is skipped, not followed: `file_type`
+            // doesn't follow links, so it isn't `is_dir`, and reading it
+            // as a file would fail the run.
+            if kind.is_symlink() && entry.path().is_dir() {
+                continue;
+            }
             if kind.is_dir() {
                 if prefix.is_empty() && (name == OBSERVATIONS_FOLDER || name == ".git") {
                     continue;

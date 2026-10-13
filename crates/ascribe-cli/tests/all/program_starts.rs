@@ -78,9 +78,12 @@ fn starting(root: &Path) -> Vec<String> {
             .take_while(|l| !l.starts_with("#[cfg(test)]"))
             .filter(|l| !l.trim_start().starts_with("//"))
             .collect();
+        // A `process` module's `Command`, the standard library's or
+        // another's (`tokio::process`), imported or written out
+        // (`process::Command::new`). Another type named `Command`, as the
+        // commands' own, isn't one.
         let uses_process = code.iter().any(|l| {
-            l.contains("std::process::Command")
-                || (l.contains("std::process::{") && l.contains("Command"))
+            l.contains("process::Command") || (l.contains("process::{") && l.contains("Command"))
         });
         if uses_process && code.iter().any(|l| l.contains("Command::new(")) {
             let rel = file
