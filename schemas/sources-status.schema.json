@@ -5,7 +5,7 @@
       "oneOf": [
         {
           "const": "current",
-          "description": "It's the file the lock pins, and a snippet uses it.",
+          "description": "It's the file the lock pins, and a snippet uses it, or it's the\nsource's tested examples' config or one of their observations.",
           "type": "string"
         },
         {

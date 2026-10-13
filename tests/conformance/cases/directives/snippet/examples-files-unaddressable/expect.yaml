@@ -1,0 +1,11 @@
+description: >-
+  A source's `ascribe.examples.toml` and the observations beside it travel
+  with the source whatever its `include` says, and no snippet can address
+  one: a snippet of either gets the diagnostic of a file the source doesn't
+  make readable.
+spec: ["4.8", "7.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-missing, file: index.md, line: 5}
+  - {slug: snippet-file-missing, file: index.md, line: 7}
