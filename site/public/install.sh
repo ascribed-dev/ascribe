@@ -130,10 +130,12 @@ work=$(mktemp -d 2> /dev/null || mktemp -d -t ascribe)
 trap 'rm -rf "$work"' EXIT INT TERM
 
 if [ -z "$version" ]; then
-  fetch "https://api.github.com/repos/$repo/releases/latest" "$work/latest.json" ||
-    fail "couldn't ask GitHub for the latest release; name one with --version"
-  version=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([^"]*\)".*/\1/p' "$work/latest.json" | head -n 1)
-  [ -n "$version" ] || fail "couldn't read the latest release from GitHub; name one with --version"
+  # The latest release's SHA256SUMS names its version. GitHub's API isn't
+  # asked, since it limits how often a machine may ask without signing in.
+  fetch "https://github.com/$repo/releases/latest/download/SHA256SUMS" "$work/SHA256SUMS" ||
+    fail "couldn't download the latest release's SHA256SUMS from GitHub; name a release with --version"
+  version=$(sed -n "s|.*[ /]ascribe-\(.*\)-$target\.tar\.gz\$|\1|p" "$work/SHA256SUMS" | head -n 1)
+  [ -n "$version" ] || fail "the latest release's SHA256SUMS names no archive for $target"
 fi
 case "$version" in
   *[!0-9A-Za-z.+-]* | "") fail "\`$version\` isn't a version, such as 0.3.0" ;;
@@ -142,8 +144,10 @@ esac
 name="ascribe-$version-$target"
 base="https://github.com/$repo/releases/download/v$version"
 say "Downloading ascribe $version for $target"
-fetch "$base/SHA256SUMS" "$work/SHA256SUMS" ||
-  fail "couldn't download $base/SHA256SUMS. Is $version a release? They're listed at https://github.com/$repo/releases"
+if [ ! -f "$work/SHA256SUMS" ]; then
+  fetch "$base/SHA256SUMS" "$work/SHA256SUMS" ||
+    fail "couldn't download $base/SHA256SUMS. Is $version a release? They're listed at https://github.com/$repo/releases"
+fi
 fetch "$base/$name.tar.gz" "$work/$name.tar.gz" || fail "couldn't download $base/$name.tar.gz"
 
 # SHA256SUMS names each file by its path in the release's folders, such as

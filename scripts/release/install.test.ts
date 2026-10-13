@@ -47,10 +47,6 @@ function install(machine: Machine, ...args: string[]) {
   const release = path.join(dir, "release");
   const tag = path.join(release, "v1.2.3");
   mkdirSync(tag, { recursive: true });
-  writeFileSync(
-    path.join(release, "latest"),
-    '{\n  "url": "x",\n  "tag_name": "v1.2.3",\n  "name": "Ascribe 1.2.3"\n}\n',
-  );
   if (target !== undefined) {
     const name = `ascribe-1.2.3-${target}`;
     const stage = path.join(dir, "stage", name);
@@ -82,7 +78,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$url" in
-  https://api.github.com/repos/ascribed-dev/ascribe/releases/latest) file=${JSON.stringify(release)}/latest ;;
+  https://github.com/ascribed-dev/ascribe/releases/latest/download/*) file=${JSON.stringify(tag)}/\${url##*/} ;;
   https://github.com/ascribed-dev/ascribe/releases/download/*) file=${JSON.stringify(release)}/\${url#https://github.com/ascribed-dev/ascribe/releases/download/} ;;
   *) exit 22 ;;
 esac

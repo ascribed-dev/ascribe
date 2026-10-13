@@ -54,7 +54,7 @@ The script is short enough to read before you run it: [install.sh](https://ascri
 On Windows, in PowerShell, download the latest release's archive and its `SHA256SUMS`, check the one against the other, and put `ascribe.exe` on your path:
 
 ```powershell
-$v = (Invoke-RestMethod https://api.github.com/repos/ascribed-dev/ascribe/releases/latest).tag_name.TrimStart("v"); $zip = "ascribe-$v-win32-x64.zip"; $base = "https://github.com/ascribed-dev/ascribe/releases/download/v$v"; Invoke-WebRequest "$base/$zip" -OutFile $zip; Invoke-WebRequest "$base/SHA256SUMS" -OutFile SHA256SUMS
+$base = "https://github.com/ascribed-dev/ascribe/releases"; Invoke-WebRequest "$base/latest/download/SHA256SUMS" -OutFile SHA256SUMS; $v = (Select-String -Path SHA256SUMS -Pattern "github/ascribe-(.+)-win32-x64\.zip").Matches[0].Groups[1].Value; $zip = "ascribe-$v-win32-x64.zip"; Invoke-WebRequest "$base/download/v$v/$zip" -OutFile $zip
 if (-not (Select-String -Path SHA256SUMS -SimpleMatch -Pattern "$((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower())  github/$zip")) { throw "$zip doesn't match SHA256SUMS" }
 Expand-Archive $zip "$env:LOCALAPPDATA\Programs" -Force; [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";$env:LOCALAPPDATA\Programs\ascribe-$v-win32-x64", "User")
 ```
