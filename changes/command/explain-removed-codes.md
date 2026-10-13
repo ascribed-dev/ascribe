@@ -1,0 +1,1 @@
+- **Behavior change: a diagnostic that's removed is gone.** `ascribe explain` no longer answers for `ASC039`, `ASC051`, `ASC071`, or `ASC072`, which were kept as retired, and the diagnostics reference has no "Retired" section. A code that's removed leaves a gap; no other code changes.

@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**A diagnostic that's removed is deleted, and nothing is kept for it.** Its entry in `tests/conformance/diagnostics.toml`, its constant, and its permalink go, and `ascribe explain` doesn't know its code. Codes still aren't renumbered, so a removed diagnostic leaves a gap, and the registry's test checks that codes go up, not that they go up by one. The four that were kept as retired (`ASC039`, `ASC051`, `ASC071`, `ASC072`) are deleted, with the `retired` key, the reference's "Retired" section, and the fragment that held it. `explain`'s JSON is unchanged in shape: `next` and `fix` stay nullable in the schema, and every diagnostic has both. _Why:_ a retired entry was a record for people who had met the old code, and Ascribe is before 1.0 with nobody who has. Renumbering instead of leaving gaps would change every later code, in every test and page that names one, for no reader's benefit. _From:_ the maintainer, 12 October 2026, asking for everything kept for earlier versions to be removed.
