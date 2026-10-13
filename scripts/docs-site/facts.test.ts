@@ -143,6 +143,7 @@ test("the glibc floor is release-build.yml's everywhere it's written", () => {
     expect(new Set(named), file).toEqual(new Set([floor]));
   }
   expect(read("RELEASING.md")).toContain(`--target <triple>.${floor}`);
+  expect(read("site/public/install.sh")).toContain(`glibc_floor="${floor}"`);
 });
 
 /** The files the docs take with `@snippet` or `@include` from `code:`, outside code blocks. */
