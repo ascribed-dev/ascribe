@@ -96,7 +96,7 @@ Ascribe's own docs show configuration files, test output, and source code throug
 | Every snippet is an example | Simple. Every project gets advice on every snippet the day it upgrades |
 | A page says which snippets are examples | `@snippet {tested=true}`. Exact, and the code's owners no longer decide what counts |
 
-**Decided:** nothing, unless the source has an `ascribe.examples.toml` and its `include` matches the file (README decision 29, decision [#458e](../decisions/458e-what-is-an-example.md)). A project that never adopts tested examples sees no change, and the code's owners, who write the config, decide what counts as an example. Treating every snippet as one would give every project advice on every snippet the day it upgrades, and marking them in the page would move that choice away from the code. _From:_ Kyle, on issue #458, 13 October 2026.
+**Decided:** nothing, unless the source has an `ascribe.examples.toml` whose `include` matches the file and whose `ignore` doesn't (README decision 29, decision [#458e](../decisions/458e-what-is-an-example.md)). A project that never adopts tested examples sees no change, and the code's owners, who write the config, decide what counts as an example. Treating every snippet as one would give every project advice on every snippet the day it upgrades, and marking them in the page would move that choice away from the code. _From:_ Kyle, on issue #458, 13 October 2026.
 
 ## Tasks
 

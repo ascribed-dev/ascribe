@@ -56,7 +56,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 26. **The tested line is an attribute holding the environment alone,** `tested="Node 24.9.0 and TypeScript 5.9.2 on Linux"`, in the code block's info string. "Tested with" comes from the stylesheet, as "Available:" does. A block with a tested line and no title still gets a caption; with both, the title comes first. The plain output writes the whole sentence on a line under the block.
 27. **The JSON output's `tested`** is on a block's `snippet`, only when the file is an example: a `status` of `current`, `stale`, or `unobserved`, and `observations`, the current ones, each with its name and its environment as the observation has it. No labels.
 28. **The diagnostics are `example-stale`, `example-unobserved`, and `observation-file-missing`:** advice, in a new area, `examples`, with the next step `outside` wherever the code is. The message says what to run: `ascribe observe` in the named folder, or the next `ascribe sources update`. The first two are at the `@snippet` line, the third at the observation.
-29. **A snippet of a file that isn't an example reports nothing.** A file is an example only when its source has an `ascribe.examples.toml` whose `include` matches it, so a project without a config sees no change.
+29. **A snippet of a file that isn't an example reports nothing.** A file is an example only when its source has an `ascribe.examples.toml` whose `include` matches it and whose `ignore` doesn't, so a project without a config sees no change.
 
 ## The thread
 
