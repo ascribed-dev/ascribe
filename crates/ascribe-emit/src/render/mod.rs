@@ -49,7 +49,10 @@ const MARKER: &str = names::ELEMENT_ATTRIBUTES;
 /// tables, strikethrough, bare links, and task lists as Astro's defaults have
 /// them, and the attribute markers applied.
 pub fn render_site_html(markdown: &str) -> String {
-    apply_anchors(&apply_markers(&markdown_to_html(markdown, &options())))
+    apply_captions(&apply_anchors(&apply_markers(&markdown_to_html(
+        markdown,
+        &options(),
+    ))))
 }
 
 /// Renders one line of inline markdown as HTML, with no paragraph around it:
@@ -68,6 +71,9 @@ fn options() -> Options<'static> {
     options.extension.strikethrough = true;
     options.extension.autolink = true;
     options.extension.tasklist = true;
+    // A code block's info string past its language, as `data-meta`, which
+    // `apply_captions` reads and removes.
+    options.render.full_info_string = true;
     options
 }
 
@@ -472,6 +478,118 @@ fn link_edits(html: &str, marker: &Found) -> Option<Vec<Edit>> {
             text: String::new(),
         },
     ])
+}
+
+/// Reads the info string comrak wrote on each code block as `data-meta`,
+/// and removes it. A block whose info string has `tested="…"` is put in a
+/// figure with a caption, as `@ascribed/astro`'s highlighting does
+/// (site-render contract §5.1): its title, when it has one, then the tested
+/// line. A source anchor on its `<pre>` moves to the figure, as it does in
+/// Astro, where highlighting runs first.
+fn apply_captions(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    while let Some(at) = rest.find("<pre") {
+        out.push_str(&rest[..at]);
+        rest = &rest[at..];
+        let block = code_block(rest);
+        let Some((pre, code, body_start, end)) = block else {
+            out.push_str("<pre");
+            rest = &rest[4..];
+            continue;
+        };
+        let meta = code
+            .iter()
+            .find(|(n, _)| n == "data-meta")
+            .map(|(_, v)| v.clone());
+        let Some(meta) = meta else {
+            out.push_str(&rest[..end]);
+            rest = &rest[end..];
+            continue;
+        };
+        let code: Vec<(String, String)> =
+            code.into_iter().filter(|(n, _)| n != "data-meta").collect();
+        let body = &rest[body_start..end];
+        let tested = meta_value(&meta, "tested");
+        match tested {
+            None => {
+                out.push_str(&format!("<pre{}>", write_attributes(&pre, &[])));
+                out.push_str(&format!("<code{}>", write_attributes(&code, &[])));
+                out.push_str(body);
+            }
+            Some(tested) => {
+                let title = meta_value(&meta, "title")
+                    .map(|t| encode(&t))
+                    .unwrap_or_default();
+                let mut figure = vec![("class".to_owned(), "code-title".to_owned())];
+                figure.extend(
+                    pre.iter()
+                        .filter(|(n, _)| n.starts_with("data-ascribe-"))
+                        .cloned(),
+                );
+                let pre: Vec<(String, String)> = pre
+                    .into_iter()
+                    .filter(|(n, _)| !n.starts_with("data-ascribe-"))
+                    .collect();
+                out.push_str(&format!(
+                    "<figure{}><figcaption>{title}<div class=\"{}\">{}</div></figcaption>",
+                    write_attributes(&figure, &[]),
+                    names::CLASS_CODE_TESTED,
+                    encode(&tested),
+                ));
+                out.push_str(&format!("<pre{}>", write_attributes(&pre, &[])));
+                out.push_str(&format!("<code{}>", write_attributes(&code, &[])));
+                out.push_str(body);
+                out.push_str("</figure>");
+            }
+        }
+        rest = &rest[end..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// A code block comrak wrote, at the start of `html`: its `<pre>`'s and
+/// `<code>`'s attributes, where its code starts, and where its
+/// `</code></pre>` ends. comrak escapes `<` in code, so the block ends at the
+/// first `</code></pre>`.
+#[allow(clippy::type_complexity)]
+fn code_block(html: &str) -> Option<(Vec<(String, String)>, Vec<(String, String)>, usize, usize)> {
+    let after_pre = html.strip_prefix("<pre")?;
+    let (pre, pre_len) = parse_open_tag(after_pre)?;
+    let code_at = 4 + pre_len;
+    let after_code = html[code_at..].strip_prefix("<code")?;
+    let (code, code_len) = parse_open_tag(after_code)?;
+    let body_start = code_at + 5 + code_len;
+    let close = "</code></pre>";
+    let end = body_start + html[body_start..].find(close)? + close.len();
+    Some((pre, code, body_start, end))
+}
+
+/// The value of `key="…"` in a code block's info string past its language,
+/// read as `@ascribed/astro` reads a title: from a space or the start, to
+/// the quote that's followed by a space or the end.
+fn meta_value(meta: &str, key: &str) -> Option<String> {
+    let open = format!("{key}=\"");
+    let mut from = 0;
+    while let Some(found) = meta[from..].find(&open) {
+        let at = from + found;
+        from = at + open.len();
+        if at > 0 && !meta[..at].ends_with(char::is_whitespace) {
+            continue;
+        }
+        let value = &meta[from..];
+        let end = value.char_indices().find(|&(i, c)| {
+            c == '"'
+                && value[i + 1..]
+                    .chars()
+                    .next()
+                    .is_none_or(char::is_whitespace)
+        })?;
+        let value = &value[..end.0];
+        return (!value.is_empty()).then(|| value.to_owned());
+    }
+    None
 }
 
 /// The attributes comrak wrote on a tag, as `(name, decoded value)`.

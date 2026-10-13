@@ -99,3 +99,8 @@ description = "Blocks from a fragment, and from a fragment it includes, carry th
 name = "availability-row"
 covers = ["availability-row"]
 description = "A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` that make its text the plain output's."
+
+[[fixture]]
+name = "code-tested"
+covers = ["code-tested"]
+description = "A code block whose info string has `tested=\"…\"` is put in a figure whose caption holds its title, when it has one, then the tested line, escaped as text, in a line of its own."

@@ -1786,6 +1786,21 @@ ascribe-group {
   display: block;
 }
 
+/* A tested code block (CONTRACT.md §9) ----------------------------------- */
+
+/* The caption line under a code block's title that says what its example was
+   tested with. The lead-in is generated content, so a site can restyle or
+   translate it. */
+.ascribe-code-tested {
+  font-family: var(--ascribe-font-family);
+  font-size: var(--ascribe-font-size-small);
+}
+
+.ascribe-code-tested::before {
+  content: "Tested with ";
+  color: var(--ascribe-muted-color);
+}
+
 /* <ascribe-for-agents> --------------------------------------------------- */
 
 /* The pointer to llms.txt: out of sight, but in the page for an agent (and a

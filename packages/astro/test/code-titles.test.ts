@@ -1,6 +1,6 @@
 import type { Root } from "hast";
 import { describe, expect, it } from "vitest";
-import { codeTitle, codeTitles } from "../src/code-titles.js";
+import { codeTested, codeTitle, codeTitles } from "../src/code-titles.js";
 
 /** Shiki's output for a code block: a root holding its <pre>. */
 function highlighted(): Root {
@@ -56,6 +56,35 @@ describe("codeTitles", () => {
         ],
       },
     ]);
+  });
+
+  it("captions a tested block with its tested line, after any title", () => {
+    const tested = {
+      type: "element",
+      tagName: "div",
+      properties: { className: ["ascribe-code-tested"] },
+      children: [{ type: "text", value: "Node 24.9.0 on Linux" }],
+    };
+    const alone = transform('tested="Node 24.9.0 on Linux"', highlighted());
+    expect(alone.children[0]).toMatchObject({
+      tagName: "figure",
+      children: [{ tagName: "figcaption", children: [tested] }, highlighted().children[0]],
+    });
+    const both = transform('title="a.ts" tested="Node 24.9.0 on Linux"', highlighted());
+    expect(both.children[0]).toMatchObject({
+      tagName: "figure",
+      children: [
+        { tagName: "figcaption", children: [{ type: "text", value: "a.ts" }, tested] },
+        highlighted().children[0],
+      ],
+    });
+  });
+
+  it("keeps a hostile tested line as text", () => {
+    const root = transform('tested="<script>alert(1)</script> on Linux"', highlighted());
+    expect(JSON.stringify(root)).toContain('"value":"<script>alert(1)</script> on Linux"');
+    expect(codeTested('title="a" tested="x"')).toBe("x");
+    expect(codeTested('untested="x"')).toBeUndefined();
   });
 
   it("leaves a block without a title as it is", () => {
