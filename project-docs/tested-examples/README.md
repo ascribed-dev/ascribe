@@ -16,7 +16,7 @@ A code example in an Ascribe site says what it was tested with, and Ascribe know
 - **The JSON output carries a snippet's address, path, and lines** on its block (`crates/ascribe-emit/src/json.rs`).
 - **The editor has nothing for a `@snippet` line** beyond its problems, and a snippet is read again when its page changes, not when its code does.
 - **Advice checks have a contract:** a name, an area, a kind of next step (`fix`, `choose`, `write`, `review`, or `outside`), and a project can raise one, turn it off, or acknowledge a problem.
-- **Ascribe starts three kinds of program:** `git`, with arguments it builds; Vale, as a program the project installs, with a fixed argument list (`crates/ascribe-check/src/tool.rs`); and the programs `ascribe report` runs. It never runs a line of shell. The proposal says it runs `git` and nothing else, which was true when it was written.
+- **Ascribe starts three kinds of program:** `git`, with arguments it builds; Vale, as a program the project installs, with a fixed argument list (`crates/ascribe-check/src/tool.rs`); and the programs `ascribe report` runs. It never runs a line of shell.
 - **Reading a repository runs nothing the repository supplies** (decision 76 in `project-docs/decisions.md`). The MCP server and the agents' hook never start a program a project names, and the language server asks first.
 - **Nothing puts `ascribe` on a machine's path without Node.** Each release publishes an archive for each platform with `SHA256SUMS`, and `@ascribed/cli` is the only install.
 - **`examples/docs-repository`** takes its examples from another repository, `ascribed-dev/sources-fixture-code`, which [outside.md](../outside.md) lists.
@@ -50,7 +50,13 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 23. **`ascribe` installs without Node** from a Homebrew tap and an install script, each wrapping what a release already published. Windows gets the archive and instructions.
 24. **It's for projects starting clean.** Compatibility with other tools' tags and layouts isn't a goal.
 
-[Phase 1](phase-1-decisions.md) settles five more, each a contract a phase ships: how a file is hashed so the two sides agree, what carries the tested line to a renderer, what the JSON output says, what the three diagnostics are called and what their next step is, and what a snippet of a file that isn't an example reports.
+[Phase 1](phase-1-decisions.md) settled five more, each a contract a phase ships, and records each in `project-docs/decisions/` as #458a to #458e:
+
+25. **A file is hashed as its bytes, with CRLF read as LF,** and the hash is named `sha256-lf:`, apart from the lock's `sha256:`. A file hashes the same on a Windows checkout and a Linux one, and a change only to line endings reads as unchanged.
+26. **The tested line is an attribute holding the environment alone,** `tested="Node 24.9.0 and TypeScript 5.9.2 on Linux"`, in the code block's info string. "Tested with" comes from the stylesheet, as "Available:" does. A block with a tested line and no title still gets a caption; with both, the title comes first. The plain output writes the whole sentence on a line under the block.
+27. **The JSON output's `tested`** is on a block's `snippet`, only when the file is an example: a `status` of `current`, `stale`, or `unobserved`, and `observations`, the current ones, each with its name and its environment as the observation has it. No labels.
+28. **The diagnostics are `example-stale`, `example-unobserved`, and `observation-file-missing`:** advice, in a new area, `examples`, with the next step `outside` wherever the code is. The message says what to run: `ascribe observe` in the named folder, or the next `ascribe sources update`. The first two are at the `@snippet` line, the third at the observation.
+29. **A snippet of a file that isn't an example reports nothing.** A file is an example only when its source has an `ascribe.examples.toml` whose `include` matches it, so a project without a config sees no change.
 
 ## The thread
 

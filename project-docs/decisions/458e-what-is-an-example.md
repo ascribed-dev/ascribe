@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**A snippet's file is an example only when its source has an `ascribe.examples.toml` whose `include` matches the file, and a snippet of any other file reports nothing about testing.** A source with no config shows no tested line and gets no advice. With a config, a matched file is tested, stale, or unobserved; a file it doesn't match is just a file a page shows. _Why:_ a project that never adopts tested examples, such as Ascribe's own docs showing configuration, test output, and source code through one source, sees no change the day it upgrades, and the code's owners, who write the config, decide what counts. Treating every snippet as an example would give every project advice on every snippet; marking examples in the page with `@snippet {tested=true}` would take that choice from the code's owners. _From:_ Kyle, on [issue #458](https://github.com/ascribed-dev/ascribe/issues/458), taking [phase 1](../tested-examples/phase-1-decisions.md)'s recommendation, 13 October 2026.
