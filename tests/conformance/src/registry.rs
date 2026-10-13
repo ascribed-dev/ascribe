@@ -98,11 +98,11 @@ pub struct Entry {
     pub severity: Severity,
     /// File or page.
     pub level: Level,
-    /// The kind of next step; every entry that isn't retired has one.
+    /// The kind of next step; every entry has one.
     #[serde(default)]
     pub next: Option<Next>,
     /// The named pieces of context an agent prompt about it carries, beyond
-    /// the message and the line. Every entry that isn't retired has the
+    /// the message and the line. Every entry has the
     /// list, which may be empty.
     #[serde(default)]
     pub evidence: Option<Vec<String>>,
@@ -116,7 +116,7 @@ pub struct Entry {
     /// The SPEC.md section the rule comes from.
     pub spec: String,
     /// The section of the directive or `ascribe.toml` reference about the
-    /// problem, as `directives.md#links`; every entry that isn't retired has
+    /// problem, as `directives.md#links`; every entry has
     /// one.
     #[serde(default)]
     pub reference: Option<String>,
@@ -145,9 +145,6 @@ pub struct Entry {
     /// `ascribe report` runs, since it needs the network or a built site.
     #[serde(default)]
     pub stage: Option<String>,
-    /// Why the diagnostic was retired, if it was.
-    #[serde(default)]
-    pub retired: Option<String>,
     /// How to fix the problem, for the diagnostics reference.
     #[serde(default)]
     pub fix: Option<String>,

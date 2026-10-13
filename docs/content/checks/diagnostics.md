@@ -44,5 +44,3 @@ A check about the content's quality, rather than whether the project is valid, c
 ## Index
 
 @include: ../_generated/diagnostics-index.md
-
-@include: ../_generated/diagnostics-retired.md

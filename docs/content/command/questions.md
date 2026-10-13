@@ -23,7 +23,7 @@ An example that needs something in `ascribe.toml` to go wrong shows that too: a 
 | `0` | It explained the diagnostic, or listed them |
 | `2` | No diagnostic has that code or name, and it names the closest; or a usage error |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `next` (the [kind of next step](../checks/diagnostics.md#what-to-do-next), or null for a retired diagnostic), `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `next` (the [kind of next step](../checks/diagnostics.md#what-to-do-next)), `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
 
 ## `ascribe model`
 @id {permalink=true}: cli-model

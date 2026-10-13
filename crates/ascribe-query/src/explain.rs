@@ -42,7 +42,7 @@ pub struct Explanation {
     /// `error`, `warning`, or `advice`.
     pub severity: &'static str,
     /// The kind of next step: `fix`, `choose`, `write`, `outside`, or
-    /// `review`. `null` for a diagnostic that's no longer reported.
+    /// `review`. Every diagnostic has one.
     pub next: Option<&'static str>,
     /// `file` for a problem found in each file on its own; `page` for one
     /// found in each page as a build resolves it.
@@ -52,8 +52,7 @@ pub struct Explanation {
     /// The other ways the message is worded, by the case they're for, in
     /// name order.
     pub variants: Vec<MessageVariant>,
-    /// How to fix it, in general. `null` for a diagnostic that's no longer
-    /// reported.
+    /// How to fix it, in general. Every diagnostic has one.
     pub fix: Option<String>,
     /// The address of its entry in the diagnostics reference: the docs'
     /// permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,

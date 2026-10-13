@@ -9,7 +9,6 @@ home/content/screenshots/   the pictures of review and the editor, light and dar
 demo/                       the page the landing page demonstrates, an Ascribe project of its own, which the landing page draws beside its source; it has no address
 netlify.toml                production's build on Netlify
 netlify/edge-functions/     content negotiation: a page asked for as Markdown answers with its .md, and the .md's headers
-public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
 public/cards/               a social card for each page outside the docs, generated (../design/README.md)
 src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
@@ -29,7 +28,7 @@ src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
 scripts/screenshot.ts       the review picture: a pull request on the docs in astro dev (see Screenshots)
-test/                       navigation, links and anchors, redirects, the projects, the demonstration, content negotiation, the sitemap and robots.txt, and the built site in Chromium
+test/                       navigation, links and anchors, the projects, the demonstration, content negotiation, the sitemap and robots.txt, and the built site in Chromium
 test/fixtures/crawled/      a small built site with a page that says noindex, for the sitemap's rules
 ```
 
@@ -76,12 +75,11 @@ npm test              # after a build
 - `test/changelog.test.ts`: the changelog's rules for links, anchors, and collapsed entries, on Markdown made in the test, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/crawlers.test.ts`: the sitemap lists every built page that doesn't say `noindex`, other than a permalink's forwarding page, the 404 page, and `unindexed` in `src/site.ts`, and nothing else; a page that says `noindex` is in neither the sitemap nor `llms.txt`; `robots.txt` names the sitemap; and the changelog has its canonical link. No docs page is marked `listing: unlisted`, so the rules are also run on `test/fixtures/crawled/`, which has such a page.
-- `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
 - `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the footer, on every kind of page, with its links to Credits, the changelog, the license, and the repository, and the changelog's link to a docs page, its entries opening one at a time and all at once, its area counts, Behavior changes only, and its contents, beside it and, at phone width, above it; Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's; and Credits, from the footer and the landing page, with comrak's release and no sideways scroll at phone width.
 
 ## Addresses
 
-A docs page's address is `/docs/` and its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. What links in from outside the docs, the binary's help and diagnostics, the editor's links, and the published READMEs, uses a [permalink](https://ascribed-dev.com/docs/writing/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
+A docs page's address is `/docs/` and its file's path under `docs/content/`, so moving a page moves its address, and nothing forwards from the old one. What links in from outside the docs, the binary's help and diagnostics, the editor's links, and the published READMEs, uses a [permalink](https://ascribed-dev.com/docs/writing/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
 
 ## Navigation
 

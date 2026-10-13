@@ -826,7 +826,7 @@ fn every_registered_rule_is_covered() {
     let mut registered = BTreeSet::new();
     for d in doc["diagnostic"].as_array().unwrap() {
         let slug = d["slug"].as_str().unwrap();
-        if slug.starts_with("model-") && d.get("retired").is_none() {
+        if slug.starts_with("model-") {
             registered.insert(slug.to_owned());
         }
     }
