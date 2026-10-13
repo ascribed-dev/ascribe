@@ -145,3 +145,59 @@ fn a_page_isnt_moved_through_a_folder_that_is_a_link() {
     assert_eq!(read(dir.path(), "docs/install.md"), INSTALL);
     assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 0);
 }
+
+#[test]
+fn each_target_is_renamed_from_the_folder_above_with_config() {
+    let above = tempfile::tempdir().unwrap();
+    let model = MODEL.replace(
+        "[phrases]",
+        "[dimensions.platform]\nvalues = [\"linux\", \"macos\"]\n\n[phrases]",
+    );
+    write(above.path(), "site/ascribe.toml", &model);
+    write(above.path(), "site/docs/keys.md", KEYS);
+    write(
+        above.path(),
+        "site/docs/install.md",
+        &format!("{INSTALL}\n@variant {{platform=linux}}:\nOn Linux.\n@end\n"),
+    );
+    let rename = |args: &[&str]| {
+        let args = [&["rename"], args, &["--config", "site"]].concat();
+        ascribe(above.path(), &args)
+    };
+    for (args, said) in [
+        (
+            &["phrase:cloud", "hosted"][..],
+            "changed site/ascribe.toml (1 place)\nchanged site/docs/install.md (1 place)\nchanged site/docs/keys.md (1 place)\n",
+        ),
+        (
+            &["value:linux", "gnu"][..],
+            "changed site/ascribe.toml (1 place)\nchanged site/docs/install.md (1 place)\n",
+        ),
+        // From the content root, and from the current directory.
+        (
+            &["keys.md#rotate-keys", "rotate"][..],
+            "changed site/docs/install.md (1 place)\nchanged site/docs/keys.md (1 place)\n",
+        ),
+        (
+            &["keys.md", "guides/keys.md"][..],
+            "changed site/docs/install.md (1 place)\nmoved site/docs/keys.md to site/docs/guides/keys.md\n",
+        ),
+        (
+            &["site/docs/guides/keys.md", "site/docs/keys.md"][..],
+            "changed site/docs/install.md (1 place)\nmoved site/docs/guides/keys.md to site/docs/keys.md\n",
+        ),
+    ] {
+        let output = rename(args);
+        assert_eq!(code_of(&output), 0, "{args:?}: {}", stderr(&output));
+        assert_eq!(stdout(&output), said, "{args:?}");
+    }
+    let check = ascribe(above.path(), &["check", "--config", "site"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+
+    let output = rename(&["nothing.md", "new.md"]);
+    assert_eq!(code_of(&output), 1);
+    assert_eq!(
+        stderr(&output),
+        "error: `nothing.md` doesn't exist: there's no page or fragment at `nothing.md` from the current directory, or at `site/docs/nothing.md` in the content root.\n"
+    );
+}

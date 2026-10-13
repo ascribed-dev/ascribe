@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use ascribe_check::Project;
+use ascribe_core::path::normalize;
 use ascribe_core::{Coded, RelPath};
 use ascribe_lsp::{RenameError, Renamed, Renaming};
 use clap::Args as ClapArgs;
@@ -91,7 +92,9 @@ fn rename(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         )),
     };
     let config = match answer::locate(global, near) {
-        Ok(config) => config,
+        // `--config docs` names it from the current directory; the project
+        // and the editor's rename work from where it is.
+        Ok(config) => std::path::absolute(&config).map_or(config, |c| normalize(&c)),
         Err(e) => return answer::fail(err, &e),
     };
     // Something of the project's that isn't there is an answer to act on,
@@ -107,7 +110,7 @@ fn rename(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         None => match answer::FromDisk.load(&config) {
             Ok(loaded) => match path_renaming(&loaded.project, &args.target, &args.new) {
                 Ok(Some(renaming)) => Ok(renaming),
-                Ok(None) => return missing(err, &given),
+                Ok(None) => return missing(err, &not_found(&loaded.project, &args.target)),
                 Err(e) => Err(e),
             },
             Err(e) => return answer::report_failure(err, &crate::context::Failure::Load(e)),
@@ -212,6 +215,26 @@ fn path_renaming(
                 })?;
             Ok(Some(Renaming::File { from: file, to }))
         }
+    }
+}
+
+/// What's said when a path target names no page or fragment: the path, and
+/// the places it was looked for. A path that leaves the content root isn't
+/// read from it, and from the content root itself the two are one.
+fn not_found(project: &Project, target: &str) -> String {
+    let path = target.split_once('#').map_or(target, |(path, _)| path);
+    let here = answer::path_from_here(Path::new(path));
+    let content = project.root().join(project.content_root().as_str());
+    let in_content = answer::content_path_readings(project, Path::new(path))[1]
+        .as_ref()
+        .filter(|rel| rel.is_inside())
+        .map(|rel| answer::path_from_here(&content.join(rel.as_str())))
+        .filter(|there| *there != here);
+    match in_content {
+        Some(there) => format!(
+            "`{target}` doesn't exist: there's no page or fragment at `{here}` from the current directory, or at `{there}` in the content root."
+        ),
+        None => format!("`{target}` doesn't exist: there's no page or fragment at `{here}`."),
     }
 }
 
