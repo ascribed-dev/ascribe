@@ -61,8 +61,6 @@ pnpm exec ascribe-astro init
 @available: ascribe 0.3.0
 It writes `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts`, and from then on they're yours to change; it never writes over a file, and if any of the four is there, it writes nothing. It builds the project first, to list its pages in the sidebar. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
 
-In a release without `init`, write the four files yourself, from the sections below.
-
 #### The collection
 
 @snippet {title=src/content.config.ts}: code:examples/astro-site/src/content.config.ts
@@ -102,8 +100,6 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 
 @available: ascribe 0.2.0
 `<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
-
-In a release without `Availability.astro`, copy [its markup]({repo}/blob/main/packages/astro/src/Availability.astro) into your layout in place of the component.
 
 #### The sidebar
 @available: ascribe 0.3.0

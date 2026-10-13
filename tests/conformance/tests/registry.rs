@@ -144,15 +144,23 @@ fn only_content_checks_have_a_stage() {
 }
 
 #[test]
-fn codes_are_sequential_and_slugs_unique() {
+fn codes_go_up_and_slugs_are_unique() {
     let reg = registry();
     let mut slugs = BTreeSet::new();
-    for (i, e) in reg.entries.iter().enumerate() {
-        assert_eq!(
-            e.code,
-            format!("ASC{:03}", i + 1),
-            "codes go up by one, in file order"
+    let mut last = 0u32;
+    for e in &reg.entries {
+        // A removed diagnostic leaves a gap; nothing is renumbered.
+        let number = e
+            .code
+            .strip_prefix("ASC")
+            .filter(|digits| digits.len() == 3)
+            .and_then(|digits| digits.parse::<u32>().ok());
+        assert!(
+            number.is_some_and(|n| n > last),
+            "{}: codes are `ASC` and three digits, going up in file order",
+            e.code
         );
+        last = number.unwrap_or(last);
         assert!(slugs.insert(&e.slug), "{} appears twice", e.slug);
         let kebab = e.slug.split('-').all(|w| {
             !w.is_empty()
@@ -161,8 +169,8 @@ fn codes_are_sequential_and_slugs_unique() {
         });
         assert!(kebab, "{} isn't kebab-case", e.slug);
         assert!(
-            e.row.is_some() || e.group.is_some() || e.area.is_some() || e.retired.is_some(),
-            "{}: every entry comes from a §8.2 row, a loader rule, or a content check's area, or is retired",
+            e.row.is_some() || e.group.is_some() || e.area.is_some(),
+            "{}: every entry comes from a §8.2 row, a loader rule, or a content check's area",
             e.slug
         );
         assert!(

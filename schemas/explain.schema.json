@@ -98,7 +98,7 @@
       "description": "A page that has the problem and the same page fixed; `null` when the\ndiagnostic has no example."
     },
     "fix": {
-      "description": "How to fix it, in general. `null` for a diagnostic that's no longer\nreported.",
+      "description": "How to fix it, in general. Every diagnostic has one.",
       "type": [
         "string",
         "null"
@@ -113,7 +113,7 @@
       "type": "string"
     },
     "next": {
-      "description": "The kind of next step: `fix`, `choose`, `write`, `outside`, or\n`review`. `null` for a diagnostic that's no longer reported.",
+      "description": "The kind of next step: `fix`, `choose`, `write`, `outside`, or\n`review`. Every diagnostic has one.",
       "type": [
         "string",
         "null"

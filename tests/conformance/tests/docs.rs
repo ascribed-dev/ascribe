@@ -39,8 +39,8 @@ fn evidence_names() -> Vec<&'static str> {
 /// diagnostic can have their names.
 const CHECK_TOOLS: &[&str] = &["vale", "links"];
 
-/// No check ships without its next step: every diagnostic that isn't retired
-/// has a kind of next step, a `fix` paragraph, an entry in the reference, a
+/// No check ships without its next step: every diagnostic has a
+/// kind of next step, a `fix` paragraph, an entry in the reference, a
 /// section of the directive or `ascribe.toml` reference to send its reader on
 /// to, and the list of what its prompt carries. A `review` diagnostic can be
 /// acknowledged and set in `[checks]`, so it's configurable. That every `fix`
@@ -58,15 +58,6 @@ fn every_diagnostic_has_its_next_step() {
     for e in &registry.entries {
         if CHECK_TOOLS.contains(&e.slug.as_str()) {
             wrong.push(format!("{}: `[checks.{}]` is for a tool", e.code, e.slug));
-        }
-        if e.retired.is_some() {
-            if e.next.is_some() || e.evidence.is_some() || e.configurable || e.reference.is_some() {
-                wrong.push(format!(
-                    "{}: a retired entry has no `next`, `evidence`, `configurable`, or `reference`",
-                    e.code
-                ));
-            }
-            continue;
         }
         match &e.reference {
             None => wrong.push(format!("{}: no `reference`", e.code)),
@@ -158,7 +149,7 @@ fn the_diagnostics_reference_is_current() {
 
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
-/// the index and the retired diagnostics.
+/// the index.
 const DIAGNOSTICS_PAGES: [(&str, &str); 4] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
@@ -416,15 +407,10 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics in two (directives, and links, pages, and
-/// sources), the content model's, the content checks, and the retired ones
-/// (empty when there are none). The index links to each entry on the page
+/// sources), the content model's, and the content checks. The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
-    let active: Vec<&Entry> = registry
-        .entries
-        .iter()
-        .filter(|e| e.retired.is_none())
-        .collect();
+    let active: Vec<&Entry> = registry.entries.iter().collect();
 
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
@@ -484,27 +470,6 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         .collect();
     assert!(unlisted.is_empty(), "areas not in AREAS: {unlisted:?}");
 
-    let mut retired = HEADER.to_owned();
-    let gone: Vec<&Entry> = registry
-        .entries
-        .iter()
-        .filter(|e| e.retired.is_some())
-        .collect();
-    if !gone.is_empty() {
-        retired.push_str(
-            "\n## Retired\n\nNo longer reported. Their codes and names aren't reused, and their permalinks still lead here.\n",
-        );
-        for entry in gone {
-            let _ = write!(
-                retired,
-                "\n### {code} `{}`\n@id {{permalink=true}}: {code}\n\n{}\n",
-                entry.slug,
-                entry.retired.as_deref().unwrap_or_default(),
-                code = entry.code,
-            );
-        }
-    }
-
     let all = index(active.iter().copied(), &page_of);
     vec![
         ("diagnostics-index.md".to_owned(), all),
@@ -512,7 +477,6 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         ("diagnostics-pages.md".to_owned(), source_pages),
         ("diagnostics-content-model.md".to_owned(), content_model),
         ("diagnostics-content-checks.md".to_owned(), content_checks),
-        ("diagnostics-retired.md".to_owned(), retired),
     ]
 }
 

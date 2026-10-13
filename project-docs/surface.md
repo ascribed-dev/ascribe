@@ -98,7 +98,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-193 in use, and 4 retired. By severity: 28 advice, 143 error, 22 warning. By level: 174 file, 19 page. By kind of next step: 43 choose, 13 fix, 3 outside, 11 review, 123 write.
+193 in all. By severity: 28 advice, 143 error, 22 warning. By level: 174 file, 19 page. By kind of next step: 43 choose, 13 fix, 3 outside, 11 review, 123 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -140,7 +140,6 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC036` | `link-target-missing` | error | choose | `{path}` doesn't exist |
 | `ASC037` | `link-id-missing` | error | choose | `{path}` has no heading with the id `{id}` |
 | `ASC038` | `link-to-fragment` | error | choose | `{path}` is a fragment, which isn't published on its own; link to a page that includes it |
-| `ASC039` | `link-id-in-fragment` | retired |  | `{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment |
 | `ASC040` | `link-id-removed` | error | write | build `{build}` removes the heading `{id}` from `{path}`, so this link would be broken in that build |
 | `ASC041` | `link-route` | warning | choose | this looks like the published route of `{page}`; link to the file instead: `{suggestion}` |
 | `ASC042` | `image-source-missing` | error | choose | the image `{path}` doesn't exist |
@@ -152,7 +151,6 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC048` | `frontmatter-missing-field` | error | write | the required field `{field}` is missing; the content type `{type}` needs it |
 | `ASC049` | `frontmatter-type-mismatch` | error | choose | `{field}` must be {expected}, but it's {found} |
 | `ASC050` | `frontmatter-reserved-in-fragment` | error | write | `{key}` is reserved for pages, and fragments can't use it |
-| `ASC051` | `content-type-unresolved` | retired |  | this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive |
 | `ASC052` | `list-ended-by-directive` | warning | write | this unindented `@{name}` ends the list above it; indent it to the list item's content to keep it in the item |
 | `ASC053` | `directive-indented-code` | warning | write | this `@{name}` is indented four or more spaces past its container's content, so it's part of an indented code block, not a directive |
 | `ASC054` | `steps-numbering-continued` | warning | write | this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list |
@@ -172,8 +170,6 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC068` | `model-path-absolute` | error | write | `{key}` must be a path relative to ascribe.toml, not an absolute path |
 | `ASC069` | `model-content-root-missing` | error | write | content root `{path}` doesn't exist |
 | `ASC070` | `model-output-overlaps-content` | error | write | output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source |
-| `ASC071` | `model-type-multiple-defaults` | retired |  | only one content type can be the default, but `{a}` and `{b}` both set default = true |
-| `ASC072` | `model-type-unreachable` | retired |  | content type `{type}` has no `files` and isn't the default, so no page can use it |
 | `ASC073` | `model-type-title` | error | write | content type `{type}` must declare title = "string": it's the page title, used for empty link text |
 | `ASC074` | `model-field-reserved` | error | write | `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` |
 | `ASC075` | `model-type-syntax` | error | write | "{type}" isn't a valid {kind} type: {detail} |

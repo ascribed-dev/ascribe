@@ -231,7 +231,6 @@ interface Diagnostic {
   severity: string;
   level: string;
   next?: string;
-  retired?: unknown;
   message?: string;
 }
 
@@ -240,7 +239,7 @@ function diagnostics(): Section {
     diagnostic: Diagnostic[];
   };
   const entries = registry.diagnostic;
-  const live = entries.filter((entry) => entry.retired === undefined);
+  const live = entries;
   const count = (key: "severity" | "level" | "next"): string =>
     Array.from(
       live.reduce(
@@ -257,13 +256,13 @@ function diagnostics(): Section {
     for: "people and agents",
     from: ["tests/conformance/diagnostics.toml"],
     body: [
-      `${live.length} in use, and ${entries.length - live.length} retired. By severity: ${count("severity")}. By level: ${count("level")}. By kind of next step: ${count("next")}.`,
+      `${live.length} in all. By severity: ${count("severity")}. By level: ${count("level")}. By kind of next step: ${count("next")}.`,
       table(
         ["Code", "Name", "Severity", "Next step", "Message"],
         entries.map((entry) => [
           code(entry.code),
           code(entry.slug),
-          entry.retired === undefined ? entry.severity : "retired",
+          entry.severity,
           entry.next ?? "",
           entry.message ?? "",
         ]),

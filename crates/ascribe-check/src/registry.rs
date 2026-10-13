@@ -85,11 +85,11 @@ pub struct Entry {
     /// Alternative templates, by variant name.
     pub messages: HashMap<String, String>,
     /// How to fix the problem, in general: the entry's `fix` paragraph,
-    /// which every entry that isn't retired has.
+    /// which every entry has.
     pub fix: Option<String>,
     /// A short wrong-and-right example: the registry's `example`.
     pub example: Option<Example>,
-    /// The kind of next step, which every entry that isn't retired has.
+    /// The kind of next step, which every entry has.
     pub next: Option<Next>,
     /// The named pieces of context an agent prompt about it carries, beyond
     /// the message and the line, such as `allowed-values`.
@@ -103,8 +103,6 @@ pub struct Entry {
     /// needs the network or a built site: never `ascribe check` or the
     /// editor.
     pub report_only: bool,
-    /// Whether it's retired: no longer reported.
-    pub retired: bool,
 }
 
 /// A diagnostic's example: a page that has the problem, and the same page
@@ -238,7 +236,6 @@ impl Registry {
                 .unwrap_or(false),
             place: text("place").and_then(|p| Place::from_name(&p)),
             report_only: text("stage").as_deref() == Some("report"),
-            retired: t.contains_key("retired"),
         })
     }
 

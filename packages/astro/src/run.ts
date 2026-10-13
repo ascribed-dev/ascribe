@@ -12,10 +12,9 @@ export interface BuildResult {
 
 /**
  * A check's summary line, the report's last: `checked 14 files for build \`site\`, reported on 14:
- * 0 errors, 0 warnings, 0 advice`. An older binary wrote `checked 14 files: 0 errors,
- * 0 warnings`, with `, 3 advice` after only when there was advice.
+ * 0 errors, 0 warnings, 0 advice`.
  */
-const SUMMARY = /^checked [^:\n]*: (\d+) errors?, (\d+) warnings?(?:, \d+ advice)?$/;
+const SUMMARY = /^checked [^:\n]*: (\d+) errors?, (\d+) warnings?, \d+ advice$/;
 
 /**
  * Whether a build's report is worth a warning: anything but a report whose

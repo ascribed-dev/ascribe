@@ -128,9 +128,6 @@ pub const LINK_ID_MISSING: DiagnosticSlug = DiagnosticSlug("link-id-missing");
 /// `ASC038`, error, file level: SPEC §8.2, "Links | Target is a fragment".
 pub const LINK_TO_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-to-fragment");
 
-/// `ASC039`, retired: a link can name a heading from a fragment the target page includes (SPEC §4.2).
-pub const LINK_ID_IN_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-id-in-fragment");
-
 /// `ASC040`, error, page level: SPEC §8.2, "Links | Target id is removed by a build (page level, per build)".
 pub const LINK_ID_REMOVED: DiagnosticSlug = DiagnosticSlug("link-id-removed");
 
@@ -165,9 +162,6 @@ pub const FRONTMATTER_TYPE_MISMATCH: DiagnosticSlug = DiagnosticSlug("frontmatte
 /// `ASC050`, error, file level: SPEC §8.2, "Frontmatter | Reserved key (`available`, `variant`) on a fragment".
 pub const FRONTMATTER_RESERVED_IN_FRAGMENT: DiagnosticSlug =
     DiagnosticSlug("frontmatter-reserved-in-fragment");
-
-/// `ASC051`, retired: a page names its content type in its frontmatter (SPEC §7.2).
-pub const CONTENT_TYPE_UNRESOLVED: DiagnosticSlug = DiagnosticSlug("content-type-unresolved");
 
 /// `ASC052`, warning, file level: SPEC §8.2, "Lists | Unindented directive line ends a list".
 pub const LIST_ENDED_BY_DIRECTIVE: DiagnosticSlug = DiagnosticSlug("list-ended-by-directive");
@@ -226,13 +220,6 @@ pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-con
 /// `ASC070`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
     DiagnosticSlug("model-output-overlaps-content");
-
-/// `ASC071`, retired: a content type has no `default` (SPEC §7.2).
-pub const MODEL_TYPE_MULTIPLE_DEFAULTS: DiagnosticSlug =
-    DiagnosticSlug("model-type-multiple-defaults");
-
-/// `ASC072`, retired: a content type has no `files` (SPEC §7.2).
-pub const MODEL_TYPE_UNREACHABLE: DiagnosticSlug = DiagnosticSlug("model-type-unreachable");
 
 /// `ASC073`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_TITLE: DiagnosticSlug = DiagnosticSlug("model-type-title");
@@ -669,7 +656,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_TARGET_MISSING,
     LINK_ID_MISSING,
     LINK_TO_FRAGMENT,
-    LINK_ID_IN_FRAGMENT,
     LINK_ID_REMOVED,
     LINK_ROUTE,
     IMAGE_SOURCE_MISSING,
@@ -681,7 +667,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     FRONTMATTER_MISSING_FIELD,
     FRONTMATTER_TYPE_MISMATCH,
     FRONTMATTER_RESERVED_IN_FRAGMENT,
-    CONTENT_TYPE_UNRESOLVED,
     LIST_ENDED_BY_DIRECTIVE,
     DIRECTIVE_INDENTED_CODE,
     STEPS_NUMBERING_CONTINUED,
@@ -701,8 +686,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_PATH_ABSOLUTE,
     MODEL_CONTENT_ROOT_MISSING,
     MODEL_OUTPUT_OVERLAPS_CONTENT,
-    MODEL_TYPE_MULTIPLE_DEFAULTS,
-    MODEL_TYPE_UNREACHABLE,
     MODEL_TYPE_TITLE,
     MODEL_FIELD_RESERVED,
     MODEL_TYPE_SYNTAX,
