@@ -21,6 +21,8 @@ What's fetched is someone else's repository, so it's only ever read as text: `gi
 
 Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. It's what you run after writing a new `@snippet` from a source in another repository, or after cloning if the copies were left out. It never moves a pin; a source with no pin yet is pinned to the head of its branch.
 
+Beside the files snippets name, it copies the repository's [tested examples](tested.md#when-the-code-is-in-another-repository) config, `ascribe.examples.toml`, and every file in its `examples.observations/`, whatever the source's `include` says, and the lock lists them as it does every copy. They're read as text, and nothing in them is run. A source whose copies are all in order is left alone, without reaching its repository, so a pin made by an `ascribe` that didn't copy them gets them with the next `update`, or the next time a copy is fetched.
+
 @include: ../_generated/cli-sources-fetch-options.md
 
 It lists each copy it wrote or removed. The first time a source's files are copied, it says so: the copies are committed with the docs, so everyone who can read the docs repository can read them.
@@ -34,7 +36,9 @@ It lists each copy it wrote or removed. The first time a source's files are copi
 ### `ascribe sources update`
 @id {permalink=true}: cli-sources-update
 
-Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, and the pages whose examples changed, grouped as [`ascribe drift`](../review/diff.md#cli-drift) groups them. With nothing to move, it changes no file and says so.
+Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the [tested examples](tested.md#when-the-code-is-in-another-repository) whose status changed, and the pages whose examples changed, grouped as [`ascribe drift`](../review/diff.md#cli-drift) groups them. With nothing to move, it changes no file and says so.
+
+A tested example snippets use is listed when the new pin changed its status: it went stale (the file changed, and its observation didn't follow), no observation lists it any more, or it's tested as it is now. Each is read from the copies, before and after.
 
 @include: ../_generated/cli-sources-update-options.md
 
@@ -42,7 +46,7 @@ Moves each source's pin to the head of its `branch` (or to `--to`), copies the f
 
 The pages are found as `ascribe drift` finds them, comparing the working tree, with the new copies, against `HEAD`, so run it in a clean checkout. A snippet whose region is gone at the new commit is listed among the examples that no longer resolve, and the update still completes: `ascribe check` then fails on it, which is the signal to fix the page. When the project isn't in a git repository, or has no commit yet, the pages aren't listed, and it says why: commit the docs once before the first update.
 
-`--format markdown` writes Markdown for a pull request's description: each source that moved, with its commits and copies, then the pages, each linked to its route on `[consumer] site`. For a repository on github.com, the old and new pins link to GitHub's comparison of them. Commit subjects are code spans, so a subject like `Fixes #12 @someone` in the code's repository can't close an issue or notify anyone from the docs' pull request. It writes nothing when nothing moved. `--format json` writes one document: `schema_version` (`1`), `ascribe_version`, `changed`, `sources`, `pages` (as in the [drift JSON](../review/diff.md#drift-json), or null), and `pages_unavailable` (why there are no pages, or null). Each source has `name`, `git`, `followed` (the branch, `HEAD`, or `--to`'s revision), `from` and `to` (the pins, `from` null for a first pin), `moved`, `back` (true when the new pin isn't after the old one: it moved back, or to another line of history, and no commits are counted), `commits` (`count` and `newest`, each with `commit` and `subject`, or null), `files` (each with `path` and `change`: `added`, `changed`, or `removed`), `failed` (each with `path` and `reason`), and `first_copy`.
+`--format markdown` writes Markdown for a pull request's description: each source that moved, with its commits, its copies, and its tested examples whose status changed, then the pages, each linked to its route on `[consumer] site`. For a repository on github.com, the old and new pins link to GitHub's comparison of them. Commit subjects are code spans, so a subject like `Fixes #12 @someone` in the code's repository can't close an issue or notify anyone from the docs' pull request. It writes nothing when nothing moved. `--format json` writes one document: `schema_version` (`1`), `ascribe_version`, `changed`, `sources`, `pages` (as in the [drift JSON](../review/diff.md#drift-json), or null), and `pages_unavailable` (why there are no pages, or null). Each source has `name`, `git`, `followed` (the branch, `HEAD`, or `--to`'s revision), `from` and `to` (the pins, `from` null for a first pin), `moved`, `back` (true when the new pin isn't after the old one: it moved back, or to another line of history, and no commits are counted), `commits` (`count` and `newest`, each with `commit` and `subject`, or null), `files` (each with `path` and `change`: `added`, `changed`, or `removed`), `examples` (each tested example whose status changed, with `path`, `status`, and `was`: `current`, `stale`, or `unobserved`, `was` null when it wasn't an example before), `failed` (each with `path` and `reason`), and `first_copy`.
 
 | Code | Meaning |
 |---|---|
@@ -52,7 +56,7 @@ The pages are found as `ascribe drift` finds them, comparing the working tree, w
 ### `ascribe sources status`
 @id {permalink=true}: cli-sources-status
 
-Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). It reads only the project's files: no `git`, no network.
+Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). A tested examples' config or observation is current when it's the file the lock pins, though no snippet uses it. It reads only the project's files: no `git`, no network.
 
 @include: ../_generated/cli-sources-status-options.md
 
@@ -67,7 +71,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-observe
 @available: next
 
-Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders, and doesn't read `ascribe.toml` or `--config`. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
+Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
 
 @include: ../_generated/cli-observe-options.md
 
@@ -88,7 +92,7 @@ When `test` exits 0, it hashes every example and writes the observation whole, t
 |---|---|
 | `0` | The test passed, and the observation is written |
 | `1` | The test failed. Nothing was written, and the old observation is as it was. |
-| `2` | It couldn't run: no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
+| `2` | It couldn't run: the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
 
 With `--format json`, what the commands print goes to standard error, and standard output has one document: `schema_version` (`1`), `ascribe_version`, `config`, `environment` (each with `key`, `command`, and `kept`, the line the observation records), `test` (`command`, `passed`, and `exit_code`, null when a signal stopped it), `observation` (the file it wrote, or null), `recorded` (the observation's `[environment]`, by name, `os` and `arch` among them), `files` (each example's hash, by path), and `tested` (what a page says it was tested with, or absent). When the test fails, the last four are empty. Its schema is in the [JSON report contract](../contracts/json-reports/sources.md#ascribe-observe).
 

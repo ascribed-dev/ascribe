@@ -669,9 +669,13 @@ pub const COPIES_FOLDER: &str = "sources";
 
 impl Source {
     /// Whether the file at `path`, relative to the source's folder, is
-    /// readable: `include` matches it (or is empty) and `ignore` doesn't.
+    /// readable: `include` matches it (or is empty), `ignore` doesn't, and
+    /// it isn't the source's tested examples' config or one of their
+    /// observations ([`crate::examples::is_examples_file`]), which no
+    /// snippet can address.
     pub fn reads(&self, path: &str) -> bool {
-        (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
+        !crate::examples::is_examples_file(path)
+            && (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
             && !self.ignore.iter().any(|p| p.matches(path))
     }
 

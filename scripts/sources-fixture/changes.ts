@@ -1,20 +1,56 @@
 // The sources fixture's code repository, and the changes that can be made to
 // it: an example changed, a change no page shows, a region renamed, a file
-// moved, and everything put back. scripts/sources-fixture/setup.ts builds the
+// moved, an example changed without a test run, and everything put back. scripts/sources-fixture/setup.ts builds the
 // repository from CODE and copies this file into it, as `.github/change.ts`,
 // where a scheduled workflow runs it:
 //
-//   node change.ts <example|unrelated|rename|move|restore|next> [--dir <checkout>]
+//   node change.ts <example|unrelated|rename|move|untested|restore|next> [--dir <checkout>]
 //
 // It changes the checkout (the current directory by default) and commits, but
 // doesn't push. `next` makes the change after the last one, in CYCLE's order.
 // It needs only Node and `git`, so the code repository runs it as it is.
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
+
+/** The quickstart, the one file that's a tested example. */
+const QUICKSTART = `import { Client } from "lantern-sdk";
+
+const client = new Client({ host: "flags.example.com", token: process.env.LANTERN_TOKEN ?? "" });
+await client.connect();
+console.log(client.enabled("new-checkout"));
+`;
+
+/**
+ * An observation of the examples as `ascribe observe` writes it, for a test
+ * run that passed on Node 24.9.0 on Linux: the file is data here, so the
+ * fixture needs no Node of a given version to be built. Each example's hash
+ * is its bytes' SHA-256, with CRLF read as LF.
+ */
+function observation(files: Record<string, string>): string {
+  const lines = Object.entries(files)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([path, text]) => {
+      const hash = createHash("sha256").update(text.replace(/\r\n/g, "\n")).digest("hex");
+      return `"${path}" = "sha256-lf:${hash}"\n`;
+    });
+  return `# Written by \`ascribe observe\`. Don't edit it by hand.
+version = 1
+ascribe = "0.3.0"
+command = "node --test"
+
+[environment]
+os = "linux"
+arch = "x64"
+node = "v24.9.0"
+
+[files]
+${lines.join("")}`;
+}
 
 /** The code repository as it's built: a made-up client library for Lantern. */
 export const CODE: Record<string, string> = {
@@ -71,15 +107,27 @@ export async function withRetry<T>(call: () => Promise<T>, attempts = 3): Promis
   }
 }
 `,
-  "examples/quickstart.ts": `import { Client } from "lantern-sdk";
+  "examples/quickstart.ts": QUICKSTART,
+  // The examples are tested, and the docs say what with.
+  "ascribe.examples.toml": `include = ["examples/**"]
+test = "node --test"
 
-const client = new Client({ host: "flags.example.com", token: process.env.LANTERN_TOKEN ?? "" });
-await client.connect();
-console.log(client.enabled("new-checkout"));
+[environment]
+node = { label = "Node", command = "node --version" }
 `,
+  "test/quickstart.test.mjs": `import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+
+test("the quickstart connects before it reads a flag", () => {
+  const text = readFileSync(new URL("../examples/quickstart.ts", import.meta.url), "utf8");
+  assert.ok(text.indexOf("connect()") < text.indexOf("enabled("));
+});
+`,
+  "examples.observations/default.toml": observation({ "examples/quickstart.ts": QUICKSTART }),
 };
 
-export type Change = "example" | "unrelated" | "rename" | "move" | "restore";
+export type Change = "example" | "unrelated" | "rename" | "move" | "untested" | "restore";
 
 /** What each change is, as its commit's subject says. */
 export const SUBJECTS: Record<Change, string> = {
@@ -87,6 +135,7 @@ export const SUBJECTS: Record<Change, string> = {
   unrelated: "Change the retry count",
   rename: "Rename the connect region",
   move: "Move the quickstart",
+  untested: "Change the quickstart without testing it",
   restore: "Put the code back as it was built",
 };
 
@@ -97,6 +146,9 @@ export const CYCLE: Change[] = ["example", "unrelated", "rename", "restore", "mo
 export const PREFIX = "Scripted change: ";
 
 const MOVED = "examples/start/quickstart.ts";
+
+/** The files and folders at the top of CODE: what the changes touch. */
+const TOP = [...new Set(Object.keys(CODE).map((path) => path.split("/")[0] ?? path))];
 
 /** Makes a change in the checkout at `dir` and commits it; returns the change. */
 export function makeChange(dir: string, change: Change | "next"): Change {
@@ -131,13 +183,16 @@ export function makeChange(dir: string, change: Change | "next"): Change {
       rmSync(file(from));
       break;
     }
+    case "untested":
+      // The observation doesn't follow: the example goes stale.
+      toggle("examples/quickstart.ts", '"new-checkout"', '"dark-mode"');
+      break;
     case "restore":
-      rmSync(file("src"), { recursive: true, force: true });
-      rmSync(file("examples"), { recursive: true, force: true });
+      for (const top of TOP) rmSync(file(top), { recursive: true, force: true });
       for (const [path, text] of Object.entries(CODE)) write(path, text);
       break;
   }
-  git(dir, "add", "-A", "src", "examples");
+  git(dir, "add", "-A", ...TOP);
   git(dir, "commit", "-q", "--allow-empty", "-m", `${PREFIX}${SUBJECTS[made]}`);
   return made;
 }

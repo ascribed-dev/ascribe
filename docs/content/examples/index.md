@@ -81,6 +81,7 @@ Ascribe doesn't read the other repository whenever it checks. It copies the file
 
 Everything else reads the copies: `ascribe check`, `ascribe build`, the editor, and `ascribe diff` and `ascribe drift`, which read the copies at the base from the docs repository's own history. None of them run `git` against the code's repository or use the network, and `ascribe check` fails on a copy edited by hand, since the change belongs in the code. `ascribe sources status` shows each pin and copy.
 
+- **Tested examples.** When the code's repository has an [`ascribe.examples.toml`](tested.md#when-the-code-is-in-another-repository), `fetch` and `update` copy it and its observations too, whatever `include` says, and the pages say what each example was tested with. They're read as text: nothing in them is run here.
 - **What's published.** The copies are committed with the docs, so everyone who can read the docs repository can read them. When the code is private and the docs are public, that's a decision to make knowingly; `fetch` and `update` say so the first time they copy a source's files.
 - **Access.** `ascribe sources fetch` and `update` run `git`, with whatever credentials let `git fetch` work in that shell. A CI job that only checks or builds needs no access to the code's repository, and neither does the host that builds your site. A job that runs `update` needs read access, for a private repository a token from a GitHub App or a read-only deploy key, given to `git` as any other job would, for example:
 
@@ -98,7 +99,7 @@ Nothing moves a pin unless something runs `ascribe sources update`. This GitHub 
 
 Until a release has `ascribe sources`, install `@ascribed/cli@next` in it instead.
 
-The pull request's title names each source and its new pin. Its description is what `ascribe sources update --format markdown` writes: the commits that came in, linked to the comparison on GitHub, the copies that changed, and the pages to reread, as `ascribe drift` groups them. When an example no longer resolves, because its region was renamed or its file moved, the description says so, with `ascribe check`'s errors, and the pull request fails your docs' checks like any other.
+The pull request's title names each source and its new pin. Its description is what `ascribe sources update --format markdown` writes: the commits that came in, linked to the comparison on GitHub, the copies that changed, the [tested examples](tested.md#when-the-code-is-in-another-repository) that went stale or were tested again, and the pages to reread, as `ascribe drift` groups them. When an example no longer resolves, because its region was renamed or its file moved, the description says so, with `ascribe check`'s errors, and the pull request fails your docs' checks like any other.
 
 Because the copies are in its diff, the pull request is reviewed like any change to the docs: your checks, the [review report](../review/index.md), and your site's preview all show the pages with the new code.
 

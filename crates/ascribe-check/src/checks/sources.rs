@@ -5,7 +5,9 @@
 use std::collections::BTreeSet;
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::examples::{DEFAULT_OBSERVATION, EXAMPLES_FILE, observation_path};
+use ascribe_model::examples::{
+    DEFAULT_OBSERVATION, EXAMPLES_FILE, is_examples_file, observation_path,
+};
 use ascribe_model::{Lock, LockedSource, file_hash};
 
 use crate::project::LOCK_FILE_ID;
@@ -91,7 +93,9 @@ pub(crate) fn check_sources(project: &Project) -> Vec<Diagnostic> {
                 };
                 match fs.read_file(&copy) {
                     Ok(bytes) if file_hash(&bytes) == file.hash => {
-                        if !read.contains(&copy) {
+                        // The config and the observations are read by the
+                        // examples' checks, not by a snippet.
+                        if !read.contains(&copy) && !is_examples_file(path) {
                             issues.push(
                                 Issue::new(diagnostics::SOURCE_COPY_UNUSED, at_lock(file.span))
                                     .with_arg("path", shown(path)),
@@ -123,17 +127,17 @@ pub(crate) fn check_sources(project: &Project) -> Vec<Diagnostic> {
 }
 
 /// The problems of each source folder's `ascribe.examples.toml` and its
-/// observation, for a source in the same repository: reported at the source
-/// in ascribe.toml, since a config that can't be read means none of the
-/// source's examples can be checked. An observation is read only beside a
-/// config.
+/// observation: reported at the source in ascribe.toml, since a config that
+/// can't be read means none of the source's examples can be checked. An
+/// observation is read only beside a config. For a source in another
+/// repository, they're the copies in its folder.
 pub(crate) fn check_examples(project: &Project) -> Vec<Diagnostic> {
     let model = project.model();
     if model.checks.is_off(diagnostics::EXAMPLES_CONFIG_INVALID) {
         return Vec::new();
     }
     let mut out = Vec::new();
-    for source in model.sources.iter().filter(|s| s.git.is_none()) {
+    for source in &model.sources {
         let Ok(folder) = RelPath::parse(&source.path) else {
             continue;
         };

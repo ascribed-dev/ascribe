@@ -49,6 +49,27 @@ pub fn observation_path(name: &str) -> String {
     format!("{OBSERVATIONS_FOLDER}/{name}.toml")
 }
 
+/// Whether the file at `path`, relative to a source's folder, is the
+/// source's config or one of its observations: the files that travel with a
+/// source whatever its `include` says, and that no snippet can address.
+pub fn is_examples_file(path: &str) -> bool {
+    path == EXAMPLES_FILE
+        || path
+            .strip_prefix(OBSERVATIONS_FOLDER)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// Where an example stands against an observation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Status {
+    /// The observation lists the file with the hash it has now.
+    Current,
+    /// The observation lists the file with another hash.
+    Stale,
+    /// No observation lists the file.
+    Unobserved,
+}
+
 /// A problem in a config or an observation, at the value it's about.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Problem {
@@ -334,6 +355,16 @@ impl Observation {
         match observation {
             Some(observation) if problems.is_empty() => Ok(observation),
             _ => Err(problems),
+        }
+    }
+
+    /// Where the example at `path` (from the config's folder), whose bytes
+    /// are `bytes`, stands against this observation.
+    pub fn status(&self, path: &str, bytes: &[u8]) -> Status {
+        match self.files.get(path) {
+            None => Status::Unobserved,
+            Some(hash) if *hash == example_hash(bytes) => Status::Current,
+            Some(_) => Status::Stale,
         }
     }
 
@@ -701,6 +732,30 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
         )
         .expect("valid");
         assert_eq!(unlabelled.environment[0].label, "go");
+    }
+
+    #[test]
+    fn the_files_that_travel_with_a_source() {
+        assert!(is_examples_file("ascribe.examples.toml"));
+        assert!(is_examples_file("examples.observations/default.toml"));
+        assert!(is_examples_file("examples.observations/x/y.toml"));
+        assert!(!is_examples_file("examples.observations"));
+        assert!(!is_examples_file("examples.observationsx/a.toml"));
+        assert!(!is_examples_file("code/ascribe.examples.toml"));
+        assert!(!is_examples_file("examples/a.ts"));
+    }
+
+    #[test]
+    fn an_examples_status() {
+        let observation = Observation {
+            ascribe: "0.3.0".to_owned(),
+            command: "npm test".to_owned(),
+            environment: Vec::new(),
+            files: BTreeMap::from([("a.ts".to_owned(), example_hash(b"a\n"))]),
+        };
+        assert_eq!(observation.status("a.ts", b"a\r\n"), Status::Current);
+        assert_eq!(observation.status("a.ts", b"b\n"), Status::Stale);
+        assert_eq!(observation.status("b.ts", b"a\n"), Status::Unobserved);
     }
 
     #[test]

@@ -89,6 +89,15 @@ impl Ctx<'_> {
         let issue = Issue::new(slug, self.location(primary))
             .with_arg("path", address.file())
             .with_arg("folder", found.folder.to_string());
+        // The test runs in the other repository, and its observation arrives
+        // with the next update.
+        let issue = if found.remote {
+            issue
+                .with_variant("other-repository")
+                .with_arg("source", address.source.clone())
+        } else {
+            issue
+        };
         self.report(issue);
     }
 
