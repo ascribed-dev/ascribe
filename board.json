@@ -1846,7 +1846,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/448"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Page templates: what the notes miss about troubleshooting headings and steps as headings"
     },
     {
@@ -1879,9 +1879,220 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/451"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A page declares its type in frontmatter, and a type no longer has files or a default"
+    },
+    {
+      "content": {
+        "body": "Renaming a page a glossary term links to leaves the term's `link` pointing at the old path. The project then has a model error, and every later `ascribe rename` refuses.\n\n## To reproduce\n\nIn a copy of `examples/monorepo`, whose glossary terms link to `reference/glossary.md`:\n\n```console\n$ cd docs\n$ ascribe rename reference/glossary.md reference/terms.md\nchanged content/index.md (1 place)\nmoved content/reference/glossary.md to content/reference/terms.md\n$ grep glossary.md ascribe.toml\nlink = \"/reference/glossary.md#feature-flag\"\nlink = \"/reference/glossary.md#rollout\"\nlink = \"/reference/glossary.md#segment\"\n$ ascribe check\n… model-glossary-link, three times\n$ ascribe rename getting-started.md renamed-page.md\nerror: ascribe.toml has errors; `ascribe check` lists them\n```\n\nReproduced on `main` at `46ec166b`, with a debug build.\n\n## What should happen\n\nThe rename changes each glossary term's `link` to the page's new path, keeping its `#id`, and reports `ascribe.toml` among the files it changed, as it does for a page. `ascribe.toml` is edited in place, keeping its comments and order, as `ascribe permalinks retire` edits it.\n\nThe command's help says it changes \"everything that uses it, as the editor's rename does\". Check whether the editor's rename has the same gap; if it does, fix both, since they're meant to be one behavior.\n\n## Also check\n\nAnything else in `ascribe.toml` that names a page or a folder by path and should follow a move: `[listing.folders]`, when a folder's last page leaves it or a folder is renamed, and any other key that holds a path into the content root. Say in the pull request which were checked and which follow.\n\n## How it was found\n\nMoving 32 of Ascribe's own docs pages for #452. Each glossary link had to be fixed by hand between renames.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 453,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe rename` doesn't update a glossary term's link to a page it moves",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/453"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUIKw",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe rename` doesn't update a glossary term's link to a page it moves"
+    },
+    {
+      "content": {
+        "body": "`ascribe rename` with `--config <dir>` fails when it's run from outside the project, though its help says a path is \"from the current directory, or from the content root\".\n\n## To reproduce\n\nIn a copy of `examples/monorepo`, from the folder above the project:\n\n```console\n$ ascribe rename reference/glossary.md reference/terms.md --config docs\nerror: The project has no pages to rename in.\n$ echo $?\n2\n$ cd docs && ascribe rename reference/glossary.md reference/terms.md\nchanged content/index.md (1 place)\nmoved content/reference/glossary.md to content/reference/terms.md\n```\n\nThe same from Ascribe's own repository root with `--config docs`. Reproduced on `main` at `46ec166b`, with a debug build.\n\n## What should happen\n\nWith `--config`, the command finds the project it names, reads TARGET and NEW from the current directory or from that project's content root, as its help says, and renames. Every other command that takes `--config` works from the repository's root (`ascribe check --config docs`, `ascribe build --config docs`), and CI and agents run them that way.\n\nThe message is also wrong for what happened: the project has pages. If a path can't be found, the error should name the path and the two places it was looked for.\n\n## Worth checking with it\n\nWhether the other targets (`phrase:<key>`, `value:<value>`, a heading's id) work from outside the project with `--config`, and a test for each from the folder above.\n\n## How it was found\n\nMoving Ascribe's own docs pages for #452, from the repository's root.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 454,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe rename --config <dir>` fails from outside the project",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/454"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUIMk",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe rename --config <dir>` fails from outside the project"
+    },
+    {
+      "content": {
+        "body": "One docs page has a Markdown link in its frontmatter `description`, where it's plain text and never a link.\n\n`docs/content/contracts/output-layout.md`:\n\n```yaml\ndescription: Where ascribe build writes each [build](../reference/content-model/output.md#16-buildsname)'s output, how it records what it wrote, and how it replaces a previous output.\n```\n\n`description` is a plain `string` with `role = \"description\"`, so the brackets and the path are part of the text: they're in the page's `<meta name=\"description\">`, in `llms.txt`, and in the page records. Because it isn't a link, `ascribe rename` doesn't update it when the target moves, and `ascribe check` doesn't report it when it dangles.\n\nIt's the only description in `docs/content/` with one.\n\n## What to do\n\n- Take the link out, leaving the word: \"Where ascribe build writes each build's output, …\".\n- Consider a check for it. A description that holds Markdown link syntax is almost certainly a mistake, and it reaches every reader that isn't a person. It would be advice, with a fix that keeps the link's text, beside `description-too-long` and `description-duplicate`. If it's added, it's a new diagnostic with a recorded decision; if not, say so on this issue and close it with the one-line fix.\n\n## How it was found\n\nMoving Ascribe's own docs pages for #452: the rename left this destination alone, and nothing reported it. #452 changed the path by hand, so after it merges the description holds the new path and is still text.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 455,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A docs page's description holds a Markdown link, which is plain text there",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/455"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUIMw",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A docs page's description holds a Markdown link, which is plain text there"
+    },
+    {
+      "content": {
+        "body": "The generator that writes the diagnostics reference rewrites link destinations inside code spans, so two examples in the published reference show a path nobody would write.\n\n## What happens\n\n`tests/conformance/tests/docs.rs` writes the diagnostics fragments in `docs/content/_generated/` from `tests/conformance/diagnostics.toml`. Its `rebase_links` makes the registry's relative links resolve from the fragment's folder, by putting a prefix before every destination that follows `](`:\n\n```rust\nwhile let Some(at) = rest.find(\"](\") {\n    …\n    if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains(\"://\")) {\n        out.push_str(\"../reference/\");\n    }\n```\n\nIt doesn't look at whether the `](` is inside a code span. Two `fix` texts have an example there:\n\n| Diagnostic | In the registry | In the generated page, on `main` |\n|---|---|---|\n| `image-alt-missing` | `` `![The settings page](settings.png)` `` | `` `![The settings page](../reference/settings.png)` `` |\n| `image-attribute-missing` | `` `![Alt](image.png){width=600}` `` | `` `![Alt](../reference/image.png){width=600}` `` |\n\nSo the reference tells a reader to write `../reference/settings.png` where the example means any image beside the page. `ascribe explain` and `check`'s JSON show the registry's text as written, so they're right, and the reference disagrees with them.\n\n#452 changes what the prefix is, since it moves the docs' pages, and leaves this as it is: the examples will read `../settings.png` after it.\n\n## What should happen\n\n`rebase_links` leaves a destination alone when it's inside a code span. `escape_braces`, a few lines below it in the same file, already tracks code spans by their backtick runs; the same tracking fits here.\n\n## To check with it\n\n- A test for a `fix` text with a link in a code span and a real link beside it: the first is unchanged and the second is rebased.\n- Re-bless the fragments (`ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`) and read the diff: only those two examples should change.\n- Whether the same function, or one like it, is used for the other generated fragments that carry registry text.\n\n## How it was found\n\nWhile moving the docs' pages for #452, re-blessing the fragments changed two examples that should have been untouched.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+        "number": 456,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The diagnostics reference's generator rewrites link destinations inside code spans",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/456"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUOeY",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The diagnostics reference's generator rewrites link destinations inside code spans"
+    },
+    {
+      "content": {
+        "body": "Phase 1 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-1-decisions.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-1-decisions.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** nothing.\n\n## Waiting on Kyle\n\nThe phase records five answers before anything ships. Each has a recommendation in the phase file:\n\n1. **How a file is hashed:** the bytes with CRLF read as LF, named `sha256-lf:`.\n2. **What carries the tested line:** the environment alone, `tested=\"Node 24.9.0 on Linux\"`, with \"Tested with\" from the stylesheet.\n3. **The JSON output:** `tested` on a block's `snippet`, with `status` (`current`, `stale`, `unobserved`) and the current observations' raw environments; no labels.\n4. **The diagnostics:** `example-stale`, `example-unobserved`, `observation-file-missing`, all advice in a new area `examples`, next step `outside`.\n5. **A snippet of a file that isn't an example:** reports nothing unless its source has `ascribe.examples.toml` and `include` matches the file.\n\nAnswer each on this issue (\"take the recommendation\" is an answer). Then it's Ready.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 458,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: record the five decisions the plan ships",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/458"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUut0",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: record the five decisions the plan ships"
+    },
+    {
+      "content": {
+        "body": "Phase 2 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-2-thread.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-2-thread.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** #458.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 459,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: `ascribe observe`, the tested line, and `example-stale`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/459"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUut8",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: `ascribe observe`, the tested line, and `example-stale`"
+    },
+    {
+      "content": {
+        "body": "Phase 3 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-3-remote.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-3-remote.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** #459.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 460,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: examples kept in another repository say what they were tested with",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/460"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUuuU",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: examples kept in another repository say what they were tested with"
+    },
+    {
+      "content": {
+        "body": "Phase 4 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-4-status.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-4-status.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** #459. Changes the JSON output's contract, by the decisions recorded in #458.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 461,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: several environments, a missing file, the JSON output, and the report",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/461"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUuvg",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: several environments, a missing file, the JSON output, and the report"
+    },
+    {
+      "content": {
+        "body": "Phase 5 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-5-editor.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-5-editor.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** #461.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 462,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: a `@snippet` line's file, status, and environment in the editor",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/462"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUuwY",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: a `@snippet` line's file, status, and environment in the editor"
+    },
+    {
+      "content": {
+        "body": "Phase 6 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-6-install.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-6-install.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** nothing in this plan.\n\n## Waiting on Kyle\n\nThe phase opens with three choices, each an address people will type or pipe into a shell (phase file, \"Decisions first\"):\n\n1. **Where the install script lives:** recommended, this repository, served at `https://ascribed-dev.com/install.sh`.\n2. **How the tap is updated:** recommended, the release workflow opens a pull request on `ascribed-dev/homebrew-tap`, and the maintainer merges it.\n3. **What the script does by default:** recommended, install to `~/.local/bin`, never `sudo`.\n\nIt also needs `ascribed-dev/homebrew-tap` to exist, which only the maintainer can create. Until both are settled this stays in Backlog.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 463,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: install `ascribe` without Node, from a Homebrew tap or a script",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/463"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUuww",
+      "labels": [
+        "enhancement",
+        "github_actions"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: install `ascribe` without Node, from a Homebrew tap or a script"
+    },
+    {
+      "content": {
+        "body": "Phase 7 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-7-repositories.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-7-repositories.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** #460, #461, and #463.\n\nThe maintainer creates the two repositories under the organization (Node with TypeScript, and Python); the pull request in this repository points the guide at them and records them in `outside.md`.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 464,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: example repositories to copy, for Node with TypeScript and for Python",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/464"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUuxA",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: example repositories to copy, for Node with TypeScript and for Python"
+    },
+    {
+      "content": {
+        "body": "Phase 8 of the [tested examples plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/README.md). The phase file is the spec: [phase-8-docs.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/tested-examples/phase-8-docs.md). Its **Acceptance criteria** are what done looks like, and its **Commits** list the commits of one pull request.\n\n**Needs:** #461.\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 465,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested examples: Ascribe's own docs say what their examples were tested with",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/465"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAUuyE",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested examples: Ascribe's own docs say what their examples were tested with"
     }
   ]
 }
