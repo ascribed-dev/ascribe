@@ -1,0 +1,10 @@
+# Which files are examples, relative to this folder.
+include = ["examples/**"]
+
+# The line of shell that tests them: Node's own test runner, running the
+# example and comparing what it prints with the output beside it.
+test = "node --test test/greet.test.mjs"
+
+# What to note about where the test ran.
+[environment]
+node = { label = "Node", command = "node --version" }

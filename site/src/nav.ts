@@ -42,7 +42,10 @@ export const nav: NavGroup[] = [
   { label: "Review", pages: ["review/index.md", "review/diff.md", "review/troubleshooting.md"] },
   { label: "The editor", pages: ["editor/index.md", "editor/settings.md"] },
   { label: "Agents", pages: ["agents/index.md", "agents/commands.md", "agents/measuring.md"] },
-  { label: "Examples and drift", pages: ["examples/index.md", "examples/sources.md"] },
+  {
+    label: "Examples and drift",
+    pages: ["examples/index.md", "examples/tested.md", "examples/sources.md"],
+  },
   {
     label: "Publishing with Astro",
     pages: ["astro/index.md", "astro/reference.md", "astro/elements.md"],
@@ -64,6 +67,7 @@ export const nav: NavGroup[] = [
       "contracts/site-render.md",
       "contracts/output-layout.md",
       "contracts/assets.md",
+      "contracts/tested-examples.md",
       "contracts/json-reports.md",
       "contracts/json-reports/diff.md",
       "contracts/json-reports/report.md",

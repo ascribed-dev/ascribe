@@ -27,6 +27,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
 | `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|builds\|sources]` | `text`, `json` |
+| `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`. |  | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
@@ -98,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-194 in all. By severity: 29 advice, 143 error, 22 warning. By level: 175 file, 19 page. By kind of next step: 43 choose, 13 fix, 3 outside, 11 review, 124 write.
+197 in all. By severity: 31 advice, 143 error, 23 warning. By level: 178 file, 19 page. By kind of next step: 43 choose, 13 fix, 6 outside, 11 review, 124 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -296,6 +297,9 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC196` | `content-type-missing` | error | choose | this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values} |
 | `ASC197` | `content-type-unknown` | error | choose | `{type}` isn't a content type; the types are: {values} |
 | `ASC198` | `description-link` | advice | write | a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it |
+| `ASC199` | `example-stale` | advice | outside | `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again |
+| `ASC200` | `example-unobserved` | advice | outside | `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` |
+| `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 
 ## The VS Code extension
 
@@ -554,7 +558,7 @@ The integration's options:
 | `binary` | `string` | No | The `ascribe` binary, relative to the Astro root. |
 | `anchors` | `boolean \| "dev"` | No | Mark each block of the site output with the source lines it came from (source anchors), for review: `"dev"` in `astro dev` only, `true` always. |
 | `review` | `boolean \| string` | No | Review in the site preview: an **Ascribe review** app in `astro dev`'s toolbar, which marks the page's changes and shows the pull request's comments, with source anchors in `astro dev`. |
-| `codeTitles` | `boolean` | No | Show a code block's title (`title="…"` in its info string, as `@snippet` writes it) above it, with a Shiki transformer that puts the block in a `<figure class="code-title">` with a `<figcaption>`. |
+| `codeTitles` | `boolean` | No | Show a code block's title (`title="…"` in its info string, as `@snippet` writes it), and what a tested example was tested with (`tested="…"`), above it, with a Shiki transformer that puts the block in a `<figure class="code-title">` with a `<figcaption>`. |
 | `sitemap` | `{ exclude?: string[] }` | No | The site's one sitemap, at `<base>sitemap.xml`, of every listed page of every project and every page of the site's own. |
 
 What a site imports:
@@ -681,6 +685,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |
 | `schemas/model.schema.json` | ModelReport | What `ascribe model --format json` answers: the content model's sections, or the one asked for. |
+| `schemas/observe.schema.json` | ObserveReport | What `ascribe observe --format json` writes: the commands it ran, how the test ended, and the observation it wrote. |
 | `schemas/outline.schema.json` | OutlineReport | What `ascribe outline <PAGE>` answers. |
 | `schemas/permalinks-list.schema.json` | PermalinksListReport | What `ascribe permalinks list` answers. |
 | `schemas/permalinks-retire.schema.json` | PermalinksRetireReport | What `ascribe permalinks retire` did. |
@@ -733,15 +738,17 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, and `ascribe permalinks` | reference |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
 | `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
 | `contracts/output-layout.md` | Output-layout contract | reference |
 | `contracts/permalinks-list.md` | The permalinks list | reference |
 | `contracts/site-render.md` | Site-render contract | reference |
+| `contracts/tested-examples.md` | Tested examples contract | reference |
 | `editor/index.md` | Editing | reference |
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
 | `examples/index.md` | Drift | how-to |
-| `examples/sources.md` | `ascribe init`, `sources`, `permalinks`, `templates`, and `vale` | reference |
+| `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
+| `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `index.md` | Ascribe documentation | index |
 | `permalinks/index.md` | Permalinks | how-to |

@@ -1,0 +1,13 @@
+# A project whose page shows a tested example: a TypeScript file and the
+# output it prints, from code/, a folder beside the docs. code/ says which of
+# its files are examples, and how to test them, in ascribe.examples.toml;
+# `ascribe observe`, run there, writes what the test passed and where to
+# code/examples.observations/default.toml, and the page's code block says
+# what the example was tested with. See docs/content/examples/tested.md.
+spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[sources.code]
+path = "code"
