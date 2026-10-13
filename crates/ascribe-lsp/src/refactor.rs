@@ -22,6 +22,7 @@ use lsp_types::{
     RenameParams, TextEdit, Uri, WorkspaceEdit,
 };
 
+use crate::model_file::{self, ModelFile};
 use crate::nav::{Ctx, Lines, directive_at, encode_destination, hit_at, identifier_primary};
 
 pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
@@ -176,14 +177,72 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
         }
     }
     let mut result = workspace_edit(ctx, edits);
-    if !phrase_edits.is_empty() {
+    let mut model_edits: Vec<TextEdit> = phrase_edits.into_values().collect();
+    model_edits.extend(model_path_edits(ctx, &mappings)?);
+    if !model_edits.is_empty() {
         let uri = crate::uri::path_to_uri(&ctx.config)?;
         result
             .changes
             .get_or_insert_with(HashMap::new)
-            .insert(uri, phrase_edits.into_values().collect());
+            .insert(uri, model_edits);
     }
     Some(result)
+}
+
+/// The edits to `ascribe.toml` that keep what it names by path following
+/// the files that move: a glossary term's `link`, and a retired permalink's
+/// `to`, each keeping its `#id`. `None` when they can't be made in place.
+fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<TextEdit>> {
+    // A file that isn't TOML loads no model, so names no path to follow.
+    let Ok(file) = ModelFile::parse(&ctx.model_text) else {
+        return Some(Vec::new());
+    };
+    let mut edits = Vec::new();
+    for (table, key) in [
+        (["glossary", "terms"], "link"),
+        (["permalinks", "retired"], "to"),
+    ] {
+        let Some(entries) = file.table_like(&model_file::path(&table)) else {
+            continue;
+        };
+        for (name, _) in entries.iter() {
+            let at = model_file::path(&[table[0], table[1], name, key]);
+            let Some(written) = file.get(&at).and_then(toml_edit::Item::as_str) else {
+                continue;
+            };
+            if let Some(moved) = moved_path(written, mappings) {
+                edits.push(
+                    file.replace_value(&at, toml_edit::Value::from(moved))
+                        .ok()?,
+                );
+            }
+        }
+    }
+    if edits.is_empty() {
+        return Some(Vec::new());
+    }
+    let (edits, _) = file.finish(edits).ok()?;
+    let index = LineIndex::new(&ctx.model_text);
+    Some(
+        edits
+            .into_iter()
+            .map(|edit| TextEdit {
+                range: ctx.encoding.range(&index, edit.span),
+                new_text: edit.new_text,
+            })
+            .collect(),
+    )
+}
+
+/// `written`, a path from the content root with an optional `/` before it
+/// and `#id` after it, as it's written once `mappings` move its file; `None`
+/// when its file doesn't move.
+fn moved_path(written: &str, mappings: &[(RelPath, RelPath)]) -> Option<String> {
+    let (path, rest) = written.split_at(written.find(['?', '#']).unwrap_or(written.len()));
+    let slash = if path.starts_with('/') { "/" } else { "" };
+    let old = RelPath::parse(path.trim_start_matches('/')).ok()?;
+    let new = remap(&old, mappings);
+    (new != old).then(|| format!("{slash}{new}{rest}"))
 }
 
 pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
