@@ -180,3 +180,41 @@ fn a_permalink_is_refused_since_links_from_outside_use_it() {
         "{error}"
     );
 }
+
+#[test]
+fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
+    // A glossary term's `link` and a retired permalink's `to`, each written
+    // with or without the `/`, keep their `#id`; one naming another page,
+    // and the file's comments, stay as they are.
+    let model = format!(
+        "{MODEL}\n[glossary.terms.key]\nterm = \"key\"\ndefinition = \"A secret.\"\nlink = \"/keys.md#create-key\" # the first\n\n\
+         [glossary.terms.install]\nterm = \"install\"\ndefinition = \"Setting it up.\"\nlink = \"install.md\"\n\n\
+         [glossary.terms.setup]\nterm = \"setup\"\ndefinition = \"Getting ready.\"\nlink = \"keys.md#set-up\"\n\n\
+         [permalinks.retired]\nold-keys = {{ to = \"keys.md\", reason = \"Merged\" }}\n"
+    );
+    let f = Fixture::new(
+        &model,
+        &[("docs/keys.md", KEYS), ("docs/install.md", INSTALL)],
+    );
+    let renamed = rename(
+        &f.path("ascribe.toml"),
+        &Renaming::File {
+            from: path("keys.md"),
+            to: path("reference/keys.md"),
+        },
+    )
+    .expect("renamed");
+    let toml = renamed
+        .files
+        .iter()
+        .find(|file| file.path == f.path("ascribe.toml"))
+        .expect("ascribe.toml changes");
+    assert_eq!(
+        toml.text,
+        model
+            .replace("\"/keys.md#", "\"/reference/keys.md#")
+            .replace("\"keys.md#", "\"reference/keys.md#")
+            .replace("\"keys.md\"", "\"reference/keys.md\"")
+    );
+    assert_eq!(toml.edits, 3);
+}
