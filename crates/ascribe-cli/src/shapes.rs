@@ -152,6 +152,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_query::ModelReport>(),
     },
     Shape {
+        file: "observe",
+        title: "ObserveReport",
+        written_by: "`ascribe observe --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::observe::ObserveReport>(),
+    },
+    Shape {
         file: "outline",
         title: "OutlineReport",
         written_by: "`ascribe outline --format json`",
