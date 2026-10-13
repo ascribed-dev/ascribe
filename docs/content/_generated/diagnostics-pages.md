@@ -104,7 +104,7 @@ Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.
 
 **Message:** this image has no alt text; describe it between the brackets for readers who can't see it
 
-**Fix:** Describe the image between the brackets: `![The settings page](../settings.png)`.
+**Fix:** Describe the image between the brackets: `![The settings page](settings.png)`.
 
 **Read more:** [Images](../writing/directives.md#images) in the directive reference.
 
@@ -117,7 +117,7 @@ Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md
 
 **Message:** this image is missing the required attribute `{key}`
 
-**Fix:** Add the attribute in the block after the image: `![Alt](../image.png){width=600}`.
+**Fix:** Add the attribute in the block after the image: `![Alt](image.png){width=600}`.
 
 **Read more:** [Images](../writing/directives.md#images) in the directive reference.
 
