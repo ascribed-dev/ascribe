@@ -283,7 +283,60 @@ fn model_shows_sources() {
     assert_eq!(source["include"][0], "src/**");
     assert_eq!(source["ignore"][0], "**/target/**");
     assert!(source["git"].is_null(), "{one}");
+    assert!(source.get("examples").is_none(), "{one}");
     assert!(one.get("types").is_none(), "{one}");
+}
+
+/// A source with an `ascribe.examples.toml` says how many of its files are
+/// examples, and each observation's environment and how many of its files
+/// are as it found them.
+#[test]
+fn model_shows_a_source_s_tested_examples() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\npath = \"code\"\nignore = [\"examples/hidden.ts\"]\n",
+    );
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    let code = dir.path().join("code");
+    write(
+        &code.join("ascribe.examples.toml"),
+        "include = [\"examples/**\"]\n\n[environment]\nnode = { label = \"Node\", command = \"node --version\" }\n",
+    );
+    write(&code.join("examples/a.ts"), "a();\n");
+    write(&code.join("examples/b.ts"), "b();\n");
+    write(&code.join("examples/hidden.ts"), "hidden();\n");
+    write(&code.join("helper.ts"), "helper();\n");
+    write(
+        &code.join("examples.observations/node-22.toml"),
+        &format!(
+            "version = 1\nascribe = \"0.4.0\"\ncommand = \"x\"\n\n[environment]\nos = \"linux\"\narch = \"x64\"\nnode = \"v22.4.0\"\n\n[files]\n\"examples/a.ts\" = \"{}\"\n\"examples/b.ts\" = \"{}\"\n",
+            ascribe_model::example_hash(b"a();\n"),
+            ascribe_model::example_hash(b"old\n"),
+        ),
+    );
+    let one = json(dir.path(), &["model", "--section", "sources"], 0);
+    assert_eq!(
+        one["sources"][0]["examples"],
+        serde_json::json!({
+            "valid": true,
+            "files": 2,
+            "observations": [{
+                "name": "node-22",
+                "environment": { "arch": "x64", "node": "v22.4.0", "os": "linux" },
+                "tested": "Node 22.4.0 on Linux",
+                "listed": 2,
+                "current": 1,
+            }],
+        })
+    );
+    let text = stdout(&run(dir.path(), &["model", "--section", "sources"], 0));
+    assert!(
+        text.contains(
+            "- `code:` (folder `code`; not `examples/hidden.ts`; 2 tested examples, observation `node-22`: Node 22.4.0 on Linux, 1 of 2 files as observed)\n"
+        ),
+        "{text}"
+    );
 }
 
 #[test]

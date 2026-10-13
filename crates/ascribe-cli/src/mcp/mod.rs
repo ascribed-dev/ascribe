@@ -20,6 +20,7 @@ use ascribe_mcp::{
     Handler, Prompt, PromptArgument, PromptText, Resource, ResourceTemplate, ResourceText,
     ServerInfo, Tool, ToolResult,
 };
+use ascribe_resolve::{DiskFs, Layout};
 use serde_json::{Map, Value};
 
 use crate::agents::{prompts, skill, sync};
@@ -136,7 +137,13 @@ impl Server {
             answer::locate(&self.global(), Some(Path::new(project))).map_err(|e| e.to_string())?;
         let file = Project::load_model_bounded(&config, self.cache.bound())
             .map_err(|e| answer::Stop::Load(crate::context::Failure::Load(e)).message())?;
-        Ok(ascribe_query::summary(&file.model, None, SUMMARY_BUDGET))
+        let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
+        Ok(ascribe_query::summary(
+            &file.model,
+            None,
+            SUMMARY_BUDGET,
+            Some(&fs),
+        ))
     }
 
     /// A project's rules: what `ascribe agents rules <project>` prints.

@@ -556,6 +556,43 @@
       ],
       "type": "object"
     },
+    "ExamplesCount": {
+      "description": "How many snippets of one source show a tested example, by status.",
+      "properties": {
+        "current": {
+          "description": "How many of those show an example an observation is current for.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "snippets": {
+          "description": "How many `@snippet` lines, in pages and fragments, show one of its\nexamples.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source": {
+          "description": "The source's name.",
+          "type": "string"
+        },
+        "stale": {
+          "description": "How many show one that changed after every observation listing it.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unobserved": {
+          "description": "How many show one no observation lists.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source",
+        "snippets",
+        "current",
+        "stale",
+        "unobserved"
+      ],
+      "type": "object"
+    },
     "FileCount": {
       "description": "How many diagnostics one file has.",
       "properties": {
@@ -634,6 +671,16 @@
             "$ref": "#/$defs/TypeCount"
           },
           "type": "array"
+        },
+        "examples": {
+          "description": "The tested examples the snippets show, for each source in the same\nrepository with an `ascribe.examples.toml`, in the content model's\norder. Absent when no source has one.",
+          "items": {
+            "$ref": "#/$defs/ExamplesCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         },
         "orphans": {
           "$ref": "#/$defs/Capped_Entry",

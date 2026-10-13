@@ -124,6 +124,33 @@
       ],
       "type": "object"
     },
+    "ModelExamples": {
+      "description": "A source's tested examples.",
+      "properties": {
+        "files": {
+          "description": "How many of the files the source makes readable its config makes\nexamples.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "observations": {
+          "description": "Its observations, in name order: those that can't be read left out.",
+          "items": {
+            "$ref": "#/$defs/ModelObservation"
+          },
+          "type": "array"
+        },
+        "valid": {
+          "description": "Whether its `ascribe.examples.toml` can be read. One that can't makes\nno file an example.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "valid",
+        "files",
+        "observations"
+      ],
+      "type": "object"
+    },
     "ModelFeature": {
       "description": "A feature.",
       "properties": {
@@ -194,6 +221,44 @@
       ],
       "type": "object"
     },
+    "ModelObservation": {
+      "description": "An observation of a source's examples.",
+      "properties": {
+        "current": {
+          "description": "How many of those are as it found them: the rest changed since, or\nare gone.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "environment": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Its environment as it has it, by name: `os`, `arch`, and each\nentry's kept line.",
+          "type": "object"
+        },
+        "listed": {
+          "description": "How many files it lists.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "name": {
+          "description": "Its name: `default`, or the name `ascribe observe --name` gave it.",
+          "type": "string"
+        },
+        "tested": {
+          "description": "What a page says it was tested with, by this observation alone.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "environment",
+        "tested",
+        "listed",
+        "current"
+      ],
+      "type": "object"
+    },
     "ModelPhrase": {
       "description": "A phrase.",
       "properties": {
@@ -236,6 +301,17 @@
     "ModelSource": {
       "description": "A source: a folder of files, such as code, that pages can show.",
       "properties": {
+        "examples": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelExamples"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its tested examples, for a source in the same repository with an\n`ascribe.examples.toml`: absent for any other."
+        },
         "git": {
           "anyOf": [
             {

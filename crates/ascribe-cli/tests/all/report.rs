@@ -646,3 +646,98 @@ fn pages_as_json_are_the_build_s_records() {
         .collect();
     assert_eq!(properties("ListingFromJson"), from);
 }
+
+/// A project whose page shows three examples of a folder beside the docs,
+/// with two observations: one current under either, one stale under both,
+/// and one neither lists.
+fn examples_project() -> TempDir {
+    let hash = ascribe_model::example_hash;
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\npath = \"code\"\n",
+    );
+    write(
+        dir.path(),
+        "code/ascribe.examples.toml",
+        "include = [\"examples/**\"]\n\n[environment]\nnode = { label = \"Node\", command = \"node --version\" }\n",
+    );
+    write(dir.path(), "code/examples/a.ts", "a();\n");
+    write(dir.path(), "code/examples/b.ts", "b();\n");
+    write(dir.path(), "code/examples/c.ts", "c();\n");
+    for (name, node) in [("default", "v24.9.0"), ("node-22", "v22.4.0")] {
+        write(
+            dir.path(),
+            &format!("code/examples.observations/{name}.toml"),
+            &format!(
+                "version = 1\nascribe = \"0.4.0\"\ncommand = \"node --test\"\n\n[environment]\nos = \"linux\"\narch = \"x64\"\nnode = \"{node}\"\n\n[files]\n\"examples/a.ts\" = \"{}\"\n\"examples/b.ts\" = \"{}\"\n",
+                hash(b"a();\n"),
+                hash(b"old\n"),
+            ),
+        );
+    }
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Examples\n---\n\n@snippet: code:examples/a.ts\n\n@snippet: code:examples/b.ts\n\n@snippet: code:examples/c.ts\n\n@snippet: code:examples/a.ts\n",
+    );
+    dir
+}
+
+#[test]
+fn the_inventory_counts_examples_as_the_pages_have_them() {
+    let dir = examples_project();
+    let out = ascribe(dir.path(), &["report", "--format", "json"]);
+    let report = json(&out);
+    assert_eq!(
+        report["inventory"]["examples"],
+        serde_json::json!([
+            { "source": "code", "snippets": 4, "current": 2, "stale": 1, "unobserved": 1 }
+        ])
+    );
+    let text = stdout(&ascribe(dir.path(), &["report"]));
+    assert!(
+        text.contains("Examples from code: 4 snippets, 2 current, 1 stale, 1 unobserved."),
+        "{text}"
+    );
+
+    // The JSON output's pages say the same of each snippet.
+    let out = ascribe(dir.path(), &["build", "--emit", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let page: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(dir.path().join(".ascribe/build/site/json/index.json"))
+            .expect("the page's JSON"),
+    )
+    .expect("JSON");
+    let tested: Vec<&serde_json::Value> = page["blocks"]
+        .as_array()
+        .expect("blocks")
+        .iter()
+        .filter_map(|b| b["snippet"].get("tested"))
+        .collect();
+    let statuses: Vec<&str> = tested
+        .iter()
+        .map(|t| t["status"].as_str().expect("a status"))
+        .collect();
+    assert_eq!(statuses, ["current", "stale", "unobserved", "current"]);
+    assert_eq!(
+        tested[0]["observations"],
+        serde_json::json!([
+            { "name": "default", "environment": { "os": "linux", "arch": "x64", "node": "v24.9.0" } },
+            { "name": "node-22", "environment": { "os": "linux", "arch": "x64", "node": "v22.4.0" } }
+        ])
+    );
+    assert_eq!(tested[1]["observations"], serde_json::json!([]));
+    let blocks = page["blocks"].as_array().expect("blocks");
+    let info = blocks
+        .iter()
+        .find(|b| b["snippet"]["tested"]["status"] == "current")
+        .map(|b| b["info"].as_str().expect("an info string"));
+    assert_eq!(info, Some("ts tested=\"Node 22.4.0 and 24.9.0 on Linux\""));
+
+    // A project without a config has no such key.
+    let plain = project(MODEL);
+    let report = json(&ascribe(plain.path(), &["report", "--format", "json"]));
+    assert!(report["inventory"].get("examples").is_none(), "{report}");
+}

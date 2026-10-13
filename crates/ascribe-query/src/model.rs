@@ -5,7 +5,14 @@
 //! budget.
 
 use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
-use ascribe_model::{AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, VariantMode};
+use std::collections::BTreeMap;
+
+use ascribe_core::RelPath;
+use ascribe_model::{
+    AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Source, VariantMode,
+    example_hash,
+};
+use ascribe_resolve::{FileSystem, FolderExamples, Probe};
 use serde::Serialize;
 
 use crate::ASCRIBE_VERSION;
@@ -293,6 +300,42 @@ pub struct ModelSource {
     pub ignore: Vec<String>,
     /// The repository it's in, for a source in another repository.
     pub git: Option<ModelRemote>,
+    /// Its tested examples, for a source in the same repository with an
+    /// `ascribe.examples.toml`: absent for any other.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub examples: Option<ModelExamples>,
+}
+
+/// A source's tested examples.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelExamples {
+    /// Whether its `ascribe.examples.toml` can be read. One that can't makes
+    /// no file an example.
+    pub valid: bool,
+    /// How many of the files the source makes readable its config makes
+    /// examples.
+    pub files: usize,
+    /// Its observations, in name order: those that can't be read left out.
+    pub observations: Vec<ModelObservation>,
+}
+
+/// An observation of a source's examples.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelObservation {
+    /// Its name: `default`, or the name `ascribe observe --name` gave it.
+    pub name: String,
+    /// Its environment as it has it, by name: `os`, `arch`, and each
+    /// entry's kept line.
+    pub environment: BTreeMap<String, String>,
+    /// What a page says it was tested with, by this observation alone.
+    pub tested: String,
+    /// How many files it lists.
+    pub listed: usize,
+    /// How many of those are as it found them: the rest changed since, or
+    /// are gone.
+    pub current: usize,
 }
 
 /// The repository a source is in.
@@ -305,8 +348,13 @@ pub struct ModelRemote {
     pub branch: Option<String>,
 }
 
-/// The content model's sections, or only `section`.
-pub fn model(model: &ContentModel, section: Option<Section>) -> ModelReport {
+/// The content model's sections, or only `section`. With `fs`, each source in
+/// the same repository says what its tested examples are.
+pub fn model(
+    model: &ContentModel,
+    section: Option<Section>,
+    fs: Option<&dyn FileSystem>,
+) -> ModelReport {
     let wants = |s: Section| section.is_none_or(|wanted| wanted == s).then_some(());
     ModelReport {
         schema_version: MODEL_SCHEMA_VERSION,
@@ -354,11 +402,11 @@ pub fn model(model: &ContentModel, section: Option<Section>) -> ModelReport {
         }),
         widgets: wants(Section::Widgets).map(|()| widgets(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
-        sources: wants(Section::Sources).map(|()| sources(model)),
+        sources: wants(Section::Sources).map(|()| sources(model, fs)),
     }
 }
 
-fn sources(model: &ContentModel) -> Vec<ModelSource> {
+fn sources(model: &ContentModel, fs: Option<&dyn FileSystem>) -> Vec<ModelSource> {
     let patterns = |list: &[ascribe_model::Pattern]| -> Vec<String> {
         list.iter().map(|p| p.as_str().to_owned()).collect()
     };
@@ -374,8 +422,59 @@ fn sources(model: &ContentModel) -> Vec<ModelSource> {
                 url: g.url.clone(),
                 branch: g.branch.clone(),
             }),
+            examples: fs.and_then(|fs| examples(s, fs)),
         })
         .collect()
+}
+
+/// A source's tested examples, read through `fs`: `None` for a source in
+/// another repository, or without an `ascribe.examples.toml`.
+fn examples(source: &Source, fs: &dyn FileSystem) -> Option<ModelExamples> {
+    if source.git.is_some() {
+        return None;
+    }
+    let folder = RelPath::parse(&source.path).ok()?;
+    let read = FolderExamples::read(fs, &folder);
+    let config = read.config.as_ref()?;
+    let Ok(config) = config else {
+        return Some(ModelExamples {
+            valid: false,
+            files: 0,
+            observations: Vec::new(),
+        });
+    };
+    let files = fs
+        .files_in(&folder)
+        .iter()
+        .filter_map(|p| p.relative_to(&folder))
+        .filter(|p| source.reads(p.as_str()) && config.is_example(p.as_str()))
+        .count();
+    let observations = read
+        .readable()
+        .map(|(name, observation)| ModelObservation {
+            name: name.to_owned(),
+            environment: observation.environment.iter().cloned().collect(),
+            tested: observation.tested_line(config),
+            listed: observation.files.len(),
+            current: observation
+                .files
+                .iter()
+                .filter(|(path, hash)| {
+                    folder
+                        .join(path)
+                        .ok()
+                        .filter(|p| fs.probe(p) == Probe::File)
+                        .and_then(|p| fs.read_file(&p).ok())
+                        .is_some_and(|bytes| example_hash(&bytes) == **hash)
+                })
+                .count(),
+        })
+        .collect();
+    Some(ModelExamples {
+        valid: true,
+        files,
+        observations,
+    })
 }
 
 fn types(model: &ContentModel) -> Vec<ModelType> {
@@ -511,8 +610,13 @@ fn builds(model: &ContentModel) -> Vec<ModelBuild> {
 /// the whole would be longer than `budget` characters, long lists are cut,
 /// each where it's cut naming the command that lists the rest. With a
 /// `section`, only that one, never cut.
-pub fn summary(model: &ContentModel, section: Option<Section>, budget: usize) -> String {
-    let report = self::model(model, section);
+pub fn summary(
+    model: &ContentModel,
+    section: Option<Section>,
+    budget: usize,
+    fs: Option<&dyn FileSystem>,
+) -> String {
+    let report = self::model(model, section, fs);
     let sections: Vec<(Section, Vec<String>)> = Section::ALL
         .into_iter()
         .filter(|s| section.is_none_or(|wanted| wanted == *s))
@@ -558,7 +662,7 @@ pub(crate) fn fit(all: &[usize], fits: impl Fn(&[usize]) -> bool) -> Vec<usize> 
 /// A line of Markdown for each entry of a section, as the summary lists
 /// them.
 pub(crate) fn entries(model: &ContentModel, section: Section) -> Vec<String> {
-    lines(&self::model(model, Some(section)), section)
+    lines(&self::model(model, Some(section), None), section)
 }
 
 /// A line of Markdown for each page type, as the summary lists them, saying
@@ -687,7 +791,57 @@ fn source_line(s: &ModelSource) -> String {
             None => notes.push(format!("from `{}`", git.url)),
         }
     }
+    if let Some(examples) = &s.examples {
+        notes.push(examples_note(examples));
+    }
     format!("`{}:` ({})", s.name, notes.join("; "))
+}
+
+/// What a source's tested examples are, for the summary: how many files,
+/// then each observation, what it says it was tested with, and how many of
+/// its files are as it found them.
+fn examples_note(examples: &ModelExamples) -> String {
+    if !examples.valid {
+        return "an `ascribe.examples.toml` that can't be read".to_owned();
+    }
+    let mut note = format!(
+        "{} tested {}",
+        examples.files,
+        if examples.files == 1 {
+            "example"
+        } else {
+            "examples"
+        }
+    );
+    if examples.observations.is_empty() {
+        note.push_str(", no observations");
+    }
+    for o in &examples.observations {
+        note.push_str(&format!(
+            ", observation `{}`: {}, {} of {} files as observed",
+            o.name,
+            markdown_text(&o.tested),
+            o.current,
+            o.listed
+        ));
+    }
+    note
+}
+
+/// Text from an observation, already made safe to show, with what Markdown
+/// would read as markup escaped.
+fn markdown_text(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        if matches!(
+            c,
+            '\\' | '`' | '*' | '_' | '[' | ']' | '<' | '>' | '&' | '#' | '|'
+        ) {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
 }
 
 fn type_line(t: &ModelType) -> String {
