@@ -82,7 +82,7 @@ impl Ctx<'_> {
             return;
         };
         let slug = match found.status {
-            ExampleStatus::Current(_) => return,
+            ExampleStatus::Current => return,
             ExampleStatus::Stale => diagnostics::EXAMPLE_STALE,
             ExampleStatus::Unobserved => diagnostics::EXAMPLE_UNOBSERVED,
         };

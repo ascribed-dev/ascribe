@@ -628,6 +628,9 @@ pub const EXAMPLE_UNOBSERVED: DiagnosticSlug = DiagnosticSlug("example-unobserve
 /// `ASC201`, warning, file level: a content check (area `examples`).
 pub const EXAMPLES_CONFIG_INVALID: DiagnosticSlug = DiagnosticSlug("examples-config-invalid");
 
+/// `ASC202`, advice, file level: a content check (area `examples`).
+pub const OBSERVATION_FILE_MISSING: DiagnosticSlug = DiagnosticSlug("observation-file-missing");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -827,6 +830,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLE_STALE,
     EXAMPLE_UNOBSERVED,
     EXAMPLES_CONFIG_INVALID,
+    OBSERVATION_FILE_MISSING,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -864,6 +868,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     EXAMPLE_STALE,
     EXAMPLE_UNOBSERVED,
     EXAMPLES_CONFIG_INVALID,
+    OBSERVATION_FILE_MISSING,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

@@ -75,7 +75,9 @@ test("every file that names the Node version names the one in package.json", () 
   for (const file of tracked(".nvmrc", "**/.nvmrc")) found.push([file, read(file).trim()]);
   for (const file of tracked("*.yml", "*.yaml").filter((file) => !file.startsWith("tests/"))) {
     const text = read(file);
-    for (const setting of all(text, /^\s*node-version:\s*(\S+)/gm)) {
+    // A step that sets up another Node on purpose says so on its line, with
+    // `# Not Ascribe's Node:` and why, and isn't counted.
+    for (const setting of all(text, /^\s*node-version:\s*(\S+)(?!.*# Not Ascribe's Node:)/gm)) {
       found.push([file, `node-version ${setting}`]);
     }
     for (const setting of all(text, /^\s*node-version-file:\s*(\S+)/gm)) {

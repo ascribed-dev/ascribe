@@ -199,3 +199,4 @@
 | [ASC199](../checks/diagnostics/content-checks.md#ASC199) | `example-stale` | Advice | File | outside |
 | [ASC200](../checks/diagnostics/content-checks.md#ASC200) | `example-unobserved` | Advice | File | outside |
 | [ASC201](../checks/diagnostics/content-checks.md#ASC201) | `examples-config-invalid` | Warning | File | outside |
+| [ASC202](../checks/diagnostics/content-checks.md#ASC202) | `observation-file-missing` | Advice | File | outside |

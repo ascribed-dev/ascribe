@@ -5,8 +5,11 @@
 use std::collections::BTreeSet;
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::examples::{DEFAULT_OBSERVATION, EXAMPLES_FILE, observation_path};
+use ascribe_model::examples::{
+    DEFAULT_OBSERVATION, EXAMPLES_FILE, Observation, Problem, observation_path,
+};
 use ascribe_model::{Lock, LockedSource, file_hash};
+use ascribe_resolve::{FolderExamples, Probe};
 
 use crate::project::LOCK_FILE_ID;
 use crate::{Diagnostic, Project};
@@ -123,40 +126,105 @@ pub(crate) fn check_sources(project: &Project) -> Vec<Diagnostic> {
 }
 
 /// The problems of each source folder's `ascribe.examples.toml` and its
-/// observation, for a source in the same repository: reported at the source
+/// observations, for a source in the same repository: reported at the source
 /// in ascribe.toml, since a config that can't be read means none of the
-/// source's examples can be checked. An observation is read only beside a
-/// config.
+/// source's examples can be checked. Observations are read only beside a
+/// config that can be. Then each file an observation lists that isn't in the
+/// folder is reported at its line in the observation.
 pub(crate) fn check_examples(project: &Project) -> Vec<Diagnostic> {
     let model = project.model();
-    if model.checks.is_off(diagnostics::EXAMPLES_CONFIG_INVALID) {
+    let invalid = !model.checks.is_off(diagnostics::EXAMPLES_CONFIG_INVALID);
+    let missing = !model.checks.is_off(diagnostics::OBSERVATION_FILE_MISSING);
+    if !invalid && !missing {
         return Vec::new();
     }
+    let (fs, code) = (project.file_system(), project.code_files());
     let mut out = Vec::new();
     for source in model.sources.iter().filter(|s| s.git.is_none()) {
         let Ok(folder) = RelPath::parse(&source.path) else {
             continue;
         };
-        let examples = project
-            .code_files()
-            .examples(project.file_system(), &folder);
-        let observation = observation_path(DEFAULT_OBSERVATION);
-        let (file, problems) = match (&examples.config, &examples.observation) {
-            (Some(Err(problems)), _) => (EXAMPLES_FILE, problems),
-            (Some(Ok(_)), Some(Err(problems))) => (observation.as_str(), problems),
-            _ => continue,
+        let examples = code.examples(fs, &folder);
+        let mut unreadable: Vec<(&str, &[Problem])> = Vec::new();
+        match &examples.config {
+            Some(Err(problems)) => unreadable.push((EXAMPLES_FILE, problems)),
+            Some(Ok(_)) => unreadable.extend(
+                examples
+                    .observations
+                    .iter()
+                    .filter_map(|o| Some((o.path.as_str(), o.read.as_ref().err()?.as_slice()))),
+            ),
+            None => continue,
+        }
+        if invalid {
+            for (file, problems) in unreadable {
+                let shown = folder
+                    .join(file)
+                    .map_or_else(|_| file.to_owned(), |p| p.to_string());
+                for problem in problems {
+                    let issue = Issue::new(
+                        diagnostics::EXAMPLES_CONFIG_INVALID,
+                        Location::new(FileId::new(0), source.span),
+                    )
+                    .with_arg("source", source.name.clone())
+                    .with_arg("file", shown.clone())
+                    .with_arg("detail", problem.detail.clone());
+                    out.push(Diagnostic::from_issue(&issue));
+                }
+            }
+        }
+        if missing && matches!(examples.config, Some(Ok(_))) {
+            out.extend(missing_files(project, &folder, &examples));
+        }
+    }
+    out
+}
+
+/// Each file an observation lists that isn't in the folder, at its line in
+/// the observation, which is read as a code file so a report can show it.
+fn missing_files(
+    project: &Project,
+    folder: &RelPath,
+    examples: &FolderExamples,
+) -> Vec<Diagnostic> {
+    let (fs, code) = (project.file_system(), project.code_files());
+    let mut out = Vec::new();
+    for (name, observation) in examples.readable() {
+        let gone: Vec<&String> = observation
+            .files
+            .keys()
+            .filter(|path| {
+                folder
+                    .join(path)
+                    .map_or(true, |p| fs.probe(&p) != Probe::File)
+            })
+            .collect();
+        if gone.is_empty() {
+            continue;
+        }
+        let path = observation_path(name);
+        let Ok(at) = folder.join(&path) else {
+            continue;
         };
-        let shown = folder
-            .join(file)
-            .map_or_else(|_| file.to_owned(), |p| p.to_string());
-        for problem in problems {
+        let Ok(file) = code.read(fs, &at) else {
+            continue;
+        };
+        let spans = Observation::file_spans(&file.text);
+        let command = if name == DEFAULT_OBSERVATION {
+            "ascribe observe".to_owned()
+        } else {
+            format!("ascribe observe --name {name}")
+        };
+        for listed in gone {
+            let span = spans.get(listed).copied().unwrap_or(Span::empty(0));
             let issue = Issue::new(
-                diagnostics::EXAMPLES_CONFIG_INVALID,
-                Location::new(FileId::new(0), source.span),
+                diagnostics::OBSERVATION_FILE_MISSING,
+                Location::new(file.id, span),
             )
-            .with_arg("source", source.name.clone())
-            .with_arg("file", shown.clone())
-            .with_arg("detail", problem.detail.clone());
+            .with_arg("observation", at.to_string())
+            .with_arg("path", listed.clone())
+            .with_arg("folder", folder.to_string())
+            .with_arg("command", command.clone());
             out.push(Diagnostic::from_issue(&issue));
         }
     }

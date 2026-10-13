@@ -343,10 +343,18 @@ pub struct Snippet {
     /// The lines of the code file it covers, from 1; `None` when they're
     /// none.
     pub lines: Option<(u32, u32)>,
+    /// The file as a tested example: its status, the observations current
+    /// for it, and what it was tested with. `None` when it isn't one.
+    pub example: Option<examples::Example>,
+}
+
+impl Snippet {
     /// For a file that's a tested example with a current observation, what
     /// it was tested with: `Node 24.9.0 on Linux`. It's in the info string
     /// too, as `tested="…"`.
-    pub tested: Option<String>,
+    pub fn tested(&self) -> Option<&str> {
+        self.example.as_ref()?.tested.as_deref()
+    }
 }
 
 /// Why a snippet's address doesn't give a snippet.
@@ -417,21 +425,16 @@ pub fn resolve_snippet(
     let Some(extracted) = file.extract(address.region.as_deref()) else {
         return Err(SnippetError::RegionMissing(file));
     };
-    let tested = match examples::example(source, &address.path, &file.text, fs, code) {
-        Some(examples::Example {
-            status: examples::ExampleStatus::Current(tested),
-            ..
-        }) => Some(tested),
-        _ => None,
-    };
+    let example = examples::example(source, &address.path, &file.text, fs, code);
+    let tested = example.as_ref().and_then(|e| e.tested.as_deref());
     Ok(Snippet {
         address: snippet.written.clone(),
         path: file.path.clone(),
         file: file.id,
-        info: snippet.info(&file, tested.as_deref()),
+        info: snippet.info(&file, tested),
         code: extracted.code,
         lines: extracted.lines,
-        tested,
+        example,
     })
 }
 

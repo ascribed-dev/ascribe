@@ -3769,3 +3769,18 @@ reference = "content-model/output.md#18-sourcesname"
 when = "A source in the same repository has an `ascribe.examples.toml`, or an observation beside it, that can't be read. Reported at the source in ascribe.toml, once for each problem in each file"
 message = "the examples of source `{source}` can't be checked: `{file}` can't be read: {detail}"
 fix = "Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with."
+
+[[diagnostic]]
+code = "ASC202"
+slug = "observation-file-missing"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "examples"
+spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
+when = "An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file"
+message = "`{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again"
+fix = "The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file."

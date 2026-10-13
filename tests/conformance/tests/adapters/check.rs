@@ -116,16 +116,25 @@ pub fn to_conformance(
 ) -> Result<Vec<Diagnostic>, AdapterError> {
     let mut out = Vec::new();
     for d in diagnostics {
-        let file = project
-            .file(d.location.file)
-            .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
-        let index = ascribe_core::LineIndex::new(file.text);
+        // A diagnostic in a code file a check read, such as an observation,
+        // is at the file's path from the project's folder.
+        let (path, text) = match project.file(d.location.file) {
+            Some(file) => (
+                file.content_path
+                    .map_or_else(|| file.display_path.clone(), |p| p.to_string()),
+                file.text.to_owned(),
+            ),
+            None => {
+                let code = project
+                    .code_file(d.location.file)
+                    .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
+                (code.path.to_string(), code.text.clone())
+            }
+        };
+        let index = ascribe_core::LineIndex::new(&text);
         let pos = index
             .wide_line_col(WideEncoding::Utf32, d.location.span.start())
             .ok_or_else(|| AdapterError(format!("bad location for {}", d.slug)))?;
-        let path = file
-            .content_path
-            .map_or_else(|| file.display_path.clone(), |p| p.to_string());
         out.push(Diagnostic {
             slug: d.slug.as_str().to_owned(),
             file: path,

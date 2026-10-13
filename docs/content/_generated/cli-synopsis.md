@@ -18,7 +18,7 @@ ascribe link              TARGET --from <PAGE> [--format text|json]
 ascribe lsp
 ascribe mcp
 ascribe model             [PATH] [--section types|dimensions|phrases|features|glossary|widgets|builds|sources] [--format text|json]
-ascribe observe           [--format text|json]
+ascribe observe           [--name <NAME>] [--check] [--format text|json]
 ascribe outline           PAGE [--build <NAME>] [--format text|json]
 ascribe permalinks sync   [--check] [--format text|json]
 ascribe permalinks list   [--format text|json]

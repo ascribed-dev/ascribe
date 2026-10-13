@@ -1,0 +1,13 @@
+# Written by `ascribe observe`. Don't edit it by hand.
+version = 1
+ascribe = "0.3.0"
+command = "node --test test/greet.test.mjs"
+
+[environment]
+os = "linux"
+arch = "x64"
+node = "v22.22.0"
+
+[files]
+"examples/greet.out.txt" = "sha256-lf:231462024105beaa2d3fcc21f4f29a2a2768328bb8bdb514e37ce65914552cec"
+"examples/greet.ts" = "sha256-lf:224cb5bb3ee428652127268d6b08c6e9dde5e3ab3ac3731633ef34898cf55f0d"
