@@ -12,6 +12,7 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | Project widget | [An element named after the widget](#6-project-widgets), and `<ascribe-group>` for groups | The project's own; `<ascribe-group>` is the library's |
 | Glossary term | [An ordinary link](#7-glossary-terms), marked with `data-ascribe-term` | Optional CSS |
 | The pointer to `llms.txt`, with `[consumer] agents = true` | [`<ascribe-for-agents>`](#8-ascribe-for-agents) | CSS only |
+| A tested example's `@snippet` | [A caption line on its code block](#9-a-tested-code-block), with the class `ascribe-code-tested` | CSS only |
 
 A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
@@ -254,3 +255,20 @@ For AI agents: the documentation index is at [llms.txt](/docs/llms.txt), and thi
 It's the first block of the page's body, before any other content, so an agent that reads only the start of a page still finds it. Without `agents = true` the emitter writes no `<ascribe-for-agents>`.
 
 **Rendering:** visually hidden: in the page, and read by an agent or a screen reader, but out of sight, as a site's "skip to content" link is (a clipped 1-pixel box, not `display: none`, which some readers skip). A site that wants readers to see it too restyles it.
+
+## 9. A tested code block
+
+There's no element for a tested example either. A `@snippet` of a file that's a tested example with a current observation (docs/content/contracts/tested-examples.md) becomes a fenced code block whose info string carries the environment it was tested with, after any title: `` ```ts title="connect.ts" tested="Node 24.9.0 and TypeScript 5.9.2 on Linux" `` (docs/content/contracts/site-render.md §5.1). The value is the environment alone, without the words around it (decision [#458b](../../project-docs/decisions/458b-tested-attribute.md)).
+
+The renderer, `@ascribed/astro`'s code highlighting or `render_site_html`, puts the block in a figure with a caption: the title, when there is one, then a line of its own holding the environment, with the class `ascribe-code-tested`:
+
+```html
+<figure class="code-title">
+  <figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 and TypeScript 5.9.2 on Linux</div></figcaption>
+  <pre>…</pre>
+</figure>
+```
+
+A block with a tested line and no title has the line alone in its caption. A block with a title and no tested line is as it was: its caption is the title.
+
+**Rendering:** the line reads "Tested with Node 24.9.0 and TypeScript 5.9.2 on Linux". The lead-in, "Tested with ", is generated content from the library's stylesheet (`.ascribe-code-tested::before`), as "Available:" is, so a site restyles or translates it once. With no CSS, the caption still reads as a fact about the block. The HTML holds no hidden copy of the lead-in (decision [#459c](../../project-docs/decisions/459c-tested-lead-in.md)). The line is a block of its own, so its text is the plain output's sentence without the lead-in, and a check that each line of the page's HTML appears in its Markdown version finds it there, inside "Tested with … .".

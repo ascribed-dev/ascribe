@@ -1,10 +1,10 @@
 ---
 type: reference
-title: "`ascribe init`, `sources`, `permalinks`, `templates`, and `vale`"
-description: "Start a project, fetch and update source repositories, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
+title: "`ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale`"
+description: "Start a project, fetch and update source repositories, record what tested a folder's examples, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
 ---
 
-The commands that start a project, and look after what it keeps beside its pages: its source repositories, its permalinks, its page templates, and Vale's configuration. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+The commands that start a project, and look after what it keeps beside its pages: its source repositories, the record of what tested its examples, its permalinks, its page templates, and Vale's configuration. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## `ascribe sources`
 @id {permalink=true}: cli-sources
@@ -62,6 +62,35 @@ Shows each source in another repository: its repository and branch, its pin, and
 | `2` | It couldn't run: a usage error, no `ascribe.toml`, or one with errors |
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and `sources`, each with `name`, `git`, `branch` (or null), `commit` (the pin, or null), and `files`, each with `path` and `state`: `current`, `changed`, `missing`, `unlocked`, `unused`, `not_copied`, or `not_at_pin`.
+
+## `ascribe observe`
+@id {permalink=true}: cli-observe
+@available: next
+
+Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders, and doesn't read `ascribe.toml` or `--config`. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
+
+@include: ../_generated/cli-observe-options.md
+
+It prints the config's path and every command it will run, then runs each `[environment]` command, then `test`, through the platform's shell (`sh`, or `cmd` on Windows), in the folder, with your environment and standard input closed. The test's output goes to the terminal as it comes, and there's no time limit: you started it, and you can stop it.
+
+```console
+$ ascribe observe
+Running the commands in ascribe.examples.toml:
+  test         node --test test/greet.test.mjs
+  environment  node --version
+node --test test/greet.test.mjs passed.
+Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
+```
+
+When `test` exits 0, it hashes every example and writes the observation whole, to a file beside it that it then renames, so a run that's stopped part way leaves the old one. When it doesn't, it writes nothing. A file that changes while the test runs is hashed as it is at the end, so run it on a clean tree.
+
+| Code | Meaning |
+|---|---|
+| `0` | The test passed, and the observation is written |
+| `1` | The test failed. Nothing was written, and the old observation is as it was. |
+| `2` | It couldn't run: no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
+
+With `--format json`, what the commands print goes to standard error, and standard output has one document: `schema_version` (`1`), `ascribe_version`, `config`, `environment` (each with `key`, `command`, and `kept`, the line the observation records), `test` (`command`, `passed`, and `exit_code`, null when a signal stopped it), `observation` (the file it wrote, or null), `recorded` (the observation's `[environment]`, by name, `os` and `arch` among them), `files` (each example's hash, by path), and `tested` (what a page says it was tested with, or absent). When the test fails, the last four are empty. Its schema is in the [JSON report contract](../contracts/json-reports/sources.md#ascribe-observe).
 
 ## `ascribe permalinks`
 @id {permalink=true}: cli-permalinks

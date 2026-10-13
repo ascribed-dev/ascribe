@@ -83,7 +83,7 @@ The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site
 | `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
 | `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. With `projects`, an entry's name reviews that entry, and `true` the first. |
-| `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it) above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`. `false` leaves it out. By default, `true`. |
+| `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it), and what a tested example was tested with (`tested="…"`), above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`, the tested line in a `<div class="ascribe-code-tested">` of its own. `false` leaves both out. By default, `true`. |
 | `sitemap` | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the sitemap, such as one that carries `noindex`. |
 
 ## Development
@@ -96,7 +96,7 @@ The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site
 | `src/init.ts`, `src/cli.ts`, `starter/` | `npx @ascribed/astro init`, the package's command (`ascribe-astro`), and the files it writes. `examples/astro-site`'s are what it writes for that project; `test/init.test.ts` holds that, and rewrites them with `ASCRIBE_BLESS=1` |
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
 | `src/Availability.astro` | A page's availability as the element library's badge |
-| `src/code-titles.ts` | The Shiki transformer that shows code block titles |
+| `src/code-titles.ts` | The Shiki transformer that shows code block titles and tested lines |
 | `src/Permalink.astro`, `src/permalinks.ts` | The route at each permalink's address, and its pages, from the site output's `_ascribe/permalinks.json` |
 | `src/MissingPermalink.astro` | The explanation on a site's 404 page for an address under the permalinks' path that matches nothing |
 | `src/schema.ts` | Copies the generated schema inside the Astro root |

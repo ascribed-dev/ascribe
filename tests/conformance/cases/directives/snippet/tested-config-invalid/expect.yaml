@@ -1,0 +1,15 @@
+description: >-
+  A source whose `ascribe.examples.toml` can't be read, and one whose
+  observation is in a format this version doesn't read, each report
+  `examples-config-invalid` at the source in ascribe.toml, once for each
+  problem. A config that can't be read makes no file an example, so its
+  snippets report nothing; an observation that can't be read leaves its
+  examples unobserved.
+spec: ["7.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: examples-config-invalid, file: ascribe.toml, line: 6}
+  - {slug: examples-config-invalid, file: ascribe.toml, line: 6}
+  - {slug: examples-config-invalid, file: ascribe.toml, line: 9}
+  - {slug: example-unobserved, file: index.md, line: 7}

@@ -128,7 +128,8 @@ interface SharedOptions {
   review?: boolean | string;
   /**
    * Show a code block's title (`title="…"` in its info string, as `@snippet`
-   * writes it) above it, with a Shiki transformer that puts the block in a
+   * writes it), and what a tested example was tested with (`tested="…"`),
+   * above it, with a Shiki transformer that puts the block in a
    * `<figure class="code-title">` with a `<figcaption>`. Default `true`.
    */
   codeTitles?: boolean;

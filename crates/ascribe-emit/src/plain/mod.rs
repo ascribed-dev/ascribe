@@ -390,7 +390,15 @@ impl Renderer<'_> {
             BlockKind::Paragraph(p) => {
                 vec![self.inlines(block, &p.inlines, Style::default())]
             }
-            BlockKind::CodeBlock(c) => vec![fenced(c)],
+            BlockKind::CodeBlock(c) => {
+                let mut out = vec![fenced(c)];
+                // A tested example says what it was tested with in a line of
+                // its own, which nothing styles (decision #458b).
+                if let Some(tested) = block.snippet.as_ref().and_then(|s| s.tested.as_deref()) {
+                    out.push(format!("Tested with {}.", escape(tested, true)));
+                }
+                out
+            }
             BlockKind::HtmlBlock(h) => {
                 // An HTML block with no text (a comment, a script) leaves
                 // nothing behind.

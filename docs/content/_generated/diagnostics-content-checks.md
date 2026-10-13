@@ -357,3 +357,44 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 **Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
+
+## Tested examples
+
+### ASC199 `example-stale`
+@id {permalink=true}: ASC199
+
+Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** A `@snippet` shows a file of a source in the same repository that the source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. Reported once for each snippet of the file, whichever region it shows.
+
+**Message:** `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again
+
+**Fix:** Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run.
+
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
+
+### ASC200 `example-unobserved`
+@id {permalink=true}: ASC200
+
+Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** A `@snippet` shows a file of a source in the same repository that the source's `ascribe.examples.toml` makes an example, and no observation lists the file. Reported once for each snippet of the file.
+
+**Message:** `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}`
+
+**Fix:** Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. When the file isn't meant to be an example, add it to the config's `ignore`, or narrow its `include`.
+
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
+
+### ASC201 `examples-config-invalid`
+@id {permalink=true}: ASC201
+
+Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+
+**When:** A source in the same repository has an `ascribe.examples.toml`, or an observation beside it, that can't be read. Reported at the source in ascribe.toml, once for each problem in each file.
+
+**Message:** the examples of source `{source}` can't be checked: `{file}` can't be read: \{detail}
+
+**Fix:** Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with.
+
+**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.

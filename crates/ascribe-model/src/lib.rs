@@ -12,6 +12,7 @@
 //! | [`types`] | Field types, and [`validate_frontmatter`] |
 //! | [`inline`] | Code spans in a field that sets `inline = "code"` |
 //! | [`pattern`] | [`Pattern`]: the glob syntax of `files` and fragment patterns |
+//! | [`examples`] | [`ExamplesConfig`] and [`Observation`]: a source's `ascribe.examples.toml`, and what `ascribe observe` writes beside it |
 //! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
 //! | [`permalinks`] | [`PermalinkList`]: `ascribe.permalinks`, the project's permalinks and where each is declared |
 //! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
@@ -35,6 +36,7 @@
 
 mod checks;
 mod crawlers;
+pub mod examples;
 mod fields;
 pub mod inline;
 mod intended;
@@ -57,6 +59,7 @@ pub use ascribe_core::Issue;
 pub use crawlers::{
     KNOWN_CRAWLERS_FILE, KnownCrawler, crawler_tokens, known_crawlers, parse_known, user_agent,
 };
+pub use examples::{EXAMPLES_FILE, ExamplesConfig, Observation, example_hash};
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;

@@ -118,6 +118,16 @@ The element contract ([`packages/elements/CONTRACT.md`]({repo}/blob/main/package
 
 Apart from markers, both implementations render CommonMark with raw HTML passed through unchanged (SPEC §9.5, "HTML passthrough"). In particular, the site output's custom elements are HTML blocks, and the markdown they wrap is parsed as markdown because the emitter puts blank lines around it (SPEC §9.4). An implementation may also enable GFM and typographic replacements, as Astro does by default; the fixtures avoid content those would change, except inside markers, which they must not change.
 
+### 5.1 A tested code block
+
+A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. The value is read as a title is: from a space or the start, to the quote that's followed by a space or the end, with the Markdown escapes taken off.
+
+```html
+<figure class="code-title"><figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 on Linux</div></figcaption><pre><code class="language-ts">…</code></pre></figure>
+```
+
+A block with no `tested` word is left as everything else is. The element contract's §9 says how the caption renders.
+
 ## 6. Constructs and fixtures
 
 Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/main/tests/render/), listed in its `fixtures.toml`. [`tests/render/README.md`]({repo}/blob/main/tests/render/README.md) says how implementations run the fixtures and compare HTML.
@@ -143,6 +153,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |
+| `code-tested` | §5.1 | A code block with a tested line alone, and with a title and a tested line, each in a figure with its caption |
 
 ## 7. Source anchors
 @id {permalink=true}: 7-source-anchors

@@ -36,7 +36,7 @@ use ascribe_syntax::{
 
 use crate::{Diagnostic, Project, SourceFile};
 
-pub(crate) use sources::check_sources;
+pub(crate) use sources::{check_examples, check_sources};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {

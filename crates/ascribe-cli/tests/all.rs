@@ -41,12 +41,16 @@ mod lsp_project_log;
 mod mcp;
 #[path = "all/network.rs"]
 mod network;
+#[path = "all/observe.rs"]
+mod observe;
 #[path = "all/output.rs"]
 mod output;
 #[path = "all/permalinks.rs"]
 mod permalinks;
 #[path = "../../ascribe-diff/tests/planted/mod.rs"]
 mod planted;
+#[path = "all/program_starts.rs"]
+mod program_starts;
 #[path = "all/rename.rs"]
 mod rename;
 #[path = "all/report.rs"]

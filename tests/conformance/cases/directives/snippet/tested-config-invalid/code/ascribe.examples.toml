@@ -1,0 +1,6 @@
+include = ["examples/**"]
+test = "true"
+timeout = 30
+
+[environment]
+os = { command = "uname" }

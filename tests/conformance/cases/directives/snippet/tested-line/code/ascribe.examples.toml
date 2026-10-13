@@ -1,0 +1,7 @@
+include = ["examples/**"]
+ignore = ["examples/scratch.ts"]
+test = "node --test"
+
+[environment]
+node = { label = "Node", command = "node --version" }
+typescript = { label = "TypeScript", command = "npx tsc --version" }

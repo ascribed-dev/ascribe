@@ -77,8 +77,8 @@ pub struct Global {
     ///
     /// By default, the nearest `ascribe.toml` in the current directory or a
     /// parent, so the commands work from anywhere inside a project. Not for
-    /// `lsp`, whose project comes from the editor, or `init`, which starts
-    /// one.
+    /// `lsp`, whose project comes from the editor, `init`, which starts
+    /// one, or `observe`, which runs in a folder of code.
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
 
@@ -150,6 +150,15 @@ pub enum Command {
     /// and builds.
     #[command(after_help = docs_link!("cli-model"))]
     Model(commands::model::Args),
+    /// Run the test of the ascribe.examples.toml in this folder, and when it
+    /// passes, write down what it passed and where: an observation, which
+    /// pages read to say what an example was tested with.
+    ///
+    /// Runs the config's commands as lines of shell (`sh`, or `cmd` on
+    /// Windows), as you, with nothing added: only the config in the current
+    /// folder, never one in a parent folder or another project.
+    #[command(after_help = docs_link!("cli-observe"))]
+    Observe(commands::observe::Args),
     /// Show a page's title, type, and headings, with their ids and lines.
     #[command(after_help = docs_link!("cli-outline"))]
     Outline(commands::outline::Args),
@@ -201,6 +210,7 @@ impl Command {
             Command::Lsp(args) => commands::lsp::run(global, args),
             Command::Mcp(args) => commands::mcp::run(global, args),
             Command::Model(args) => commands::model::run(global, args),
+            Command::Observe(args) => commands::observe::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Permalinks(args) => commands::permalinks::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),
