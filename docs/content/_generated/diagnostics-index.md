@@ -195,3 +195,4 @@
 | [ASC195](../checks/diagnostics/content-checks.md#ASC195) | `template-placeholder-left` | Advice | File | write |
 | [ASC196](../checks/diagnostics/pages.md#ASC196) | `content-type-missing` | Error | File | choose |
 | [ASC197](../checks/diagnostics/pages.md#ASC197) | `content-type-unknown` | Error | File | choose |
+| [ASC198](../checks/diagnostics/content-checks.md#ASC198) | `description-link` | Advice | File | write |

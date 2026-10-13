@@ -616,6 +616,9 @@ pub const CONTENT_TYPE_MISSING: DiagnosticSlug = DiagnosticSlug("content-type-mi
 /// `ASC197`, error, file level: SPEC §8.2, "Frontmatter | Page's `type` names no declared content type".
 pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-unknown");
 
+/// `ASC198`, advice, file level: a content check (area `pages`).
+pub const DESCRIPTION_LINK: DiagnosticSlug = DiagnosticSlug("description-link");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -811,6 +814,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     TEMPLATE_PLACEHOLDER_LEFT,
     CONTENT_TYPE_MISSING,
     CONTENT_TYPE_UNKNOWN,
+    DESCRIPTION_LINK,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -844,6 +848,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     DESCRIPTION_DUPLICATE,
     TITLE_HEADING_DIFFERS,
     TEMPLATE_PLACEHOLDER_LEFT,
+    DESCRIPTION_LINK,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

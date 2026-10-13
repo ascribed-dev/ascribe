@@ -173,7 +173,7 @@ team = { type = "enum(docs, platform)", role = "owner" }
 
 | Role | The field's type | What reads it |
 |---|---|---|
-| `description` | `string`, optional or not | [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
+| `description` | `string`, optional or not | [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. [`description-link`](../checks/diagnostics/content-checks.md#ASC198) reports a Markdown link in one: a description is plain text, so the link is shown as written. |
 | `review-date` | `date`, optional or not | [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. |
 | `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../review/diff.md#cli-report) counts pages by owner. |
 

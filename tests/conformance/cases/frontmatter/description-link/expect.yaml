@@ -1,0 +1,8 @@
+description: >-
+  A description is plain text, so a Markdown link in one is advice, at the
+  link; a description without one isn't.
+spec: ["8.2", "9.4"]
+tags: [check]
+
+diagnostics:
+  - {slug: description-link, file: install.md, line: 4}

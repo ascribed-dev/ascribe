@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**A page's description that holds a Markdown link is advice, `description-link` (ASC198), with a fix that keeps the link's text.** It's a content check in the area `pages`, configurable, reported at each link in the field its type marks `role = "description"`, whatever the outputs. A description is plain text: the site writes it into the page's `<meta name="description">` as written, and the page records and the JSON carry it as written, so a link there is never a link, `ascribe check` doesn't report it when it dangles, and `ascribe rename` doesn't update it when its target moves. The fix replaces the link with its text, and is offered only when the value is a plain YAML scalar the edit leaves the same text; it's unsafe, since it changes the description. Ascribe's own docs had one such description, in `docs/content/contracts/output-layout.md`, and it's fixed in the same change. _Why:_ a link in a description is almost certainly a mistake, and it reaches every reader that isn't a person. _From:_ [#455](https://github.com/ascribed-dev/ascribe/issues/455), triaged to add the check, 13 October 2026.
