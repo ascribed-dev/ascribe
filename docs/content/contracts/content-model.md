@@ -4,7 +4,7 @@ title: "`ascribe.toml` format contract"
 description: The normative contract for the content model file, with the rules a loader enforces and the decisions behind them.
 ---
 
-This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../reference/content-model.md).
+This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../content-model/index.md).
 
 SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](content-model/validation.md#26-decisions).
 

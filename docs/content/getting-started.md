@@ -5,7 +5,7 @@ description: Install Ascribe, write a first page, check it, build it, and publis
 permalink: getting-started
 ---
 
-Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](guides/astro.md), publishes the page as a site.
+Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
 
 It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor and CI check as you write it, and a build of it ready for a site.
 
@@ -41,9 +41,9 @@ Install the **Ascribe** extension for VS Code from the Marketplace:
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-It checks your pages as you type, completes directives, [phrases](reference/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
+It checks your pages as you type, completes directives, [phrases](writing/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](editor/index.md).
 
-Format your pages with Ascribe, not a general Markdown formatter: one such as Prettier can change what a page builds to as it saves it. When another extension formats Markdown in your project's folder, the extension offers to be its Markdown formatter instead; choose **Use Ascribe**. See [Formatting](guides/editor.md#formatting).
+Format your pages with Ascribe, not a general Markdown formatter: one such as Prettier can change what a page builds to as it saves it. When another extension formats Markdown in your project's folder, the extension offers to be its Markdown formatter instead; choose **Use Ascribe**. See [Formatting](editor/index.md#formatting).
 
 @available: ascribe 0.3.0
 After you install it, its walkthrough, **Get Started with Ascribe**, shows the preview, the actions bar that writes directives for you, and the Ascribe sidebar. It's under **Help → Welcome** whenever you want it again.
@@ -72,7 +72,7 @@ It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the 
 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
-Every page is of the one type, `page`, and says so with `type: page` in its frontmatter, with a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](guides/templates.md).
+Every page is of the one type, `page`, and says so with `type: page` in its frontmatter, with a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](templates/index.md).
 
 ### Write it by hand
 
@@ -90,7 +90,7 @@ The page below uses what most projects add next: a dimension the content varies 
 
 @snippet: code:examples/getting-started/ascribe.toml#added
 
-The [`ascribe.toml` reference](reference/content-model.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
+The [`ascribe.toml` reference](content-model/index.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
 Add the output directory to `.gitignore`:
 
@@ -98,7 +98,7 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
-[Files Ascribe writes](reference/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+[Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
 
 ## Write a page
 
@@ -107,13 +107,13 @@ Create `docs/install.md`:
 @snippet {lang=markdown}: code:examples/getting-started/docs/install.md
 
 - `@note` is a callout; `{type=tip}` is its attribute.
-- `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](guides/variants.md).
+- `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](writing/variants.md).
 - `type: page` says what kind of page it is: a type `ascribe.toml` declares. `title` and `description` are the fields that type asks for.
 - `{product}` and `{version}` are phrases from `ascribe.toml`.
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
 
-The [directive reference](reference/directives.md) describes every directive and inline construct.
+The [directive reference](writing/directives.md) describes every directive and inline construct.
 
 ## Check it
 
@@ -125,7 +125,7 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
-Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again.
+Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again.
 
 ## Build it
 
@@ -139,7 +139,7 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
 - `json/`: the resolved pages as JSON, for your own tools.
 
-See the [command reference](reference/cli/check.md#cli-build).
+See the [command reference](checks/check.md#cli-build).
 
 ## Format it
 
@@ -151,7 +151,7 @@ rewrites directives and attribute blocks into their canonical spelling, and chan
 
 ## Publish it with Astro
 
-Publishing the site is this guide's second half, on its own page: [Astro](guides/astro.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
+Publishing the site is this guide's second half, on its own page: [Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
 
 @steps
 1. Create an Astro project: `npm create astro@latest`.
@@ -179,12 +179,12 @@ You installed the command and the editor, declared a content model in `ascribe.t
 
 ## Next steps
 
-- [Content that varies](guides/variants.md): alternatives by platform or product, availability, and builds.
-- [Directive reference](reference/directives.md): the language.
-- [`ascribe.toml` reference](reference/content-model.md): the content model.
-- [Command reference](reference/cli.md): every command, its options, and its exit codes.
-- [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, and its fix.
-- [Editing](guides/editor.md): the VS Code extension.
-- [Astro](guides/astro.md): publishing a site.
+- [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
+- [Directive reference](writing/directives.md): the language.
+- [`ascribe.toml` reference](content-model/index.md): the content model.
+- [Command reference](command/index.md): every command, its options, and its exit codes.
+- [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.
+- [Editing](editor/index.md): the VS Code extension.
+- [Astro](astro/index.md): publishing a site.
 - @available: ascribe 0.3.0
-  [Agents](guides/agents.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.
+  [Agents](agents/index.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.

@@ -6,35 +6,35 @@ permalink: docs
 ---
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
-- [Content that varies](guides/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
-- [Directive reference](reference/directives.md): the language: directives, attributes, titles, phrases, links, and images.
-- [`ascribe.toml` reference](reference/content-model.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
-- [Command reference](reference/cli.md): every `ascribe` command, its options, outputs, and exit codes.
+- [Content that varies](writing/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
+- [Directive reference](writing/directives.md): the language: directives, attributes, titles, phrases, links, and images.
+- [`ascribe.toml` reference](content-model/index.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
+- @available: ascribe 0.3.0
+  [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
+- @available: ascribe 0.3.0
+  [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
+- [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - @available: ascribe 0.2.0
-  [Review](guides/review.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
+  [Review](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
+- [Editing](editor/index.md): the VS Code extension, workspaces with several projects, and other editors.
+- @available: ascribe 0.3.0
+  [Agents](agents/index.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
 - @available: ascribe 0.2.0
-  [Drift](guides/drift.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
+  [Drift](examples/index.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
+- [Astro](astro/index.md): publishing a site with `@ascribed/astro`.
+- [Element library reference](astro/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
 - @available: ascribe 0.3.0
-  [Agents](guides/agents.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
-- @available: ascribe 0.3.0
-  [Prose, through Vale](guides/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
-- @available: ascribe 0.3.0
-  [The project report](guides/report.md): what state the whole project is in, from the problems and pages it counts to broken external links, and running it every week in CI.
-- @available: ascribe 0.3.0
-  [Permalinks](guides/permalinks.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
+  [Permalinks](permalinks/index.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 - @available: next
-  [Page templates](guides/templates.md): starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it.
-- [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
-- [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
-- [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.
-- [Element library reference](reference/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
-- [Files Ascribe writes](reference/project-files.md): every file Ascribe puts in a project, and which to commit.
+  [Page templates](templates/index.md): starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it.
+- [Command reference](command/index.md): every `ascribe` command, its options, outputs, and exit codes.
+- [Files Ascribe writes](command/project-files.md): every file Ascribe puts in a project, and which to commit.
 
 ## For implementers
 
 These contracts say what an emitter writes and what a consumer can rely on. They matter if you're changing Ascribe's outputs or writing a consumer, and not if you're writing documentation with it.
 
-- [The `ascribe.toml` format](contracts/content-model.md): the normative contract for the content model file, with the rules a loader enforces and the decisions behind them. The [reference](reference/content-model.md) above is where to look up a key while writing one.
+- [The `ascribe.toml` format](contracts/content-model.md): the normative contract for the content model file, with the rules a loader enforces and the decisions behind them. The [reference](content-model/index.md) above is where to look up a key while writing one.
 - [Output layout](contracts/output-layout.md): where `ascribe build` writes each build's output, how it records what it wrote, and how it replaces a previous output.
 - [Assets](contracts/assets.md): where assets go in each output and how pages refer to them.
 - [JSON reports](contracts/json-reports.md): the schemas of what the commands write with `--format json`.

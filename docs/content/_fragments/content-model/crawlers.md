@@ -1,4 +1,4 @@
-What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. Each build writes it into its page records, `_ascribe/pages.json` in the site output ([output-layout contract](../../contracts/output-layout.md) §1.3), for a site to write its `robots.txt` from; `@ascribed/astro` writes it ([the `@ascribed/astro` reference](../../reference/astro.md#search-engines-and-crawlers)).
+What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. Each build writes it into its page records, `_ascribe/pages.json` in the site output ([output-layout contract](../../contracts/output-layout.md) §1.3), for a site to write its `robots.txt` from; `@ascribed/astro` writes it ([the `@ascribed/astro` reference](../../astro/reference.md#search-engines-and-crawlers)).
 
 ```toml
 [crawlers]

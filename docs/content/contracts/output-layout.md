@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Output-layout contract
-description: Where ascribe build writes each [build](../reference/content-model/output.md#16-buildsname)'s output, how it records what it wrote, and how it replaces a previous output.
+description: Where ascribe build writes each [build](../content-model/output.md#16-buildsname)'s output, how it records what it wrote, and how it replaces a previous output.
 permalink: output-layout-contract
 ---
 
