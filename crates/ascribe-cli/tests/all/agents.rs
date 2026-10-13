@@ -1257,13 +1257,13 @@ fn names(pattern: &str, file: &str) -> bool {
     }
 }
 
-/// Files Ascribe writes, `docs/content/reference/project-files.md`, lists
+/// Files Ascribe writes, `docs/content/command/project-files.md`, lists
 /// every file `sync` writes with every option, in its rows that name
 /// `ascribe agents sync`, and nothing it doesn't.
 #[test]
 fn the_project_files_page_lists_what_sync_writes() {
     let page =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/content/reference/project-files.md");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/content/command/project-files.md");
     let page = read(&page);
     let mut listed = Vec::new();
     for row in page.lines().filter(|l| l.starts_with("| ")) {

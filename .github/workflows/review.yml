@@ -1,6 +1,6 @@
 # The review report: on each pull request, every page the change reaches,
 # rendered with its changes marked, as one HTML file a reviewer opens from the
-# run's summary. The `report` job is the one docs/content/guides/review.md
+# run's summary. The `report` job is the one docs/content/review/index.md
 # ("The report in CI") gives users, and the page takes it from this file: the
 # lines marked `:remove:` are what this repository adds. It installs `next`,
 # the canary of `main`, over the release the job installs, since this

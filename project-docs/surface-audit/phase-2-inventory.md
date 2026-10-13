@@ -14,7 +14,7 @@ Part of [The surface audit](README.md). Requires phase 1. A script, its test, an
   - the commands: `crates/ascribe-cli/src/cli.rs`, and the option fragments `crates/ascribe-cli/src/docs.rs` already generates into `docs/content/_generated/`;
   - the diagnostics: `tests/conformance/diagnostics.toml`;
   - the directives: `ascribe_core::builtin_schemas`;
-  - the content model's sections: `docs/content/reference/content-model.md`, or the loader in `crates/ascribe-model`;
+  - the content model's sections: `docs/content/content-model/index.md`, or the loader in `crates/ascribe-model`;
   - the extension: `packages/vscode/package.json` (commands, settings, views, keybindings, menus, walkthrough, language model tools), and the action registry;
   - the server's own requests: the `METHOD` constants in `crates/ascribe-lsp/src/`;
   - the MCP server: `crates/ascribe-cli/src/mcp/tools.rs`, and its resources and prompts;

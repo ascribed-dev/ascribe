@@ -135,7 +135,7 @@ test("the glibc floor is release-build.yml's everywhere it's written", () => {
     ".github/workflows/release-build.yml",
     "RELEASING.md",
     "packages/cli/README.md",
-    "docs/content/reference/directives.md",
+    "docs/content/writing/directives.md",
     "SPEC.md",
   ]) {
     const named = all(read(file), /\bglibc (\d+\.\d+)/g);

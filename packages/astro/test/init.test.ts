@@ -21,7 +21,7 @@ import { readProject } from "../src/project.js";
 const BLESS = "ASCRIBE_BLESS=1 pnpm --filter @ascribed/astro exec vitest run test/init.test.ts";
 const example = fileURLToPath(new URL("../../../examples/astro-site/", import.meta.url));
 const projectFiles = fileURLToPath(
-  new URL("../../../docs/content/reference/project-files.md", import.meta.url),
+  new URL("../../../docs/content/command/project-files.md", import.meta.url),
 );
 
 function project(toml: string): string {

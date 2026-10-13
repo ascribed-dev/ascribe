@@ -1,5 +1,5 @@
 # The daily report on docs/: its external links, and the delivery spec's
-# checks on the published site. It's the job docs/content/guides/report.md
+# checks on the published site. It's the job docs/content/checks/report.md
 # ("On a schedule") gives users, and the page takes it from this file: the
 # lines marked `:remove:` are what this repository adds. Links and the
 # published site change without a commit, and checking them takes minutes and

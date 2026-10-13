@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/reference/cli.md`, `docs/content/reference/cli/`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/command/questions.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -69,7 +69,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 
 ## `ascribe.toml`
 
-For authors. Read from `docs/content/reference/content-model.md`, `docs/content/reference/content-model/`, `docs/content/_fragments/content-model/`.
+For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/content-model/`.
 
 | Section | What it's for | In the reference |
 |---|---|---|
@@ -705,6 +705,27 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 
 | Page | Title | Type |
 |---|---|---|
+| `agents/commands.md` | `ascribe agents`, `mcp`, and `lsp` | reference |
+| `agents/index.md` | Agents | how-to |
+| `agents/measuring.md` | What to measure | concept |
+| `astro/elements.md` | Element library reference | reference |
+| `astro/index.md` | Astro | how-to |
+| `astro/reference.md` | `@ascribed/astro` reference | reference |
+| `checks/check.md` | `ascribe check`, `build`, and `fmt` | reference |
+| `checks/diagnostics.md` | Diagnostics | reference |
+| `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
+| `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
+| `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
+| `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/report.md` | The project report | how-to |
+| `checks/vale.md` | Prose, through Vale | how-to |
+| `command/index.md` | Command reference | reference |
+| `command/project-files.md` | Files Ascribe writes | reference |
+| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` | reference |
+| `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
+| `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
+| `content-model/index.md` | `ascribe.toml` reference | reference |
+| `content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
 | `contracts/assets.md` | Asset contract | reference |
 | `contracts/content-model.md` | `ascribe.toml` format contract | reference |
 | `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing | reference |
@@ -720,40 +741,19 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/output-layout.md` | Output-layout contract | reference |
 | `contracts/permalinks-list.md` | The permalinks list | reference |
 | `contracts/site-render.md` | Site-render contract | reference |
+| `editor/index.md` | Editing | reference |
+| `editor/settings.md` | Editor workspaces, settings, and commands | reference |
+| `examples/index.md` | Drift | how-to |
+| `examples/sources.md` | `ascribe init`, `sources`, `permalinks`, `templates`, and `vale` | reference |
 | `getting-started.md` | Getting started | tutorial |
-| `guides/agents.md` | Agents | how-to |
-| `guides/astro.md` | Astro | how-to |
-| `guides/drift.md` | Drift | how-to |
-| `guides/editor.md` | Editing | reference |
-| `guides/editor/settings.md` | Editor workspaces, settings, and commands | reference |
-| `guides/measuring.md` | What to measure | concept |
-| `guides/permalinks.md` | Permalinks | how-to |
-| `guides/report.md` | The project report | how-to |
-| `guides/review.md` | Review | how-to |
-| `guides/review/troubleshooting.md` | Troubleshooting review | troubleshooting |
-| `guides/templates.md` | Page templates | how-to |
-| `guides/vale.md` | Prose, through Vale | how-to |
-| `guides/variants.md` | Content that varies | tutorial |
 | `index.md` | Ascribe documentation | index |
-| `reference/astro.md` | `@ascribed/astro` reference | reference |
-| `reference/cli.md` | Command reference | reference |
-| `reference/cli/agents.md` | `ascribe agents`, `mcp`, and `lsp` | reference |
-| `reference/cli/check.md` | `ascribe check`, `build`, and `fmt` | reference |
-| `reference/cli/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
-| `reference/cli/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` | reference |
-| `reference/cli/sources.md` | `ascribe init`, `sources`, `permalinks`, `templates`, and `vale` | reference |
-| `reference/content-model.md` | `ascribe.toml` reference | reference |
-| `reference/content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
-| `reference/content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
-| `reference/content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
-| `reference/diagnostics.md` | Diagnostics | reference |
-| `reference/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
-| `reference/diagnostics/content-model.md` | Diagnostics: the content model | reference |
-| `reference/diagnostics/directives.md` | Diagnostics: directives | reference |
-| `reference/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
-| `reference/directives.md` | Directive reference | reference |
-| `reference/elements.md` | Element library reference | reference |
-| `reference/project-files.md` | Files Ascribe writes | reference |
+| `permalinks/index.md` | Permalinks | how-to |
+| `review/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
+| `review/index.md` | Review | how-to |
+| `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
+| `templates/index.md` | Page templates | how-to |
+| `writing/directives.md` | Directive reference | reference |
+| `writing/variants.md` | Content that varies | tutorial |
 
 READMEs published with a package, a crate, or the repository:
 
@@ -787,7 +787,7 @@ READMEs published with a package, a crate, or the repository:
 
 ## Files Ascribe puts in a project
 
-For people and agents. Read from `docs/content/reference/project-files.md`.
+For people and agents. Read from `docs/content/command/project-files.md`.
 
 | File | What writes it | Commit it |
 |---|---|---|
@@ -816,7 +816,7 @@ These are part of the surface, and no file a script can read lists them, so they
 
 | Surface | What | Where it lives instead |
 |---|---|---|
-| The command line | What each command's exit codes mean | The prose of the command reference's pages in `docs/content/reference/cli/`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs` |
+| The command line | What each command's exit codes mean | The prose of the command reference's pages, `docs/content/command/index.md` and the pages it lists, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs` |
 | The language | The reserved frontmatter keys: `available`, `variant`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile | Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1 |
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | `ascribe.toml` | Each section's keys | The loader, `crates/ascribe-model/src/`, and the reference's prose |

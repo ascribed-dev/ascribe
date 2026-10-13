@@ -21,7 +21,7 @@ A change that spans areas goes where a reader would look for it first. A new are
 
 **Name** the file for the change, in lowercase words joined by `-`, such as `check-fix.md`. Any name that isn't taken will do; it only sets the order the entries are gathered in, within their area.
 
-**Write** the entry as CHANGELOG.md writes one: a list item that starts with `- ` and a bold sentence saying what changed, then the rest. Lines under the item are indented by two spaces. A link is written relative to the repository's root, as the changelog's are: a docs page is linked by its source, such as `docs/content/guides/permalinks.md`, and the site's changelog page points it at the page.
+**Write** the entry as CHANGELOG.md writes one: a list item that starts with `- ` and a bold sentence saying what changed, then the rest. Lines under the item are indented by two spaces. A link is written relative to the repository's root, as the changelog's are: a docs page is linked by its source, such as `docs/content/permalinks/index.md`, and the site's changelog page points it at the page.
 
 ```markdown
 - **`ascribe check --fix` applies the safe fixes.** Every fix `ascribe check` marks `safe` is applied, then the check reports what's left.

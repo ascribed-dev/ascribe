@@ -12,7 +12,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 
 - The [proposal](../proposals/versions.md), whole, and its "Settled" section.
 - `project-docs/decisions.md`: decision 67 (`[versions] current`), 81 and 82 (the Astro integration's projects), 84 and 87 (the site's own project).
-- `docs/content/reference/content-model.md`: §1.2 (names), §7 (`[versions]`), §11 (`[phrases]`), §16 (`[builds.<name>]`), §22 (`[listing]`).
+- `docs/content/content-model/index.md`: §1.2 (names), §7 (`[versions]`), §11 (`[phrases]`), §16 (`[builds.<name>]`), §22 (`[listing]`).
 - `packages/elements/CONTRACT.md`: the availability element's attributes and its text.
 - `docs/content/contracts/output-layout.md` §1, and `json-reports.md`: how a report names the builds a problem is in.
 - `project-docs/checklists.md`, "A new command or option".

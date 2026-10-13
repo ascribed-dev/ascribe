@@ -82,15 +82,15 @@ interface Section {
 }
 
 /**
- * A docs page and the pages in the folder of its name, as `reference/cli.md`
- * has `reference/cli/`, in order.
+ * A folder's `index.md` and the folder's other pages, its parts, as
+ * `content-model/index.md` has `content-model/checks.md`, in order.
  */
 function pagesOf(file: string): string[] {
-  const folder = file.replace(/\.md$/, "");
+  const folder = path.posix.dirname(file);
   return [
     file,
     ...readdirSync(path.join(root, folder))
-      .filter((name) => name.endsWith(".md"))
+      .filter((name) => name.endsWith(".md") && name !== "index.md")
       .sort()
       .map((name) => `${folder}/${name}`),
   ];
@@ -98,9 +98,28 @@ function pagesOf(file: string): string[] {
 
 // The command line.
 
+const COMMAND_REFERENCE = "docs/content/command/index.md";
+
+/**
+ * The command reference's pages: its own, then each page that includes a
+ * fragment generated from the help text, in the folder of the feature its
+ * commands are for.
+ */
+function commandReference(): string[] {
+  return [
+    COMMAND_REFERENCE,
+    ...tracked("docs/content/**/*.md").filter(
+      (file) =>
+        file !== COMMAND_REFERENCE &&
+        !file.includes("/_") &&
+        /^@include: .*\/_generated\/cli-/m.test(read(file)),
+    ),
+  ];
+}
+
 function commands(): Section {
   const synopsis = read("docs/content/_generated/cli-synopsis.md");
-  const reference = pagesOf("docs/content/reference/cli.md").map(read).join("\n");
+  const reference = commandReference().map(read).join("\n");
   const rows = all(synopsis, /^ascribe (\S+(?: [a-z]+)?) *(.*)$/gm, "commands").flatMap(
     ([, name = "", rest = ""]) => {
       // `ascribe build [--build <NAME>]`: the name is one word, and the rest its arguments.
@@ -137,8 +156,7 @@ function commands(): Section {
     from: [
       "docs/content/_generated/cli-synopsis.md",
       "docs/content/_generated/cli-global-options.md",
-      "docs/content/reference/cli.md",
-      "docs/content/reference/cli/",
+      ...commandReference(),
     ],
     body: [
       table(["Command", "What it's for", "Arguments and options", "`--format`"], rows),
@@ -182,7 +200,7 @@ function expanded(file: string): string {
 
 function model(): Section {
   // The reference takes what it shares with the contract from fragments.
-  const reference = pagesOf("docs/content/reference/content-model.md").map(expanded).join("\n");
+  const reference = pagesOf("docs/content/content-model/index.md").map(expanded).join("\n");
   const sections = reference.split(/^(?=## )/m);
   const rows = sections.flatMap((section) => {
     const heading = /^## (\d+)\. (.*`.*)\n/.exec(section);
@@ -200,11 +218,7 @@ function model(): Section {
   return {
     title: "`ascribe.toml`",
     for: "authors",
-    from: [
-      "docs/content/reference/content-model.md",
-      "docs/content/reference/content-model/",
-      "docs/content/_fragments/content-model/",
-    ],
+    from: ["docs/content/content-model/", "docs/content/_fragments/content-model/"],
     body: table(["Section", "What it's for", "In the reference"], rows),
   };
 }
@@ -606,7 +620,7 @@ function docs(): Section {
 // What Ascribe writes into a project.
 
 /** The page that lists the files Ascribe puts in a project, one table under `## The files`. */
-const PROJECT_FILES = "docs/content/reference/project-files.md";
+const PROJECT_FILES = "docs/content/command/project-files.md";
 
 function projectFiles(): Section {
   const text = read(PROJECT_FILES);
@@ -644,7 +658,7 @@ const UNDECLARED: { surface: string; what: string; where: string }[] = [
     surface: "The command line",
     what: "What each command's exit codes mean",
     where:
-      "The prose of the command reference's pages in `docs/content/reference/cli/`, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs`",
+      "The prose of the command reference's pages, `docs/content/command/index.md` and the pages it lists, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs`",
   },
   {
     surface: "The language",

@@ -13,7 +13,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the key's spelling, or remove it. To accept a new image attribute, declare it in `[images.attributes]`; for a project widget, in its `attributes`.
 
-**Read more:** [Attributes](../reference/directives.md#attributes) in the directive reference.
+**Read more:** [Attributes](../writing/directives.md#attributes) in the directive reference.
 
 ### ASC002 `attribute-type-mismatch`
 @id {permalink=true}: ASC002
@@ -26,7 +26,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Give a value of the key's declared type: one of the enumeration's values, `true` or `false` for a boolean, or a plain number such as `600` for a number.
 
-**Read more:** [Attributes](../reference/directives.md#attributes) in the directive reference.
+**Read more:** [Attributes](../writing/directives.md#attributes) in the directive reference.
 
 ### ASC003 `attribute-bare-key`
 @id {permalink=true}: ASC003
@@ -39,7 +39,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the key a value: `key=value`. Booleans are written out too: `open=true`.
 
-**Read more:** [Attributes](../reference/directives.md#attributes) in the directive reference.
+**Read more:** [Attributes](../writing/directives.md#attributes) in the directive reference.
 
 ### ASC004 `attribute-unquoted-reserved`
 @id {permalink=true}: ASC004
@@ -52,7 +52,7 @@ Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#3
 
 **Fix:** Quote the value: `label="Using other images"`.
 
-**Read more:** [Attributes](../reference/directives.md#attributes) in the directive reference.
+**Read more:** [Attributes](../writing/directives.md#attributes) in the directive reference.
 
 ### ASC055 `attribute-syntax`
 @id {permalink=true}: ASC055
@@ -65,7 +65,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the attribute block: close every quote and brace, give every `=` a value, and separate pairs with commas.
 
-**Read more:** [Attributes](../reference/directives.md#attributes) in the directive reference.
+**Read more:** [Attributes](../writing/directives.md#attributes) in the directive reference.
 
 ### ASC056 `attribute-duplicate-key`
 @id {permalink=true}: ASC056
@@ -78,7 +78,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the key once. For several values of a set-valued key, write a value set: `platform=cloud|on-prem`.
 
-**Read more:** [Attributes](../reference/directives.md#attributes) in the directive reference.
+**Read more:** [Attributes](../writing/directives.md#attributes) in the directive reference.
 
 ## Directives
 
@@ -93,7 +93,7 @@ Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC
 
 **Fix:** Correct the directive's name, or declare a project widget with that name in `ascribe.toml`. If the line is meant as text, write `\@` at its start.
 
-**Read more:** [Directive lines](../reference/directives.md#directive-lines) in the directive reference.
+**Read more:** [Directive lines](../writing/directives.md#directive-lines) in the directive reference.
 
 ### ASC006 `directive-primary`
 @id {permalink=true}: ASC006
@@ -106,7 +106,7 @@ Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the text after the colon, or add the primary the directive needs, such as the path in `@include: setup.md`.
 
-**Read more:** [Directive lines](../reference/directives.md#directive-lines) in the directive reference.
+**Read more:** [Directive lines](../writing/directives.md#directive-lines) in the directive reference.
 
 ### ASC120 `directive-extra-text`
 @id {permalink=true}: ASC120
@@ -119,7 +119,7 @@ Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#3
 
 **Fix:** Remove the extra text. Text a directive should show belongs in its primary, after the colon, or in its content.
 
-**Read more:** [Directive lines](../reference/directives.md#directive-lines) in the directive reference.
+**Read more:** [Directive lines](../writing/directives.md#directive-lines) in the directive reference.
 
 ## Container
 
@@ -134,7 +134,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Add an `@end` line where the container's content ends, indented like its opener.
 
-**Read more:** [Forms: line and container](../reference/directives.md#forms-line-and-container) in the directive reference.
+**Read more:** [Forms: line and container](../writing/directives.md#forms-line-and-container) in the directive reference.
 
 ### ASC008 `container-colon-unexpected`
 @id {permalink=true}: ASC008
@@ -147,7 +147,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 
 **Fix:** Remove the trailing colon. The directive applies to what its binding says, such as the block after it.
 
-**Read more:** [Forms: line and container](../reference/directives.md#forms-line-and-container) in the directive reference.
+**Read more:** [Forms: line and container](../writing/directives.md#forms-line-and-container) in the directive reference.
 
 ### ASC009 `container-colon-missing`
 @id {permalink=true}: ASC009
@@ -160,7 +160,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 
 **Fix:** End the opener's line with a colon, and close the container with `@end`.
 
-**Read more:** [Forms: line and container](../reference/directives.md#forms-line-and-container) in the directive reference.
+**Read more:** [Forms: line and container](../writing/directives.md#forms-line-and-container) in the directive reference.
 
 ### ASC010 `container-open-at-arm`
 @id {permalink=true}: ASC010
@@ -173,7 +173,7 @@ Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md
 
 **Fix:** Close the inner container with `@end` before the next arm's opener.
 
-**Read more:** [Groups](../reference/directives.md#groups) in the directive reference.
+**Read more:** [Groups](../writing/directives.md#groups) in the directive reference.
 
 ### ASC011 `end-unmatched`
 @id {permalink=true}: ASC011
@@ -186,7 +186,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the `@end`, or make the directive it should close a container by ending that directive's line with a colon.
 
-**Read more:** [Forms: line and container](../reference/directives.md#forms-line-and-container) in the directive reference.
+**Read more:** [Forms: line and container](../writing/directives.md#forms-line-and-container) in the directive reference.
 
 ### ASC012 `end-indent-mismatch`
 @id {permalink=true}: ASC012
@@ -199,7 +199,7 @@ Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md
 
 **Fix:** Indent the `@end` exactly as its opener is indented.
 
-**Read more:** [Lists and block quotes](../reference/directives.md#lists-and-block-quotes) in the directive reference.
+**Read more:** [Lists and block quotes](../writing/directives.md#lists-and-block-quotes) in the directive reference.
 
 ### ASC013 `container-nesting-deep`
 @id {permalink=true}: ASC013
@@ -212,7 +212,7 @@ Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC
 
 **Fix:** Flatten the structure: use a directive's following-block form instead of a container, or split the content into sections.
 
-**Read more:** [Forms: line and container](../reference/directives.md#forms-line-and-container) in the directive reference.
+**Read more:** [Forms: line and container](../writing/directives.md#forms-line-and-container) in the directive reference.
 
 ## Binding
 
@@ -227,7 +227,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Put the block the directive applies to directly below it, in the same container, or remove the directive.
 
-**Read more:** [Binding: what a directive applies to](../reference/directives.md#binding-what-a-directive-applies-to) in the directive reference.
+**Read more:** [Binding: what a directive applies to](../writing/directives.md#binding-what-a-directive-applies-to) in the directive reference.
 
 ### ASC015 `binding-heading`
 @id {permalink=true}: ASC015
@@ -240,7 +240,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Move the directive below the heading, directly above the block it describes.
 
-**Read more:** [Binding: what a directive applies to](../reference/directives.md#binding-what-a-directive-applies-to) in the directive reference.
+**Read more:** [Binding: what a directive applies to](../writing/directives.md#binding-what-a-directive-applies-to) in the directive reference.
 
 ### ASC016 `binding-blank-line`
 @id {permalink=true}: ASC016
@@ -253,7 +253,7 @@ Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the blank line, so the directive touches its block. `ascribe fmt` does this.
 
-**Read more:** [Binding: what a directive applies to](../reference/directives.md#binding-what-a-directive-applies-to) in the directive reference.
+**Read more:** [Binding: what a directive applies to](../writing/directives.md#binding-what-a-directive-applies-to) in the directive reference.
 
 ### ASC017 `binding-not-section-top`
 @id {permalink=true}: ASC017
@@ -266,7 +266,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Move the directive directly under its heading, before any other content of the section.
 
-**Read more:** [Binding: what a directive applies to](../reference/directives.md#binding-what-a-directive-applies-to) in the directive reference.
+**Read more:** [Binding: what a directive applies to](../writing/directives.md#binding-what-a-directive-applies-to) in the directive reference.
 
 ## Title
 
@@ -281,7 +281,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 
 **Fix:** Remove the title line, or start it with `\.` if it's text that begins with a dot.
 
-**Read more:** [Titles](../reference/directives.md#titles) in the directive reference.
+**Read more:** [Titles](../writing/directives.md#titles) in the directive reference.
 
 ### ASC019 `title-dot-space`
 @id {permalink=true}: ASC019
@@ -294,7 +294,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 
 **Fix:** Remove the space after the dot (`.Title`) to make the line a title, or separate it from the directive with a blank line if it's text.
 
-**Read more:** [Titles](../reference/directives.md#titles) in the directive reference.
+**Read more:** [Titles](../writing/directives.md#titles) in the directive reference.
 
 ## `@id`
 
@@ -309,7 +309,7 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Give one of the headings a different `@id`. When the second id comes from an included fragment, change it in the page or in the fragment, or include the fragment once.
 
-**Read more:** [`@id`](../reference/directives.md#id) in the directive reference.
+**Read more:** [`@id`](../writing/directives.md#id) in the directive reference.
 
 ### ASC058 `id-invalid`
 @id {permalink=true}: ASC058
@@ -322,7 +322,7 @@ Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Use only letters, digits, hyphens, underscores, and periods in the id, or in the page's `permalink`.
 
-**Read more:** [`@id`](../reference/directives.md#id) in the directive reference.
+**Read more:** [`@id`](../writing/directives.md#id) in the directive reference.
 
 ### ASC173 `permalink-duplicate`
 @id {permalink=true}: ASC173
@@ -335,7 +335,7 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Give one of them a different name (a heading's `@id`, or a page's `permalink`), or stop it being a permalink: remove `{permalink=true}` from the `@id`, or `permalink` from the frontmatter. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages.
 
-**Read more:** [Permalinks](../reference/directives.md#permalinks) in the directive reference.
+**Read more:** [Permalinks](../writing/directives.md#permalinks) in the directive reference.
 
 ## `@include`
 
@@ -350,7 +350,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the path. It's relative to the including file, or to the content root when it starts with `/`, and the file must be a Markdown source file inside the content root.
 
-**Read more:** [`@include`](../reference/directives.md#include) in the directive reference.
+**Read more:** [`@include`](../writing/directives.md#include) in the directive reference.
 
 ### ASC022 `include-id-missing`
 @id {permalink=true}: ASC022
@@ -363,7 +363,7 @@ Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the `#id`, or give the heading you want to include that id with `@id`.
 
-**Read more:** [`@include`](../reference/directives.md#include) in the directive reference.
+**Read more:** [`@include`](../writing/directives.md#include) in the directive reference.
 
 ### ASC023 `include-cycle`
 @id {permalink=true}: ASC023
@@ -376,7 +376,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove one of the includes in the cycle. A section can't include itself, directly or through other files.
 
-**Read more:** [`@include`](../reference/directives.md#include) in the directive reference.
+**Read more:** [`@include`](../writing/directives.md#include) in the directive reference.
 
 ### ASC125 `include-heading-without-id`
 @id {permalink=true}: ASC125
@@ -389,7 +389,7 @@ Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.
 
 **Fix:** Remove `heading=false`, or include a section: `file.md#id`.
 
-**Read more:** [`@include`](../reference/directives.md#include) in the directive reference.
+**Read more:** [`@include`](../writing/directives.md#include) in the directive reference.
 
 ### ASC182 `include-limit`
 @id {permalink=true}: ASC182
@@ -402,7 +402,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Include less on this page. Usually a fragment is included more than once on the way: a few files that each include the next twice double the page at every step. Include each fragment once, or split the page.
 
-**Read more:** [`@include`](../reference/directives.md#include) in the directive reference.
+**Read more:** [`@include`](../writing/directives.md#include) in the directive reference.
 
 ## `@variant`
 
@@ -417,7 +417,7 @@ Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.
 
 **Fix:** Add an arm for the build's selection, or check the build's `variants` in `ascribe.toml`. If the content is meant to be absent from that build, the warning can be ignored.
 
-**Read more:** [`@variant`](../reference/directives.md#variant) in the directive reference.
+**Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 
 ### ASC025 `variant-unknown`
 @id {permalink=true}: ASC025
@@ -430,7 +430,7 @@ Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there.
 
-**Read more:** [`@variant`](../reference/directives.md#variant) in the directive reference.
+**Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 
 ### ASC026 `variant-mixed-arms`
 @id {permalink=true}: ASC026
@@ -443,7 +443,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Make every arm of the group dimensional (attributes, such as `{pm=npm}`) or every arm labeled (a title line).
 
-**Read more:** [`@variant`](../reference/directives.md#variant) in the directive reference.
+**Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 
 ### ASC027 `variant-arm-kind`
 @id {permalink=true}: ASC027
@@ -456,7 +456,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the arm either attributes or a title line: one, not both and not neither.
 
-**Read more:** [`@variant`](../reference/directives.md#variant) in the directive reference.
+**Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 
 ### ASC028 `variant-no-shared-dimension`
 @id {permalink=true}: ASC028
@@ -469,7 +469,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Name at least one dimension that every arm of the group shares.
 
-**Read more:** [`@variant`](../reference/directives.md#variant) in the directive reference.
+**Read more:** [`@variant`](../writing/directives.md#variant) in the directive reference.
 
 ## `@available`
 
@@ -484,7 +484,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 
 **Fix:** Use a declared dimension value, dimension, feature key, or lifecycle state, or declare the name in `ascribe.toml`.
 
-**Read more:** [`@available`](../reference/directives.md#available) in the directive reference.
+**Read more:** [`@available`](../writing/directives.md#available) in the directive reference.
 
 ### ASC030 `available-history-order`
 @id {permalink=true}: ASC030
@@ -497,7 +497,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** List the target's states oldest first: `self-managed (preview 3.3, ga 3.5)`.
 
-**Read more:** [Availability specs](../reference/directives.md#availability-specs) in the directive reference.
+**Read more:** [Availability specs](../writing/directives.md#availability-specs) in the directive reference.
 
 ### ASC031 `available-versionless`
 @id {permalink=true}: ASC031
@@ -510,7 +510,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the version. A versionless target, or a dimension name, takes a state but no version: `cloud beta`.
 
-**Read more:** [Availability specs](../reference/directives.md#availability-specs) in the directive reference.
+**Read more:** [Availability specs](../writing/directives.md#availability-specs) in the directive reference.
 
 ### ASC032 `available-exceeds-scope`
 @id {permalink=true}: ASC032
@@ -523,7 +523,7 @@ Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Narrow this availability to what the enclosing page or section allows, or widen the enclosing one.
 
-**Read more:** [`@available`](../reference/directives.md#available) in the directive reference.
+**Read more:** [`@available`](../writing/directives.md#available) in the directive reference.
 
 ### ASC057 `available-syntax`
 @id {permalink=true}: ASC057
@@ -534,9 +534,9 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Message:** "\{spec}" isn't a valid availability spec: \{detail}
 
-**Fix:** Fix the availability spec. Its syntax is in the [directive reference](../reference/directives.md#availability-specs).
+**Fix:** Fix the availability spec. Its syntax is in the [directive reference](../writing/directives.md#availability-specs).
 
-**Read more:** [Availability specs](../reference/directives.md#availability-specs) in the directive reference.
+**Read more:** [Availability specs](../writing/directives.md#availability-specs) in the directive reference.
 
 ## `@steps`
 
@@ -551,7 +551,7 @@ Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md
 
 **Fix:** Put an ordered list directly below `@steps`.
 
-**Read more:** [`@steps`](../reference/directives.md#steps) in the directive reference.
+**Read more:** [`@steps`](../writing/directives.md#steps) in the directive reference.
 
 ## `@details`
 
@@ -566,7 +566,7 @@ Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md
 
 **Fix:** Add a title line directly above `@details`: `.Show the full configuration`.
 
-**Read more:** [`@details`](../reference/directives.md#details) in the directive reference.
+**Read more:** [`@details`](../writing/directives.md#details) in the directive reference.
 
 ## Project widget
 
@@ -581,4 +581,4 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 
 **Fix:** Change the widget's use to match its declaration in `[widgets]`, or change the declaration.
 
-**Read more:** [Project widgets](../reference/directives.md#project-widgets) in the directive reference.
+**Read more:** [Project widgets](../writing/directives.md#project-widgets) in the directive reference.

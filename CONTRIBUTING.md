@@ -70,7 +70,7 @@ cargo build -p ascribe-cli
 
 Two pages that say the same thing say it once, in a fragment under `docs/content/_fragments/` that each includes. The `ascribe.toml` reference and its contract share theirs from `docs/content/_fragments/content-model/`, and `the_content_model_pages_share_text_only_through_fragments` in `tests/conformance/tests/docs.rs` fails on a paragraph, list, table, or example written in both; change the fragment, and both pages change.
 
-A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/reference/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/ascribe-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:
+A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/writing/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/ascribe-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:
 
 ```toml
 # :snippet-start: project
@@ -108,11 +108,11 @@ Three checks run Ascribe from npm, the nightly canary `next`, not from the check
 
 ## Linking to the docs from code
 
-Nothing outside the docs links to a page's path. The binary, the extension, the agents' rules, and the published READMEs (the repository's, the packages', the crates', and the plugin's) link to a [permalink](docs/content/reference/directives.md#permalinks) instead, which forwards to wherever its page or section is, so the docs can move without breaking them. Ascribe's names follow one convention:
+Nothing outside the docs links to a page's path. The binary, the extension, the agents' rules, and the published READMEs (the repository's, the packages', the crates', and the plugin's) link to a [permalink](docs/content/writing/directives.md#permalinks) instead, which forwards to wherever its page or section is, so the docs can move without breaking them. Ascribe's names follow one convention:
 
 | For | Name | Declared on |
 |---|---|---|
-| A command | `cli-` and its name, with `-` for a space: `cli-check`, `cli-sources-update` | Its heading in its page under `docs/content/reference/cli/`, `@id {permalink=true}: cli-check` |
+| A command | `cli-` and its name, with `-` for a space: `cli-check`, `cli-sources-update` | Its heading on its page of the command reference, `@id {permalink=true}: cli-check` |
 | The command reference | `cli-reference` | The page's frontmatter |
 | A diagnostic | Its code, `ASC036`, retired ones too | Its heading in the diagnostics reference, which the generator writes |
 | Another page | Its subject, with `-guide` for a guide and `-contract` for a contract: `diagnostics`, `directives`, `getting-started`, `agents-guide`, `editor-guide`, `output-layout-contract` | The page's frontmatter, `permalink: agents-guide` |

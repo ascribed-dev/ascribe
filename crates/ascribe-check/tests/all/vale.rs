@@ -132,7 +132,7 @@ fn the_docs_name_the_oldest_vale_that_works() {
         registry.contains(&wanted),
         "the prose-not-checked fix says {wanted}"
     );
-    let guide = fs::read_to_string(repo.join("docs/content/guides/vale.md")).expect("the guide");
+    let guide = fs::read_to_string(repo.join("docs/content/checks/vale.md")).expect("the guide");
     let wanted = format!("Install Vale {major}.{minor} or later");
     assert!(guide.contains(&wanted), "the Vale guide says {wanted}");
 }

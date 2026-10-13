@@ -15,7 +15,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 - SPEC §4.8, and `packages/astro/src/code-titles.ts`: how a snippet's title reaches a renderer.
 - `packages/elements/CONTRACT.md`: how the availability element's lead-in, "Available:", comes from a stylesheet and not from the markup.
 - `crates/ascribe-emit/src/json.rs`: what a block's `snippet` holds.
-- `docs/content/reference/diagnostics.md`, "What to do next": the five kinds of next step.
+- `docs/content/checks/diagnostics.md`, "What to do next": the five kinds of next step.
 - `docs/ascribe.toml`: the docs' own source, `code`, is the repository's root, and its snippets show configuration, test output, and source files.
 
 ## The decisions

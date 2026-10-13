@@ -1,6 +1,6 @@
-//! The command reference, `docs/content/reference/cli.md` and its pages in
-//! `docs/content/reference/cli/`, includes fragments generated from the
-//! `clap` definitions: the synopsis, the options every
+//! The command reference, `docs/content/command/index.md` and its pages, each
+//! in the folder of the feature its commands are for, includes fragments
+//! generated from the `clap` definitions: the synopsis, the options every
 //! command accepts, and each command's own, in
 //! `docs/content/_generated/cli-*.md`. This test renders them and fails when
 //! one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite them. To
@@ -64,8 +64,9 @@ fn docs_permalinks(base: &str) -> Vec<ascribe_resolve::Permalink> {
 /// heading, as written, it must lead to: each command's help, each
 /// diagnostic's entry (in `check`'s JSON, `explain`, and the editor), the
 /// agents' rules, and the plugin's homepage. A page with a folder of the same
-/// name, as `reference/cli.md` has `reference/cli/`, stands for itself and
-/// the pages in that folder.
+/// name, as `checks/diagnostics.md` has `checks/diagnostics/`, stands for
+/// itself and the pages in that folder, and the command reference for its
+/// pages wherever they are.
 fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     let mut helps = Vec::new();
     let mut cli = Cli::command();
@@ -95,25 +96,25 @@ fn addresses() -> Vec<(String, &'static str, Option<String>)> {
                 .lines()
                 .find_map(|line| line.strip_prefix("Documentation: "))
                 .expect("each command's help ends with a link to its documentation");
-            (link.to_owned(), "reference/cli.md", heading)
+            (link.to_owned(), COMMAND_REFERENCE, heading)
         })
         .collect();
     // Retired codes keep their entries, and their permalinks.
     for entry in ascribe_check::Registry::global().entries() {
         out.push((
             entry.docs(),
-            "reference/diagnostics.md",
+            "checks/diagnostics.md",
             Some(format!("{} `{}`", entry.code, entry.slug)),
         ));
     }
     out.push((
         ascribe_query::rules::directive_reference_url(),
-        "reference/directives.md",
+        "writing/directives.md",
         None,
     ));
     out.push((
         crate::agents::plugin::HOMEPAGE.to_owned(),
-        "guides/agents.md",
+        "agents/index.md",
         None,
     ));
     out
@@ -148,9 +149,47 @@ fn the_docs_site_is_where_the_binary_links() {
     );
 }
 
+/// The command reference's own page. Its other pages are each in the folder
+/// of the feature its commands are for.
+const COMMAND_REFERENCE: &str = "command/index.md";
+
+/// The command reference's pages: the pages that include a fragment generated
+/// from the help text, its own page first.
+fn command_reference() -> Vec<String> {
+    fn walk(folder: &str, pages: &mut Vec<String>) {
+        let dir = repo().join("docs/content").join(folder);
+        let mut names: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|name| !name.starts_with('_'))
+            .collect();
+        names.sort();
+        for name in names {
+            let path = format!("{folder}{name}");
+            if repo().join("docs/content").join(&path).is_dir() {
+                walk(&format!("{path}/"), pages);
+            } else if name.ends_with(".md")
+                && path != COMMAND_REFERENCE
+                && std::fs::read_to_string(repo().join("docs/content").join(&path))
+                    .unwrap()
+                    .lines()
+                    .any(|l| l.starts_with("@include: ") && l.contains("/_generated/cli-"))
+            {
+                pages.push(path);
+            }
+        }
+    }
+    let mut pages = vec![COMMAND_REFERENCE.to_owned()];
+    walk("", &mut pages);
+    pages
+}
+
 /// The pages `page` stands for: itself, and the pages in the folder of its
-/// name.
+/// name; or, for the command reference, its pages.
 fn pages_of(page: &str) -> Vec<String> {
+    if page == COMMAND_REFERENCE {
+        return command_reference();
+    }
     let mut pages = vec![page.to_owned()];
     let folder = page.trim_end_matches(".md");
     if let Ok(dir) = std::fs::read_dir(repo().join("docs/content").join(folder)) {
@@ -275,7 +314,7 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
             })
             .place;
         assert!(
-            place.starts_with("reference/content-model"),
+            place.starts_with("content-model/"),
             "{name} leads to {place}, not the ascribe.toml reference"
         );
     }
@@ -283,7 +322,7 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
         .strip_prefix(crate::cli::DOCS_PERMALINKS)
         .and_then(|rest| rest.strip_suffix('/'))
         .unwrap();
-    assert_eq!(list.permalinks[next].place, "guides/astro.md");
+    assert_eq!(list.permalinks[next].place, "astro/index.md");
 }
 
 /// The docs' committed list is what `ascribe permalinks sync` writes for
@@ -335,10 +374,9 @@ fn the_binary_s_addresses_dont_move_with_the_docs() {
             "{address}: on {on}, not on {}",
             pages_of(page).join(", ")
         );
-        assert_eq!(
-            found.route,
-            format!("/docs/{}/", on.trim_end_matches(".md"))
-        );
+        // A folder's `index.md` is at the folder's address.
+        let id = on.trim_end_matches(".md").trim_end_matches("/index");
+        assert_eq!(found.route, format!("/docs/{id}/"));
     }
     let mut model = ascribe_model::load(repo().join("docs/ascribe.toml")).unwrap();
     "/docs/".clone_into(&mut model.consumer.base_path);
@@ -356,7 +394,7 @@ fn the_binary_s_addresses_dont_move_with_the_docs() {
 fn the_command_reference_is_current() {
     let fragments = render();
     check_fragments("cli-", &fragments);
-    let pages = pages_of("reference/cli.md");
+    let pages = pages_of(COMMAND_REFERENCE);
     for (name, _) in &fragments {
         assert!(
             pages.iter().any(|page| {

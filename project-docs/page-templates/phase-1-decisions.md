@@ -11,7 +11,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 ## Context
 
 - The [proposal](../proposals/page-templates.md): "In a project", and "The conversion".
-- `docs/content/reference/content-model.md` §4: what a type has today, and how a path in `ascribe.toml` is written (from the project's folder).
+- `docs/content/content-model/index.md` §4: what a type has today, and how a path in `ascribe.toml` is written (from the project's folder).
 - `ascribe vale eject`, in the command reference: what it writes, what it refuses, and its exit codes.
 - `project-docs/checklists.md`, "A new command or option": naming, `--format`, how a command names things, and exit codes.
 - The [memos proposal](../proposals/memos.md): `@memo`, and that nothing has built it.

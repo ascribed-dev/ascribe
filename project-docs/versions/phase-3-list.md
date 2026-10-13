@@ -14,7 +14,7 @@ Nothing here needs a versioned build, and its seam isn't the thread's. It's numb
 - `project-docs/decisions.md`, decision 67: `[versions] current` and `availability-left-behind`, which this phase amends.
 - `crates/ascribe-check/src/across.rs`: the checks across a project, `availability-left-behind` among them.
 - `packages/elements/CONTRACT.md`: the availability element. `crates/ascribe-emit/src/labels.rs`: the text the element and the plain output share.
-- `docs/content/reference/cli.md`: `ASCRIBE_TODAY`, the one rule for a check that depends on the day.
+- `docs/content/command/index.md`: `ASCRIBE_TODAY`, the one rule for a check that depends on the day.
 - `docs/ascribe.toml`, `site/home/ascribe.toml`, and `scripts/docs-site/facts.test.ts`, which holds the two equal.
 - `RELEASING.md`: the step after a release.
 

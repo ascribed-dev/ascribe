@@ -376,8 +376,8 @@ mod tests {
             ".github/workflows/report.yml installs another afdocs than {VERSION}"
         );
         for page in [
-            "docs/content/guides/report.md",
-            "docs/content/reference/cli/diff.md",
+            "docs/content/checks/report.md",
+            "docs/content/review/diff.md",
         ] {
             assert!(
                 read(page).contains(&format!("npm install -g afdocs@{VERSION}`")),

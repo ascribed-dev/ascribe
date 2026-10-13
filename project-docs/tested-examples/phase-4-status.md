@@ -18,7 +18,7 @@ The page then reads "Tested with Node 22.4.0 and 24.9.0 on Linux."
 
 - README decisions 5, 11, and 12, and phase 1's decisions 2 to 4.
 - `crates/ascribe-emit/src/json.rs`, and the JSON output's contract: a block's `snippet`.
-- `docs/content/guides/report.md`, and decision 66: `ascribe report`'s sections, and that its JSON is a contract.
+- `docs/content/checks/report.md`, and decision 66: `ascribe report`'s sections, and that its JSON is a contract.
 - `ascribe model`, which lists a project's sources.
 
 ## Design
