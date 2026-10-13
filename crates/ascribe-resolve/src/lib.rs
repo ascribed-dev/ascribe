@@ -125,6 +125,7 @@ pub use references::{
     IncludeTarget, SourceSet, destination_phrases, destination_span, include_issue, include_target,
     reference_issue, reference_target, resolve_reference,
 };
+pub use snippet::examples::{Example, ExampleStatus, FolderExamples, example};
 pub use snippet::{
     Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,
     snippet_issues, source_files,

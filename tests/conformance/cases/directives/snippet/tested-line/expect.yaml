@@ -1,0 +1,32 @@
+description: >-
+  A snippet of a file that its source's `ascribe.examples.toml` makes an
+  example, and that the observation beside it lists with the hash the file
+  has now, gets `tested="…"` in its info string, after any title: each
+  environment entry's label and shown number, in the config's order, then
+  the operating system. The hash reads CRLF as LF. An example that changed
+  since, and a file that isn't an example, get nothing.
+spec: ["4.8", "7.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "An example its observation lists as it is:"
+          - code: "console.log(\"hello\");\n"
+            info: ts tested="Node 24.9.0 and TypeScript 5.9.2 on Linux"
+          - paragraph: "With a title:"
+          - code: "console.log(\"hello\");\n"
+            info: ts title="Say hello" tested="Node 24.9.0 and TypeScript 5.9.2 on Linux"
+          - paragraph: "An example checked out with CRLF line endings, observed with LF:"
+          - code: "console.log(\"crlf\");\n"
+            info: ts tested="Node 24.9.0 and TypeScript 5.9.2 on Linux"
+          - paragraph: "An example changed since it was observed:"
+          - code: "console.log(\"edited\");\n"
+            info: ts
+          - paragraph: "A file the config's `ignore` matches, and one its `include` doesn't:"
+          - code: "console.log(\"scratch\");\n"
+            info: ts
+          - code: "console.log(\"helper\");\n"
+            info: ts

@@ -619,6 +619,15 @@ pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-un
 /// `ASC198`, advice, file level: a content check (area `pages`).
 pub const DESCRIPTION_LINK: DiagnosticSlug = DiagnosticSlug("description-link");
 
+/// `ASC199`, advice, file level: a content check (area `examples`).
+pub const EXAMPLE_STALE: DiagnosticSlug = DiagnosticSlug("example-stale");
+
+/// `ASC200`, advice, file level: a content check (area `examples`).
+pub const EXAMPLE_UNOBSERVED: DiagnosticSlug = DiagnosticSlug("example-unobserved");
+
+/// `ASC201`, warning, file level: a content check (area `examples`).
+pub const EXAMPLES_CONFIG_INVALID: DiagnosticSlug = DiagnosticSlug("examples-config-invalid");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -815,6 +824,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     CONTENT_TYPE_MISSING,
     CONTENT_TYPE_UNKNOWN,
     DESCRIPTION_LINK,
+    EXAMPLE_STALE,
+    EXAMPLE_UNOBSERVED,
+    EXAMPLES_CONFIG_INVALID,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -849,6 +861,9 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     TITLE_HEADING_DIFFERS,
     TEMPLATE_PLACEHOLDER_LEFT,
     DESCRIPTION_LINK,
+    EXAMPLE_STALE,
+    EXAMPLE_UNOBSERVED,
+    EXAMPLES_CONFIG_INVALID,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

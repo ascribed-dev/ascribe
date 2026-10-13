@@ -1,0 +1,12 @@
+description: >-
+  A snippet of an example whose file changed after the observation that
+  lists it reports `example-stale`, and one of an example no observation
+  lists reports `example-unobserved`, each at the `@snippet` line. An example
+  whose observation is current, a file `ignore` matches, and a file
+  `include` doesn't match report nothing.
+spec: ["4.8", "7.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: example-stale, file: index.md, line: 5}
+  - {slug: example-unobserved, file: index.md, line: 7}

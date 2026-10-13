@@ -13,8 +13,11 @@
 //!   [`CodeFiles`];
 //! - the tags in the file and the snippet they mark ([`tags`]);
 //! - the code block it becomes ([`Snippet`]), and the file-level issues when
-//!   it can't be one ([`snippet_issues`]).
+//!   it can't be one ([`snippet_issues`]);
+//! - whether its file is a tested example, and what it was tested with
+//!   ([`examples`]).
 
+pub mod examples;
 pub mod tags;
 
 use std::collections::HashMap;
@@ -179,17 +182,21 @@ impl SnippetUse {
     }
 
     /// The fenced code block's info string (SPEC §4.8): the language, then
-    /// `title="…"`, then `phrases=true`. With no language but other words,
+    /// `title="…"`, then `tested="…"` for an example with a current
+    /// observation, then `phrases=true`. With no language but other words,
     /// it starts with `text`, so no word is read as the language.
-    pub fn info(&self, file: &CodeFile) -> String {
+    pub fn info(&self, file: &CodeFile, tested: Option<&str>) -> String {
         let lang = self
             .lang
             .clone()
             .or_else(|| file.path.extension().map(str::to_ascii_lowercase));
+        let quoted = |text: &str| text.replace('\\', "\\\\").replace('"', "\\\"");
         let mut words: Vec<String> = Vec::new();
         if let Some(title) = &self.title {
-            let escaped = title.replace('\\', "\\\\").replace('"', "\\\"");
-            words.push(format!("title=\"{escaped}\""));
+            words.push(format!("title=\"{}\"", quoted(title)));
+        }
+        if let Some(tested) = tested {
+            words.push(format!("tested=\"{}\"", quoted(tested)));
         }
         if self.phrases {
             words.push("phrases=true".to_owned());
@@ -252,6 +259,9 @@ pub enum ReadError {
 #[derive(Debug, Default)]
 pub struct CodeFiles {
     files: Mutex<HashMap<RelPath, Result<Arc<CodeFile>, ReadError>>>,
+    /// Each source folder's `ascribe.examples.toml` and observation, read
+    /// once ([`CodeFiles::examples`]).
+    examples: Mutex<HashMap<RelPath, Arc<examples::FolderExamples>>>,
 }
 
 impl CodeFiles {
@@ -333,6 +343,10 @@ pub struct Snippet {
     /// The lines of the code file it covers, from 1; `None` when they're
     /// none.
     pub lines: Option<(u32, u32)>,
+    /// For a file that's a tested example with a current observation, what
+    /// it was tested with: `Node 24.9.0 on Linux`. It's in the info string
+    /// too, as `tested="…"`.
+    pub tested: Option<String>,
 }
 
 /// Why a snippet's address doesn't give a snippet.
@@ -403,13 +417,21 @@ pub fn resolve_snippet(
     let Some(extracted) = file.extract(address.region.as_deref()) else {
         return Err(SnippetError::RegionMissing(file));
     };
+    let tested = match examples::example(source, &address.path, &file.text, fs, code) {
+        Some(examples::Example {
+            status: examples::ExampleStatus::Current(tested),
+            ..
+        }) => Some(tested),
+        _ => None,
+    };
     Ok(Snippet {
         address: snippet.written.clone(),
         path: file.path.clone(),
         file: file.id,
-        info: snippet.info(&file),
+        info: snippet.info(&file, tested.as_deref()),
         code: extracted.code,
         lines: extracted.lines,
+        tested,
     })
 }
 

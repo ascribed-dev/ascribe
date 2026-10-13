@@ -61,7 +61,7 @@ pub use builds::{
     diagnose_editor_build_in, select_builds,
 };
 pub use checks::check_file;
-use checks::check_sources;
+use checks::{check_examples, check_sources};
 pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
 pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
@@ -115,6 +115,7 @@ pub(crate) fn check_files_with(
     // permalinks list, then the unused entries of the content model; whether
     // a copy is used is known once every file's snippets have been read.
     let mut sources = check_sources(project);
+    sources.extend(check_examples(project));
     sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
     sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);

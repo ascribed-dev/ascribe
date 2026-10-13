@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**A tested examples' file that can't be read is `examples-config-invalid`: a warning, in the area `examples`, reported by `ascribe check` at the source in `ascribe.toml`.** It covers `ascribe.examples.toml` and the observation beside it, once for each problem, with the file and what's wrong in the message, and it's configurable like the area's advice. `ascribe observe` reports the same problems as errors, with their line and column, and exits 2. _Why:_ [phase 2](../tested-examples/phase-2-thread.md) has a config that can't be read reported where it's read, as a warning on the docs project naming the source, since then no example of the source can be checked; it isn't advice like `example-stale`, because it hides every example's status rather than reporting one, and it isn't an error, because the pages still build. The `@snippet` lines aren't where it's fixed, so it's at the source's entry. _From:_ the implementation of [issue #459](https://github.com/ascribed-dev/ascribe/issues/459), following phase 2's design, for Kyle's review in its pull request, 13 October 2026.
