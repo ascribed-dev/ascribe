@@ -56,9 +56,16 @@ An edit to an example, anywhere in the file, makes its observation out of date. 
 
 A change to a file an example only calls, such as a library, doesn't make it stale: only the example files are compared.
 
+## When the code is in another repository
+
+For a [source in another repository](index.md#docs-kept-apart-from-the-code), the config and the observation stay in the code's repository, beside the examples, and `ascribe observe` runs there. [`ascribe sources fetch`](sources.md#cli-sources-fetch) copies both into `sources/<name>/` with the files your snippets use, whatever the source's `include` says, and `ascribe.lock` lists them as it does every copy. The pages then say what each example was tested with, as they do for a folder in the same repository.
+
+- **An update says what changed.** When [`ascribe sources update`](sources.md#cli-sources-update) moves a pin, its summary names the examples that went stale (the file changed and its observation didn't follow), the ones the new observation doesn't list, and the ones tested again. The [update pull request](index.md#the-update-pull-request) carries the same lines.
+- **The fix is in the code's repository.** `example-stale` and `example-unobserved` say so: run `ascribe observe` there and commit, and the next update brings the observation here.
+- **Nothing here runs the config.** Its `test` and commands are read as text and never run, and `ascribe observe` refuses to run in `sources/<name>/`.
+
 ## What it doesn't do yet
 
-- **A source in another repository** shows no tested line, and reports nothing about testing.
 - **An example has one observation,** from the last run. Recording it under several environments, such as each operating system, comes later.
 - **The run is the unit.** Every file `include` matches is recorded as passing when the test passes, whether or not the test touched it, and one failing example blocks the whole run.
 

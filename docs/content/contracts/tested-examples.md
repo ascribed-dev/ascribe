@@ -9,9 +9,11 @@ This contract says what the two files of a source's tested examples hold: `ascri
 
 ## 1. Where they are
 
-Both are in the folder a source's `path` names: `ascribe.examples.toml` at its root, and the observations in `examples.observations/` beside it, the one `ascribe observe` writes named `default.toml`. They're read from there whatever the source's own `include` says, and no snippet can address an observation. Every path in either file is relative to that folder, with `/` between segments, which is also how a snippet's path in the source is written.
+Both are in a source's folder: `ascribe.examples.toml` at its root, and the observations in `examples.observations/` beside it, the one `ascribe observe` writes named `default.toml`. They're read from there whatever the source's own `include` says, and no snippet can address either: a `@snippet` of `ascribe.examples.toml`, or of a file under `examples.observations/`, reports what a file outside the source's `include` does. Every path in either file is relative to that folder, with `/` between segments, which is also how a snippet's path in the source is written.
 
-`check`, `build`, and the editor read both files and never run a command in either. Only `ascribe observe` runs the config's commands, and only from the folder it's run in.
+For a source in another repository, the folder is its copies, `sources/<name>/`. [`ascribe sources fetch` and `update`](../examples/sources.md#cli-sources-fetch) copy the repository's `ascribe.examples.toml` and every file in its `examples.observations/` there, at the pin, beside the files snippets use, and `ascribe.lock` lists each with its hash, as it does every copy ([the lock](content-model/output.md)). A repository with neither copies nothing more.
+
+`check`, `build`, `sources`, and the editor read both files and never run a command in either. Only `ascribe observe` runs the config's commands, and only from the folder it's run in. It refuses a folder that's a source's copies, which it knows from the `ascribe.lock` of a project above it, and exits 2: a config that arrived as a copy is data, and its `test` and commands are shown nowhere.
 
 ## 2. `ascribe.examples.toml`
 
@@ -73,7 +75,7 @@ For a snippet of an example, the observation decides its status:
 | stale | `[files]` lists it with another hash | Nothing | [`example-stale`](../checks/diagnostics/content-checks.md#ASC199), advice |
 | unobserved | `[files]` doesn't list it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/content-checks.md#ASC200), advice |
 
-A source in another repository has no status: its files show nothing and report nothing.
+For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its advice says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
 
 ## 5. The tested line
 

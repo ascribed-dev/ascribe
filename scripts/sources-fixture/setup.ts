@@ -191,9 +191,19 @@ interface Step {
   broken?: string[];
   /** Whether `ascribe check` fails on the pull request, when that isn't because of `broken`. */
   fails?: boolean;
+  /** The examples it says went stale: changed since their last test run. */
+  stale?: string[];
 }
 
 const PASS: Step[] = [
+  {
+    change: "untested",
+    outcome: "opened",
+    changed: ["quickstart.md"],
+    broken: [],
+    stale: ["examples/quickstart.ts"],
+  },
+  { change: "restore", outcome: "closed" },
   { change: "example", outcome: "opened", changed: ["login.md"], broken: [] },
   { change: "rename", outcome: "updated", changed: ["login.md"], broken: ["connect.md"] },
   { change: "restore", outcome: "closed" },
@@ -310,6 +320,13 @@ function check(step: Step, after: Snapshot): string[] {
         `"${lead}" lists ${found.join(", ") || "nothing"}, not ${expected.join(", ") || "nothing"}`,
       );
     }
+  }
+  const stale = /Examples that went stale, changed since their last test run: (.*)\.\n/.exec(body);
+  const staleFound = Array.from((stale?.[1] ?? "").matchAll(/`([^`]+)`/g), (m) => m[1] ?? "");
+  if (staleFound.join() !== (step.stale ?? []).join()) {
+    problems.push(
+      `it says ${staleFound.join(", ") || "nothing"} went stale, not ${(step.stale ?? []).join(", ") || "nothing"}`,
+    );
   }
   const says = body.includes("### `ascribe check` fails");
   if (says !== fails(step)) {

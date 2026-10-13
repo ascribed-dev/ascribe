@@ -10,8 +10,8 @@ use ascribe_check::{LoadError, Project};
 use ascribe_core::Coded;
 use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
 use ascribe_sources::{
-    CopyState, FetchReport, FileChange, Options, SourceUpdate, StatusReport, UpdateReport,
-    Workspace, short,
+    CopyState, ExampleState, FetchReport, FileChange, Options, SourceUpdate, StatusReport,
+    UpdateReport, Workspace, short,
 };
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
@@ -479,6 +479,15 @@ fn target(source: &SourceUpdate, to: Option<&str>, code: fn(&str) -> String) -> 
     }
 }
 
+/// What became of a tested example, in a line of `update`'s text.
+fn example_word(status: ExampleState) -> &'static str {
+    match status {
+        ExampleState::Current => "tested as it is now:",
+        ExampleState::Stale => "went stale, changed since its last test run:",
+        ExampleState::Unobserved => "no observation lists the example:",
+    }
+}
+
 fn change_word(change: FileChange) -> &'static str {
     match change {
         FileChange::Added => "added",
@@ -527,6 +536,9 @@ fn write_update_text(
             }
             for file in &source.files {
                 writeln!(out, "  {} {}", change_word(file.change), file.path)?;
+            }
+            for example in &source.examples {
+                writeln!(out, "  {} {}", example_word(example.status), example.path)?;
             }
         }
         out.flush()?;
@@ -612,6 +624,37 @@ fn write_update_summary(
                 .map(|f| format!("`{}` {}", f.path, change_word(f.change)))
                 .collect();
             writeln!(out, "  - Copies: {}.", files.join(", "))?;
+        }
+        for (status, lead) in [
+            (
+                ExampleState::Stale,
+                "Examples that went stale, changed since their last test run",
+            ),
+            (
+                ExampleState::Unobserved,
+                "Examples no observation lists at the new pin",
+            ),
+            (ExampleState::Current, "Examples tested as they are now"),
+        ] {
+            let paths: Vec<String> = source
+                .examples
+                .iter()
+                .filter(|e| e.status == status)
+                .map(|e| code_span(&e.path))
+                .collect();
+            if !paths.is_empty() {
+                writeln!(out, "  - {lead}: {}.", paths.join(", "))?;
+            }
+        }
+        if source
+            .examples
+            .iter()
+            .any(|e| e.status != ExampleState::Current)
+        {
+            writeln!(
+                out,
+                "  - Their pages say nothing about testing until `ascribe observe` passes in the code's repository and its observation arrives with an update."
+            )?;
         }
         for failure in &source.failed {
             writeln!(

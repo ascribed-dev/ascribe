@@ -489,3 +489,205 @@ fn fetch_and_status_say_what_they_did() {
         "error: --to moves one source's pin: name the source\n"
     );
 }
+
+/// A tested example in another repository: its config and observation come
+/// with the copies, the page says what it was tested with, an update says
+/// which examples went stale, and nothing the config names is ever run.
+#[test]
+fn examples_from_another_repository_say_what_they_were_tested_with() {
+    let code = tempfile::tempdir().unwrap();
+    let docs = tempfile::tempdir().unwrap();
+    let cache = tempfile::tempdir().unwrap();
+    // `rm -rf ~` empties this folder, not the user's, if it's ever run.
+    let home = tempfile::tempdir().unwrap();
+    write(home.path(), "still-here", "");
+    let ascribe = |dir: &Path, args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_ascribe"))
+            .current_dir(dir)
+            .args(args)
+            .env("NO_COLOR", "1")
+            .env("ASCRIBE_CACHE_DIR", cache.path())
+            .env("HOME", home.path())
+            .env("USERPROFILE", home.path())
+            .output()
+            .expect("run ascribe")
+    };
+
+    let code_dir = code.path();
+    git(code_dir, &["init", "-q", "-b", "main"]);
+    git(code_dir, &["config", "uploadpack.allowFilter", "true"]);
+    write(
+        code_dir,
+        "ascribe.examples.toml",
+        "include = [\"examples/**\"]\ntest = \"rm -rf ~\"\n\n[environment]\nnode = { label = \"Node\", command = \"rm -rf ~\" }\n",
+    );
+    write(code_dir, "examples/hello.ts", "hello();\n");
+    write(code_dir, "examples/other.ts", "other();\n");
+    write(code_dir, "src/lib.ts", "lib();\n");
+    let observation = |files: &[(&str, &str)]| {
+        let mut text = String::from(
+            "version = 1\nascribe = \"0.3.0\"\ncommand = \"rm -rf ~\"\n\n[environment]\nos = \"linux\"\narch = \"x64\"\nnode = \"v24.9.0\"\n\n[files]\n",
+        );
+        for (path, contents) in files {
+            text.push_str(&format!(
+                "\"{path}\" = \"{}\"\n",
+                ascribe_model::example_hash(contents.as_bytes())
+            ));
+        }
+        text
+    };
+    write(
+        code_dir,
+        "examples.observations/default.toml",
+        &observation(&[("examples/hello.ts", "hello();\n")]),
+    );
+    commit(code_dir, "first");
+
+    let dir = docs.path();
+    git(dir, &["init", "-q", "-b", "main"]);
+    write(
+        dir,
+        "ascribe.toml",
+        &format!(
+            "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\ngit = \"{}\"\nbranch = \"main\"\ninclude = [\"examples/**\"]\n",
+            file_url(code_dir)
+        ),
+    );
+    write(
+        dir,
+        "docs/index.md",
+        "---\ntitle: Hello\n---\n\n@snippet: code:examples/hello.ts\n\n@snippet: code:examples/other.ts\n",
+    );
+
+    // The config and the observation are copied beside the examples, and
+    // locked, whatever the source's `include` says.
+    let out = ascribe(dir, &["sources", "fetch"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let lock = fs::read_to_string(dir.join("ascribe.lock")).unwrap();
+    assert!(
+        lock.contains("\"ascribe.examples.toml\" = \"sha256:"),
+        "{lock}"
+    );
+    assert!(
+        lock.contains("\"examples.observations/default.toml\" = \"sha256:"),
+        "{lock}"
+    );
+    assert!(!lock.contains("src/lib.ts"), "{lock}");
+    assert!(dir.join("sources/code/ascribe.examples.toml").is_file());
+    commit(dir, "docs");
+
+    // The page says what the example was tested with; the other example has
+    // no observation, and the fix is in the other repository.
+    let out = ascribe(dir, &["check"]);
+    assert_eq!(code_of(&out), 0, "{}", stdout(&out));
+    let text = stdout(&out);
+    assert!(text.contains("example-unobserved"), "{text}");
+    assert!(
+        text.contains("the fix is in source `code`'s repository"),
+        "{text}"
+    );
+    assert!(!text.contains("source-copy-unused"), "{text}");
+    let out = ascribe(dir, &["build"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let built: String = tree(&dir.join(".ascribe").join("build"))
+        .into_values()
+        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+        .collect();
+    assert!(
+        built.contains("Tested with Node 24.9.0 on Linux."),
+        "{built}"
+    );
+    let out = ascribe(dir, &["sources", "status"]);
+    assert!(
+        stdout(&out).contains("  ascribe.examples.toml: current\n"),
+        "{}",
+        stdout(&out)
+    );
+
+    // No snippet can address the config or an observation.
+    write(
+        dir,
+        "docs/config.md",
+        "---\ntitle: Config\n---\n\n@snippet: code:ascribe.examples.toml\n\n@snippet: code:examples.observations/default.toml\n",
+    );
+    let out = ascribe(dir, &["check"]);
+    assert_eq!(code_of(&out), 1, "{}", stdout(&out));
+    assert_eq!(
+        stdout(&out).matches("snippet-file-missing").count(),
+        2,
+        "{}",
+        stdout(&out)
+    );
+    fs::remove_file(dir.join("docs/config.md")).unwrap();
+
+    // `ascribe observe` won't run a config that arrived as a copy.
+    let copies = dir.join("sources").join("code");
+    let out = ascribe(&copies, &["observe"]);
+    assert_eq!(code_of(&out), 2, "{}", stdout(&out));
+    assert!(
+        stderr(&out).contains("the copies of source `code`"),
+        "{}",
+        stderr(&out)
+    );
+
+    // The example changes and its observation doesn't follow: the update
+    // says so, and check reports it with the advice for another repository.
+    write(code_dir, "examples/hello.ts", "hello(\"world\");\n");
+    commit(code_dir, "Change the example");
+    let out = ascribe(dir, &["sources", "update"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).contains("  went stale, changed since its last test run: examples/hello.ts\n"),
+        "{}",
+        stdout(&out)
+    );
+    git(dir, &["checkout", "-q", "--", "."]);
+    let out = ascribe(dir, &["sources", "update", "--format", "markdown"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).contains("  - Examples that went stale, changed since their last test run: `examples/hello.ts`.\n  - Their pages say nothing about testing until"),
+        "{}",
+        stdout(&out)
+    );
+    let out = ascribe(dir, &["check"]);
+    let text = stdout(&out);
+    assert!(text.contains("example-stale"), "{text}");
+    assert!(
+        text.contains("the fix is in source `code`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update code`"),
+        "{text}"
+    );
+
+    // The observation follows, and lists the other example too.
+    write(
+        code_dir,
+        "examples.observations/default.toml",
+        &observation(&[
+            ("examples/hello.ts", "hello(\"world\");\n"),
+            ("examples/other.ts", "other();\n"),
+        ]),
+    );
+    commit(code_dir, "Test the examples again");
+    let out = ascribe(dir, &["sources", "update", "--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(
+        json["sources"][0]["examples"],
+        serde_json::json!([
+            {"path": "examples/hello.ts", "status": "current", "was": "stale"},
+            {"path": "examples/other.ts", "status": "current", "was": "unobserved"},
+        ])
+    );
+
+    // A copied observation deleted is a copy missing, as any locked file is.
+    fs::remove_file(dir.join("sources/code/examples.observations/default.toml")).unwrap();
+    let out = ascribe(dir, &["check"]);
+    assert_eq!(code_of(&out), 1, "{}", stdout(&out));
+    assert!(
+        stdout(&out).contains("ascribe.lock lists `sources/code/examples.observations/default.toml`, which isn't there"),
+        "{}",
+        stdout(&out)
+    );
+
+    // Nothing the config names ever ran.
+    assert!(home.path().join("still-here").exists());
+}
