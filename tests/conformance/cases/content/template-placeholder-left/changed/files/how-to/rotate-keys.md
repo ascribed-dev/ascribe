@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: "Rotate keys"
 description: "Replace a project's signing keys without downtime."
 ---

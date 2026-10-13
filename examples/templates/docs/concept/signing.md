@@ -1,4 +1,5 @@
 ---
+type: concept
 title: "Release signing"
 description: "What it means that Quill signs a release, and why a reader can trust a signed one."
 ---

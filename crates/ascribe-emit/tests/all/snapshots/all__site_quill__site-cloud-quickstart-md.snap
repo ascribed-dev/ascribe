@@ -3,6 +3,7 @@ source: crates/ascribe-emit/tests/all/site_quill.rs
 expression: text
 ---
 ---
+type: page
 title: Try Quill in the browser
 description: Run Quill in the browser with no local setup.
 source: quickstart.md

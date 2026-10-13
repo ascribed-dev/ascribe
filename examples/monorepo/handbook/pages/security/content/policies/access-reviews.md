@@ -1,4 +1,5 @@
 ---
+type: policy
 title: Access reviews
 owner: security
 review: quarterly

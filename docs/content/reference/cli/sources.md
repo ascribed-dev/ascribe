@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe init`, `sources`, `permalinks`, `templates`, and `vale`"
 description: "Start a project, fetch and update source repositories, keep the list of permalinks, write page templates into a project, and eject Vale's configuration."
 ---
@@ -147,15 +148,15 @@ The file it writes is small, and says what each part is for:
 
 @snippet: code:crates/ascribe-cli/tests/output/init-ascribe.toml
 
-It sets the content root, `docs`, though that's the default, since it's the first thing a project changes. It declares one type, `page`, the default, for every page no other type's `files` covers, with a title and a description; a project with types and no default has no type for a page outside their folders. Its comments name what most projects add next, each with its section of the [`ascribe.toml` reference](../content-model.md), and it adds none of them: no site address, no builds, and no dimensions.
+It sets the content root, `docs`, though that's the default, since it's the first thing a project changes. It declares one type, `page`, with a title and a description; since it declares a type, each page names it in its frontmatter, with `type: page`. Its comments name what most projects add next, each with its section of the [`ascribe.toml` reference](../content-model.md), and it adds none of them: no site address, no builds, and no dimensions.
 
-With `--templates`, the six types are added after `page`, each covering a folder of its name in `docs/`, and the templates, their guides, Ascribe's notes, and `templates.lock` are written into `templates/`, as `eject` writes them. When a file is where one would be written, it's named, as `eject` names it, and nothing is written.
+With `--templates`, the six types are added after `page`, and the templates, their guides, Ascribe's notes, and `templates.lock` are written into `templates/`, as `eject` writes them. When a file is where one would be written, it's named, as `eject` names it, and nothing is written.
 
 It lists each file it wrote, `ascribe.toml` last, from the current folder; the content root, when it made it; with `--templates`, each type it added, as `eject` says it; and last, the [Astro guide](../../guides/astro.md), to publish the pages as a site.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init.txt
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the new project's folder, in the order written), `content_root` (from the new project's folder), `content_root_made` (whether it made it), `templates` (what `eject` did, with the fields its own JSON has, or null without `--templates`), and `next` (the Astro guide's address). When `templates.refused` isn't empty, `written` is empty.
+With `--format json`, the document has `schema_version` (`2`), `ascribe_version`, `written` (the files, from the new project's folder, in the order written), `content_root` (from the new project's folder), `content_root_made` (whether it made it), `templates` (what `eject` did, with the fields its own JSON has, or null without `--templates`), and `next` (the Astro guide's address). When `templates.refused` isn't empty, `written` is empty.
 
 | Code | Meaning |
 |---|---|
@@ -168,7 +169,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages; [Page templates](../../guides/templates.md) says where they come from, and how to use them.
 
-The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file into the type's folder. `eject` adds to a project, and never starts one: [`ascribe init --templates`](#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
+The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file to where the page goes; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list
@@ -190,7 +191,6 @@ For each template, it writes the template, its guide, and Ascribe's notes on the
 
 ```toml
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
@@ -199,31 +199,30 @@ title = "string"
 description = "string"
 ```
 
-The type's `guide` lists their guide, then Ascribe's notes, in the order to read them. The type covers the pages in a folder of its name in the content root, and its frontmatter has the fields the template's has, each a string a page must have. When the project's default type declares one of those fields as a string with more to it, such as `title = { type = "string", inline = "code" }` or `description = { type = "string", role = "description" }`, the type added declares it the same way, so its pages' titles and descriptions read as the project's other pages' do. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was, and the project's other pages keep it:
+The type's `guide` lists their guide, then Ascribe's notes, in the order to read them. Its frontmatter has the fields the template's has, apart from `type`, each a string a page must have. When one of the project's types declares one of those fields as a string with more to it, such as `title = { type = "string", inline = "code" }` or `description = { type = "string", role = "description" }`, the type added declares it the same way, so its pages' titles and descriptions read as the project's other pages' do. A project that declared no types had every page of the implicit `page` type, so `eject` writes that type out first, as it was:
 
 ```toml
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 ```
 
+A project that declares types has each page name one, so its pages that named none, which were of `page`, now need `type: page`: `eject` lists them, and `ascribe check` reports each with a fix that adds it.
+
 Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it.
 
-A project that declares a template's type already, with its own `files` and frontmatter, takes the template for it with `--keep-type`:
+A project that declares a template's type already, with its own frontmatter, takes the template for it with `--keep-type`:
 
 ```sh
 ascribe templates eject reference --keep-type
 ```
 
-It writes the same files and `templates.lock`, and adds only `template` and `guide` to the type's table, after its last entry, leaving its `files`, its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
+It writes the same files and `templates.lock`, and adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
 
 It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
 
-It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the folder its pages go in and the fields it declared as the default type does; each type it added that matches no page yet, and then the pages of the default type, up to ten, which are the ones to list in a type's `files` to make them of it; each type it kept, with the keys it left as they were; that a type's `files` is the line to change to keep its pages elsewhere; and how to start a page.
+It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the fields it declared as the project's other types do; the pages that name no type, up to ten, which `ascribe check` reports until each has its `type:`; each type it kept, with the keys it left as they were; and how to start a page.
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `files` (the type's pattern), `folder` (where its pages go, from the folder `ascribe.toml` is in), `template`, `guide` (their guide, then Ascribe's notes), `copied` (the fields of its frontmatter declared as the default type declares them), and `pages` (how many of the project's pages its `files` match); `kept`, the types `--keep-type` kept, each with `name`, `summary`, `template`, `guide`, and `left` (the type's keys left as they were, in the order `ascribe.toml` has them); `refused`, each with `name`, `reason` (`unknown`, `declared`, `file_in_the_way`, or, with `--keep-type`, `type_not_table`, `type_has_template`, or `frontmatter_differs`), `path` (the file in the way, or null), and `message`; `page_declared`, whether `[types.page]` was written out; `default_type`, the project's default type with the types added, or null when it has none; and `default_pages`, the pages of the default type, from the folder `ascribe.toml` is in, when a type added matches no page, and otherwise empty. When `refused` isn't empty, `written`, `added`, and `kept` are.
+With `--format json`, the document has `schema_version` (`2`), `ascribe_version`, `written` (the files, from the folder `ascribe.toml` is in, in the order written), `added`, each with `name`, `summary`, `template`, `guide` (their guide, then Ascribe's notes), and `copied` (the fields of its frontmatter declared as another of the project's types declares them); `kept`, the types `--keep-type` kept, each with `name`, `summary`, `template`, `guide`, and `left` (the type's keys left as they were, in the order `ascribe.toml` has them); `refused`, each with `name`, `reason` (`unknown`, `declared`, `file_in_the_way`, or, with `--keep-type`, `type_not_table`, `type_has_template`, or `frontmatter_differs`), `path` (the file in the way, or null), and `message`; `page_declared`, whether `[types.page]` was written out; and `untyped`, the pages that name no type, from the folder `ascribe.toml` is in. When `refused` isn't empty, `written`, `added`, and `kept` are.
 
 | Code | Meaning |
 |---|---|

@@ -589,9 +589,12 @@ describe("with several projects, one nested in another", () => {
       // A link to a page the cloud build leaves out: a problem in cloud alone.
       writeFileSync(
         selfManaged.fsPath,
-        "---\ntitle: Self-managed\navailable: self-managed\n---\n\nRun your own.\n",
+        "---\ntype: page\ntitle: Self-managed\navailable: self-managed\n---\n\nRun your own.\n",
       );
-      writeFileSync(linking.fsPath, "---\ntitle: Cloud link\n---\n\nSee [](self-managed.md).\n");
+      writeFileSync(
+        linking.fsPath,
+        "---\ntype: page\ntitle: Cloud link\n---\n\nSee [](self-managed.md).\n",
+      );
       // Opened first, so the server has the page before it checks the link.
       await open(selfManaged);
       const editor = await open(linking);
@@ -640,13 +643,13 @@ describe("with several projects, one nested in another", () => {
       // server has no page here.
       const editor = await open(nestedPage);
       // Before "edition" in "## The {edition} edition".
-      editor.selection = new vscode.Selection(5, 17, 5, 17);
+      editor.selection = new vscode.Selection(6, 17, 6, 17);
       const before = api.actions.runs.length;
       api.actions.answerNext(["edition"]);
       await vscode.commands.executeCommand("ascribe.action.insertPhrase");
       try {
         assert.deepEqual(api.actions.runs[before]?.messages, []);
-        assert.equal(editor.document.lineAt(5).text, "## The {edition} {edition}edition");
+        assert.equal(editor.document.lineAt(6).text, "## The {edition} {edition}edition");
       } finally {
         await vscode.commands.executeCommand("workbench.action.files.revert");
       }
@@ -666,7 +669,7 @@ describe("with several projects, one nested in another", () => {
     it("offer the nested project's note types and dimensions in its page, not the handbook's", async () => {
       const editor = await open(nestedPage);
       // The blank line between "@id: edition" and the note.
-      editor.selection = new vscode.Selection(7, 0, 7, 0);
+      editor.selection = new vscode.Selection(8, 0, 8, 0);
       /** The values the first step of the bar's action offers; the wizard is then cancelled. */
       async function offered(label: string): Promise<string[]> {
         let values: string[] = [];
@@ -699,7 +702,7 @@ describe("with several projects, one nested in another", () => {
     before(async () => {
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
       await mkdirWatched(path.join(agent(), "docs"));
-      writeFileSync(page("index.md").fsPath, "---\ntitle: Agent\n---\n\nAgent.\n");
+      writeFileSync(page("index.md").fsPath, "---\ntype: page\ntitle: Agent\n---\n\nAgent.\n");
       await afterDiskChanges();
       await createProject(agent());
       assert.equal(api.state(agent()), "stopped");
@@ -725,9 +728,15 @@ describe("with several projects, one nested in another", () => {
       const listener = api.onDidStartServer((folder) => started.push(comparable(folder)));
       try {
         const broken = page("broken.md");
-        writeFileSync(broken.fsPath, "---\ntitle: Broken\n---\n\nSee [](missing.md).\n");
+        writeFileSync(
+          broken.fsPath,
+          "---\ntype: page\ntitle: Broken\n---\n\nSee [](missing.md).\n",
+        );
         for (let i = 0; i < 30; i++) {
-          writeFileSync(page(`page-${i}.md`).fsPath, `---\ntitle: Page ${i}\n---\n\nPage.\n`);
+          writeFileSync(
+            page(`page-${i}.md`).fsPath,
+            `---\ntype: page\ntitle: Page ${i}\n---\n\nPage.\n`,
+          );
         }
         await diagnosticsOf(broken, () => codes(broken).join() === "ASC036");
         assert.equal(api.state(agent()), "running");
@@ -751,7 +760,7 @@ describe("with several projects, one nested in another", () => {
       const guides = path.join(workspace(), "guides");
       const page = vscode.Uri.file(path.join(guides, "docs", "index.md"));
       mkdirSync(path.dirname(page.fsPath), { recursive: true });
-      writeFileSync(page.fsPath, "---\ntitle: Guides\n---\n\nSee [](missing.md).\n");
+      writeFileSync(page.fsPath, "---\ntype: page\ntitle: Guides\n---\n\nSee [](missing.md).\n");
       try {
         await afterDiskChanges();
         await createProject(guides);
@@ -779,7 +788,10 @@ describe("with several projects, one nested in another", () => {
       // A project none of whose files has been opened.
       const idle = path.join(workspace(), "idle");
       mkdirSync(path.join(idle, "docs"), { recursive: true });
-      writeFileSync(path.join(idle, "docs", "index.md"), "---\ntitle: Idle\n---\n\nIdle.\n");
+      writeFileSync(
+        path.join(idle, "docs", "index.md"),
+        "---\ntype: page\ntitle: Idle\n---\n\nIdle.\n",
+      );
       try {
         await afterDiskChanges();
         await createProject(idle);
@@ -814,7 +826,7 @@ describe("with several projects, one nested in another", () => {
       const unwatched = path.join(workspace(), "unwatched");
       const page = vscode.Uri.file(path.join(unwatched, "docs", "index.md"));
       mkdirSync(path.dirname(page.fsPath), { recursive: true });
-      writeFileSync(page.fsPath, "---\ntitle: Unwatched\n---\n\nSee [](missing.md).\n");
+      writeFileSync(page.fsPath, "---\ntype: page\ntitle: Unwatched\n---\n\nSee [](missing.md).\n");
       copyFileSync(uriOf("docs", "ascribe.toml").fsPath, path.join(unwatched, "ascribe.toml"));
       try {
         // Time for a watcher event, if there were going to be one.

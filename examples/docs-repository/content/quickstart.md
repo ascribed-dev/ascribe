@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Quickstart
 description: A whole program that connects to Lantern and reads a flag.
 ---

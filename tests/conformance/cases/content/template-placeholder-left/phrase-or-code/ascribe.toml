@@ -8,7 +8,6 @@ product = "Quill"
 version = "2.0"
 
 [types.tutorial]
-files = ["tutorials/**"]
 template = "templates/tutorial.md"
 
 [types.tutorial.frontmatter]

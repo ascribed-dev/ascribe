@@ -5,4 +5,4 @@ spec: ["9.5"]
 tags: [model]
 
 diagnostics:
-  - {slug: model-invalid-value, file: ascribe.toml, line: 12}
+  - {slug: model-invalid-value, file: ascribe.toml, line: 9}

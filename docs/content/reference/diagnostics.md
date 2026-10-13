@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Diagnostics
 description: Every problem Ascribe reports, with its code and fix.
 permalink: diagnostics

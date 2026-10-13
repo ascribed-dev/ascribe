@@ -5,4 +5,4 @@ spec: ["7.2"]
 tags: [model]
 
 diagnostics:
-  - {slug: model-type-file, file: ascribe.toml, line: 9}
+  - {slug: model-type-file, file: ascribe.toml, line: 8}

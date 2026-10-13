@@ -14,7 +14,7 @@ use serde_json::{Value, json};
 use crate::support::{emit_build, memory_project, site};
 
 const MODEL: &str = "spec = \"0.1\"\n\
-    [types.page]\ndefault = true\n\
+    [types.page]\n\
     [types.page.frontmatter]\ntitle = \"string\"\n\
     description = { type = \"string?\", role = \"description\" }\n\
     [consumer]\nsite = \"https://docs.example.com\"\nbase-path = \"/docs/\"\nagents = true\n\
@@ -23,17 +23,20 @@ const MODEL: &str = "spec = \"0.1\"\n\
 const FILES: &[(&str, &str)] = &[
     (
         "index.md",
-        "---\ntitle: Home\ndescription: Every page of [the docs](index.md).\n---\n",
+        "---\ntype: page\ntitle: Home\ndescription: Every page of [the docs](index.md).\n---\n",
     ),
     (
         "guides/install.md",
-        "---\ntitle: Install the agent\ndescription: Install and connect it.\n---\n",
+        "---\ntype: page\ntitle: Install the agent\ndescription: Install and connect it.\n---\n",
     ),
     (
         "guides/drafts.md",
-        "---\ntitle: Drafts\nlisting: unlisted\n---\n",
+        "---\ntype: page\ntitle: Drafts\nlisting: unlisted\n---\n",
     ),
-    ("faq.md", "---\ntitle: FAQ\nlisting: unquoted\n---\n"),
+    (
+        "faq.md",
+        "---\ntype: page\ntitle: FAQ\nlisting: unquoted\n---\n",
+    ),
 ];
 
 fn records(project: &Project) -> Value {
@@ -126,7 +129,7 @@ fn each_page_has_a_record_keyed_by_its_route() {
 #[test]
 fn without_a_site_or_agents_a_record_has_no_addresses_but_its_route() {
     let model = "spec = \"0.1\"\n";
-    let project = memory_project(model, &[("a.md", "---\ntitle: A\n---\n")]);
+    let project = memory_project(model, &[("a.md", "---\ntype: page\ntitle: A\n---\n")]);
     assert_eq!(
         records(&project),
         json!({
@@ -210,15 +213,15 @@ fn breadcrumbs_are_the_pages_at_a_routes_folders() {
     // with no title isn't either. The base path's page is the first step.
     let model = "spec = \"0.1\"\n[consumer]\nbase-path = \"/docs/\"\n";
     let files: &[(&str, &str)] = &[
-        ("index.md", "---\ntitle: Docs\n---\n"),
-        ("guides/index.md", "---\ntitle: Guides\n---\n"),
+        ("index.md", "---\ntype: page\ntitle: Docs\n---\n"),
+        ("guides/index.md", "---\ntype: page\ntitle: Guides\n---\n"),
         (
             "guides/Setup/Install Agent.md",
-            "---\ntitle: Install\n---\n",
+            "---\ntype: page\ntitle: Install\n---\n",
         ),
-        ("reference/cli.md", "---\ntitle: CLI\n---\n"),
+        ("reference/cli.md", "---\ntype: page\ntitle: CLI\n---\n"),
         ("untitled/index.md", "Untitled.\n"),
-        ("untitled/page.md", "---\ntitle: Page\n---\n"),
+        ("untitled/page.md", "---\ntype: page\ntitle: Page\n---\n"),
     ];
     let project = memory_project(model, files);
     assert_eq!(
@@ -262,9 +265,9 @@ fn breadcrumbs_at_the_root_and_without_a_trailing_slash() {
     // trailing slash, each route has none.
     let model = "spec = \"0.1\"\n[consumer]\ntrailing-slash = \"never\"\n";
     let files: &[(&str, &str)] = &[
-        ("index.md", "---\ntitle: Home\n---\n"),
-        ("a/index.md", "---\ntitle: A\n---\n"),
-        ("a/b.md", "---\ntitle: B\n---\n"),
+        ("index.md", "---\ntype: page\ntitle: Home\n---\n"),
+        ("a/index.md", "---\ntype: page\ntitle: A\n---\n"),
+        ("a/b.md", "---\ntype: page\ntitle: B\n---\n"),
     ];
     assert_eq!(
         steps(&records(&memory_project(model, files))),
@@ -298,7 +301,7 @@ fn line_for<'a>(llms: &'a str, url: &str) -> Option<&'a str> {
 /// [`MODEL`] with a rule at every level of `[listing]`.
 fn with_rules() -> String {
     format!(
-        "{MODEL}[types.changelog]\nfiles = [\"changes/**\"]\n\
+        "{MODEL}[types.changelog]\n\
          [types.changelog.frontmatter]\ntitle = \"string\"\n\
          [listing]\ndefault = \"listed\"\n\
          [listing.folders]\n\"internal/\" = \"unlisted\"\n\
@@ -310,11 +313,11 @@ fn with_rules() -> String {
 fn files_with_rules() -> Vec<(&'static str, &'static str)> {
     let mut files = FILES.to_vec();
     files.extend([
-        ("internal/plan.md", "---\ntitle: Plan\n---\n"),
-        ("changes/one.md", "---\ntitle: One\n---\n"),
+        ("internal/plan.md", "---\ntype: page\ntitle: Plan\n---\n"),
+        ("changes/one.md", "---\ntype: changelog\ntitle: One\n---\n"),
         (
             "changes/two.md",
-            "---\ntitle: Two\nlisting: unlisted\n---\n",
+            "---\ntype: changelog\ntitle: Two\nlisting: unlisted\n---\n",
         ),
     ]);
     files
@@ -457,7 +460,10 @@ fn each_markdown_version_has_its_headers() {
 fn without_markdown_versions_the_headers_are_an_empty_list() {
     let project = memory_project(
         "spec = \"0.1\"\n",
-        &[("a.md", "---\ntitle: A\nlisting: unlisted\n---\n")],
+        &[(
+            "a.md",
+            "---\ntype: page\ntitle: A\nlisting: unlisted\n---\n",
+        )],
     );
     assert_eq!(headers(&project), json!({ "version": 1, "headers": [] }));
 }

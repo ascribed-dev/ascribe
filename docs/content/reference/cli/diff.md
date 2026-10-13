@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe diff`, `drift`, and `report`"
 description: "Compare a project's output with another revision, find sources that drifted, and report on a project's health."
 ---

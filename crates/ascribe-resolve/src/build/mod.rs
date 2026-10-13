@@ -286,7 +286,7 @@ impl<'p> BuildResolver<'p> {
         phrases::substitute_blocks(project, &mut blocks);
         let (frontmatter, formatted) = match &index.frontmatter {
             Some(f) => {
-                let (value, formatted) = phrases::frontmatter(model, path, f);
+                let (value, formatted) = phrases::frontmatter(model, index.content_type(model), f);
                 (Some(value), formatted)
             }
             None => (None, Vec::new()),
@@ -301,7 +301,8 @@ impl<'p> BuildResolver<'p> {
             .and_then(|f| f.get(Listing::KEY))
             .and_then(|l| l.as_str())
             .and_then(Listing::from_name);
-        let (listing, listing_from) = model.listing_of(path.as_str(), own);
+        let type_name = index.content_type(model).map(|t| t.name.as_str());
+        let (listing, listing_from) = model.listing_of(path.as_str(), type_name, own);
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
         // Acknowledgements (SPEC §4.9) are for the checks: no output shows

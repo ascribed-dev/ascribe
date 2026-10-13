@@ -7,8 +7,8 @@
 //! and never scanned for phrases or markup again. Each replacement is also
 //! listed as a [`Substitution`] over the block's source text.
 
-use ascribe_core::{RelPath, Span};
-use ascribe_model::{ContentModel, FieldType, TypeMatch, inline};
+use ascribe_core::Span;
+use ascribe_model::{ContentModel, ContentType, FieldType, inline};
 use ascribe_syntax::{BlockKind, Inline, InlineKind, LinkForm, Phrase};
 use serde_yaml_ng::Value;
 
@@ -180,14 +180,14 @@ pub(crate) fn merge_text(list: &mut Vec<Inline>) {
 /// page leaves out.
 pub(crate) fn frontmatter(
     model: &ContentModel,
-    path: &RelPath,
+    page_type: Option<&ContentType>,
     value: &Value,
 ) -> (Value, Vec<FormattedField>) {
     let mut out = value.clone();
-    let fields = match model.type_for(path.as_str()) {
-        TypeMatch::One(t) => &t.frontmatter.fields,
-        _ => return (out, Vec::new()),
+    let Some(page_type) = page_type else {
+        return (out, Vec::new());
     };
+    let fields = &page_type.frontmatter.fields;
     let mut formatted = Vec::new();
     if let Value::Mapping(map) = &mut out {
         for field in fields {

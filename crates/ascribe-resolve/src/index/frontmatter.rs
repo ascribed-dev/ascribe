@@ -10,21 +10,21 @@
 //! candidates listed.
 
 use ascribe_core::Span;
-use ascribe_model::{ContentModel, Field, FieldType, TypeMatch};
+use ascribe_model::{ContentModel, Field, FieldType};
 
 use super::{FileIndex, PhrasePlace, PhraseUse};
 
 /// The declared phrase candidates in the fields of the frontmatter at
-/// `content` (a span of `source`) that take phrases.
+/// `content` (a span of `source`) that take phrases, of the page's type's
+/// `fields` (`None` when it has no type).
 pub(crate) fn phrases(
     source: &str,
     content: Span,
-    path: &str,
+    fields: Option<&[Field]>,
     model: &ContentModel,
 ) -> Vec<PhraseUse> {
-    let fields = match model.type_for(path) {
-        TypeMatch::One(t) => &t.frontmatter.fields,
-        _ => return Vec::new(),
+    let Some(fields) = fields else {
+        return Vec::new();
     };
     if !fields.iter().any(takes_phrases) {
         return Vec::new();
@@ -133,13 +133,17 @@ pub(crate) fn key_line(file: &FileIndex, key: &str) -> Option<Span> {
 mod tests {
     use super::*;
 
-    const MODEL: &str = "spec = \"0.1\"\n\n[phrases]\nproduct = \"Quill\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = { type = \"string\", phrases = true }\ndescription = \"string?\"\nkeywords = { type = \"list(string)?\", phrases = true }\ncode = { type = \"string?\", phrases = true, inline = \"code\" }\n";
+    const MODEL: &str = "spec = \"0.1\"\n\n[phrases]\nproduct = \"Quill\"\n\n[types.page.frontmatter]\ntitle = { type = \"string\", phrases = true }\ndescription = \"string?\"\nkeywords = { type = \"list(string)?\", phrases = true }\ncode = { type = \"string?\", phrases = true, inline = \"code\" }\n";
 
     fn found(frontmatter: &str) -> Vec<String> {
         let model = ascribe_model::load_str(MODEL, ascribe_core::FileId::new(0)).expect("model");
         let source = format!("---\n{frontmatter}---\n");
         let content = Span::new(4, 4 + frontmatter.len());
-        phrases(&source, content, "a.md", &model)
+        let fields = model
+            .type_named(Some("page"))
+            .found()
+            .map(|t| t.frontmatter.fields.as_slice());
+        phrases(&source, content, fields, &model)
             .into_iter()
             .map(|p| {
                 assert_eq!(&source[p.phrase.key_span.range()], p.phrase.key);

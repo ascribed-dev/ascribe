@@ -1,0 +1,9 @@
+description: >-
+  A content type has no `files` or `default`: a page names its type in its
+  frontmatter. Each is an unknown key, whose message says to write `type:`.
+spec: ["7.1", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 4}
+  - {slug: model-unknown-key, file: ascribe.toml, line: 5}

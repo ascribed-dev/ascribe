@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Permalinks
 description: Giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 available: ascribe 0.3.0

@@ -21,7 +21,7 @@
 //! same ones, so what is reported is what is published.
 
 use ascribe_core::RelPath;
-use ascribe_model::{ContentModel, Field, FieldRole, TypeMatch};
+use ascribe_model::{ContentModel, Field, FieldRole};
 use ascribe_syntax::{BlockKind, ParseOptions};
 
 use crate::AstroRouter;
@@ -351,7 +351,7 @@ fn link_text(text: &str) -> String {
 /// A page's description, as its line in an index shows it
 /// ([`description_text`]). `None` when it has none.
 pub fn description(model: &ContentModel, page: &ResolvedPage) -> Option<String> {
-    let field = description_field(model, page.path.as_str())?;
+    let field = description_field(model, page.frontmatter.as_ref())?;
     let raw = page
         .frontmatter
         .as_ref()?
@@ -368,12 +368,13 @@ pub fn description_text(model: &ContentModel, raw: &str) -> Option<String> {
     (!text.is_empty()).then_some(text)
 }
 
-/// The description field of the page at `path`: the field its content type
-/// marks `role = "description"`.
-pub fn description_field<'m>(model: &'m ContentModel, path: &str) -> Option<&'m Field> {
-    let TypeMatch::One(ty) = model.type_for(path) else {
-        return None;
-    };
+/// The description field of a page with this frontmatter: the field its
+/// content type marks `role = "description"`.
+pub fn description_field<'m>(
+    model: &'m ContentModel,
+    frontmatter: Option<&serde_yaml_ng::Value>,
+) -> Option<&'m Field> {
+    let ty = model.type_of(frontmatter).found()?;
     ty.frontmatter.field_with_role(FieldRole::Description)
 }
 

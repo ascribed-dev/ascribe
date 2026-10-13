@@ -1,4 +1,5 @@
 ---
+type: page
 title: no
 description: A description
 order: 3

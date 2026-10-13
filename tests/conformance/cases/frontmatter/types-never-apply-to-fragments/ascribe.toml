@@ -1,0 +1,22 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# A page names one of these types (SPEC §7.2): `page`, with a field of each
+# type, and `reference`, which requires `api-version`.
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+order = "number?"
+updated = "date?"
+draft = "boolean?"
+level = "enum(beginner, intermediate, advanced)?"
+tags = "list(string)?"
+
+[types.reference.frontmatter]
+title = "string"
+api-version = "string"
+
+[checks]
+fragment-unused = "off"

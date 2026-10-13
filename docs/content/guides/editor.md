@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Editing
 description: The VS Code extension, workspaces with several projects, and other editors.
 permalink: editor-guide
@@ -82,6 +83,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.
 - In an attribute block: the directive's attribute keys, then their allowed values, such as note types or a dimension's values with their labels. After an image: the declared image attributes.
 - In `@available:` and frontmatter `available:`: targets, dimension names, feature keys, and lifecycle states.
+- In frontmatter `type:` {available=next}: the content types `ascribe.toml` declares, each with what it's for.
 - After `{` in text: the declared phrases, each with its value.
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.
@@ -171,11 +173,11 @@ These change `ascribe.toml` in place, keeping its comments, blank lines, and ord
 ### Start a page
 @available: next
 
-**Ascribe: New Page** makes a page from its type's [template](templates.md). Run it from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the page's type, each with what it's for (the type's `purpose`, or for a type from the starter set, their summary of it), then its title. The page is the template with its `title` set, named for the title, in the first folder the type's `files` cover; run on a folder, it lists only the types whose `files` take a page there, and makes the page in that folder. It's saved and opened with the first thing the template left to fill in selected, usually the description, so typing replaces it. A page is never made over a file: with a file of that name there, it says so, and you give another title.
+**Ascribe: New Page** makes a page from its type's [template](templates.md). Run it from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the page's type, each with what it's for (the type's `purpose`, or for a type from the starter set, their summary of it), then its title. The page is the template with its `type` and `title` set, named for the title, in the content root; run on a folder, it makes the page in that folder. A page names its type in its frontmatter, so any folder of pages takes every type; a fragment's folder takes none. It's saved and opened with the first thing the template left to fill in selected, usually the description, so typing replaces it. A page is never made over a file: with a file of that name there, it says so, and you give another title.
 
 **Ascribe: Go to Next Placeholder** selects the next thing the template left to fill in after the cursor: a frontmatter field still as the template has it, or a `\{placeholder}`, a whole one even when it runs across a paragraph and a list. After the last, it goes back to the first. They're the placeholders and fields [`template-placeholder-left`](templates.md#whats-left-to-fill-in) reports, found the same way; the template's instructions aren't among them, since you read those rather than fill them in. To give it a key, open **Preferences: Open Keyboard Shortcuts** and search for `ascribe.nextPlaceholder`.
 
-A type with no template makes a page with its frontmatter: the title, and each other field the type requires, empty.
+A type with no template makes a page with its frontmatter: its `type`, the title, and each other field the type requires, empty.
 
 ### The Ascribe sidebar
 @available: ascribe 0.3.0

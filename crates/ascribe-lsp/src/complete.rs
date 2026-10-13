@@ -55,6 +55,10 @@ pub(crate) fn complete(ctx: &Ctx, position: Position) -> Option<CompletionRespon
             let typed = value.trim_start().trim_start_matches(['"', '\'']);
             return Some(list(cx.listing(typed), false));
         }
+        if let Some(value) = prefix.strip_prefix("type:") {
+            let typed = value.trim_start().trim_start_matches(['"', '\'']);
+            return Some(list(cx.page_types(typed), false));
+        }
         let value = prefix.strip_prefix("available:")?;
         let typed = value.trim_start().trim_start_matches(['"', '\'']);
         return Some(list(cx.availability(typed), false));
@@ -127,7 +131,7 @@ impl Cx<'_> {
         let floor = self
             .ctx
             .model
-            .listing_rule(self.ctx.path.as_str())
+            .listing_rule(self.ctx.path.as_str(), self.ctx.page_type_name())
             .map(|rule| rule.listing)
             .unwrap_or_default();
         Listing::ALL
@@ -145,6 +149,33 @@ impl Cx<'_> {
                     }
                     .to_owned(),
                 ));
+                item
+            })
+            .collect()
+    }
+
+    /// The content types a page's `type` can name, after `type:` with
+    /// `typed` typed, in declaration order, each with its `purpose`. None in
+    /// a project that declares no types, or in a fragment.
+    fn page_types(&self, typed: &str) -> Vec<CompletionItem> {
+        let model = &self.ctx.model;
+        if !model.declares_types() || model.is_fragment(self.ctx.path.as_str()) {
+            return Vec::new();
+        }
+        model
+            .types
+            .iter()
+            .filter(|t| t.name.starts_with(typed))
+            .enumerate()
+            .map(|(n, t)| {
+                let mut item = self.item(
+                    &t.name,
+                    CompletionItemKind::ENUM_MEMBER,
+                    typed.len(),
+                    &t.name,
+                );
+                item.sort_text = Some(format!("{n:04}"));
+                item.documentation = t.purpose.clone().map(markdown);
                 item
             })
             .collect()

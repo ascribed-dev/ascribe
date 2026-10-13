@@ -8,4 +8,4 @@ spec: ["2.1"]
 tags: [check]
 
 diagnostics:
-  - {slug: listing-disallowed, file: drafts/a.md, line: 3}
+  - {slug: listing-disallowed, file: drafts/a.md, line: 4}

@@ -69,13 +69,11 @@ base-path = "/"
 trailing-slash = "never"
 permalink-path = "/go/"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 `,
   "home/content/index.md": `---
+type: page
 title: Loom
 ---
 
@@ -85,6 +83,7 @@ title: Loom
 Loom weaves your strands together.
 `,
   "home/content/why.md": `---
+type: page
 title: Why Loom
 ---
 

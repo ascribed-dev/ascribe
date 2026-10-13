@@ -73,10 +73,7 @@ fn the_full_models_schema_covers_every_field_type() {
 
 #[test]
 fn the_schema_of_a_model_with_no_frontmatter_beyond_the_title() {
-    let project = memory_project(
-        "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[types.page]\ndefault = true\n[types.page.frontmatter]\ntitle = \"string\"\n",
-        &[],
-    );
+    let project = memory_project("spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n", &[]);
     let schema = zod::generate(project.model());
     assert!(schema.contains("export const pageSchema = z.strictObject({\n  title: z.string(),\n"));
     assert!(schema.contains("export const schema = pageSchema;"));

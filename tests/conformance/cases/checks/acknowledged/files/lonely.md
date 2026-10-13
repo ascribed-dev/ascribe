@@ -1,4 +1,5 @@
 ---
+type: page
 title: Lonely
 intended:
   - check: page-orphan

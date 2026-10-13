@@ -5,4 +5,4 @@ tags: [check]
 today: "2026-10-10"
 
 diagnostics:
-  - {slug: review-overdue, line: 3, severity: warning}
+  - {slug: review-overdue, line: 4, severity: warning}

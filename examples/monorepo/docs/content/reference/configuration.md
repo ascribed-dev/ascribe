@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Server configuration
 description: The settings in a self-hosted server's lantern.yaml.
 since: "2.4"

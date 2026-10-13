@@ -40,28 +40,32 @@ describe("the Quill schema", () => {
   it("gives a layout each page's path from the content root", () => {
     const page = quill.pageSchema.parse(frontmatter["install-agent.md"]);
     expect(page.source).toBe("install-agent.md");
-    expect(quill.pageSchema.safeParse({ title: "T" }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", title: "T" }).success).toBe(false);
   });
 
   it("rejects an unknown key, a missing title, and a source-style available", () => {
-    expect(quill.pageSchema.safeParse({ title: "T", surprise: 1 }).success).toBe(false);
-    expect(quill.pageSchema.safeParse({ description: "no title" }).success).toBe(false);
-    expect(quill.pageSchema.safeParse({ title: "T", available: "cloud" }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", title: "T", surprise: 1 }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", description: "no title" }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", title: "T", available: "cloud" }).success).toBe(false);
   });
 
   it("takes variant as a mapping to a value or a list", () => {
     const ok = quill.pageSchema.safeParse({
+      type: "page",
       title: "T",
       variant: { pm: ["npm", "yarn"], deployment: "cloud" },
       source: "a.md",
     });
     expect(ok.success).toBe(true);
-    expect(quill.pageSchema.safeParse({ title: "T", variant: "cloud" }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", title: "T", variant: "cloud" }).success).toBe(false);
   });
 
   it("lists the content types", () => {
     expect(Object.keys(quill.schemas)).toEqual(["page"]);
-    expect(quill.contentTypes.page).toEqual({ default: true, files: [] });
+    // A page names its type, and only that type's name is accepted.
+    expect(quill.pageSchema.safeParse({ type: "guide", title: "T", source: "a.md" }).success).toBe(
+      false,
+    );
     const title: z.infer<typeof quill.pageSchema>["title"] = "typed";
     expect(title).toBe("typed");
   });
@@ -69,6 +73,7 @@ describe("the Quill schema", () => {
 
 describe("the full content model's schema", () => {
   const guide = {
+    type: "guide",
     title: "Guide",
     description: "d",
     order: 2,
@@ -108,26 +113,33 @@ describe("the full content model's schema", () => {
 
   it("has a schema for each type, and one for any of them", () => {
     expect(Object.keys(full.schemas)).toEqual(["guide", "reference"]);
-    expect(full.contentTypes.reference.files).toEqual(["reference/**", "api/**/*.md"]);
     const reference = {
+      type: "reference",
       title: "R",
       "api-version": "3",
       source: "reference/r.md",
       formatted: { title: "<code>R</code>" },
     };
     expect(full.schema.safeParse(reference).success).toBe(true);
+    expect(full.schema.safeParse(guide).success).toBe(true);
+    // The union is discriminated by `type`: a page of one type with another's
+    // fields fails, as does one that names no type.
+    expect(full.schema.safeParse({ ...reference, type: "guide" }).success).toBe(false);
+    const { type: _, ...untyped } = reference;
+    expect(full.schema.safeParse(untyped).success).toBe(false);
     expect(full.schema.safeParse({ nope: 1 }).success).toBe(false);
   });
 
   it("has the formatted form of a field that sets inline", () => {
     const page = {
+      type: "reference",
       title: "ascribe.toml reference",
       source: "reference/toml.md",
       formatted: { title: "<code>ascribe.toml</code> reference" },
     };
     expect(full.referenceSchema.parse(page).formatted.title).toBe("<code>ascribe.toml</code> reference");
     // The site output always writes it beside the title.
-    expect(full.referenceSchema.safeParse({ title: "R", source: "r.md" }).success).toBe(false);
+    expect(full.referenceSchema.safeParse({ type: "reference", title: "R", source: "r.md" }).success).toBe(false);
     expect(full.referenceSchema.safeParse({ ...page, formatted: { title: "R", nope: "" } }).success).toBe(false);
   });
 });

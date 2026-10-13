@@ -20,9 +20,6 @@ spec = "0.1"
 content-root = "docs"
 output-dir = ".ascribe/build"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = { type = "string", phrases = true }
 description = "string?"

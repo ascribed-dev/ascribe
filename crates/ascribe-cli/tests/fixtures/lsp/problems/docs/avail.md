@@ -1,4 +1,5 @@
 ---
+type: page
 title: Availability
 available: nowhere 1.0
 ---

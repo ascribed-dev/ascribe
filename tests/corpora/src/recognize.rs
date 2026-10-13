@@ -44,7 +44,8 @@ pub const OUT_OF_SCOPE: &[&str] = &[
     "frontmatter-unknown-key",
     "frontmatter-missing-field",
     "frontmatter-type-mismatch",
-    "content-type-unresolved",
+    "content-type-missing",
+    "content-type-unknown",
 ];
 
 /// One recognition.

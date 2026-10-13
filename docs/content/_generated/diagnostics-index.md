@@ -51,7 +51,6 @@
 | [ASC048](../reference/diagnostics/pages.md#ASC048) | `frontmatter-missing-field` | Error | File | write |
 | [ASC049](../reference/diagnostics/pages.md#ASC049) | `frontmatter-type-mismatch` | Error | File | choose |
 | [ASC050](../reference/diagnostics/pages.md#ASC050) | `frontmatter-reserved-in-fragment` | Error | File | write |
-| [ASC051](../reference/diagnostics/pages.md#ASC051) | `content-type-unresolved` | Error | File | write |
 | [ASC052](../reference/diagnostics/pages.md#ASC052) | `list-ended-by-directive` | Warning | File | write |
 | [ASC053](../reference/diagnostics/pages.md#ASC053) | `directive-indented-code` | Warning | File | write |
 | [ASC054](../reference/diagnostics/pages.md#ASC054) | `steps-numbering-continued` | Warning | File | write |
@@ -71,8 +70,6 @@
 | [ASC068](../reference/diagnostics/content-model.md#ASC068) | `model-path-absolute` | Error | File | write |
 | [ASC069](../reference/diagnostics/content-model.md#ASC069) | `model-content-root-missing` | Error | File | write |
 | [ASC070](../reference/diagnostics/content-model.md#ASC070) | `model-output-overlaps-content` | Error | File | write |
-| [ASC071](../reference/diagnostics/content-model.md#ASC071) | `model-type-multiple-defaults` | Error | File | choose |
-| [ASC072](../reference/diagnostics/content-model.md#ASC072) | `model-type-unreachable` | Error | File | write |
 | [ASC073](../reference/diagnostics/content-model.md#ASC073) | `model-type-title` | Error | File | write |
 | [ASC074](../reference/diagnostics/content-model.md#ASC074) | `model-field-reserved` | Error | File | write |
 | [ASC075](../reference/diagnostics/content-model.md#ASC075) | `model-type-syntax` | Error | File | write |
@@ -196,3 +193,5 @@
 | [ASC193](../reference/diagnostics/content-model.md#ASC193) | `model-type-file` | Error | File | write |
 | [ASC194](../reference/diagnostics/content-model.md#ASC194) | `model-type-template` | Error | File | write |
 | [ASC195](../reference/diagnostics/content-checks.md#ASC195) | `template-placeholder-left` | Advice | File | write |
+| [ASC196](../reference/diagnostics/pages.md#ASC196) | `content-type-missing` | Error | File | choose |
+| [ASC197](../reference/diagnostics/pages.md#ASC197) | `content-type-unknown` | Error | File | choose |

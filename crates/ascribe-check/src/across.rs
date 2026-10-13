@@ -433,7 +433,7 @@ fn duplicate_descriptions(
     let model = index.model();
     let described = resolved.iter().filter_map(|page| {
         let text = ascribe_resolve::llms::description(model, page)?;
-        let field = ascribe_resolve::llms::description_field(model, page.path.as_str())?;
+        let field = ascribe_resolve::llms::description_field(model, page.frontmatter.as_ref())?;
         let span = field_span(index.file(&page.path)?, &field.name)?;
         Some((*page, text, span))
     });

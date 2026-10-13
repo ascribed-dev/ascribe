@@ -1,0 +1,9 @@
+description: >-
+  A project that declares no content types needs nothing on its pages: they
+  have the implicit `page` type. A page there that names a type anyway is an
+  error at the value, since the project declares none.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: content-type-unknown, file: a.md, line: 2}

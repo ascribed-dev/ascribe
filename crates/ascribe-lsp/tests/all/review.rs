@@ -275,13 +275,17 @@ fn a_title_with_code_is_listed_and_previewed_formatted() {
     f.write(
         "ascribe.toml",
         &format!(
-            "{MODEL}\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\n"
+            "{MODEL}\n[types.page.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\n"
         ),
     );
+    // A project that declares a type: each page names it.
+    for (path, text) in [("docs/install.md", PAGE), ("docs/other.md", OTHER)] {
+        f.write(path, &text.replacen("---\n", "---\ntype: page\n", 1));
+    }
     git(&f.root(), &["commit", "-q", "-am", "Code in titles"]);
     f.write(
         "docs/keys.md",
-        "---\ntitle: \"`ascribe.toml` keys\"\n---\n\nKeys.\n",
+        "---\ntype: page\ntitle: \"`ascribe.toml` keys\"\n---\n\nKeys.\n",
     );
     let mut client = Client::start(&f.root());
     client.settle();

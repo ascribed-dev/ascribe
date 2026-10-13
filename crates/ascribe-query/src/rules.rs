@@ -72,7 +72,7 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
     let render = |types_taken: usize, directives_taken: usize| -> String {
         format!(
             "{head}{}{phrases}{}{tail}",
-            section(Section::Types, TYPES_INTRO, &types, types_taken, &at),
+            section(Section::Types, types_intro(model), &types, types_taken, &at),
             directives(directives_taken)
         )
     };
@@ -238,9 +238,18 @@ impl At {
     }
 }
 
-/// What the page types' section says before its lines.
-const TYPES_INTRO: &str = "A page's frontmatter is its type's. A file or folder whose name starts \
-                           with `_` is a fragment, which pages `@include`, not a page.";
+/// What the page types' section says before its lines: in a project that
+/// declares types, that a page names its own (SPEC §7.2).
+fn types_intro(model: &ContentModel) -> &'static str {
+    if model.declares_types() {
+        "A page says what type it is with `type:` in its frontmatter, first, and its other \
+         fields are its type's. A file or folder whose name starts with `_` is a fragment, \
+         which pages `@include`, not a page, and names no type."
+    } else {
+        "A page's frontmatter is its type's. A file or folder whose name starts with `_` is a \
+         fragment, which pages `@include`, not a page."
+    }
+}
 
 /// The phrases, cut to [`MODEL_BUDGET`].
 fn phrases_section(model: &ContentModel, at: &At) -> String {
@@ -424,10 +433,13 @@ mod tests {
 
     /// The line of the rules for the type `name`.
     fn line<'a>(rules: &'a str, name: &str) -> &'a str {
-        let start = format!("- `{name}` ");
+        let start = format!("- `{name}`");
         rules
             .lines()
-            .find(|l| l.starts_with(&start))
+            .find(|l| {
+                l.strip_prefix(&start)
+                    .is_some_and(|rest| rest.starts_with([' ', ':']))
+            })
             .unwrap_or_else(|| panic!("no line for `{name}`:\n{rules}"))
     }
 
@@ -462,7 +474,7 @@ mod tests {
         }
         assert_eq!(
             line(&rules, "page"),
-            "- `page` (the default): frontmatter `title` (string, required)"
+            "- `page`: frontmatter `title` (string, required)"
         );
     }
 
@@ -508,13 +520,13 @@ mod tests {
         let mut model = String::from("spec = \"0.1\"\n");
         for i in 0..30 {
             model.push_str(&format!(
-                "\n[types.kind-{i}]\nfiles = [\"kind-{i}/**\"]\npurpose = \"A page about the \
+                "\n[types.kind-{i}]\npurpose = \"A page about the \
                  {i}th kind of thing this product does, with every detail a reader asks for.\"\n\n\
                  [types.kind-{i}.frontmatter]\ntitle = \"string\"\n"
             ));
         }
         model.push_str("\n[phrases]\nproduct = \"Lantern\"\n");
-        let page = "---\ntitle: Steps\n---\n\n@steps\n1. One.\n2. Two.\n";
+        let page = "---\ntype: kind-0\ntitle: Steps\n---\n\n@steps\n1. One.\n2. Two.\n";
         let rules = rules_of(&model, &[("docs/kind-0/steps.md", page)]);
         assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
         let kept = rules.lines().filter(|l| l.starts_with("- `kind-")).count();

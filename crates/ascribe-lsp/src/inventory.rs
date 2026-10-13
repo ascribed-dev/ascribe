@@ -7,7 +7,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::{LineIndex, RelPath};
-use ascribe_model::{GlossaryMatch, TypeMatch};
+use ascribe_model::GlossaryMatch;
 use ascribe_resolve::Usable;
 use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
@@ -138,10 +138,7 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
         .map(|file| InventoryPage {
             path: file.path.to_string(),
             title: file.title.clone(),
-            content_type: match ctx.model.type_for(file.path.as_str()) {
-                TypeMatch::One(t) => Some(t.name.clone()),
-                TypeMatch::Ambiguous(_) | TypeMatch::None => None,
-            },
+            content_type: file.content_type(&ctx.model).map(|t| t.name.clone()),
             incoming: count(Usable::File(file.path.clone())),
         })
         .collect();

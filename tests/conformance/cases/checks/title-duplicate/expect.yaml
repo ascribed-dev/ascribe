@@ -7,7 +7,7 @@ tags: [page-check, resolve]
 builds:
   site:
     diagnostics:
-      - {slug: title-duplicate, file: install.md, line: 2}
-      - {slug: title-duplicate, file: server.md, line: 2}
+      - {slug: title-duplicate, file: install.md, line: 3}
+      - {slug: title-duplicate, file: server.md, line: 3}
   cloud:
     diagnostics: []

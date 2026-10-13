@@ -56,6 +56,18 @@ impl Ctx {
     /// the content root that no source file can have.
     pub(crate) const PROJECT: &'static str = "ascribe.toml";
 
+    /// The requested page's content type, as the source index has it: the
+    /// one its `type` names. `None` for a fragment, and for a page with no
+    /// type or one that isn't declared.
+    pub(crate) fn page_type(&self) -> Option<&ascribe_model::ContentType> {
+        self.snapshot.file(&self.path)?.content_type(&self.model)
+    }
+
+    /// The name of the requested page's content type ([`Ctx::page_type`]).
+    pub(crate) fn page_type_name(&self) -> Option<&str> {
+        self.page_type().map(|t| t.name.as_str())
+    }
+
     /// The requested file's index.
     pub(crate) fn file(&self) -> Option<&FileIndex> {
         self.snapshot.file(&self.path)

@@ -15,14 +15,8 @@ const MODEL: &str = r#"spec = "0.1"
 [consumer]
 site = "https://docs.example.com"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
-
-[types.guide]
-files = ["guides/**"]
 
 [types.guide.frontmatter]
 title = "string"
@@ -42,10 +36,9 @@ availability = { filter = "server" }
 build = "cloud"
 "#;
 
-const INSTALL: &str = "---\ntitle: Install\nteam: platform\n---\n\nSee the [old docs](https://gone.example/) first.\n";
+const INSTALL: &str = "---\ntype: guide\ntitle: Install\nteam: platform\n---\n\nSee the [old docs](https://gone.example/) first.\n";
 
-const CLOUD: &str =
-    "---\ntitle: Cloud\nteam: platform\navailable: cloud\n---\n\nRead [install](install.md).\n";
+const CLOUD: &str = "---\ntype: guide\ntitle: Cloud\nteam: platform\navailable: cloud\n---\n\nRead [install](install.md).\n";
 
 fn project(model: &str) -> TempDir {
     let dir = tempfile::tempdir().expect("a temporary directory");
@@ -55,7 +48,7 @@ fn project(model: &str) -> TempDir {
     write(
         dir.path(),
         "docs/index.md",
-        "---\ntitle: Home\n---\n\nRead [install](guides/install.md) and [cloud](guides/cloud.md).\n",
+        "---\ntype: page\ntitle: Home\n---\n\nRead [install](guides/install.md) and [cloud](guides/cloud.md).\n",
     );
     dir
 }
@@ -239,7 +232,7 @@ fn links_are_reported_at_their_place_and_fail_with_exit_code() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let text = stdout(&out);
     assert!(
-        text.contains("docs/guides/install.md:6: [ASC168] `https://gone.example/` answered 404 Not Found, so the link is broken for readers"),
+        text.contains("docs/guides/install.md:7: [ASC168] `https://gone.example/` answered 404 Not Found, so the link is broken for readers"),
         "{text}"
     );
 
@@ -389,7 +382,7 @@ fn a_link_that_answered_before_is_held_until_it_keeps_failing() {
          Checked 1 address, asking about each: no answer from an earlier run was reused.\n  \
          None is broken or moved.\n  \
          1 link not confirmed. It answered before and fails now, and is reported if it's still failing on its day:\n    \
-         docs/guides/install.md:6: https://gone.example/ answered 503 Service Unavailable. Last answered 8 October; reported from 13 October\n"
+         docs/guides/install.md:7: https://gone.example/ answered 503 Service Unavailable. Last answered 8 October; reported from 13 October\n"
     );
     let prompt = stdout(&links_on(dir.path(), "2026-10-10", &["--format", "prompt"]));
     assert!(!prompt.contains("gone.example"), "{prompt}");
@@ -400,7 +393,7 @@ fn a_link_that_answered_before_is_held_until_it_keeps_failing() {
     assert_eq!((&links["new"], &links["resolved"]), (&0.into(), &0.into()));
     let held = &links["unconfirmed"]["items"][0];
     assert_eq!(held["file"], "docs/guides/install.md");
-    assert_eq!(held["range"]["start"]["line"], 6);
+    assert_eq!(held["range"]["start"]["line"], 7);
     assert_eq!(held["url"], "https://gone.example/");
     assert_eq!(held["status"], "503 Service Unavailable");
     assert_eq!(
@@ -421,7 +414,7 @@ fn a_link_that_answered_before_is_held_until_it_keeps_failing() {
     let text = stdout(&links_on(dir.path(), "2026-10-13", &[]));
     assert!(
         text.contains(
-            "  1 link to look at, new since 10 October:\n    docs/guides/install.md:6: [ASC168]"
+            "  1 link to look at, new since 10 October:\n    docs/guides/install.md:7: [ASC168]"
         ),
         "{text}"
     );
@@ -498,9 +491,6 @@ site = "https://docs.example.com"
 base-path = "/docs/"
 agents = true
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = { type = "string?", role = "description" }
@@ -518,22 +508,22 @@ fn pages_project() -> TempDir {
     write(
         dir.path(),
         "docs/index.md",
-        "---\ntitle: Home\ndescription: Where to start.\n---\n\nRead [install](guides/install.md), [roadmap](roadmap.md), and [notes](internal/notes.md).\n",
+        "---\ntype: page\ntitle: Home\ndescription: Where to start.\n---\n\nRead [install](guides/install.md), [roadmap](roadmap.md), and [notes](internal/notes.md).\n",
     );
     write(
         dir.path(),
         "docs/guides/install.md",
-        "---\ntitle: Install\ndescription: Install the product.\n---\n\nDownload it.\n",
+        "---\ntype: page\ntitle: Install\ndescription: Install the product.\n---\n\nDownload it.\n",
     );
     write(
         dir.path(),
         "docs/roadmap.md",
-        "---\ntitle: Roadmap\nlisting: unquoted\n---\n\nWhat's next.\n",
+        "---\ntype: page\ntitle: Roadmap\nlisting: unquoted\n---\n\nWhat's next.\n",
     );
     write(
         dir.path(),
         "docs/internal/notes.md",
-        "---\ntitle: Notes\n---\n\nFor the team.\n",
+        "---\ntype: page\ntitle: Notes\n---\n\nFor the team.\n",
     );
     dir
 }
@@ -555,7 +545,7 @@ fn pages_lists_every_record_by_address() {
     assert!(rows[1].trim_start().starts_with("/docs/ "), "{text}");
     assert!(rows[2].contains("/docs/guides/install/"), "{text}");
     assert!(
-        rows[3].contains("unlisted") && rows[3].contains("folder internal/, line 16"),
+        rows[3].contains("unlisted") && rows[3].contains("folder internal/, line 13"),
         "{text}"
     );
     assert_eq!(

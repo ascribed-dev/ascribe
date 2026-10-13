@@ -175,6 +175,7 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
   const out = escaped.flatMap((line, i) => [...(before.get(i) ?? []), line]);
   return [
     "---",
+    `type: ${name}`,
     `title: ${JSON.stringify(title)}`,
     `description: ${JSON.stringify(rules.description)}`,
     "---",
@@ -329,14 +330,18 @@ export function binary(): string | undefined {
   return process.env["ASCRIBE_BIN"] ?? (existsSync(built) ? built : undefined);
 }
 
-/** `ascribe fmt` on each page, in a project that declares nothing but a title and a description. */
+/**
+ * `ascribe fmt` on each page, in a project that declares each page's type with
+ * nothing but a title and a description.
+ */
 function format(ascribe: string, pages: Map<string, string>): Map<string, string> {
   const dir = mkdtempSync(path.join(tmpdir(), "ascribe-templates-"));
   try {
-    writeFileSync(
-      path.join(dir, "ascribe.toml"),
-      'spec = "0.1"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = "string"\ndescription = "string"\n',
+    const types = [...pages.keys()].map(
+      (file) =>
+        `[types.${path.basename(file, ".md")}.frontmatter]\ntitle = "string"\ndescription = "string"\n`,
     );
+    writeFileSync(path.join(dir, "ascribe.toml"), ['spec = "0.1"\n', ...types].join("\n"));
     mkdirSync(path.join(dir, "docs"));
     for (const [file, text] of pages) writeFileSync(path.join(dir, "docs", file), text);
     const run = spawnSync(ascribe, ["fmt"], { cwd: dir, encoding: "utf8" });

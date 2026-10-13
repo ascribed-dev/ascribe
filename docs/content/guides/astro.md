@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Astro
 description: Publishing a site with @ascribed/astro.
 permalink: astro-guide

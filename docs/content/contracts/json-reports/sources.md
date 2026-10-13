@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "JSON reports: `ascribe init`, `ascribe sources`, and `ascribe permalinks`"
 description: "The JSON Schemas of what ascribe init, ascribe sources, and ascribe permalinks write with --format json."
 ---

@@ -9,9 +9,6 @@ content-root = "pages"
 output-dir = ".ascribe/build"
 
 # Every page names the team that keeps it current.
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = { type = "string?", role = "description" }

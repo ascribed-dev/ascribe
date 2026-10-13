@@ -10,7 +10,7 @@ use ascribe_resolve::{LinkTarget, RefKind, ResolvedBlock, ResolvedKind, Resolved
 use ascribe_syntax::{BlockKind, InlineKind};
 use build_support::{MODEL, path, plain, project, project_with, resolve, summary};
 
-const PAGE: &str = "---\ntitle: Test\n---\n\n";
+const PAGE: &str = "---\ntype: page\ntitle: Test\n---\n\n";
 
 fn page(body: &str) -> String {
     format!("{PAGE}{body}")
@@ -105,7 +105,7 @@ fn substitutions_are_listed_over_the_source_text() {
 fn frontmatter_phrases_apply_only_to_the_fields_that_opt_in() {
     let p = project(&[(
         "index.md",
-        "---\ntitle: Get {product}\ndescription: About {product}\ntags: [\"{cloud}\", plain]\nnote: \"{product}\"\n---\n\nBody.\n",
+        "---\ntype: page\ntitle: Get {product}\ndescription: About {product}\ntags: [\"{cloud}\", plain]\nnote: \"{product}\"\n---\n\nBody.\n",
     )]);
     let resolved = resolve(&p, "index.md", "site");
     assert_eq!(resolved.title.as_deref(), Some("Get Quill"));
@@ -128,7 +128,7 @@ fn an_inline_field_is_plain_text_beside_its_pieces() {
         &model,
         &[(
             "index.md",
-            "---\ntitle: \"`{product}` for {product}\"\n---\n\nBody.\n",
+            "---\ntype: page\ntitle: \"`{product}` for {product}\"\n---\n\nBody.\n",
         )],
     );
     let resolved = resolve(&p, "index.md", "site");
@@ -267,8 +267,11 @@ fn a_link_to_a_page_points_at_its_route_and_an_empty_one_takes_the_pages_title()
             "index.md",
             &page("See [](keys.md) and [text](guides/setup.md).\n"),
         ),
-        ("keys.md", "---\ntitle: Rotate {product} keys\n---\n"),
-        ("guides/setup.md", "---\ntitle: Setup\n---\n"),
+        (
+            "keys.md",
+            "---\ntype: page\ntitle: Rotate {product} keys\n---\n",
+        ),
+        ("guides/setup.md", "---\ntype: page\ntitle: Setup\n---\n"),
     ]);
     let resolved = resolve(&p, "index.md", "site");
     assert_eq!(summary(&resolved), ["p See Rotate Quill keys and text."]);
@@ -311,7 +314,7 @@ fn a_link_to_an_id_points_at_the_headings_page_id_and_an_empty_one_takes_its_tex
         ),
         (
             "keys.md",
-            "---\ntitle: Keys\n---\n\n## Rotate\n\n@include: _f.md\n\n## Later\n@id: with-id\n",
+            "---\ntype: page\ntitle: Keys\n---\n\n## Rotate\n\n@include: _f.md\n\n## Later\n@id: with-id\n",
         ),
         ("_f.md", "## Rotate\n\nFragment.\n"),
     ]);
@@ -338,7 +341,7 @@ fn a_link_follows_its_targets_page_id_when_an_include_moves_the_slug() {
         ("index.md", &page("[link](keys.md#rotate)\n")),
         (
             "keys.md",
-            "---\ntitle: Keys\n---\n\n@include: _f.md\n\n## Rotate\n",
+            "---\ntype: page\ntitle: Keys\n---\n\n@include: _f.md\n\n## Rotate\n",
         ),
         ("_f.md", "## Rotate\n"),
     ]);
@@ -383,7 +386,7 @@ fn a_link_to_a_page_the_build_drops_is_recorded_and_left_unresolved() {
         ),
         (
             "sm.md",
-            "---\ntitle: SM\nvariant:\n  deployment: self-managed\n---\n",
+            "---\ntype: page\ntitle: SM\nvariant:\n  deployment: self-managed\n---\n",
         ),
     ]);
     // Every page is published under `site`: no problems.
@@ -417,7 +420,7 @@ fn a_link_to_a_heading_the_build_removes_is_recorded() {
         ),
         (
             "keys.md",
-            "---\ntitle: Keys\n---\n\n## Intro\n\n## Streaming\n@available: self-managed preview 3.4\n",
+            "---\ntype: page\ntitle: Keys\n---\n\n## Intro\n\n## Streaming\n@available: self-managed preview 3.4\n",
         ),
     ]);
     assert!(resolve(&p, "index.md", "sm-3.4").problems.is_empty());
@@ -448,7 +451,7 @@ fn a_link_to_a_heading_removed_by_a_selection_is_recorded() {
         ("index.md", &page("[SM](keys.md#sm-setup)\n")),
         (
             "keys.md",
-            "---\ntitle: Keys\n---\n\n## Setup\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\n### Self-managed setup\n@id: sm-setup\n\nText.\n@end\n",
+            "---\ntype: page\ntitle: Keys\n---\n\n## Setup\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\n### Self-managed setup\n@id: sm-setup\n\nText.\n@end\n",
         ),
     ]);
     assert!(resolve(&p, "index.md", "site").problems.is_empty());
@@ -466,7 +469,10 @@ fn links_with_a_missing_target_or_id_are_left_unresolved_without_a_build_problem
             "index.md",
             &page("[a](nope.md) [b](keys.md#missing) [d](_f.md)\n"),
         ),
-        ("keys.md", "---\ntitle: Keys\n---\n\n@include: _f.md\n"),
+        (
+            "keys.md",
+            "---\ntype: page\ntitle: Keys\n---\n\n@include: _f.md\n",
+        ),
         ("_f.md", "## Frag\n"),
     ]);
     let resolved = resolve(&p, "index.md", "site");
@@ -485,7 +491,7 @@ fn a_link_to_a_heading_from_an_included_fragment_resolves_on_the_including_page(
         ("index.md", &page("[](keys.md#frag) [x](keys.md#nested)\n")),
         (
             "keys.md",
-            "---\ntitle: Keys\n---\n\n## Frag\n@id: own\n\n@include: _f.md\n",
+            "---\ntype: page\ntitle: Keys\n---\n\n## Frag\n@id: own\n\n@include: _f.md\n",
         ),
         ("_f.md", "## Frag\n\n@include: _g.md\n"),
         ("_g.md", "### Nested\n"),
@@ -514,7 +520,7 @@ fn a_link_to_a_fragment_heading_a_build_removes_is_recorded() {
         ("index.md", &page("[SM](keys.md#sm-setup)\n")),
         (
             "keys.md",
-            "---\ntitle: Keys\n---\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\n@include: _sm.md\n@end\n",
+            "---\ntype: page\ntitle: Keys\n---\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\n@include: _sm.md\n@end\n",
         ),
         ("_sm.md", "## Self-managed setup\n@id: sm-setup\n\nText.\n"),
     ]);
@@ -534,7 +540,10 @@ fn a_reference_link_resolves_through_its_definition_and_its_phrases() {
                 "[api][a] and [keys][k] and [kd].\n\n[a]: {api}streaming\n[k]: keys.md#rotate\n[kd]: keys.md\n",
             ),
         ),
-        ("keys.md", "---\ntitle: Keys\n---\n\n## Rotate\n"),
+        (
+            "keys.md",
+            "---\ntype: page\ntitle: Keys\n---\n\n## Rotate\n",
+        ),
     ]);
     let resolved = resolve(&p, "index.md", "site");
     let all = links(&resolved);
@@ -589,7 +598,7 @@ fn the_assets_of_a_page_are_the_ones_its_surviving_content_references() {
     // A link to a page is not an asset.
     let with_page = project(&[
         ("index.md", &page("[Keys](keys.md) [Data](data.csv)\n")),
-        ("keys.md", "---\ntitle: K\n---\n"),
+        ("keys.md", "---\ntype: page\ntitle: K\n---\n"),
         ("data.csv", "a"),
     ]);
     assert_eq!(resolve(&with_page, "index.md", "site").assets.len(), 1);
@@ -619,7 +628,7 @@ fn glossary_project(body: &str) -> ascribe_resolve::Project {
         ("index.md", &page(body)),
         (
             "glossary.md",
-            "---\ntitle: Glossary\n---\n\n## API key\n\n## API\n\n## Go\n\n## Build\n\n## Mode\n",
+            "---\ntype: page\ntitle: Glossary\n---\n\n## API key\n\n## API\n\n## Go\n\n## Build\n\n## Mode\n",
         ),
     ])
 }
@@ -780,7 +789,7 @@ fn a_build_lists_the_pages_it_drops_and_the_assets_it_copies() {
         ("index.md", &page("![a](a.png)\n")),
         (
             "sm.md",
-            "---\ntitle: SM\nvariant:\n  deployment: self-managed\n---\n\n![b](b.png)\n",
+            "---\ntype: page\ntitle: SM\nvariant:\n  deployment: self-managed\n---\n\n![b](b.png)\n",
         ),
         ("a.png", ""),
         ("b.png", ""),

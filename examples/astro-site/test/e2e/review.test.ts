@@ -435,7 +435,7 @@ describe("review in the site preview", () => {
         expect(await panel(page).textContent()).toContain("Why 22?");
         // Each card names its file as the overlay's cards do.
         const where = await panel(page).locator(".thread .where").allTextContents();
-        expect(where.sort()).toEqual(["My Setup.md:7", "requirements.md:3"]);
+        expect(where.sort()).toEqual(["My Setup.md:8", "requirements.md:3"]);
         await page.close();
       } finally {
         await server.stop();

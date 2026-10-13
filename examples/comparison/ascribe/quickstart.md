@@ -1,4 +1,5 @@
 ---
+type: page
 title: Try Quill in the browser
 description: Run Quill in the browser with no local setup.
 ---

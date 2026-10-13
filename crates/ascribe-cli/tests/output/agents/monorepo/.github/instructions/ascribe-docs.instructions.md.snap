@@ -12,10 +12,10 @@ Programmatic check: after editing a page, run `ascribe check <file> --format con
 
 ### Page types
 
-A page's frontmatter is its type's. A file or folder whose name starts with `_` is a fragment, which pages `@include`, not a page.
+A page says what type it is with `type:` in its frontmatter, first, and its other fields are its type's. A file or folder whose name starts with `_` is a fragment, which pages `@include`, not a page, and names no type.
 
-- `guide` (the default): frontmatter `title` (string, required), `description` (string)
-- `reference` (files `reference/**`): frontmatter `title` (string, required), `description` (string), `since` (string, required)
+- `guide`: frontmatter `title` (string, required), `description` (string)
+- `reference`: frontmatter `title` (string, required), `description` (string), `since` (string, required)
 
 ### Phrases
 

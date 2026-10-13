@@ -1,4 +1,5 @@
 ---
+type: page
 title: Configure Quill's server
 ---
 

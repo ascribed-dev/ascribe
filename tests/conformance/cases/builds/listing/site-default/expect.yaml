@@ -7,8 +7,8 @@ spec: ["2.1", "7.2"]
 tags: [resolve, check]
 
 diagnostics:
-  - {slug: listing-loosened, file: open.md, line: 3}
-  - {slug: listing-loosened, file: quiet.md, line: 3}
+  - {slug: listing-loosened, file: open.md, line: 4}
+  - {slug: listing-loosened, file: quiet.md, line: 4}
 
 builds:
   site:

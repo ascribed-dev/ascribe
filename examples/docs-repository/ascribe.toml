@@ -8,9 +8,6 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-[types.guide]
-default = true
-
 [types.guide.frontmatter]
 title = "string"
 description = { type = "string", role = "description" }

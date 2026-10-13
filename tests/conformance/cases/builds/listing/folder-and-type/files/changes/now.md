@@ -1,4 +1,5 @@
 ---
+type: changelog
 title: Now
 ---
 

@@ -16,12 +16,6 @@ spec = "0.1"
 content-root = "docs"
 output-dir = ".out"
 
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
-
 [dimensions.pm]
 values = ["npm", "pnpm"]
 
@@ -710,11 +704,7 @@ mod robustness {
 /// field, and the outputs for agents on or off.
 fn described(agents: bool, files: &[(&str, &str)]) -> Project {
     let text = format!(
-        "{MODEL}\n[consumer]\nsite = \"https://docs.example.com\"\nagents = {agents}\n"
-    )
-    .replace(
-        "title = \"string\"\n",
-        "title = \"string\"\ndescription = { type = \"string?\", role = \"description\" }\n",
+        "{MODEL}\n[consumer]\nsite = \"https://docs.example.com\"\nagents = {agents}\n\n[types.page.frontmatter]\ntitle = \"string\"\ndescription = {{ type = \"string?\", role = \"description\" }}\n"
     );
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
     let sources = Project::from_sources(files.iter().map(|(path, text)| {
@@ -734,16 +724,19 @@ fn described(agents: bool, files: &[(&str, &str)]) -> Project {
 
 #[test]
 fn a_description_is_measured_as_its_line_in_llms_txt_with_agents_on() {
-    let long = format!("---\ntitle: T\ndescription: {}\n---\n", "word ".repeat(70));
+    let long = format!(
+        "---\ntype: page\ntitle: T\ndescription: {}\n---\n",
+        "word ".repeat(70)
+    );
     assert_eq!(
         found(&described(true, &[("a.md", &long)])),
-        [("description-too-long".to_owned(), 3)]
+        [("description-too-long".to_owned(), 4)]
     );
     // Without llms.txt there's no line to keep short.
     assert!(found(&described(false, &[("a.md", &long)])).is_empty());
     // A link counts as its text, which is all llms.txt shows of it.
     let linked = format!(
-        "---\ntitle: T\ndescription: See [the guide](https://example.com/{}).\n---\n",
+        "---\ntype: page\ntitle: T\ndescription: See [the guide](https://example.com/{}).\n---\n",
         "x".repeat(400)
     );
     assert!(found(&described(true, &[("a.md", &linked)])).is_empty());

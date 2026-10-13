@@ -12,15 +12,11 @@ const MODEL: &str = r#"spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 owner = "string"
 
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 purpose = "One task, step by step."
 
@@ -43,10 +39,13 @@ fn project() -> (Fixture, Client) {
         MODEL,
         &[
             ("templates/how-to.md", how_to()),
-            ("docs/index.md", "---\ntitle: Home\nowner: me\n---\nHome.\n"),
+            (
+                "docs/index.md",
+                "---\ntype: page\ntitle: Home\nowner: me\n---\nHome.\n",
+            ),
             (
                 "docs/how-to/index.md",
-                "---\ntitle: How-tos\ndescription: All of them.\n---\n",
+                "---\ntype: how-to\ntitle: How-tos\ndescription: All of them.\n---\n",
             ),
         ],
     );
@@ -117,21 +116,22 @@ fn a_folder_lists_the_types_a_page_started_there_would_be_of() {
             .expect("the request succeeds");
         result["types"].clone()
     };
+    let every = json!([
+        { "name": "page", "purpose": null, "template": false },
+        { "name": "how-to", "purpose": "One task, step by step.", "template": true },
+    ]);
+    assert_eq!(types(&mut client, None), every);
+    // A page names its type, so any folder of pages takes every type.
     assert_eq!(
-        types(&mut client, None),
-        json!([
-            { "name": "page", "purpose": null, "template": false },
-            { "name": "how-to", "purpose": "One task, step by step.", "template": true },
-        ])
+        types(&mut client, Some(folder_uri(&fixture, "docs/how-to"))),
+        every
     );
-    let in_how_to = types(&mut client, Some(folder_uri(&fixture, "docs/how-to")));
     assert_eq!(
-        in_how_to,
-        json!([{ "name": "how-to", "purpose": "One task, step by step.", "template": true }])
+        types(&mut client, Some(folder_uri(&fixture, "docs"))),
+        every
     );
-    let at_root = types(&mut client, Some(folder_uri(&fixture, "docs")));
-    assert_eq!(at_root.as_array().map(Vec::len), Some(1));
-    assert_eq!(at_root[0]["name"], "page");
+    let fragments = types(&mut client, Some(folder_uri(&fixture, "docs/_parts")));
+    assert_eq!(fragments, json!([]));
     let outside = types(&mut client, Some(folder_uri(&fixture, "templates")));
     assert_eq!(outside, json!([]));
 }
@@ -159,7 +159,10 @@ fn a_new_page_is_created_with_its_text_and_the_first_placeholder_selected() {
     let edits = changes[1]["edits"].as_array().expect("the page's edits");
     assert_eq!(edits.len(), 1);
     let text = edits[0]["newText"].as_str().expect("the page's text");
-    assert!(text.starts_with("---\ntitle: \"Rotate keys\"\n"), "{text}");
+    assert!(
+        text.starts_with("---\ntype: how-to\ntitle: \"Rotate keys\"\n"),
+        "{text}"
+    );
     assert_eq!(
         text.replacen("title: \"Rotate keys\"", "title: \"Title\"", 1),
         how_to(),
@@ -175,7 +178,7 @@ fn a_new_page_is_created_with_its_text_and_the_first_placeholder_selected() {
 }
 
 #[test]
-fn without_a_folder_the_page_goes_where_its_type_s_files_say() {
+fn without_a_folder_the_page_goes_in_the_content_root() {
     let (fixture, mut client) = project();
     let result = edit(
         &mut client,
@@ -186,7 +189,7 @@ fn without_a_folder_the_page_goes_where_its_type_s_files_say() {
     );
     assert_eq!(
         result["edit"]["documentChanges"][0]["uri"],
-        folder_uri(&fixture, "docs/how-to/rotate-keys.md").as_str()
+        folder_uri(&fixture, "docs/rotate-keys.md").as_str()
     );
 }
 
@@ -207,13 +210,13 @@ fn a_type_without_a_template_starts_with_its_frontmatter_and_nothing_selected() 
     );
     assert_eq!(
         changes[1]["edits"][0]["newText"],
-        "---\ntitle: \"Notes\"\nowner:\n---\n"
+        "---\ntype: page\ntitle: \"Notes\"\nowner:\n---\n"
     );
     assert_eq!(result["select"], Value::Null);
 }
 
 #[test]
-fn a_page_is_never_started_over_a_file_or_outside_its_type() {
+fn a_page_is_never_started_over_a_file_or_in_a_fragment_s_folder() {
     let (fixture, mut client) = project();
     let model = model_uri(&fixture);
     let error = |client: &mut Client, args: Value| {
@@ -231,10 +234,10 @@ fn a_page_is_never_started_over_a_file_or_outside_its_type() {
     assert!(taken.starts_with('`') && taken.ends_with('.'), "{taken}");
     let elsewhere = error(
         &mut client,
-        json!({ "type": "how-to", "title": "Keys", "folder": folder_uri(&fixture, "docs") }),
+        json!({ "type": "how-to", "title": "Keys", "folder": folder_uri(&fixture, "docs/_parts") }),
     );
     assert!(
-        elsewhere.contains("wouldn't be a page of type `how-to`"),
+        elsewhere.contains("wouldn't be a page of type `how-to`: it's a fragment's path"),
         "{elsewhere}"
     );
     let outside = error(
@@ -309,7 +312,7 @@ fn next_placeholder_says_when_there_is_nothing_to_fill_in() {
         page(
             &mut client,
             "docs/how-to/done.md",
-            "---\ntitle: Done\ndescription: All done.\n---\n\nFilled in.\n"
+            "---\ntype: how-to\ntitle: Done\ndescription: All done.\n---\n\nFilled in.\n"
         ),
         "Nothing the template left to fill in is on the page."
     );
@@ -317,7 +320,7 @@ fn next_placeholder_says_when_there_is_nothing_to_fill_in() {
         page(
             &mut client,
             "docs/notes.md",
-            "---\ntitle: Notes\nowner: me\n---\n"
+            "---\ntype: page\ntitle: Notes\nowner: me\n---\n"
         ),
         "This page's type has no template, so nothing on it is left to fill in."
     );

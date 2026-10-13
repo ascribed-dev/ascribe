@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe.toml`: consumer, builds, and sources"
 description: "How the content model sets the site's consumer, the builds, the editor's build, and the source repositories."
 ---

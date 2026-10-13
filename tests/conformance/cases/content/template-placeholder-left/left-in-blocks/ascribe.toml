@@ -4,7 +4,6 @@ spec = "0.1"
 content-root = "files"
 
 [types.tutorial]
-files = ["tutorials/**"]
 template = "templates/tutorial.md"
 
 [types.tutorial.frontmatter]

@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Asset contract
 description: Where assets go in each output and how pages refer to them.
 ---

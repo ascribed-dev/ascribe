@@ -2,17 +2,18 @@
 //! gives an agent to begin from.
 //!
 //! The page's text is the type's template, read through the project's
-//! [`FileSystem`], with its frontmatter's `title` set to the title given and
-//! nothing else changed. A type with no template gives its frontmatter: the
-//! title and each other field it requires, empty. The page goes where it's
-//! asked to, or, when it's asked for a folder or nothing, in that folder or
-//! the first folder the type's `files` covers, named for the title slugged as
-//! a route's segments are.
+//! [`FileSystem`], with its frontmatter's `type` set to the type's name and
+//! its `title` to the title given, and nothing else changed. A type with no
+//! template gives its frontmatter: its type, the title, and each other field
+//! it requires, empty. The implicit `page` type of a project that declares
+//! none isn't named. The page goes where it's asked to, or, when it's asked
+//! for a folder or nothing, in that folder or the content root, named for
+//! the title slugged as a route's segments are.
 //! Nothing here writes a file, and a page is never started where a file is.
 
 use ascribe_check::Project;
 use ascribe_core::{RelPath, Slugger as _};
-use ascribe_model::{ContentModel, ContentType, Pattern, TypeMatch};
+use ascribe_model::{ContentModel, ContentType, TYPE_KEY};
 use ascribe_resolve::slug::GithubSlugger;
 use ascribe_resolve::{FileSystem, Probe};
 use ascribe_syntax::frontmatter_lines;
@@ -22,8 +23,8 @@ use ascribe_syntax::frontmatter_lines;
 pub struct NewPage {
     /// Its path, from the content root.
     pub path: RelPath,
-    /// Its text: the type's template with the title set, or the type's
-    /// frontmatter when it has none.
+    /// Its text: the type's template with the type and the title set, or
+    /// the type's frontmatter when it has none.
     pub text: String,
     /// The type's `template`, from the folder `ascribe.toml` is in, when it
     /// has one.
@@ -50,7 +51,7 @@ pub enum StartError {
         /// The file, from the content root.
         path: String,
     },
-    /// The path isn't one a page of the type can have.
+    /// The path isn't one a page can have.
     #[error("`{path}` wouldn't be a page of type `{type_name}`: {reason}")]
     NotTheType {
         /// The path, from the content root.
@@ -92,14 +93,13 @@ impl ascribe_core::Coded for StartError {
 
 /// The page of type `type_name` titled `title`, at `path` from the content
 /// root: a page's path, ending in `.md`, or a folder, where the page is named
-/// for the title. When it's `None`, the page goes in the first folder the
-/// type's `files` covers.
+/// for the title. When it's `None`, the page goes in the content root.
 ///
 /// # Errors
 ///
 /// A type the model doesn't have, a file where the page would go, a path a
-/// page of the type can't have, no path coming from the title, or a
-/// template that can't be read.
+/// page can't have, no path coming from the title, or a template that can't
+/// be read.
 pub fn start(
     project: &Project,
     type_name: &str,
@@ -127,7 +127,13 @@ pub fn start(
             of_type(model, page_type, path)?
         }
         Some(path) => of_type(model, page_type, path.clone())?,
-        None => default_path(model, page_type, title)?,
+        None => of_type(
+            model,
+            page_type,
+            RelPath::root()
+                .join(&file_name(page_type, title)?)
+                .unwrap_or_else(|_| RelPath::root()),
+        )?,
     };
     let fs = project.file_system();
     let in_project = project
@@ -149,27 +155,34 @@ pub fn start(
 }
 
 /// The text a page of `page_type` titled `title` starts with, wherever it
-/// goes: the type's template with the title set, or its frontmatter when it
-/// has none.
+/// goes: the type's template with the type and the title set, or its
+/// frontmatter when it has none.
 ///
 /// # Errors
 ///
 /// A template that can't be read.
 pub fn text(project: &Project, page_type: &ContentType, title: &str) -> Result<String, StartError> {
     Ok(match &page_type.template {
-        Some(template) => with_title(
-            &read_template(project.file_system(), &template.path)?,
-            title,
-        ),
+        Some(template) => {
+            let text = with_key(
+                &read_template(project.file_system(), &template.path)?,
+                "title",
+                &yaml_string(title),
+            );
+            if page_type.implicit {
+                text
+            } else {
+                with_key(&text, TYPE_KEY, &type_value(&page_type.name))
+            }
+        }
         None => frontmatter_only(page_type, title),
     })
 }
 
-/// Whether a page started in `folder`, from the content root, would be of
-/// `page_type`, as [`start`] holds a page it's given a folder for: inside the
-/// content root, not a fragment's, and matched by the type alone. It's tried
-/// with a name a title gives, so a type whose `files` take only some names
-/// in a folder may still refuse a title there.
+/// Whether a page of `page_type` can be started in `folder`, from the
+/// content root, as [`start`] holds a page it's given a folder for: inside
+/// the content root, and not a fragment's. A page is of the type it names,
+/// wherever it is (SPEC §7.2), so every such folder takes every type.
 pub fn takes_folder(model: &ContentModel, page_type: &ContentType, folder: &RelPath) -> bool {
     folder
         .join(TRIED_NAME)
@@ -201,44 +214,16 @@ fn of_type(
     }
 }
 
-/// Why `path` wouldn't be a page of `page_type`, or `None` when it would.
-fn not_of_type(model: &ContentModel, page_type: &ContentType, path: &RelPath) -> Option<String> {
+/// Why `path` wouldn't be a page of `page_type`, or `None` when it would:
+/// a page names its type, so only a path that isn't a page's is refused.
+fn not_of_type(model: &ContentModel, _page_type: &ContentType, path: &RelPath) -> Option<String> {
     if !path.is_inside() || path.is_root() {
         return Some("it isn't a file in the content root".to_owned());
     }
     if model.is_fragment(path.as_str()) {
         return Some("it's a fragment's path".to_owned());
     }
-    match model.type_for(path.as_str()) {
-        TypeMatch::One(t) if t.name == page_type.name => None,
-        TypeMatch::One(t) => Some(format!("it's a page of type `{}`", t.name)),
-        TypeMatch::Ambiguous(_) => Some("several types' `files` match it".to_owned()),
-        TypeMatch::None => Some("no type's `files` match it".to_owned()),
-    }
-}
-
-/// The path a page of `page_type` titled `title` has when none is given:
-/// the first folder the type's `files` covers, where a page named for the
-/// title is of the type, and the title slugged as a route's segments are.
-fn default_path(
-    model: &ContentModel,
-    page_type: &ContentType,
-    title: &str,
-) -> Result<RelPath, StartError> {
-    let file = file_name(page_type, title)?;
-    let folders: Vec<RelPath> = if page_type.files.is_empty() {
-        vec![RelPath::root()]
-    } else {
-        page_type.files.iter().map(folder_of).collect()
-    };
-    folders
-        .iter()
-        .filter_map(|folder| folder.join(&file).ok())
-        .find(|path| not_of_type(model, page_type, path).is_none())
-        .ok_or_else(|| StartError::NoPath {
-            type_name: page_type.name.clone(),
-            reason: "no folder its `files` covers takes a page named for it".to_owned(),
-        })
+    None
 }
 
 /// The file a page titled `title` is named: the title slugged as a route's
@@ -257,20 +242,6 @@ fn file_name(page_type: &ContentType, title: &str) -> Result<String, StartError>
     Ok(format!("{name}.md"))
 }
 
-/// The folder a pattern covers: its segments before the first with a glob
-/// in it, `how-to` for `how-to/**`.
-fn folder_of(pattern: &Pattern) -> RelPath {
-    let source = pattern.as_str();
-    let mut segments: Vec<&str> = source.split('/').collect();
-    // The last segment names files, not a folder.
-    segments.pop();
-    let literal: Vec<&str> = segments
-        .into_iter()
-        .take_while(|s| !s.contains(['*', '?', '[', '{', '\\']))
-        .collect();
-    RelPath::parse(&literal.join("/")).unwrap_or_else(|_| RelPath::root())
-}
-
 fn read_template(fs: &dyn FileSystem, path: &str) -> Result<String, StartError> {
     let failed = |reason: String| StartError::Template {
         path: path.to_owned(),
@@ -281,11 +252,11 @@ fn read_template(fs: &dyn FileSystem, path: &str) -> Result<String, StartError> 
     String::from_utf8(bytes).map_err(|_| failed("it isn't valid UTF-8".to_owned()))
 }
 
-/// `template` with its frontmatter's `title` set to `title`, and nothing
-/// else changed. A template with no `title` gets one, first; one with no
-/// frontmatter gets frontmatter with only the title.
-fn with_title(template: &str, title: &str) -> String {
-    let line = format!("title: {}\n", yaml_string(title));
+/// `template` with its frontmatter's top-level `key` set to `value`, as
+/// YAML, and nothing else changed. A template with no `key` gets one, first;
+/// one with no frontmatter gets frontmatter with only the key.
+fn with_key(template: &str, key: &str, value: &str) -> String {
+    let line = format!("{key}: {value}\n");
     let Some((start, end)) = frontmatter(template) else {
         return format!("---\n{line}---\n\n{template}");
     };
@@ -293,11 +264,11 @@ fn with_title(template: &str, title: &str) -> String {
     let lines = frontmatter_lines(content);
     let Some(at) = lines
         .iter()
-        .position(|l| l.key == Some("title") && l.indent == 0 && l.item.is_none())
+        .position(|l| l.key == Some(key) && l.indent == 0 && l.item.is_none())
     else {
         return format!("{}{line}{}", &template[..start], &template[start..]);
     };
-    // The title's value runs on over the lines indented under it: a block
+    // The key's value runs on over the lines indented under it: a block
     // scalar, or a plain or quoted string over several lines.
     let from = start + lines[at].start;
     let to = lines[at + 1..]
@@ -341,11 +312,15 @@ fn frontmatter(text: &str) -> Option<(usize, usize)> {
     None
 }
 
-/// The page a type with no template starts with: its title, and each other
-/// field it requires, empty, in its frontmatter. Every type has a `title`
-/// field (`model-type-title`).
+/// The page a type with no template starts with: its type, its title, and
+/// each other field it requires, empty, in its frontmatter. Every type has a
+/// `title` field (`model-type-title`).
 fn frontmatter_only(page_type: &ContentType, title: &str) -> String {
-    let mut lines = vec![format!("title: {}", yaml_string(title))];
+    let mut lines = Vec::new();
+    if !page_type.implicit {
+        lines.push(format!("{TYPE_KEY}: {}", type_value(&page_type.name)));
+    }
+    lines.push(format!("title: {}", yaml_string(title)));
     for field in page_type
         .frontmatter
         .fields
@@ -355,6 +330,15 @@ fn frontmatter_only(page_type: &ContentType, title: &str) -> String {
         lines.push(format!("{}:", field.name));
     }
     format!("---\n{}\n---\n", lines.join("\n"))
+}
+
+/// A type's name as the value of `type`: plain, as a page's is written,
+/// unless YAML would read it as something other than that string.
+fn type_value(name: &str) -> String {
+    match serde_yaml_ng::from_str::<serde_yaml_ng::Value>(name) {
+        Ok(serde_yaml_ng::Value::String(s)) if s == name => name.to_owned(),
+        _ => yaml_string(name),
+    }
 }
 
 /// `text` as a YAML string in double quotes, its backslashes, quotes, and
@@ -386,7 +370,7 @@ mod tests {
         let template =
             "---\ntitle: \"Title\"\ndescription: \"{One sentence.}\"\n---\n\n## Overview\n";
         assert_eq!(
-            with_title(template, "Rotate \"keys\""),
+            with_key(template, "title", &yaml_string("Rotate \"keys\"")),
             "---\ntitle: \"Rotate \\\"keys\\\"\"\ndescription: \"{One sentence.}\"\n---\n\n## Overview\n"
         );
     }
@@ -395,7 +379,7 @@ mod tests {
     fn a_title_over_several_lines_is_replaced_whole() {
         let template = "---\ntitle: >\n  Long\n  title\n# kept\ndescription: x\n---\nBody\n";
         assert_eq!(
-            with_title(template, "New"),
+            with_key(template, "title", &yaml_string("New")),
             "---\ntitle: \"New\"\n# kept\ndescription: x\n---\nBody\n"
         );
     }
@@ -403,23 +387,35 @@ mod tests {
     #[test]
     fn a_template_without_a_title_gets_one_first() {
         assert_eq!(
-            with_title("---\ndescription: x\n---\nBody\n", "New"),
+            with_key(
+                "---\ndescription: x\n---\nBody\n",
+                "title",
+                &yaml_string("New")
+            ),
             "---\ntitle: \"New\"\ndescription: x\n---\nBody\n"
         );
         assert_eq!(
-            with_title("Body\n", "New"),
+            with_key("Body\n", "title", &yaml_string("New")),
             "---\ntitle: \"New\"\n---\n\nBody\n"
         );
     }
 
     #[test]
-    fn a_pattern_covers_its_literal_folders() {
-        let folder = |p: &str| folder_of(&Pattern::new(p).unwrap()).to_string();
-        assert_eq!(folder("how-to/**"), "how-to");
-        assert_eq!(folder("guides/*.md"), "guides");
-        assert_eq!(folder("api/v1/{a,b}/**"), "api/v1");
-        assert_eq!(folder("**/*.md"), "");
-        assert_eq!(folder("intro.md"), "");
+    fn a_type_goes_first_and_replaces_one_there() {
+        let template = "---\ntitle: \"Title\"\n---\nBody\n";
+        assert_eq!(
+            with_key(template, "type", &type_value("how-to")),
+            "---\ntype: how-to\ntitle: \"Title\"\n---\nBody\n"
+        );
+        assert_eq!(
+            with_key(
+                "---\ntype: concept\ntitle: T\n---\n",
+                "type",
+                &type_value("how-to")
+            ),
+            "---\ntype: how-to\ntitle: T\n---\n"
+        );
+        assert_eq!(type_value("true"), "\"true\"");
     }
 
     #[test]

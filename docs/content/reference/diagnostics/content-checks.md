@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "Diagnostics: content checks"
 description: "The checks of a project's quality, which it can set the level of or turn off."
 ---

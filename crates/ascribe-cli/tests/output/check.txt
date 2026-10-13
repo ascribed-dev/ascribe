@@ -1,7 +1,7 @@
 [ASC041] Warning: this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
-   ╭─[ docs/keys.md:7:15 ]
+   ╭─[ docs/keys.md:8:15 ]
    │
- 7 │ See [Install](/install-agent/).
+ 8 │ See [Install](/install-agent/).
    │               ───────┬───────
    │                      ╰───────── link-route
    │

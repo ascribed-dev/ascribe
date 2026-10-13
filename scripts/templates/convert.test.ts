@@ -32,6 +32,7 @@ test("the title goes to frontmatter, and what the template says about itself goe
   expect(convertTemplate("t", template("## Overview\n\nThis explains {the task}."), rules)).toBe(
     [
       "---",
+      "type: t",
       'title: "{Product} title"',
       `description: "{Say what it's for.}"`,
       "---",
@@ -50,6 +51,7 @@ test("every block quote the template opens with goes, however many", () => {
   expect(convertTemplate("t", source, rules)).toBe(
     [
       "---",
+      "type: t",
       'title: "T"',
       `description: "{Say what it's for.}"`,
       "---",
@@ -141,6 +143,7 @@ test("a paragraph a rule says is about the template goes whole, and one it doesn
   ).toBe(
     [
       "---",
+      "type: t",
       'title: "{Product} title"',
       `description: "{Say what it's for.}"`,
       "---",

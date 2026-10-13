@@ -9,8 +9,8 @@ tags: [page-check, resolve]
 builds:
   site:
     diagnostics:
-      - {slug: page-orphan, file: lonely.md, line: 2}
+      - {slug: page-orphan, file: lonely.md, line: 3}
   cloud:
     diagnostics:
-      - {slug: page-orphan, file: lonely.md, line: 2}
-      - {slug: page-orphan, file: upgrade.md, line: 2}
+      - {slug: page-orphan, file: lonely.md, line: 3}
+      - {slug: page-orphan, file: upgrade.md, line: 3}

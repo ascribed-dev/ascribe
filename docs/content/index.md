@@ -1,4 +1,5 @@
 ---
+type: index
 title: Ascribe documentation
 description: Guides and references for writing documentation with Ascribe, and the contracts for implementers.
 permalink: docs

@@ -44,7 +44,7 @@ fn set() -> Set {
 /// will declare it, with the template copied to a page of that type.
 fn project(name: &str, page: &str) -> Project {
     let model = format!(
-        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.{name}]\nfiles = [\"{name}/**\"]\n\n[types.{name}.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.{name}.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
     );
     let path = RelPath::parse(&format!("{name}/page.md")).expect("a relative path");
     Project::from_parts(
@@ -125,7 +125,8 @@ fn notes_lists_every_file_in_notes_and_every_template_has_ascribe_s_notes() {
 /// them.
 #[test]
 fn ascribe_s_notes_check_clean_read_as_pages() {
-    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[checks]\npage-orphan = \"off\"\n";
+    let model =
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[checks]\npage-orphan = \"off\"\n";
     for note in NOTES {
         let (heading, body) = note
             .text

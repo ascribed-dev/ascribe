@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`@ascribed/astro` reference"
 description: "What the Astro integration takes, what it does to a site, and what it writes for search engines, crawlers, and review."
 permalink: astro-reference

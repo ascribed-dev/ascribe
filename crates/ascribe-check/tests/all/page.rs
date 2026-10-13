@@ -17,12 +17,6 @@ spec = "0.1"
 [project]
 content-root = "docs"
 
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
-
 [dimensions.deployment]
 values = ["cloud", "self-managed", "edge"]
 versionless = ["cloud", "self-managed", "edge"]
@@ -58,12 +52,6 @@ spec = "0.1"
 
 [project]
 content-root = "docs"
-
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
 
 [dimensions.deployment]
 values = ["cloud", "self-managed", "edge"]

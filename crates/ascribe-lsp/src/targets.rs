@@ -11,7 +11,6 @@
 
 use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
 use ascribe_core::{Binding, LineIndex, Primary, RelPath, image_media_type};
-use ascribe_model::TypeMatch;
 use ascribe_resolve::{CodeFiles, FileSystem, in_nested_project, source_files};
 use ascribe_syntax::BlockKind;
 use lsp_types::{Range, TextDocumentIdentifier};
@@ -605,10 +604,7 @@ fn pages(ctx: &Ctx) -> Vec<TargetPage> {
         .map(|file| TargetPage {
             path: file.path.to_string(),
             title: file.title.clone(),
-            content_type: match ctx.model.type_for(file.path.as_str()) {
-                TypeMatch::One(t) => Some(t.name.clone()),
-                TypeMatch::Ambiguous(_) | TypeMatch::None => None,
-            },
+            content_type: file.content_type(&ctx.model).map(|t| t.name.clone()),
             link: link_to(ctx, &file.path),
             root_link: encode_destination(&format!("/{}", file.path)),
         })

@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "Reference template"
 description: "{One sentence that says what this page lists and what a reader looks up in it.}"
 ---

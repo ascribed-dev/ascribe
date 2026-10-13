@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: "Rotate keys"
 description: "Replace the keys Quill signs releases with, without a release going unsigned."
 ---

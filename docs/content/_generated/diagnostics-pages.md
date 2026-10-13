@@ -236,26 +236,13 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**When:** Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment.
+**When:** Reserved key (`available`, `variant`, `permalink`, `listing`, `type`) on a fragment.
 
 **Message:** `{key}` is reserved for pages, and fragments can't use it
 
 **Fix:** Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it.
 
 **Read more:** [Fragments](../reference/content-model.md#43-fragments) in the `ascribe.toml` reference.
-
-### ASC051 `content-type-unresolved`
-@id {permalink=true}: ASC051
-
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
-
-**When:** Page matches more than one content type, or matches none and there's no default type.
-
-**Message:** this page matches the content types \{types}, but a page can match only one; make their `files` patterns exclusive
-
-**Fix:** Make the content types' `files` patterns match each page once, or mark one type `default = true` for the pages no pattern matches.
-
-**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
 ### ASC122 `frontmatter-syntax`
 @id {permalink=true}: ASC122
@@ -282,6 +269,32 @@ Error · file level · next step: fix · [SPEC §2.1]({repo}/blob/main/SPEC.md#2
 **Fix:** Remove the page's `listing`, which the rule already sets, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list the page more openly, change the rule in `[listing]`: a page can only restrict what it's under. The editor's quick fix removes `listing`.
 
 **Read more:** [`[listing]`](../reference/content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+
+### ASC196 `content-type-missing`
+@id {permalink=true}: ASC196
+
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** Page names no content type, in a project that declares types.
+
+**Message:** this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: \{values}
+
+**Fix:** Add `type:` to the page's frontmatter, naming one of the content types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type.
+
+**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
+
+### ASC197 `content-type-unknown`
+@id {permalink=true}: ASC197
+
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** Page's `type` names no declared content type.
+
+**Message:** `{type}` isn't a content type; the types are: \{values}
+
+**Fix:** Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it.
+
+**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
 
 ## Lists
 

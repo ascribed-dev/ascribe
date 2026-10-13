@@ -449,15 +449,12 @@ impl ListingRules {
 
 impl ContentModel {
     /// The strictest rule of `[listing]` a page at `path` (from the content
-    /// root, with `/`) is under, or `None` when it's under none. Of rules
+    /// root, with `/`) of the type named `type_name` is under, or `None` when
+    /// it's under none. Of rules
     /// equally strict, the narrowest is given: the deepest folder, then the
     /// type, then the site's default. A folder and a type have no order
     /// between them; the folder is named first.
-    pub fn listing_rule(&self, path: &str) -> Option<&ListingRule> {
-        let type_name = match self.type_for(path) {
-            TypeMatch::One(t) => Some(t.name.as_str()),
-            _ => None,
-        };
+    pub fn listing_rule(&self, path: &str, type_name: Option<&str>) -> Option<&ListingRule> {
         let mut folders: Vec<&ListingRule> = self
             .listing
             .folders
@@ -485,13 +482,18 @@ impl ContentModel {
         best
     }
 
-    /// A page's listing, given its own `listing` (`None` when it sets none
+    /// A page's listing, given its type's name and its own `listing` (`None` when it sets none
     /// or a value that isn't one), and where it comes from: the strictest of
     /// the page's own and the rules it's under. A page as strict as its
     /// rule, or stricter, has its own; a looser one, which `ascribe check`
     /// reports, has its rule's.
-    pub fn listing_of(&self, path: &str, own: Option<Listing>) -> (Listing, ListingFrom) {
-        let rule = self.listing_rule(path);
+    pub fn listing_of(
+        &self,
+        path: &str,
+        type_name: Option<&str>,
+        own: Option<Listing>,
+    ) -> (Listing, ListingFrom) {
+        let rule = self.listing_rule(path, type_name);
         match (own, rule) {
             (Some(own), Some(rule)) if own < rule.listing => {
                 (rule.listing, ListingFrom::Rule(rule.clone()))
@@ -685,10 +687,9 @@ impl Source {
 pub struct ContentType {
     /// The type's name.
     pub name: String,
-    /// The pages it applies to.
-    pub files: Vec<Pattern>,
-    /// Whether it applies to pages no type's `files` match.
-    pub default: bool,
+    /// Whether it's the implicit `page` type of a project that declares no
+    /// types, which every page has without naming it.
+    pub implicit: bool,
     /// The frontmatter schema.
     pub frontmatter: FrontmatterSchema,
     /// What a page of the type is for, in a few words, `purpose`.
@@ -974,15 +975,32 @@ pub struct Build {
     pub availability: AvailabilityMode,
 }
 
-/// Which content type applies to a page.
+/// The reserved frontmatter key a page names its content type with (SPEC
+/// §2.1).
+pub const TYPE_KEY: &str = "type";
+
+/// Which content type a page has (SPEC §7.2).
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeMatch<'a> {
-    /// Exactly one type applies (by `files`, or the default).
+    /// The type the page names, or the implicit `page` type of a project
+    /// that declares none.
     One(&'a ContentType),
-    /// Several types' `files` match: an error (`content-type-unresolved`).
-    Ambiguous(Vec<&'a ContentType>),
-    /// None match and there's no default: an error (`content-type-unresolved`).
-    None,
+    /// The project declares types and the page names none: an error
+    /// (`content-type-missing`).
+    Missing,
+    /// The page names a type the project doesn't declare, or its `type`
+    /// isn't a string: an error (`content-type-unknown`).
+    Unknown,
+}
+
+impl<'a> TypeMatch<'a> {
+    /// The type, when the page has one.
+    pub fn found(self) -> Option<&'a ContentType> {
+        match self {
+            TypeMatch::One(t) => Some(t),
+            TypeMatch::Missing | TypeMatch::Unknown => None,
+        }
+    }
 }
 
 /// A problem in an availability spec that needs the model to detect. The
@@ -1154,21 +1172,35 @@ impl ContentModel {
             || self.fragments.patterns.iter().any(|p| p.matches(path))
     }
 
-    /// Which content type applies to a page. Don't
-    /// call it for fragments.
-    pub fn type_for(&self, path: &str) -> TypeMatch<'_> {
-        let matching: Vec<&ContentType> = self
-            .types
-            .iter()
-            .filter(|t| t.files.iter().any(|p| p.matches(path)))
-            .collect();
-        match matching.len() {
-            1 => TypeMatch::One(matching[0]),
-            0 => match self.types.iter().find(|t| t.default) {
+    /// Whether the project declares its own content types, rather than
+    /// having the implicit `page` type.
+    pub fn declares_types(&self) -> bool {
+        !self.types.iter().any(|t| t.implicit)
+    }
+
+    /// The content type a page has, given its frontmatter (`None` when it
+    /// has none, or it isn't valid YAML): the type its `type` names (SPEC
+    /// §7.2). Don't call it for fragments.
+    pub fn type_of(&self, frontmatter: Option<&serde_yaml_ng::Value>) -> TypeMatch<'_> {
+        match frontmatter.and_then(|f| f.get(TYPE_KEY)) {
+            None => self.type_named(None),
+            Some(serde_yaml_ng::Value::String(name)) => self.type_named(Some(name)),
+            Some(_) => TypeMatch::Unknown,
+        }
+    }
+
+    /// The content type a page that names `declared` with `type` has, or,
+    /// for `None`, one that names none.
+    pub fn type_named(&self, declared: Option<&str>) -> TypeMatch<'_> {
+        match declared {
+            None => match self.types.iter().find(|t| t.implicit) {
                 Some(t) => TypeMatch::One(t),
-                None => TypeMatch::None,
+                None => TypeMatch::Missing,
             },
-            _ => TypeMatch::Ambiguous(matching),
+            Some(name) => match self.types.iter().find(|t| !t.implicit && t.name == name) {
+                Some(t) => TypeMatch::One(t),
+                None => TypeMatch::Unknown,
+            },
         }
     }
 

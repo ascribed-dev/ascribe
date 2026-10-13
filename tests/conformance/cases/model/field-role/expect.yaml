@@ -7,8 +7,8 @@ spec: ["7.2"]
 tags: [model]
 
 diagnostics:
+  - {slug: model-field-role, file: ascribe.toml, line: 5}
+  - {slug: model-field-role, file: ascribe.toml, line: 6}
   - {slug: model-field-role, file: ascribe.toml, line: 8}
-  - {slug: model-field-role, file: ascribe.toml, line: 9}
-  - {slug: model-field-role, file: ascribe.toml, line: 11}
-  - {slug: model-field-role, file: ascribe.toml, line: 13}
-  - {slug: model-field-role, file: ascribe.toml, line: 17}
+  - {slug: model-field-role, file: ascribe.toml, line: 10}
+  - {slug: model-field-role, file: ascribe.toml, line: 14}

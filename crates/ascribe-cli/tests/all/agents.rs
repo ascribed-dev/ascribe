@@ -215,11 +215,8 @@ fn monorepo_with_every_target() {
         handbook.contains("`owner` (string, required)"),
         "{handbook}"
     );
-    assert!(
-        security.contains("`policy` (files `policies/**`)"),
-        "{security}"
-    );
-    assert!(!handbook.contains("`policy` (files"), "{handbook}");
+    assert!(security.contains("- `policy`: frontmatter"), "{security}");
+    assert!(!handbook.contains("- `policy`:"), "{handbook}");
     assert!(handbook.contains("`{company}`") && !security.contains("`{company}`"));
     // The root holds a short block for each, and Claude Code's skill is
     // loaded for the pages of all three.

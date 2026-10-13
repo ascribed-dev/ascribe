@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "JSON reports: `ascribe templates`"
 description: "The JSON Schemas of what ascribe templates writes with --format json."
 ---

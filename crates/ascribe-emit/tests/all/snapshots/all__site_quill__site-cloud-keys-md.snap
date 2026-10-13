@@ -3,6 +3,7 @@ source: crates/ascribe-emit/tests/all/site_quill.rs
 expression: text
 ---
 ---
+type: page
 title: API keys
 description: Create and rotate the API keys the Quill agent uses.
 source: keys.md

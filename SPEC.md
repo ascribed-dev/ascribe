@@ -82,9 +82,17 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves five keys: `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, and `listing` (below).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves six keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, and `listing` (below).
 
 - Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, or one of `listing`'s values) is a frontmatter value of the wrong type (§8.2).
+- `type` says which content type a page is (§7.2). Its value is the name of a type the content model declares. In a project that declares types, every page MUST name one, and a page that names none, or names one that isn't declared, is an error (§8.2). In a project that declares none, its pages have the implicit type `page` and name no type. Tools that write frontmatter put `type` first.
+
+  ```yaml
+  ---
+  type: how-to
+  title: Rotate an API key
+  ---
+  ```
 - `permalink` gives a page a **permalink**: a name for the page that something outside the documentation can link to, which a build publishes at an address of its own that leads to the page wherever it is (§9.5). Its value is a name with the characters of an `@id` (§4.1), and it shares one set of names with the headings' permalinks: a build MUST publish each name once, whether on a page or a heading, and names that differ only in case are one name.
 
   ```yaml
@@ -112,7 +120,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available`, `variant`, `permalink`, and `listing`; availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `type`, `available`, `variant`, `permalink`, and `listing`; a fragment has no content type, and availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -800,7 +808,7 @@ A content model declares the following.
 
 | Declaration | Contents | Used by |
 |---|---|---|
-| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code, and a page type's fields may have roles. Each type names the pages it applies to by path pattern, and at most one type is the default for pages no pattern matches | §2, §5.2 |
+| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code, and a page type's fields may have roles. A page names its type in its frontmatter, with `type` | §2, §5.2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
@@ -828,7 +836,7 @@ A string field is plain text unless the content model opts it in to code spans. 
 
 A page type's top-level field MAY have a role, which says what the field is for, whatever its name, so a tool can find it: `description`, on a string field, is the page's description; `review-date`, on a date field, is the date its content is due for review; and `owner`, on a string or enum field, names who looks after the page. A content type has at most one field with each role. Roles change no output.
 
-A page's content type is the one whose path patterns match it. A page matched by more than one type's patterns is an error; there's no precedence between types. A page no type matches gets the default type, and it's an error if there isn't one.
+A page's content type is the one its frontmatter's `type` names (§2.1), wherever the page is: a type applies to pages by what they say, not by where their files are, so a folder can hold pages of every type. A content model that declares no types has one, the implicit `page`, whose only field is a required string `title`; its pages name no type. A content model that declares types has no implicit one: each of its pages names one of the declared types.
 
 ### 7.3 Sources
 
@@ -1015,9 +1023,10 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
-| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`) on a fragment | Error |
+| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `type`) on a fragment | Error |
 | Frontmatter | `listing` looser than a rule of the content model the page is under | Error |
-| Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
+| Frontmatter | Page names no content type, in a project that declares types | Error |
+| Frontmatter | Page's `type` names no declared content type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |
 | Files | Source file that can't be read, or isn't valid UTF-8 | Error |
 | Lists | Unindented directive line ends a list | Warning |
@@ -1187,7 +1196,7 @@ Astro is the primary consumer, through its content collections.
 - Compiled pages from the site output are loaded into an Astro content collection.
 - The collection's schema MUST be generated from the content model, as a Zod schema.
 - Page layouts are the project's own.
-- Page-level frontmatter, including `available`, reaches the layout as collection data, except `listing`, which reaches the site in the page's record (§9.4). A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
+- Page-level frontmatter, including `type` and `available`, reaches the layout as collection data, except `listing`, which reaches the site in the page's record (§9.4). A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
 
 An Astro integration SHOULD provide the collection configuration and generated schema, load the element library, and supply the markdown processing needed for explicit heading ids.
 
@@ -1316,10 +1325,12 @@ UTF8-non-ascii  = %x80-10FFFF
 *Non-normative.* A complete page, assuming a content model that declares:
 
 - the dimensions `pm` (`npm`, `pnpm`, `yarn`) and `deployment` (`cloud`, `self-managed`), with `cloud` versionless;
-- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`).
+- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`);
+- the content type `page`, with a `title` and a `description`, which the page names with `type: page`.
 
 ````markdown
 ---
+type: page
 title: Install the Quill agent
 description: Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.
 available: cloud, self-managed preview 3.3

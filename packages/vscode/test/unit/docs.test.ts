@@ -58,7 +58,7 @@ const commands: Record<string, string> = {
   "ascribe.promptAgentProject":
     "Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems.",
   "ascribe.newPage":
-    "Starts a page from its type's template: asks for the type, each with what it's for, then the title, makes the page in the first folder the type's `files` cover, and opens it with the first thing to fill in selected. Run on a folder in the Explorer, it offers the types whose `files` take a page there, and makes the page in that folder. It's in the Pages view's title bar too. See [Start a page](../guides/editor.md#start-a-page).",
+    "Starts a page from its type's template: asks for the type, each with what it's for, then the title, makes the page in the content root, and opens it with the first thing to fill in selected; the page names its type in its frontmatter. Run on a folder in the Explorer, it makes the page in that folder. It's in the Pages view's title bar too. See [Start a page](../guides/editor.md#start-a-page).",
   "ascribe.nextPlaceholder":
     "Selects the next thing the page's template left to fill in, after the cursor, so typing replaces it; after the last, it goes back to the first.",
   "ascribe.actions":

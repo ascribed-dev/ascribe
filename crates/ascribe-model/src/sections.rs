@@ -82,7 +82,7 @@ impl Loader<'_> {
             let reserved: &dyn Fn(&str) -> bool = &|n| {
                 matches!(
                     n,
-                    "available" | "variant" | "permalink" | "listing" | "intended"
+                    "available" | "variant" | "permalink" | "listing" | "intended" | "type"
                 )
             };
             for (name, span, _) in entries(ft) {
@@ -107,7 +107,6 @@ impl Loader<'_> {
 
     pub fn types(&mut self, v: Option<&V<'_>>, _fragments: &Fragments) -> Vec<ContentType> {
         let mut out: Vec<ContentType> = Vec::new();
-        let mut default_at: Option<String> = None;
         if let Some(v) = v
             && let Some(t) = self.as_table("types", v)
         {
@@ -117,6 +116,20 @@ impl Loader<'_> {
                 let Some(tt) = self.as_table(&path, item) else {
                     continue;
                 };
+                // A page names its type in its frontmatter (SPEC §7.2), so
+                // `files` and `default`, which applied a type by path, are
+                // gone: say where the type is given now.
+                for (key, span, _) in entries(tt) {
+                    if matches!(key, "files" | "default") {
+                        self.push(
+                            self.issue(diagnostics::MODEL_UNKNOWN_KEY, span)
+                                .with_variant("type-key")
+                                .with_arg("key", key)
+                                .with_arg("table", path.as_str())
+                                .with_arg("type", name),
+                        );
+                    }
+                }
                 self.check_keys(
                     &path,
                     tt,
@@ -129,10 +142,6 @@ impl Loader<'_> {
                         "guide",
                     ],
                 );
-                let files = tt
-                    .get("files")
-                    .map(|f| self.patterns(&format!("{path}.files"), f))
-                    .unwrap_or_default();
                 let purpose = tt
                     .get("purpose")
                     .and_then(|p| self.string(&format!("{path}.purpose"), p, true));
@@ -143,29 +152,6 @@ impl Loader<'_> {
                     .get("guide")
                     .map(|g| self.type_files(&format!("{path}.guide"), g))
                     .unwrap_or_default();
-                let default_v = tt.get("default");
-                let default = default_v
-                    .and_then(|d| self.boolean(&format!("{path}.default"), d))
-                    .unwrap_or(false);
-                if default {
-                    match &default_at {
-                        Some(first) => self.push(
-                            self.issue(
-                                diagnostics::MODEL_TYPE_MULTIPLE_DEFAULTS,
-                                default_v.map_or(name_span, sp),
-                            )
-                            .with_arg("a", first.as_str())
-                            .with_arg("b", name),
-                        ),
-                        None => default_at = Some(name.to_owned()),
-                    }
-                }
-                if files.is_empty() && !default {
-                    self.push(
-                        self.issue(diagnostics::MODEL_TYPE_UNREACHABLE, name_span)
-                            .with_arg("type", name),
-                    );
-                }
                 let fm_path = format!("{path}.frontmatter");
                 let mut fields = Vec::new();
                 if let Some(fm) = self.require(&path, tt, sp(item), "frontmatter")
@@ -183,6 +169,7 @@ impl Loader<'_> {
                                 | "permalink"
                                 | "listing"
                                 | "intended"
+                                | "type"
                                 | "slug"
                                 | "formatted"
                                 | "source"
@@ -207,8 +194,7 @@ impl Loader<'_> {
                 }
                 out.push(ContentType {
                     name: name.to_owned(),
-                    files,
-                    default,
+                    implicit: false,
                     frontmatter: FrontmatterSchema {
                         owner: SchemaOwner::Type(name.to_owned()),
                         fields,
@@ -222,8 +208,7 @@ impl Loader<'_> {
         if out.is_empty() {
             out.push(ContentType {
                 name: "page".into(),
-                files: Vec::new(),
-                default: true,
+                implicit: true,
                 frontmatter: FrontmatterSchema {
                     owner: SchemaOwner::Type("page".into()),
                     fields: vec![Field {

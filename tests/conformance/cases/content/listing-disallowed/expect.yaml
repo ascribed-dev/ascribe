@@ -10,5 +10,5 @@ spec: ["2.1"]
 tags: [check]
 
 diagnostics:
-  - {slug: listing-disallowed, file: drafts/unlisted.md, line: 3}
-  - {slug: listing-disallowed, file: archive/old.md, line: 3}
+  - {slug: listing-disallowed, file: drafts/unlisted.md, line: 4}
+  - {slug: listing-disallowed, file: archive/old.md, line: 4}

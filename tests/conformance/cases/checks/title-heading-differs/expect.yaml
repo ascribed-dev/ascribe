@@ -9,4 +9,4 @@ tags: [page-check, resolve]
 builds:
   site:
     diagnostics:
-      - {slug: title-heading-differs, file: index.md, line: 2}
+      - {slug: title-heading-differs, file: index.md, line: 3}

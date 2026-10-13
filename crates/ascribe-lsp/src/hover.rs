@@ -53,7 +53,10 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
         }
         Hit::Availability(text, span) => (span, availability_markdown(&ctx.model, text)?),
         Hit::Frontmatter(text, span) => (span, availability_markdown(&ctx.model, &text)?),
-        Hit::Listing(span) => (span, listing_markdown(&ctx.model, ctx.path.as_str())),
+        Hit::Listing(span) => (
+            span,
+            listing_markdown(&ctx.model, ctx.path.as_str(), ctx.page_type_name()),
+        ),
         Hit::Directive(d) => {
             let schema = ctx
                 .model
@@ -296,11 +299,11 @@ pub(crate) fn type_name(ty: &AttributeType) -> String {
     }
 }
 
-/// The rule of `[listing]` a page at `path` is under, for its `listing:`
-/// line.
-fn listing_markdown(model: &ContentModel, path: &str) -> String {
+/// The rule of `[listing]` a page at `path` of the type named `type_name` is
+/// under, for its `listing:` line.
+fn listing_markdown(model: &ContentModel, path: &str, type_name: Option<&str>) -> String {
     let values = "`listed`, then `unquoted`, then `unlisted`";
-    match model.listing_rule(path) {
+    match model.listing_rule(path, type_name) {
         Some(rule) => format!(
             "**Under `{}`**, line {} of `ascribe.toml`.\n\n\
              This page is at least `{}`. It can set that or a stricter value, \

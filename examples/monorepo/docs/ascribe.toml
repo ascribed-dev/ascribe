@@ -7,15 +7,9 @@ content-root = "content"
 output-dir = ".ascribe/build"
 
 # Guides are the default. Reference pages say which version they describe.
-[types.guide]
-default = true
-
 [types.guide.frontmatter]
 title = { type = "string", phrases = true }
 description = { type = "string?", role = "description" }
-
-[types.reference]
-files = ["reference/**"]
 
 [types.reference.frontmatter]
 title = "string"

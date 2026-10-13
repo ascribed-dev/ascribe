@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Connect
 description: What the client does when it starts.
 ---

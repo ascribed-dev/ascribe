@@ -5,22 +5,16 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-# Every page has a type, and none is the default, so a page no `files`
-# pattern matches is an error rather than a page of no kind. Five of the types
-# are the set's, from `ascribe templates eject`: each one's template and guide
-# are in templates/, with Ascribe's notes on it, and templates.lock records
-# where they came from. What the set's types don't have is put back here: the
-# pages where they are, since the docs keep their guides together under
-# guides/ and their addresses don't move, each type's purpose, and the same
-# frontmatter on all of them. Titles can show code ("`ascribe.toml`
-# reference"); the site's layout uses the formatted title for the heading and
-# the sidebar.
+# Every page names its type with `type:` in its frontmatter. Five of the
+# types are the set's, from `ascribe templates eject`: each one's template and
+# guide are in templates/, with Ascribe's notes on it, and templates.lock
+# records where they came from. What the set's types don't have is put back
+# here: each type's purpose, and the same frontmatter on all of them. Titles
+# can show code ("`ascribe.toml` reference"); the site's layout uses the
+# formatted title for the heading and the sidebar.
 
 # The home page, a list of the other pages. No template is for a landing page,
 # so the type has none.
-[types.index]
-files = ["index.md"]
-
 [types.index.frontmatter]
 title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
@@ -30,7 +24,6 @@ description = { type = "string", role = "description" }
 # for implementers but shaped as references, and the editor's pages are its
 # reference though they're with the guides.
 [types.reference]
-files = ["reference/**", "contracts/**", "guides/editor.md", "guides/editor/**"]
 template = "templates/reference.md"
 guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
 purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnostic, the editor's features and settings, or a contract's rules."
@@ -39,19 +32,8 @@ purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnosti
 title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
-# The set's other four types, from `ascribe templates eject`, with each
-# type's pages where they are.
+# The set's other four types, from `ascribe templates eject`.
 [types.how-to]
-files = [
-  "guides/astro.md",
-  "guides/review.md",
-  "guides/drift.md",
-  "guides/agents.md",
-  "guides/vale.md",
-  "guides/report.md",
-  "guides/permalinks.md",
-  "guides/templates.md",
-]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, or taking the page templates."
@@ -61,7 +43,6 @@ title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
 [types.tutorial]
-files = ["getting-started.md", "guides/variants.md"]
 template = "templates/tutorial.md"
 guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
 purpose = "Learning Ascribe by building an example project a step at a time: a first project, then content that varies."
@@ -71,7 +52,6 @@ title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
 [types.concept]
-files = ["guides/measuring.md"]
 template = "templates/concept.md"
 guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
 purpose = "Understanding an idea behind the docs a team publishes, such as what Ascribe can't measure and where to look instead."
@@ -81,7 +61,6 @@ title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
 [types.troubleshooting]
-files = ["guides/review/troubleshooting.md"]
 template = "templates/troubleshooting.md"
 guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
 purpose = "Finding out why something isn't working, from what it shows, and what to do about it."

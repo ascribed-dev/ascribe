@@ -33,7 +33,7 @@ use ascribe_check::{
 };
 use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
-use ascribe_model::{FieldRole, Listing, TypeMatch};
+use ascribe_model::{FieldRole, Listing};
 use ascribe_resolve::pages::{self, PageRecord};
 use ascribe_resolve::{AstroRouter, FileKind, Removal};
 
@@ -416,10 +416,7 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
     let mut pages = 0;
     for file in index.files().filter(|f| f.kind == FileKind::Page) {
         pages += 1;
-        let ty = match model.type_for(file.path.as_str()) {
-            TypeMatch::One(ty) => Some(ty),
-            TypeMatch::Ambiguous(_) | TypeMatch::None => None,
-        };
+        let ty = file.content_type(model);
         *by_type.entry(ty.map(|t| t.name.clone())).or_default() += 1;
         let owner = ty
             .and_then(|t| t.frontmatter.field_with_role(FieldRole::Owner))

@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "JSON reports: the commands that answer questions"
 description: "The JSON Schemas of what ascribe explain, model, outline, link, refs, render, and agents index write with --format json."
 ---

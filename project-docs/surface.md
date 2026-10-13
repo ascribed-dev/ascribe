@@ -75,7 +75,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 |---|---|---|
 | Top level: `spec` | The only other top-level keys are the tables in §3–§20. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
-| `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page, plus the files it applies to. | §4 |
+| `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
 | `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
 | `[versions]` | How versions in availability specs are compared (SPEC §4.4), and which release is current. | §7 |
 | `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §8 |
@@ -98,7 +98,7 @@ For authors. Read from `docs/content/reference/content-model.md`, `docs/content/
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-194 in use, and 1 retired. By severity: 28 advice, 144 error, 22 warning. By level: 175 file, 19 page. By kind of next step: 42 choose, 13 fix, 3 outside, 11 review, 125 write.
+193 in use, and 4 retired. By severity: 28 advice, 143 error, 22 warning. By level: 174 file, 19 page. By kind of next step: 43 choose, 13 fix, 3 outside, 11 review, 123 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -152,7 +152,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC048` | `frontmatter-missing-field` | error | write | the required field `{field}` is missing; the content type `{type}` needs it |
 | `ASC049` | `frontmatter-type-mismatch` | error | choose | `{field}` must be {expected}, but it's {found} |
 | `ASC050` | `frontmatter-reserved-in-fragment` | error | write | `{key}` is reserved for pages, and fragments can't use it |
-| `ASC051` | `content-type-unresolved` | error | write | this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive |
+| `ASC051` | `content-type-unresolved` | retired |  | this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive |
 | `ASC052` | `list-ended-by-directive` | warning | write | this unindented `@{name}` ends the list above it; indent it to the list item's content to keep it in the item |
 | `ASC053` | `directive-indented-code` | warning | write | this `@{name}` is indented four or more spaces past its container's content, so it's part of an indented code block, not a directive |
 | `ASC054` | `steps-numbering-continued` | warning | write | this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list |
@@ -172,8 +172,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC068` | `model-path-absolute` | error | write | `{key}` must be a path relative to ascribe.toml, not an absolute path |
 | `ASC069` | `model-content-root-missing` | error | write | content root `{path}` doesn't exist |
 | `ASC070` | `model-output-overlaps-content` | error | write | output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source |
-| `ASC071` | `model-type-multiple-defaults` | error | choose | only one content type can be the default, but `{a}` and `{b}` both set default = true |
-| `ASC072` | `model-type-unreachable` | error | write | content type `{type}` has no `files` and isn't the default, so no page can use it |
+| `ASC071` | `model-type-multiple-defaults` | retired |  | only one content type can be the default, but `{a}` and `{b}` both set default = true |
+| `ASC072` | `model-type-unreachable` | retired |  | content type `{type}` has no `files` and isn't the default, so no page can use it |
 | `ASC073` | `model-type-title` | error | write | content type `{type}` must declare title = "string": it's the page title, used for empty link text |
 | `ASC074` | `model-field-reserved` | error | write | `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` |
 | `ASC075` | `model-type-syntax` | error | write | "{type}" isn't a valid {kind} type: {detail} |
@@ -297,6 +297,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC193` | `model-type-file` | error | write | `{path}`, the {key} of content type `{type}`, doesn't exist |
 | `ASC194` | `model-type-template` | error | write | can't read `{path}`, the template of content type `{type}`: {reason} |
 | `ASC195` | `template-placeholder-left` | advice | write | this page still has its template's placeholder `{placeholder}`; write what it asks for in its place |
+| `ASC196` | `content-type-missing` | error | choose | this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values} |
+| `ASC197` | `content-type-unknown` | error | choose | `{type}` isn't a content type; the types are: {values} |
 
 ## The VS Code extension
 
@@ -703,55 +705,55 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 
 | Page | Title | Type |
 |---|---|---|
-| `contracts/assets.md` | Asset contract |  |
-| `contracts/content-model.md` | `ascribe.toml` format contract |  |
-| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing |  |
-| `contracts/content-model/content.md` | `ascribe.toml` format contract: dimensions, phrases, and widgets |  |
-| `contracts/content-model/output.md` | `ascribe.toml` format contract: consumer, builds, and sources |  |
-| `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules |  |
-| `contracts/json-reports.md` | JSON report contract |  |
-| `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` |  |
-| `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions |  |
-| `contracts/json-reports/report.md` | JSON reports: `ascribe report` |  |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, and `ascribe permalinks` |  |
-| `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` |  |
-| `contracts/output-layout.md` | Output-layout contract |  |
-| `contracts/permalinks-list.md` | The permalinks list |  |
-| `contracts/site-render.md` | Site-render contract |  |
-| `getting-started.md` | Getting started |  |
-| `guides/agents.md` | Agents |  |
-| `guides/astro.md` | Astro |  |
-| `guides/drift.md` | Drift |  |
-| `guides/editor.md` | Editing |  |
-| `guides/editor/settings.md` | Editor workspaces, settings, and commands |  |
-| `guides/measuring.md` | What to measure |  |
-| `guides/permalinks.md` | Permalinks |  |
-| `guides/report.md` | The project report |  |
-| `guides/review.md` | Review |  |
-| `guides/review/troubleshooting.md` | Troubleshooting review |  |
-| `guides/templates.md` | Page templates |  |
-| `guides/vale.md` | Prose, through Vale |  |
-| `guides/variants.md` | Content that varies |  |
-| `index.md` | Ascribe documentation |  |
-| `reference/astro.md` | `@ascribed/astro` reference |  |
-| `reference/cli.md` | Command reference |  |
-| `reference/cli/agents.md` | `ascribe agents`, `mcp`, and `lsp` |  |
-| `reference/cli/check.md` | `ascribe check`, `build`, and `fmt` |  |
-| `reference/cli/diff.md` | `ascribe diff`, `drift`, and `report` |  |
-| `reference/cli/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` |  |
-| `reference/cli/sources.md` | `ascribe init`, `sources`, `permalinks`, `templates`, and `vale` |  |
-| `reference/content-model.md` | `ascribe.toml` reference |  |
-| `reference/content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing |  |
-| `reference/content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets |  |
-| `reference/content-model/output.md` | `ascribe.toml`: consumer, builds, and sources |  |
-| `reference/diagnostics.md` | Diagnostics |  |
-| `reference/diagnostics/content-checks.md` | Diagnostics: content checks |  |
-| `reference/diagnostics/content-model.md` | Diagnostics: the content model |  |
-| `reference/diagnostics/directives.md` | Diagnostics: directives |  |
-| `reference/diagnostics/pages.md` | Diagnostics: links, pages, and sources |  |
-| `reference/directives.md` | Directive reference |  |
-| `reference/elements.md` | Element library reference |  |
-| `reference/project-files.md` | Files Ascribe writes |  |
+| `contracts/assets.md` | Asset contract | reference |
+| `contracts/content-model.md` | `ascribe.toml` format contract | reference |
+| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing | reference |
+| `contracts/content-model/content.md` | `ascribe.toml` format contract: dimensions, phrases, and widgets | reference |
+| `contracts/content-model/output.md` | `ascribe.toml` format contract: consumer, builds, and sources | reference |
+| `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
+| `contracts/json-reports.md` | JSON report contract | reference |
+| `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
+| `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
+| `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, and `ascribe permalinks` | reference |
+| `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
+| `contracts/output-layout.md` | Output-layout contract | reference |
+| `contracts/permalinks-list.md` | The permalinks list | reference |
+| `contracts/site-render.md` | Site-render contract | reference |
+| `getting-started.md` | Getting started | tutorial |
+| `guides/agents.md` | Agents | how-to |
+| `guides/astro.md` | Astro | how-to |
+| `guides/drift.md` | Drift | how-to |
+| `guides/editor.md` | Editing | reference |
+| `guides/editor/settings.md` | Editor workspaces, settings, and commands | reference |
+| `guides/measuring.md` | What to measure | concept |
+| `guides/permalinks.md` | Permalinks | how-to |
+| `guides/report.md` | The project report | how-to |
+| `guides/review.md` | Review | how-to |
+| `guides/review/troubleshooting.md` | Troubleshooting review | troubleshooting |
+| `guides/templates.md` | Page templates | how-to |
+| `guides/vale.md` | Prose, through Vale | how-to |
+| `guides/variants.md` | Content that varies | tutorial |
+| `index.md` | Ascribe documentation | index |
+| `reference/astro.md` | `@ascribed/astro` reference | reference |
+| `reference/cli.md` | Command reference | reference |
+| `reference/cli/agents.md` | `ascribe agents`, `mcp`, and `lsp` | reference |
+| `reference/cli/check.md` | `ascribe check`, `build`, and `fmt` | reference |
+| `reference/cli/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
+| `reference/cli/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` | reference |
+| `reference/cli/sources.md` | `ascribe init`, `sources`, `permalinks`, `templates`, and `vale` | reference |
+| `reference/content-model.md` | `ascribe.toml` reference | reference |
+| `reference/content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
+| `reference/content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
+| `reference/content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
+| `reference/diagnostics.md` | Diagnostics | reference |
+| `reference/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
+| `reference/diagnostics/content-model.md` | Diagnostics: the content model | reference |
+| `reference/diagnostics/directives.md` | Diagnostics: directives | reference |
+| `reference/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `reference/directives.md` | Directive reference | reference |
+| `reference/elements.md` | Element library reference | reference |
+| `reference/project-files.md` | Files Ascribe writes | reference |
 
 READMEs published with a package, a crate, or the repository:
 

@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "`ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render`"
 description: "Ask a project about its diagnostics, content model, pages, links, and references, and rename what a page links to."
 ---

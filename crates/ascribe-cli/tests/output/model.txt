@@ -2,7 +2,7 @@
 
 ## Page types
 
-- `page` (the default): frontmatter `title` (string, required), `description` (string)
+- `page`: frontmatter `title` (string, required), `description` (string)
 
 ## Dimensions
 

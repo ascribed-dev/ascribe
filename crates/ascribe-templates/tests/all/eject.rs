@@ -10,7 +10,7 @@ use ascribe_core::RelPath;
 use ascribe_resolve::{DiskFs, Layout};
 use ascribe_templates::{Eject, EjectAnswer, EjectError, RefusalReason, eject};
 
-const MODEL: &str = "# The docs' content model.\nspec = \"0.1\"\n\n[project]\ncontent-root = \"docs\" # the pages\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = \"string\"\n";
+const MODEL: &str = "# The docs' content model.\nspec = \"0.1\"\n\n[project]\ncontent-root = \"docs\" # the pages\n\n[types.guide.frontmatter]\ntitle = \"string\"\n";
 
 fn project(model: &str) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("a temporary folder");
@@ -22,6 +22,15 @@ fn project(model: &str) -> tempfile::TempDir {
     )
     .expect("written");
     dir
+}
+
+/// The home page `project` writes, naming its type, `guide`.
+fn typed_home(dir: &Path) {
+    std::fs::write(
+        dir.join("docs/index.md"),
+        "---\ntype: guide\ntitle: Home\n---\n\nHello.\n",
+    )
+    .expect("written");
 }
 
 fn run(dir: &Path, names: &[&str], to: &str) -> Result<EjectAnswer, EjectError> {
@@ -97,8 +106,6 @@ fn a_clean_project_gets_the_template_its_guide_ascribe_s_notes_the_lock_and_the_
     );
     let added = &answer.added[0];
     assert_eq!(added.name, "how-to");
-    assert_eq!(added.folder, "docs/how-to");
-    assert_eq!(added.files, "how-to/**");
     assert_eq!(
         added.guide,
         ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
@@ -119,7 +126,7 @@ fn a_clean_project_gets_the_template_its_guide_ascribe_s_notes_the_lock_and_the_
     assert_eq!(
         model,
         format!(
-            "{MODEL}\n[types.how-to]\nfiles = [\"how-to/**\"]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+            "{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\nguide = [\"templates/how-to.guide.md\", \"templates/how-to.ascribe.md\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
         )
     );
     // The project loads with its files checked, and a page copied from the
@@ -188,9 +195,7 @@ fn a_new_lock_says_what_it_is() {
 
 #[test]
 fn a_type_declared_already_is_refused_and_nothing_is_written() {
-    let model = format!(
-        "{MODEL}\n[types.how-to]\nfiles = [\"how-to/**\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\n"
-    );
+    let model = format!("{MODEL}\n[types.how-to.frontmatter]\ntitle = \"string\"\n");
     let dir = project(&model);
     let before = files(dir.path());
     let answer = run(dir.path(), &["how-to"], "templates").expect("answered");
@@ -212,14 +217,14 @@ fn a_type_declared_already_is_refused_and_nothing_is_written() {
 /// comment and a type after it.
 fn declared(table: &str) -> String {
     format!(
-        "{MODEL}\n# How-tos.\n{table}\n# Last.\n[types.concept]\nfiles = [\"concept/**\"]\n\n[types.concept.frontmatter]\ntitle = \"string\"\n"
+        "{MODEL}\n# How-tos.\n{table}\n# Last.\n[types.concept.frontmatter]\ntitle = \"string\"\n"
     )
 }
 
 #[test]
 fn a_type_kept_gets_its_template_and_guide_and_nothing_else_changes() {
     let model = declared(
-        "[types.how-to]\nfiles = [\"how-to/**\", \"tasks/**\"] # both\npurpose = \"Doing a task.\"\n\n[types.how-to.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n",
+        "[types.how-to] # How-tos\npurpose = \"Doing a task.\"\n\n[types.how-to.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n",
     );
     let dir = project(&model);
     let answer = keeping(dir.path(), &["how-to"]).expect("ejected");
@@ -241,7 +246,7 @@ fn a_type_kept_gets_its_template_and_guide_and_nothing_else_changes() {
         kept.guide,
         ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
     );
-    assert_eq!(kept.left, ["files", "purpose", "frontmatter"]);
+    assert_eq!(kept.left, ["purpose", "frontmatter"]);
     assert_eq!(
         read(dir.path(), "ascribe.toml"),
         model.replace(
@@ -253,13 +258,13 @@ fn a_type_kept_gets_its_template_and_guide_and_nothing_else_changes() {
     assert!(lock.contains("name = \"how-to\""), "{lock}");
     let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
     let how_to = file.model.types.iter().find(|t| t.name == "how-to");
-    assert!(how_to.is_some_and(|t| t.template.is_some() && t.files.len() == 2));
+    assert!(how_to.is_some_and(|t| t.template.is_some()));
 }
 
 #[test]
 fn keeping_a_type_adds_the_ones_not_declared_as_eject_does() {
     let model = declared(
-        "[types.how-to]\nfiles = [\"how-to/**\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n",
+        "[types.how-to]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n",
     );
     let dir = project(&model);
     let answer = keeping(dir.path(), &["tutorial", "how-to"]).expect("ejected");
@@ -274,7 +279,7 @@ fn keeping_a_type_adds_the_ones_not_declared_as_eject_does() {
         "{text}"
     );
     assert!(
-        text.contains("files = [\"how-to/**\"]\ntemplate = \"templates/how-to.md\"\n"),
+        text.contains("[types.how-to]\ntemplate = \"templates/how-to.md\"\n"),
         "{text}"
     );
     // Written in the order named.
@@ -315,8 +320,8 @@ fn the_docs_reference_is_what_keeping_the_type_writes_apart_from_its_purpose() {
 #[test]
 fn a_type_kept_must_be_a_table_of_its_own() {
     for table in [
-        "[types]\nhow-to = { files = [\"how-to/**\"], frontmatter = { title = \"string\", description = \"string\" } }\n",
-        "[types]\nhow-to.files = [\"how-to/**\"]\nhow-to.frontmatter.title = \"string\"\nhow-to.frontmatter.description = \"string\"\n",
+        "[types]\nhow-to = { purpose = \"Doing a task.\", frontmatter = { title = \"string\", description = \"string\" } }\n",
+        "[types]\nhow-to.purpose = \"Doing a task.\"\nhow-to.frontmatter.title = \"string\"\nhow-to.frontmatter.description = \"string\"\n",
     ] {
         let model = declared(table);
         let dir = project(&model);
@@ -336,7 +341,7 @@ fn a_type_kept_with_a_template_or_guide_already_is_refused() {
         "guide = [\"ours/how-to.guide.md\"]",
     ] {
         let model = declared(&format!(
-            "[types.how-to]\nfiles = [\"how-to/**\"]\n{key}\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
+            "[types.how-to]\n{key}\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
         ));
         let dir = project(&model);
         std::fs::create_dir(dir.path().join("ours")).expect("made");
@@ -367,7 +372,7 @@ fn a_type_kept_whose_frontmatter_doesn_t_take_the_template_s_is_refused() {
         ),
     ] {
         let model = declared(&format!(
-            "[types.how-to]\nfiles = [\"how-to/**\"]\n\n[types.how-to.frontmatter]\n{frontmatter}"
+            "[types.how-to]\n\n[types.how-to.frontmatter]\n{frontmatter}"
         ));
         let dir = project(&model);
         let answer = keeping(dir.path(), &["how-to"]).expect("answered");
@@ -468,7 +473,7 @@ fn a_lock_eject_can_t_read_stops_it() {
 
 #[test]
 fn types_written_inline_can_t_be_added_to_and_nothing_is_written() {
-    let model = "spec = \"0.1\"\ntypes = { guide = { default = true, frontmatter = { title = \"string\" } } }\n";
+    let model = "spec = \"0.1\"\ntypes = { guide = { frontmatter = { title = \"string\" } } }\n";
     let dir = project(model);
     let error = run(dir.path(), &["how-to"], "templates").expect_err("refused");
     assert!(matches!(error, EjectError::Model { .. }), "{error}");
@@ -485,7 +490,7 @@ fn a_project_with_no_types_keeps_the_page_type_its_pages_had() {
     let text = read(dir.path(), "ascribe.toml");
     assert!(
         text.starts_with(
-            "spec = \"0.1\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[types.how-to]\n"
+            "spec = \"0.1\"\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[types.how-to]\n"
         ),
         "{text}"
     );
@@ -503,13 +508,8 @@ fn an_empty_types_table_declares_no_type_and_keeps_the_page_type() {
     let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
     let names: Vec<&str> = file.model.types.iter().map(|t| t.name.as_str()).collect();
     assert_eq!(names, ["page", "how-to"]);
-    // The page outside the new type is still of a type, as it was before.
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
-    let errors: Vec<_> = ascribe_check::check_all_builds(&project)
-        .into_iter()
-        .filter(|d| d.slug.as_str() == "content-type-unresolved")
-        .collect();
-    assert!(errors.is_empty(), "{errors:#?}");
+    // The page there names no type: it's listed, to be given `type: page`.
+    assert_eq!(answer.untyped, ["docs/index.md"]);
 }
 
 #[test]
@@ -528,6 +528,7 @@ fn an_empty_inline_types_table_can_t_be_added_to_and_nothing_is_written() {
 #[test]
 fn a_project_given_the_whole_set_checks_clean() {
     let dir = project(MODEL);
+    typed_home(dir.path());
     let answer = run(dir.path(), &[], "templates").expect("ejected");
     let names: Vec<&str> = answer.added.iter().map(|a| a.name.as_str()).collect();
     let set: Vec<String> = ascribe_templates::set()
@@ -561,6 +562,7 @@ fn a_project_given_the_whole_set_checks_clean() {
 fn a_page_copied_from_each_template_reports_its_placeholders() {
     let model = format!("{MODEL}\n[checks]\npage-orphan = \"off\"\n");
     let dir = project(&model);
+    typed_home(dir.path());
     run(dir.path(), &[], "templates").expect("ejected");
     for template in ascribe_templates::set().templates {
         let text = template.text(&template.template);
@@ -604,12 +606,12 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
     }
 }
 
-/// A project whose pages are under `guides/`, of its default type, which
-/// declares its title and description with more than their type.
-const DECLARED: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n";
+/// A project with one type, `guide`, which declares its title and
+/// description with more than their type.
+const DECLARED: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\ndescription = { type = \"string\", role = \"description\" }\n";
 
 #[test]
-fn a_type_added_takes_the_default_type_s_declarations_of_its_fields() {
+fn a_type_added_takes_another_type_s_declarations_of_its_fields() {
     let dir = project(DECLARED);
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert_eq!(answer.added[0].copied, ["title", "description"]);
@@ -636,7 +638,7 @@ fn a_type_added_takes_the_default_type_s_declarations_of_its_fields() {
 
 #[test]
 fn a_declaration_under_a_header_of_its_own_is_copied_inline() {
-    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter.title]\ntype = \"string\" # the page's\ninline = \"code\"\n";
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\n\n[types.guide.frontmatter.title]\ntype = \"string\" # the page's\ninline = \"code\"\n";
     let dir = project(model);
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert_eq!(answer.added[0].copied, ["title"]);
@@ -650,8 +652,8 @@ fn a_declaration_under_a_header_of_its_own_is_copied_inline() {
 }
 
 #[test]
-fn a_field_the_default_type_declares_as_something_else_is_a_plain_string() {
-    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = \"string\"\ndescription = \"date\"\n";
+fn a_field_another_type_declares_as_something_else_is_a_plain_string() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\ndescription = \"date\"\n";
     let dir = project(model);
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert!(answer.added[0].copied.is_empty());
@@ -665,38 +667,21 @@ fn a_field_the_default_type_declares_as_something_else_is_a_plain_string() {
 }
 
 #[test]
-fn a_type_that_matches_no_page_says_so_with_the_default_type_s_pages() {
+fn the_pages_that_name_no_type_are_listed() {
     let dir = project(DECLARED);
     std::fs::create_dir_all(dir.path().join("docs/guides/_parts")).expect("made");
-    std::fs::create_dir_all(dir.path().join("docs/how-to")).expect("made");
-    for page in ["guides/b.md", "guides/a.md", "guides/_parts/note.md"] {
-        std::fs::write(dir.path().join("docs").join(page), "---\ntitle: A\n---\n")
-            .expect("written");
+    for (page, text) in [
+        ("guides/b.md", "---\ntitle: B\n---\n"),
+        ("guides/a.md", "No frontmatter.\n"),
+        ("guides/typed.md", "---\ntype: guide\ntitle: T\n---\n"),
+        ("guides/_parts/note.md", "---\ntitle: A\n---\n"),
+    ] {
+        std::fs::write(dir.path().join("docs").join(page), text).expect("written");
     }
     let answer = run(dir.path(), &["how-to", "concept"], "templates").expect("ejected");
-    let pages: Vec<(&str, usize)> = answer
-        .added
-        .iter()
-        .map(|a| (a.name.as_str(), a.pages))
-        .collect();
-    assert_eq!(pages, [("how-to", 0), ("concept", 0)]);
-    assert_eq!(answer.default_type.as_deref(), Some("guide"));
     // In order, from the folder ascribe.toml is in, and no fragment.
     assert_eq!(
-        answer.default_pages,
+        answer.untyped,
         ["docs/guides/a.md", "docs/guides/b.md", "docs/index.md"]
     );
-
-    // A page in a type's folder is the type's, and when every type added has
-    // one, the default type's pages aren't listed.
-    let dir = project(DECLARED);
-    std::fs::create_dir_all(dir.path().join("docs/how-to")).expect("made");
-    std::fs::write(
-        dir.path().join("docs/how-to/fix.md"),
-        "---\ntitle: A\n---\n",
-    )
-    .expect("written");
-    let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
-    assert_eq!(answer.added[0].pages, 1);
-    assert!(answer.default_pages.is_empty());
 }

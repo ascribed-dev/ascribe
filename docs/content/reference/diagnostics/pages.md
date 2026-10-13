@@ -1,4 +1,5 @@
 ---
+type: reference
 title: "Diagnostics: links, pages, and sources"
 description: "The diagnostics about links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, and permalinks."
 ---

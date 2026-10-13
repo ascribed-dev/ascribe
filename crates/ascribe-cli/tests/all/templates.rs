@@ -82,13 +82,17 @@ fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
          wrote templates/how-to.ascribe.md\n\
          wrote templates/templates.lock\n\
          wrote ascribe.toml\n\
-         added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and the pages outside the new types keep it\n\
-         added [types.how-to] to ascribe.toml, for pages under docs/how-to/\n\
-         [types.how-to] matches no page yet: no page is under docs/how-to/\n\
-         1 page is of [types.page], the default type. To make one of a type added, list it in the type's `files` in ascribe.toml, or move it into the type's folder:\n  \
+         added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and a page that isn't of a new type names it, with `type: page`\n\
+         added [types.how-to] to ascribe.toml\n\
+         1 page names no type. In a project whose ascribe.toml declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:\n  \
          docs/index.md\n\
-         To start a page, copy templates/how-to.md into docs/how-to/, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.\n"
+         To start a page, copy templates/how-to.md to where the page goes, and read templates/how-to.guide.md and templates/how-to.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
     );
+    fs::write(
+        dir.path().join("docs/index.md"),
+        "---\ntype: page\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
     fs::create_dir(dir.path().join("docs/how-to")).unwrap();
     fs::copy(
         dir.path().join("templates/how-to.md"),
@@ -112,7 +116,10 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     let output = ascribe(dir.path(), &["templates", "eject", "--format", "json"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(answer["schema_version"], 1);
+    assert_eq!(
+        answer["schema_version"],
+        ascribe_templates::eject::SCHEMA_VERSION
+    );
     let set = ascribe_templates::set();
     let written = answer["written"].as_array().unwrap();
     assert_eq!(written.len(), set.templates.len() * 3 + 2, "{written:#?}");
@@ -121,7 +128,6 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     assert_eq!(added.len(), set.templates.len());
     for (added, template) in added.iter().zip(&set.templates) {
         assert_eq!(added["name"], template.name.as_str());
-        assert_eq!(added["folder"], format!("docs/{}", template.name).as_str());
         assert_eq!(
             added["guide"],
             serde_json::json!([
@@ -132,24 +138,18 @@ fn eject_s_json_lists_what_it_wrote_and_added() {
     }
     assert_eq!(answer["refused"], Value::Array(Vec::new()));
     assert_eq!(answer["page_declared"], true);
-    assert_eq!(answer["default_type"], "page");
-    assert_eq!(
-        answer["default_pages"],
-        serde_json::json!(["docs/index.md"])
-    );
-    assert_eq!(added[0]["pages"], 0);
+    assert_eq!(answer["untyped"], serde_json::json!(["docs/index.md"]));
     assert_eq!(added[0]["copied"], serde_json::json!([]));
 }
 
-/// A project whose pages are elsewhere, as Ascribe's docs' were: each type
-/// added takes the default type's declarations, says it matches no page, and
-/// the default type's pages are listed, up to ten.
+/// A project whose pages name no type: each type added takes the other
+/// types' declarations, and the pages are listed, up to ten.
 #[test]
-fn eject_says_which_types_match_no_page_and_lists_the_default_type_s() {
+fn eject_lists_the_pages_that_name_no_type() {
     let dir = tempfile::tempdir().unwrap();
     fs::write(
         dir.path().join("ascribe.toml"),
-        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide]\ndefault = true\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\n",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\n",
     )
     .unwrap();
     fs::create_dir_all(dir.path().join("docs/guides")).unwrap();
@@ -170,13 +170,11 @@ fn eject_says_which_types_match_no_page_and_lists_the_default_type_s() {
     assert_eq!(
         after,
         format!(
-            "added [types.how-to] to ascribe.toml, for pages under docs/how-to/, with `title` declared as [types.guide] declares it\n\
-             added [types.concept] to ascribe.toml, for pages under docs/concept/, with `title` declared as [types.guide] declares it\n\
-             [types.how-to] matches no page yet: no page is under docs/how-to/\n\
-             [types.concept] matches no page yet: no page is under docs/concept/\n\
-             12 pages are of [types.guide], the default type. To make one of a type added, list it in the type's `files` in ascribe.toml, or move it into the type's folder:\n\
+            "added [types.how-to] to ascribe.toml, with `title` declared as the project's other types declare it\n\
+             added [types.concept] to ascribe.toml, with `title` declared as the project's other types declare it\n\
+             12 pages name no type. In a project whose ascribe.toml declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:\n\
              {listed}  and 2 more, which `--format json` lists\n\
-             To start a page, copy its type's template into the type's folder, and read its guide and Ascribe's notes on it first.\n"
+             To start a page, copy its type's template to where the page goes, and read its guide and Ascribe's notes on it first. The page names its type in its frontmatter, as the template does.\n"
         )
     );
 }
@@ -186,6 +184,11 @@ fn eject_with_no_name_gives_six_types_whose_templates_check_and_are_formatted() 
     let dir = project();
     let output = ascribe(dir.path(), &["templates", "eject"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::write(
+        dir.path().join("docs/index.md"),
+        "---\ntype: page\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
     for template in ascribe_templates::set().templates {
         let folder = dir.path().join("docs").join(&template.name);
         fs::create_dir(&folder).unwrap();
@@ -239,7 +242,7 @@ fn eject_refused_writes_nothing_and_exits_2() {
 fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
     let dir = project();
     let model = format!(
-        "{MODEL}\n[types.reference]\nfiles = [\"reference/**\", \"contracts/**\"]\n\n# Titles show code.\n[types.reference.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\ndescription = {{ type = \"string\", role = \"description\" }}\n"
+        "{MODEL}\n[types.reference]\n\n# Titles show code.\n[types.reference.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\ndescription = {{ type = \"string\", role = \"description\" }}\n"
     );
     fs::write(dir.path().join("ascribe.toml"), &model).unwrap();
     let output = ascribe(
@@ -254,14 +257,14 @@ fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
          wrote templates/reference.ascribe.md\n\
          wrote templates/templates.lock\n\
          wrote ascribe.toml\n\
-         added `template` and `guide` to [types.reference] in ascribe.toml, and left `files` and `frontmatter` as they were\n\
-         To start a page, copy templates/reference.md to where [types.reference]'s `files` cover, and read templates/reference.guide.md and templates/reference.ascribe.md first.\n"
+         added `template` and `guide` to [types.reference] in ascribe.toml, and left `frontmatter` as it was\n\
+         To start a page, copy templates/reference.md to where the page goes, and read templates/reference.guide.md and templates/reference.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
     );
     assert_eq!(
         fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
         model.replace(
-            "\"contracts/**\"]\n",
-            "\"contracts/**\"]\ntemplate = \"templates/reference.md\"\nguide = [\"templates/reference.guide.md\", \"templates/reference.ascribe.md\"]\n"
+            "[types.reference]\n",
+            "[types.reference]\ntemplate = \"templates/reference.md\"\nguide = [\"templates/reference.guide.md\", \"templates/reference.ascribe.md\"]\n"
         )
     );
     let again = ascribe(
@@ -286,7 +289,7 @@ fn eject_s_json_lists_what_it_kept() {
     let dir = project();
     fs::write(
         dir.path().join("ascribe.toml"),
-        format!("{MODEL}\n[types.how-to]\nfiles = [\"tasks/**\"]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"),
+        format!("{MODEL}\n[types.how-to]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"),
     )
     .unwrap();
     let output = ascribe(
@@ -310,7 +313,7 @@ fn eject_s_json_lists_what_it_kept() {
             "summary": ascribe_templates::set().templates[0].summary,
             "template": "templates/how-to.md",
             "guide": ["templates/how-to.guide.md", "templates/how-to.ascribe.md"],
-            "left": ["files", "frontmatter"],
+            "left": ["frontmatter"],
         }])
     );
 }
@@ -336,7 +339,6 @@ fn to_is_a_folder_from_the_current_folder() {
     // Paths are shown from where it ran; ascribe.toml has them from its
     // own folder.
     assert!(text.starts_with("wrote ../writing/how-to.md\n"), "{text}");
-    assert!(text.contains("for pages under how-to/\n"), "{text}");
     let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
     assert!(
         model.contains("template = \"writing/how-to.md\"\n"),
@@ -376,6 +378,7 @@ fn reported_on(dir: &Path, file: &str) -> Vec<Value> {
 }
 
 const FILLED: &str = "---
+type: how-to
 title: \"Rotate keys\"
 description: \"Replace the keys Quill signs releases with, without a release going unsigned.\"
 ---
@@ -633,6 +636,11 @@ fn the_new_page_prompt_has_the_template_and_the_guide_and_its_check_runs_where_i
     assert!(git.status.success());
     let eject = ascribe(&site, &["templates", "eject", "how-to"]);
     assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    fs::write(
+        site.join("docs/index.md"),
+        "---\ntype: page\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
     let template = fs::read_to_string(site.join("templates/how-to.md")).unwrap();
     let body = &template[template.find("\n---\n").unwrap()..];
 
@@ -657,7 +665,9 @@ fn the_new_page_prompt_has_the_template_and_the_guide_and_its_check_runs_where_i
         assert_eq!(code_of(&output), 0, "{}", stderr(&output));
         let text = stdout(&output);
         assert!(
-            text.contains(&format!("Where: `{base}docs/how-to/rotate-keys.md`")),
+            text.contains(&format!(
+                "when it doesn't say, `{base}docs/rotate-keys.md`."
+            )),
             "{text}"
         );
         let guide = text
@@ -720,7 +730,7 @@ fn the_new_page_prompt_puts_the_page_where_path_says() {
         assert_eq!(code, 0, "{err}");
         assert!(text.contains(&format!("Where: `{place}`.\n")), "{text}");
     }
-    let (code, _, err) = prompt("path=index.md");
+    let (code, _, err) = prompt("path=_parts/rotate.md");
     assert_eq!(code, 2);
-    assert!(err.contains("of type `page`"), "{err}");
+    assert!(err.contains("it's a fragment's path"), "{err}");
 }

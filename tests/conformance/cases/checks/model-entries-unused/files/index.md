@@ -1,4 +1,5 @@
 ---
+type: page
 title: About {in-title}
 ---
 

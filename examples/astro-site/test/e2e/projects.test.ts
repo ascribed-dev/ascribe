@@ -219,7 +219,7 @@ describe("what several projects can't share", () => {
 
   it("refuses a page of one project under another's base path", async () => {
     const root = await twoProjects("refuse-page");
-    await write(root, { "home/content/docs/extra.md": "---\ntitle: Extra\n---\n\nIn the way.\n" });
+    await write(root, { "home/content/docs/extra.md": "---\ntype: page\ntitle: Extra\n---\n\nIn the way.\n" });
     expect(await buildFailure(root)).toContain(
       'the page docs/extra.md of "home" is at /docs/extra/, under the base path of "docs", /docs/',
     );

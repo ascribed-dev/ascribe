@@ -1,4 +1,5 @@
 ---
+type: tutorial
 title: "Title"
 description: "{One sentence that says what a reader will have learned by the end of this tutorial.}"
 ---

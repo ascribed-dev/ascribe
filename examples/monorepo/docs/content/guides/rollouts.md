@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Roll out a flag
 description: Turn a flag on for a percentage of users, a segment, or on a schedule.
 ---

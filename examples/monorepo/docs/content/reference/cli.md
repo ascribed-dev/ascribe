@@ -1,4 +1,5 @@
 ---
+type: reference
 title: CLI reference
 description: Every command of the lantern CLI.
 since: "2.0"

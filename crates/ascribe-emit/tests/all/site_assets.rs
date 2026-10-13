@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use ascribe_emit::{EmitContext, Emitter, OutputDir, SiteEmitter, emit};
 use ascribe_resolve::AstroRouter;
 
-const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[consumer]\nbase-path = \"/docs/\"\ntrailing-slash = \"never\"\n";
+const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[consumer]\nbase-path = \"/docs/\"\ntrailing-slash = \"never\"\n";
 
 /// A fragment with an image beside it, a page that includes it, an image
 /// beside the page, downloadable files (one outside the content root, with a

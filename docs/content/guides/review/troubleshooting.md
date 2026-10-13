@@ -1,4 +1,5 @@
 ---
+type: troubleshooting
 title: Troubleshooting review
 description: What to do when review shows no pull request, no comments, or no marks, says the project has errors, or won't start.
 available: ascribe 0.2.0

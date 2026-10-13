@@ -12,7 +12,8 @@ expression: text
   "title": "API keys",
   "frontmatter": {
     "description": "Create and rotate the API keys the Quill agent uses.",
-    "title": "API keys"
+    "title": "API keys",
+    "type": "page"
   },
   "availability": null,
   "headings": [
@@ -24,8 +25,8 @@ expression: text
       "explicit": true,
       "source": {
         "file": "keys.md",
-        "span": [91, 106],
-        "lines": [6, 6]
+        "span": [102, 117],
+        "lines": [7, 7]
       }
     },
     {
@@ -36,8 +37,8 @@ expression: text
       "explicit": true,
       "source": {
         "file": "keys.md",
-        "span": [176, 190],
-        "lines": [11, 11]
+        "span": [187, 201],
+        "lines": [12, 12]
       }
     }
   ],
@@ -54,13 +55,13 @@ expression: text
         {
           "type": "text",
           "value": "Create a key",
-          "span": [94, 106]
+          "span": [105, 117]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [91, 106],
-        "lines": [6, 6]
+        "span": [102, 117],
+        "lines": [7, 7]
       }
     },
     {
@@ -76,8 +77,8 @@ expression: text
       "annotation": null,
       "source": {
         "file": "keys.md",
-        "span": [107, 122],
-        "lines": [7, 7]
+        "span": [118, 133],
+        "lines": [8, 8]
       }
     },
     {
@@ -86,7 +87,7 @@ expression: text
         {
           "type": "text",
           "value": "Sign in to Quill Cloud and open ",
-          "span": [124, 152]
+          "span": [135, 163]
         },
         {
           "type": "strong",
@@ -94,25 +95,25 @@ expression: text
             {
               "type": "text",
               "value": "Settings → Keys",
-              "span": [154, 171]
+              "span": [165, 182]
             }
           ],
-          "span": [152, 173]
+          "span": [163, 184]
         },
         {
           "type": "text",
           "value": ".",
-          "span": [173, 174]
+          "span": [184, 185]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [124, 174],
-        "lines": [9, 9]
+        "span": [135, 185],
+        "lines": [10, 10]
       },
       "substitutions": [
         {
-          "span": [135, 142],
+          "span": [146, 153],
           "key": "cloud",
           "value": "Quill Cloud"
         }
@@ -129,13 +130,13 @@ expression: text
         {
           "type": "text",
           "value": "Rotate keys",
-          "span": [179, 190]
+          "span": [190, 201]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [176, 190],
-        "lines": [11, 11]
+        "span": [187, 201],
+        "lines": [12, 12]
       }
     },
     {
@@ -151,8 +152,8 @@ expression: text
       "annotation": null,
       "source": {
         "file": "keys.md",
-        "span": [191, 207],
-        "lines": [12, 12]
+        "span": [202, 218],
+        "lines": [13, 13]
       }
     },
     {
@@ -161,17 +162,17 @@ expression: text
         {
           "type": "text",
           "value": "Generate a new key, put it in ",
-          "span": [209, 239]
+          "span": [220, 250]
         },
         {
           "type": "code",
           "value": "quill.yaml",
-          "span": [239, 251]
+          "span": [250, 262]
         },
         {
           "type": "text",
           "value": ", and restart the agent. To install the agent first, see ",
-          "span": [251, 308]
+          "span": [262, 319]
         },
         {
           "type": "link",
@@ -188,25 +189,25 @@ expression: text
             {
               "type": "text",
               "value": "Install the agent",
-              "span": [308, 342]
+              "span": [319, 353]
             }
           ],
-          "span": [308, 342]
+          "span": [319, 353]
         },
         {
           "type": "text",
           "value": ".",
-          "span": [342, 343]
+          "span": [353, 354]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [209, 343],
-        "lines": [14, 14]
+        "span": [220, 354],
+        "lines": [15, 15]
       },
       "links": [
         {
-          "span": [308, 342],
+          "span": [319, 353],
           "kind": "link",
           "destination": "install-agent.md#install-agent",
           "target": {

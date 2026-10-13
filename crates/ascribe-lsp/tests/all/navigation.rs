@@ -280,6 +280,27 @@ fn availability_completes_targets_states_and_features() {
 }
 
 #[test]
+fn a_page_s_type_completes_the_declared_types() {
+    let f = Fixture::new(
+        "spec = \"0.1\"\n\n[types.guide]\npurpose = \"How to do one thing.\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\n\n[types.reference.frontmatter]\ntitle = \"string\"\n",
+        &[("docs/index.md", "---\ntype: guide\ntitle: Home\n---\n")],
+    );
+    let page = f.path("docs/index.md");
+    let mut client = Client::start(&f.root());
+    let all = complete(&mut client, &page, "---\ntype: $0\ntitle: T\n---\n");
+    assert_eq!(labels(&all), ["guide", "reference"]);
+    assert_eq!(
+        item(&all, "guide")["documentation"]["value"],
+        "How to do one thing."
+    );
+    let typed = complete(&mut client, &page, "---\ntype: re$0\ntitle: T\n---\n");
+    assert_eq!(labels(&typed), ["reference"]);
+    // A fragment has no type.
+    let fragment = f.path("docs/_part.md");
+    assert!(items(&complete(&mut client, &fragment, "---\ntype: $0\n---\n")).is_empty());
+}
+
+#[test]
 fn phrases_show_their_values() {
     let f = quill();
     let page = f.path("docs/quickstart.md");
@@ -998,7 +1019,7 @@ fn a_code_lens_names_the_include_and_opens_it() {
         uri(&f.path("docs/keys.md")).as_str()
     );
     assert_eq!(shown[0].params["takeFocus"], true);
-    assert_eq!(shown[0].params["selection"]["start"]["line"], 5);
+    assert_eq!(shown[0].params["selection"]["start"]["line"], 6);
     // Anything else is refused.
     let refused = client.request(
         "workspace/executeCommand",

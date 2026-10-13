@@ -1,4 +1,5 @@
 ---
+type: reference
 title: JSON report contract
 description: The JSON Schemas of what the ascribe commands write with --format json.
 ---

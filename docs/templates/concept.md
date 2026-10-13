@@ -1,4 +1,5 @@
 ---
+type: concept
 title: "Concept template"
 description: "{One sentence that says what the concept is and why a reader needs it.}"
 ---

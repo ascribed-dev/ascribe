@@ -4,7 +4,6 @@ spec = "0.1"
 content-root = "files"
 
 [types.how-to]
-files = ["how-to/**"]
 purpose = ["Do one task", "step by step"]
 
 [types.how-to.frontmatter]

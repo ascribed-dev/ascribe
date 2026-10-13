@@ -14,7 +14,6 @@ use ascribe_resolve::{DiskFs, Layout, MemoryFs};
 const MODEL: &str = r#"spec = "0.1"
 
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/notes.md"]
 

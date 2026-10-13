@@ -6,4 +6,4 @@ spec: ["2.1", "7.2"]
 tags: [model]
 
 diagnostics:
-  - {slug: model-field-reserved, file: ascribe.toml, line: 8}
+  - {slug: model-field-reserved, file: ascribe.toml, line: 5}

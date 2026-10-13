@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Element library reference
 description: "`@ascribed/elements`: the custom elements the site output uses, the CSS custom properties that theme them, and styling a project's own note types and lifecycle states."
 permalink: elements

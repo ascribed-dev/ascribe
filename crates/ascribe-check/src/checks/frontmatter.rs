@@ -10,15 +10,15 @@
 use ascribe_core::Router;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{
-    FieldRole, FrontmatterSchema, Listing, ListingLevel, Purpose, TypeMatch, crawler_tokens,
-    validate_frontmatter,
+    FieldRole, FrontmatterSchema, Listing, ListingLevel, Purpose, TYPE_KEY, TypeMatch,
+    crawler_tokens, types, validate_frontmatter,
 };
 use ascribe_resolve::{AstroRouter, llms, pages};
 use ascribe_syntax::Frontmatter;
 use serde_yaml_ng::Value;
 
 use super::Ctx;
-use super::text::quoted_and;
+use super::text::{quoted_and, suggest};
 use crate::yaml::{Node, YamlIndex};
 
 impl Ctx<'_> {
@@ -26,32 +26,6 @@ impl Ctx<'_> {
         let first_line = self.first_line();
         let path = self.file.path.as_str().to_owned();
         let fragment = self.model.is_fragment(&path);
-        let schema: &FrontmatterSchema = if fragment {
-            &self.model.fragments.frontmatter
-        } else {
-            match self.model.type_for(&path) {
-                TypeMatch::One(t) => &t.frontmatter,
-                TypeMatch::Ambiguous(types) => {
-                    let names: Vec<&str> = types.iter().map(|t| t.name.as_str()).collect();
-                    let issue = Issue::new(
-                        diagnostics::CONTENT_TYPE_UNRESOLVED,
-                        Location::new(self.id, first_line),
-                    )
-                    .with_arg("types", quoted_and(&names));
-                    self.report(issue);
-                    return;
-                }
-                TypeMatch::None => {
-                    let issue = Issue::new(
-                        diagnostics::CONTENT_TYPE_UNRESOLVED,
-                        Location::new(self.id, first_line),
-                    )
-                    .with_variant("none");
-                    self.report(issue);
-                    return;
-                }
-            }
-        };
 
         let (value, index) = match frontmatter {
             Some(fm) => {
@@ -82,6 +56,25 @@ impl Ctx<'_> {
             None => (Value::Null, YamlIndex::default()),
         };
 
+        let schema: &FrontmatterSchema = if fragment {
+            &self.model.fragments.frontmatter
+        } else {
+            match self.model.type_of(Some(&value)) {
+                TypeMatch::One(t) => {
+                    self.page_type = Some(t);
+                    &t.frontmatter
+                }
+                TypeMatch::Missing => {
+                    self.report_type_missing(frontmatter, first_line);
+                    return;
+                }
+                TypeMatch::Unknown => {
+                    self.report_type_unknown(&value, &index, first_line);
+                    return;
+                }
+            }
+        };
+
         let at = Location::new(self.id, first_line);
         for issue in validate_frontmatter(schema, &value, at) {
             let issue = self.relocate(issue, &index);
@@ -94,6 +87,81 @@ impl Ctx<'_> {
             self.check_template_fields(&value, &index);
         }
         self.check_intended_key(&value, &index, first_line);
+    }
+
+    /// A page that names no content type, in a project that declares types
+    /// (SPEC §7.2), at its first line. A fix adds each declared type, as the
+    /// frontmatter's first key, where `ascribe fmt` keeps it.
+    fn report_type_missing(&mut self, frontmatter: Option<&Frontmatter>, first_line: Span) {
+        let names: Vec<&str> = self.model.types.iter().map(|t| t.name.as_str()).collect();
+        let mut issue = Issue::new(
+            diagnostics::CONTENT_TYPE_MISSING,
+            Location::new(self.id, first_line),
+        )
+        .with_arg("values", names.join(", "));
+        for name in &names {
+            let edit = match frontmatter {
+                Some(fm) => TextEdit::insert(fm.content.start(), format!("{TYPE_KEY}: {name}\n")),
+                None => TextEdit::insert(0, format!("---\n{TYPE_KEY}: {name}\n---\n\n")),
+            };
+            issue = issue.with_fix(Fix {
+                title: format!("Add `{TYPE_KEY}: {name}`"),
+                file: self.id,
+                edits: vec![edit],
+                // Which type a page is is the author's to choose.
+                applicability: Applicability::Unsafe,
+            });
+        }
+        self.report(issue);
+    }
+
+    /// A page whose `type` names no declared content type (SPEC §7.2), at
+    /// its value. The fix is the closest declared name, when one is close.
+    fn report_type_unknown(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
+        let names: Vec<&str> = if self.model.declares_types() {
+            self.model.types.iter().map(|t| t.name.as_str()).collect()
+        } else {
+            Vec::new()
+        };
+        let node = index.get(TYPE_KEY);
+        let at = node.map_or(first_line, |n| n.value);
+        let mut issue = Issue::new(
+            diagnostics::CONTENT_TYPE_UNKNOWN,
+            Location::new(self.id, at),
+        )
+        .with_arg("values", names.join(", "));
+        match value.get(TYPE_KEY) {
+            Some(Value::String(declared)) => {
+                issue = issue.with_arg("type", declared.clone());
+                if names.is_empty() {
+                    issue = issue.with_variant("none");
+                    if let Some(node) = node
+                        && let Some(fix) = self.remove_line(node, "Remove `type`", true)
+                    {
+                        issue = issue.with_fix(fix);
+                    }
+                } else if let Some(suggestion) = suggest(declared, names.iter().copied()) {
+                    issue = issue
+                        .with_variant("suggestion")
+                        .with_arg("suggestion", suggestion.to_owned());
+                    if node.is_some_and(|n| n.scalar) {
+                        issue = issue.with_fix(Fix {
+                            title: format!("Change the type to `{suggestion}`"),
+                            file: self.id,
+                            edits: vec![TextEdit::replace(at, suggestion.to_owned())],
+                            // The nearest name, which may not be the one meant.
+                            applicability: Applicability::Unsafe,
+                        });
+                    }
+                }
+            }
+            found => {
+                issue = issue
+                    .with_variant("not-a-name")
+                    .with_arg("found", found.map_or_else(String::new, types::found));
+            }
+        }
+        self.report(issue);
     }
 
     /// A description longer than its line in `llms.txt` should be, when the
@@ -271,7 +339,8 @@ impl Ctx<'_> {
     /// A page whose `listing` is looser than the rule of `[listing]` it's
     /// under (`listing-loosened`). The fix removes `listing`.
     fn check_listing_rule(&mut self, listing: Listing, node: &Node) {
-        let Some(rule) = self.model.listing_rule(self.file.path.as_str()) else {
+        let type_name = self.page_type().map(|t| t.name.as_str());
+        let Some(rule) = self.model.listing_rule(self.file.path.as_str(), type_name) else {
             return;
         };
         if listing >= rule.listing {
@@ -289,15 +358,15 @@ impl Ctx<'_> {
                 .with_variant("default")
                 .with_arg("strict", rule.listing.name());
         }
-        if let Some(fix) = self.remove_listing(node, "Remove `listing` from the page", true) {
+        if let Some(fix) = self.remove_line(node, "Remove `listing` from the page", true) {
             issue = issue.with_fix(fix);
         }
         self.report(issue);
     }
 
-    /// A fix that removes the page's `listing` line, line break and all.
+    /// A fix that removes a top-level key's line, line break and all.
     /// `None` when the key's place isn't known.
-    fn remove_listing(&self, node: &Node, title: &str, safe: bool) -> Option<Fix> {
+    fn remove_line(&self, node: &Node, title: &str, safe: bool) -> Option<Fix> {
         let key = node.key?;
         let text = &self.file.text;
         let start = text[..key.start()].rfind('\n').map_or(0, |n| n + 1);
@@ -352,7 +421,7 @@ impl Ctx<'_> {
             return;
         }
         // It lists the page, which may not be what was meant.
-        if let Some(fix) = self.remove_listing(node, "Remove `listing: unlisted`", false) {
+        if let Some(fix) = self.remove_line(node, "Remove `listing: unlisted`", false) {
             issue = issue.with_fix(fix);
         }
         self.report(issue);

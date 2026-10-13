@@ -8,19 +8,11 @@
       "description": "A type eject added to `ascribe.toml`.",
       "properties": {
         "copied": {
-          "description": "The fields of its frontmatter declared as the project's default type\ndeclares them, rather than as plain strings, in order.",
+          "description": "The fields of its frontmatter declared as another of the project's\ntypes declares them, rather than as plain strings, in order.",
           "items": {
             "type": "string"
           },
           "type": "array"
-        },
-        "files": {
-          "description": "The pattern its `files` has, from the content root.",
-          "type": "string"
-        },
-        "folder": {
-          "description": "The folder of the pages it covers, from the folder `ascribe.toml` is\nin.",
-          "type": "string"
         },
         "guide": {
           "description": "Its `guide`, from the folder `ascribe.toml` is in, in the order to\nread them: their guide, then Ascribe's notes on the type.",
@@ -32,11 +24,6 @@
         "name": {
           "description": "The type's name, `[types.<name>]`, which is the template's.",
           "type": "string"
-        },
-        "pages": {
-          "description": "How many of the project's pages its `files` match. When it's 0 and the\nproject has pages, they're elsewhere, and its `files` is the writer's\nto change.",
-          "minimum": 0,
-          "type": "integer"
         },
         "summary": {
           "description": "Their index's summary of it.",
@@ -50,12 +37,9 @@
       "required": [
         "name",
         "summary",
-        "files",
-        "folder",
         "template",
         "guide",
-        "copied",
-        "pages"
+        "copied"
       ],
       "type": "object"
     },
@@ -70,7 +54,7 @@
           "type": "array"
         },
         "left": {
-          "description": "The type's keys left as they were, in the order `ascribe.toml` has\nthem, such as `files` and `frontmatter`.",
+          "description": "The type's keys left as they were, in the order `ascribe.toml` has\nthem, such as `purpose` and `frontmatter`.",
           "items": {
             "type": "string"
           },
@@ -179,20 +163,6 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
-    "default_pages": {
-      "description": "The pages of the default type, with the types added, from the folder\n`ascribe.toml` is in, in order, when a type added matches no page;\notherwise empty. A type's pages are listed in its `files`.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "default_type": {
-      "description": "The project's default type, with the types added: the one a page no\ntype's `files` match is of. Null when it has none.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
     "kept": {
       "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each was given its `template` and\n`guide`, and nothing else in it changed. Empty when anything was\nrefused.",
       "items": {
@@ -201,7 +171,7 @@
       "type": "array"
     },
     "page_declared": {
-      "description": "Whether `ascribe.toml` declared no types, so that every page was of\nthe implicit type `page`, and `[types.page]` was written out first,\nas it was, so the pages outside the types added keep it.",
+      "description": "Whether `ascribe.toml` declared no types, so that every page was of\nthe implicit type `page`, and `[types.page]` was written out first,\nas it was, so the pages that aren't of a type added can name it.",
       "type": "boolean"
     },
     "refused": {
@@ -215,6 +185,13 @@
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
       "type": "integer"
+    },
+    "untyped": {
+      "description": "The project's pages that name no type, from the folder `ascribe.toml`\nis in, in order. With the types added the project declares types, so\neach needs `type:` in its frontmatter, naming its type.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     },
     "written": {
       "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`. Empty when anything was refused.",
@@ -232,8 +209,7 @@
     "kept",
     "refused",
     "page_declared",
-    "default_type",
-    "default_pages"
+    "untyped"
   ],
   "title": "TemplatesEjectReport",
   "type": "object"

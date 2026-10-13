@@ -1,0 +1,8 @@
+description: >-
+  `type` is reserved for pages: a fragment that names a type is an error at
+  the key.
+spec: ["2.1", "2.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _frag.md, line: 2}

@@ -1,4 +1,5 @@
 ---
+type: page
 title: API keys
 description: Create and rotate the API keys the Quill agent uses.
 ---

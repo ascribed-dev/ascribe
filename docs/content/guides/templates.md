@@ -1,4 +1,5 @@
 ---
+type: how-to
 title: Page templates
 description: Starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it, written into your project by ascribe templates eject.
 available: next
@@ -16,7 +17,7 @@ The set has six templates, for a how-to, a concept, a tutorial, a reference, a t
 
 ## Take the templates
 
-To start a project with the set, run `ascribe init --templates` in an empty folder. It writes the project's first `ascribe.toml`, with a type for every page no template covers, and takes the six templates as `eject` would; the [command reference](../reference/cli/sources.md#cli-init) shows the file.
+To start a project with the set, run `ascribe init --templates` in an empty folder. It writes the project's first `ascribe.toml`, with a type, `page`, for a page that's none of the six, and takes the six templates as `eject` would; the [command reference](../reference/cli/sources.md#cli-init) shows the file.
 
 In a project that has its `ascribe.toml` already, take the whole set:
 
@@ -24,11 +25,10 @@ In a project that has its `ascribe.toml` already, take the whole set:
 ascribe templates eject
 ```
 
-It writes each template, its guide, and Ascribe's notes on its type into `templates/`, beside `ascribe.toml`, and adds the six types to `ascribe.toml`, below what's there. Each type's pages go in a folder of its name in the content root, and the command says which: `docs/how-to/` for how-tos, `docs/concept/` for concepts, and so on. A type is declared like this:
+It writes each template, its guide, and Ascribe's notes on its type into `templates/`, beside `ascribe.toml`, and adds the six types to `ascribe.toml`, below what's there. A type is declared like this:
 
 ```toml
 [types.how-to]
-files = ["how-to/**"]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
 
@@ -37,9 +37,18 @@ title = "string"
 description = "string"
 ```
 
-Each type's page has a title and a description, as every template's frontmatter has; when your default type declares `title` or `description` with more than `"string"`, such as an `inline` or a `role`, the new types declare them the same way. The folders are only a start: to keep a type's pages somewhere else, change its `files`, the line that says which pages are of it. A project that has pages already has them elsewhere, so `eject` says which new types match no page yet, and lists the pages of the default type, the ones to name in a type's `files`. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](agents.md#agent-instructions) writes say what each type is for with their summary of it, from that file; to say it your own way, give the type a [`purpose`](../reference/content-model.md#41-page-types).
+Each type's page has a title and a description, as every template's frontmatter has; when one of your types declares `title` or `description` with more than `"string"`, such as an `inline` or a `role`, the new types declare them the same way. A page says what type it is in its frontmatter, as each template does, so a page of any type can go in any folder:
 
-To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. To keep a type the project declares, with its own `files` and frontmatter, and take the template for it, add `--keep-type`: it adds only the type's `template` and `guide`. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
+```yaml
+---
+type: how-to
+title: "Rotate keys"
+---
+```
+
+Once a project declares types, every page names one. A project that had none, whose pages were all of the implicit type `page`, gets `[types.page]` written out, and `eject` lists the pages that name no type: each needs `type: page`, or the type it's of, and `ascribe check` reports each with a fix for every type. Commit the files, with `templates/templates.lock`, which records what each was copied from. The rules [`ascribe agents sync`](agents.md#agent-instructions) writes say what each type is for with their summary of it, from that file; to say it your own way, give the type a [`purpose`](../reference/content-model.md#41-page-types).
+
+To take only some, name them: `ascribe templates eject how-to concept`. `ascribe templates list` names the six. A type of the same name declared already, or a file where one would be written, is named, and then nothing is written. To keep a type the project declares, with its own frontmatter, and take the template for it, add `--keep-type`: it adds only the type's `template` and `guide`. `--to` writes them into another folder outside the content root, and the [command reference](../reference/cli/sources.md#cli-templates-eject) has the rest.
 
 `eject` adds to a project, and doesn't start one: without an `ascribe.toml`, it says to run `ascribe init --templates`.
 
@@ -72,7 +81,7 @@ ascribe templates status --diff how-to
 A project that takes the set late is one with pages written already. Ascribe's own docs took it that way, with 46 pages, and it showed what to expect:
 
 - **A type you declare already is refused,** and nothing is written. To take its template and keep your type as it is, add `--keep-type`.
-- **The new types match no page** until you change their `files`. Eject puts each type's pages in a folder of its name, and yours are somewhere else; a type that matches nothing isn't reported either.
+- **Your pages name no type yet,** if your project declared none. Each needs `type:`, and `ascribe check` offers a fix for each type; a type no page names isn't reported.
 - **Each type's frontmatter is the set's,** a plain `title` and `description`. Put back what your own types declare, such as a title drawn as code (`inline = "code"`), on each one.
 - **Pages written before their template have nothing of it left,** so the check reports none of its placeholders. A phrase with a placeholder's name, such as `{product}`, which the tutorial's template has, isn't reported, since the template's brace is escaped and the phrase's isn't.
 - **Not every page fits.** A home page that lists the other pages is none of the six: give it a type of your own, with no template. The troubleshooting template's "Cause" and "Solution" headings repeat under every symptom, and the check warns about headings with the same name on a page, so the docs write them as bold paragraphs instead.
@@ -85,22 +94,21 @@ Their guide says what belongs in a page of each kind, and it's written for any t
 
 ## Start a page
 
-In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with the title set, in the first folder the type's `files` cover, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](editor.md#start-a-page)).
+In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with its type and title set, in the content root, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](editor.md#start-a-page)).
 
 Without the editor:
 
 @steps
-1. Copy the template into the type's folder:
+1. Copy the template to where the page goes. It names its type already, `type: how-to`:
 
    ```sh
-   mkdir -p docs/how-to
-   cp templates/how-to.md docs/how-to/rotate-keys.md
+   cp templates/how-to.md docs/rotate-keys.md
    ```
 
 2. Read the type's guide and Ascribe's notes on it, before you write.
 3. Replace each `\{placeholder}` with what it asks for, and the title and description in the frontmatter with your own.
 
-An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](agents.md#from-the-command-line)), and the prompt gives it the template with the title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
+An agent starts from the template too. Ask it for a page, with the plugin's `/ascribe:new-page` or the prompt `ascribe agents prompt new-page` prints ([agents guide](agents.md#from-the-command-line)), and the prompt gives it the template with its type and title set, says where the file goes, and sends it to the guide and the notes, by their paths, before it writes:
 
 ```sh
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
