@@ -55,6 +55,12 @@ team = { type = "enum(platform, api)?", role = "owner" }
 
 Without one, every page is counted as having no owner, and the report leaves that line out.
 
+For each source with an `ascribe.examples.toml`, it counts the snippets that show one of the source's [tested examples](../examples/tested.md), and how many of those are current, stale, and unobserved: each `@snippet` line once, in pages and fragments alike. In the JSON, it's `inventory.examples`, a list with `source`, `snippets`, `current`, `stale`, and `unobserved`. A project with no config in any source has no such line and no such key.
+
+```text
+  Examples from code: 4 snippets, 2 current, 1 stale, 1 unobserved.
+```
+
 ## Builds
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.
