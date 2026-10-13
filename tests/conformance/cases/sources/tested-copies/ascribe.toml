@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[sources.code]
+git = "https://github.com/acme/code.git"
+branch = "main"
+include = ["examples/**"]

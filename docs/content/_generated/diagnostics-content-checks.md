@@ -365,11 +365,11 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
-**When:** A `@snippet` shows a file of a source in the same repository that the source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. Reported once for each snippet of the file, whichever region it shows.
+**When:** A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows.
 
 **Message:** `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again
 
-**Fix:** Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run.
+**Fix:** Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run. For a source in another repository, that's done in the code's repository, and `ascribe sources update` copies the new observation here; nothing in this repository runs the test.
 
 **Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
@@ -378,11 +378,11 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
-**When:** A `@snippet` shows a file of a source in the same repository that the source's `ascribe.examples.toml` makes an example, and no observation lists the file. Reported once for each snippet of the file.
+**When:** A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and no observation lists the file. For a source in another repository, the config and the observation are the copies `ascribe sources fetch` made. Reported once for each snippet of the file.
 
 **Message:** `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}`
 
-**Fix:** Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. When the file isn't meant to be an example, add it to the config's `ignore`, or narrow its `include`.
+**Fix:** Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. When the file isn't meant to be an example, add it to the config's `ignore`, or narrow its `include`. For a source in another repository, both are done in the code's repository, and `ascribe sources update` copies the result here.
 
 **Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
@@ -391,7 +391,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 Warning · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
-**When:** A source in the same repository has an `ascribe.examples.toml`, or an observation beside it, that can't be read. Reported at the source in ascribe.toml, once for each problem in each file.
+**When:** A source has an `ascribe.examples.toml`, or an observation beside it, that can't be read: in its folder, or, for a source in another repository, in its copies. Reported at the source in ascribe.toml, once for each problem in each file.
 
 **Message:** the examples of source `{source}` can't be checked: `{file}` can't be read: \{detail}
 

@@ -16,12 +16,12 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 
-use ascribe_core::LineIndex;
-use ascribe_model::example_hash;
+use ascribe_core::{FileId, LineIndex};
 use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, OBSERVATIONS_FOLDER, Observation, Problem,
     kept_line, observation_path,
 };
+use ascribe_model::{COPIES_FOLDER, LOCK_FILE, Lock, example_hash};
 use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
@@ -108,7 +108,8 @@ struct TestRun {
 
 /// Runs the command. Exit codes: 0 when the test passed and the observation
 /// is written, 1 when the test failed and nothing was written, 2 when it
-/// couldn't run: no config in the current folder, a config that can't be
+/// couldn't run: a folder that's a source's copies, no config in the current
+/// folder, a config that can't be
 /// read, no shell, an environment command that failed or printed nothing,
 /// or an observation that can't be written.
 pub fn run(_global: &Global, args: Args) -> ExitCode {
@@ -130,6 +131,13 @@ pub fn run(_global: &Global, args: Args) -> ExitCode {
 /// Runs the config in `folder`, writing the report to `out` and what went
 /// wrong to `err`, and returns the exit code.
 fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    if let Some(copy) = copies_of(folder) {
+        let _ = writeln!(
+            err,
+            "error: this folder is {copy}, which `ascribe sources fetch` copied from another repository; `ascribe observe` never runs a config that arrived as a copy. Run it in that repository, and `ascribe sources update` brings the observation here"
+        );
+        return exit::FAILURE;
+    }
     let (config, test) = match read_config(folder, err) {
         Ok(read) => read,
         Err(code) => return code,
@@ -235,6 +243,42 @@ fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Wri
         );
     }
     exit::OK
+}
+
+/// What `folder` is a copy of, when it's in a source's copies,
+/// `sources/<name>/`, by an `ascribe.lock` in a folder above it: `the copies
+/// of source `api``. A lock that can't be read makes everything in its
+/// `sources/` a copy.
+fn copies_of(folder: &Path) -> Option<String> {
+    // Outside FileSystem: the folder `ascribe observe` is run in, and the
+    // lock of a docs project it may be in, read only to refuse to run in its
+    // copies.
+    let folder = fs::canonicalize(folder).unwrap_or_else(|_| folder.to_path_buf());
+    for root in folder.ancestors().skip(1) {
+        // Outside FileSystem: as above.
+        let Ok(text) = fs::read_to_string(root.join(LOCK_FILE)) else {
+            continue;
+        };
+        let Ok(rest) = folder.strip_prefix(root.join(COPIES_FOLDER)) else {
+            continue;
+        };
+        let Some(name) = rest.components().next() else {
+            continue;
+        };
+        let name = name.as_os_str().to_string_lossy();
+        let pinned = match Lock::parse(&text, FileId::new(0)) {
+            Ok(lock) => lock.sources.iter().any(|s| s.name == name),
+            Err(_) => true,
+        };
+        if pinned {
+            return Some(format!(
+                "{COPIES_FOLDER}/{}, the copies of source `{}`",
+                terminal(&name),
+                terminal(&name)
+            ));
+        }
+    }
+    None
 }
 
 /// The config in `folder`, and its `test`: or, when it can't be read or has

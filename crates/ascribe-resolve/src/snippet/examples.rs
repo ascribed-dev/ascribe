@@ -4,16 +4,19 @@
 //!
 //! Both files are read through the [`FileSystem`], from the source's folder,
 //! whatever the source's own `include` says, and only read: nothing here
-//! starts a program. A source in another repository has no tested line yet,
-//! and reports nothing.
+//! starts a program. For a source in another repository, the folder is its
+//! copies, `sources/<name>/`, where `ascribe sources fetch` puts the config
+//! and the observations beside the files snippets use, and they're data
+//! just the same.
 
 use std::sync::Arc;
 
 use ascribe_core::RelPath;
+use ascribe_model::Source;
 use ascribe_model::examples::{
-    DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, Observation, Problem, observation_path,
+    DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, Observation, Problem, Status,
+    observation_path,
 };
-use ascribe_model::{Source, example_hash};
 
 use super::CodeFiles;
 use crate::fs::{FileSystem, Probe};
@@ -69,14 +72,18 @@ pub enum ExampleStatus {
 pub struct Example {
     /// Its status.
     pub status: ExampleStatus,
-    /// The folder `ascribe observe` is run in, from the project root.
+    /// The folder `ascribe observe` is run in, from the project root. For a
+    /// source in another repository, the folder of its copies, where it
+    /// isn't run: the test runs in that repository.
     pub folder: RelPath,
+    /// Whether the source is in another repository, so the observation
+    /// arrives with the next `ascribe sources update`.
+    pub remote: bool,
 }
 
 /// The file at `path` (relative to `source`'s folder), with text `text`, as
-/// an example: `None` when it isn't one, because its source is in another
-/// repository, has no config, has one that can't be read, or doesn't
-/// include the file.
+/// an example: `None` when it isn't one, because its source has no config,
+/// has one that can't be read, or doesn't include the file.
 pub fn example(
     source: &Source,
     path: &str,
@@ -84,9 +91,6 @@ pub fn example(
     fs: &dyn FileSystem,
     code: &CodeFiles,
 ) -> Option<Example> {
-    if source.git.is_some() {
-        return None;
-    }
     let folder = RelPath::parse(&source.path).ok()?;
     let examples = code.examples(fs, &folder);
     let config = examples.config.as_ref()?.as_ref().ok()?;
@@ -95,15 +99,17 @@ pub fn example(
     }
     let status = match examples.observation.as_ref().and_then(|o| o.as_ref().ok()) {
         None => ExampleStatus::Unobserved,
-        Some(observation) => match observation.files.get(path) {
-            None => ExampleStatus::Unobserved,
-            Some(hash) if *hash == example_hash(text.as_bytes()) => {
-                ExampleStatus::Current(observation.tested_line(config))
-            }
-            Some(_) => ExampleStatus::Stale,
+        Some(observation) => match observation.status(path, text.as_bytes()) {
+            Status::Current => ExampleStatus::Current(observation.tested_line(config)),
+            Status::Stale => ExampleStatus::Stale,
+            Status::Unobserved => ExampleStatus::Unobserved,
         },
     };
-    Some(Example { status, folder })
+    Some(Example {
+        status,
+        folder,
+        remote: source.git.is_some(),
+    })
 }
 
 impl CodeFiles {
