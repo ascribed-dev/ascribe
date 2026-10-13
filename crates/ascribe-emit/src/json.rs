@@ -191,6 +191,44 @@ struct SnippetJson {
     path: String,
     /// The lines of the code file it covers, first and last.
     lines: Option<[u32; 2]>,
+    /// Whether the file was tested, when it's a tested example
+    /// (decision #458c); absent on any other file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tested: Option<TestedJson>,
+}
+
+/// A tested example's status, and the observations current for it.
+#[derive(Serialize)]
+struct TestedJson {
+    /// `current`, `stale`, or `unobserved`.
+    status: &'static str,
+    /// The observations current for it, in name order: empty unless it's
+    /// `current`.
+    observations: Vec<ObservationJson>,
+}
+
+/// An observation current for an example.
+#[derive(Serialize)]
+struct ObservationJson {
+    /// Its name: `default`, or the name `ascribe observe --name` gave it.
+    name: String,
+    /// Its environment as it has it, in its order: `os`, `arch`, then each
+    /// entry's kept line, such as `"node": "v24.9.0"`.
+    environment: Environment,
+}
+
+/// Name and value pairs, written as an object in their order.
+struct Environment(Vec<(String, String)>);
+
+impl Serialize for Environment {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(self.0.len()))?;
+        for (key, value) in &self.0 {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
+    }
 }
 
 #[derive(Serialize)]
@@ -577,6 +615,17 @@ impl Writer<'_, '_> {
                 address: s.address.clone(),
                 path: s.path.to_string(),
                 lines: s.lines.map(|(first, last)| [first, last]),
+                tested: s.example.as_ref().map(|e| TestedJson {
+                    status: e.status.as_str(),
+                    observations: e
+                        .current
+                        .iter()
+                        .map(|o| ObservationJson {
+                            name: o.name.clone(),
+                            environment: Environment(o.environment.clone()),
+                        })
+                        .collect(),
+                }),
             }),
         }
     }
