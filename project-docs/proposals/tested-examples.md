@@ -68,14 +68,14 @@ node = "v24.9.0"
 typescript = "Version 5.9.2"
 
 [files]
-"examples/connect.out.txt" = "sha256:07fe…"
-"examples/connect.ts" = "sha256:9b1c…"
+"examples/connect.out.txt" = "sha256-lf:07fe…"
+"examples/connect.ts" = "sha256-lf:9b1c…"
 ```
 
 - **A person runs it, and commits the result.** `ascribe observe` is run by hand, at the source's root, before committing, as a lockfile is updated. The observation describes that person's machine, and says so. Running it in CI is left for later.
 - **One file per environment.** Without `--name` it's `default.toml`. An example observed under Node 22 and under Node 24 has two.
 - **No timestamp and no commit,** so an observation changes only when the code or the environment does. It's written before the commit that will hold it, so it couldn't name that commit; the hashes are the statement.
-- **Every example file is hashed,** with the hash `ascribe.lock` already uses, including expected-output files, which are examples like any other. Files are listed in order, one to a line, so two changes to different examples merge without conflict.
+- **Every example file is hashed,** as its bytes with CRLF read as LF, named `sha256-lf:` so it isn't mistaken for the `sha256:` of `ascribe.lock`, which hashes bytes as they are (decision [#458a](../decisions/458a-example-hash.md)). A file then hashes the same on a Windows checkout that rewrote its line endings as on a Linux one. Expected-output files are hashed too: they are examples like any other. Files are listed in order, one to a line, so two changes to different examples merge without conflict.
 - **A failed run writes nothing** and leaves the old observation in place, which then no longer matches.
 - **Only the example files decide whether it's stale.** An observation says these files passed this command. It goes stale when one of those files changes. A change to a library an example calls doesn't make it stale; catching that is the test's job the next time it runs, not Ascribe's.
 - **It says which `ascribe` wrote it, and in what format,** so an older `ascribe` reading a newer one's file can say so instead of misreading it.
@@ -115,7 +115,7 @@ Where it shows up:
 - **Carried the way a title is.** A `@snippet` becomes a fenced code block, and a title reaches both renderers and the plain output through the block's info string. The tested line travels the same way, as one more attribute there. A block with a tested line and no title still gets a caption. This is a change to the site-render and elements contracts.
 - **In the JSON output,** beside the snippet's address, path, and lines, which it already carries: the status, and each current observation's environment. An agent reading the Markdown version gets the caption's line. The research found that matching versions is where agents go wrong with examples.
 - **In the editor.** The language server has nothing for a `@snippet` line today. A hover there would show the file, the status, and the environment, and the stale and unobserved diagnostics appear on that line.
-- **As diagnostics,** under the [content checks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/README.md) contract: stale, unobserved, and an observation of a missing file. All advisory, all able to be raised or turned off. Their next step depends on where the code is. For a source in the same repository, it's a command the author runs: `ascribe observe`. For a source in another repository, it's `outside`: the fix is made there, and arrives with the next `ascribe sources update`.
+- **As diagnostics,** under the [content checks](https://github.com/ascribed-dev/ascribe/blob/76a46b26090c2dd0efbd7c918a29d58754f8eace/project-docs/content-checks/README.md) contract: stale, unobserved, and an observation of a missing file. All advisory, all able to be raised or turned off. Their next step is `outside` wherever the code is, since in neither case does anything in a page fix it: someone runs the tests (decision [#458d](../decisions/458d-example-diagnostics.md)). The message says which: for a source in the same repository, `ascribe observe` in the named folder; for a source in another repository, the fix is made there and arrives with the next `ascribe sources update`.
 - **In `ascribe report`:** how many of a project's examples have a current observation.
 
 One check nothing else could make: a page says a feature is available from version 3.4, and its example was tested on 3.2. Availability is already in the content model; a project would map an environment label to a dimension to turn this on.
@@ -162,7 +162,7 @@ One caution carries over from the editor: a project can already have two version
 
 ## Security
 
-`ascribe observe` runs a command. Ascribe runs `git` today and nothing else, so this is new, and it's held to these rules:
+`ascribe observe` runs a command. Ascribe starts `git` with arguments it builds, Vale with a fixed argument list, and the programs `ascribe report` runs, but never a line of shell, so this is new, and it's held to these rules:
 
 - **Only when asked.** A person types `ascribe observe`. Nothing else starts it: not `check`, `build`, `diff`, or `drift`, not the language server or the editor, and not `ascribe sources fetch` or `update`.
 - **Only the config in front of you.** It runs the `test` and `[environment]` commands of the `ascribe.examples.toml` in the folder it's run from, and says which file and which commands before it runs them. It never runs a command from a config that arrived as a pinned source's copy, or that a page or another project points at.
