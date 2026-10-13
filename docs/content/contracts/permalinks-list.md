@@ -5,7 +5,7 @@ description: The format of ascribe.permalinks, the list of a project's permalink
 available: ascribe 0.3.0
 ---
 
-A project can commit a list of its [permalinks](../reference/directives.md#permalinks), `ascribe.permalinks`, beside `ascribe.toml` (SPEC §7.5), with its aliases and the permalinks it retired (§7.6). With it, `ascribe check` warns when a permalink goes away, and something outside the docs, such as a product's CI, can check the names it links to against a copy of the file, without the docs. This contract says what the file holds, how Ascribe reads and writes it, and what a reader of a copy can rely on.
+A project can commit a list of its [permalinks](../writing/directives.md#permalinks), `ascribe.permalinks`, beside `ascribe.toml` (SPEC §7.5), with its aliases and the permalinks it retired (§7.6). With it, `ascribe check` warns when a permalink goes away, and something outside the docs, such as a product's CI, can check the names it links to against a copy of the file, without the docs. This contract says what the file holds, how Ascribe reads and writes it, and what a reader of a copy can rely on.
 
 | Who | Uses this contract to |
 |---|---|
@@ -43,7 +43,7 @@ An entry's value is where the name is **declared**: the path of the file it's wr
 
 A name is in one of the three tables, never two. The two tables were added to version 1: a list without them is a list with none, and a version of Ascribe that predates them reports a list with them as invalid rather than misread it.
 
-A place is where the name is written in the source, not the address a reader goes to: that's the site's address, the permalinks' path, and the name, the same in every build ([Permalinks](../guides/permalinks.md)).
+A place is where the name is written in the source, not the address a reader goes to: that's the site's address, the permalinks' path, and the name, the same in every build ([Permalinks](../permalinks/index.md)).
 
 ## 2. What it lists
 
@@ -55,15 +55,15 @@ The list is the project's, not one build's. Each permalink the content declares,
 
 | Diagnostic | When |
 |---|---|
-| [`permalinks-list-behind`](../reference/diagnostics/pages.md#ASC176) | A declared name has no entry, or its entry is at a place that doesn't declare it any more. It's reported where the name is declared. An alias or retired permalink without its entry, or with an entry that says otherwise, is reported on it in `ascribe.toml`. |
-| [`permalink-removed`](../reference/diagnostics/pages.md#ASC177) | An entry's name isn't declared anywhere, and `ascribe.toml` neither aliases nor retires it. It's reported on the entry, in `ascribe.permalinks`. The editor's quick fix retires it. |
-| [`permalinks-list-invalid`](../reference/diagnostics/pages.md#ASC175) | The file isn't a list this version reads. The list isn't used until it's fixed. |
+| [`permalinks-list-behind`](../checks/diagnostics/pages.md#ASC176) | A declared name has no entry, or its entry is at a place that doesn't declare it any more. It's reported where the name is declared. An alias or retired permalink without its entry, or with an entry that says otherwise, is reported on it in `ascribe.toml`. |
+| [`permalink-removed`](../checks/diagnostics/pages.md#ASC177) | An entry's name isn't declared anywhere, and `ascribe.toml` neither aliases nor retires it. It's reported on the entry, in `ascribe.permalinks`. The editor's quick fix retires it. |
+| [`permalinks-list-invalid`](../checks/diagnostics/pages.md#ASC175) | The file isn't a list this version reads. The list isn't used until it's fixed. |
 
-Moving a permalink to another heading or page makes the list behind, and doesn't remove it: the address still works. Retiring a removed permalink, with [`ascribe permalinks retire`](../reference/cli/sources.md#cli-permalinks-retire), ends the warning: the name moves to `[retired]`.
+Moving a permalink to another heading or page makes the list behind, and doesn't remove it: the address still works. Retiring a removed permalink, with [`ascribe permalinks retire`](../examples/sources.md#cli-permalinks-retire), ends the warning: the name moves to `[retired]`.
 
 ## 4. How Ascribe writes it
 
-[`ascribe permalinks sync`](../reference/cli/sources.md#cli-permalinks-sync) writes the list, and the editor's quick fix on `permalinks-list-behind` writes the same text. Writing the list:
+[`ascribe permalinks sync`](../examples/sources.md#cli-permalinks-sync) writes the list, and the editor's quick fix on `permalinks-list-behind` writes the same text. Writing the list:
 
 - adds an entry for each declared name the list doesn't have;
 - moves an entry whose place no longer declares its name to a place that does;
@@ -74,7 +74,7 @@ The text is the same for the same list on every platform: the comment, `version`
 
 ## 5. Reading a copy
 
-A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]` or `[aliases]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason or leads elsewhere, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../reference/cli/sources.md#cli-permalinks-verify) does this, and [Checking a product's links](../guides/permalinks.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
+A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]` or `[aliases]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason or leads elsewhere, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../examples/sources.md#cli-permalinks-verify) does this, and [Checking a product's links](../permalinks/index.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
 
 - should fail on a `version` it doesn't know, rather than read it as version 1;
 - should fail on a name in `[retired]`, saying why it was retired;

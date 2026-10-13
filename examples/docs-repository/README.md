@@ -1,6 +1,6 @@
 # A docs repository
 
-The docs for the Lantern SDK, a made-up client library, kept in a repository of their own, as the [drift guide](https://ascribed-dev.com/docs/guides/drift/#docs-kept-apart-from-the-code) describes. The examples come from two sources in the code's repository, `ascribed-dev/sources-fixture-code`.
+The docs for the Lantern SDK, a made-up client library, kept in a repository of their own, as the [drift guide](https://ascribed-dev.com/docs/examples/#docs-kept-apart-from-the-code) describes. The examples come from two sources in the code's repository, `ascribed-dev/sources-fixture-code`.
 
 ```
 ascribe.toml                         the sources: `api` and `examples`, in another repository

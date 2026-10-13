@@ -10,7 +10,7 @@ Someone starting a page of a known kind (a how-to, a concept, a troubleshooting 
 
 ## What exists today
 
-- **A page type is fields, not a body.** `[types.<name>]` in `ascribe.toml` has `files` and a frontmatter schema (`docs/content/reference/content-model.md` §4).
+- **A page type is fields, not a body.** `[types.<name>]` in `ascribe.toml` has `files` and a frontmatter schema (`docs/content/content-model/index.md` §4).
 - **`ascribe agents prompt new-page`** writes a new page's frontmatter for a type and where its file goes. The plugin's `ascribe:new-page` command wraps it. The surface audit's finding 59 is about that command needing the type before it can ask.
 - **One thing ships inside the binary and is written out once as the project's own:** the Vale preset, by `ascribe vale eject` (`crates/ascribe-check/src/prose/eject.rs`). It refuses when its files are there already, and exits 0 or 2.
 - **One command edits `ascribe.toml` in place,** keeping its comments and order: `ascribe permalinks retire`.

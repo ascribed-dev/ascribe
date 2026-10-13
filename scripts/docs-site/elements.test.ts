@@ -1,4 +1,4 @@
-// The element library's reference, docs/content/reference/elements.md, lists
+// The element library's reference, docs/content/astro/elements.md, lists
 // what @ascribed/elements has, taken from the package. Its table of custom
 // properties is a fragment generated here from the first `:root` block of
 // packages/elements/css/style.css, in that block's order; what each property
@@ -15,7 +15,7 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 
 const STYLESHEET = "packages/elements/css/style.css";
 const FRAGMENT = "docs/content/_generated/elements-properties.md";
-const PAGE = "docs/content/reference/elements.md";
+const PAGE = "docs/content/astro/elements.md";
 const NAMES = "packages/elements/src/names.ts";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts";

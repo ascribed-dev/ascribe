@@ -23,9 +23,9 @@ It's the surface audit's finding 53: "Nothing starts a project, or a page, for a
 - The proposal: "What else starts from a copy".
 - `docs/content/getting-started.md`, "Create `ascribe.toml`", and `examples/getting-started/`, which the page takes its `ascribe.toml` from and a test holds to it.
 - The surface audit's findings 53, 54, and 55, and [journey 1](../surface-audit/journeys/start-a-project.md): what an agent given the page and an empty folder did.
-- `docs/content/reference/content-model.md` §21: what an absent section means. A first `ascribe.toml` should set as little as that allows.
+- `docs/content/content-model/index.md` §21: what an absent section means. A first `ascribe.toml` should set as little as that allows.
 - `ascribe templates eject`, as phase 3 left it: it needs an `ascribe.toml` to add to, and always will (README decision 24).
-- `docs/content/reference/content-model.md` §4, rule 4: a page that no type's `files` match, in a project with no default type, is an error.
+- `docs/content/content-model/index.md` §4, rule 4: a page that no type's `files` match, in a project with no default type, is an error.
 - `project-docs/checklists.md`: a command finds its project from its path arguments or the current folder.
 
 ## Design

@@ -13,7 +13,7 @@ Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
 
-**Read more:** [Links](../reference/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
 ### ASC037 `link-id-missing`
 @id {permalink=true}: ASC037
@@ -26,7 +26,7 @@ Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the `#id`, or give the heading you mean that id with `@id`.
 
-**Read more:** [Links](../reference/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
 ### ASC038 `link-to-fragment`
 @id {permalink=true}: ASC038
@@ -39,7 +39,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Link to a page that includes the fragment.
 
-**Read more:** [Links](../reference/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
 ### ASC040 `link-id-removed`
 @id {permalink=true}: ASC040
@@ -52,7 +52,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Fix:** Put the link in a `@variant` arm that the same build removes, or keep the heading in that build.
 
-**Read more:** [Links](../reference/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
 ### ASC041 `link-route`
 @id {permalink=true}: ASC041
@@ -65,7 +65,7 @@ Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC
 
 **Fix:** Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.
 
-**Read more:** [Links](../reference/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
 ### ASC121 `link-page-dropped`
 @id {permalink=true}: ASC121
@@ -78,7 +78,7 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Put the link in a `@variant` arm that the same build removes, or publish the page in that build.
 
-**Read more:** [Links](../reference/directives.md#links) in the directive reference.
+**Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
 ## Images
 
@@ -93,7 +93,7 @@ Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project.
 
-**Read more:** [Images](../reference/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/directives.md#images) in the directive reference.
 
 ### ASC043 `image-alt-missing`
 @id {permalink=true}: ASC043
@@ -104,9 +104,9 @@ Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.
 
 **Message:** this image has no alt text; describe it between the brackets for readers who can't see it
 
-**Fix:** Describe the image between the brackets: `![The settings page](../reference/settings.png)`.
+**Fix:** Describe the image between the brackets: `![The settings page](../settings.png)`.
 
-**Read more:** [Images](../reference/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/directives.md#images) in the directive reference.
 
 ### ASC059 `image-attribute-missing`
 @id {permalink=true}: ASC059
@@ -117,9 +117,9 @@ Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md
 
 **Message:** this image is missing the required attribute `{key}`
 
-**Fix:** Add the attribute in the block after the image: `![Alt](../reference/image.png){width=600}`.
+**Fix:** Add the attribute in the block after the image: `![Alt](../image.png){width=600}`.
 
-**Read more:** [Images](../reference/directives.md#images) in the directive reference.
+**Read more:** [Images](../writing/directives.md#images) in the directive reference.
 
 ## Phrases
 
@@ -134,7 +134,7 @@ Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC
 
 **Fix:** Declare the key in `[phrases]` if it's meant as a phrase. Otherwise write `\{` to keep the braces as text.
 
-**Read more:** [Phrases](../reference/directives.md#phrases) in the directive reference.
+**Read more:** [Phrases](../writing/directives.md#phrases) in the directive reference.
 
 ### ASC126 `phrase-double-braces`
 @id {permalink=true}: ASC126
@@ -147,7 +147,7 @@ Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the outer braces, or write `\{` for a brace that's meant.
 
-**Read more:** [Phrases](../reference/directives.md#phrases) in the directive reference.
+**Read more:** [Phrases](../writing/directives.md#phrases) in the directive reference.
 
 ## Headings
 
@@ -162,7 +162,7 @@ Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the heading a stable id: an `@id` line directly under it.
 
-**Read more:** [Heading ids](../reference/directives.md#heading-ids) in the directive reference.
+**Read more:** [Heading ids](../writing/directives.md#heading-ids) in the directive reference.
 
 ### ASC046 `heading-duplicate-without-id`
 @id {permalink=true}: ASC046
@@ -175,7 +175,7 @@ Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Give the heading a stable id: an `@id` line directly under it.
 
-**Read more:** [Heading ids](../reference/directives.md#heading-ids) in the directive reference.
+**Read more:** [Heading ids](../writing/directives.md#heading-ids) in the directive reference.
 
 ### ASC124 `heading-empty-slug`
 @id {permalink=true}: ASC124
@@ -188,7 +188,7 @@ Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.
 
 **Fix:** Give the heading an id: an `@id` line directly under it.
 
-**Read more:** [Heading ids](../reference/directives.md#heading-ids) in the directive reference.
+**Read more:** [Heading ids](../writing/directives.md#heading-ids) in the directive reference.
 
 ## Frontmatter
 
@@ -203,7 +203,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment).
 
-**Read more:** [Frontmatter values](../reference/content-model.md#42-frontmatter-values) in the `ascribe.toml` reference.
+**Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 
 ### ASC048 `frontmatter-missing-field`
 @id {permalink=true}: ASC048
@@ -216,7 +216,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Add the field to the page's frontmatter, or give it a default in the content type.
 
-**Read more:** [Frontmatter values](../reference/content-model.md#42-frontmatter-values) in the `ascribe.toml` reference.
+**Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 
 ### ASC049 `frontmatter-type-mismatch`
 @id {permalink=true}: ASC049
@@ -229,7 +229,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Give a value of the field's type. Quote a string that YAML would read as something else: `version: "3.10"`.
 
-**Read more:** [Frontmatter values](../reference/content-model.md#42-frontmatter-values) in the `ascribe.toml` reference.
+**Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 
 ### ASC050 `frontmatter-reserved-in-fragment`
 @id {permalink=true}: ASC050
@@ -242,7 +242,7 @@ Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it.
 
-**Read more:** [Fragments](../reference/content-model.md#43-fragments) in the `ascribe.toml` reference.
+**Read more:** [Fragments](../content-model/index.md#43-fragments) in the `ascribe.toml` reference.
 
 ### ASC122 `frontmatter-syntax`
 @id {permalink=true}: ASC122
@@ -255,7 +255,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the YAML between the `---` lines.
 
-**Read more:** [Files](../reference/directives.md#files) in the directive reference.
+**Read more:** [Files](../writing/directives.md#files) in the directive reference.
 
 ### ASC188 `listing-loosened`
 @id {permalink=true}: ASC188
@@ -268,7 +268,7 @@ Error · file level · next step: fix · [SPEC §2.1]({repo}/blob/main/SPEC.md#2
 
 **Fix:** Remove the page's `listing`, which the rule already sets, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list the page more openly, change the rule in `[listing]`: a page can only restrict what it's under. The editor's quick fix removes `listing`.
 
-**Read more:** [`[listing]`](../reference/content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
 
 ### ASC196 `content-type-missing`
 @id {permalink=true}: ASC196
@@ -281,7 +281,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Add `type:` to the page's frontmatter, naming one of the content types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type.
 
-**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
+**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
 ### ASC197 `content-type-unknown`
 @id {permalink=true}: ASC197
@@ -294,7 +294,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it.
 
-**Read more:** [Page types](../reference/content-model.md#41-page-types) in the `ascribe.toml` reference.
+**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
 ## Lists
 
@@ -309,7 +309,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 
 **Fix:** Indent the directive to the list item's content, to keep it in the item. To end the list there, put a blank line before the directive.
 
-**Read more:** [Lists and block quotes](../reference/directives.md#lists-and-block-quotes) in the directive reference.
+**Read more:** [Lists and block quotes](../writing/directives.md#lists-and-block-quotes) in the directive reference.
 
 ### ASC053 `directive-indented-code`
 @id {permalink=true}: ASC053
@@ -322,7 +322,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 
 **Fix:** Indent the directive less, to its container's content. If it's meant as code, put it in a fenced code block.
 
-**Read more:** [Lists and block quotes](../reference/directives.md#lists-and-block-quotes) in the directive reference.
+**Read more:** [Lists and block quotes](../writing/directives.md#lists-and-block-quotes) in the directive reference.
 
 ### ASC054 `steps-numbering-continued`
 @id {permalink=true}: ASC054
@@ -335,7 +335,7 @@ Warning · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.
 
 **Fix:** Indent the line that splits the list, so the steps stay one list.
 
-**Read more:** [`@steps`](../reference/directives.md#steps) in the directive reference.
+**Read more:** [`@steps`](../writing/directives.md#steps) in the directive reference.
 
 ## Files
 
@@ -350,7 +350,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Check the file's permissions, and save it as UTF-8.
 
-**Read more:** [Files](../reference/directives.md#files) in the directive reference.
+**Read more:** [Files](../writing/directives.md#files) in the directive reference.
 
 ## `@snippet`
 
@@ -365,7 +365,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the address as `<source>:<path>`, with the path relative to the source's folder and no `..`, and add `#<region>` for a region. A file outside the project's folder can only be named through a source: declare one in `[sources.<name>]`.
 
-**Read more:** [`@snippet`](../reference/directives.md#snippet) in the directive reference.
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
 ### ASC128 `snippet-source-unknown`
 @id {permalink=true}: ASC128
@@ -378,7 +378,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the source's name, or declare it in ascribe.toml: `[sources.<name>]` with a `path`.
 
-**Read more:** [`@snippet`](../reference/directives.md#snippet) in the directive reference.
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
 ### ASC129 `snippet-file-missing`
 @id {permalink=true}: ASC129
@@ -391,7 +391,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`.
 
-**Read more:** [`@snippet`](../reference/directives.md#snippet) in the directive reference.
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
 ### ASC130 `snippet-file-not-text`
 @id {permalink=true}: ASC130
@@ -404,7 +404,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Take the snippet from a text file: UTF-8, with no NUL characters.
 
-**Read more:** [`@snippet`](../reference/directives.md#snippet) in the directive reference.
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
 ### ASC131 `snippet-region-missing`
 @id {permalink=true}: ASC131
@@ -417,7 +417,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole.
 
-**Read more:** [`@snippet`](../reference/directives.md#snippet) in the directive reference.
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
 ### ASC132 `snippet-tags`
 @id {permalink=true}: ASC132
@@ -430,7 +430,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 
 **Fix:** Fix the tags in the code file: give every `-start` tag its `-end`, give each region its own name, and remove tags Ascribe reserves for later (`state`, `replace`, `uncomment`, `emphasize`).
 
-**Read more:** [`@snippet`](../reference/directives.md#snippet) in the directive reference.
+**Read more:** [`@snippet`](../writing/directives.md#snippet) in the directive reference.
 
 ## Source copies
 
@@ -445,7 +445,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** ascribe.lock is written by `ascribe sources fetch` and `ascribe sources update`. Undo the change made to it by hand, or delete it and run `ascribe sources fetch`.
 
-**Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC137 `lock-source-unknown`
 @id {permalink=true}: ASC137
@@ -458,7 +458,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Run `ascribe sources fetch` to make the lock match ascribe.toml, or `ascribe sources update <name>` for a source whose `git` changed.
 
-**Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC138 `source-copy-changed`
 @id {permalink=true}: ASC138
@@ -471,7 +471,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** A copy is the file as it is in its repository at the pinned commit. Change the code where it lives, then run `ascribe sources update <name>`; `ascribe sources fetch` puts back a copy that was changed or deleted here.
 
-**Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC139 `source-copy-unlocked`
 @id {permalink=true}: ASC139
@@ -484,7 +484,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Run `ascribe sources fetch`: it copies the files snippets use at the pinned commit and records them, and removes the rest.
 
-**Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC140 `source-copy-unused`
 @id {permalink=true}: ASC140
@@ -497,7 +497,7 @@ Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.
 
 **Fix:** Run `ascribe sources fetch`, which removes the copies no snippet uses.
 
-**Read more:** [A source in another repository](../reference/content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ## `@intended`
 
@@ -510,9 +510,9 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 **Message:** `{check}` isn't a check
 
-**Fix:** Name the check whose problem is intended, by its name in the [diagnostics reference](../reference/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable.
+**Fix:** Name the check whose problem is intended, by its name in the [diagnostics reference](../checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable.
 
-**Read more:** [`@intended`](../reference/directives.md#intended) in the directive reference.
+**Read more:** [`@intended`](../writing/directives.md#intended) in the directive reference.
 
 ### ASC144 `intended-entry`
 @id {permalink=true}: ASC144
@@ -533,7 +533,7 @@ intended:
 
 The editor's quick fix writes a placeholder reason for you to replace: until you do, the acknowledgement is reported.
 
-**Read more:** [`@intended`](../reference/directives.md#intended) in the directive reference.
+**Read more:** [`@intended`](../writing/directives.md#intended) in the directive reference.
 
 ### ASC145 `intended-unused`
 @id {permalink=true}: ASC145
@@ -546,7 +546,7 @@ Advice · page level · next step: fix · [SPEC §4.9]({repo}/blob/main/SPEC.md#
 
 **Fix:** Remove the acknowledgement: what it excused has gone. `ascribe check` reports this only when it checks every build, since a problem may appear in one build alone.
 
-**Read more:** [`@intended`](../reference/directives.md#intended) in the directive reference.
+**Read more:** [`@intended`](../writing/directives.md#intended) in the directive reference.
 
 ## Permalinks list
 
@@ -561,7 +561,7 @@ Error · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.md
 
 **Fix:** ascribe.permalinks is written by `ascribe permalinks sync`. Undo the change made to it by hand, or, for a list from a newer version of Ascribe, update Ascribe. Don't delete the file to quiet this: it's how a removed permalink is noticed, and a new one written by `sync` doesn't know the names the content no longer has.
 
-**Read more:** [Permalinks](../reference/directives.md#permalinks) in the directive reference.
+**Read more:** [Permalinks](../writing/directives.md#permalinks) in the directive reference.
 
 ### ASC176 `permalinks-list-behind`
 @id {permalink=true}: ASC176
@@ -574,7 +574,7 @@ Warning · file level · next step: fix · [SPEC §7.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each alias and retired permalink as `ascribe.toml` has it, and commit the file with the change. In the editor, the quick fix does the same.
 
-**Read more:** [Permalinks](../reference/directives.md#permalinks) in the directive reference.
+**Read more:** [Permalinks](../writing/directives.md#permalinks) in the directive reference.
 
 ### ASC177 `permalink-removed`
 @id {permalink=true}: ASC177
@@ -587,7 +587,7 @@ Warning · file level · next step: write · [SPEC §7.5]({repo}/blob/main/SPEC.
 
 **Fix:** Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, `permalink: <name>` in a page's frontmatter, or an alias in `[permalinks.aliases]` that leads to the permalink that covers it now. When it's gone, retire it: `ascribe permalinks retire <name> --reason "…"`, with `--to` for a page that covers it now, writes it in `[permalinks.retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone.
 
-**Read more:** [Permalinks](../reference/directives.md#permalinks) in the directive reference.
+**Read more:** [Permalinks](../writing/directives.md#permalinks) in the directive reference.
 
 ## Retired permalinks and aliases
 
@@ -602,7 +602,7 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Fix:** Point the alias at a permalink a heading's `@id {permalink=true}` or a page's `permalink` declares, or at another alias that leads to one. When what it named is gone, retire the alias instead: move it to `[permalinks.retired]`, with a reason.
 
-**Read more:** [`[permalinks]`](../reference/content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
+**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
 
 ### ASC180 `permalink-name-conflict`
 @id {permalink=true}: ASC180
@@ -615,7 +615,7 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Fix:** When the permalink is back, delete its entry from `[permalinks.retired]` or `[permalinks.aliases]`. When it's going, remove the `@id {permalink=true}` or the page's `permalink` that still declares it: a name retired on purpose is retired once what declared it has gone.
 
-**Read more:** [`[permalinks]`](../reference/content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
+**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
 
 ### ASC181 `permalink-retired-target-missing`
 @id {permalink=true}: ASC181
@@ -628,4 +628,4 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Fix:** Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone.
 
-**Read more:** [`[permalinks]`](../reference/content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
+**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.

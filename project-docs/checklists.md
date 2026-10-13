@@ -69,7 +69,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 
 **The docs**
 
-- [ ] The reference: `docs/content/reference/directives.md`, or the page of `docs/content/reference/content-model/` (or `content-model.md`) with the section, and any guide that shows the form. What no release has yet is marked `@available: next`.
+- [ ] The reference: `docs/content/writing/directives.md`, or the page of `docs/content/content-model/` with the section, and any guide that shows the form. What no release has yet is marked `@available: next`.
 - [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 
 ## A new command or option
@@ -81,9 +81,9 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] **The words for what it reports.** What Ascribe found is a *problem*; the kind of problem, with a code, is a *diagnostic*; how severe one is, is an error, a warning, or advice, and a count of them is a `summary` (decision 119). A command doesn't call them findings, alerts, or issues.
 - [ ] **What it exits with.** `0`: it ran, and there's nothing to act on. `1`: it ran, and the answer is the one to act on: problems, a target that isn't there, a file that would change. `2`: it couldn't do its work. A name of Ascribe's own that doesn't exist (a build, a diagnostic's code, a section) is `2`; a thing of the project's that doesn't exist (a page, a heading, a permalink) is `1`. A command whose whole job is a yes or a no exits `1` unasked (`check`, `link`, a group's `verify`). One that reports exits `0` whatever it finds, and `1` only with `--exit-code` (`diff`, `drift`, `report`).
 - [ ] The arguments and help text, in `crates/ascribe-cli/src/cli.rs` and `crates/ascribe-cli/src/commands/`. The work itself is one entry function in a library crate, taking plain arguments and returning a typed result, so the language server and other callers can reach it; the command parses its arguments, calls it, and reports. A new command's entry goes in ARCHITECTURE.md's [Each command's entry](../ARCHITECTURE.md#each-commands-entry).
-- [ ] Exit codes from `crates/ascribe-cli/src/exit.rs` only, and the command's "Exit codes" section, on its page in `docs/content/reference/cli/`, says which it uses.
-- [ ] The command reference's fragments in `docs/content/_generated/`, regenerated from the help text by `crates/ascribe-cli/src/docs.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`). A new command also gets a section in `docs/content/reference/cli.md` that includes its fragment. An option no release has yet is listed in `UNRELEASED` in `docs.rs`.
-- [ ] With `--format json`: the shape's fields documented in the command's section, on its page in `docs/content/reference/cli/`, keys in snake_case, and a schema version that rises when a field is removed or changes meaning.
+- [ ] Exit codes from `crates/ascribe-cli/src/exit.rs` only, and the command's "Exit codes" section, on its page of the command reference, which `docs/content/command/index.md` lists, says which it uses.
+- [ ] The command reference's fragments in `docs/content/_generated/`, regenerated from the help text by `crates/ascribe-cli/src/docs.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`). A new command also gets a section in `docs/content/command/index.md` that includes its fragment. An option no release has yet is listed in `UNRELEASED` in `docs.rs`.
+- [ ] With `--format json`: the shape's fields documented in the command's section, on its page of the command reference, which `docs/content/command/index.md` lists, keys in snake_case, and a schema version that rises when a field is removed or changes meaning.
 - [ ] The shape's schema and TypeScript, generated from its Rust types by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`): a doc comment on every field, a new shape added to `SHAPES` (and to `PACKAGES` when a package reads it), and a new command's schema included in `docs/content/contracts/json-reports.md`. The packages read the generated `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, never a type of their own.
 - [ ] The TypeScript that runs the command, if it passes the new option: `packages/astro/src/run.ts`.
 - [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
@@ -91,7 +91,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] The map of the surface, `project-docs/surface.md`, rewritten by `node scripts/surface/inventory.ts` after the fragments above. Its diff is what the change added to the surface: read it against the conventions at the top of this list.
 - [ ] **A tool for it,** if an agent with no shell needs the answer: named `ascribe_` and the command's own word (`ascribe_search` for `ascribe search`), with the command's arguments under the same names, `response_format` with `concise` the default, and nothing that writes a file. A command that changes the project gets no tool (decision 56).
 - [ ] **A path in what it prints, or in a prompt it writes,** is from the folder the command was run in, the form it takes as an argument. A prompt says once which folder its commands are for.
-- [ ] The tools of `ascribe mcp`, whose names and arguments are a contract (decision 56): the tools table under `ascribe mcp` in `docs/content/reference/cli/agents.md` and each tool's command's section, in `docs/content/reference/cli/questions.md`.
+- [ ] The tools of `ascribe mcp`, whose names and arguments are a contract (decision 56): the tools table under `ascribe mcp` in `docs/content/agents/commands.md` and each tool's command's section, in `docs/content/command/questions.md`.
 
 ## A new editor command, action, or setting
 

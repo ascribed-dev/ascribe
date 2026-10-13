@@ -21,9 +21,15 @@ const groups = await Promise.all(
         const id = entryId(file);
         const entry = await getEntry("docs", id);
         if (!entry) throw new Error(`src/nav.ts names ${file}, which isn't a page of the site`);
-        // A page in the folder of another page listed, as reference/cli/check.md
-        // is in reference/cli.md's, is listed under it.
-        const nested = nav.some((g) => g.pages.some((other) => id.startsWith(`${entryId(other)}/`)));
+        // A page in the folder named for another page listed, as
+        // checks/diagnostics/pages.md is in checks/diagnostics.md's, is listed
+        // under it. A folder's index.md isn't such a page: its group is the
+        // folder already.
+        const nested = nav.some((g) =>
+          g.pages.some(
+            (other) => !other.endsWith("/index.md") && id.startsWith(`${entryId(other)}/`),
+          ),
+        );
         return {
           id,
           title: entry.data.formatted.title,

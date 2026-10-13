@@ -26,7 +26,7 @@ Three things follow from that.
 
 ## What exists
 
-- **`[glossary]`** has `match`, `case-sensitive`, and `terms` (`docs/content/reference/content-model.md` §12). A term has `term`, `aliases`, `definition`, `link`, and its own `match` and `case-sensitive`.
+- **`[glossary]`** has `match`, `case-sensitive`, and `terms` (`docs/content/content-model/index.md` §12). A term has `term`, `aliases`, `definition`, `link`, and its own `match` and `case-sensitive`.
 - **Occurrences are linked for the author** (SPEC §5.4, and §9.2 step 7): whole words, in prose only, the longest term winning, the first occurrence on a page or every one. A term set to `marked` isn't linked automatically, for a word that also has an ordinary sense.
 - **A term's id is the key in the table.** The site output puts it on each link as `data-ascribe-term`, with the definition as the link's title (`docs/content/contracts/site-render.md`). An acknowledgement names it (`[[intended]] term = "rollout"`), and `ascribe model` and the JSON output list it.
 - **A term with no `link` is legal.** It's never linked, and its definition reaches the editor's hover and the JSON output only.

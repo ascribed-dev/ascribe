@@ -13,7 +13,7 @@ import {
 const targets: Targets = {
   pages: new Map([
     ["docs/content/index.md", "/docs/"],
-    ["docs/content/guides/agents.md", "/docs/guides/agents/"],
+    ["docs/content/agents/index.md", "/docs/agents/"],
   ]),
   repo: "https://github.com/ascribed-dev/ascribe",
   kind: (file) =>
@@ -31,11 +31,11 @@ function hrefs(html: string): string[] {
 
 test("a link to a docs page's source becomes its route, with its fragment", async () => {
   const html = await pointLinks(
-    '<a href="docs/content/guides/agents.md#hooks">Agents</a> <a href="docs/content/index.md">docs</a>',
+    '<a href="docs/content/agents/index.md#hooks">Agents</a> <a href="docs/content/index.md">docs</a>',
     "",
     targets,
   );
-  expect(hrefs(html)).toEqual(["/docs/guides/agents/#hooks", "/docs/"]);
+  expect(hrefs(html)).toEqual(["/docs/agents/#hooks", "/docs/"]);
 });
 
 test("a link to another file or folder in the repository becomes its address on GitHub", async () => {

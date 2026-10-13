@@ -118,7 +118,7 @@ test("each page outside the docs names its own social card, which is served", as
 });
 
 test("the header's mark links home and is named, and Docs links to the docs", async () => {
-  const page = await open("/docs/guides/astro/");
+  const page = await open("/docs/astro/");
   const home = page.getByRole("link", { name: "Ascribe", exact: true });
   expect(await home.getAttribute("href")).toBe("/");
   expect(await home.getByRole("img", { name: "Ascribe" }).isVisible()).toBe(true);
@@ -161,7 +161,7 @@ test("the landing page's link to getting started opens it under /docs/", async (
 });
 
 test("the footer links to Credits, the changelog, the license, and the repository, on every kind of page", async () => {
-  for (const path of ["/", "/docs/guides/astro/", "/changelog/", "/no/such/page/"]) {
+  for (const path of ["/", "/docs/astro/", "/changelog/", "/no/such/page/"]) {
     const page = await open(path);
     const footer = page.locator("footer.site-footer");
     expect(await footer.count(), path).toBe(1);
@@ -288,7 +288,7 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
   await tabs.getByRole("tab", { name: "pnpm" }).click();
   expect(await tabs.getByText("pnpm add --save-dev @ascribed/cli").isVisible()).toBe(true);
 
-  await page.goto(`${server.url}/docs/guides/astro/`);
+  await page.goto(`${server.url}/docs/astro/`);
   const next = page.locator("ascribe-tabs").first();
   await expect
     .poll(() => next.getByRole("tab", { name: "pnpm" }).getAttribute("aria-selected"))
@@ -298,7 +298,7 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
 });
 
 test("a page marked with an availability shows its badge", async () => {
-  const page = await open("/docs/guides/review/");
+  const page = await open("/docs/review/");
   const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
   // "unreleased" until a release ships the page's feature, then the release.
   expect(await badge.getAttribute("target")).toBe("ascribe");
@@ -317,7 +317,7 @@ test("notes and steps render as elements", async () => {
 });
 
 test("a code example taken from a file shows its title", async () => {
-  const page = await open("/docs/guides/astro/");
+  const page = await open("/docs/astro/");
   const figure = page.locator("figure.code-title", { hasText: "export default defineConfig" });
   await expect.poll(() => figure.locator("figcaption").textContent()).toBe("astro.config.mjs");
   await page.close();
@@ -325,11 +325,11 @@ test("a code example taken from a file shows its title", async () => {
 
 test("a link between pages lands on the page, and a glossary link on its heading", async () => {
   const page = await open("/docs/getting-started/");
-  await page.locator('article a[href="/docs/guides/astro/"]').first().click();
-  await page.waitForURL(`${server.url}/docs/guides/astro/`);
+  await page.locator('article a[href="/docs/astro/"]').first().click();
+  await page.waitForURL(`${server.url}/docs/astro/`);
   expect(await page.locator("h1").textContent()).toBe("Astro");
 
-  await page.goto(`${server.url}/docs/reference/diagnostics/`);
+  await page.goto(`${server.url}/docs/checks/diagnostics/`);
   // A glossary link to a heading (the first one on this page links to a page).
   const term = page.locator('article a[data-ascribe-term][href*="#"]').first();
   const href = await term.getAttribute("href");
@@ -341,7 +341,7 @@ test("a link between pages lands on the page, and a glossary link on its heading
 });
 
 test("the sidebar lists the pages and marks the current one", async () => {
-  const page = await open("/docs/reference/cli/");
+  const page = await open("/docs/command/");
   const current = page.locator('#sidebar a[aria-current="page"]');
   expect(await current.textContent()).toContain("Command reference");
   expect(await page.locator("#sidebar a").count()).toBeGreaterThanOrEqual(13);
@@ -349,7 +349,7 @@ test("the sidebar lists the pages and marks the current one", async () => {
 });
 
 test("the page comes before the sidebar in the HTML, and the sidebar is drawn on its left", async () => {
-  const page = await open("/docs/reference/cli/");
+  const page = await open("/docs/command/");
   const follows = await page.evaluate(() => {
     const main = document.querySelector("main");
     const sidebar = document.getElementById("sidebar");
@@ -377,21 +377,19 @@ test("search finds a known word, with no network", async () => {
   await input.fill("slugger");
   // The page among the results, not the first: Pagefind ranks by how often
   // a page says the word for its length, which moves as pages grow.
-  const result = page.locator(
-    '.pagefind-ui__result-link[href="/docs/reference/content-model/output/"]',
-  );
+  const result = page.locator('.pagefind-ui__result-link[href="/docs/content-model/output/"]');
   await result.waitFor();
   expect(await result.textContent()).toBeTruthy();
   await result.click();
-  await page.waitForURL(/\/docs\/reference\/content-model\/output\//);
+  await page.waitForURL(/\/docs\/content-model\/output\//);
   await page.close();
 });
 
 test("each page links to its source on GitHub", async () => {
-  const page = await open("/docs/guides/astro/");
+  const page = await open("/docs/astro/");
   const edit = page.getByRole("link", { name: "Edit this page on GitHub" });
   expect(await edit.getAttribute("href")).toBe(
-    "https://github.com/ascribed-dev/ascribe/edit/main/docs/content/guides/astro.md",
+    "https://github.com/ascribed-dev/ascribe/edit/main/docs/content/astro/index.md",
   );
   await page.close();
 });
@@ -419,7 +417,7 @@ test("a permalink the docs don't have gets the 404 page, which says so", async (
 });
 
 test("at phone width, the sidebar opens from the menu and nothing scrolls sideways", async () => {
-  const page = await open("/docs/reference/content-model/", 390);
+  const page = await open("/docs/content-model/", 390);
   const sidebar = page.locator("#sidebar");
   expect(await sidebar.isVisible()).toBe(false);
   await page.getByRole("button", { name: "Menu" }).click();

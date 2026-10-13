@@ -496,7 +496,7 @@ The group merged the day the conventions were written, so it was built without t
 ### 39. The guide to permalinks is a section of the Astro guide
 
 - **Kind:** friction.
-- **Where:** `docs/content/guides/astro.md`, "## Permalinks"; `ascribe permalinks`.
+- **Where:** `docs/content/astro/index.md`, "## Permalinks"; `ascribe permalinks`.
 - **Evidence:** The section is 100 of the page's 287 lines, with "### Linking from a product", "### Checking a product's links", "### Moving, aliasing, and retiring", and "### A permalink that isn't here". It's the only guide that names `ascribe permalinks`, seven times. Three of its four parts aren't about Astro: a product's code, a workflow "in the product's repository", and `ascribe permalinks retire`. It has a paragraph for everyone else: "**With another generator,** read `_ascribe/permalinks.json`". The home page mentions permalinks once, under "For implementers", as the format of a file.
 - **Cost:** Someone who reads `ascribe permalinks --help`, follows it to the reference, and wants the how finds it under a site generator's name, or doesn't. A project on another generator has no reason to open the page.
 - **Recommendation:** document. Permalinks get a guide of their own, and the Astro guide keeps what the integration does.
@@ -514,7 +514,7 @@ The group merged the day the conventions were written, so it was built without t
 ### 41. `ascribe.toml` is described twice, in the same words
 
 - **Kind:** a duplicate.
-- **Where:** `docs/content/reference/content-model.md` (812 lines); `docs/content/contracts/content-model.md` (1,013 lines).
+- **Where:** `docs/content/content-model/index.md` (812 lines); `docs/content/contracts/content-model.md` (1,013 lines).
 - **Evidence:** Of the reference's 301 lines longer than 40 characters, 123 are in the contract word for word. Both open with "### 1.1 The file", "### 1.2 Names", "### 1.3 Paths and patterns", and "### 1.4 How this reference describes keys"; the contract kept the last heading, and says its example files are "each valid under this reference". One piece is shared properly: both have `@include: ../_fragments/field-type-grammar.md`, the docs' only fragment written by hand. The sections are numbered one apart (`[builds.<name>]` is §16 in one and §17 in the other). Each page calls the other its counterpart: the contract says "For a guide to writing one, see the [`ascribe.toml` reference]".
 - **Cost:** A change to a table of `ascribe.toml` is made in two pages, by hand, and `AGENTS.md`'s rule is "One home per fact. Don't copy a list, a name, or a version into a second file." A reader who searches for a key gets two pages that say the same thing and doesn't know which to trust.
 - **Recommendation:** merge what's the same into fragments both pages include, as the field types' grammar already is. The contract keeps what only it has: the map to the spec, the validation rules, the decisions. The contract's text doesn't change, so no contract moves.
@@ -523,7 +523,7 @@ The group merged the day the conventions were written, so it was built without t
 ### 42. The element library and the review package have no page on the site
 
 - **Kind:** a gap.
-- **Where:** `@ascribed/elements`, `@ascribed/review`; `docs/content/guides/astro.md`, "Styling".
+- **Where:** `@ascribed/elements`, `@ascribed/review`; `docs/content/astro/index.md`, "Styling".
 - **Evidence:** "Styling" is one paragraph: the elements are "themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README]({repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states." The site that says so needed it: `site/src/styles/site.css` sets `--_color: var(--ascribe-state-preview-color)` for its own lifecycle state. `@ascribed/review` is linked the same way, to `packages/review/README.md`. Neither is a page, so neither is in the sidebar, in `llms.txt`, or in what search indexes.
 - **Cost:** A site builder theming the elements, the third kind of user the audit names, leaves the docs for a README on GitHub at `main`, which may not be the version they installed. The names are a contract (`packages/elements/CONTRACT.md`) and the docs don't list them.
 - **Recommendation:** document. A reference page for the elements and their properties, taking the list from the package so it has one home. Leave `@ascribed/review`: its README says "This README is for building a host", which nobody outside the repository does yet.

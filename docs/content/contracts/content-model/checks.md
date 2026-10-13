@@ -22,9 +22,9 @@ limit = 40_000
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../../reference/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
+| `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../../checks/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
 
-Only a check the diagnostics registry marks configurable can be named; the [diagnostics reference](../../reference/diagnostics/content-checks.md) lists them. The settings a check's table takes:
+Only a check the diagnostics registry marks configurable can be named; the [diagnostics reference](../../checks/diagnostics/content-checks.md) lists them. The settings a check's table takes:
 
 | Check | Setting | Type | Default | Description |
 |---|---|---|---|---|

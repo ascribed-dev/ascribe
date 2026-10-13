@@ -12,7 +12,7 @@ The whole starter set: concept, how-to, tutorial, reference, troubleshooting, an
 - Their six templates and guides at the pinned release. Read each whole. The proposal counted 561 placeholders across the set, and 5 errors and 18 warnings from six templates checked unchanged.
 - The script and its rule file, as phase 2 left them.
 - What Ascribe has that their templates don't know about: `@steps`, `@note` and a project's note types, `@variant`, `@available`, `@snippet`, `@details`, phrases, and the glossary.
-- `docs/content/reference/directives.md`, for how the docs describe each.
+- `docs/content/writing/directives.md`, for how the docs describe each.
 
 ## Design
 

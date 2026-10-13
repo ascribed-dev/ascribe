@@ -1,6 +1,6 @@
 # The drift report: on each pull request, the pages of docs/ whose code
 # examples changed, written to the run's summary. It's the job
-# docs/content/guides/drift.md ("The report in CI") gives users, and the page
+# docs/content/examples/index.md ("The report in CI") gives users, and the page
 # takes it from this file: the lines marked `:remove:` are what this
 # repository adds. It installs `next`, the canary of `main`, over the release
 # the job installs, since these docs follow `main`. It never fails on what it

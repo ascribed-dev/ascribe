@@ -13,7 +13,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | `ascribed-dev/ascribe` (public) | Everything. Branch `main` only; one required check, `all checks`, no required review, and admins can bypass | Maintainer |
 | `ascribed-dev/review-fixture` (private) | `scripts/review-fixture/setup.ts` rebuilds it, for trying review by hand | Maintainer, or anyone running the script with access |
 | `ascribed-dev/sources-fixture-code`, `ascribed-dev/sources-fixture-docs` (private) | `scripts/sources-fixture/setup.ts`, for running the sources update workflow for real. The docs repository runs `examples/docs-repository`'s workflow on a schedule | Maintainer, or anyone running the script with access |
-| A GitHub App with read access to `sources-fixture-code` and write access to `sources-fixture-docs` | That workflow's tokens: the variable `SOURCES_APP_CLIENT_ID` and the secret `SOURCES_APP_PRIVATE_KEY` in `sources-fixture-docs` ([the drift guide](../docs/content/guides/drift.md) says how) | Maintainer |
+| A GitHub App with read access to `sources-fixture-code` and write access to `sources-fixture-docs` | That workflow's tokens: the variable `SOURCES_APP_CLIENT_ID` and the secret `SOURCES_APP_PRIVATE_KEY` in `sources-fixture-docs` ([the drift guide](../docs/content/examples/index.md) says how) | Maintainer |
 | `KyleBlankRollins/ascribe-review-scratch` (private) | Nothing. `review-fixture` replaced it | Maintainer: **to delete or archive** |
 | Repository secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` | `site.yml`: a pull request's docs preview | Maintainer |
 | Repository secret `SITE_BUILD_HOOK` | `canary.yml`'s `site` job: rebuilds the docs site after a canary | Maintainer |

@@ -1,6 +1,6 @@
 # The inventory, one slice
 
-Part of [The surface audit](README.md), [phase 1](phase-1-thread.md). Two tables were built by hand once from the generated option lists (`docs/content/_generated/cli-*-options.md`), the command reference (`docs/content/reference/cli.md`), the diagnostics registry, the plugin, and the MCP server's tool list, all at `main` on 10 October 2026. Phase 2 replaced the first with the generated [map of the surface](../surface.md); the second is still here, since it's quotations from one project and not something a script can read.
+Part of [The surface audit](README.md), [phase 1](phase-1-thread.md). Two tables were built by hand once from the generated option lists (`docs/content/_generated/cli-*-options.md`), the command reference (`docs/content/command/index.md`), the diagnostics registry, the plugin, and the MCP server's tool list, all at `main` on 10 October 2026. Phase 2 replaced the first with the generated [map of the surface](../surface.md); the second is still here, since it's quotations from one project and not something a script can read.
 
 They lay things side by side so the seven questions can be asked of them. They don't answer the questions: what was noticed while building them is listed at the end, as candidates for findings, with the walks still to come.
 

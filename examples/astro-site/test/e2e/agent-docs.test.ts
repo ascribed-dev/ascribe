@@ -32,7 +32,7 @@ const config: AgentDocsConfig = {
   },
   skipChecks: [
     // Answering `Accept: text/markdown` with the Markdown is the web server's
-    // part, which `astro preview` doesn't do: docs/content/guides/astro.md
+    // part, which `astro preview` doesn't do: docs/content/astro/index.md
     // says what to set on a host.
     "content-negotiation",
   ],

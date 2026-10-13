@@ -34,7 +34,7 @@ const ascribe =
   (process.env["ASCRIBE_SOURCES_FIXTURE"] === "1" ? built : undefined);
 
 test("the drift guide shows the workflow the fixture runs", () => {
-  const guide = readFileSync(path.join(root, "docs", "content", "guides", "drift.md"), "utf8");
+  const guide = readFileSync(path.join(root, "docs", "content", "examples", "index.md"), "utf8");
   // docs/ascribe.toml's `code` source is the repository's root.
   expect(guide).toContain(
     "@snippet {lang=yaml}: code:examples/docs-repository/.github/workflows/update-sources.yml#workflow\n",

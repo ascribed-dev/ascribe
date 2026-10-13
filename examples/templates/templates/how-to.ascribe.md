@@ -23,4 +23,4 @@ Ascribe's notes on the how-to, to read after its guide: only what's particular t
 - **A warning is a note.** The guide's callouts are `@note {type=warning}:` or `{type=caution}`, written in the step they're about.
 - **Links name the file.** In "See also", `[](rotate-keys.md)` shows that page's title as it is now, and `ascribe check` reports the link when the page moves.
 
-The directives are in the [directives reference](https://ascribed-dev.com/docs/reference/directives/).
+The directives are in the [directives reference](https://ascribed-dev.com/docs/writing/directives/).
