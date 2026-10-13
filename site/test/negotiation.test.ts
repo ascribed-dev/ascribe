@@ -31,10 +31,7 @@ describe("which requests ask for Markdown", () => {
 test("a page's Markdown is at its address with .md, or its index.md", () => {
   expect(markdownPaths("/")).toEqual(["/index.md"]);
   expect(markdownPaths("/docs/")).toEqual(["/docs.md", "/docs/index.md"]);
-  expect(markdownPaths("/docs/guides/astro/")).toEqual([
-    "/docs/guides/astro.md",
-    "/docs/guides/astro/index.md",
-  ]);
+  expect(markdownPaths("/docs/astro/")).toEqual(["/docs/astro.md", "/docs/astro/index.md"]);
   expect(markdownPaths("/guides/astro")).toEqual([]);
   expect(markdownPaths("/llms.txt")).toEqual([]);
 });
@@ -67,7 +64,7 @@ describe("the Markdown version's headers", () => {
   });
 
   test("a listed page asked for as Markdown says nothing of how it's listed", async () => {
-    const response = await answerWith("/docs/guides/astro/", {});
+    const response = await answerWith("/docs/astro/", {});
     expect(await response.text()).toBe("# A page\n");
     expect(response.headers.get("x-robots-tag")).toBeNull();
   });
@@ -110,11 +107,11 @@ describe("the built site", () => {
   });
 
   test("a page asked for as Markdown is its .md file, typed as Markdown", async () => {
-    const response = await answer("/docs/guides/astro/", "text/markdown");
+    const response = await answer("/docs/astro/", "text/markdown");
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
     expect(response.headers.get("vary")).toBe("Accept");
-    expect(await response.text()).toBe(await readFile(`${distDir}/docs/guides/astro.md`, "utf8"));
+    expect(await response.text()).toBe(await readFile(`${distDir}/docs/astro.md`, "utf8"));
   });
 
   test("the docs' root page asked for as Markdown is its index.md", async () => {
@@ -133,7 +130,7 @@ describe("the built site", () => {
   });
 
   test("a browser gets the page, marked as varying by Accept", async () => {
-    const response = await answer("/docs/guides/astro/", "text/html,*/*;q=0.8");
+    const response = await answer("/docs/astro/", "text/html,*/*;q=0.8");
     expect(response.headers.get("content-type")).toMatch(/^text\/html/);
     expect(response.headers.get("vary")).toBe("Accept");
     expect(await response.text()).toMatch(/^<!DOCTYPE html>/i);
