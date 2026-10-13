@@ -746,20 +746,60 @@ fn message(template: &str) -> String {
 
 /// Text whose relative links, written from the content root as the
 /// registry's are, resolve from `_generated/` instead, where the fragment is.
+/// A destination inside a code span is an example, not a link, and stays as
+/// written.
 fn rebase_links(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
+    let mut fence = 0;
     let mut rest = text;
-    while let Some(at) = rest.find("](") {
-        let (before, target) = rest.split_at(at + 2);
-        out.push_str(before);
-        let dest = target.split(')').next().unwrap_or_default();
-        if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains("://")) {
-            out.push_str("../");
+    while let Some(c) = rest.chars().next() {
+        if c == '`' {
+            let run = rest.len() - rest.trim_start_matches('`').len();
+            fence = code_span(fence, run);
+            out.push_str(&rest[..run]);
+            rest = &rest[run..];
+            continue;
         }
-        rest = target;
+        if fence == 0
+            && let Some(target) = rest.strip_prefix("](")
+        {
+            out.push_str("](");
+            let dest = target.split(')').next().unwrap_or_default();
+            if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains("://")) {
+                out.push_str("../");
+            }
+            rest = target;
+            continue;
+        }
+        out.push(c);
+        rest = &rest[c.len_utf8()..];
     }
-    out.push_str(rest);
     out
+}
+
+#[test]
+fn rebase_links_leaves_a_link_in_a_code_span_as_written() {
+    assert_eq!(
+        rebase_links(
+            "Write `![Alt](image.png){width=600}`, as [the guide](writing/images.md) says."
+        ),
+        "Write `![Alt](image.png){width=600}`, as [the guide](../writing/images.md) says."
+    );
+    assert_eq!(
+        rebase_links("``a `](x.md)` b`` then [c](y.md)"),
+        "``a `](x.md)` b`` then [c](../y.md)"
+    );
+}
+
+/// Whether text is inside a code span after a run of `run` backticks: the
+/// length of the run that opened the span, or 0 outside one. A span closes
+/// only on a run as long as the one that opened it.
+fn code_span(fence: usize, run: usize) -> usize {
+    match fence {
+        0 => run,
+        open if open == run => 0,
+        open => open,
+    }
 }
 
 /// Text with a backslash before each `{` and `<` outside code spans, so a
@@ -776,11 +816,7 @@ fn escape_braces(text: &str) -> String {
                 chars.next();
                 run += 1;
             }
-            fence = match fence {
-                0 => run,
-                open if open == run => 0,
-                open => open,
-            };
+            fence = code_span(fence, run);
             out.extend(std::iter::repeat_n('`', run));
             continue;
         }
