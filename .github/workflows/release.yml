@@ -8,18 +8,20 @@ name: Release
 # them on every platform and checks them against examples/quill, and runs the
 # publish steps with --dry-run. Nothing leaves the workflow.
 #
-# With `publish` on, four more jobs follow, each waiting for approval in the
-# `release` environment: npm (with provenance), the VS Code Marketplace, and a
-# draft GitHub release with the binaries. A person publishes the draft, then
-# approves the last job, `tap`, which opens a pull request on the Homebrew tap
-# (a dry run writes its formula as an artifact instead).
+# With `publish` on, four more jobs follow, in the `release` environment:
+# npm (with provenance), the VS Code Marketplace, the GitHub release with the
+# binaries, and `tap`, which opens a pull request on the Homebrew tap for a
+# person to merge (a dry run writes its formula as an artifact instead). None
+# waits for approval: pushing the tag is the sign-off. The environment allows
+# only `v*` tags, and a tag ruleset lets only a repository admin create, move,
+# or delete one (decision #489).
 # The build, pack, and smoke jobs are in release-build.yml, which the nightly
 # canary (canary.yml) shares. RELEASING.md is the whole procedure, with its secrets and how to roll back.
 on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish to npm, the VS Code Marketplace, and a draft GitHub release (each after approval)
+        description: Publish to npm, the VS Code Marketplace, and a GitHub release, and open the Homebrew tap's pull request
         type: boolean
         default: false
 
@@ -127,7 +129,7 @@ jobs:
       - run: node scripts/release/publish.ts marketplace
 
   github:
-    name: draft the GitHub release
+    name: publish the GitHub release
     if: inputs.publish
     needs: [version, marketplace]
     runs-on: ubuntu-latest
@@ -144,7 +146,7 @@ jobs:
         with:
           name: release
           path: dist/release
-      - name: Create the draft, or update its files on a rerun
+      - name: Publish the release, or update its files on a rerun
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
@@ -153,10 +155,12 @@ jobs:
           files=(dist/release/github/* dist/release/vsix/* dist/release/SHA256SUMS)
           if gh release view "v$VERSION" > /dev/null 2>&1; then
             gh release upload "v$VERSION" "${files[@]}" --clobber
+            # A draft left by an earlier run is published too.
+            gh release edit "v$VERSION" --draft=false
           else
             prerelease=()
             if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
-            gh release create "v$VERSION" "${files[@]}" --draft --verify-tag \
+            gh release create "v$VERSION" "${files[@]}" --verify-tag \
               --title "Ascribe $VERSION" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"
           fi
 
@@ -189,9 +193,8 @@ jobs:
           path: dist/formula
           if-no-files-found: error
 
-  # The last step, approved once the GitHub release is published, not before:
-  # it writes the Homebrew formula from the published release's SHA256SUMS and
-  # opens a pull request on ascribed-dev/homebrew-tap, which the maintainer
+  # The last step, once the GitHub release is published: it writes the
+  # Homebrew formula from the published release's SHA256SUMS and opens a pull request on ascribed-dev/homebrew-tap, which the maintainer
   # merges. It needs HOMEBREW_TAP_TOKEN on the `release` environment
   # (RELEASING.md); until that exists, it writes the formula and opens nothing.
   # A pre-release (a version with `-`, such as 0.4.0-rc.1) skips it: the tap has
@@ -210,17 +213,6 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-      - name: Check that the release is published
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          # This token can't see a draft at all, so "not found" means a draft too.
-          draft=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2> /dev/null || true)
-          if [ "$draft" != false ]; then
-            echo "::error::v$VERSION is still a draft. Publish the GitHub release, then re-run this job."
-            exit 1
-          fi
       - name: Write the formula from the published release's SHA256SUMS
         env:
           VERSION: ${{ needs.version.outputs.version }}
