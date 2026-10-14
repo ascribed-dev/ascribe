@@ -213,7 +213,7 @@ Review the draft, then publish it.
 
 ### 10. Update the Homebrew tap
 
-Approve the `tap` job, now that the release is published; it stops, asking you to publish first, if the release is still a draft, and you re-run it. It opens a pull request, `ascribe 0.2.0`, on `ascribed-dev/homebrew-tap` with the formula written from the published `SHA256SUMS`. Read it, check that its CI passes if the tap has any, and merge it.
+Approve the `tap` job, now that the release is published; it stops, asking you to publish first, if the release is still a draft, and you re-run it. It opens a pull request, `ascribe 0.2.0`, on `ascribed-dev/homebrew-tap` with the formula written from the published `SHA256SUMS`. Read it, check that its CI passes if the tap has any, and merge it. A pre-release, such as `0.4.0-rc.1`, skips the `tap` job: the tap's one formula is the stable channel, like npm's `latest` and the install script, so there's nothing to merge.
 
 **Check:** on macOS and on Linux, each gives the new version:
 

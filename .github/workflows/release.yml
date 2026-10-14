@@ -194,9 +194,11 @@ jobs:
   # opens a pull request on ascribed-dev/homebrew-tap, which the maintainer
   # merges. It needs HOMEBREW_TAP_TOKEN on the `release` environment
   # (RELEASING.md); until that exists, it writes the formula and opens nothing.
+  # A pre-release (a version with `-`, such as 0.4.0-rc.1) skips it: the tap has
+  # one formula, the stable channel, as npm's `latest` and the install script are.
   tap:
     name: open the Homebrew tap's pull request
-    if: inputs.publish
+    if: inputs.publish && !contains(needs.version.outputs.version, '-')
     needs: [version, github]
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -213,7 +215,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          draft=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)
+          # This token can't see a draft at all, so "not found" means a draft too.
+          draft=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2> /dev/null || true)
           if [ "$draft" != false ]; then
             echo "::error::v$VERSION is still a draft. Publish the GitHub release, then re-run this job."
             exit 1
@@ -236,6 +239,7 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
           TAP: ascribed-dev/homebrew-tap
         run: |
+          BODY="The formula for [Ascribe $VERSION](https://github.com/$GITHUB_REPOSITORY/releases/tag/v$VERSION), written from its SHA256SUMS by the release workflow ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)). Merging it makes \`brew install ascribed-dev/tap/ascribe\` install $VERSION."
           if [ -z "$GH_TOKEN" ]; then
             echo "::warning::No HOMEBREW_TAP_TOKEN on the release environment, so this was a dry run: the formula is the \`formula\` artifact, and no pull request was opened."
             exit 0
@@ -243,8 +247,14 @@ jobs:
           branch="ascribe-$VERSION"
           git clone --quiet "https://x-access-token:$GH_TOKEN@github.com/$TAP.git" "$RUNNER_TEMP/tap"
           cd "$RUNNER_TEMP/tap"
+          pr=$(gh pr list --repo "$TAP" --head "$branch" --state all --json url --jq '.[0].url')
+          if [ -n "$pr" ]; then
+            echo "The tap already has $VERSION's pull request: $pr"
+            exit 0
+          fi
           if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
-            echo "The tap already has the branch $branch; its pull request is open or merged."
+            # An earlier run pushed the branch but didn't open the pull request.
+            gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" --body "$BODY"
             exit 0
           fi
           git switch --quiet --create "$branch"
@@ -258,5 +268,4 @@ jobs:
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit --quiet --message "ascribe $VERSION"
           git push --quiet origin "$branch"
-          gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" \
-            --body "The formula for [Ascribe $VERSION](https://github.com/$GITHUB_REPOSITORY/releases/tag/v$VERSION), written from its SHA256SUMS by the release workflow ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)). Merging it makes \`brew install ascribed-dev/tap/ascribe\` install $VERSION."
+          gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" --body "$BODY"
