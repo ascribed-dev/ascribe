@@ -1899,8 +1899,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/469"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "`ascribe rename` doesn't update a glossary term's link to a page it moves"
     },
     {
@@ -1916,8 +1919,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/473"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "`ascribe rename --config <dir>` fails from outside the project"
     },
     {
@@ -1933,8 +1939,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/467"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A docs page's description holds a Markdown link, which is plain text there"
     },
     {
@@ -1950,8 +1959,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/470"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The diagnostics reference's generator rewrites link destinations inside code spans"
     },
     {
@@ -1967,8 +1979,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/466"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Tested examples: record the five decisions the plan ships"
     },
     {
@@ -1985,8 +2000,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/474"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Tested examples: `ascribe observe`, the tested line, and `example-stale`"
     },
     {
@@ -2003,8 +2021,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/475"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Tested examples: examples kept in another repository say what they were tested with"
     },
     {
@@ -2021,8 +2042,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/476"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Tested examples: several environments, a missing file, the JSON output, and the report"
     },
     {
@@ -2039,7 +2063,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Tested examples: a `@snippet` line's file, status, and environment in the editor"
     },
     {
@@ -2056,8 +2080,11 @@
         "enhancement",
         "github_actions"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/471"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Tested examples: install `ascribe` without Node, from a Homebrew tap or a script"
     },
     {
@@ -2091,8 +2118,36 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Tested examples: Ascribe's own docs say what their examples were tested with"
+    },
+    {
+      "content": {
+        "body": "Renaming a heading's id with `ascribe rename page.md#old new` (or `F2` on its `@id` in the editor) changes the links in pages that name it, but not a glossary term's `link` or a retired permalink's `to` in `ascribe.toml` that ends in `#old`. Nothing reports it afterwards: `ascribe check` is clean, and the glossary links in every built page lead to an anchor that isn't there.\n\n## To reproduce\n\nIn a copy of `examples/monorepo`:\n\n```console\n$ cd docs\n$ ascribe rename content/reference/glossary.md#rollout rollouts\nchanged content/reference/glossary.md (1 place)\n$ grep 'glossary.md#rollout' ascribe.toml\nlink = \"/reference/glossary.md#rollout\"\n$ ascribe check\n… 0 errors, 0 warnings\n```\n\n## What should happen\n\nThe rename changes each glossary term's `link` and each retired permalink's `to` that names the heading to the new id, editing `ascribe.toml` in place as a move does since #453. Worth deciding with it: whether `model-glossary-link` (or a check) should report a glossary link whose `#id` isn't a heading on its page, as `permalink-retired-target-missing` does for a retired permalink.\n\n## How it was found\n\nChecking, for #453, what else in `ascribe.toml` should follow a rename.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 468,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Renaming a heading's id leaves glossary links and retired permalinks naming the old id",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/468"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAU6so",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Renaming a heading's id leaves glossary links and retired permalinks naming the old id"
+    },
+    {
+      "content": {
+        "body": "## Crawler sources\n\nThe crawlers Ascribe knows, in `crates/ascribe-model/data/crawlers.toml`, need their sources reread:\n\n- `Google-Extended`: https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers answered fetch failed. Find where its operator documents it now, or remove the token.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/38556974553)\n",
+        "number": 477,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Crawler sources to reread",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/477"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhAsGqM",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Crawler sources to reread"
     }
   ]
 }
