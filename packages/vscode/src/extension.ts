@@ -184,6 +184,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         arguments: args,
       }),
     ),
+    // The server's quick fix on an example that's out of date: it puts the
+    // command to run on the clipboard, for a terminal, where the person sees
+    // what it starts. The extension runs nothing an example's config names.
+    vscode.commands.registerCommand("ascribe.copyCommand", async (line: unknown) => {
+      if (typeof line !== "string") return;
+      await vscode.env.clipboard.writeText(line);
+      void vscode.window.showInformationMessage(
+        `Ascribe: copied \`${line}\`. Run it in a terminal.`,
+      );
+    }),
     vscode.commands.registerCommand("ascribe.showOutput", async () => {
       const active = vscode.window.activeTextEditor?.document.uri;
       const server = (active && projects.serverFor(active)) ?? (await pickServer(projects));

@@ -137,6 +137,8 @@ pub(crate) enum Hit<'a> {
     Reference(usize, &'a Reference),
     /// The path of an `@include`.
     Include(&'a Include),
+    /// The address of a `@snippet`.
+    Snippet(&'a ascribe_resolve::SnippetUse),
     /// The primary of an `@available`, as text.
     Availability(&'a str, Span),
     /// The value of a frontmatter `available:` key.
@@ -173,6 +175,11 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
     for include in &file.includes {
         if let Some(primary) = include.primary {
             offer(&mut best, offset, primary, Hit::Include(include));
+        }
+    }
+    for snippet in &file.snippets {
+        if let Some(primary) = snippet.primary {
+            offer(&mut best, offset, primary, Hit::Snippet(snippet));
         }
     }
     for marker in &file.availability {

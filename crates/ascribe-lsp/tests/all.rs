@@ -28,6 +28,8 @@ mod differential;
 mod edit;
 #[path = "all/edit_examples.rs"]
 mod edit_examples;
+#[path = "all/examples.rs"]
+mod examples;
 #[path = "all/model_edits.rs"]
 mod model_edits;
 #[path = "all/navigation.rs"]

@@ -51,6 +51,10 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
             };
             (include.primary?, text)
         }
+        Hit::Snippet(snippet) => (
+            snippet.primary?,
+            crate::examples::snippet_hover(ctx, snippet)?,
+        ),
         Hit::Availability(text, span) => (span, availability_markdown(&ctx.model, text)?),
         Hit::Frontmatter(text, span) => (span, availability_markdown(&ctx.model, &text)?),
         Hit::Listing(span) => (
