@@ -12,7 +12,7 @@ on:
       change:
         description: The change to make
         type: choice
-        options: [next, example, unrelated, rename, move, restore]
+        options: [next, example, unrelated, rename, move, untested, restore]
         default: next
 
 permissions:

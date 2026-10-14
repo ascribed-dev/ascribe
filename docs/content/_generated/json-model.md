@@ -241,7 +241,7 @@
           "type": "object"
         },
         "listed": {
-          "description": "How many files it lists.",
+          "description": "How many files it lists. For a source in another repository, only\nthose it has copies of, since the others weren't copied.",
           "minimum": 0,
           "type": "integer"
         },
@@ -314,7 +314,7 @@
               "type": "null"
             }
           ],
-          "description": "Its tested examples, for a source in the same repository with an\n`ascribe.examples.toml`: absent for any other."
+          "description": "Its tested examples, for a source with an `ascribe.examples.toml`:\nabsent for any other. For a source in another repository, they're\nread from its copies."
         },
         "git": {
           "anyOf": [

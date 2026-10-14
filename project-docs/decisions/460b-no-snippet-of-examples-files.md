@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**No snippet can address a source's `ascribe.examples.toml` or a file under its `examples.observations/`, for a source in the same repository as for one in another: a `@snippet` of either is `snippet-file-missing` with the variant for a file outside the source's `include`.** Only the files at the source's root count: `code:examples/tested/code/ascribe.examples.toml`, through a source whose folder is above the config, is a file like any other. _Why:_ [README decision 15](../tested-examples/README.md) says no snippet can address one, and the phase 3 file says they're refused "with the diagnostic a path outside `include` gets"; refusing them for every source keeps one rule for SPEC §7.3, and no project showed either file through its own source when it was decided. A page that wants to show a config shows it through a source whose root is above it. _From:_ the implementation of [issue #460](https://github.com/ascribed-dev/ascribe/issues/460), for Kyle's review in its pull request, 13 October 2026.

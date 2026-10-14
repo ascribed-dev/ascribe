@@ -158,6 +158,56 @@
       ],
       "type": "object"
     },
+    "ExampleState": {
+      "description": "Where a tested example stands against the observation copied with it.",
+      "oneOf": [
+        {
+          "const": "current",
+          "description": "The observation lists the file as it is: the page says what it was\ntested with.",
+          "type": "string"
+        },
+        {
+          "const": "stale",
+          "description": "The file changed, and the observation didn't follow.",
+          "type": "string"
+        },
+        {
+          "const": "unobserved",
+          "description": "No observation lists the file.",
+          "type": "string"
+        }
+      ]
+    },
+    "ExampleUpdate": {
+      "description": "A tested example whose status an update changed.",
+      "properties": {
+        "path": {
+          "description": "Its path in the source.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ExampleState",
+          "description": "Its status at the new pin."
+        },
+        "was": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExampleState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its status before; `null` when it wasn't an example, or had no\ncopy."
+        }
+      },
+      "required": [
+        "path",
+        "status",
+        "was"
+      ],
+      "type": "object"
+    },
     "Failure": {
       "description": "A file a snippet names that couldn't be copied.",
       "properties": {
@@ -232,6 +282,13 @@
           ],
           "description": "The commits after the old pin up to the new one, when it moved\nforward from one and the repository could say."
         },
+        "examples": {
+          "description": "The tested examples snippets use whose status the new pin changed:\neach one that went stale, lost its observation, or became current,\nby path.",
+          "items": {
+            "$ref": "#/$defs/ExampleUpdate"
+          },
+          "type": "array"
+        },
         "failed": {
           "description": "The files snippets name that couldn't be copied.",
           "items": {
@@ -288,6 +345,7 @@
         "back",
         "commits",
         "files",
+        "examples",
         "failed",
         "first_copy"
       ],

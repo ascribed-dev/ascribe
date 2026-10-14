@@ -1,0 +1,11 @@
+description: >-
+  A copied observation that's deleted is a copy missing, as any file
+  ascribe.lock lists is, and the examples it listed are unobserved.
+spec: ["7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: source-copy-changed, file: ascribe.lock, line: 11}
+  - {slug: example-unobserved, file: index.md, line: 5}
+  - {slug: example-unobserved, file: index.md, line: 7}
+  - {slug: example-unobserved, file: index.md, line: 9}

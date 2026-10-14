@@ -3736,9 +3736,10 @@ configurable = true
 area = "examples"
 spec = "4.8"
 reference = "writing/directives.md#snippet"
-when = "A `@snippet` shows a file of a source in the same repository that the source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. Reported once for each snippet of the file, whichever region it shows"
+when = "A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows"
 message = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again"
-fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run."
+messages.other-repository = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; the fix is in source `{source}`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update {source}`"
+fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run. For a source in another repository, that's done in the code's repository, and `ascribe sources update` copies the new observation here; nothing in this repository runs the test."
 
 [[diagnostic]]
 code = "ASC200"
@@ -3751,9 +3752,10 @@ configurable = true
 area = "examples"
 spec = "4.8"
 reference = "writing/directives.md#snippet"
-when = "A `@snippet` shows a file of a source in the same repository that the source's `ascribe.examples.toml` makes an example, and no observation lists the file. Reported once for each snippet of the file"
+when = "A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and no observation lists the file. For a source in another repository, the config and the observation are the copies `ascribe sources fetch` made. Reported once for each snippet of the file"
 message = "`{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}`"
-fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. When the file isn't meant to be an example, add it to the config's `ignore`, or narrow its `include`."
+messages.other-repository = "`{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; the fix is in source `{source}`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update {source}`"
+fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. When the file isn't meant to be an example, add it to the config's `ignore`, or narrow its `include`. For a source in another repository, both are done in the code's repository, and `ascribe sources update` copies the result here."
 
 [[diagnostic]]
 code = "ASC201"
@@ -3766,7 +3768,7 @@ configurable = true
 area = "examples"
 spec = "7.3"
 reference = "content-model/output.md#18-sourcesname"
-when = "A source in the same repository has an `ascribe.examples.toml`, or an observation beside it, that can't be read. Reported at the source in ascribe.toml, once for each problem in each file"
+when = "A source has an `ascribe.examples.toml`, or an observation beside it, that can't be read: in its folder, or, for a source in another repository, in its copies. Reported at the source in ascribe.toml, once for each problem in each file"
 message = "the examples of source `{source}` can't be checked: `{file}` can't be read: {detail}"
 fix = "Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with."
 

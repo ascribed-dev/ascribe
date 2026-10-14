@@ -686,6 +686,66 @@ fn examples_project() -> TempDir {
 }
 
 #[test]
+fn the_inventory_counts_a_source_in_another_repository_from_its_copies() {
+    let hash = ascribe_model::example_hash;
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[sources.code]\ngit = \"https://github.com/acme/code.git\"\n",
+    );
+    write(
+        dir.path(),
+        "sources/code/ascribe.examples.toml",
+        "include = [\"examples/**\"]\n",
+    );
+    write(dir.path(), "sources/code/examples/a.ts", "a();\n");
+    write(dir.path(), "sources/code/examples/b.ts", "b();\n");
+    // `default` has neither as it is now; `node-22` has `a`, and lists a
+    // file that wasn't copied.
+    let uncopied = format!("\"examples/uncopied.ts\" = \"{}\"\n", hash(b"u();\n"));
+    for (name, a, extra) in [("default", "old\n", ""), ("node-22", "a();\n", &*uncopied)] {
+        write(
+            dir.path(),
+            &format!("sources/code/examples.observations/{name}.toml"),
+            &format!(
+                "version = 1\nascribe = \"0.4.0\"\ncommand = \"node --test\"\n\n[environment]\nos = \"linux\"\narch = \"x64\"\n\n[files]\n\"examples/a.ts\" = \"{}\"\n\"examples/b.ts\" = \"{}\"\n{extra}",
+                hash(a.as_bytes()),
+                hash(b"old\n"),
+            ),
+        );
+    }
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Examples\n---\n\n@snippet: code:examples/a.ts\n\n@snippet: code:examples/b.ts\n",
+    );
+    let report = json(&ascribe(dir.path(), &["report", "--format", "json"]));
+    assert_eq!(
+        report["inventory"]["examples"],
+        serde_json::json!([
+            { "source": "code", "snippets": 2, "current": 1, "stale": 1, "unobserved": 0 }
+        ])
+    );
+
+    // `ascribe model` counts only the files that were copied.
+    let model = json(&ascribe(dir.path(), &["model", "--format", "json"]));
+    let observations: Vec<(&str, u64, u64)> = model["sources"][0]["examples"]["observations"]
+        .as_array()
+        .expect("observations")
+        .iter()
+        .map(|o| {
+            (
+                o["name"].as_str().expect("a name"),
+                o["current"].as_u64().expect("a count"),
+                o["listed"].as_u64().expect("a count"),
+            )
+        })
+        .collect();
+    assert_eq!(observations, [("default", 0, 2), ("node-22", 1, 2)]);
+}
+
+#[test]
 fn the_inventory_counts_examples_as_the_pages_have_them() {
     let dir = examples_project();
     let out = ascribe(dir.path(), &["report", "--format", "json"]);

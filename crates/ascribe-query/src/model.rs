@@ -8,9 +8,9 @@ use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
 use std::collections::BTreeMap;
 
 use ascribe_core::RelPath;
+use ascribe_model::examples::Status;
 use ascribe_model::{
     AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Source, VariantMode,
-    example_hash,
 };
 use ascribe_resolve::{FileSystem, FolderExamples, Probe};
 use serde::Serialize;
@@ -300,8 +300,9 @@ pub struct ModelSource {
     pub ignore: Vec<String>,
     /// The repository it's in, for a source in another repository.
     pub git: Option<ModelRemote>,
-    /// Its tested examples, for a source in the same repository with an
-    /// `ascribe.examples.toml`: absent for any other.
+    /// Its tested examples, for a source with an `ascribe.examples.toml`:
+    /// absent for any other. For a source in another repository, they're
+    /// read from its copies.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub examples: Option<ModelExamples>,
 }
@@ -331,7 +332,8 @@ pub struct ModelObservation {
     pub environment: BTreeMap<String, String>,
     /// What a page says it was tested with, by this observation alone.
     pub tested: String,
-    /// How many files it lists.
+    /// How many files it lists. For a source in another repository, only
+    /// those it has copies of, since the others weren't copied.
     pub listed: usize,
     /// How many of those are as it found them: the rest changed since, or
     /// are gone.
@@ -427,12 +429,10 @@ fn sources(model: &ContentModel, fs: Option<&dyn FileSystem>) -> Vec<ModelSource
         .collect()
 }
 
-/// A source's tested examples, read through `fs`: `None` for a source in
-/// another repository, or without an `ascribe.examples.toml`.
+/// A source's tested examples, read through `fs`: `None` for a source
+/// without an `ascribe.examples.toml`. A source in another repository's are
+/// read from its copies.
 fn examples(source: &Source, fs: &dyn FileSystem) -> Option<ModelExamples> {
-    if source.git.is_some() {
-        return None;
-    }
     let folder = RelPath::parse(&source.path).ok()?;
     let read = FolderExamples::read(fs, &folder);
     let config = read.config.as_ref()?;
@@ -451,23 +451,36 @@ fn examples(source: &Source, fs: &dyn FileSystem) -> Option<ModelExamples> {
         .count();
     let observations = read
         .readable()
-        .map(|(name, observation)| ModelObservation {
-            name: name.to_owned(),
-            environment: observation.environment.iter().cloned().collect(),
-            tested: observation.tested_line(config),
-            listed: observation.files.len(),
-            current: observation
+        .map(|(name, observation)| {
+            // A file's bytes, or `None` when it's gone.
+            let bytes = |path: &str| {
+                folder
+                    .join(path)
+                    .ok()
+                    .filter(|p| fs.probe(p) == Probe::File)
+                    .and_then(|p| fs.read_file(&p).ok())
+            };
+            // A copy has only the files snippets use: the others say nothing.
+            let listed: Vec<(&String, Option<Vec<u8>>)> = observation
                 .files
-                .iter()
-                .filter(|(path, hash)| {
-                    folder
-                        .join(path)
-                        .ok()
-                        .filter(|p| fs.probe(p) == Probe::File)
-                        .and_then(|p| fs.read_file(&p).ok())
-                        .is_some_and(|bytes| example_hash(&bytes) == **hash)
-                })
-                .count(),
+                .keys()
+                .map(|path| (path, bytes(path)))
+                .filter(|(_, bytes)| source.git.is_none() || bytes.is_some())
+                .collect();
+            ModelObservation {
+                name: name.to_owned(),
+                environment: observation.environment.iter().cloned().collect(),
+                tested: observation.tested_line(config),
+                listed: listed.len(),
+                current: listed
+                    .iter()
+                    .filter(|(path, bytes)| {
+                        bytes
+                            .as_ref()
+                            .is_some_and(|b| observation.status(path, b) == Status::Current)
+                    })
+                    .count(),
+            }
         })
         .collect();
     Some(ModelExamples {

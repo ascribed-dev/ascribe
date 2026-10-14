@@ -467,15 +467,15 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
 }
 
 /// The tested examples each source's snippets show, counted once for each
-/// `@snippet` line, in pages and fragments alike: `None` when no source in
-/// the same repository has an `ascribe.examples.toml`.
+/// `@snippet` line, in pages and fragments alike: `None` when no source has
+/// an `ascribe.examples.toml`. A source in another repository's is the copy
+/// `ascribe sources fetch` puts beside its files.
 fn examples(project: &Project, index: &ascribe_resolve::Project) -> Option<Vec<SourceExamples>> {
     let model = project.model();
     let (fs, code) = (project.file_system(), project.code_files());
     let mut counts: Vec<SourceExamples> = model
         .sources
         .iter()
-        .filter(|s| s.git.is_none())
         .filter(|s| {
             RelPath::parse(&s.path).is_ok_and(|folder| code.examples(fs, &folder).config.is_some())
         })

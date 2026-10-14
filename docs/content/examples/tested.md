@@ -72,7 +72,7 @@ An edit to an example, anywhere in the file, makes its observations out of date.
 
 An example that's deleted or renamed without a second run leaves its observation listing a file that isn't there. `ascribe check` reports [`observation-file-missing`](../checks/diagnostics/content-checks.md#ASC202) at that line of the observation, naming the command that writes it again.
 
-To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it.
+To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it. It's stricter than the pages: a file the config's `include` no longer matches, or one that's gone, counts as a change, though the files still in the observation stay current until the next run.
 
 ## Count a project's examples
 
@@ -80,9 +80,16 @@ To check before a commit that an observation still matches the folder, run `ascr
 
 A change to a file an example only calls, such as a library, doesn't make it stale: only the example files are compared.
 
+## When the code is in another repository
+
+For a [source in another repository](index.md#docs-kept-apart-from-the-code), the config and the observation stay in the code's repository, beside the examples, and `ascribe observe` runs there. [`ascribe sources fetch`](sources.md#cli-sources-fetch) copies both into `sources/<name>/` with the files your snippets use, whatever the source's `include` says, and `ascribe.lock` lists them as it does every copy. The pages then say what each example was tested with, as they do for a folder in the same repository.
+
+- **An update says what changed.** When [`ascribe sources update`](sources.md#cli-sources-update) moves a pin, its summary names the examples that went stale (the file changed and its observation didn't follow), the ones the new observation doesn't list, and the ones tested again. The [update pull request](index.md#the-update-pull-request) carries the same lines.
+- **The fix is in the code's repository.** `example-stale` and `example-unobserved` say so: run `ascribe observe` there and commit, and the next update brings the observation here.
+- **Nothing here runs the config.** Its `test` and commands are read as text and never run, and `ascribe observe` refuses to run in `sources/<name>/`.
+
 ## What it doesn't do yet
 
-- **A source in another repository** shows no tested line, and reports nothing about testing.
 - **The run is the unit.** Every file `include` matches is recorded as passing when the test passes, whether or not the test touched it, and one failing example blocks the whole run.
 
 ## See also

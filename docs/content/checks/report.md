@@ -55,7 +55,7 @@ team = { type = "enum(platform, api)?", role = "owner" }
 
 Without one, every page is counted as having no owner, and the report leaves that line out.
 
-For each source with an `ascribe.examples.toml`, it counts the snippets that show one of the source's [tested examples](../examples/tested.md), and how many of those are current, stale, and unobserved: each `@snippet` line once, in pages and fragments alike. In the JSON, it's `inventory.examples`, a list with `source`, `snippets`, `current`, `stale`, and `unobserved`. A project with no config in any source has no such line and no such key.
+For each source with an `ascribe.examples.toml`, it counts the snippets that show one of the source's [tested examples](../examples/tested.md), and how many of those are current, stale, and unobserved: each `@snippet` line once, in pages and fragments alike. A source in another repository is counted from the copies [`ascribe sources fetch`](../examples/sources.md#cli-sources-fetch) puts in its folder. In the JSON, it's `inventory.examples`, a list with `source`, `snippets`, `current`, `stale`, and `unobserved`. A project with no config in any source has no such line and no such key.
 
 ```text
   Examples from code: 4 snippets, 2 current, 1 stale, 1 unobserved.

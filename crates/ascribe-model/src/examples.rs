@@ -76,6 +76,37 @@ pub fn observation_name(path: &str) -> Option<&str> {
     is_observation_name(name).then_some(name)
 }
 
+/// Whether the file at `path`, relative to a source's folder, is the
+/// source's config or one of its observations: the files that travel with a
+/// source whatever its `include` says, and that no snippet can address.
+pub fn is_examples_file(path: &str) -> bool {
+    path == EXAMPLES_FILE
+        || path
+            .strip_prefix(OBSERVATIONS_FOLDER)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// Where an example stands against an observation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Status {
+    /// The observation lists the file with the hash it has now.
+    Current,
+    /// The observation lists the file with another hash.
+    Stale,
+    /// No observation lists the file.
+    Unobserved,
+}
+
+impl Status {
+    /// Where an example stands against several observations, from where it
+    /// stands against each: current when any has it as it is now, stale
+    /// when some list it and none as it is now, unobserved when none lists
+    /// it (decision 11 of the tested examples plan).
+    pub fn across(statuses: impl IntoIterator<Item = Status>) -> Status {
+        statuses.into_iter().min().unwrap_or(Status::Unobserved)
+    }
+}
+
 /// A problem in a config or an observation, at the value it's about.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Problem {
@@ -378,6 +409,16 @@ impl Observation {
         }
     }
 
+    /// Where the example at `path` (from the config's folder), whose bytes
+    /// are `bytes`, stands against this observation.
+    pub fn status(&self, path: &str, bytes: &[u8]) -> Status {
+        match self.files.get(path) {
+            None => Status::Unobserved,
+            Some(hash) if *hash == example_hash(bytes) => Status::Current,
+            Some(_) => Status::Stale,
+        }
+    }
+
     /// An environment entry's value.
     pub fn value(&self, key: &str) -> Option<&str> {
         self.environment
@@ -424,7 +465,8 @@ impl Observation {
 /// are merged the same way, and always listed. Every label and value is made
 /// safe to show and cut ([`shown_text`]).
 pub fn tested_line(config: &ExamplesConfig, observations: &[&Observation]) -> String {
-    let parts: Vec<String> = config
+    // Each entry's words, and whether they list more than one value.
+    let parts: Vec<(String, bool)> = config
         .environment
         .iter()
         .filter_map(|entry| {
@@ -443,16 +485,19 @@ pub fn tested_line(config: &ExamplesConfig, observations: &[&Observation]) -> St
                     } else {
                         "values"
                     };
-                    Some(format!(
-                        "{label}, {} {kind} from {} to {}",
-                        values.len(),
-                        shown_text(first),
-                        shown_text(last)
+                    Some((
+                        format!(
+                            "{label}, {} {kind} from {} to {}",
+                            values.len(),
+                            shown_text(first),
+                            shown_text(last)
+                        ),
+                        false,
                     ))
                 }
                 _ => {
                     let shown: Vec<String> = values.iter().map(|v| shown_text(v)).collect();
-                    Some(format!("{label} {}", and_list(&shown)))
+                    Some((format!("{label} {}", and_list(&shown)), shown.len() > 1))
                 }
             }
         })
@@ -469,10 +514,10 @@ pub fn tested_line(config: &ExamplesConfig, observations: &[&Observation]) -> St
     // Two entries, one of which lists values, are parted by a comma too, so
     // the line reads as two: `Node 22.4.0 and 24.9.0, and TypeScript 5.9.2`.
     let entries = match parts.as_slice() {
-        [a, b] if a.contains(" and ") || b.contains(" and ") => format!("{a}, and {b}"),
-        _ => and_list(&parts),
+        [(a, listed_a), (b, listed_b)] if *listed_a || *listed_b => format!("{a}, and {b}"),
+        _ => and_list(&parts.into_iter().map(|(p, _)| p).collect::<Vec<_>>()),
     };
-    if parts.is_empty() {
+    if entries.is_empty() {
         os
     } else {
         format!("{entries} on {os}")
@@ -839,6 +884,30 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
     }
 
     #[test]
+    fn the_files_that_travel_with_a_source() {
+        assert!(is_examples_file("ascribe.examples.toml"));
+        assert!(is_examples_file("examples.observations/default.toml"));
+        assert!(is_examples_file("examples.observations/x/y.toml"));
+        assert!(!is_examples_file("examples.observations"));
+        assert!(!is_examples_file("examples.observationsx/a.toml"));
+        assert!(!is_examples_file("code/ascribe.examples.toml"));
+        assert!(!is_examples_file("examples/a.ts"));
+    }
+
+    #[test]
+    fn an_examples_status() {
+        let observation = Observation {
+            ascribe: "0.3.0".to_owned(),
+            command: "npm test".to_owned(),
+            environment: Vec::new(),
+            files: BTreeMap::from([("a.ts".to_owned(), example_hash(b"a\n"))]),
+        };
+        assert_eq!(observation.status("a.ts", b"a\r\n"), Status::Current);
+        assert_eq!(observation.status("a.ts", b"b\n"), Status::Stale);
+        assert_eq!(observation.status("b.ts", b"a\n"), Status::Unobserved);
+    }
+
+    #[test]
     fn config_problems() {
         let bad = |text: &str| details(ExamplesConfig::parse(text).expect_err(text));
         assert_eq!(
@@ -1043,6 +1112,15 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
         assert_eq!(
             merged_line(&config, &two),
             "Node 22.4.0 and 24.9.0, and TypeScript 5.9.2 on Linux"
+        );
+        // A single value with "and" in it lists nothing: no comma.
+        let worded = [observed(
+            "linux",
+            &[("node", "v24.9.0"), ("typescript", "Bread and butter")],
+        )];
+        assert_eq!(
+            merged_line(&config, &worded),
+            "Node 24.9.0 and TypeScript Bread and butter on Linux"
         );
         // By version, not by text: 9 before 10.
         let three = [

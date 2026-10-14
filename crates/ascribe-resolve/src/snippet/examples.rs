@@ -4,17 +4,19 @@
 //!
 //! The files are read through the [`FileSystem`], from the source's folder,
 //! whatever the source's own `include` says, and only read: nothing here
-//! starts a program. A source in another repository has no tested line yet,
-//! and reports nothing.
+//! starts a program. For a source in another repository, the folder is its
+//! copies, `sources/<name>/`, where `ascribe sources fetch` puts the config
+//! and the observations beside the files snippets use, and they're data
+//! just the same.
 
 use std::sync::Arc;
 
 use ascribe_core::RelPath;
+use ascribe_model::Source;
 use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, OBSERVATIONS_FOLDER, Observation, Problem,
-    observation_name, observation_path, tested_line,
+    Status, observation_name, observation_path, tested_line,
 };
-use ascribe_model::{Source, example_hash};
 
 use super::CodeFiles;
 use crate::fs::{FileSystem, Probe};
@@ -148,8 +150,13 @@ pub struct CurrentObservation {
 pub struct Example {
     /// Its status.
     pub status: ExampleStatus,
-    /// The folder `ascribe observe` is run in, from the project root.
+    /// The folder `ascribe observe` is run in, from the project root. For a
+    /// source in another repository, the folder of its copies, where it
+    /// isn't run: the test runs in that repository.
     pub folder: RelPath,
+    /// Whether the source is in another repository, so the observation
+    /// arrives with the next `ascribe sources update`.
+    pub remote: bool,
     /// The observations that are current for it, in name order.
     pub current: Vec<CurrentObservation>,
     /// What the page says it was tested with, merged from the current
@@ -158,9 +165,8 @@ pub struct Example {
 }
 
 /// The file at `path` (relative to `source`'s folder), with text `text`, as
-/// an example: `None` when it isn't one, because its source is in another
-/// repository, has no config, has one that can't be read, or doesn't
-/// include the file.
+/// an example: `None` when it isn't one, because its source has no config,
+/// has one that can't be read, or doesn't include the file.
 pub fn example(
     source: &Source,
     path: &str,
@@ -168,32 +174,26 @@ pub fn example(
     fs: &dyn FileSystem,
     code: &CodeFiles,
 ) -> Option<Example> {
-    if source.git.is_some() {
-        return None;
-    }
     let folder = RelPath::parse(&source.path).ok()?;
     let examples = code.examples(fs, &folder);
     let config = examples.config.as_ref()?.as_ref().ok()?;
     if !config.is_example(path) {
         return None;
     }
-    let hash = example_hash(text.as_bytes());
-    let mut listed = false;
-    let mut current: Vec<(&str, &Observation)> = Vec::new();
-    for (name, observation) in examples.readable() {
-        match observation.files.get(path) {
-            Some(h) if *h == hash => current.push((name, observation)),
-            Some(_) => listed = true,
-            None => {}
-        }
-    }
-    let status = if !current.is_empty() {
-        ExampleStatus::Current
-    } else if listed {
-        ExampleStatus::Stale
-    } else {
-        ExampleStatus::Unobserved
+    let statuses: Vec<(&str, &Observation, Status)> = examples
+        .readable()
+        .map(|(name, o)| (name, o, o.status(path, text.as_bytes())))
+        .collect();
+    let status = match Status::across(statuses.iter().map(|(_, _, s)| *s)) {
+        Status::Current => ExampleStatus::Current,
+        Status::Stale => ExampleStatus::Stale,
+        Status::Unobserved => ExampleStatus::Unobserved,
     };
+    let current: Vec<(&str, &Observation)> = statuses
+        .into_iter()
+        .filter(|(_, _, s)| *s == Status::Current)
+        .map(|(name, o, _)| (name, o))
+        .collect();
     let tested = (!current.is_empty()).then(|| {
         let observations: Vec<&Observation> = current.iter().map(|(_, o)| *o).collect();
         tested_line(config, &observations)
@@ -201,6 +201,7 @@ pub fn example(
     Some(Example {
         status,
         folder,
+        remote: source.git.is_some(),
         current: current
             .into_iter()
             .map(|(name, o)| CurrentObservation {

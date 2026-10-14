@@ -24,6 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use ascribe_core::RelPath;
+use ascribe_model::examples::{Status, is_examples_file};
 use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
 use ascribe_resolve::{DiskFs, FileSystem, Layout};
 use serde::Serialize;
@@ -236,6 +237,13 @@ impl Workspace {
     /// Makes a source's copies those of `commit`: keeps each copy `previous`
     /// (a pin at the same commit) vouches for, copies the rest from the
     /// repository, and removes the copies nothing names.
+    ///
+    /// Beside the files snippets name, the source's tested examples' config
+    /// and observations are copied, whatever its `include` says
+    /// ([`is_examples_file`]). Which there are is read from the commit's
+    /// tree whenever the repository is reached; when every copy is in
+    /// order, from the pin, so a source whose copies are all in order still
+    /// never runs `git`.
     fn sync(
         &self,
         source: &Source,
@@ -246,7 +254,17 @@ impl Workspace {
         let folder = self.folder(source);
         let mut synced = Synced::default();
         let mut wanted = Vec::new();
-        for path in self.needed(source) {
+        // The examples' files the pin lists: a commit's files don't change.
+        let pinned_examples = previous
+            .map(|p| {
+                p.files
+                    .keys()
+                    .filter(|path| is_examples_file(path))
+                    .cloned()
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        for path in self.needed(source).into_iter().chain(pinned_examples) {
             // A commit's files don't change: one the pin found missing still is.
             if previous.is_some_and(|p| p.missing.contains(&path)) {
                 synced.not_at(path, commit);
@@ -273,6 +291,9 @@ impl Workspace {
             let mut objects: Vec<(String, String)> = Vec::new();
             for path in wanted {
                 match tree.get(&path) {
+                    // The examples' files are whatever the commit has.
+                    None if is_examples_file(&path) => {}
+                    Some(file) if is_examples_file(&path) && !file.regular => {}
                     None => synced.not_at(path, commit),
                     Some(file) if !file.regular => synced.failed.push(Failure {
                         path,
@@ -281,9 +302,26 @@ impl Workspace {
                     Some(file) => objects.push((path, file.object.clone())),
                 }
             }
+            // The examples' files the pin didn't list, or that are new at
+            // this commit.
+            for (path, file) in &tree {
+                if is_examples_file(path)
+                    && file.regular
+                    && !synced.files.contains_key(path)
+                    && !objects.iter().any(|(p, _)| p == path)
+                {
+                    objects.push((path.clone(), file.object.clone()));
+                }
+            }
             let names: Vec<&str> = objects.iter().map(|(_, o)| o.as_str()).collect();
             let contents = remote.read(&names, SIZE_LIMIT)?;
             for ((path, _), bytes) in objects.into_iter().zip(contents) {
+                // An examples' file that can't be copied is left out: its
+                // examples read as unobserved, and no snippet named it.
+                let unusable = bytes.as_deref().is_none_or(|b| not_text(b).is_some());
+                if is_examples_file(&path) && unusable {
+                    continue;
+                }
                 let Some(bytes) = bytes else {
                     synced.failed.push(Failure {
                         path,
@@ -617,10 +655,51 @@ pub struct SourceUpdate {
     pub commits: Option<Commits>,
     /// The copies that changed.
     pub files: Vec<FileUpdate>,
+    /// The tested examples snippets use whose status the new pin changed:
+    /// each one that went stale, lost its observation, or became current,
+    /// by path.
+    pub examples: Vec<ExampleUpdate>,
     /// The files snippets name that couldn't be copied.
     pub failed: Vec<Failure>,
     /// Whether these are the first files copied from the source.
     pub first_copy: bool,
+}
+
+/// A tested example whose status an update changed.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ExampleUpdate {
+    /// Its path in the source.
+    pub path: String,
+    /// Its status at the new pin.
+    pub status: ExampleState,
+    /// Its status before; `null` when it wasn't an example, or had no
+    /// copy.
+    pub was: Option<ExampleState>,
+}
+
+/// Where a tested example stands against the observation copied with it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ExampleState {
+    /// The observation lists the file as it is: the page says what it was
+    /// tested with.
+    Current,
+    /// The file changed, and the observation didn't follow.
+    Stale,
+    /// No observation lists the file.
+    Unobserved,
+}
+
+impl From<Status> for ExampleState {
+    fn from(status: Status) -> ExampleState {
+        match status {
+            Status::Current => ExampleState::Current,
+            Status::Stale => ExampleState::Stale,
+            Status::Unobserved => ExampleState::Unobserved,
+        }
+    }
 }
 
 /// How a copy changed.
@@ -716,7 +795,23 @@ fn update_one(
     // Without a pin to count from, the history isn't needed.
     let commit = remote.get()?.fetch(&followed, previous.is_none())?;
     let moved = previous.is_none_or(|p| p.commit != commit);
+    let folder = workspace.folder(source);
+    let needed = workspace.needed(source);
+    let examples_before = example_states(&folder, &needed);
     let synced = workspace.sync(source, &commit, previous.filter(|_| !moved), &mut remote)?;
+    let examples_after = example_states(&folder, &needed);
+    let examples = needed
+        .iter()
+        .filter_map(|path| {
+            let status = *examples_after.get(path)?;
+            let was = examples_before.get(path).copied();
+            (was != Some(status)).then(|| ExampleUpdate {
+                path: path.clone(),
+                status,
+                was,
+            })
+        })
+        .collect();
     let before: BTreeMap<&String, &String> = previous
         .map(|p| p.files.iter().map(|(k, v)| (k, &v.hash)).collect())
         .unwrap_or_default();
@@ -764,11 +859,32 @@ fn update_one(
             back,
             commits,
             files,
+            examples,
             first_copy: !had_files && !synced.files.is_empty(),
             failed: synced.failed,
         },
         pin,
     )))
+}
+
+/// Where each of `paths` that's a tested example stands, read from the
+/// copies in `folder`: its config, every observation, and the file, as the
+/// pages have it. A path that isn't an example, or has no copy, isn't
+/// listed. Read only: nothing in the config is run.
+fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
+    let examples = folder.examples();
+    let Some(Ok(config)) = &examples.config else {
+        return BTreeMap::new();
+    };
+    paths
+        .iter()
+        .filter(|path| config.is_example(path))
+        .filter_map(|path| {
+            let bytes = folder.read(path)?;
+            let status = Status::across(examples.readable().map(|(_, o)| o.status(path, &bytes)));
+            Some((path.clone(), ExampleState::from(status)))
+        })
+        .collect()
 }
 
 /// Each source's pin and the state of its copies, read from the files alone.
@@ -810,7 +926,8 @@ pub struct CopyStatus {
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum CopyState {
-    /// It's the file the lock pins, and a snippet uses it.
+    /// It's the file the lock pins, and a snippet uses it, or it's the
+    /// source's tested examples' config or one of their observations.
     Current,
     /// It isn't the file the lock pins.
     Changed,
@@ -853,7 +970,7 @@ pub fn status(workspace: &Workspace) -> StatusReport {
                 let state = match folder.read(path) {
                     None if !on_disk.contains(path) => CopyState::Missing,
                     Some(bytes) if file_hash(&bytes) == locked.hash => {
-                        if needed.contains(path) {
+                        if needed.contains(path) || is_examples_file(path) {
                             CopyState::Current
                         } else {
                             CopyState::Unused

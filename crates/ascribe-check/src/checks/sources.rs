@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::examples::{
-    DEFAULT_OBSERVATION, EXAMPLES_FILE, Observation, Problem, observation_path,
+    DEFAULT_OBSERVATION, EXAMPLES_FILE, Observation, Problem, is_examples_file, observation_path,
 };
 use ascribe_model::{Lock, LockedSource, file_hash};
 use ascribe_resolve::{FolderExamples, Probe};
@@ -94,7 +94,9 @@ pub(crate) fn check_sources(project: &Project) -> Vec<Diagnostic> {
                 };
                 match fs.read_file(&copy) {
                     Ok(bytes) if file_hash(&bytes) == file.hash => {
-                        if !read.contains(&copy) {
+                        // The config and the observations are read by the
+                        // examples' checks, not by a snippet.
+                        if !read.contains(&copy) && !is_examples_file(path) {
                             issues.push(
                                 Issue::new(diagnostics::SOURCE_COPY_UNUSED, at_lock(file.span))
                                     .with_arg("path", shown(path)),
@@ -126,10 +128,11 @@ pub(crate) fn check_sources(project: &Project) -> Vec<Diagnostic> {
 }
 
 /// The problems of each source folder's `ascribe.examples.toml` and its
-/// observations, for a source in the same repository: reported at the source
-/// in ascribe.toml, since a config that can't be read means none of the
-/// source's examples can be checked. Observations are read only beside a
-/// config that can be. Then each file an observation lists that isn't in the
+/// observations: reported at the source in ascribe.toml, since a config
+/// that can't be read means none of the source's examples can be checked.
+/// Observations are read only beside a config that can be. For a source in
+/// another repository, they're the copies in its folder. Then, for a source
+/// in the same repository, each file an observation lists that isn't in the
 /// folder is reported at its line in the observation.
 pub(crate) fn check_examples(project: &Project) -> Vec<Diagnostic> {
     let model = project.model();
@@ -140,7 +143,7 @@ pub(crate) fn check_examples(project: &Project) -> Vec<Diagnostic> {
     }
     let (fs, code) = (project.file_system(), project.code_files());
     let mut out = Vec::new();
-    for source in model.sources.iter().filter(|s| s.git.is_none()) {
+    for source in &model.sources {
         let Ok(folder) = RelPath::parse(&source.path) else {
             continue;
         };
@@ -173,7 +176,9 @@ pub(crate) fn check_examples(project: &Project) -> Vec<Diagnostic> {
                 }
             }
         }
-        if missing && matches!(examples.config, Some(Ok(_))) {
+        // A copy has only the files snippets use, so a listed file that
+        // isn't there says nothing about the other repository.
+        if missing && source.git.is_none() && matches!(examples.config, Some(Ok(_))) {
             out.extend(missing_files(project, &folder, &examples));
         }
     }
