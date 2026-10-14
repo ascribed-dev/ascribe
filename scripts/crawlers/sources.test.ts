@@ -42,4 +42,39 @@ describe("the crawlers' sources", () => {
       "`C`: https://c.example/ answered 404. Find where its operator documents it now, or remove the token.",
     ]);
   });
+
+  it("asks again after a failed request or a server error, and not after a 404", async () => {
+    const asked: string[] = [];
+    const answers = new Map<string, (number | string)[]>([
+      ["https://a.example/", ["fetch failed (ECONNRESET)", 200]],
+      ["https://b.example/", [503, 503]],
+      ["https://c.example/", [404]],
+    ]);
+    let pauses = 0;
+    const entries = [...answers.keys()].map((source, i) => ({
+      token: "ABC"[i] ?? "",
+      source,
+      read: "2026-10-12",
+    }));
+    const problems = await gone(
+      entries,
+      (url) => {
+        asked.push(url);
+        return Promise.resolve(answers.get(url)?.shift() ?? "no answer");
+      },
+      () => {
+        pauses += 1;
+        return Promise.resolve();
+      },
+    );
+    expect(asked).toEqual([
+      "https://a.example/",
+      "https://a.example/",
+      "https://b.example/",
+      "https://b.example/",
+      "https://c.example/",
+    ]);
+    expect(pauses).toBe(2);
+    expect(problems.map((p) => p.slice(0, 4))).toEqual(["`B`:", "`C`:"]);
+  });
 });

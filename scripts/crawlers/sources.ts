@@ -54,15 +54,34 @@ export function stale(entries: readonly Crawler[], today: Date): string[] {
   return problems;
 }
 
-/** Each source that doesn't answer with a success, after redirects, as a sentence; each address asked once. */
+/** How long to wait before asking a source again, in milliseconds. */
+const RETRY_MS = 10_000;
+
+/** Whether an answer may be the network's or the server's passing failure: a request that failed, or a 5xx. */
+function passing(status: number | string): boolean {
+  return typeof status !== "number" || status >= 500;
+}
+
+/**
+ * Each source that doesn't answer with a success, after redirects, as a sentence; each address
+ * asked once, and again after `pause` when the first answer may be a passing failure, so one
+ * dropped connection doesn't open an issue.
+ */
 export async function gone(
   entries: readonly Crawler[],
   fetchStatus: (url: string) => Promise<number | string>,
+  pause: () => Promise<void> = () => new Promise((done) => setTimeout(done, RETRY_MS)),
 ): Promise<string[]> {
+  const ask = async (url: string): Promise<number | string> => {
+    const first = await fetchStatus(url);
+    if (!passing(first)) return first;
+    await pause();
+    return fetchStatus(url);
+  };
   const problems: string[] = [];
   const asked = new Map<string, Promise<number | string>>();
   for (const entry of entries) {
-    if (!asked.has(entry.source)) asked.set(entry.source, fetchStatus(entry.source));
+    if (!asked.has(entry.source)) asked.set(entry.source, ask(entry.source));
     const status = await asked.get(entry.source);
     if (typeof status !== "number" || status >= 400)
       problems.push(
@@ -77,13 +96,23 @@ async function status(url: string): Promise<number | string> {
   try {
     const response = await fetch(url, {
       redirect: "follow",
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; ascribe-crawler-sources)" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; ascribe-crawler-sources)",
+        // Without it, fetch sends `*`, and Google's docs redirect to a language chosen at random.
+        "Accept-Language": "en",
+      },
       signal: AbortSignal.timeout(30_000),
     });
     return response.status;
   } catch (error) {
-    return error instanceof Error ? error.message : String(error);
+    return reason(error);
   }
+}
+
+/** An error's message, with its cause's: fetch says only "fetch failed", and the cause says why. */
+function reason(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  return error.cause === undefined ? error.message : `${error.message} (${reason(error.cause)})`;
 }
 
 if (import.meta.main) {
