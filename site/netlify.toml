@@ -15,7 +15,8 @@
   publish = "dist"
   # A push to `main` builds only when the site, the docs, a file the docs take
   # code examples from (the folders `[sources.code] include` in
-  # ../docs/ascribe.toml names), or the changelog, which the site renders with
+  # ../docs/ascribe.toml names), what those examples were tested with
+  # (../ascribe.examples.toml and its observations), or the changelog, which the site renders with
   # the entries in ../changes not yet gathered into it, changed. A build hook's
   # build (the canary's) is never skipped.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/ascribe-cli/tests/output ../CHANGELOG.md ../changes ../scripts/release/changes.ts"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/ascribe-cli/tests/output ../ascribe.examples.toml ../examples.observations ../CHANGELOG.md ../changes ../scripts/release/changes.ts"

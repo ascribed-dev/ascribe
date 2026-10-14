@@ -71,7 +71,15 @@ export const ROOT = "<root>";
 const DIFF_LINES = 40;
 
 /** What's copied: the projects, and what docs/ascribe.toml's `[sources.code]` reads besides them. */
-const COPIED = ["examples", "docs", ".github/workflows", "crates/ascribe-cli/tests/output"];
+const COPIED = [
+  "examples",
+  "docs",
+  ".github/workflows",
+  "crates/ascribe-cli/tests/output",
+  // What the source's examples were tested with.
+  "ascribe.examples.toml",
+  "examples.observations",
+];
 
 /** Projects whose `check` and `build` stop with errors, by design. */
 export const FAILING = ["examples/docs-repository", "examples/getting-started"];

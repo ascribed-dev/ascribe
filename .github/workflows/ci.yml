@@ -86,7 +86,7 @@ jobs:
 
           site=false
           if [ "$files" = all ] ||
-            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates|examples|changes)/|^(Cargo\.lock|pnpm-lock\.yaml|CHANGELOG\.md|scripts/release/changes\.ts)$|^\.github/workflows/(ci|site|drift|review|report)\.yml$'; then
+            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates|examples|changes|examples\.observations)/|^(Cargo\.lock|pnpm-lock\.yaml|CHANGELOG\.md|ascribe\.examples\.toml|scripts/release/changes\.ts)$|^\.github/workflows/(ci|site|drift|review|report)\.yml$'; then
             site=true
           fi
 

@@ -234,6 +234,8 @@ Some files are generated from a source, or copied from what the code writes, and
 
 The mark's images (the favicons, the touch icon, and the social card in `site/public/`, the extension's icons in `packages/vscode/media/`, and the README header and avatar in `design/out/`) are generated too, but not by a test: `node scripts/design/assets.ts` writes them and `design/assets.json`, and `scripts/design/assets.test.ts` fails, naming that command, when a source has changed since ([design/README.md](design/README.md#the-assets)).
 
+The repository's tested examples are recorded too, but not by a test: `ascribe observe`, run in the repository's root, runs the tests `ascribe.examples.toml` names and rewrites `examples.observations/default.toml`, and `rust.yml` runs `ascribe observe --check`, which fails when one of the files it lists changed since.
+
 The corpora's recorded counts in `tests/corpora/baselines/` have their own variable, `ASCRIBE_CORPORA_BLESS=1` ([tests/corpora/README.md](tests/corpora/README.md)).
 
 ## CI

@@ -30,6 +30,10 @@ on:
       - "examples/**"
       - ".github/workflows/**"
       - "crates/ascribe-cli/tests/output/**"
+      # What the source's examples were tested with: ascribe.examples.toml
+      # and its observations, at the source's root.
+      - "ascribe.examples.toml"
+      - "examples.observations/**"
       # The changelog, which the site renders with the entries not yet gathered
       # into it, and the code that gathers them: src/changelog.ts in site/.
       - "CHANGELOG.md"

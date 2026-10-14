@@ -1,0 +1,26 @@
+# The repository's files that the docs show and a test proves, read by the
+# docs' `[sources.code]` (docs/ascribe.toml), whose folder is this one. A page
+# that shows one says what it was tested with. Source and configuration the
+# docs quote aren't here: nothing tests a quoted line beyond its being the
+# file. After changing one of these files, run `ascribe observe` here and
+# commit what it writes, as you'd re-bless a generated file; CI runs
+# `ascribe observe --check`.
+include = [
+  # What the commands print, each file compared with the real output by
+  # crates/ascribe-cli/tests/all/output.rs or agents.rs.
+  "crates/ascribe-cli/tests/output/**",
+  # The example projects those tests check and render.
+  "examples/getting-started/ascribe.toml",
+  "examples/getting-started/docs/**",
+  "examples/platforms/ascribe.toml",
+  "examples/platforms/docs/**",
+  # The content models crates/ascribe-model/tests/load.rs loads.
+  "examples/content-models/*.toml",
+]
+
+# The tests that prove them, and no others: they run before every commit that
+# changes one of the files.
+test = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
+
+[environment]
+rust = { label = "Rust", command = "rustc --version" }
