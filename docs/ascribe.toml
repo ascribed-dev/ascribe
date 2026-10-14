@@ -178,8 +178,10 @@ link = "editor/index.md#site-preview"
 # other places, which need the same change when `include` changes: the paths
 # in .github/workflows/site-npm.yml, the site path pattern in
 # .github/workflows/ci.yml, and `ignore` in site/netlify.toml. Those three
-# also name CHANGELOG.md, which the site renders as its changelog.
-# scripts/docs-site/facts.test.ts fails until they agree.
+# also name CHANGELOG.md, which the site renders as its changelog, and the
+# source's ascribe.examples.toml and examples.observations/, which say what
+# the examples were tested with. scripts/docs-site/facts.test.ts fails until
+# they agree.
 [sources.code]
 path = ".."                               # relative to the folder ascribe.toml is in
 include = [                               # what's readable; everything else isn't
@@ -238,6 +240,11 @@ build = "site"
 # to work on the docs, so a machine without it isn't told so.
 [checks]
 prose-not-checked = "off"
+# The examples ../ascribe.examples.toml lists say on the page what they were
+# tested with. One changed since its last test run is an error here, so the
+# docs never publish a tested line that's no longer true; run `ascribe
+# observe` in the repository's root and commit what it writes.
+example-stale = "error"
 
 [checks.vale]
 preset = "quiet"

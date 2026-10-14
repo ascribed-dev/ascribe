@@ -11,6 +11,8 @@ Ascribe doesn't test the code. It runs the command you give it, and when that pa
 
 [`examples/tested`]({repo}/tree/main/examples/tested) in this repository is a small project set up this way: a TypeScript example, the output it should print, and a test with Node's own test runner that compares the two.
 
+These docs are set up this way too. The command output they show is a file a test compares with what the command prints, and [`ascribe.examples.toml`]({repo}/blob/main/ascribe.examples.toml) at the repository's root names those files and the tests, so each such block says which Rust it was tested with. The source and configuration the docs quote aren't in it: nothing tests them, so they show no tested line. The docs raise `example-stale` to an error, so they can't publish a tested line that's no longer true.
+
 ## 1. Say which files are examples
 
 In the source's folder, the one `[sources.<name>]` in `ascribe.toml` names with `path`, add `ascribe.examples.toml`:
