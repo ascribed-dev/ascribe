@@ -614,8 +614,6 @@ where
     to_json(request, result)
 }
 
-/// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
-/// too, whose problems about an entry can be marked as intended.
 /// Completion in a source's `ascribe.examples.toml`, which isn't a page;
 /// `None` for any other document.
 fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::CompletionItem>> {
@@ -627,6 +625,8 @@ fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types
         .config_completion(&at.text_document.uri, at.position)
 }
 
+/// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
+/// too, whose problems about an entry can be marked as intended.
 fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: lsp_types::CodeActionParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;

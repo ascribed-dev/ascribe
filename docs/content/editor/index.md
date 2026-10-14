@@ -56,7 +56,7 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - **Add a stable @id for this heading**, for a heading whose id could change.
 - Did-you-mean corrections for misspelled directives, attributes, and frontmatter keys.
 - **Remove** text on a directive line that isn't part of the directive.
-- **Copy the command** {available=next}, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal. The editor never runs a test itself.
+- **Copy the command** {available=next}, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
 ### Prompt agent
 

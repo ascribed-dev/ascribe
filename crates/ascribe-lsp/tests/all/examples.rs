@@ -262,7 +262,14 @@ fn the_advice_offers_to_copy_the_command_and_nothing_that_runs_it() {
     let folder = f.path("code");
     assert_eq!(
         copy["command"]["arguments"],
-        json!([format!("cd \"{}\" && ascribe observe", folder.display())])
+        json!([if cfg!(windows) {
+            format!(
+                "Set-Location -LiteralPath '{}'; ascribe observe",
+                folder.display()
+            )
+        } else {
+            format!("cd '{}' && ascribe observe", folder.display())
+        }])
     );
 }
 

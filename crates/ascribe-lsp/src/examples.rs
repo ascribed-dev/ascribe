@@ -150,7 +150,7 @@ pub(crate) fn copy_command(
     }
     let folder = ctx.config.parent()?.join(source.path.as_str());
     let folder = ascribe_core::path::normalize(&folder);
-    let line = format!("cd {} && ascribe observe", quoted(&folder));
+    let line = observe_line(&folder, cfg!(windows));
     Some(CodeActionOrCommand::CodeAction(CodeAction {
         title: COPY_TITLE.to_owned(),
         kind: Some(CodeActionKind::QUICKFIX),
@@ -167,15 +167,21 @@ pub(crate) fn copy_command(
     }))
 }
 
-/// A folder for a shell's command line, in double quotes, which `sh`,
-/// `cmd`, and PowerShell all read. A path with a double quote in it can't
-/// be quoted for all three, so it's left as it is.
-fn quoted(folder: &Path) -> String {
+/// The line that runs `ascribe observe` in `folder`, for the terminal a
+/// person is likely to paste it in: PowerShell on Windows, whose default
+/// version, 5.1, has no `&&`, and `sh` elsewhere. The folder is in single
+/// quotes, which both read as it's written, `$` and backticks included; a
+/// single quote in it is doubled for PowerShell, and closed, escaped, and
+/// reopened for `sh`.
+fn observe_line(folder: &Path, windows: bool) -> String {
     let text = folder.to_string_lossy();
-    if text.contains('"') {
-        text.into_owned()
+    if windows {
+        format!(
+            "Set-Location -LiteralPath '{}'; ascribe observe",
+            text.replace('\'', "''")
+        )
     } else {
-        format!("\"{text}\"")
+        format!("cd '{}' && ascribe observe", text.replace('\'', "'\\''"))
     }
 }
 
@@ -447,6 +453,18 @@ mod tests {
         assert_eq!(code_span("a"), "`a`");
         assert_eq!(code_span("a`b"), "``a`b``");
         assert_eq!(code_span("`a"), "`` `a ``");
+    }
+
+    #[test]
+    fn the_copied_line_is_for_each_platforms_terminal() {
+        assert_eq!(
+            observe_line(Path::new("/home/a/it's $HOME/code"), false),
+            "cd '/home/a/it'\\''s $HOME/code' && ascribe observe"
+        );
+        assert_eq!(
+            observe_line(Path::new("D:/it's `x`/code"), true),
+            "Set-Location -LiteralPath 'D:/it''s `x`/code'; ascribe observe"
+        );
     }
 
     #[test]
