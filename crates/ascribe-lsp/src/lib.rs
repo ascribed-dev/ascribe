@@ -16,6 +16,7 @@ mod core;
 mod definition;
 mod docs;
 mod edit;
+mod examples;
 mod formatting;
 mod fsx;
 mod headless;

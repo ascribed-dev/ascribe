@@ -327,6 +327,7 @@ impl Core {
                 loaded.model_text = text;
                 loaded.across_dirty = true;
                 self.absorb(&affected);
+                self.publish_open_configs();
             }
             Err(ApplyError::LayoutChanged | ApplyError::NestedProjectChanged) => {
                 self.load_project(model, text);
@@ -412,6 +413,68 @@ impl Core {
         for path in gone {
             self.clear(&path);
         }
+        self.publish_open_configs();
+    }
+
+    // -- A source's `ascribe.examples.toml` -------------------------------------
+
+    /// The source whose `ascribe.examples.toml` is at `path`, and the file's
+    /// path from the project root.
+    fn examples_config(&self, path: &Path) -> Option<(ascribe_model::Source, RelPath)> {
+        let loaded = self.loaded.as_ref()?;
+        let Some(Kind::Asset(project)) = loaded.classify(path) else {
+            return None;
+        };
+        let source = crate::examples::config_source(&loaded.model, &project)?;
+        Some((source.clone(), project))
+    }
+
+    /// Publishes the problems of an open `ascribe.examples.toml` whose text
+    /// is `text`; `false` when `path` isn't a source's config.
+    fn publish_config(&mut self, path: &Path, text: &str) -> bool {
+        let Some((source, project)) = self.examples_config(path) else {
+            return false;
+        };
+        let Some(loaded) = self.loaded.as_ref() else {
+            return false;
+        };
+        let found = crate::examples::config_diagnostics(
+            &loaded.model,
+            &source,
+            project.as_str(),
+            text,
+            self.encoding,
+        );
+        self.publish(path, found);
+        true
+    }
+
+    /// Publishes the problems of every open `ascribe.examples.toml`, after
+    /// the project or its sources change.
+    fn publish_open_configs(&mut self) {
+        let open: Vec<(PathBuf, String)> = self
+            .docs
+            .iter()
+            .map(|(path, doc)| (path.clone(), doc.text.clone()))
+            .collect();
+        for (path, text) in open {
+            self.publish_config(&path, &text);
+        }
+    }
+
+    /// The keys that can be written at `position` of an open
+    /// `ascribe.examples.toml`; `None` for any other document.
+    pub(crate) fn config_completion(
+        &self,
+        uri: &Uri,
+        position: lsp_types::Position,
+    ) -> Option<Vec<lsp_types::CompletionItem>> {
+        let path = Core::doc_path(uri)?;
+        self.examples_config(&path)?;
+        let text = &self.docs.get(&path)?.text;
+        let index = ascribe_core::LineIndex::new(text);
+        let offset = self.encoding.offset_lenient(&index, text, position);
+        Some(crate::examples::complete_config(text, offset))
     }
 
     // -- Documents ----------------------------------------------------------
@@ -470,6 +533,11 @@ impl Core {
             return;
         }
         self.prose_closed(&path);
+        // A config's problems are shown while it's open; `ascribe check`
+        // reports them at the source.
+        if self.examples_config(&path).is_some() {
+            self.clear(&path);
+        }
         // Closing reverts to the disk.
         if self.config.as_ref() == Some(&path) {
             self.sync_model();
@@ -496,6 +564,9 @@ impl Core {
     fn document_changed(&mut self, path: &Path, text: String) {
         if self.config.as_deref() == Some(path) {
             self.sync_model();
+            return;
+        }
+        if self.publish_config(path, &text) {
             return;
         }
         let Some(loaded) = self.loaded.as_ref() else {
@@ -560,6 +631,7 @@ impl Core {
             }
         }
         if !changes.is_empty() {
+            let reported: Vec<RelPath> = mirror.iter().map(|(path, _)| path.clone()).collect();
             let written: Vec<RelPath> = changes
                 .iter()
                 .filter_map(|change| match change {
@@ -577,6 +649,14 @@ impl Core {
                     // Checked again even when its text is what it was.
                     loaded.dirty.insert(path);
                 }
+                // A source's observations or `ascribe.examples.toml` changing
+                // changes what the pages showing its examples are told.
+                let showing = crate::examples::showing_changed(
+                    &loaded.inc.snapshot(),
+                    &loaded.model,
+                    &reported,
+                );
+                loaded.dirty.extend(showing);
             }
         }
         if sync_model {

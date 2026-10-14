@@ -191,6 +191,12 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
                     }
                 }
             }
+            "example-stale" | "example-unobserved" => {
+                if let Some(copy) = crate::examples::copy_command(ctx, file, at, diagnostic.clone())
+                {
+                    actions.push(copy);
+                }
+            }
             "permalinks-list-behind" => {
                 if let Some(sync) = sync_permalinks(ctx, diagnostic.clone()) {
                     actions.push(sync);

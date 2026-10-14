@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
 import { MCP_LABEL } from "../../src/agents/mcpServer.js";
@@ -180,6 +180,26 @@ describe("package.json", () => {
     expect(properties["ascribe.review.sourceComments"]?.enum).toEqual(["auto", "on", "off"]);
     expect(properties["ascribe.agents.promptTarget"]?.default).toBe("clipboard");
     expect(properties["ascribe.agents.promptTarget"]?.enum).toEqual([...PROMPT_TARGETS]);
+  });
+
+  it("offers no command that runs ascribe observe: the advice's quick fix only copies it", () => {
+    for (const command of manifest.contributes.commands) {
+      expect(command.command).not.toMatch(/observe/i);
+    }
+    const source = new URL("../../src/", import.meta.url);
+    const files = readdirSync(source, { recursive: true, encoding: "utf8" }).filter((f) =>
+      f.endsWith(".ts"),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const text = readFileSync(new URL(file, source), "utf8");
+      expect(text, file).not.toMatch(/ascribe observe|["'`]observe["'`]/);
+    }
+    // The quick fix's command copies the line the server gives it.
+    const extension = read("../../src/extension.ts");
+    expect(extension).toMatch(
+      /registerCommand\("ascribe\.copyCommand"[\s\S]*?clipboard\.writeText\(line\)/,
+    );
   });
 
   it("lets startServers be on demand or all, per window", () => {

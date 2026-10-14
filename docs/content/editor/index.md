@@ -56,6 +56,7 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - **Add a stable @id for this heading**, for a heading whose id could change.
 - Did-you-mean corrections for misspelled directives, attributes, and frontmatter keys.
 - **Remove** text on a directive line that isn't part of the directive.
+- **Copy the command** {available=next}, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
 ### Prompt agent
 
@@ -85,6 +86,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - In `@available:` and frontmatter `available:`: targets, dimension names, feature keys, and lifecycle states.
 - In frontmatter `type:` {available=next}: the content types `ascribe.toml` declares, each with what it's for.
 - After `{` in text: the declared phrases, each with its value.
+- In a source's [`ascribe.examples.toml`](../examples/tested.md) {available=next}: its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.
 
@@ -94,6 +96,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - A phrase: its value.
 - An availability spec or feature key: what it means, in the words the published site uses.
 - A directive or attribute key: its description. A dimension key: its values and labels.
+- A `@snippet`'s address {available=next}: its file, as a link that opens it, and its region and lines. For a [tested example](../examples/tested.md), what it was tested with, "Changed after its last test run", or "Not tested", with the observations behind it, and where to run `ascribe observe`.
 
 ### Navigation
 
@@ -134,6 +137,9 @@ The preview shows images and files from the content root, and from directories e
 
 @available: ascribe 0.2.0
 A [`@snippet`](../writing/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
+
+@available: next
+A [tested example](../examples/tested.md)'s advice, `example-stale` and `example-unobserved`, follows its source's observations and `ascribe.examples.toml`: when `ascribe observe` writes an observation, or the config changes on disk, the pages that show the source's examples are checked again. An edit to the example's own file still waits for the page to change, and so does the preview's tested line.
 
 ### Site preview
 @available: ascribe 0.3.0

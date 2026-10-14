@@ -398,6 +398,9 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
         match request.method.as_str() {
             SemanticTokensFullRequest::METHOD => semantic_tokens_request(shared, &request, false),
             SemanticTokensRangeRequest::METHOD => semantic_tokens_request(shared, &request, true),
+            Completion::METHOD if let Some(items) = config_completion(shared, &request) => {
+                to_json(&request, items)
+            }
             Completion::METHOD => navigation(shared, &request, |p: lsp_types::CompletionParams| {
                 let at = p.text_document_position;
                 (at.text_document.uri, move |ctx: &Ctx| {
@@ -609,6 +612,17 @@ where
     let target = shared.lock().project_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
     to_json(request, result)
+}
+
+/// Completion in a source's `ascribe.examples.toml`, which isn't a page;
+/// `None` for any other document.
+fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::CompletionItem>> {
+    let params: lsp_types::CompletionParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position;
+    shared
+        .lock()
+        .config_completion(&at.text_document.uri, at.position)
 }
 
 /// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`

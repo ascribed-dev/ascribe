@@ -343,7 +343,9 @@ export class ProjectServer implements vscode.Disposable {
  *
  * `ascribe.openFile` (`OPEN_FILE` in crates/ascribe-lsp/src/links.rs) is the
  * server's only command; the extension registers it in `extension.ts`. A
- * command the server adds needs the same treatment.
+ * command the server adds needs the same treatment. `ascribe.copyCommand`
+ * (`COPY_COMMAND` in crates/ascribe-lsp/src/examples.rs), which a quick fix
+ * carries, is the extension's own, and never reaches the server.
  */
 class ProjectClient extends LanguageClient {
   override registerFeature(feature: Parameters<LanguageClient["registerFeature"]>[0]): void {
@@ -411,6 +413,8 @@ function clientOptions(
       { scheme: "file", pattern: `${folder}/ascribe.toml` },
       // For the quick fix on a removed permalink, which edits ascribe.toml.
       { scheme: "file", pattern: `${folder}/ascribe.permalinks` },
+      // A source's examples config, checked and completed as it's edited.
+      { scheme: "file", pattern: `${folder}/**/ascribe.examples.toml` },
     ],
     outputChannel,
     middleware: {
