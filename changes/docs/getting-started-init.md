@@ -1,1 +1,0 @@
-- **Getting started starts the project with `ascribe init`.** Its "Create `ascribe.toml`" runs the command and shows the file it writes, then adds what the guide's page uses. Writing `ascribe.toml` by hand stays, as a short section, for a project that wants nothing written for it and for 0.3.0. See [Getting started](docs/content/getting-started.md).

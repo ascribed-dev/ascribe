@@ -1,1 +1,0 @@
-- **Fixed:** a table row's availability reads the same in the site's HTML as in its Markdown. The badge's targets are between a visually hidden "(Available: " and ")", so the delivery spec's `markdown-content-parity` check passes, and a screen reader says what the badges are. The page looks as before. See `packages/elements/CONTRACT.md`.

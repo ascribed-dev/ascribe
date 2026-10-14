@@ -1,1 +1,0 @@
-- **The schemas of `ascribe templates eject` and `ascribe templates status` have a page of their own.** They're in [JSON reports: `ascribe templates`](docs/content/contracts/json-reports/templates.md), beside the page of `ascribe init`, `ascribe sources`, and `ascribe permalinks`, which they had made longer than the Web Documentation Delivery Spec's page size.
