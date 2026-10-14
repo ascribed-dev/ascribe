@@ -1,6 +1,9 @@
 //! `ascribe observe`: runs the test of the `ascribe.examples.toml` in the
 //! current folder, and when it passes, writes down what it passed and where:
-//! an observation, `examples.observations/default.toml`.
+//! an observation, `examples.observations/<name>.toml`, `default` without
+//! `--name`, and says what changed since the one it replaces. With
+//! `--check` it runs nothing, and says whether the observation still matches
+//! the folder.
 //!
 //! This is the one place Ascribe runs a line of shell, and a test holds it
 //! to that (`tests/all/program_starts.rs`). It runs only the commands of the
@@ -19,7 +22,7 @@ use std::process::{Command, ExitCode, Stdio};
 use ascribe_core::{FileId, LineIndex};
 use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, OBSERVATIONS_FOLDER, Observation, Problem,
-    kept_line, observation_path,
+    is_observation_name, kept_line, observation_path,
 };
 use ascribe_model::{COPIES_FOLDER, LOCK_FILE, Lock, example_hash};
 use clap::{Args as ClapArgs, ValueEnum};
@@ -34,6 +37,23 @@ const SCHEMA_VERSION: u32 = 1;
 /// Arguments of `ascribe observe`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
+    /// The observation to write: `examples.observations/<NAME>.toml`.
+    ///
+    /// Lowercase words of letters and digits joined by `-`, such as
+    /// `node-22`, one for each environment the examples are tested in. Each
+    /// observation is whole and separate, and running one doesn't touch
+    /// another.
+    #[arg(long, value_name = "NAME", default_value = DEFAULT_OBSERVATION)]
+    pub name: String,
+
+    /// Run nothing, and exit 1 when the observation is stale against the
+    /// folder as it stands: for a pre-commit hook.
+    ///
+    /// It reads the config and the examples, and starts no program, the
+    /// config's commands included.
+    #[arg(long)]
+    pub check: bool,
+
     /// How to show what it did.
     ///
     /// With `json`, what the commands print goes to standard error, so
@@ -52,7 +72,9 @@ pub enum Format {
 }
 
 /// What `ascribe observe --format json` writes: the commands it ran, how the
-/// test ended, and the observation it wrote.
+/// test ended, the observation it wrote, and what changed since the one it
+/// replaced. With `--check`, nothing ran: the observation it compared, and
+/// whether it's current.
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 pub(crate) struct ObserveReport {
@@ -63,14 +85,24 @@ pub(crate) struct ObserveReport {
     ascribe_version: &'static str,
     /// The config it ran, `ascribe.examples.toml`, in the current folder.
     config: String,
+    /// Whether it was run with `--check`, which runs nothing.
+    check: bool,
     /// The `[environment]` commands, in the order the config has them, each
-    /// with the line it kept.
+    /// with the line it kept. Empty with `--check`.
     environment: Vec<EnvironmentRun>,
-    /// The test command, and how it ended.
-    test: TestRun,
+    /// The test command, and how it ended. Absent with `--check`.
+    test: Option<TestRun>,
     /// The observation it wrote, from the current folder: none when the test
-    /// failed.
+    /// failed. With `--check`, the one it compared.
     observation: Option<String>,
+    /// With `--check`, whether the observation is current: it lists every
+    /// example in the folder, with the hash it has now, and nothing else.
+    /// Absent without `--check`.
+    current: Option<bool>,
+    /// What changed since the observation it replaced: absent when there was
+    /// none, or the test failed. With `--check`, what differs between the
+    /// observation and the folder.
+    changes: Option<Changes>,
     /// The environment the observation records, by name: `os`, `arch`, and
     /// each entry's kept line. Empty when the test failed.
     recorded: BTreeMap<String, String>,
@@ -80,6 +112,112 @@ pub(crate) struct ObserveReport {
     /// What a page says it was tested with: `Node 24.9.0 on Linux`. Absent
     /// when the test failed.
     tested: Option<String>,
+}
+
+/// What differs between an observation and the one after it, or the folder.
+#[derive(Debug, Default, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct Changes {
+    /// Examples it lists that the earlier one didn't, by path.
+    added: Vec<String>,
+    /// Examples the earlier one listed that it doesn't.
+    removed: Vec<String>,
+    /// Examples both list, with different hashes.
+    changed: Vec<String>,
+    /// Environment values that differ, in the newer one's order, then those
+    /// only the earlier one had.
+    environment: Vec<EnvironmentChange>,
+}
+
+/// An environment value that differs.
+#[derive(Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct EnvironmentChange {
+    /// The entry's key: `os`, `arch`, or the config's.
+    key: String,
+    /// What the earlier observation had; absent when it had none.
+    was: Option<String>,
+    /// What the newer one has; absent when it has none.
+    now: Option<String>,
+}
+
+impl Changes {
+    /// What differs from `was` to `now`.
+    fn between(was: &Observation, now: &Observation) -> Changes {
+        let mut changes = Changes::default();
+        changes.files(&was.files, &now.files);
+        for (key, value) in &now.environment {
+            let before = was.value(key);
+            if before != Some(value.as_str()) {
+                changes.environment.push(EnvironmentChange {
+                    key: key.clone(),
+                    was: before.map(str::to_owned),
+                    now: Some(value.clone()),
+                });
+            }
+        }
+        for (key, value) in &was.environment {
+            if now.value(key).is_none() {
+                changes.environment.push(EnvironmentChange {
+                    key: key.clone(),
+                    was: Some(value.clone()),
+                    now: None,
+                });
+            }
+        }
+        changes
+    }
+
+    /// The files added, removed, and changed from `was` to `now`.
+    fn files(&mut self, was: &BTreeMap<String, String>, now: &BTreeMap<String, String>) {
+        for (path, hash) in now {
+            match was.get(path) {
+                None => self.added.push(path.clone()),
+                Some(before) if before != hash => self.changed.push(path.clone()),
+                Some(_) => {}
+            }
+        }
+        self.removed
+            .extend(was.keys().filter(|p| !now.contains_key(*p)).cloned());
+    }
+
+    fn is_empty(&self) -> bool {
+        *self == Changes::default()
+    }
+
+    /// The changes as clauses of a sentence: `added a.ts`, `changed b.ts`,
+    /// `node was v22.4.0, now v24.9.0`. Every path and value is escaped for
+    /// a terminal.
+    fn clauses(&self) -> Vec<String> {
+        let paths = |list: &[String]| -> String {
+            list.iter()
+                .map(|p| terminal(p))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        let mut out = Vec::new();
+        for (word, list) in [
+            ("added", &self.added),
+            ("removed", &self.removed),
+            ("changed", &self.changed),
+        ] {
+            if !list.is_empty() {
+                out.push(format!("{word} {}", paths(list)));
+            }
+        }
+        for change in &self.environment {
+            let key = terminal(&change.key);
+            out.push(match (&change.was, &change.now) {
+                (Some(was), Some(now)) => {
+                    format!("{key} was {}, now {}", terminal(was), terminal(now))
+                }
+                (None, Some(now)) => format!("{key} is new, {}", terminal(now)),
+                (Some(was), None) => format!("{key} is gone, was {}", terminal(was)),
+                (None, None) => key,
+            });
+        }
+        out
+    }
 }
 
 /// An `[environment]` command that ran.
@@ -108,17 +246,19 @@ struct TestRun {
 
 /// Runs the command. Exit codes: 0 when the test passed and the observation
 /// is written, 1 when the test failed and nothing was written, 2 when it
-/// couldn't run: a folder that's a source's copies, no config in the current
-/// folder, a config that can't be
-/// read, no shell, an environment command that failed or printed nothing,
-/// or an observation that can't be written.
+/// couldn't run: a name that isn't one, a folder that's a source's copies,
+/// no config in the current folder, a config that can't be read, no shell,
+/// an environment command that failed or printed nothing, or an observation
+/// that can't be written. With `--check`: 0 when the observation is current,
+/// 1 when it's stale or missing, 2 when the config, the examples, or the
+/// observation can't be read.
 pub fn run(_global: &Global, args: Args) -> ExitCode {
     let stdout = io::stdout();
     let mut out = stdout.lock();
     let stderr = io::stderr();
     let mut err = stderr.lock();
     let code = match std::env::current_dir() {
-        Ok(folder) => observe(&folder, args.format, &mut out, &mut err),
+        Ok(folder) => observe(&folder, &args, &mut out, &mut err),
         Err(e) => {
             let _ = writeln!(err, "error: can't read the current folder: {e}");
             exit::FAILURE
@@ -130,7 +270,15 @@ pub fn run(_global: &Global, args: Args) -> ExitCode {
 
 /// Runs the config in `folder`, writing the report to `out` and what went
 /// wrong to `err`, and returns the exit code.
-fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+fn observe(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    if !is_observation_name(&args.name) {
+        let _ = writeln!(
+            err,
+            "error: `{}` isn't an observation's name: lowercase words of letters and digits joined by `-`, such as `node-22`",
+            terminal(&args.name)
+        );
+        return exit::FAILURE;
+    }
     if let Some(copy) = copies_of(folder) {
         let _ = writeln!(
             err,
@@ -138,13 +286,27 @@ fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Wri
         );
         return exit::FAILURE;
     }
+    if args.check {
+        return check(folder, args, out, err);
+    }
     let (config, test) = match read_config(folder, err) {
-        Ok(read) => read,
+        Ok((config, Some(test))) => (config, test),
+        Ok((_, None)) => {
+            let _ = writeln!(
+                err,
+                "error: {EXAMPLES_FILE} has no `test`, the line of shell that tests the examples"
+            );
+            return exit::FAILURE;
+        }
         Err(code) => return code,
     };
+    let path = observation_path(&args.name);
+    // The observation this run replaces, when there's one this version can
+    // read: what changed is said against it.
+    let previous = read_observation(folder, &path).and_then(Result::ok);
 
     // Say what will run, before running anything.
-    let json = format == Format::Json;
+    let json = args.format == Format::Json;
     if !json {
         let _ = writeln!(out, "Running the commands in {EXAMPLES_FILE}:");
         let _ = writeln!(out, "  test         {}", terminal(&test));
@@ -173,13 +335,16 @@ fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Wri
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("ASCRIBE_VERSION"),
         config: EXAMPLES_FILE.to_owned(),
+        check: false,
         environment,
-        test: TestRun {
+        test: Some(TestRun {
             command: test.clone(),
             passed: status.success(),
             exit_code: status.code(),
-        },
+        }),
         observation: None,
+        current: None,
+        changes: None,
         recorded: BTreeMap::new(),
         files: BTreeMap::new(),
         tested: None,
@@ -220,14 +385,15 @@ fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Wri
         environment: recorded,
         files,
     };
-    let path = observation_path(DEFAULT_OBSERVATION);
-    if let Err(e) = write_observation(folder, &path, &observation.to_toml()) {
+    if let Err(e) = write_observation(folder, &args.name, &observation.to_toml()) {
         let _ = writeln!(err, "error: can't write {path}: {e}");
         return exit::FAILURE;
     }
     let tested = observation.tested_line(&config);
+    let changes = previous.map(|was| Changes::between(&was, &observation));
     if json {
         report.observation = Some(path);
+        report.changes = changes;
         report.recorded = observation.environment.into_iter().collect();
         report.files = observation.files;
         report.tested = Some(tested);
@@ -241,8 +407,98 @@ fn observe(folder: &Path, format: Format, out: &mut dyn Write, err: &mut dyn Wri
             if count == 1 { "file" } else { "files" },
             terminal(&tested),
         );
+        match changes {
+            None => {}
+            Some(changes) if changes.is_empty() => {
+                let _ = writeln!(out, "Nothing changed since the observation it replaces.");
+            }
+            Some(changes) => {
+                let _ = writeln!(
+                    out,
+                    "Since the observation it replaces: {}.",
+                    changes.clauses().join("; ")
+                );
+            }
+        }
     }
     exit::OK
+}
+
+/// `--check`: compares the observation named with the folder's examples as
+/// they are, and starts no program.
+fn check(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let config = match read_config(folder, err) {
+        Ok((config, _)) => config,
+        Err(code) => return code,
+    };
+    let path = observation_path(&args.name);
+    let previous = match read_observation(folder, &path) {
+        Some(Ok(observation)) => Some(observation),
+        Some(Err(problems)) => {
+            for problem in problems {
+                let _ = writeln!(err, "error: {path}: {}", terminal(&problem.detail));
+            }
+            return exit::FAILURE;
+        }
+        None => None,
+    };
+    let files = match examples(folder, &config) {
+        Ok(files) => files,
+        Err(e) => {
+            let _ = writeln!(err, "error: can't read the examples: {e}");
+            return exit::FAILURE;
+        }
+    };
+    let mut changes = Changes::default();
+    changes.files(
+        &previous
+            .as_ref()
+            .map(|o| o.files.clone())
+            .unwrap_or_default(),
+        &files,
+    );
+    let current = previous.is_some() && changes.is_empty();
+    let again = if args.name == DEFAULT_OBSERVATION {
+        "`ascribe observe`".to_owned()
+    } else {
+        format!("`ascribe observe --name {}`", args.name)
+    };
+    if args.format == Format::Json {
+        let report = ObserveReport {
+            schema_version: SCHEMA_VERSION,
+            ascribe_version: env!("ASCRIBE_VERSION"),
+            config: EXAMPLES_FILE.to_owned(),
+            check: true,
+            environment: Vec::new(),
+            test: None,
+            observation: Some(path),
+            current: Some(current),
+            changes: previous.is_some().then_some(changes),
+            recorded: BTreeMap::new(),
+            files,
+            tested: None,
+        };
+        write_json(out, &report);
+    } else if previous.is_none() {
+        let _ = writeln!(
+            out,
+            "There's no {path}, so no test run has covered the examples. Run {again} here to test them."
+        );
+    } else if current {
+        let count = files.len();
+        let _ = writeln!(
+            out,
+            "{path} is current: {count} {} as observed.",
+            if count == 1 { "file" } else { "files" },
+        );
+    } else {
+        let _ = writeln!(
+            out,
+            "{path} is stale: {}. Run {again} here to test the examples again.",
+            changes.clauses().join("; ")
+        );
+    }
+    if current { exit::OK } else { exit::PROBLEMS }
 }
 
 /// What `folder` is a copy of, when it's in a source's copies,
@@ -281,9 +537,9 @@ fn copies_of(folder: &Path) -> Option<String> {
     None
 }
 
-/// The config in `folder`, and its `test`: or, when it can't be read or has
-/// no `test`, the exit code, with what's wrong written to `err`.
-fn read_config(folder: &Path, err: &mut dyn Write) -> Result<(ExamplesConfig, String), u8> {
+/// The config in `folder`, and its `test`: or, when it can't be read, the
+/// exit code, with what's wrong written to `err`.
+fn read_config(folder: &Path, err: &mut dyn Write) -> Result<(ExamplesConfig, Option<String>), u8> {
     let config_path = folder.join(EXAMPLES_FILE);
     // Outside FileSystem: the config of the folder `ascribe observe` is run
     // in, which isn't a docs project.
@@ -301,21 +557,24 @@ fn read_config(folder: &Path, err: &mut dyn Write) -> Result<(ExamplesConfig, St
             return Err(exit::FAILURE);
         }
     };
-    let config = match ExamplesConfig::parse(&text) {
-        Ok(config) => config,
+    match ExamplesConfig::parse(&text) {
+        Ok(config) => {
+            let test = config.test.clone();
+            Ok((config, test))
+        }
         Err(problems) => {
             report_problems(err, &text, &problems);
-            return Err(exit::FAILURE);
+            Err(exit::FAILURE)
         }
-    };
-    let Some(test) = config.test.clone() else {
-        let _ = writeln!(
-            err,
-            "error: {EXAMPLES_FILE} has no `test`, the line of shell that tests the examples"
-        );
-        return Err(exit::FAILURE);
-    };
-    Ok((config, test))
+    }
+}
+
+/// The observation at `path` in `folder`, as read: `None` when there's none.
+fn read_observation(folder: &Path, path: &str) -> Option<Result<Observation, Vec<Problem>>> {
+    // Outside FileSystem: an observation in the folder `ascribe observe` is
+    // run in, which isn't a docs project.
+    let bytes = fs::read(folder.join(path)).ok()?;
+    Some(Observation::parse(&String::from_utf8_lossy(&bytes)))
 }
 
 /// Runs each `[environment]` command, keeping the first line it prints: or,
@@ -472,16 +731,13 @@ fn examples(folder: &Path, config: &ExamplesConfig) -> io::Result<BTreeMap<Strin
     Ok(files)
 }
 
-/// Writes the observation whole to a file beside it, then renames that over
-/// it, so a run that's stopped part way leaves the old one.
-fn write_observation(folder: &Path, path: &str, text: &str) -> io::Result<()> {
-    let target = folder.join(path);
+/// Writes the observation `name` whole to a file beside it, then renames
+/// that over it, so a run that's stopped part way leaves the old one.
+fn write_observation(folder: &Path, name: &str, text: &str) -> io::Result<()> {
+    let target = folder.join(observation_path(name));
     let dir = folder.join(OBSERVATIONS_FOLDER);
     fs::create_dir_all(&dir)?;
-    let temporary = dir.join(format!(
-        ".{DEFAULT_OBSERVATION}.toml.{}",
-        std::process::id()
-    ));
+    let temporary = dir.join(format!(".{name}.toml.{}", std::process::id()));
     fs::write(&temporary, text)?;
     fs::rename(&temporary, &target).inspect_err(|_| {
         let _ = fs::remove_file(&temporary);

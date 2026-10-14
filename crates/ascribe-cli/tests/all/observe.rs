@@ -212,3 +212,142 @@ fn a_config_that_cant_be_read_or_an_environment_that_cant_be_noted_is_2() {
     assert!(stderr(&output).contains("`exit 4` failed (exit code 4)"));
     assert!(!dir.path().join(OBSERVATION).exists());
 }
+
+#[test]
+fn a_name_writes_an_observation_of_its_own() {
+    let dir = folder("exit 0");
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    let default = fs::read(dir.path().join(OBSERVATION)).unwrap();
+    let output = ascribe(dir.path(), &["observe", "--name", "node-22"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(
+        stdout(&output)
+            .contains("Wrote examples.observations/node-22.toml: 2 files, Tool 1.2.3 on "),
+        "{}",
+        stdout(&output)
+    );
+    // A new observation says nothing about one it replaces, and the other is
+    // as it was.
+    assert!(!stdout(&output).contains("Since"), "{}", stdout(&output));
+    assert_eq!(fs::read(dir.path().join(OBSERVATION)).unwrap(), default);
+    assert!(
+        dir.path()
+            .join("examples.observations/node-22.toml")
+            .exists()
+    );
+
+    for name in ["Node", "node_22", "../x", "x-", ""] {
+        let output = ascribe(dir.path(), &["observe", "--name", name]);
+        assert_eq!(code_of(&output), 2, "{name}");
+        assert!(
+            stderr(&output).contains("isn't an observation's name"),
+            "{}",
+            stderr(&output)
+        );
+    }
+}
+
+#[test]
+fn a_run_says_what_changed_since_the_observation_it_replaces() {
+    let dir = folder("exit 0");
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    let output = ascribe(dir.path(), &["observe"]);
+    assert!(
+        stdout(&output).ends_with("Nothing changed since the observation it replaces.\n"),
+        "{}",
+        stdout(&output)
+    );
+
+    fs::write(dir.path().join("examples/a.ts"), "changed();\n").unwrap();
+    fs::remove_file(dir.path().join("examples/nested/b.txt")).unwrap();
+    fs::write(dir.path().join("examples/c.ts"), "c();\n").unwrap();
+    let config = fs::read_to_string(dir.path().join("ascribe.examples.toml")).unwrap();
+    fs::write(
+        dir.path().join("ascribe.examples.toml"),
+        config.replace("echo v1.2.3", "echo v1.3.0"),
+    )
+    .unwrap();
+    let output = ascribe(dir.path(), &["observe"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(
+        stdout(&output).ends_with(
+            "Since the observation it replaces: added examples/c.ts; removed examples/nested/b.txt; changed examples/a.ts; tool was v1.2.3, now v1.3.0.\n"
+        ),
+        "{}",
+        stdout(&output)
+    );
+
+    let config = fs::read_to_string(dir.path().join("ascribe.examples.toml")).unwrap();
+    fs::write(
+        dir.path().join("ascribe.examples.toml"),
+        config.replace("echo v1.3.0", "echo v1.4.0"),
+    )
+    .unwrap();
+    let output = ascribe(dir.path(), &["observe", "--format", "json"]);
+    let json: Value = serde_json::from_str(&stdout(&output)).unwrap();
+    assert_eq!(
+        json["changes"],
+        serde_json::json!({
+            "added": [],
+            "removed": [],
+            "changed": [],
+            "environment": [{ "key": "tool", "was": "v1.3.0", "now": "v1.4.0" }],
+        })
+    );
+    assert_eq!(json["check"], false);
+}
+
+/// `--check` starts no program: the config's `test` and its environment
+/// command would both fail if they ran.
+#[test]
+fn check_runs_nothing_and_says_whether_the_observation_is_stale() {
+    let dir = folder("exit 0");
+    let output = ascribe(dir.path(), &["observe", "--check"]);
+    assert_eq!(code_of(&output), 1);
+    assert_eq!(
+        stdout(&output),
+        "There's no examples.observations/default.toml, so no test run has covered the examples. Run `ascribe observe` here to test them.\n"
+    );
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    fs::write(
+        dir.path().join("ascribe.examples.toml"),
+        "include = [\"examples/**\"]\nignore = [\"examples/skip.ts\"]\ntest = \"exit 7\"\n\n[environment]\ntool = { command = \"exit 8\" }\n",
+    )
+    .unwrap();
+
+    let output = ascribe(dir.path(), &["observe", "--check"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert_eq!(
+        stdout(&output),
+        "examples.observations/default.toml is current: 2 files as observed.\n"
+    );
+    assert_eq!(stderr(&output), "");
+
+    // A change only to line endings isn't one.
+    fs::write(dir.path().join("examples/a.ts"), "a();\n").unwrap();
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe", "--check"])), 0);
+
+    fs::write(dir.path().join("examples/a.ts"), "changed();\n").unwrap();
+    let output = ascribe(dir.path(), &["observe", "--check"]);
+    assert_eq!(code_of(&output), 1);
+    assert_eq!(
+        stdout(&output),
+        "examples.observations/default.toml is stale: changed examples/a.ts. Run `ascribe observe` here to test the examples again.\n"
+    );
+    let output = ascribe(dir.path(), &["observe", "--check", "--format", "json"]);
+    assert_eq!(code_of(&output), 1);
+    let json: Value = serde_json::from_str(&stdout(&output)).unwrap();
+    assert_eq!(json["check"], true);
+    assert_eq!(json["current"], false);
+    assert_eq!(json["test"], Value::Null);
+    assert_eq!(json["changes"]["changed"][0], "examples/a.ts");
+
+    // The name it compares is the one given.
+    let output = ascribe(dir.path(), &["observe", "--check", "--name", "node-22"]);
+    assert_eq!(code_of(&output), 1);
+    assert!(
+        stdout(&output).contains("Run `ascribe observe --name node-22` here"),
+        "{}",
+        stdout(&output)
+    );
+}

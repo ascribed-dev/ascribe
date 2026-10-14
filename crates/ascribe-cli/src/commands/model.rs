@@ -8,6 +8,7 @@ use std::process::ExitCode;
 use ascribe_check::Project;
 use ascribe_model::ContentModel;
 use ascribe_query::{ModelReport, Section as QuerySection};
+use ascribe_resolve::{DiskFs, Layout};
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{self, Format, Stop};
@@ -84,11 +85,14 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-/// The content model `args` names. Only the content model: a project whose
-/// pages have errors still has one to show.
-fn load(global: &Global, args: &Args) -> Result<ContentModel, Failure> {
+/// The content model `args` names, and the project's files, which say what
+/// its sources' tested examples are. Only the content model is checked: a
+/// project whose pages have errors still has one to show.
+fn load(global: &Global, args: &Args) -> Result<(ContentModel, DiskFs), Failure> {
     let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
-    Ok(Project::load_model(&config).map_err(Failure::Load)?.model)
+    let file = Project::load_model(&config).map_err(Failure::Load)?;
+    let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
+    Ok((file.model, fs))
 }
 
 /// What `--format json` writes.
@@ -97,24 +101,25 @@ fn load(global: &Global, args: &Args) -> Result<ContentModel, Failure> {
 ///
 /// No content model, or one with errors.
 pub fn answer(global: &Global, args: &Args) -> Result<ModelReport, Stop> {
-    let model = load(global, args)?;
+    let (model, fs) = load(global, args)?;
     Ok(ascribe_query::model(
         &model,
         args.section.map(Section::query),
+        Some(&fs),
     ))
 }
 
 fn model(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let model = match load(global, args) {
-        Ok(model) => model,
+    let (model, fs) = match load(global, args) {
+        Ok(loaded) => loaded,
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let section = args.section.map(Section::query);
     let result = match args.format {
-        Format::Json => answer::write_json(out, &ascribe_query::model(&model, section)),
-        Format::Text => {
-            out.write_all(ascribe_query::summary(&model, section, SUMMARY_BUDGET).as_bytes())
-        }
+        Format::Json => answer::write_json(out, &ascribe_query::model(&model, section, Some(&fs))),
+        Format::Text => out.write_all(
+            ascribe_query::summary(&model, section, SUMMARY_BUDGET, Some(&fs)).as_bytes(),
+        ),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }

@@ -76,17 +76,33 @@ jobs:
           echo "ASCRIBE_TEST_VALE=$RUNNER_TEMP/vale/vale" >> "$GITHUB_ENV"
       # The determinism test runs in a job of its own, below, at the same time.
       - run: cargo test --workspace --locked -- --skip every_output_is_the_same_twice
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
       # The tested example's seam: `ascribe observe` in examples/tested/code,
       # with this build, writes the [files] that's committed, on every
       # platform, since the docs side reads them on any other
-      # (project-docs/tested-examples/phase-2-thread.md).
+      # (project-docs/tested-examples/phase-2-thread.md). Each of its two
+      # observations is written under the Node it names: `node-22` first,
+      # then `default` under the Node the rest of the job uses. `--check`,
+      # which runs nothing, says first whether the committed one matches.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22 # Not Ascribe's Node: the one examples/tested's node-22 observation names.
+      - name: Observe examples/tested with Node 22
+        shell: bash
+        working-directory: examples/tested/code
+        run: |
+          ../../../target/debug/ascribe observe --check --name node-22
+          sed -n '/^\[files\]/,$p' examples.observations/node-22.toml > "$RUNNER_TEMP/committed.toml"
+          ../../../target/debug/ascribe observe --name node-22
+          sed -n '/^\[files\]/,$p' examples.observations/node-22.toml > "$RUNNER_TEMP/observed.toml"
+          diff "$RUNNER_TEMP/committed.toml" "$RUNNER_TEMP/observed.toml"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
       - name: Observe examples/tested
         shell: bash
         working-directory: examples/tested/code
         run: |
+          ../../../target/debug/ascribe observe --check
           sed -n '/^\[files\]/,$p' examples.observations/default.toml > "$RUNNER_TEMP/committed.toml"
           ../../../target/debug/ascribe observe
           sed -n '/^\[files\]/,$p' examples.observations/default.toml > "$RUNNER_TEMP/observed.toml"

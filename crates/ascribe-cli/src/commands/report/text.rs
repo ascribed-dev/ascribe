@@ -271,6 +271,17 @@ impl Writer<'_> {
         if i.by_owner.iter().any(|(owner, _)| owner.is_some()) {
             self.line(&format!("By owner: {}.", counted(&i.by_owner, "no owner")))?;
         }
+        for e in i.examples.iter().flatten() {
+            let source = self.code(&e.source);
+            self.line(&format!(
+                "Examples from {source}: {} {}, {} current, {} stale, {} unobserved.",
+                e.snippets,
+                plural(e.snippets, "snippet", "snippets"),
+                e.current,
+                e.stale,
+                e.unobserved,
+            ))?;
+        }
         for (label, list) in [
             ("Overdue reviews", &i.overdue),
             ("Pages nothing links to", &i.orphans),

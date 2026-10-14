@@ -107,9 +107,11 @@ Every block has a `type`, and:
 | `links` | The block's own links and images, resolved: `span`, `kind`, `destination`, `target` |
 | `glossary` | Glossary terms linked in its prose: `term`, `text`, `url` |
 | `substitutions` | Phrases replaced in its text: `span` (over the source), `key`, `value` |
-| `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers). Its `source` is the `@snippet` line |
+| `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers), and `tested` when the file is a tested example. Its `source` is the `@snippet` line |
 
 `links`, `glossary`, and `substitutions` are absent when empty, and `snippet` is absent on every other block.
+
+A snippet's `tested` is present only when its source's `ascribe.examples.toml` makes the file an example ([decision #458c](../../project-docs/decisions/458c-tested-json.md)): `status`, one of `current`, `stale`, and `unobserved`, and `observations`, the observations current for the file in name order, each with its `name` and its `environment` as the observation has it, `os` and `arch` first, such as `{ "os": "linux", "arch": "x64", "node": "v24.9.0" }`. `observations` is empty unless the status is `current`.
 
 | `type` | Fields |
 |---|---|

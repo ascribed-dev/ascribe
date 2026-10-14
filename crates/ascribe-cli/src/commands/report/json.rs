@@ -180,6 +180,28 @@ struct InventoryJson {
     /// The fragments, phrases, features, glossary terms, and images nothing
     /// uses.
     unused: Capped<Entry>,
+    /// The tested examples the snippets show, for each source in the same
+    /// repository with an `ascribe.examples.toml`, in the content model's
+    /// order. Absent when no source has one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    examples: Option<Vec<ExamplesCount>>,
+}
+
+/// How many snippets of one source show a tested example, by status.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct ExamplesCount {
+    /// The source's name.
+    source: String,
+    /// How many `@snippet` lines, in pages and fragments, show one of its
+    /// examples.
+    snippets: usize,
+    /// How many of those show an example an observation is current for.
+    current: usize,
+    /// How many show one that changed after every observation listing it.
+    stale: usize,
+    /// How many show one no observation lists.
+    unobserved: usize,
 }
 
 /// How many pages one content type has.
@@ -534,6 +556,17 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
             overdue: entries(&i.overdue),
             orphans: entries(&i.orphans),
             unused: entries(&i.unused),
+            examples: i.examples.as_ref().map(|list| {
+                list.iter()
+                    .map(|e| ExamplesCount {
+                        source: e.source.clone(),
+                        snippets: e.snippets,
+                        current: e.current,
+                        stale: e.stale,
+                        unobserved: e.unobserved,
+                    })
+                    .collect()
+            }),
         }),
         builds: report.builds.as_ref().map(|b| builds(b, files, limit)),
         pages: report.pages.as_ref().map(|p| pages(p, limit)),

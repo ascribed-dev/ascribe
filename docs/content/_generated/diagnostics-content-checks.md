@@ -398,3 +398,16 @@ Warning · file level · next step: outside · configurable in `[checks]` · [SP
 **Fix:** Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with.
 
 **Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.
+
+### ASC202 `observation-file-missing`
+@id {permalink=true}: ASC202
+
+Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+
+**When:** An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file.
+
+**Message:** `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again
+
+**Fix:** The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file.
+
+**Read more:** [`[sources.<name>]`](../content-model/output.md#18-sourcesname) in the `ascribe.toml` reference.

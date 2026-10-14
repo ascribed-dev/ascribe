@@ -394,7 +394,7 @@ impl Renderer<'_> {
                 let mut out = vec![fenced(c)];
                 // A tested example says what it was tested with in a line of
                 // its own, which nothing styles (decision #458b).
-                if let Some(tested) = block.snippet.as_ref().and_then(|s| s.tested.as_deref()) {
+                if let Some(tested) = block.snippet.as_ref().and_then(|s| s.tested()) {
                     out.push(format!("Tested with {}.", escape(tested, true)));
                 }
                 out

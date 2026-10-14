@@ -71,7 +71,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-observe
 @available: next
 
-Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
+Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
 
 @include: ../_generated/cli-observe-options.md
 
@@ -86,15 +86,24 @@ node --test test/greet.test.mjs passed.
 Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 ```
 
-When `test` exits 0, it hashes every example and writes the observation whole, to a file beside it that it then renames, so a run that's stopped part way leaves the old one. When it doesn't, it writes nothing. A file that changes while the test runs is hashed as it is at the end, so run it on a clean tree.
+When `test` exits 0, it hashes every example and writes the observation whole, to a file beside it that it then renames, so a run that's stopped part way leaves the old one. When it doesn't, it writes nothing. A file that changes while the test runs is hashed as it is at the end, so run it on a clean tree. When the observation replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ. An observation of another name is never touched.
+
+With `--check`, it runs nothing: not `test`, not the `[environment]` commands. It hashes the examples as they are, and compares them with the observation `--name` names, `default` without it, so a pre-commit hook can run it:
+
+```console
+$ ascribe observe --check
+examples.observations/default.toml is stale: changed examples/greet.ts. Run `ascribe observe` here to test the examples again.
+```
 
 | Code | Meaning |
 |---|---|
 | `0` | The test passed, and the observation is written |
 | `1` | The test failed. Nothing was written, and the old observation is as it was. |
-| `2` | It couldn't run: the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
+| `2` | It couldn't run: a `--name` that isn't one; the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
 
-With `--format json`, what the commands print goes to standard error, and standard output has one document: `schema_version` (`1`), `ascribe_version`, `config`, `environment` (each with `key`, `command`, and `kept`, the line the observation records), `test` (`command`, `passed`, and `exit_code`, null when a signal stopped it), `observation` (the file it wrote, or null), `recorded` (the observation's `[environment]`, by name, `os` and `arch` among them), `files` (each example's hash, by path), and `tested` (what a page says it was tested with, or absent). When the test fails, the last four are empty. Its schema is in the [JSON report contract](../contracts/json-reports/sources.md#ascribe-observe).
+With `--check`, `0` means the observation is current, `1` that it's stale or missing, and `2` that the config, the examples, or the observation can't be read.
+
+With `--format json`, what the commands print goes to standard error, and standard output has one document: `schema_version` (`1`), `ascribe_version`, `config`, `environment` (each with `key`, `command`, and `kept`, the line the observation records), `test` (`command`, `passed`, and `exit_code`, null when a signal stopped it), `observation` (the file it wrote, or null), `recorded` (the observation's `[environment]`, by name, `os` and `arch` among them), `files` (each example's hash, by path), `tested` (what a page says it was tested with, or absent), and `changes` (`added`, `removed`, and `changed`, by path, and `environment`, each value that differs with its `key`, `was`, and `now`), absent when there was no observation before. When the test fails, the last five are empty. With `--check`, `check` is `true`, `test` is absent, `observation` is the one it compared, `current` says whether it matches, `files` has the examples as they are, and `changes` what differs. Its schema is in the [JSON report contract](../contracts/json-reports/sources.md#ascribe-observe).
 
 ## `ascribe permalinks`
 @id {permalink=true}: cli-permalinks

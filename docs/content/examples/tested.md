@@ -36,7 +36,7 @@ node --test test/greet.test.mjs passed.
 Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 ```
 
-Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays.
+Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 
 `ascribe observe` runs where the code is, so `ascribe` has to be installed there. Today, that means Node, as [Getting started](../getting-started.md#install-the-command) installs it. Run it on a clean tree: the files are hashed after the test, as they are then.
 
@@ -50,9 +50,33 @@ Nothing changes in the page. A `@snippet` of an example the observation lists, a
 
 On the site, "Tested with" comes from the element library's stylesheet, so a site can translate it.
 
+## Test under more than one environment
+
+Run `ascribe observe --name` once in each environment, and commit each observation. `--name node-22` writes `examples.observations/node-22.toml`; a name is lowercase words of letters and digits joined by `-`. Each observation is whole and separate, with its own environment and its own hashes, and running one doesn't touch another.
+
+```console
+$ ascribe observe --name node-22
+…
+Wrote examples.observations/node-22.toml: 2 files, Node 22.4.0 on Linux.
+```
+
+A page names every environment whose observation lists the file as it is: "Tested with Node 22.4.0 and 24.9.0 on Linux". Each entry is said once, with each of its values in version order, and the operating systems are merged the same way, "on Linux and macOS". Past three values, the line says how many there are and the lowest and highest: "Node, 5 versions from 18.20.0 to 24.9.0". The [JSON output](../contracts/tested-examples.md#6-in-the-json-output) has every one.
+
+`examples/tested` has two observations, `default` with the Node in the repository's `.nvmrc` and `node-22` with Node 22, and CI writes both again on every platform to compare their files with the committed ones.
+
+An observation nothing writes any more stays until you delete its file. It goes stale like any other, and a page doesn't name it.
+
 ## When an example changes
 
-An edit to an example, anywhere in the file, makes its observation out of date. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/content-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. An example no observation lists reports `example-unobserved`. Both are advice: the pages still build. Run `ascribe observe` again and commit, and both clear.
+An edit to an example, anywhere in the file, makes its observations out of date. The page then drops the tested line, and `ascribe check` reports [`example-stale`](../checks/diagnostics/content-checks.md#ASC199) at each `@snippet` of the file, naming the folder to run `ascribe observe` in. An example no observation lists reports `example-unobserved`. Both are advice: the pages still build. Run `ascribe observe` again and commit, and both clear. With two observations, running one again brings the page back with that one's environment, and the other is still out of date until it's run again too: `ascribe model --section sources` says how many of each observation's files are as it found them.
+
+An example that's deleted or renamed without a second run leaves its observation listing a file that isn't there. `ascribe check` reports [`observation-file-missing`](../checks/diagnostics/content-checks.md#ASC202) at that line of the observation, naming the command that writes it again.
+
+To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it. It's stricter than the pages: a file the config's `include` no longer matches, or one that's gone, counts as a change, though the files still in the observation stay current until the next run.
+
+## Count a project's examples
+
+`ascribe report` counts, for each source with an `ascribe.examples.toml`, how many snippets show one of its examples, and how many of those are current, stale, and unobserved. In its JSON, they're `inventory.examples`, which a project without a config doesn't have.
 
 A change to a file an example only calls, such as a library, doesn't make it stale: only the example files are compared.
 
@@ -66,7 +90,6 @@ For a [source in another repository](index.md#docs-kept-apart-from-the-code), th
 
 ## What it doesn't do yet
 
-- **An example has one observation,** from the last run. Recording it under several environments, such as each operating system, comes later.
 - **The run is the unit.** Every file `include` matches is recorded as passing when the test passes, whether or not the test touched it, and one failing example blocks the whole run.
 
 ## See also

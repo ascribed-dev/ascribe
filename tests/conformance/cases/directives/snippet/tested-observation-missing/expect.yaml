@@ -1,0 +1,15 @@
+description: >-
+  Each file an observation lists that isn't in the source's folder reports
+  `observation-file-missing` at its line in the observation. An observation
+  in a format this version doesn't know is one `examples-config-invalid`,
+  at the source in ascribe.toml, whatever else it holds, and counts for none
+  of its files: the example only it lists as it is is stale, by the
+  observations that can be read, and the others still count.
+spec: ["7.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: examples-config-invalid, file: ascribe.toml, line: 6}
+  - {slug: observation-file-missing, file: code/examples.observations/default.toml, line: 12}
+  - {slug: observation-file-missing, file: code/examples.observations/node-22.toml, line: 13}
+  - {slug: example-stale, file: index.md, line: 7}

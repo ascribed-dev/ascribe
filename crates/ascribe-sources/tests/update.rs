@@ -326,3 +326,44 @@ fn an_update_says_which_examples_went_stale_lost_their_observation_or_are_curren
     let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
     assert!(examples(report).is_empty());
 }
+
+#[test]
+fn an_update_counts_an_example_current_when_any_observation_has_it_as_it_is() {
+    use ascribe_sources::{ExampleState, ExampleUpdate};
+    let code = Code::new();
+    code.write("ascribe.examples.toml", "include = [\"*.rs\"]\n")
+        .write("a.rs", "a\n")
+        .write("b.rs", "b\n")
+        .write(
+            "examples.observations/default.toml",
+            observation(&[("a.rs", "a\n"), ("b.rs", "b\n")]),
+        )
+        .write(
+            "examples.observations/node-22.toml",
+            observation(&[("a.rs", "a\n"), ("b.rs", "b\n")]),
+        );
+    code.commit("first");
+    let docs = Docs::new(&source("api", &code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:a.rs\n\n@snippet: api:b.rs\n",
+    );
+    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+
+    // Both change; only `node-22` is run again, and only `a` passes it as
+    // it is now. `a` stays current, by `node-22`; `b` goes stale.
+    code.write("a.rs", "a2\n").write("b.rs", "b2\n").write(
+        "examples.observations/node-22.toml",
+        observation(&[("a.rs", "a2\n")]),
+    );
+    code.commit("second");
+    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    assert_eq!(
+        report.sources[0].examples,
+        [ExampleUpdate {
+            path: "b.rs".to_owned(),
+            status: ExampleState::Stale,
+            was: Some(ExampleState::Current),
+        }]
+    );
+}

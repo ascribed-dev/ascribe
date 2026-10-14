@@ -347,6 +347,25 @@ impl FileSystem for GitFs {
         Ok(bytes)
     }
 
+    /// The files the revision has under a folder, as [`crate::git::Tree`]
+    /// lists them: a symbolic link is listed, as a file.
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        let Ok(dir) = self.project_dir.join(project_dir.as_str()) else {
+            return Vec::new();
+        };
+        if !dir.is_inside() {
+            return Vec::new();
+        }
+        self.tree
+            .files
+            .keys()
+            .filter(|path| **path != dir)
+            .filter_map(|path| path.relative_to(&dir))
+            .filter(|rest| !rest.is_root())
+            .filter_map(|rest| project_dir.join(rest.as_str()).ok())
+            .collect()
+    }
+
     /// git records a link as a file holding its target, and never follows
     /// it: a path with a link on the way isn't read at all.
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {

@@ -26,7 +26,7 @@ pub const EXAMPLES_FILE: &str = "ascribe.examples.toml";
 /// is an example, whatever `include` says.
 pub const OBSERVATIONS_FOLDER: &str = "examples.observations";
 
-/// The name of the observation `ascribe observe` writes.
+/// The name of the observation `ascribe observe` writes without `--name`.
 pub const DEFAULT_OBSERVATION: &str = "default";
 
 /// The observation format's `version`.
@@ -44,9 +44,36 @@ pub const SHOWN_LIMIT: usize = 60;
 /// declare.
 pub const NOTED_ENTRIES: [&str; 2] = ["os", "arch"];
 
+/// Past this many values, an entry of the tested line says how many there
+/// are and names the lowest and highest.
+pub const LISTED_VALUES: usize = 3;
+
 /// The path of an observation, relative to the config's folder.
 pub fn observation_path(name: &str) -> String {
     format!("{OBSERVATIONS_FOLDER}/{name}.toml")
+}
+
+/// Whether `name` can name an observation: lowercase words of letters and
+/// digits, joined by `-`, as in `node-22`.
+pub fn is_observation_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.split('-').all(|word| {
+            !word.is_empty()
+                && word
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+        })
+}
+
+/// The name of the observation at `path`, relative to the config's folder:
+/// a file in [`OBSERVATIONS_FOLDER`] whose name is an observation's name and
+/// `.toml`. `None` for any other path.
+pub fn observation_name(path: &str) -> Option<&str> {
+    let name = path
+        .strip_prefix(OBSERVATIONS_FOLDER)?
+        .strip_prefix('/')?
+        .strip_suffix(".toml")?;
+    is_observation_name(name).then_some(name)
 }
 
 /// Whether the file at `path`, relative to a source's folder, is the
@@ -68,6 +95,16 @@ pub enum Status {
     Stale,
     /// No observation lists the file.
     Unobserved,
+}
+
+impl Status {
+    /// Where an example stands against several observations, from where it
+    /// stands against each: current when any has it as it is now, stale
+    /// when some list it and none as it is now, unobserved when none lists
+    /// it (decision 11 of the tested examples plan).
+    pub fn across(statuses: impl IntoIterator<Item = Status>) -> Status {
+        statuses.into_iter().min().unwrap_or(Status::Unobserved)
+    }
 }
 
 /// A problem in a config or an observation, at the value it's about.
@@ -358,6 +395,20 @@ impl Observation {
         }
     }
 
+    /// Where each file `[files]` lists is in the observation's text, by
+    /// path: the span of its key. Empty when the text isn't TOML.
+    pub fn file_spans(text: &str) -> BTreeMap<String, Span> {
+        let Ok(parsed) = DeTable::parse(text) else {
+            return BTreeMap::new();
+        };
+        match parsed.get_ref().get("files").map(|v| v.get_ref()) {
+            Some(DeValue::Table(table)) => entries(table)
+                .map(|(path, span, _)| (path.to_owned(), span))
+                .collect(),
+            _ => BTreeMap::new(),
+        }
+    }
+
     /// Where the example at `path` (from the config's folder), whose bytes
     /// are `bytes`, stands against this observation.
     pub fn status(&self, path: &str, bytes: &[u8]) -> Status {
@@ -394,36 +445,154 @@ impl Observation {
         out
     }
 
-    /// What the page says it was tested with: each of `config`'s entries'
-    /// label and shown value, in the config's order, then the operating
-    /// system, as in `Node 24.9.0 and TypeScript 5.9.2 on Linux`. An entry
-    /// the observation has no value for is left out. Every label and value
-    /// is made safe to show and cut ([`shown_text`]).
+    /// What the page says it was tested with, for this observation alone
+    /// ([`tested_line`]).
     pub fn tested_line(&self, config: &ExamplesConfig) -> String {
-        let parts: Vec<String> = config
-            .environment
-            .iter()
-            .filter_map(|entry| {
-                let value = self.value(&entry.key)?;
-                Some(format!(
-                    "{} {}",
-                    shown_text(&entry.label),
-                    shown_text(shown_value(value))
-                ))
-            })
-            .collect();
-        let os = os_name(self.value("os").unwrap_or_default());
-        if parts.is_empty() {
-            os
-        } else {
-            format!("{} on {os}", and_list(&parts))
+        tested_line(config, &[self])
+    }
+}
+
+/// What the page says an example was tested with, from the observations
+/// that are current for it: each of `config`'s entries, in the config's
+/// order, then the operating systems, as in `Node 22.4.0 and 24.9.0 on
+/// Linux`.
+///
+/// An entry is said once, with each distinct shown value the observations
+/// have for it, in order: by version where every value is a dotted number,
+/// by text otherwise. One no observation has a value for is left out, and
+/// past [`LISTED_VALUES`] values it's said as how many and the lowest and
+/// highest: `Node, 5 versions from 18.20.0 to 24.9.0`. The operating systems
+/// are merged the same way, and always listed. Every label and value is made
+/// safe to show and cut ([`shown_text`]).
+pub fn tested_line(config: &ExamplesConfig, observations: &[&Observation]) -> String {
+    // Each entry's words, and whether they list more than one value.
+    let parts: Vec<(String, bool)> = config
+        .environment
+        .iter()
+        .filter_map(|entry| {
+            let values = merged(
+                observations
+                    .iter()
+                    .filter_map(|o| o.value(&entry.key))
+                    .map(shown_value),
+            );
+            let label = shown_text(&entry.label);
+            match values.as_slice() {
+                [] => None,
+                [first, .., last] if values.len() > LISTED_VALUES => {
+                    let kind = if values.iter().all(|v| dotted(v).is_some()) {
+                        "versions"
+                    } else {
+                        "values"
+                    };
+                    Some((
+                        format!(
+                            "{label}, {} {kind} from {} to {}",
+                            values.len(),
+                            shown_text(first),
+                            shown_text(last)
+                        ),
+                        false,
+                    ))
+                }
+                _ => {
+                    let shown: Vec<String> = values.iter().map(|v| shown_text(v)).collect();
+                    Some((format!("{label} {}", and_list(&shown)), shown.len() > 1))
+                }
+            }
+        })
+        .collect();
+    let systems: Vec<String> = observations
+        .iter()
+        .map(|o| os_name(o.value("os").unwrap_or_default()))
+        .collect();
+    let systems: Vec<String> = merged(systems.iter().map(String::as_str))
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+    let os = and_list(&systems);
+    // Two entries, one of which lists values, are parted by a comma too, so
+    // the line reads as two: `Node 22.4.0 and 24.9.0, and TypeScript 5.9.2`.
+    let entries = match parts.as_slice() {
+        [(a, listed_a), (b, listed_b)] if *listed_a || *listed_b => format!("{a}, and {b}"),
+        _ => and_list(&parts.into_iter().map(|(p, _)| p).collect::<Vec<_>>()),
+    };
+    if entries.is_empty() {
+        os
+    } else {
+        format!("{entries} on {os}")
+    }
+}
+
+/// The distinct values, in order: by version when every one is a dotted
+/// number, by text otherwise.
+fn merged<'a>(values: impl Iterator<Item = &'a str>) -> Vec<&'a str> {
+    let mut out: Vec<&str> = Vec::new();
+    for value in values {
+        if !out.contains(&value) {
+            out.push(value);
         }
     }
+    let numbers: Option<Vec<Vec<u64>>> = out.iter().map(|v| dotted(v)).collect();
+    match numbers {
+        Some(numbers) => {
+            let mut paired: Vec<(Vec<u64>, &str)> = numbers.into_iter().zip(out).collect();
+            paired.sort();
+            paired.into_iter().map(|(_, v)| v).collect()
+        }
+        None => {
+            out.sort_by(|a, b| {
+                a.to_lowercase()
+                    .cmp(&b.to_lowercase())
+                    .then_with(|| a.cmp(b))
+            });
+            out
+        }
+    }
+}
+
+/// A dotted number's parts: `[24, 9, 0]` from `24.9.0`. `None` for anything
+/// else, a number with no dot included.
+fn dotted(value: &str) -> Option<Vec<u64>> {
+    let parts: Option<Vec<u64>> = value.split('.').map(|p| p.parse().ok()).collect();
+    parts.filter(|p| p.len() > 1 && value.bytes().all(|b| b.is_ascii_digit() || b == b'.'))
 }
 
 fn read_observation(text: &str, problems: &mut Vec<Problem>) -> Option<Observation> {
     let parsed = parse_toml(text, problems)?;
     let root = parsed.get_ref();
+    // A format this version doesn't know is said once, naming what wrote
+    // it, and nothing else in it is read: its keys may mean other things.
+    match root.get("version") {
+        None => problems.push(Problem {
+            span: Span::empty(0),
+            detail: "it has no `version`".to_owned(),
+        }),
+        Some(v) => match v.get_ref() {
+            DeValue::Integer(i) if i.as_str() == OBSERVATION_VERSION.to_string() => {}
+            DeValue::Integer(i) => {
+                let writer = root
+                    .get("ascribe")
+                    .and_then(|a| match a.get_ref() {
+                        DeValue::String(s) => Some(shown_text(s)),
+                        _ => None,
+                    })
+                    .map_or_else(|| ",".to_owned(), |a| format!(", written by Ascribe {a},"));
+                problems.push(Problem {
+                    span: sp(v),
+                    detail: format!(
+                        "it's version {}{writer} and this version of Ascribe reads version {OBSERVATION_VERSION}",
+                        shown_text(i.as_str())
+                    ),
+                });
+                return None;
+            }
+            other => problems.push(Problem {
+                span: sp(v),
+                detail: format!("`version` is {}, not a number", describe(other)),
+            }),
+        },
+    }
     for (key, span, _) in entries(root) {
         if !matches!(
             key,
@@ -434,26 +603,6 @@ fn read_observation(text: &str, problems: &mut Vec<Problem>) -> Option<Observati
                 detail: format!("it has no key `{key}`"),
             });
         }
-    }
-    match root.get("version") {
-        None => problems.push(Problem {
-            span: Span::empty(0),
-            detail: "it has no `version`".to_owned(),
-        }),
-        Some(v) => match v.get_ref() {
-            DeValue::Integer(i) if i.as_str() == OBSERVATION_VERSION.to_string() => {}
-            DeValue::Integer(i) => problems.push(Problem {
-                span: sp(v),
-                detail: format!(
-                    "it's version {}, and this version of Ascribe reads version {OBSERVATION_VERSION}",
-                    i.as_str()
-                ),
-            }),
-            other => problems.push(Problem {
-                span: sp(v),
-                detail: format!("`version` is {}, not a number", describe(other)),
-            }),
-        },
     }
     let mut string = |key: &str| -> Option<String> {
         let Some(v) = root.get(key) else {
@@ -828,8 +977,16 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
     fn observation_problems() {
         let bad = |text: &str| details(Observation::parse(text).expect_err(text));
         assert_eq!(
-            bad("version = 2\nascribe = \"1\"\ncommand = \"x\"\n[environment]\n"),
+            bad("version = 2\ncommand = \"x\"\n[environment]\n"),
             ["it's version 2, and this version of Ascribe reads version 1"]
+        );
+        // A newer format is one problem, naming what wrote it, whatever else
+        // it holds.
+        assert_eq!(
+            bad("version = 99\nascribe = \"9.0.0\"\nshape = \"new\"\n[files]\na = 1\n"),
+            [
+                "it's version 99, written by Ascribe 9.0.0, and this version of Ascribe reads version 1"
+            ]
         );
         assert_eq!(
             bad(
@@ -839,6 +996,34 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
                 "the hash of `a`, `sha256:00`, isn't `sha256-lf:` and 64 lowercase hexadecimal digits"
             ]
         );
+    }
+
+    #[test]
+    fn observation_names() {
+        for name in ["default", "node-22", "a", "linux-x64-2"] {
+            assert!(is_observation_name(name), "{name}");
+        }
+        for name in ["", "Node", "node_22", "-a", "a-", "a--b", "a.b", "é"] {
+            assert!(!is_observation_name(name), "{name}");
+        }
+        assert_eq!(
+            observation_name("examples.observations/node-22.toml"),
+            Some("node-22")
+        );
+        assert_eq!(
+            observation_name("examples.observations/.default.toml.12"),
+            None
+        );
+        assert_eq!(observation_name("examples.observations/a/b.toml"), None);
+        assert_eq!(observation_name("default.toml"), None);
+    }
+
+    #[test]
+    fn file_spans_point_at_each_key() {
+        let text = observation().to_toml();
+        let spans = Observation::file_spans(&text);
+        assert_eq!(&text[spans["examples/b.ts"].range()], "\"examples/b.ts\"");
+        assert!(Observation::file_spans("x = ").is_empty());
     }
 
     #[test]
@@ -886,6 +1071,102 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
             ("c".into(), "3.0".into()),
         ];
         assert_eq!(obs.tested_line(&three), "a 1.0, b 2.0, and c 3.0 on macOS");
+    }
+
+    fn observed(os: &str, values: &[(&str, &str)]) -> Observation {
+        let mut environment = vec![("os".to_owned(), os.to_owned())];
+        environment.extend(
+            values
+                .iter()
+                .map(|(k, v)| ((*k).to_owned(), (*v).to_owned())),
+        );
+        Observation {
+            ascribe: "0.4.0".into(),
+            command: "npm test".into(),
+            environment,
+            files: BTreeMap::new(),
+        }
+    }
+
+    fn merged_line(config: &ExamplesConfig, observations: &[Observation]) -> String {
+        tested_line(config, &observations.iter().collect::<Vec<_>>())
+    }
+
+    #[test]
+    fn the_tested_line_of_several() {
+        let config = ExamplesConfig::parse(CONFIG).expect("valid");
+        // One value: said once.
+        let same = [
+            observed("linux", &[("node", "v24.9.0")]),
+            observed("linux", &[("node", "v24.9.0")]),
+        ];
+        assert_eq!(merged_line(&config, &same), "Node 24.9.0 on Linux");
+        // Two, in version order, whatever order the observations are in.
+        let two = [
+            observed(
+                "linux",
+                &[("node", "v24.9.0"), ("typescript", "Version 5.9.2")],
+            ),
+            observed("linux", &[("node", "v22.4.0")]),
+        ];
+        assert_eq!(
+            merged_line(&config, &two),
+            "Node 22.4.0 and 24.9.0, and TypeScript 5.9.2 on Linux"
+        );
+        // A single value with "and" in it lists nothing: no comma.
+        let worded = [observed(
+            "linux",
+            &[("node", "v24.9.0"), ("typescript", "Bread and butter")],
+        )];
+        assert_eq!(
+            merged_line(&config, &worded),
+            "Node 24.9.0 and TypeScript Bread and butter on Linux"
+        );
+        // By version, not by text: 9 before 10.
+        let three = [
+            observed("linux", &[("node", "v10.0.0")]),
+            observed("linux", &[("node", "v9.1.0")]),
+            observed("linux", &[("node", "v18.20.0")]),
+        ];
+        assert_eq!(
+            merged_line(&config, &three),
+            "Node 9.1.0, 10.0.0, and 18.20.0 on Linux"
+        );
+        // More than three: how many, the lowest, and the highest.
+        let five: Vec<Observation> = ["v24.9.0", "v18.20.0", "v20.1.0", "v22.4.0", "v23.0.0"]
+            .iter()
+            .map(|v| observed("linux", &[("node", v)]))
+            .collect();
+        assert_eq!(
+            merged_line(&config, &five),
+            "Node, 5 versions from 18.20.0 to 24.9.0 on Linux"
+        );
+        // Values that aren't versions are in text order.
+        let words: Vec<Observation> = ["stable", "Beta", "alpha"]
+            .iter()
+            .map(|v| observed("linux", &[("node", v)]))
+            .collect();
+        assert_eq!(
+            merged_line(&config, &words),
+            "Node alpha, Beta, and stable on Linux"
+        );
+        let many: Vec<Observation> = ["e", "d", "c", "b", "a"]
+            .iter()
+            .map(|v| observed("linux", &[("node", v)]))
+            .collect();
+        assert_eq!(
+            merged_line(&config, &many),
+            "Node, 5 values from a to e on Linux"
+        );
+        // Two operating systems.
+        let systems = [
+            observed("macos", &[("node", "v24.9.0")]),
+            observed("linux", &[("node", "v24.9.0")]),
+        ];
+        assert_eq!(
+            merged_line(&config, &systems),
+            "Node 24.9.0 on Linux and macOS"
+        );
     }
 
     #[test]

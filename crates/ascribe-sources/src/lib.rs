@@ -24,10 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use ascribe_core::RelPath;
-use ascribe_model::examples::{
-    DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, Observation, Status, is_examples_file,
-    observation_path,
-};
+use ascribe_model::examples::{Status, is_examples_file};
 use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
 use ascribe_resolve::{DiskFs, FileSystem, Layout};
 use serde::Serialize;
@@ -871,28 +868,20 @@ fn update_one(
 }
 
 /// Where each of `paths` that's a tested example stands, read from the
-/// copies in `folder`: its config, its observation, and the file. A path
-/// that isn't an example, or has no copy, isn't listed. Read only: nothing
-/// in the config is run.
+/// copies in `folder`: its config, every observation, and the file, as the
+/// pages have it. A path that isn't an example, or has no copy, isn't
+/// listed. Read only: nothing in the config is run.
 fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
-    let text = |path: &str| {
-        folder
-            .read(path)
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
-    };
-    let Some(Ok(config)) = text(EXAMPLES_FILE).map(|t| ExamplesConfig::parse(&t)) else {
+    let examples = folder.examples();
+    let Some(Ok(config)) = &examples.config else {
         return BTreeMap::new();
     };
-    let observation =
-        text(&observation_path(DEFAULT_OBSERVATION)).and_then(|t| Observation::parse(&t).ok());
     paths
         .iter()
         .filter(|path| config.is_example(path))
         .filter_map(|path| {
             let bytes = folder.read(path)?;
-            let status = observation
-                .as_ref()
-                .map_or(Status::Unobserved, |o| o.status(path, &bytes));
+            let status = Status::across(examples.readable().map(|(_, o)| o.status(path, &bytes)));
             Some((path.clone(), ExampleState::from(status)))
         })
         .collect()

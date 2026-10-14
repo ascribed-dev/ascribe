@@ -35,7 +35,7 @@ use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
 use ascribe_model::{FieldRole, Listing};
 use ascribe_resolve::pages::{self, PageRecord};
-use ascribe_resolve::{AstroRouter, FileKind, Removal};
+use ascribe_resolve::{AstroRouter, ExampleStatus, FileKind, Removal};
 
 /// A section of the report.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -185,6 +185,25 @@ pub struct Inventory {
     /// The fragments, phrases, features, glossary terms, and images nothing
     /// uses.
     pub unused: Vec<Diagnostic>,
+    /// The tested examples the snippets show, for each source in the same
+    /// repository with an `ascribe.examples.toml`, in the content model's
+    /// order; `None` when no source has one.
+    pub examples: Option<Vec<SourceExamples>>,
+}
+
+/// How many snippets of one source show a tested example, by status.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SourceExamples {
+    /// The source's name.
+    pub source: String,
+    /// How many `@snippet` lines show one of its examples.
+    pub snippets: usize,
+    /// How many of those show an example an observation is current for.
+    pub current: usize,
+    /// How many show one that changed after every observation listing it.
+    pub stale: usize,
+    /// How many show one no observation lists.
+    pub unobserved: usize,
 }
 
 /// The checks whose problems `inventory` lists as unused entries.
@@ -443,7 +462,54 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         overdue: listed(&[diagnostics::REVIEW_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
+        examples: examples(project, &index),
     }
+}
+
+/// The tested examples each source's snippets show, counted once for each
+/// `@snippet` line, in pages and fragments alike: `None` when no source has
+/// an `ascribe.examples.toml`. A source in another repository's is the copy
+/// `ascribe sources fetch` puts beside its files.
+fn examples(project: &Project, index: &ascribe_resolve::Project) -> Option<Vec<SourceExamples>> {
+    let model = project.model();
+    let (fs, code) = (project.file_system(), project.code_files());
+    let mut counts: Vec<SourceExamples> = model
+        .sources
+        .iter()
+        .filter(|s| {
+            RelPath::parse(&s.path).is_ok_and(|folder| code.examples(fs, &folder).config.is_some())
+        })
+        .map(|s| SourceExamples {
+            source: s.name.clone(),
+            ..SourceExamples::default()
+        })
+        .collect();
+    if counts.is_empty() {
+        return None;
+    }
+    for file in index.files() {
+        for snippet in &file.snippets {
+            let Some(Ok(address)) = &snippet.address else {
+                continue;
+            };
+            let Some(example) = index
+                .snippet_at(&file.path, snippet.span)
+                .and_then(|s| s.example.as_ref())
+            else {
+                continue;
+            };
+            let Some(count) = counts.iter_mut().find(|c| c.source == address.source) else {
+                continue;
+            };
+            count.snippets += 1;
+            match example.status {
+                ExampleStatus::Current => count.current += 1,
+                ExampleStatus::Stale => count.stale += 1,
+                ExampleStatus::Unobserved => count.unobserved += 1,
+            }
+        }
+    }
+    Some(counts)
 }
 
 /// Counts, most first; a tie in key order, with `None` last.
