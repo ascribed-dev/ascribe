@@ -38,7 +38,7 @@ Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 
 Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 
-`ascribe observe` runs where the code is, so `ascribe` has to be installed there. Today, that means Node, as [Getting started](../getting-started.md#install-the-command) installs it. Run it on a clean tree: the files are hashed after the test, as they are then.
+`ascribe observe` runs where the code is, so `ascribe` has to be installed there: with npm, or [without Node](../getting-started.md#without-node) from Homebrew or the install script. Run it on a clean tree: the files are hashed after the test, as they are then.
 
 ## 3. Show the example
 
@@ -91,6 +91,15 @@ For a [source in another repository](index.md#docs-kept-apart-from-the-code), th
 ## What it doesn't do yet
 
 - **The run is the unit.** Every file `include` matches is recorded as passing when the test passes, whether or not the test touched it, and one failing example blocks the whole run.
+
+## Start from a repository
+
+Two repositories have all of this set up, to copy whole: examples as plain programs, each with the output it prints beside it, a test for each, the config, an observation for each of two versions of the runtime, and docs that show every example and its output with a tested line naming both. Their CI runs the tests weekly and on every pull request, builds the docs, and fails a pull request that changes an example without observing it again, with `ascribe observe --check`.
+
+- [**tested-examples-node**](https://github.com/ascribed-dev/tested-examples-node): Node with TypeScript, tested with Node's own test runner, with `ascribe` from npm.
+- [**tested-examples-python**](https://github.com/ascribed-dev/tested-examples-python): Python, tested with pytest, with `ascribe` from the install script and no Node.
+
+Copy one, replace its examples with yours, and run `ascribe observe --name` once under each version you test. Its README says how to add an example, and what changes when the docs live in another repository.
 
 ## See also
 
