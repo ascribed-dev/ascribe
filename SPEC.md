@@ -755,6 +755,8 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 
 The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source, except for a term whose settings turn automatic linking off: processors don't link that term, and authors link the occurrences that mean it with an ordinary link (§5.2), for words that also have ordinary senses.
 
+A term's definition is where its `link` leads: a page, and optionally `#` and a heading's id, written as a link from the content root is. The id MUST be a heading's source id (§5.5) on that page, written in it or in a fragment it includes.
+
 Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on the page it links to, and a term whose target page or heading a build doesn't publish isn't linked in that build.
 
 ### 5.5 Heading ids
@@ -1006,6 +1008,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
 | Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
 | Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
+| Glossary | A term's `link` that names a heading its page doesn't have | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

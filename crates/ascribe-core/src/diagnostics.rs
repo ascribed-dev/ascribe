@@ -631,6 +631,10 @@ pub const EXAMPLES_CONFIG_INVALID: DiagnosticSlug = DiagnosticSlug("examples-con
 /// `ASC202`, advice, file level: a content check (area `examples`).
 pub const OBSERVATION_FILE_MISSING: DiagnosticSlug = DiagnosticSlug("observation-file-missing");
 
+/// `ASC203`, error, file level: SPEC §8.2, "Glossary | A term's `link` that names a heading its page doesn't have".
+pub const GLOSSARY_LINK_TARGET_MISSING: DiagnosticSlug =
+    DiagnosticSlug("glossary-link-target-missing");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -831,6 +835,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLE_UNOBSERVED,
     EXAMPLES_CONFIG_INVALID,
     OBSERVATION_FILE_MISSING,
+    GLOSSARY_LINK_TARGET_MISSING,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

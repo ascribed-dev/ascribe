@@ -852,6 +852,8 @@ pub struct GlossaryTerm {
     pub match_mode: GlossaryMatch,
     /// The term id's key in `ascribe.toml`.
     pub span: Span,
+    /// The `link` value in `ascribe.toml`, when it has one.
+    pub link_span: Option<Span>,
 }
 
 /// A project widget.

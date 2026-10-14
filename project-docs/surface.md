@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-198 in all. By severity: 32 advice, 143 error, 23 warning. By level: 179 file, 19 page. By kind of next step: 43 choose, 13 fix, 7 outside, 11 review, 124 write.
+199 in all. By severity: 32 advice, 144 error, 23 warning. By level: 180 file, 19 page. By kind of next step: 44 choose, 13 fix, 7 outside, 11 review, 124 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -301,6 +301,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC200` | `example-unobserved` | advice | outside | `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` |
 | `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 | `ASC202` | `observation-file-missing` | advice | outside | `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again |
+| `ASC203` | `glossary-link-target-missing` | error | choose | glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}` |
 
 ## The VS Code extension
 

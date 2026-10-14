@@ -378,6 +378,7 @@ impl Loader<'_> {
                     "marked" => GlossaryMatch::Marked,
                     _ => GlossaryMatch::First,
                 });
+            let link_span = term_t.get("link").map(sp);
             let link = term_t.get("link").and_then(|l| {
                 let text = self.string(&format!("{path}.link"), l, true)?;
                 self.glossary_link(id, &text, sp(l), project, fragments)
@@ -395,6 +396,7 @@ impl Loader<'_> {
                 case_sensitive,
                 match_mode,
                 span: id_span,
+                link_span,
             });
         }
         self.glossary_duplicates(&out, tt);
