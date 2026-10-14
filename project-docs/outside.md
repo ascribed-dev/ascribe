@@ -11,6 +11,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Thing | What uses it | Who can change it |
 |---|---|---|
 | `ascribed-dev/ascribe` (public) | Everything. Branch `main` only; one required check, `all checks`, no required review, and admins can bypass | Maintainer |
+| `ascribed-dev/homebrew-tap` (public) | `brew install ascribed-dev/tap/ascribe`: its `Formula/ascribe.rb`, written for each release by `scripts/release/formula.ts`. It needs a default branch for a pull request to target | Maintainer, who merges each release's pull request ([decision #463b](decisions/463b-homebrew-tap-pull-request.md)) |
 | `ascribed-dev/review-fixture` (private) | `scripts/review-fixture/setup.ts` rebuilds it, for trying review by hand | Maintainer, or anyone running the script with access |
 | `ascribed-dev/sources-fixture-code`, `ascribed-dev/sources-fixture-docs` (private) | `scripts/sources-fixture/setup.ts`, for running the sources update workflow for real. The docs repository runs `examples/docs-repository`'s workflow on a schedule. The code repository is `CODE` in `scripts/sources-fixture/changes.ts`: the client library, its quickstart, and the quickstart's tested examples config, test, and observation, which a scripted change (`untested`) makes stale. A change to `CODE` reaches GitHub when the maintainer runs `setup.ts ascribed-dev` again | Maintainer, or anyone running the script with access |
 | A GitHub App with read access to `sources-fixture-code` and write access to `sources-fixture-docs` | That workflow's tokens: the variable `SOURCES_APP_CLIENT_ID` and the secret `SOURCES_APP_PRIVATE_KEY` in `sources-fixture-docs` ([the drift guide](../docs/content/examples/index.md) says how) | Maintainer |
@@ -19,7 +20,8 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Repository secret `SITE_BUILD_HOOK` | `canary.yml`'s `site` job: rebuilds the docs site after a canary | Maintainer |
 | Repository secret `PROJECT_BOARD_TOKEN`: a fine-grained token of the maintainer's, owned by `ascribed-dev`, with Organization → Projects: read and write | `board.yml`: reads [the project board](https://github.com/orgs/ascribed-dev/projects/1) into `board.json` on the branch `board`, and moves issues on it, for agents that can't reach the board | Maintainer; it stops working when the token expires |
 | Repository setting Actions → General → "Allow GitHub Actions to create and approve pull requests" | `approve.yml`: approves a pull request as `github-actions[bot]` for a reviewing agent, since agents post as the pull request's author; `templates.yml`: opens the templates' update pull request | Maintainer |
-| Environment `release` (required reviewer; `v*` tags only) | `release.yml`'s `npm`, `marketplace`, and `github` jobs | Maintainer |
+| Environment `release` (required reviewer; `v*` tags only) | `release.yml`'s `npm`, `marketplace`, `github`, and `tap` jobs | Maintainer |
+| Secret `HOMEBREW_TAP_TOKEN`, on `release` (**to add**): a fine-grained token of the maintainer's, resource owner `ascribed-dev`, for the repository `ascribed-dev/homebrew-tap` only, with Contents: read and write and Pull requests: read and write | `release.yml`'s `tap` job: pushes a branch to the tap and opens its pull request. Without it, the job writes the formula and opens nothing | Maintainer; it stops working when the token expires |
 | Variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, on `release` | `release.yml`'s `azure/login`: the Marketplace managed identity below. Not secrets | Maintainer |
 | Environment `canary` (no reviewers; `main` only) | `canary.yml`'s `npm` job | Maintainer |
 | Secret `NPM_TOKEN` | Nothing, once phase 6 part C merges. The inventory found it on `release`; RELEASING.md had it on `canary` | Maintainer: **to delete**, from whichever environment holds it, and revoke the token on npmjs.com |
@@ -63,6 +65,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Site `ascribe-docs` | Serves <https://ascribed-dev.com> from `main`, built with the canary (`site/netlify.toml`) | Maintainer |
 | Build hook `canary` | `SITE_BUILD_HOOK`, above | Maintainer |
 | A Netlify personal access token, with an expiry | `NETLIFY_AUTH_TOKEN`, above | Maintainer; it needs replacing when it expires |
+| The install script's address, <https://ascribed-dev.com/install.sh> | `curl -fsSL https://ascribed-dev.com/install.sh \| sh`, in the docs' getting started. The site serves `site/public/install.sh` as it is ([decision #463a](decisions/463a-install-script-address.md)) | Anyone, by pull request; it changes only through this repository |
 | The domain `ascribed-dev.com` | The docs site, and `[consumer]` in `docs/ascribe.toml` | Maintainer. Its registrar and DNS weren't checked |
 
 ## Images

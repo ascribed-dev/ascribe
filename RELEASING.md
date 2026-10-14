@@ -10,6 +10,9 @@ The [nightly canary](#the-nightly-canary) is the one exception: the npm packages
 | `@ascribed/cli`, `@ascribed/elements`, `@ascribed/astro`, `@ascribed/review` | npm | the `npm` job |
 | `Ascribe.ascribe-vscode`, for each of the four platforms | VS Code Marketplace | the `marketplace` job |
 | `ascribe-<version>-<platform>.tar.gz` (`.zip` for Windows), the `.vsix` files, `SHA256SUMS` | GitHub release | the `github` job drafts it; you publish it |
+| `Formula/ascribe.rb`, for `brew install ascribed-dev/tap/ascribe` | [`ascribed-dev/homebrew-tap`](https://github.com/ascribed-dev/homebrew-tap) | the `tap` job opens a pull request; you merge it |
+
+The install script, `curl -fsSL https://ascribed-dev.com/install.sh | sh`, isn't published by a release: it's `site/public/install.sh`, served with the [docs site](#the-docs-site), and installs whichever release is latest on GitHub.
 
 ## How a release runs
 
@@ -20,9 +23,12 @@ version ─→ build (4 platforms) ─→ pack ─→ smoke (4 platforms)
                                               │   with `publish` checked, each of these
                                               ▼   waits for approval in the `release` environment
                                             npm ─→ marketplace ─→ github (draft release)
+                                                                    │   you publish the release, then approve
+                                                                    ▼
+                                                                   tap (pull request on the Homebrew tap)
 ```
 
-Without `publish`, it's a dry run: everything up to `smoke` runs, and the publish steps run with `--dry-run`. Nothing leaves the workflow.
+Without `publish`, it's a dry run: everything up to `smoke` runs, the publish steps run with `--dry-run`, and the `formula` job writes the Homebrew formula from the packed release's `SHA256SUMS` as the `formula` artifact. Nothing leaves the workflow.
 
 ### Who owns what
 
@@ -53,7 +59,7 @@ Do these once. Each says how to check it.
 
 ### 1. Make the repository public
 
-npm refuses provenance from a private repository ("Only public source repositories are supported when publishing with provenance"), and a private repository on a free plan can't require reviewers on an environment. A public repository also runs Actions on standard runners at no cost. A release run hasn't been timed yet; expect under an hour of runner time across its thirteen jobs, two of them on macOS runners, which a private repository bills at ten times the Linux rate.
+npm refuses provenance from a private repository ("Only public source repositories are supported when publishing with provenance"), and a private repository on a free plan can't require reviewers on an environment. A public repository also runs Actions on standard runners at no cost. A release run hasn't been timed yet; expect under an hour of runner time across its fourteen jobs, two of them on macOS runners, which a private repository bills at ten times the Linux rate.
 
 Decide where the repository lives first. If it moves (for example, to `ascribed-dev`), update the URLs that name it, which npm checks against the repository that publishes:
 
@@ -105,6 +111,17 @@ The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access t
 7. **Two variables on the `release` environment** (Settings → Environments → release → Environment variables; they aren't secrets): `AZURE_CLIENT_ID`, the identity's client ID, and `AZURE_TENANT_ID`, the directory (tenant) ID.
 
 **Check:** the identity is listed under the publisher's Members as Contributor, the two variables exist on the environment, and the `marketplace` job's login step succeeds on a real release.
+
+### 5. The Homebrew tap
+
+The `tap` job opens a pull request on [`ascribed-dev/homebrew-tap`](https://github.com/ascribed-dev/homebrew-tap) with the release's formula ([decision #463b](project-docs/decisions/463b-homebrew-tap-pull-request.md)). It needs:
+
+1. **The tap, public, with a default branch.** Homebrew can't install from a private repository. A pull request needs a branch to target, so the repository needs a first commit, such as a README.
+2. **A token that can open the pull request.** A fine-grained personal access token (your GitHub settings → Developer settings → Fine-grained tokens → Generate new token): resource owner `ascribed-dev`, **Only select repositories** → `ascribed-dev/homebrew-tap`, with the repository permissions **Contents: Read and write** and **Pull requests: Read and write**, and an expiry you'll be reminded of. Save it as the secret `HOMEBREW_TAP_TOKEN` on the `release` environment (Settings → Environments → release → Environment secrets), so only an approved release job can read it. If the organization requires approval for fine-grained tokens, approve it under the organization's Settings → Personal access tokens → Pending requests.
+
+Until both are done, the `tap` job writes the formula, uploads it as the `formula` artifact, warns that it was a dry run, and opens nothing. For a release that went out before them, write its formula by hand and open the tap's pull request yourself: `node scripts/release/formula.ts 0.3.0 > Formula/ascribe.rb` in a checkout of the tap.
+
+**Check:** the tap's page says Public, the environment lists `HOMEBREW_TAP_TOKEN`, and on the next release the `tap` job opens a pull request.
 
 ## Each release
 
@@ -194,7 +211,18 @@ Install the extension from the Marketplace, open a copy of `examples/quill`, and
 
 Review the draft, then publish it.
 
-### 10. Check the docs site
+### 10. Update the Homebrew tap
+
+Approve the `tap` job, now that the release is published; it stops, asking you to publish first, if the release is still a draft, and you re-run it. It opens a pull request, `ascribe 0.2.0`, on `ascribed-dev/homebrew-tap` with the formula written from the published `SHA256SUMS`. Read it, check that its CI passes if the tap has any, and merge it. A pre-release, such as `0.4.0-rc.1`, skips the `tap` job: the tap's one formula is the stable channel, like npm's `latest` and the install script, so there's nothing to merge.
+
+**Check:** on macOS and on Linux, each gives the new version:
+
+```sh
+brew update && brew install ascribed-dev/tap/ascribe && ascribe --version   # or brew upgrade ascribe
+curl -fsSL https://ascribed-dev.com/install.sh | sh && ~/.local/bin/ascribe --version
+```
+
+### 11. Check the docs site
 
 The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` and `[versions] current` to the release, and change each `next` mark under `docs/content/` to `ascribe <version>`, as the comment above `[dimensions.release]` says. `[features.next]` stays unreleased, for what `main` adds after the release. Once that's merged and Netlify has built it, open <https://ascribed-dev.com/docs/getting-started/>: **Check:** it installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
 

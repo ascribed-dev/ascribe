@@ -33,6 +33,36 @@ pnpm exec ascribe --version
 
 @note {type=tip}: To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
 
+### Without Node
+
+Where there's no Node, such as a Python or Go repository whose hooks or CI run `ascribe`, put a release's binary on your path instead. Each of these installs exactly what a release published, and checks it against the release's `SHA256SUMS` first.
+
+On macOS or Linux, with [Homebrew](https://brew.sh):
+
+```sh
+brew install ascribed-dev/tap/ascribe
+```
+
+Or with the install script, which puts `ascribe` in `~/.local/bin`, never asks for `sudo`, and says when that folder isn't on your path. Add `-s -- --version <version>` for a release other than the latest, or `-s -- --to <folder>` for another folder:
+
+```sh
+curl -fsSL https://ascribed-dev.com/install.sh | sh
+```
+
+The script is short enough to read before you run it: [install.sh](https://ascribed-dev.com/install.sh). Run either again to update.
+
+On Windows, in PowerShell, download the latest release's archive and its `SHA256SUMS`, check the one against the other, and put `ascribe.exe` on your path:
+
+```powershell
+$base = "https://github.com/ascribed-dev/ascribe/releases"; Invoke-WebRequest "$base/latest/download/SHA256SUMS" -OutFile SHA256SUMS; $v = (Select-String -Path SHA256SUMS -Pattern "github/ascribe-(.+)-win32-x64\.zip").Matches[0].Groups[1].Value; $zip = "ascribe-$v-win32-x64.zip"; Invoke-WebRequest "$base/download/v$v/$zip" -OutFile $zip
+if (-not (Select-String -Path SHA256SUMS -SimpleMatch -Pattern "$((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower())  github/$zip")) { throw "$zip doesn't match SHA256SUMS" }
+Expand-Archive $zip "$env:LOCALAPPDATA\Programs" -Force; [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";$env:LOCALAPPDATA\Programs\ascribe-$v-win32-x64", "User")
+```
+
+Open a new terminal, and `ascribe --version` prints the release.
+
+A machine can then have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles. A bare `ascribe` runs your path's; `npx ascribe` runs the project's; the editor runs the project's when there is one, and its own otherwise, and puts that one first on the path of its terminals ([Agents](agents/index.md#vs-code) says how). `ascribe --version` says which version you're running.
+
 ## Install the editor
 
 Install the **Ascribe** extension for VS Code from the Marketplace:
