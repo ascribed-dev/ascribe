@@ -60,6 +60,16 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo build --workspace --locked
+      # The repository's examples (ascribe.examples.toml): each file the docs
+      # show and a test proves is as its observation recorded it, so a change
+      # to one comes with `ascribe observe` run again. It runs nothing.
+      - name: Check the repository's examples are observed
+        shell: bash
+        run: |
+          ./target/debug/ascribe observe --check || {
+            echo "::error file=ascribe.examples.toml::An example the docs show changed since it was last observed. Run \`cargo run -p ascribe-cli -- observe\` in the repository's root, and commit examples.observations/default.toml."
+            exit 1
+          }
       # Vale, for crates/ascribe-check/tests/all/vale.rs, which runs a real
       # Vale on Linux and fails there without one. A pinned release, checked
       # against its published checksum.

@@ -191,12 +191,22 @@ test("the docs' source folders and the changelog are named everywhere a build is
   // A folder inside site/, such as the landing page's demonstration, is
   // covered by the site's own pattern in both of the next two.
   const outside = include.filter((glob) => !glob.startsWith("site/"));
+  // What the examples were tested with: the source's ascribe.examples.toml,
+  // at its root, and the observations beside it, which a page's tested line
+  // comes from.
+  expect(read("docs/ascribe.toml")).toMatch(/^\[sources\.code\]\npath = "\.\." /m);
+  const examplesConfig = "ascribe.examples.toml";
+  const tested = [examplesConfig, "examples.observations/**"];
+  expect(
+    existsSync(path.join(root, examplesConfig)),
+    `${examplesConfig} is at the repository's root`,
+  ).toBe(true);
 
   // site-npm.yml builds production's site when one of them changes on `main`.
   const npm = read(".github/workflows/site-npm.yml");
   const paths = /^ {4}paths:\n((?: {6}.*\n)+)/m.exec(npm)?.[1] ?? "";
   expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(
-    ["docs/**", "site/**", ...outside, changelog, `${changesDir}/**`, gather].sort(),
+    ["docs/**", "site/**", ...outside, ...tested, changelog, `${changesDir}/**`, gather].sort(),
   );
 
   // Netlify skips a push to `main` when none of them changed.
@@ -205,7 +215,7 @@ test("the docs' source folders and the changelog are named everywhere a build is
     [
       ".",
       "../docs",
-      ...outside.map((glob) => `../${glob.replace(/\/\*\*$/, "")}`),
+      ...[...outside, ...tested].map((glob) => `../${glob.replace(/\/\*\*$/, "")}`),
       `../${changelog}`,
       `../${changesDir}`,
       `../${gather}`,
@@ -226,7 +236,13 @@ test("the docs' source folders and the changelog are named everywhere a build is
     expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
   }
   expect(site.test("docs/content/index.md")).toBe(true);
-  for (const file of [changelog, `${changesDir}/an-entry.md`, gather]) {
+  for (const file of [
+    changelog,
+    `${changesDir}/an-entry.md`,
+    gather,
+    examplesConfig,
+    "examples.observations/default.toml",
+  ]) {
     expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
   }
 });
