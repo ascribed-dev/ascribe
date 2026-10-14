@@ -26,7 +26,7 @@ jobs:
     # packages they need, so the job downloads neither. Its tag is the
     # playwright-core version in pnpm-lock.yaml (scripts/ci/workflows.test.ts).
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
     env:
       # The job runs as root, and Firefox won't start under a home directory
       # another user owns, which is what Actions gives a container.
