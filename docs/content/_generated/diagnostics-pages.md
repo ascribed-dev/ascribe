@@ -629,3 +629,18 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 **Fix:** Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone.
 
 **Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
+
+## Glossary
+
+### ASC203 `glossary-link-target-missing`
+@id {permalink=true}: ASC203
+
+Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+
+**When:** A term's `link` that names a heading its page doesn't have.
+
+**Message:** glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}`
+
+**Fix:** Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included.
+
+**Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.

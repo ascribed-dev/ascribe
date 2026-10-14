@@ -200,3 +200,4 @@
 | [ASC200](../checks/diagnostics/content-checks.md#ASC200) | `example-unobserved` | Advice | File | outside |
 | [ASC201](../checks/diagnostics/content-checks.md#ASC201) | `examples-config-invalid` | Warning | File | outside |
 | [ASC202](../checks/diagnostics/content-checks.md#ASC202) | `observation-file-missing` | Advice | File | outside |
+| [ASC203](../checks/diagnostics/pages.md#ASC203) | `glossary-link-target-missing` | Error | File | choose |

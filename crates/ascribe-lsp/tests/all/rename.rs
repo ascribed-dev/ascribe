@@ -218,3 +218,35 @@ fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
     );
     assert_eq!(toml.edits, 3);
 }
+
+#[test]
+fn a_heading_whose_id_changes_takes_what_ascribe_toml_names_it_by_along() {
+    // A glossary term's `link` and a retired permalink's `to` that name the
+    // heading change with its id, and with the numbering after it; one
+    // naming the same id on another page stays as it is.
+    let model = format!(
+        "{MODEL}\n[glossary.terms.setup]\nterm = \"setup\"\ndefinition = \"Getting ready.\"\nlink = \"/keys.md#set-up\" # the first\n\n\
+         [glossary.terms.again]\nterm = \"again\"\ndefinition = \"Once more.\"\nlink = \"keys.md#set-up-1\"\n\n\
+         [glossary.terms.install]\nterm = \"install\"\ndefinition = \"Setting it up.\"\nlink = \"install.md#set-up\"\n\n\
+         [permalinks.retired]\nold-setup = {{ to = \"keys.md#set-up\", reason = \"Merged\" }}\n"
+    );
+    let f = Fixture::new(
+        &model,
+        &[("docs/keys.md", KEYS), ("docs/install.md", INSTALL)],
+    );
+    let renamed =
+        rename(&f.path("ascribe.toml"), &id("keys.md", "set-up", "setup")).expect("renamed");
+    let toml = renamed
+        .files
+        .iter()
+        .find(|file| file.path == f.path("ascribe.toml"))
+        .expect("ascribe.toml changes");
+    assert_eq!(
+        toml.text,
+        model
+            .replace("\"/keys.md#set-up\"", "\"/keys.md#setup\"")
+            .replace("\"keys.md#set-up\"", "\"keys.md#setup\"")
+            .replace("\"keys.md#set-up-1\"", "\"keys.md#set-up\"")
+    );
+    assert_eq!(toml.edits, 3);
+}

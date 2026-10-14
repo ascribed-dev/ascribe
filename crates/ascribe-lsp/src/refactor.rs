@@ -193,6 +193,17 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
 /// the files that move: a glossary term's `link`, and a retired permalink's
 /// `to`, each keeping its `#id`. `None` when they can't be made in place.
 fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<TextEdit>> {
+    model_link_edits(ctx, |written| moved_path(written, mappings))
+}
+
+/// The edits to `ascribe.toml` that change what it names by a link from the
+/// content root, a glossary term's `link` and a retired permalink's `to`,
+/// to what `change` gives for each as it's written, leaving those it gives
+/// `None` for. `None` when they can't be made in place.
+fn model_link_edits(
+    ctx: &Ctx,
+    mut change: impl FnMut(&str) -> Option<String>,
+) -> Option<Vec<TextEdit>> {
     // A file that isn't TOML loads no model, so names no path to follow.
     let Ok(file) = ModelFile::parse(&ctx.model_text) else {
         return Some(Vec::new());
@@ -210,9 +221,9 @@ fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<Te
             let Some(written) = file.get(&at).and_then(toml_edit::Item::as_str) else {
                 continue;
             };
-            if let Some(moved) = moved_path(written, mappings) {
+            if let Some(changed) = change(written) {
                 edits.push(
-                    file.replace_value(&at, toml_edit::Value::from(moved))
+                    file.replace_value(&at, toml_edit::Value::from(changed))
                         .ok()?,
                 );
             }
@@ -243,6 +254,24 @@ fn moved_path(written: &str, mappings: &[(RelPath, RelPath)]) -> Option<String> 
     let old = RelPath::parse(path.trim_start_matches('/')).ok()?;
     let new = remap(&old, mappings);
     (new != old).then(|| format!("{slash}{new}{rest}"))
+}
+
+/// `written`, a link from the content root, with its `#old_id` made
+/// `#new_id`; `None` when it names another id, or a page `names_heading`
+/// says doesn't have the heading.
+fn renamed_fragment(
+    written: &str,
+    old_id: &str,
+    new_id: &str,
+    names_heading: impl FnOnce(&RelPath) -> bool,
+) -> Option<String> {
+    let (before, fragment) = written.split_once('#')?;
+    if fragment != old_id {
+        return None;
+    }
+    let path = before.split('?').next().unwrap_or(before);
+    let page = RelPath::parse(path.trim_start_matches('/')).ok()?;
+    names_heading(&page).then(|| format!("{before}#{}", encode_destination(new_id)))
 }
 
 pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
@@ -730,6 +759,16 @@ fn add_id_reference_edits(
                 }
             }
         }
+    }
+    // A glossary term's `link`, and a retired permalink's `to`, name the
+    // heading the same way, from the content root. Their edits go with the
+    // phrases' to `ascribe.toml`, keyed by where each is, which no phrase's
+    // key can be.
+    for edit in model_link_edits(ctx, |written| {
+        renamed_fragment(written, old_id, new_id, &mut links_here)
+    })? {
+        let at = format!("#{}:{}", edit.range.start.line, edit.range.start.character);
+        phrase_edits.insert(at, edit);
     }
     Some(())
 }

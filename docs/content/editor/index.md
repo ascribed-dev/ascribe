@@ -106,7 +106,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 ### Refactoring
 
 - **Rename or move a file** in the Explorer, and the links and includes that point to it are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it.
-- **Rename** (`F2`) a heading's `@id` to update the links to it, or a phrase key to update its uses and its declaration.
+- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` among them, or a phrase key to update its uses and its declaration.
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.

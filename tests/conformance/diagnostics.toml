@@ -3786,3 +3786,16 @@ reference = "content-model/output.md#18-sourcesname"
 when = "An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file"
 message = "`{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again"
 fix = "The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file."
+
+[[diagnostic]]
+code = "ASC203"
+slug = "glossary-link-target-missing"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "5.4"
+reference = "content-model/content.md#122-terms"
+row = "Glossary | A term's `link` that names a heading its page doesn't have"
+message = "glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}`"
+fix = "Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included."

@@ -39,6 +39,7 @@ mod checks;
 mod diagnostic;
 mod evidence;
 pub mod fix;
+mod glossary;
 pub mod intended;
 mod levels;
 pub mod links;

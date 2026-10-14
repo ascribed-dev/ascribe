@@ -1,0 +1,1 @@
+- **Fixed:** a heading's id `ascribe rename` changes is changed in `ascribe.toml` too. A glossary term's `link` and a retired permalink's `to` that name the heading follow it, as the links in pages do, and so does `F2` in the editor. Before, they kept the old id, and nothing reported it. `ascribe.toml` keeps its comments and order. See `docs/content/command/questions.md`.
