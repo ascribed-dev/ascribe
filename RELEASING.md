@@ -207,6 +207,8 @@ npx ascribe --version
 
 Install the extension from the Marketplace, open a copy of `examples/quill`, and check that diagnostics appear on a page with a mistake. **Ascribe: Show Server Output** says which binary it uses.
 
+Build each example repository's docs with the release: in a clone of [`tested-examples-node`](https://github.com/ascribed-dev/tested-examples-node) and of [`tested-examples-python`](https://github.com/ascribed-dev/tested-examples-python), `ascribe observe --check --name <each observation> && ascribe check --deny-warnings --config docs && ascribe build --config docs` with the new `ascribe`. **Check:** both pass. Then open a pull request on each that moves its pin to the release (`@ascribed/cli` in the Node one's `package.json`, `.ascribe-version` in the Python one's). Its CI checks the rest.
+
 ### 9. Publish the GitHub release
 
 Review the draft, then publish it.
