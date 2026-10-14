@@ -87,10 +87,8 @@ Then [read getting started]({site}/go/getting-started/): it sets up a project, w
 ## Where it's going
 
 - **Versions.** A project says which versions of its product exist, and publishes a site for each one still supported, from one source.
-- **Tested examples.** A code example says what it was tested with, and Ascribe notices when that stops being true.
 - **Search.** Find where the pages say something as readers see it, through phrases, fragments, and variants, and edit it at its source.
 - **Notes.** Why a page is written the way it is, kept beside it for the people and agents who change it, and never shown to readers.
-- **Page templates.** A new how-to, concept, or troubleshooting page starts from the right shape, with guidance on what belongs in it.
 
 ## Early, and open source
 
