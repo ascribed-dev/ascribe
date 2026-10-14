@@ -247,7 +247,7 @@ jobs:
           branch="ascribe-$VERSION"
           git clone --quiet "https://x-access-token:$GH_TOKEN@github.com/$TAP.git" "$RUNNER_TEMP/tap"
           cd "$RUNNER_TEMP/tap"
-          pr=$(gh pr list --repo "$TAP" --head "$branch" --state all --json url --jq '.[0].url')
+          pr=$(gh pr list --repo "$TAP" --head "$branch" --state all --json url --jq '.[0].url // empty')
           if [ -n "$pr" ]; then
             echo "The tap already has $VERSION's pull request: $pr"
             exit 0
