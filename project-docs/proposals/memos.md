@@ -67,7 +67,7 @@ A new built-in directive, a sibling of `@intended`. It isn't an extension of it:
   ```
 
 - **What it's about** follows `@available`'s rule, so there's one rule to learn: at the top of a section it's about the section, and anywhere else it's about the block below it. Several stack. A memo with nothing after it is the error any following-block directive gets.
-- **Its contents are text, and nothing reads them.** A container's lines are kept as written, as a code block's are. A `{phrase}` in one isn't a phrase, a link isn't checked and isn't a use of its target, an `@include` isn't followed, a heading gets no id, and Vale isn't given the text. Otherwise a memo could break a build, or keep an unused phrase alive.
+- **Its contents are text, and nothing reads them.** A container's lines are kept as written, as a code block's are: the parser keeps them as raw text, so nothing inside is a block, a directive, or a heading ([plan decision 21](../memos/README.md#decisions)). A `{phrase}` in one isn't a phrase, a link isn't checked and isn't a use of its target, an `@include` isn't followed, a heading gets no id, and Vale isn't given the text. Otherwise a memo could break a build, or keep an unused phrase alive.
 - **No attributes.**
 - **`ascribe fmt`** treats it as it treats `@intended`: the directive touches its block, and its text is left alone.
 
@@ -90,7 +90,7 @@ HTML comments stay exactly as they are.
 
 ### The same construct serves page templates
 
-The [page templates proposal](page-templates.md) needs a template's instructions to its author to be text that's never published, and leaves the construct to this proposal. It's this one: the conversion writes each instruction as a `@memo` container.
+The [page templates proposal](page-templates.md) needs a template's instructions to its author to be text that's never published, and leaves the construct to this proposal. It's this one: the conversion writes each instruction as a line memo, naming which paragraphs are instructions in its rules, since nothing in their shape says so ([plan decision 22](../memos/README.md#decisions)).
 
 That proposal finds a leftover placeholder by comparing a page with its type's template. A leftover instruction is found the same way, since a memo's text is in the syntax tree. So a forgotten instruction is reported, and is never published either way. Nothing is added to the language for it.
 
@@ -111,7 +111,7 @@ doesn't mention the agent.
 From Dana Okafor (platform), in the 3.4 launch review.
 ```
 
-- **`about`** names one thing, in the form `ascribe refs` takes: a page or fragment by its path from the content root, a heading by its id, or a content model entry (`phrase:product`, `feature:next`, `term:workspace`). One grammar, one parser, and a memo is a kind of use of what it names.
+- **`about`** names one thing, in the form `ascribe refs` takes: a page or fragment by its path from the content root, a heading by its id, or a content model entry (`phrase:product`, `feature:next`, `term:workspace`, and `dimension:`, `note:`, and `widget:` the same way). One grammar, one parser, and a memo is a kind of use of what it names.
 - **`quote`** is optional. It narrows the memo to one block: the block in the named page or section whose source text holds the quote.
 - **The body** is CommonMark, shown as written. Ascribe resolves nothing in it.
 - **No author and no date.** The commit has both.
@@ -172,7 +172,7 @@ Under the [content checks](https://github.com/ascribed-dev/ascribe/blob/76a46b26
 | `memo-invalid` | Frontmatter that doesn't parse, no `about`, a key that isn't one of the two, or a `memos/` folder inside the content root | Error | `write` |
 | `memo-detached` | `about` names a page, heading, or entry that doesn't exist | Warning | `choose`: the closest ids on the page, or delete the memo |
 | `memo-outdated` | The quote isn't in the page or section any more | Advice | `write`: the prompt carries the memo and the section as it is now |
-| `memo-long` | A body over a limit, `[checks.memo-long] limit` | Advice | `write` |
+| `memo-long` | A body over a limit, `[checks.memo-long] limit`, 2,000 characters by default | Advice | `write` |
 | `html-comment` | An HTML comment in a page, which reaches the published page's source. Vale's are exempt: Ascribe already recognizes them and passes them to Vale | Advice | `review`: rewrite it as `@memo`, or acknowledge it with `@intended` where it's for another tool |
 
 The first four aren't `review` checks, so none is acknowledged with `@intended`: a note that's wrong is edited or deleted. `html-comment` is one, since a comment written for another tool is right as it is, and it's reported on the page, not on a note.

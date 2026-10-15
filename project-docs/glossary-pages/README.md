@@ -42,7 +42,14 @@ From the proposal:
 13. **The repository's projects are moved by hand** in the pull request that makes the change. No command does it.
 14. **Ascribe's docs get a glossary page:** a section for each of their terms, a sentence or two and a link on to the page that documents it.
 
-[Phase 1](phase-1-decisions.md) settles six more, each a contract the thread ships: what exactly a definition is, which page a term links to when two glossary pages show it, how `glossary-term-unused` is acknowledged, what `ascribe model` says about a term, the diagnostics' names and levels, and where Ascribe's docs keep their glossary.
+From [phase 1](phase-1-decisions.md), which keeps the options each was chosen from:
+
+15. **A definition is the first block of the section's own content, and it must be a paragraph.** A section that opens with anything else has no definition, which is an error. A paragraph a fragment brings in counts. As plain text: phrases substituted for the build, emphasis and code reduced to their text, a link to its text, an image to its alt text, inline HTML dropped, and whitespace runs one space. A paragraph the build removes leaves the term undefined in that build, and unlinked.
+16. **A term that two glossary pages show, through a fragment, is one term,** linked to the first page in `pages` that the build publishes. Two different headings with the same text are still the duplicate error.
+17. **`glossary-term-unused` is acknowledged with `@intended` at the term's heading, and `term` leaves `[[intended]]`.** `@intended` gains `@available`'s heading-or-block binding: at the top of a section it acknowledges a check that reports at that heading, and nothing wider. `[[intended]]` keeps `phrase`, `feature`, and `image`.
+18. **`ascribe model` lists a term as `id`, `term`, `aliases`, `match`, `case_sensitive`, `page`, and `line`,** with no `definition` and no `link`, and its `schema_version` goes to 3. `page` is the path from the content root.
+19. **The diagnostics:** `model-unknown-key` for `[glossary] terms`, naming `pages` and `@term`; `model-glossary-page` (error, `choose`); `glossary-term-duplicate` (error, `write`, at the second, naming the first), replacing `model-glossary-duplicate-term`; `glossary-definition-missing` (error, `write`); `glossary-definition-long` (advice, `write`); and `term-off-glossary-page` (error, `choose`, with the fix that adds the page). `model-glossary-link` and `glossary-link-target-missing` go, their codes left as gaps. One constant, `DESCRIPTION_LIMIT`, serves both length checks; a setting is added to both at once if a project ever asks.
+20. **Ascribe's docs keep their glossary at `docs/content/glossary.md`,** type `reference`: the root holds what belongs to no one feature.
 
 ## The thread
 

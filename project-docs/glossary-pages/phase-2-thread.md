@@ -11,7 +11,7 @@ In `examples/monorepo/docs`:
 ```toml
 [glossary]
 match = "first"
-pages = ["reference/glossary.md"]
+pages = ["glossary.md"]
 ```
 
 ```markdown

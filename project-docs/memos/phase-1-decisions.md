@@ -33,6 +33,8 @@ A container's contents are parsed as CommonMark today, then paired with their `@
 
 Both keep a container's prefixes as they are: a memo in a list item or a block quote is indented or quoted like anything else in it.
 
+**Decided: raw lines.** Decision 5 holds by construction, for every reader there is and every one added later, instead of by a rule each has to remember; `ascribe fmt` leaves the bytes alone for the same reason; and a memo can't break its page. The cost is one change to the fork, marked and listed in `FORK.md`, and a sentence in SPEC §3.5 saying what a raw container is: its lines are text until a line that's only `@end` at its indent, with the container's prefixes as they are. README decision 21.
+
 ### 2. Which of a template's words become memos, and what the check reports
 
 Decision 10 settles that a template's instructions to its writer become memos. The page templates plan expected them in block quotes; the six templates it shipped have none inside a section. Their instructions are paragraphs that are one placeholder, beside placeholders that stand for content:
@@ -62,6 +64,8 @@ The first is said to the writer, and the second is replaced. Nothing in their sh
 
 Either way, the rule that a quoted paragraph is an instruction (page templates decision 33) goes: no template in the set has one, and a project's copies are its own.
 
+**Decided: named in the conversion's rules, and the check reports nothing of them.** Nothing in a paragraph's shape says whether it's said to the writer or stands for content, so a person reads the 28 once and the rule file keeps the answer, where a reworded upstream release trips it as every rule does. The conversion writes each as a line memo, with the words and without the braces. A memo with the template's text costs a reader nothing and is often still true, so the check leaves it alone; an empty section is still reported by its placeholders. The quoted-paragraph rule goes. README decision 22.
+
 ### 3. The diagnostics' names, levels, and next steps
 
 | Reports | Recommended name | Level | Next step |
@@ -74,6 +78,8 @@ Either way, the rule that a quoted paragraph is an instruction (page templates d
 
 The first four are reported on the memo file, at its `about` or `quote` line, and aren't review checks: a memo that's wrong is edited or deleted. `html-comment` is a review check, reported at the comment, and acknowledged with `@intended`. An empty `@memo`, one with attributes, and one with nothing below it are the errors any directive gets, with no names of their own.
 
+**Decided: as the table has it.** Four checks on a memo file, named for what's wrong with it, at the line that's wrong; one review check on a page, acknowledged where it reports; and nothing of its own for what the directive's own rules already report. `memo-long` takes `limit`, as `page-size` and `image-large` do, 2,000 by default: a memo longer than that is a document, and belongs in one. README decision 23.
+
 ### 4. What `about` can name, and how `quote` is matched
 
 | Question | Recommended |
@@ -85,12 +91,16 @@ The first four are reported on the memo file, at its `about` or `quote` line, an
 | A quote that runs across two blocks | Not found: the memo is outdated |
 | A heading in a fragment | Named in the fragment, `_fragments/keys.md#rotate`, as `ascribe refs` names it. A quote is matched in the file `about` names, never in a page that includes it |
 
+**Decided: as the table has it.** One grammar and one parser, `ascribe refs`'s, so a memo can name whatever a reference can, and `quote` only where there's text to hold it. Matching source, not rendered text, with whitespace folded and case kept, is what lets two machines never disagree about where a memo is, and the editor's create action fills the quote from the same source. README decision 24.
+
 ### 5. What `ascribe outline` and `ascribe refs` say about memo files
 
 Both commands' JSON is a contract. The recommendation adds keys and changes none, so neither `schema_version` moves.
 
 - **`ascribe outline`:** the page gains `memos`, for memos about the page as a whole, and each heading gains `memos`, for memos about that section or a block in it. Each entry is `file`, `state` (`placed`, `outdated`), `quote` when it has one, `first_line` (the body's first line, cut as every line is), and `personal` when it's from `.ascribe/memos/`. A detached memo is about nothing on the page, so it isn't listed. The text output adds one line under the heading for each.
 - **`ascribe refs`:** a memo file is a place, with `use` `memo`, at its `about` line. A detached memo is listed under the target it names, as a link to a page that's gone is.
+
+**Decided: as recommended.** Both commands gain keys and change none, so neither contract's version moves. A detached memo is about nothing on a page, so `outline` doesn't list it, and `refs` does, under the target it names, which is where someone deleting that target looks. README decision 25.
 
 ### 6. Whether the memo folders can be moved
 
@@ -99,12 +109,14 @@ Both commands' JSON is a contract. The recommendation adds keys and changes none
 | **Fixed: `memos/` and `.ascribe/memos/`** (recommended) | One place to look in every project, for a person and for an agent. Moving it later is additive: a key with these defaults |
 | A key, `[project] memos-dir` | A team with a `memos/` folder already gets to choose. One more thing to configure, and every surface that says where memos are has to read it |
 
+**Decided: fixed, `memos/` and `.ascribe/memos/`.** One place to look, for a person and for an agent, in every project. A team with a `memos/` folder of its own has its `.md` files read as memos and reported, which the proposal already names as the one thing that breaks; a key with these two as defaults is additive if that ever matters. README decision 26.
+
 ## Tasks
 
-1. The maintainer reads the six and answers each.
-2. Record each answer in this file, under its heading, as **Decided:** with the reason, and in the README's decisions, numbered from 21.
-3. Record them in `project-docs/decisions/`, numbered by this plan's issue, as the repository does.
-4. Add to the proposal what the answers change in it.
+1. The maintainer reads the six and answers each. _Done,_ 15 October 2026: each recommendation is taken.
+2. Record each answer in this file, under its heading, as **Decided:** with the reason, and in the README's decisions, numbered from 21. _Done._
+3. Record them in `project-docs/decisions/`, numbered by this plan's issue, as the repository does. _Waits:_ the plan has no issue and no pull request yet, and a decision file is named by one of the two.
+4. Add to the proposal what the answers change in it. _Done:_ a container's raw lines, how a template's instructions are chosen, what `about` can name, and `memo-long`'s default.
 
 ## Out of scope
 

@@ -36,6 +36,8 @@ Decision 8 says it's the first paragraph as plain text. What's left is which par
 | Line breaks | One space, and whitespace runs one space |
 | A paragraph the build removes | The term has no definition in that build, and isn't linked in it (phase 3) |
 
+**Decided: as the table has it.** The first block of the section's own content, and it must be a paragraph, so a definition is always a sentence a hover can show; what's kept of it is what a reader reads, and what's dropped is what only a renderer sees. A paragraph a fragment brings in counts, since it's on the page. README decision 15.
+
 ### 2. A term that two glossary pages show
 
 A glossary split by product can keep shared terms in a fragment that each product's glossary page includes. Then one heading, one id, is on two pages.
@@ -47,6 +49,8 @@ A glossary split by product can keep shared terms in a fragment that each produc
 
 Two different headings with the same term text stay decision 9's error.
 
+**Decided: one term, linked to the first page in `pages` that the build publishes.** One source is one term, so it can't be the duplicate the error is for, and a glossary split by product needs its shared terms written once. The order of `pages` is already something a project writes, so it's the tie-break. README decision 16.
+
 ### 3. How `glossary-term-unused` is acknowledged
 
 The term is a section of a page now. Today the acknowledgement is `[[intended]] term = "<id>"` in `ascribe.toml`.
@@ -55,6 +59,8 @@ The term is a section of a page now. Today the acknowledgement is `[[intended]] 
 |---|---|
 | **`@intended` at the term's heading, and `term` leaves `[[intended]]`** (recommended) | The check reports at the heading, and a review check is acknowledged where it reports (SPEC §4.9). The reason sits beside the term it's about. `[[intended]]` keeps `phrase`, `feature`, and `image`, which have no page |
 | `[[intended]] term`, naming the heading's id | No change to `[[intended]]`. The reason for a term is in `ascribe.toml`, away from it, and renaming the heading's id has to rewrite it |
+
+**Decided: `@intended` at the term's heading, and `term` leaves `[[intended]]`.** A review check is acknowledged where it reports (SPEC §4.9), and the term reports at its heading. That takes one change to the language: `@intended` is a following-block directive, and a following-block directive can't bind a heading (SPEC §3.8), so it gains the binding `@available` has, heading-or-block: at the top of a section, under `@term` and `@id`, it acknowledges a check that reports at that heading, and nothing wider. The alternative, reporting at the definition's paragraph so today's binding serves, would point the message at the wrong line to keep the language still. `[[intended]]` keeps `phrase`, `feature`, and `image`, which have no page. README decision 17.
 
 ### 4. What `ascribe model` says about a term
 
@@ -66,6 +72,8 @@ The term is a section of a page now. Today the acknowledgement is `[[intended]] 
 | The definition for the editor's default build | Keeps `definition`. `ascribe model` is about the model, and this one key would depend on a build |
 
 `ascribe model` keeps listing terms at all because agents read it to learn a project's vocabulary.
+
+**Decided: the term's page and line, no definition, and `schema_version` goes to 3.** `ascribe model` describes the model and no build, and a definition is now a build's. `page` is the path from the content root, the form the audit's finding 13 settled for a page in JSON. Two keys removed is a contract change, so the version moves, as it did for `type` (decision #450). README decision 18.
 
 ### 5. The diagnostics' names and levels
 
@@ -81,6 +89,8 @@ The term is a section of a page now. Today the acknowledgement is `[[intended]] 
 
 **The limit.** The proposal settled that a definition's limit is `description-too-long`'s, "set the same way", and assumed that check had a `limit`. It doesn't: the limit is a constant, 300 characters. Recommended: keep one constant for both, as `description-too-long` has it, and add a `limit` to both at once if a project ever needs one. The alternative is to add `[checks.<name>] limit` to both now, which changes `description-too-long` in a plan about the glossary.
 
+**Decided: the names and levels in the table, and one constant for both limits.** `DESCRIPTION_LIMIT` serves `glossary-definition-long` as it serves `description-too-long`; a `limit` setting is added to both at once when a project asks, and not before, since this plan isn't the place to change the description check. `glossary-term-duplicate` takes a new code and ASC098's stays a gap, with ASC099 and ASC203, as decision #457a has it. README decision 19.
+
 ### 6. Where Ascribe's docs keep their glossary
 
 Decision 14 gives the docs a glossary page. The proposal said `reference/glossary.md`, and the docs have no `reference/` folder now: each folder is a feature (decision #452).
@@ -90,12 +100,14 @@ Decision 14 gives the docs a glossary page. The proposal said `reference/glossar
 | **`docs/content/glossary.md`, at the root** (recommended) | A glossary is about the whole product, as getting started is, and the root holds the pages that belong to no one feature. Its type is `reference` |
 | `docs/content/content-model/glossary.md` | Beside the glossary's reference. But a reader looking up "fragment" isn't looking for the content model |
 
+**Decided: `docs/content/glossary.md`, at the root, type `reference`.** The root holds what belongs to no one feature, as getting started does, and a glossary is about the whole product; a reader who follows "fragment" wants the word, not the content model's folder. README decision 20.
+
 ## Tasks
 
-1. The maintainer reads the six and answers each.
-2. Record each answer in this file, under its heading, as **Decided:** with the reason, and in the README's decisions, numbered from 15.
-3. Record them in `project-docs/decisions/`, numbered by this plan's issue, as the repository does.
-4. Add to the proposal what the answers change in it.
+1. The maintainer reads the six and answers each. _Done,_ 15 October 2026.
+2. Record each answer in this file, under its heading, as **Decided:** with the reason, and in the README's decisions, numbered from 15. _Done._
+3. Record them in `project-docs/decisions/`, numbered by this plan's issue, as the repository does. _Waits:_ the plan has no issue and no pull request yet, and a decision file is named by one of the two.
+4. Add to the proposal what the answers change in it. _Done:_ the acknowledgement, and the limit.
 
 ## Out of scope
 

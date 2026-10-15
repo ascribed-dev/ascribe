@@ -6,7 +6,7 @@ Part of [Glossary pages](README.md). Needs phase 3.
 
 A term goes to its section, `@term` completes, a misplaced one has a fix, and renaming a heading keeps everything that names its term.
 
-In VS Code, `F12` on "rollouts" in `getting-started.md` opens `reference/glossary.md` at "Rollout". Typing `@te` under a heading on a glossary page offers `@term`, and inside its braces `match=` offers `first`, `every`, and `marked`. On a page that isn't in `pages`, `@term` is underlined, and **Add this page to the glossary** lists it.
+In VS Code, `F12` on "rollouts" in `getting-started.md` opens `glossary.md` at "Rollout". Typing `@te` under a heading on a glossary page offers `@term`, and inside its braces `match=` offers `first`, `every`, and `marked`. On a page that isn't in `pages`, `@term` is underlined, and **Add this page to the glossary** lists it.
 
 ## Context
 

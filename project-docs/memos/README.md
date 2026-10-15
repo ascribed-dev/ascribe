@@ -51,7 +51,14 @@ From the proposal:
 19. **The memo in the page is built first.**
 20. **The word is "memo"** for both, decided by the maintainer on 11 October 2026.
 
-[Phase 1](phase-1-decisions.md) settles six more, each a contract a phase ships: how a container memo's contents are kept, which of a template's words become memos and what the check then reports, the diagnostics' names and levels, what `about` can name and how `quote` is matched, what `ascribe outline` and `ascribe refs` say about memo files, and whether the memo folders can be moved.
+From [phase 1](phase-1-decisions.md), which keeps the options each was chosen from:
+
+21. **A container memo's lines are raw.** The fork's scanner keeps the lines between `@memo:` and a line that's only `@end` at its indent as text, as a fenced code block's are, with the container's prefixes as they are. Nothing inside is a block, a directive, an inline, or a heading, so decision 5 holds by construction and `ascribe fmt` leaves the bytes alone. SPEC §3.5 says what a raw container is, and `FORK.md` lists the change.
+22. **A template's instructions are named in the conversion's rules,** a `memos` list for each template of the paragraphs said to the writer, each named by its text; the conversion writes each as a line memo, without the braces, and a rule that doesn't find its text stops the script. The check reports nothing of a memo that has the template's words. The rule that a quoted paragraph is an instruction goes.
+23. **The diagnostics:** `memo-invalid` (error, `write`), `memo-detached` (warning, `choose`), `memo-outdated` (advice, `write`), and `memo-long` (advice, `write`, `[checks.memo-long] limit`, 2,000 by default), each on the memo file at its `about` or `quote` line; and `html-comment` (advice, `review`), at the comment, acknowledged with `@intended`. An empty `@memo`, one with attributes, and one with nothing below it get the errors any directive gets.
+24. **`about` names anything `ascribe refs` can:** a page, a fragment, a heading, and `phrase:`, `feature:`, `term:`, `dimension:`, `note:`, and `widget:`. `quote` with a target that has no text is `memo-invalid`. A quote is matched against each block's source as written in the file `about` names, whitespace runs read as one space and case kept, the first block in source order wins, and a quote across two blocks isn't found. A heading in a fragment is named in the fragment.
+25. **`ascribe outline` gains `memos` on the page and on each heading,** each entry `file`, `state`, `quote`, `first_line`, and `personal`; a detached memo isn't listed there. **`ascribe refs` lists a memo file as a place** with `use` `memo`, at its `about` line, a detached one under the target it names. Keys are added and none change, so neither `schema_version` moves.
+26. **The folders are fixed:** `memos/` and `.ascribe/memos/`. A key with those defaults is additive if a project ever needs to move them.
 
 ## The thread
 

@@ -15,7 +15,7 @@ An empty definition, a long one, and a term off a glossary page are each reporte
 
 ```console
 $ ascribe check
-reference/glossary.md:12:1: error[glossary-definition-missing]: the term "Region" has no definition: its section doesn't start with a paragraph
+glossary.md:12:1: error[glossary-definition-missing]: the term "Region" has no definition: its section doesn't start with a paragraph
 ```
 
 ## Context
@@ -31,6 +31,7 @@ reference/glossary.md:12:1: error[glossary-definition-missing]: the term "Region
 ### The three checks
 
 - **`glossary-definition-missing`:** a term whose section doesn't start with a paragraph, by phase 1's decision 1. At the heading. An error, since there's nothing for a link's title or a hover.
+- **`@intended` at a heading** (README decision 17): the directive gains `@available`'s heading-or-block binding, in SPEC §4.9 and the schema, so that at the top of a section it acknowledges a check that reports at that heading. `glossary-term-unused` reports there, and `term` leaves `[[intended]]`, with its conformance cases.
 - **`glossary-definition-long`:** a definition, as derived for a build, over the limit phase 1's decision 5 settles. Advice, configurable in level as every advice is. Counted for each build and reported once, naming the builds where it's over. The fix paragraph says to end the first paragraph after the definition and put the rest in a second.
 - **`term-off-glossary-page`:** `@term` on a page that isn't in `pages`. At the directive. Its fix adds the page to `pages`, in `ascribe.toml`, keeping its comments and order.
 
