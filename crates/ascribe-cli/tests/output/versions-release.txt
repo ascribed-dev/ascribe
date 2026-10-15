@@ -5,6 +5,8 @@ What a reader sees changes in:
   the file the lines share: 1 file changed
   site's plain output: 1 file changed
   site's site output: 1 file changed
-  site@3.5's plain output: 6 files added
-  site@3.5's site output: 10 files added
+  site@3.4's plain output: 1 file changed
+  site@3.4's site output: 1 file changed
+  site@3.5's plain output: 8 files added
+  site@3.5's site output: 12 files added
 Dry run: nothing written. It would write ascribe.toml and 1 file under docs.
