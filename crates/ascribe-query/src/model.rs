@@ -36,6 +36,8 @@ pub enum Section {
     Glossary,
     /// Project widgets.
     Widgets,
+    /// Release lines: each target's, with its status.
+    Releases,
     /// Builds.
     Builds,
     /// Sources.
@@ -44,13 +46,14 @@ pub enum Section {
 
 impl Section {
     /// Every section, in the order answers list them.
-    pub const ALL: [Section; 8] = [
+    pub const ALL: [Section; 9] = [
         Section::Types,
         Section::Dimensions,
         Section::Phrases,
         Section::Features,
         Section::Glossary,
         Section::Widgets,
+        Section::Releases,
         Section::Builds,
         Section::Sources,
     ];
@@ -64,6 +67,7 @@ impl Section {
             Section::Features => "features",
             Section::Glossary => "glossary",
             Section::Widgets => "widgets",
+            Section::Releases => "releases",
             Section::Builds => "builds",
             Section::Sources => "sources",
         }
@@ -77,6 +81,7 @@ impl Section {
             Section::Features => "Features",
             Section::Glossary => "Glossary",
             Section::Widgets => "Widgets",
+            Section::Releases => "Releases",
             Section::Builds => "Builds",
             Section::Sources => "Sources",
         }
@@ -112,7 +117,12 @@ pub struct ModelReport {
     /// Project widgets, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub widgets: Option<Vec<ModelWidget>>,
-    /// Builds, in declaration order.
+    /// `[releases.<target>]`, in declaration order: each target's lines,
+    /// with their status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub releases: Option<Vec<ModelReleases>>,
+    /// Builds, in declaration order, a versioned build as one for each live
+    /// line, the current line first.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub builds: Option<Vec<ModelBuild>>,
     /// Sources, in declaration order.
@@ -281,6 +291,36 @@ pub struct ModelBuild {
     pub availability: String,
     /// Whether it's the build the editor checks (`[editor] build`).
     pub editor: bool,
+    /// For a line of a versioned build, the target it's versioned by.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub versions: Option<String>,
+    /// For a line of a versioned build, the line, as `[releases.<target>]`
+    /// writes it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line: Option<String>,
+}
+
+/// A target's release lines.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelReleases {
+    /// The target: a versioned dimension value.
+    pub target: String,
+    /// Its lines, newest first: planned, live, then archived.
+    pub lines: Vec<ModelLine>,
+}
+
+/// A release line.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelLine {
+    /// The line, as the list writes it.
+    pub line: String,
+    /// `current`, `live`, `planned`, or `archived`.
+    pub status: &'static str,
+    /// The builds that are this line, one for each build versioned by the
+    /// target: `site@3.4`, or `site` for the current line.
+    pub builds: Vec<String>,
 }
 
 /// A source: a folder of files, such as code, that pages can show.
@@ -403,6 +443,7 @@ pub fn model(
                 .collect()
         }),
         widgets: wants(Section::Widgets).map(|()| widgets(model)),
+        releases: wants(Section::Releases).map(|()| releases(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
         sources: wants(Section::Sources).map(|()| sources(model, fs)),
     }
@@ -614,6 +655,37 @@ fn builds(model: &ContentModel) -> Vec<ModelBuild> {
                 },
             },
             editor: b.name == model.editor_build,
+            versions: b.line.as_ref().and(b.versions.clone()),
+            line: b.line.as_ref().map(|l| l.line.text.clone()),
+        })
+        .collect()
+}
+
+fn releases(model: &ContentModel) -> Vec<ModelReleases> {
+    model
+        .releases
+        .iter()
+        .map(|releases| ModelReleases {
+            target: releases.target.clone(),
+            lines: releases
+                .lines()
+                .into_iter()
+                .map(|(line, status)| ModelLine {
+                    line: line.text.clone(),
+                    status: status.as_str(),
+                    builds: model
+                        .builds
+                        .iter()
+                        .filter(|b| {
+                            b.versions.as_deref() == Some(releases.target.as_str())
+                                && b.line
+                                    .as_ref()
+                                    .is_some_and(|l| l.line.components == line.components)
+                        })
+                        .map(|b| b.name.clone())
+                        .collect(),
+                })
+                .collect(),
         })
         .collect()
 }
@@ -766,14 +838,38 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
             })
             .collect(),
         Section::Widgets => report.widgets.iter().flatten().map(widget_line).collect(),
+        Section::Releases => report
+            .releases
+            .iter()
+            .flatten()
+            .map(|r| {
+                let lines: Vec<String> = r
+                    .lines
+                    .iter()
+                    .map(|l| {
+                        let builds: Vec<String> = l.builds.iter().map(|b| code(b)).collect();
+                        if builds.is_empty() {
+                            format!("{} ({})", l.line, l.status)
+                        } else {
+                            format!("{} ({}, {})", l.line, l.status, builds.join(", "))
+                        }
+                    })
+                    .collect();
+                format!("{}: {}", code(&r.target), lines.join("; "))
+            })
+            .collect(),
         Section::Builds => report
             .builds
             .iter()
             .flatten()
             .map(|b| {
                 let editor = if b.editor { ", the editor's build" } else { "" };
+                let line = match (&b.line, &b.versions) {
+                    (Some(line), Some(target)) => format!(", line {line} of {}", code(target)),
+                    _ => String::new(),
+                };
                 format!(
-                    "{}{editor}: variants {}, availability {}",
+                    "{}{editor}: variants {}, availability {}{line}",
                     code(&b.name),
                     b.variants,
                     b.availability

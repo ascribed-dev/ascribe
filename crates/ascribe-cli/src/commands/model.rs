@@ -52,6 +52,8 @@ pub enum Section {
     Glossary,
     /// Project widgets, with their attributes.
     Widgets,
+    /// Release lines, each target's with its status and the builds that are it.
+    Releases,
     /// Builds, with their variant and availability modes.
     Builds,
     /// Sources, with their folders and the files they make readable.
@@ -67,6 +69,7 @@ impl Section {
             Section::Features => QuerySection::Features,
             Section::Glossary => QuerySection::Glossary,
             Section::Widgets => QuerySection::Widgets,
+            Section::Releases => QuerySection::Releases,
             Section::Builds => QuerySection::Builds,
             Section::Sources => QuerySection::Sources,
         }

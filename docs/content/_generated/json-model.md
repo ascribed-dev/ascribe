@@ -62,6 +62,13 @@
           "description": "Whether it's the build the editor checks (`[editor] build`).",
           "type": "boolean"
         },
+        "line": {
+          "description": "For a line of a versioned build, the line, as `[releases.<target>]`\nwrites it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "name": {
           "description": "Its name.",
           "type": "string"
@@ -69,6 +76,13 @@
         "variants": {
           "description": "Which variant arms it keeps: `switch` for all of them, or the\nselection, such as `deployment=cloud`.",
           "type": "string"
+        },
+        "versions": {
+          "description": "For a line of a versioned build, the target it's versioned by.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -225,6 +239,32 @@
       ],
       "type": "object"
     },
+    "ModelLine": {
+      "description": "A release line.",
+      "properties": {
+        "builds": {
+          "description": "The builds that are this line, one for each build versioned by the\ntarget: `site@3.4`, or `site` for the current line.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "line": {
+          "description": "The line, as the list writes it.",
+          "type": "string"
+        },
+        "status": {
+          "description": "`current`, `live`, `planned`, or `archived`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "line",
+        "status",
+        "builds"
+      ],
+      "type": "object"
+    },
     "ModelObservation": {
       "description": "An observation of a source's examples.",
       "properties": {
@@ -278,6 +318,27 @@
       "required": [
         "key",
         "value"
+      ],
+      "type": "object"
+    },
+    "ModelReleases": {
+      "description": "A target's release lines.",
+      "properties": {
+        "lines": {
+          "description": "Its lines, newest first: planned, live, then archived.",
+          "items": {
+            "$ref": "#/$defs/ModelLine"
+          },
+          "type": "array"
+        },
+        "target": {
+          "description": "The target: a versioned dimension value.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "lines"
       ],
       "type": "object"
     },
@@ -485,7 +546,7 @@
       "type": "string"
     },
     "builds": {
-      "description": "Builds, in declaration order.",
+      "description": "Builds, in declaration order, a versioned build as one for each live\nline, the current line first.",
       "items": {
         "$ref": "#/$defs/ModelBuild"
       },
@@ -528,6 +589,16 @@
       "description": "Phrases, in declaration order.",
       "items": {
         "$ref": "#/$defs/ModelPhrase"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "releases": {
+      "description": "`[releases.<target>]`, in declaration order: each target's lines,\nwith their status.",
+      "items": {
+        "$ref": "#/$defs/ModelReleases"
       },
       "type": [
         "array",
