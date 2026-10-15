@@ -538,6 +538,19 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 
 **Read more:** [Availability specs](../writing/directives.md#availability-specs) in the directive reference.
 
+### ASC210 `available-version-ahead`
+@id {permalink=true}: ASC210
+
+Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** Version newer than every release line its target declares.
+
+**Message:** `{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}`
+
+**Fix:** Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work whose number isn't known yet is marked with a feature, such as `next`, that names the planned line.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
 ## `@steps`
 
 ### ASC033 `steps-not-ordered-list`

@@ -47,27 +47,27 @@ values = ["npm", "pnpm"]
 
 # What follows are copies of ../../docs/ascribe.toml's, so a claim here is
 # marked as the docs mark it. scripts/docs-site/facts.test.ts fails until
-# each agrees with the docs': the release dimension, the versions, the
-# unreleased lifecycle and the `next` feature, the `version` and `site`
+# each agrees with the docs': the release dimension, the releases and their
+# planned label, the `next` feature, the `version` and `site`
 # phrases, the sources, and `[consumer]`'s `site`, `trailing-slash`, and `permalink-path`.
 [dimensions.release]
 label = "Ascribe"
 values = ["ascribe"]
 labels = { ascribe = "Ascribe" }
 
-[versions]
-current = "0.3.1"
+[releases]
+planned-label = "in main, not yet released"
 
-[lifecycle.unreleased]
-available = true
-label = "in main, not yet released"
+[releases.ascribe]
+live = ["0.3.1"]
+planned = ["0.4.0"]
 
 [features.next]
 name = "In main, not yet released"
-available = "ascribe unreleased"
+available = "ascribe 0.4.0"
 
 [phrases]
-version = "0.3.1"
+version = { line = "ascribe" }
 # `[consumer] site`, for links into the docs, which are another project: a
 # link that starts with `/` names a file in this one. Write a docs page by its
 # permalink, `{site}/go/<name>/`; the site's tests check each name.

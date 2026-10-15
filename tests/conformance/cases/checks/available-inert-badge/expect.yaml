@@ -1,0 +1,8 @@
+description: >-
+  A badge build that isn't versioned shows every mark's versions, and
+  publishes content no line has, so with one, no mark is reported as doing
+  nothing, as in a project with one site.
+spec: ["4.4", "9.3"]
+tags: [check]
+
+diagnostics: []

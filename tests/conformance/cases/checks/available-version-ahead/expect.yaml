@@ -1,0 +1,14 @@
+description: >-
+  With `[releases]`, a version newer than every line its target declares is
+  an error, in a page's mark, in a feature, and in a build's filter, with
+  the newest line offered as a fix where the version has a span of its own.
+  A version in a live or planned line isn't, nor is one shorter than the
+  lines that some line follows.
+spec: ["4.4", "7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-version-ahead, file: ascribe.toml, line: 19, column: 35}
+  - {slug: available-version-ahead, file: ascribe.toml, line: 29, column: 27}
+  - {slug: available-version-ahead, file: index.md, line: 6, column: 26}
+  - {slug: available-version-ahead, file: index.md, line: 9, column: 50}

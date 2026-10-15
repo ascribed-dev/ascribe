@@ -454,9 +454,8 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
   }
 }
 
-/* Unreleased features are this site's one lifecycle state. */
-ascribe-availability-target[states="unreleased"],
-ascribe-availability-target[states$=" unreleased"] {
+/* What's in main and not yet released: the planned line, in preview's colors. */
+ascribe-availability-target[planned] {
   --_color: var(--ascribe-state-preview-color);
   --_background: var(--ascribe-state-preview-background);
 }
@@ -1778,6 +1777,15 @@ ascribe-availability-target[states="removed"],
 ascribe-availability-target[states$=" removed"] {
   --_color: var(--ascribe-state-removed-color);
   --_background: var(--ascribe-state-removed-background);
+}
+
+/* A planned version (`[releases]`): the badge of no state, with a dashed
+   outline, whatever the state it's planned in. */
+ascribe-availability-target[planned] {
+  --_color: var(--ascribe-state-color);
+  --_background: var(--ascribe-state-background);
+  outline: 1px dashed currentColor;
+  outline-offset: -1px;
 }
 
 /* <ascribe-group> --------------------------------------------------------- */

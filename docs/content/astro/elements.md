@@ -82,7 +82,7 @@ ascribe-availability-target[states$=" sunset"] {
 
 `states` lists a target's states in order, and the last one styles the badge, so match it as a whole word, as above: `[states="x"], [states$=" x"]`. A bare `[states$="x"]` would also match a state named `pre-x`. A type or a state the library doesn't style gets the default: the `note` type's colors, or the neutral badge's, `--ascribe-state-color` and `--ascribe-state-background`.
 
-The colors can come from the library's own properties, so a project's state looks like one of Ascribe's in both schemes: this site gives its `unreleased` state the colors of `preview`, with `--_color: var(--ascribe-state-preview-color)` and `--_background: var(--ascribe-state-preview-background)`.
+The colors can come from the library's own properties, so a project's state looks like one of Ascribe's in both schemes: this site gives a planned version, `[planned]`, the colors of `preview`, with `--_color: var(--ascribe-state-preview-color)` and `--_background: var(--ascribe-state-preview-background)`.
 
 ## Generated text
 

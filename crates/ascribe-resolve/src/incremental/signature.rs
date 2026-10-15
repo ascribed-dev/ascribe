@@ -160,8 +160,8 @@ impl Fingerprints {
             fragments,
             dimensions,
             version_scheme,
-            current_version,
             releases,
+            planned_label,
             lifecycle,
             features,
             notes,
@@ -201,7 +201,7 @@ impl Fingerprints {
                 (&t.name, t.implicit, fields)
             })
             .collect();
-        // Where a phrase, a feature, a glossary term, or the current release
+        // Where a phrase, a feature, a glossary term, or a release line
         // is declared is read only by the diagnostics of `ascribe.toml`.
         let phrase_values: Vec<_> = phrases.iter().map(|p| (&p.key, &p.value)).collect();
         let feature_specs: Vec<_> = features
@@ -223,17 +223,26 @@ impl Fingerprints {
             .map(|p| p.span)
             .chain(features.iter().map(|f| f.span))
             .chain(glossary.terms.iter().map(|t| t.span))
-            .chain(current_version.iter().map(|v| v.span))
-            .chain(releases.iter().flat_map(|r| r.live.iter().map(|l| l.span)))
+            .chain(releases.iter().flat_map(|r| {
+                r.lines()
+                    .into_iter()
+                    .map(|(l, _)| l.span)
+                    .chain(r.ends.iter().map(|e| e.line.span))
+            }))
             .collect();
         let lines: Vec<_> = releases
             .iter()
             .map(|r| {
-                let live: Vec<_> = r.live.iter().map(|l| (&l.text, &l.components)).collect();
-                (&r.target, live)
+                let lines: Vec<_> = r
+                    .lines()
+                    .into_iter()
+                    .map(|(l, status)| (&l.text, &l.components, status))
+                    .collect();
+                let ends: Vec<_> = r.ends.iter().map(|e| (&e.line.text, e.date)).collect();
+                let archived: Vec<_> = r.archived.iter().map(|a| (&a.url, a.ended)).collect();
+                (&r.target, lines, ends, archived)
             })
             .collect();
-        let current = current_version.as_ref().map(|v| &v.components);
         let index = hash_of(&format!(
             "{parse}{:?}",
             (
@@ -249,7 +258,7 @@ impl Fingerprints {
             (
                 (spec, project, types, fragments, dimensions),
                 (
-                    (version_scheme, current, lines),
+                    (version_scheme, planned_label, lines),
                     lifecycle,
                     feature_specs,
                     notes,

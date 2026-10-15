@@ -162,11 +162,25 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 4] = [
 const FIRST_ON_PAGES: &str = "Links";
 
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
-/// has the value that file has.
+/// has the value that file has. The `version` phrase is `[releases.ascribe]`'s
+/// current line, so the line is what's compared.
 #[test]
 fn the_docs_phrases_match_their_sources() {
-    let docs: toml::Table = read("docs/ascribe.toml").parse().unwrap();
-    let phrase = |key: &str| docs["phrases"][key].as_str().unwrap().to_owned();
+    let text = read("docs/ascribe.toml");
+    let docs: toml::Table = text.parse().unwrap();
+    assert!(
+        docs["phrases"]["version"].get("line").is_some(),
+        "the phrase `version` in docs/ascribe.toml is a line, `{{ line = \"ascribe\" }}`"
+    );
+    let model = ascribe_model::load_str(&text, ascribe_core::FileId::new(0)).unwrap();
+    let phrase = |key: &str| {
+        model
+            .phrases
+            .iter()
+            .find(|p| p.key == key)
+            .map(|p| p.value.clone())
+            .unwrap()
+    };
     let mut wrong = Vec::new();
     let mut compare = |key: &str, file: &str, value: &str| {
         if phrase(key) != value {

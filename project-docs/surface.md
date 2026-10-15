@@ -78,7 +78,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
 | `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
-| `[versions]` | How versions in availability specs are compared (SPEC §4.4), and which release is current. | §7 |
+| `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §7 |
 | `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §8 |
 | `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §9 |
 | `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §10 |
@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-202 in all. By severity: 32 advice, 147 error, 23 warning. By level: 183 file, 19 page. By kind of next step: 45 choose, 13 fix, 7 outside, 11 review, 126 write.
+211 in all. By severity: 35 advice, 152 error, 24 warning. By level: 192 file, 19 page. By kind of next step: 49 choose, 13 fix, 7 outside, 11 review, 131 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -270,7 +270,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC169` | `link-external-moved` | advice | choose | `{url}` moved permanently to `{to}`; link to the new address |
 | `ASC170` | `delivery-hosting` | advice | outside | the site fails the delivery spec's `{check}` check: {result}. {setting} |
 | `ASC171` | `delivery-output` | advice | outside | the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues} |
-| `ASC172` | `availability-left-behind` | advice | review | feature `{key}` names releases up to {version}, and the current release is {current}, so what it marks has shipped |
+| `ASC172` | `availability-left-behind` | advice | review | feature `{key}` names releases up to {version}, and the current line of `{target}` is {current}, so what it marks has shipped |
 | `ASC173` | `permalink-duplicate` | error | write | the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only |
 | `ASC174` | `model-consumer-permalink-path` | error | write | permalink-path must start with "/", such as "/go/" |
 | `ASC175` | `permalinks-list-invalid` | error | write | ascribe.permalinks can't be read: {detail} |
@@ -305,6 +305,15 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` isn't a declared dimension value |
 | `ASC205` | `model-releases-line` | error | write | `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts |
 | `ASC206` | `model-build-versions` | error | write | build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = ["3.4"]` |
+| `ASC207` | `model-releases-order` | error | write | `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}` |
+| `ASC208` | `model-releases-ends` | error | choose | `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live} |
+| `ASC209` | `model-versions-current` | error | write | `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live` |
+| `ASC210` | `available-version-ahead` | error | choose | `{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}` |
+| `ASC211` | `available-line-undeclared` | advice | choose | `{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}` |
+| `ASC212` | `available-same-in-every-line` | advice | write | `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}` |
+| `ASC213` | `available-in-no-line` | warning | write | `{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it |
+| `ASC214` | `release-line-ended` | advice | write | support for `{target}` {line} ended on {date}, and the line is still live |
+| `ASC215` | `model-phrase-line` | error | choose | phrase `{key}` is the line of `{target}`, which has no live line in `[releases]` |
 
 ## The VS Code extension
 

@@ -52,9 +52,8 @@
   }
 }
 
-/* Unreleased features are this site's one lifecycle state. */
-ascribe-availability-target[states="unreleased"],
-ascribe-availability-target[states$=" unreleased"] {
+/* What's in main and not yet released: the planned line, in preview's colors. */
+ascribe-availability-target[planned] {
   --_color: var(--ascribe-state-preview-color);
   --_background: var(--ascribe-state-preview-background);
 }

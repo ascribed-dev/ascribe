@@ -207,13 +207,13 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
-**When:** `[versions] current` is set, and a feature's availability names a version for every target, none of them later than the current release.
+**When:** A feature's availability names a version for every target, each target lists its lines in `[releases]`, and no version is later than its target's current line.
 
-**Message:** feature `{key}` names releases up to \{version}, and the current release is \{current}, so what it marks has shipped
+**Message:** feature `{key}` names releases up to \{version}, and the current line of `{target}` is \{current}, so what it marks has shipped
 
-**Fix:** When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the release after it, or at a state such as `unreleased`. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements). After each release, move [`[versions] current`](../content-model/content.md#7-versions) to it.
+**Fix:** When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the next planned line. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](../content-model/content.md#71-releasestarget).
 
-**Read more:** [`[versions]`](../content-model/content.md#7-versions) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC191 `description-duplicate`
 @id {permalink=true}: ASC191
@@ -227,6 +227,58 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
 
 **Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
+
+### ASC211 `available-line-undeclared`
+@id {permalink=true}: ASC211
+
+Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** A version is in a line between two of its target's declared lines, and that line isn't declared.
+
+**Message:** `{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}`
+
+**Fix:** Declare the line in `[releases.<target>]`, in the list where it falls: `live` for a line readers are on, `planned` for one newer than every live line that hasn't shipped, or, for one older than every live line that shipped and that nothing publishes now, `archived` with no address, as `"3.3" = {}`. Or correct the number to a declared line, such as the one either side of it.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
+### ASC212 `available-same-in-every-line`
+@id {permalink=true}: ASC212
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** Every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and every version the mark names for the target is at or before the oldest live line, so no output shows it.
+
+**Message:** `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`
+
+**Fix:** Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so nothing a reader sees changes.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
+### ASC213 `available-in-no-line`
+@id {permalink=true}: ASC213
+
+Warning · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** Every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and the content is in no live or planned line of the target.
+
+**Message:** `{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it
+
+**Fix:** Remove the content, which no line's output publishes, or, if a line still has it, correct the mark. A mark that makes content unavailable from a version before the oldest live line, such as `self-managed (ga 3.0, removed 3.2)` with 3.4 the oldest, leaves it in no line.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
+### ASC214 `release-line-ended`
+@id {permalink=true}: ASC214
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A live line's date in `[releases.<target>.ends]` is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
+
+**Message:** support for `{target}` \{line} ended on \{date}, and the line is still live
+
+**Fix:** Move the line from `live` to `archived` in `[releases.<target>]`, with its date as `ended` and, when it's still readable somewhere, its `url`; or, if its support goes on, change its date in `ends`.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
 ## Outputs
 

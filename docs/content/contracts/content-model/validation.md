@@ -83,7 +83,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-glossary-duplicate-term` | No two terms or aliases are the same text, ignoring case when either is case-insensitive. | `` "{text}" is declared by both glossary terms `{a}` and `{b}` `` |
 | `model-glossary-link` | A term's `link` file exists under the content root and isn't a fragment. | `` glossary term `{id}` links to {path}, which doesn't exist ``<br>`` glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which MUST be a version, by `model-wrong-type`. Image attribute types are covered by the rules in §24.3.
+`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. Image attribute types are covered by the rules in §24.3.
 
 ### 24.6 Widgets
 

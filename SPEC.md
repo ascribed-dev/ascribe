@@ -814,12 +814,12 @@ A content model declares the following.
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
-| Versions | How versions are compared, and optionally which release is current | §4.4 |
-| Releases | For a versioned target, its release lines that are live. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line | §9.3 |
+| Versions | How versions are compared | §4.4 |
+| Releases | For a versioned target, its release lines: those that are live, those planned, each newer than every live line, and those archived, each older; when a live line's support ends; and the label of a planned version. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line. A version in a planned line is planned | §4.4, §9.3, §9.4 |
 | Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
-| Phrases registry | Phrase keys and values | §5.1 |
+| Phrases registry | Phrase keys and values. A value is text, or a versioned target whose release line it is: the line a line's output is for, and the current line elsewhere | §5.1 |
 | Glossary | Terms, definitions, and matching settings | §5.4 |
 | Image attributes | Accepted image attribute keys and types | §5.3 |
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
@@ -990,6 +990,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@available` | History out of chronological order | Error |
 | `@available` | Versions given for a versionless target | Error |
 | `@available` | Spec exceeds its enclosing scope | Error |
+| `@available` | Version newer than every release line its target declares | Error |
 | `@steps` | Bound block isn't an ordered list | Error |
 | `@details` | Missing title | Error |
 | `@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>` | Error |
@@ -1148,7 +1149,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A page begins with its title as a level-1 heading, then its page-level availability line, if it has one. Its other frontmatter isn't included.
 - Raw HTML in the source keeps its text and loses its tags, so `<kbd>Ctrl</kbd>` becomes `Ctrl`. Comments, and the contents of `<script>` and `<style>`, are dropped.
 - An inline `<br>` becomes a hard line break, or `; ` where the text stays on one line (a table cell or a heading), so code spans either side of it stay apart. A line break in the source right after a `<br>` is the same line break, and nothing is added for a `<br>` at the start or end of a paragraph, cell, or heading.
-- An availability line gives each target's label, then its state and the version it begins at, as in the element library (§9.7): `Self-managed (preview, 3.4+)`, `Self-managed (GA, 3.3+)`, or, for a history, `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)`. Targets are separated by `; `.
+- An availability line gives each target's label, then its state and the version it begins at, as in the element library (§9.7): `Self-managed (preview, 3.4+)`, `Self-managed (GA, 3.3+)`, or, for a history, `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)`. A target whose last version is in a planned release line (§7.2) gives the content model's planned label in place of that version's state, and no `+`: `Self-managed (planned, 3.6)`. Targets are separated by `; `.
 - A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
 - A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.
 - Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.

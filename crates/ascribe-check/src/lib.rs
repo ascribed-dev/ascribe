@@ -49,6 +49,7 @@ mod project;
 pub mod prompt;
 pub mod prose;
 pub mod registry;
+mod releases;
 mod scope;
 pub mod site;
 pub mod tool;
