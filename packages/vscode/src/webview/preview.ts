@@ -194,6 +194,7 @@ function showAvailability(targets: AvailabilityTarget[]): void {
     if (item.versions && item.versions.length > 0) {
       element.setAttribute("versions", item.versions.join(" "));
     }
+    if (item.planned) element.setAttribute("planned", "");
     element.textContent = item.text;
     wrapper.append(element);
   });

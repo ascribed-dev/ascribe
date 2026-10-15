@@ -71,6 +71,11 @@ pub fn removal_detail(model: &ContentModel, build: &Build, removed: &Removed) ->
 /// One target of an availability spec as a person reads it: its label, and in
 /// parentheses its state and version (`Self-managed (preview, 3.4+)`). The
 /// text of a `<ascribe-availability-target>` (element contract §4).
+///
+/// A target whose last version is in a planned line (`[releases]`) reads
+/// the planned label in place of that version's state, and the version
+/// without `+`: `Self-managed (planned, 3.6)`, or `Self-managed (preview
+/// 3.3, planned 3.6)` for a history.
 pub fn availability_target_text(model: &ContentModel, entry: &Entry) -> String {
     let ga = model
         .lifecycle_state("ga")
@@ -85,8 +90,13 @@ pub fn availability_target_text(model: &ContentModel, entry: &Entry) -> String {
         .value_label(target)
         .or_else(|| model.dimension(target).map(|d| d.label.as_str()))
         .unwrap_or(target);
+    let planned = model.planned_label.as_str();
     let detail = match &entry.detail {
         Detail::None => ga.to_owned(),
+        Detail::Version(v)
+        | Detail::State {
+            version: Some(v), ..
+        } if is_planned(model, entry) => format!("{planned}, {}", v.text),
         Detail::Version(v) => format!("{ga}, {}+", v.text),
         Detail::State {
             state: s,
@@ -96,13 +106,44 @@ pub fn availability_target_text(model: &ContentModel, entry: &Entry) -> String {
             state: s,
             version: Some(v),
         } => format!("{}, {}+", state(&s.text), v.text),
-        Detail::History(steps) => steps
-            .iter()
-            .map(|step| format!("{} {}", state(&step.state.text), step.version.text))
-            .collect::<Vec<_>>()
-            .join(", "),
+        Detail::History(steps) => {
+            let last = steps.len().saturating_sub(1);
+            let planned_last = is_planned(model, entry);
+            steps
+                .iter()
+                .enumerate()
+                .map(|(i, step)| {
+                    let shown = if i == last && planned_last {
+                        planned.to_owned()
+                    } else {
+                        state(&step.state.text)
+                    };
+                    format!("{shown} {}", step.version.text)
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
     };
     format!("{label} ({detail})")
+}
+
+/// Whether an entry is planned: its target lists its lines in
+/// `[releases]`, and the last version it names is in a planned line.
+pub fn is_planned(model: &ContentModel, entry: &Entry) -> bool {
+    let last = match &entry.detail {
+        Detail::Version(v)
+        | Detail::State {
+            version: Some(v), ..
+        } => v,
+        Detail::History(steps) => match steps.last() {
+            Some(step) => &step.version,
+            None => return false,
+        },
+        Detail::None | Detail::State { version: None, .. } => return false,
+    };
+    model
+        .releases_of(&entry.target.text)
+        .is_some_and(|r| r.is_planned(last))
 }
 
 /// [`availability_display`] for a spec written as text, such as an

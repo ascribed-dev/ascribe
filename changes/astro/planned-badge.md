@@ -1,0 +1,1 @@
+- **A planned version has a badge of its own.** The element library styles an `<ascribe-availability-target planned>` as the badge of no state with a dashed outline, and `Availability.astro` and the generated Zod schema carry a page's `planned` targets. See [the element contract](packages/elements/CONTRACT.md).

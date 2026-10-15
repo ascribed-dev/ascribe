@@ -448,3 +448,73 @@ fn a_rows_availability_ends_its_first_cell() {
         "{cloud}"
     );
 }
+
+/// A version in a planned line of `[releases]` reads "planned" the same way
+/// in the site output's element and frontmatter, the plain output, and the
+/// JSON output, and stops when the line moves to `live`.
+#[test]
+fn a_planned_version_says_so_in_every_output() {
+    let body = "@available: cloud, self-managed preview 3.6\nSoon.\n\n\
+                @available: self-managed (preview 3.5, ga 3.6.1)\nLater.\n";
+    let source = format!("---\ntitle: Test\navailable: self-managed 3.6\n---\n\n{body}");
+    let project = memory_project(FULL_MODEL, &[("index.md", &source)]);
+
+    let out = site(&project, "site", "index.md");
+    assert!(
+        out.contains("- target: self-managed\n  dimension: deployment\n  states:\n  - ga\n  versions:\n  - '3.6'\n  planned: true\n  text: Self-managed (planned, 3.6)\n"),
+        "{out}"
+    );
+    assert!(
+        out.contains(r#"<ascribe-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.6" planned="">Self-managed (planned, 3.6)</ascribe-availability-target>"#),
+        "{out}"
+    );
+    assert!(
+        out.contains(
+            r#"versions="3.5 3.6.1" planned="">Self-managed (preview 3.5, planned 3.6.1)<"#
+        ),
+        "{out}"
+    );
+    // Cloud has no versions, so it's never planned.
+    assert!(out.contains(r#"states="ga">Quill Cloud (GA)<"#), "{out}");
+
+    let out = support::plain(&project, "site", "index.md");
+    assert!(
+        out.starts_with("# Test\n\nAvailable: Self-managed (planned, 3.6)\n\n"),
+        "{out}"
+    );
+    assert!(
+        out.contains("Available: Quill Cloud (GA); Self-managed (planned, 3.6)\n\nSoon."),
+        "{out}"
+    );
+
+    let out = support::emit_build(
+        std::path::Path::new("/nowhere"),
+        &project,
+        "site",
+        &ascribe_emit::JsonEmitter,
+    );
+    let doc: serde_json::Value = serde_json::from_str(&out["index.json"]).expect("JSON");
+    let targets = &doc["availability"]["targets"];
+    assert_eq!(targets[0]["target"], "self-managed");
+    assert_eq!(targets[0]["planned"], true);
+    assert_eq!(targets[0]["text"], "Self-managed (planned, 3.6)");
+
+    // Shipped: the same source, with 3.6 live.
+    let shipped = FULL_MODEL.replace(
+        "live = [\"3.4\", \"3.5\"]\nplanned = [\"3.6\"]",
+        "live = [\"3.4\", \"3.5\", \"3.6\"]",
+    );
+    assert_ne!(shipped, FULL_MODEL);
+    let project = memory_project(&shipped, &[("index.md", &source)]);
+    let out = site(&project, "site", "index.md");
+    assert!(!out.contains("planned"), "{out}");
+    assert!(out.contains("Self-managed (GA, 3.6+)"), "{out}");
+    let out = support::emit_build(
+        std::path::Path::new("/nowhere"),
+        &project,
+        "site",
+        &ascribe_emit::JsonEmitter,
+    );
+    let doc: serde_json::Value = serde_json::from_str(&out["index.json"]).expect("JSON");
+    assert!(doc["availability"]["targets"][0].get("planned").is_none());
+}

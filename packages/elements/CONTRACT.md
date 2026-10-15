@@ -151,7 +151,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 - `section`: directly after the section's heading, as the next block.
 - `block`: directly before the block it annotates, where the `@available` line was.
 - `row`: at the end of the row's first cell, after a space (or alone in an empty cell), all on one line: inside a table cell the element has no line breaks.
-- `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6): `available` is a list with one entry per target, in the spec's order and with feature keys resolved, each holding this element's attributes and its text: `{ target, dimension, states: [...], versions: [...], text }`, with `versions` left out as the attribute is. A layout that shows it renders this element with `scope="page"`, one `<ascribe-availability-target>` per entry, joining `states` and `versions` with single spaces.
+- `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6): `available` is a list with one entry per target, in the spec's order and with feature keys resolved, each holding this element's attributes and its text: `{ target, dimension, states: [...], versions: [...], planned: true, text }`, with `versions` and `planned` left out as the attributes are. A layout that shows it renders this element with `scope="page"`, one `<ascribe-availability-target>` per entry, joining `states` and `versions` with single spaces, and with `planned` when the entry's is `true`.
 
 ### `<ascribe-availability-target>`
 
@@ -161,6 +161,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 | `dimension` | yes | The dimension the target belongs to, or the target itself when it's a dimension name. |
 | `states` | yes | The target's lifecycle states in order, separated by single spaces: `ga` for a bare target, `preview`, or `preview ga deprecated` for a history. |
 | `versions` | when the spec gives versions | The version each state starts at, in the same order, separated by single spaces: `3.4`, or `3.3 3.5 4.0`. A bare version (`self-managed 3.3`) is `states="ga" versions="3.3"`. Left out for a versionless target, and for a target given without versions. |
+| `planned` | when the last version is planned | Present, with no value, when the last version is in a line the content model's `[releases.<target>]` lists as planned: it hasn't shipped. Left out otherwise. |
 
 **Text content:** what a reader sees, built from labels (§0):
 
@@ -170,8 +171,10 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 | `self-managed preview 3.4` | `Self-managed (preview, 3.4+)` |
 | `self-managed 3.3` | `Self-managed (GA, 3.3+)` |
 | `self-managed (preview 3.3, ga 3.5, deprecated 4.0)` | `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)` |
+| `self-managed 3.6`, with 3.6 planned | `Self-managed (planned, 3.6)` |
+| `self-managed (preview 3.5, ga 3.6)`, with 3.6 planned | `Self-managed (preview 3.5, planned 3.6)` |
 
-That is: the target's label, then in parentheses either one state's label, followed by `, <version>+` if it has a version, or, for a history, each state's label and version separated by `, `. The plain-markdown output's availability line uses the same text per target.
+That is: the target's label, then in parentheses either one state's label, followed by `, <version>+` if it has a version, or, for a history, each state's label and version separated by `, `. When the target is `planned`, the last version's state label is the content model's planned label (`[releases] planned-label`, `planned` by default), and a single version has no `+`. The plain-markdown output's availability line uses the same text per target.
 
 ```html
 <ascribe-availability scope="section">
@@ -179,7 +182,7 @@ That is: the target's label, then in parentheses either one state's label, follo
 </ascribe-availability>
 ```
 
-**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in in sight: the `ascribe-availability-lead-in` spans are visually hidden, and a screen reader reads them. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`, and a row's as `(Available: Quill Cloud (GA))`.
+**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), or as planned (`[planned]`) when it is, with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in in sight: the `ascribe-availability-lead-in` spans are visually hidden, and a screen reader reads them. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`, and a row's as `(Available: Quill Cloud (GA))`.
 
 ## 5. `<details>`
 
