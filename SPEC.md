@@ -990,6 +990,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@available` | History out of chronological order | Error |
 | `@available` | Versions given for a versionless target | Error |
 | `@available` | Spec exceeds its enclosing scope | Error |
+| `@available` | Version newer than every release line its target declares | Error |
 | `@steps` | Bound block isn't an ordered list | Error |
 | `@details` | Missing title | Error |
 | `@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>` | Error |

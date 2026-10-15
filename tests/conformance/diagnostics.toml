@@ -3885,3 +3885,31 @@ reference = "content-model/content.md#71-releasestarget"
 group = "releases"
 message = "`[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`"
 fix = "Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = [\"3.4\"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line."
+
+[[diagnostic]]
+code = "ASC210"
+slug = "available-version-ahead"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+row = "`@available` | Version newer than every release line its target declares"
+message = "`{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}`"
+fix = "Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work whose number isn't known yet is marked with a feature, such as `next`, that names the planned line."
+
+[[diagnostic]]
+code = "ASC211"
+slug = "available-line-undeclared"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = []
+configurable = true
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "a version is in a line between two of its target's declared lines, and that line isn't declared"
+message = "`{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}`"
+fix = "Declare the line in `[releases.<target>]`: in `archived` with no address, as `\"3.3\" = {}`, for a line that shipped and that nothing publishes now. Or correct the number to a declared line, such as the one either side of it."

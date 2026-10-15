@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-205 in all. By severity: 32 advice, 150 error, 23 warning. By level: 186 file, 19 page. By kind of next step: 46 choose, 13 fix, 7 outside, 11 review, 128 write.
+207 in all. By severity: 33 advice, 151 error, 23 warning. By level: 188 file, 19 page. By kind of next step: 48 choose, 13 fix, 7 outside, 11 review, 128 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -308,6 +308,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC207` | `model-releases-order` | error | write | `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}` |
 | `ASC208` | `model-releases-ends` | error | choose | `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live} |
 | `ASC209` | `model-versions-current` | error | write | `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live` |
+| `ASC210` | `available-version-ahead` | error | choose | `{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}` |
+| `ASC211` | `available-line-undeclared` | advice | choose | `{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}` |
 
 ## The VS Code extension
 

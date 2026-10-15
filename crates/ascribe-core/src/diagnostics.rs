@@ -653,6 +653,12 @@ pub const MODEL_RELEASES_ENDS: DiagnosticSlug = DiagnosticSlug("model-releases-e
 /// `ASC209`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_VERSIONS_CURRENT: DiagnosticSlug = DiagnosticSlug("model-versions-current");
 
+/// `ASC210`, error, file level: SPEC §8.2, "`@available` | Version newer than every release line its target declares".
+pub const AVAILABLE_VERSION_AHEAD: DiagnosticSlug = DiagnosticSlug("available-version-ahead");
+
+/// `ASC211`, advice, file level: a content check (area `project`).
+pub const AVAILABLE_LINE_UNDECLARED: DiagnosticSlug = DiagnosticSlug("available-line-undeclared");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -860,6 +866,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_RELEASES_ORDER,
     MODEL_RELEASES_ENDS,
     MODEL_VERSIONS_CURRENT,
+    AVAILABLE_VERSION_AHEAD,
+    AVAILABLE_LINE_UNDECLARED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

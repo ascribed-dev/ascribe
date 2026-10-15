@@ -207,3 +207,5 @@
 | [ASC207](../checks/diagnostics/content-model.md#ASC207) | `model-releases-order` | Error | File | write |
 | [ASC208](../checks/diagnostics/content-model.md#ASC208) | `model-releases-ends` | Error | File | choose |
 | [ASC209](../checks/diagnostics/content-model.md#ASC209) | `model-versions-current` | Error | File | write |
+| [ASC210](../checks/diagnostics/directives.md#ASC210) | `available-version-ahead` | Error | File | choose |
+| [ASC211](../checks/diagnostics/content-checks.md#ASC211) | `available-line-undeclared` | Advice | File | choose |

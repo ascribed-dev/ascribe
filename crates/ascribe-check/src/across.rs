@@ -30,12 +30,14 @@ use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{
-    CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission, Purpose, in_line,
+    AvailabilityMode, CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission,
+    Purpose, in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
 use crate::page::Found;
 use crate::project::image_id;
+use crate::releases;
 use crate::yaml::YamlIndex;
 use crate::{Diagnostic, Project};
 
@@ -57,6 +59,8 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::IMAGE_UNUSED,
     diagnostics::IMAGE_LARGE,
     diagnostics::AVAILABILITY_LEFT_BEHIND,
+    diagnostics::AVAILABLE_VERSION_AHEAD,
+    diagnostics::AVAILABLE_LINE_UNDECLARED,
     diagnostics::CRAWLERS_DISALLOWED,
 ];
 
@@ -171,6 +175,10 @@ pub(crate) fn for_every_build(
         }
     }
 
+    if on(diagnostics::AVAILABLE_VERSION_AHEAD) || on(diagnostics::AVAILABLE_LINE_UNDECLARED) {
+        placement(project.model(), &mut issues);
+    }
+
     if on(diagnostics::CRAWLERS_DISALLOWED) {
         crawlers_disallowed(project.model(), &mut issues);
     }
@@ -189,6 +197,35 @@ pub(crate) fn for_every_build(
         list.sort_by_key(|d| d.location.span);
     }
     out
+}
+
+/// `available-version-ahead` and `available-line-undeclared` in
+/// `ascribe.toml`: each version a feature's spec or a build's filter names
+/// that its target's list can't place. A filter's version is reported at
+/// the whole filter, with no fix.
+fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
+    let at = |span: Span| Location::new(FileId::new(0), span);
+    for f in &model.features {
+        issues.extend(releases::placement_issues(
+            model,
+            &f.available.entries,
+            &at,
+            true,
+        ));
+    }
+    for build in &model.builds {
+        if let AvailabilityMode::Filter {
+            target,
+            version: Some(version),
+        } = &build.availability
+            && let Some(list) = model.releases_of(target)
+        {
+            let placed = list.place(version);
+            issues.extend(releases::placement_issue(
+                model, target, placed, version, &at, false,
+            ));
+        }
+    }
 }
 
 /// `crawlers-disallowed`: `search` or `on-request` disallowed in
