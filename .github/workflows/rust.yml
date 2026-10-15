@@ -89,7 +89,7 @@ jobs:
       # The tested example's seam: `ascribe observe` in examples/tested/code,
       # with this build, writes the [files] that's committed, on every
       # platform, since the docs side reads them on any other
-      # (project-docs/tested-examples/phase-2-thread.md). Each of its two
+      # (https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/tested-examples/phase-2-thread.md). Each of its two
       # observations is written under the Node it names: `node-22` first,
       # then `default` under the Node the rest of the job uses. `--check`,
       # which runs nothing, says first whether the committed one matches.

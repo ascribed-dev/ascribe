@@ -2,7 +2,7 @@
 //! check` has nothing to say about, in a project that declares its type, and
 //! one `ascribe fmt` leaves as it is; its body has no level-1 heading, since
 //! its title is its frontmatter's, and no block quote, since what the template
-//! said about itself is gone (project-docs/page-templates/README.md, decisions
+//! said about itself is gone (https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md, decisions
 //! 21 and 22). That the copies are what the pinned release gives is
 //! `scripts/templates/convert.test.ts`, which needs their repository.
 

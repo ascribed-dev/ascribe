@@ -2,7 +2,7 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail.
 
-The plan for building it is in [page-templates/](../page-templates/README.md).
+It's built: see [Page templates](../../docs/content/templates/index.md). The plan that built it was [page-templates/](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md), removed once it was done.
 
 ## The goal
 

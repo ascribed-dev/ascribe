@@ -5,7 +5,7 @@
 # A rule changes structure, never their words, and names the text it applies
 # at, as their template has it, before any brace is escaped. A rule that
 # doesn't find its text exactly once stops the script, naming the template and
-# the text (project-docs/page-templates/README.md, decision 3).
+# the text (https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md, decision 3).
 #
 # Each table has:
 # - `description`: the placeholder for the page's description in its

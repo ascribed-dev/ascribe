@@ -1,6 +1,6 @@
 # ascribe-templates
 
-The page templates Ascribe ships: The Good Docs Project's, converted into Ascribe pages, and carried as they were committed. The plan is [project-docs/page-templates/README.md](../../project-docs/page-templates/README.md). This README is about the code.
+The page templates Ascribe ships: The Good Docs Project's, converted into Ascribe pages, and carried as they were committed. The plan was [the page templates plan](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md), removed once it was done. This README is about the code.
 
 ## Pieces
 
