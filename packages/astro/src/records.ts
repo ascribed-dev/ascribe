@@ -166,7 +166,7 @@ export function routeAs(route: string, trailingSlash: "always" | "never" | "igno
 
 /** What the sitemap is drawn from. */
 export interface SitemapSources {
-  /** Every project's records. */
+  /** Every project's records, and each older line's of a versioned build. */
   projects: readonly PageRecord[][];
   /**
    * Whether a project's page has a route in the site: was built, or, in
@@ -182,10 +182,22 @@ export interface SitemapSources {
 }
 
 /**
+ * Whether a page's canonical address is its own: it has none, or it's at the
+ * page's route. An older line's page whose canonical address is the same
+ * page in the current line isn't.
+ */
+export function canonicalIsOwn(page: PageRecord): boolean {
+  if (page.canonical === undefined) return true;
+  return routeKey(new URL(page.canonical).pathname) === routeKey(page.route);
+}
+
+/**
  * The sitemap's addresses, absolute, sorted, each once: every listed page of
- * every project that has a route in the site, and every page of the site's
- * own, less the excluded routes. A project's page that isn't listed is left
- * out, and so is a page of the site's own at the same route as one.
+ * every project that has a route in the site and whose canonical address is
+ * its own, and every page of the site's own, less the excluded routes. A
+ * project's page that isn't listed is left out, and so is an older line's
+ * page that the current line has, and a page of the site's own at the same
+ * route as one.
  */
 export function sitemapAddresses(sources: SitemapSources): string[] {
   const excluded = new Set(sources.excluded.map(routeKey));
@@ -195,7 +207,13 @@ export function sitemapAddresses(sources: SitemapSources): string[] {
     for (const page of pages) {
       const key = routeKey(page.route);
       records.add(key);
-      if (page.listing === "unlisted" || excluded.has(key) || !sources.routed(page.route)) continue;
+      if (
+        page.listing === "unlisted" ||
+        !canonicalIsOwn(page) ||
+        excluded.has(key) ||
+        !sources.routed(page.route)
+      )
+        continue;
       if (!routes.has(key)) routes.set(key, page.route);
     }
   }

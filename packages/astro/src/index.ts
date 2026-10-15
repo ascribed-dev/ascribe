@@ -233,17 +233,17 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
     }
     const root = normalizeBase(base);
     return {
-      projects: records.map(pageList),
+      projects: [
+        ...records.map(pageList),
+        // An older line's pages are the site's too: those the current line has point at it.
+        ...entries.flatMap((entry) =>
+          olderLines(entry.siteRoot).map((line) => pageList(readRecords(line.siteRoot))),
+        ),
+      ],
       routed,
       sitePages,
       excluded: [
         ...forwardingRoutes(entries.map((entry) => readPermalinks(entry.siteRoot))),
-        // An older line's pages, which aren't the site's own; what crawlers are told of them is to come.
-        ...entries.flatMap((entry) =>
-          olderLines(entry.siteRoot).flatMap((line) =>
-            pageList(readRecords(line.siteRoot)).map((page) => page.route),
-          ),
-        ),
         `${root}404`,
         `${root}500`,
         ...(options.sitemap?.exclude ?? []),

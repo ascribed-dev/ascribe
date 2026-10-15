@@ -340,6 +340,7 @@ impl<'p> BuildResolver<'p> {
             permalink,
             listing,
             listing_from,
+            current_page: None,
             blocks,
             assets: Vec::new(),
             problems,
@@ -355,6 +356,7 @@ impl<'p> BuildResolver<'p> {
         links::resolve(self, &mut page);
         // Step 7: glossary.
         glossary::link_terms(self, &mut page);
+        page.current_page = self.current_page(path);
         Some(page)
     }
 

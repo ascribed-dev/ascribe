@@ -1251,6 +1251,20 @@ impl Build {
         (!line.current).then(|| format!("{}/", line.line.text))
     }
 
+    /// The base path of the current line of this build's versioned build,
+    /// given `base`, the base path this build's pages are under, starting
+    /// and ending with `/`: `base` without the line's folder at its end. For
+    /// the current line and a build that isn't versioned, `base` itself.
+    pub fn current_base(&self, base: &str) -> String {
+        match self.line_folder() {
+            Some(folder) => match base.strip_suffix(folder.as_str()) {
+                Some(root) if root.ends_with('/') => root.to_owned(),
+                _ => base.to_owned(),
+            },
+            None => base.to_owned(),
+        }
+    }
+
     /// The name the build is declared with: a line's build's, or its own.
     pub fn declared_name(&self) -> &str {
         self.line.as_ref().map_or(&self.name, |l| &l.build)
