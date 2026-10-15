@@ -54,6 +54,33 @@ describe("versions.json", () => {
     expect(pageLines(site, "gone.md")).toEqual([]);
   });
 
+  it("follows a rewritten page to the page that takes its place in a line, and back", () => {
+    const site = output({
+      ...VERSIONS,
+      builds: {
+        site: {
+          ...VERSIONS.builds.site,
+          pages: {
+            "configure.md": {
+              lines: { "3.5": "/docs/configure/" },
+              replaces: "configure-legacy.md",
+            },
+            "configure-legacy.md": {
+              lines: { "3.4": "/docs/3.4/configure-legacy/" },
+              "replaced-by": "configure.md",
+            },
+          },
+        },
+      },
+    });
+    const both = [
+      { line: "3.5", current: true, route: "/docs/configure/" },
+      { line: "3.4", current: false, route: "/docs/3.4/configure-legacy/" },
+    ];
+    expect(pageLines(site, "configure.md")).toEqual(both);
+    expect(pageLines(site, "configure-legacy.md")).toEqual(both);
+  });
+
   it("has nothing for a build that isn't versioned, or a project with no file", () => {
     const other = path.join(path.dirname(path.dirname(output(VERSIONS))), "cloud", "site");
     expect(linesOf(other)).toBeUndefined();

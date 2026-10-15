@@ -3,8 +3,9 @@
 // newest first, from `<output-dir>/_ascribe/versions.json`: each line's
 // number, linking to the page in that line, with the page's own line marked
 // `aria-current="page"` and the current line `data-current`. A line that
-// doesn't have the page isn't listed. A layout includes it given the page's
-// collection entry:
+// doesn't have the page links to the page that takes its place there, when
+// one says so with `replaces`, and isn't listed otherwise. A layout includes
+// it given the page's collection entry:
 //
 //   import Versions from "@ascribed/astro/Versions.astro";
 //   <Versions entry={entry} />

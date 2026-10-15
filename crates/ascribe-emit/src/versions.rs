@@ -1,8 +1,8 @@
 //! `_ascribe/versions.json`: what every line of each versioned build knows
 //! about the others (output layout contract §1.5). It's above the builds'
 //! folders, the one file the builds share, and says, for each versioned
-//! build, its target, its lines, newest first, and each page's route in
-//! each line that publishes it.
+//! build, its target, its lines, newest first, each page's route in each
+//! line that publishes it, and which page replaces which.
 
 use std::collections::BTreeMap;
 
@@ -43,6 +43,13 @@ struct Line<'a> {
 #[derive(Serialize)]
 struct Page<'a> {
     lines: Routes<'a>,
+    /// The page its `replaces` names, when a line publishes that page.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    replaces: Option<String>,
+    /// The page whose `replaces` names it, when a line publishes that page:
+    /// the first, by path.
+    #[serde(rename = "replaced-by", skip_serializing_if = "Option::is_none")]
+    replaced_by: Option<String>,
 }
 
 /// A page's route in each line that publishes it, newest line first.
@@ -96,10 +103,29 @@ pub fn versions_json(index: &Project) -> Result<Option<String>, EmitError> {
                     .entry(page.path.to_string())
                     .or_insert_with(|| Page {
                         lines: Routes(Vec::new()),
+                        replaces: None,
+                        replaced_by: None,
                     })
                     .lines
                     .0
                     .push((&line.line.text, router.route(&page.path)));
+            }
+        }
+    }
+    // Which page replaces which, between pages a line publishes, so a site
+    // follows a rewritten page from one line to the next.
+    let replacements = index.replacements();
+    for entry in builds.values_mut() {
+        for (by, replaced) in &replacements {
+            let (by, replaced) = (by.to_string(), replaced.to_string());
+            if !entry.pages.contains_key(&by) || !entry.pages.contains_key(&replaced) {
+                continue;
+            }
+            if let Some(page) = entry.pages.get_mut(&by) {
+                page.replaces = Some(replaced.clone());
+            }
+            if let Some(page) = entry.pages.get_mut(&replaced) {
+                page.replaced_by.get_or_insert(by);
             }
         }
     }

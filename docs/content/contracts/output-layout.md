@@ -196,6 +196,8 @@ A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/
         { "line": "3.4", "status": "live", "build": "site@3.4", "base": "/docs/3.4/" }
       ],
       "pages": {
+        "configure-legacy.md": { "lines": { "3.4": "/docs/3.4/configure-legacy/" }, "replaced-by": "configure.md" },
+        "configure.md": { "lines": { "3.5": "/docs/configure/" }, "replaces": "configure-legacy.md" },
         "install.md": { "lines": { "3.5": "/docs/install/", "3.4": "/docs/3.4/install/" } },
         "webhooks.md": { "lines": { "3.5": "/docs/webhooks/" } }
       }
@@ -216,6 +218,8 @@ A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/
 | `lines[].base` | The path the line's pages are under, starting and ending with `/`: the base path, then the line's number for every line but the current one. |
 | `builds.<name>.pages` | Each page a line publishes, by its source path from the content root, sorted by path. |
 | `pages.<path>.lines` | Its route in each line that publishes it, by line, newest first. A line that doesn't publish the page isn't in it. |
+| `pages.<path>.replaces` | The page it says it replaces (SPEC §2.1), when that page is in `pages` too. Absent otherwise. |
+| `pages.<path>.replaced-by` | The page that says it replaces this one, when that page is in `pages` too; the first by path when more than one does. Absent otherwise. A site lists a page's lines together with those of the pages these lead to, so a page's old and new addresses link to each other. |
 
 A later version adds keys and changes none of these.
 
