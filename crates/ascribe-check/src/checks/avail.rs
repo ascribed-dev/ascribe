@@ -106,12 +106,14 @@ impl Ctx<'_> {
                     .with_arg("earlier", earlier),
             });
         }
-        // The list places the versions of a spec that's otherwise right.
+        // The list places the versions of a spec that's otherwise right, and
+        // only a spec it places is asked whether any output shows it: a
+        // mistyped version is one problem, not also content in no line.
         if issues.is_empty() {
             issues = crate::releases::placement_issues(self.model, &spec.entries, &at, precise);
-            issues.extend(crate::releases::inert_issues(
-                self.model, &spec, &at, precise,
-            ));
+        }
+        if issues.is_empty() {
+            issues = crate::releases::inert_issues(self.model, &spec, &at, precise);
         }
         for issue in issues {
             self.report(issue);

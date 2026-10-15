@@ -237,7 +237,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 **Message:** `{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}`
 
-**Fix:** Declare the line in `[releases.<target>]`: in `archived` with no address, as `"3.3" = {}`, for a line that shipped and that nothing publishes now. Or correct the number to a declared line, such as the one either side of it.
+**Fix:** Declare the line in `[releases.<target>]`, in the list where it falls: `live` for a line readers are on, `planned` for one newer than every live line that hasn't shipped, or, for one older than every live line that shipped and that nothing publishes now, `archived` with no address, as `"3.3" = {}`. Or correct the number to a declared line, such as the one either side of it.
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
