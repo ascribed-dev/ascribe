@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It comes from section 15 of the [brainstorm](../brainstorm.md), which also raised a cache and a search index. Those are proposals of their own: they hold derived data, and share no layer with this one.
 
+The plan for building it is in [memos/](../memos/README.md).
+
 ## The goal
 
 The people and agents who maintain a docs set can find out why a page is written the way it is, at the place they're about to change.
