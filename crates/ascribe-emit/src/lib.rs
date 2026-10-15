@@ -64,5 +64,5 @@ pub use plain::PlainEmitter;
 pub use render::render_site_html;
 pub use site::{AstroProfile, SiteEmitter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};
-pub use versions::{VERSIONS_PATH, VERSIONS_VERSION, versions_json};
-pub use write::{Output, WriteEvent, WriteOptions, Written, write_outputs};
+pub use versions::{VERSIONS_PATH, VERSIONS_VERSION, line_base, versions_json};
+pub use write::{Output, WriteEvent, WriteOptions, Written, outputs_in_memory, write_outputs};

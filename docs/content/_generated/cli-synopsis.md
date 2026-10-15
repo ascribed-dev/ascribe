@@ -35,5 +35,8 @@ ascribe templates list
 ascribe templates eject   [NAME]... [--to <DIR>] [--keep-type] [--format text|json]
 ascribe templates status  [--format text|json] [--exit-code] [--diff <NAME>]
 ascribe vale eject
+ascribe versions list     [--format text|json]
+ascribe versions changes  FROM TO [--format text|json|markdown]
+ascribe versions release  LINE [--next <LINE>] [--dry-run] [--force] [--format text|json]
 ascribe --version
 ```

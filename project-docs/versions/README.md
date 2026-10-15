@@ -85,6 +85,14 @@ From [phase 2](phase-2-thread.md), made building it, for the maintainer to confi
 37. **`Versions.astro` renders nothing for a page only its own line has.** _Why:_ a list of one is no way across, and a project with one live line then renders as it did without versions.
 38. **The integration builds an older line in a second `ascribe build`, after the first has written `versions.json`.** It says only what that run built: its errors still fail the build, and `ascribe check` reports every line's warnings. _Why:_ the lines aren't known before the current line's build writes the file, and naming a line that has left the list would fail the run.
 
+From [phase 7](phase-7-release.md), made building it, for the maintainer to confirm in its pull request:
+
+39. **`release` compares the site and plain outputs, not the JSON output.** Rewriting the marks and archiving the old line must change neither; what the release itself changes is listed by build. _Why:_ the JSON output records each mark as written and where it's written, so it changes with every rewrite, however right.
+40. **An archived line `release` writes is `{}`, or `{ ended = <date> }` when `ends` gave its last day,** and the line's entry in `ends` goes. _Why:_ `ends` is the only day the project has written down; an address is for whoever publishes the archive to add.
+41. **`release` writes only files git can put back:** each file it would write must be tracked and unchanged (`git status`), or it refuses and names them; `--force` writes anyway, and outside a repository it needs `--force`. `--dry-run` needs neither. _Why:_ then the release is one commit to read, and `git checkout` undoes it.
+42. **`changes` holds a line to what's marked for a version in it.** The current line doesn't hold what's marked for a later one here, though its output shows it. _Why:_ two lines are compared as they were released, whichever is current, so release notes don't change when a planned feature lands. `changes` also takes `--format markdown`, the draft release notes the phase's design names, beside decision 31's two.
+43. **Ascribe releases its own docs with the command, in the release's commit,** not in a follow-up pull request: [RELEASING.md](../../RELEASING.md) step 2. _Why:_ the line moves in that commit already, and a mark a later pull request adds is written `next` and stays so, which the follow-up had to sort out by hand.
+
 ## The thread
 
 **The use case:** `examples/quill` declares `live = ["3.4", "3.5"]` for `self-managed` and sets `versions = "self-managed"` on its site build. `ascribe build` writes two outputs. A page marked `self-managed 3.5` is in one and not the other, the pages about the cloud service are in both, and the Astro example serves the older line under `/3.4/`, where a list on each page links to the same page in the other line.

@@ -87,7 +87,7 @@ pub fn versions_json(index: &Project) -> Result<Option<String>, EmitError> {
             line: &line.line.text,
             status: if line.current { "current" } else { "live" },
             build: &build.name,
-            base: base_of(model, build),
+            base: line_base(model, build),
         });
         for page in index.pages() {
             if index.dropped(&page.path, build).is_none() {
@@ -115,7 +115,7 @@ pub fn versions_json(index: &Project) -> Result<Option<String>, EmitError> {
 }
 
 /// The path a line's pages are under, ending in `/`.
-fn base_of(model: &ContentModel, build: &Build) -> String {
+pub fn line_base(model: &ContentModel, build: &Build) -> String {
     let base = model.for_build(build).consumer.base_path.clone();
     let mut base = if base.starts_with('/') {
         base

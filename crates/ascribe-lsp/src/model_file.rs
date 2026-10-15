@@ -36,6 +36,8 @@ pub(crate) enum Change {
     Set(Vec<Seg>, Value),
     /// Renames the last key of a path, keeping its value.
     RenameKey(Vec<Seg>, String),
+    /// Removes the last key of a path, with its value.
+    Remove(Vec<Seg>),
 }
 
 /// A text edit to the file, and the change it makes.
@@ -195,6 +197,42 @@ impl<'a> ModelFile<'a> {
             Key::new(new).display_repr().into_owned(),
         );
         Ok((edit, Change::RenameKey(at.to_vec(), new.to_owned())))
+    }
+
+    /// Removes `key = value` from the `[header]` table at `table`, with its
+    /// line.
+    pub(crate) fn remove_entry(&self, table: &[&str], key: &str) -> Result<Edit, String> {
+        let refused = || {
+            format!(
+                "`ascribe.toml` writes `{key}` in `{}` in a form this can't remove. Remove it by hand.",
+                table.join(".")
+            )
+        };
+        let Some(Item::Table(t)) = self.get(&path(table)) else {
+            return Err(refused());
+        };
+        if t.is_dotted() || t.is_implicit() {
+            return Err(refused());
+        }
+        let (k, item) = t.get_key_value(key).ok_or_else(refused)?;
+        let (Some(k_span), Some(v_span)) = (k.span(), item.span()) else {
+            return Err(refused());
+        };
+        let start = self.text[..k_span.start].rfind('\n').map_or(0, |i| i + 1);
+        if !self.text[start..k_span.start].trim().is_empty() {
+            return Err(refused());
+        }
+        let end = self.text[v_span.end..]
+            .find('\n')
+            .map_or(self.text.len(), |i| v_span.end + i + 1);
+        let full: Vec<Seg> = path(table)
+            .into_iter()
+            .chain([Seg::Key(key.to_owned())])
+            .collect();
+        Ok((
+            TextEdit::replace(Span::new(start, end), String::new()),
+            Change::Remove(full),
+        ))
     }
 
     /// The edits, checked: applied to the text, they give a file with the
@@ -367,6 +405,20 @@ fn apply_change(root: &mut Item, change: &Change) -> Option<()> {
             let table = item.as_table_like_mut()?;
             let value = table.remove(old)?;
             table.insert(new, value);
+            Some(())
+        }
+        Change::Remove(at) => {
+            let (Seg::Key(old), parents) = at.split_last()? else {
+                return None;
+            };
+            let mut item = root;
+            for seg in parents {
+                item = match seg {
+                    Seg::Key(key) => item.get_mut(key.as_str())?,
+                    Seg::Index(i) => item.get_mut(*i)?,
+                };
+            }
+            item.as_table_like_mut()?.remove(old)?;
             Some(())
         }
     }
