@@ -14,4 +14,4 @@ enum            = "enum" [ "(" OWS enum-value *( OWS "," OWS enum-value ) OWS ")
 enum-value      = 1*( ALPHA / DIGIT / "-" / "_" / "." )
 ```
 
-Spaces are allowed only where `OWS` appears. The canonical spelling has no spaces except one after each comma: `enum(a, b)`.
+Spaces are allowed only where `OWS` appears, and nowhere else. The canonical spelling, which `ascribe fmt` writes, has no spaces except one after each comma: `enum(a, b)`.

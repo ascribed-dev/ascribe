@@ -24,7 +24,7 @@ npx ascribe --version
 ```
 @variant {pm=pnpm}:
 ```sh
-pnpm add --save-dev @ascribed/cli
+pnpm add -D @ascribed/cli
 pnpm exec ascribe --version
 ```
 @end
@@ -71,7 +71,9 @@ Install the **Ascribe** extension for VS Code from the Marketplace:
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-It checks your pages as you type, completes directives, [phrases](writing/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](editor/index.md).
+It checks your pages as you type, completes directives, [phrases](writing/directives.md#phrases), and links, previews pages as the site shows them, and shows a pull request's changes and comments on the page. It uses the project's `ascribe` when there is one. See [Editing](editor/index.md).
+
+@note {type=tip}: Open a page and run **Ascribe: Open Page Preview to the Side** to see it rendered beside its source.
 
 Format your pages with Ascribe, not a general Markdown formatter: one such as Prettier can change what a page builds to as it saves it. When another extension formats Markdown in your project's folder, the extension offers to be its Markdown formatter instead; choose **Use Ascribe**. See [Formatting](editor/index.md#formatting).
 
@@ -157,6 +159,14 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again.
 
+## Format it
+
+```sh
+npx ascribe fmt
+```
+
+rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
+
 ## Build it
 
 ```sh
@@ -169,23 +179,13 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
 - `json/`: the resolved pages as JSON, for your own tools.
 
-See the [command reference](checks/check.md#cli-build).
-
-## Format it
-
-```sh
-npx ascribe fmt
-```
-
-rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
-
 ## Publish it with Astro
 
 Publishing the site is this guide's second half, on its own page: [Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
 
 @steps
 1. Create an Astro project: `npm create astro@latest`.
-2. Move `ascribe.toml` and `docs/` into it, beside `astro.config.mjs`.
+2. Move `ascribe.toml` and `docs/` into it, beside `astro.config.mjs` and `package.json`.
 3. Follow the guide from its first step.
 
 For an existing site, keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's directory.
@@ -212,7 +212,7 @@ You installed the command and the editor, declared a content model in `ascribe.t
 - [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
 - [Directive reference](writing/directives.md): the language.
 - [`ascribe.toml` reference](content-model/index.md): the content model.
-- [Command reference](command/index.md): every command, its options, and its exit codes.
+- [Command reference](command/index.md): every command, its options, its JSON, and its exit codes.
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](editor/index.md): the VS Code extension.
 - [Astro](astro/index.md): publishing a site.
