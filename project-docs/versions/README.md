@@ -78,6 +78,13 @@ From [phase 1](phase-1-decisions.md), where each has its reason, taken by the ma
 
 The last two are what Ascribe's own docs meet first: a project with one site has no archive to give `retire`, and every mark it has ever written is older than its one live line.
 
+From [phase 2](phase-2-thread.md), made building it, for the maintainer to confirm in its pull request:
+
+35. **An older line's output says nothing to agents yet.** Its model has `[consumer] agents` off, so its pages carry no pointer to `llms.txt` or a Markdown version, its page records no `markdown`, and its plain output no `llms.txt`; the pages' Markdown is still written. Phase 5 gives each line its own. _Why:_ the integration publishes the current line's alone for now, so an older line pointing at them would link to addresses that don't exist, and every link in its pages has to land.
+36. **The site's list of pages is checked against every line's pages, and the sidebar shows one line's.** `sidebar(nav, entries, { entry })` shows the listed pages that the entry's line has, the current line's without `entry`; a page in any line must be listed, and a listed file must be a page of some line. _Why:_ a page an older line has and the current one doesn't (or the other way round) is still a page of the site, and one list keeps the sidebar the same across lines.
+37. **`Versions.astro` renders nothing for a page only its own line has.** _Why:_ a list of one is no way across, and a project with one live line then renders as it did without versions.
+38. **The integration builds an older line in a second `ascribe build`, after the first has written `versions.json`.** It says only what that run built: its errors still fail the build, and `ascribe check` reports every line's warnings. _Why:_ the lines aren't known before the current line's build writes the file, and naming a line that has left the list would fail the run.
+
 ## The thread
 
 **The use case:** `examples/quill` declares `live = ["3.4", "3.5"]` for `self-managed` and sets `versions = "self-managed"` on its site build. `ascribe build` writes two outputs. A page marked `self-managed 3.5` is in one and not the other, the pages about the cloud service are in both, and the Astro example serves the older line under `/3.4/`, where a list on each page links to the same page in the other line.
