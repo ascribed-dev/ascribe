@@ -1,0 +1,9 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+# Webhooks
+
+Available: self-managed (GA, 3.5+)
+
+The agent posts an event to each webhook in `quill.yaml`. See [API keys](https://docs.quill.dev/keys/).

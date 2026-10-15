@@ -40,6 +40,18 @@ expression: text
         "span": [187, 201],
         "lines": [12, 12]
       }
+    },
+    {
+      "level": 2,
+      "text": "Sign webhook events",
+      "id": "sign-webhooks",
+      "sourceId": "sign-webhooks",
+      "explicit": true,
+      "source": {
+        "file": "keys.md",
+        "span": [356, 378],
+        "lines": [17, 17]
+      }
     }
   ],
   "assets": [],
@@ -216,6 +228,158 @@ expression: text
             "id": "install-agent",
             "url": "/install-agent/#install-agent",
             "textFilled": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "sign-webhooks",
+      "sourceId": "sign-webhooks",
+      "explicit": true,
+      "text": "Sign webhook events",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Sign webhook events",
+          "span": [359, 378]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [356, 378],
+        "lines": [17, 17]
+      },
+      "availability": {
+        "text": "self-managed 3.5",
+        "display": "self-managed (GA, 3.5+)",
+        "scope": "section",
+        "feature": null,
+        "source": {
+          "file": "keys.md",
+          "span": [398, 426]
+        }
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "sign-webhooks"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "keys.md",
+        "span": [379, 397],
+        "lines": [18, 18]
+      },
+      "availability": {
+        "text": "self-managed 3.5",
+        "display": "self-managed (GA, 3.5+)",
+        "scope": "section",
+        "feature": null,
+        "source": {
+          "file": "keys.md",
+          "span": [398, 426]
+        }
+      }
+    },
+    {
+      "type": "directive",
+      "name": "available",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "line",
+        "text": "self-managed 3.5"
+      },
+      "binding": "heading",
+      "annotation": {
+        "text": "self-managed 3.5",
+        "display": "self-managed (GA, 3.5+)",
+        "feature": null
+      },
+      "source": {
+        "file": "keys.md",
+        "span": [398, 426],
+        "lines": [19, 19]
+      },
+      "availability": {
+        "text": "self-managed 3.5",
+        "display": "self-managed (GA, 3.5+)",
+        "scope": "section",
+        "feature": null,
+        "source": {
+          "file": "keys.md",
+          "span": [398, 426]
+        }
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "A key also signs the events the agent sends to your ",
+          "span": [428, 480]
+        },
+        {
+          "type": "link",
+          "destination": "/webhooks/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "webhooks.md",
+            "id": null,
+            "url": "/webhooks/",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "webhooks",
+              "span": [481, 489]
+            }
+          ],
+          "span": [480, 503]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [503, 504]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [428, 504],
+        "lines": [21, 21]
+      },
+      "availability": {
+        "text": "self-managed 3.5",
+        "display": "self-managed (GA, 3.5+)",
+        "scope": "section",
+        "feature": null,
+        "source": {
+          "file": "keys.md",
+          "span": [398, 426]
+        }
+      },
+      "links": [
+        {
+          "span": [480, 503],
+          "kind": "link",
+          "destination": "webhooks.md",
+          "target": {
+            "type": "page",
+            "page": "webhooks.md",
+            "id": null,
+            "url": "/webhooks/",
+            "textFilled": false
           }
         }
       ]

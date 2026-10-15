@@ -1050,11 +1050,10 @@ fn renames_in_quill_add_no_diagnostics() {
         "on-prem",
     );
     let model = std::fs::read_to_string(root.join("ascribe.toml")).unwrap();
-    assert!(
-        done.after(&support::real_path(&root).join("ascribe.toml"))
-            .contains("filter = \"on-prem 3.3\""),
-        "the build's filter"
-    );
+    let after = done.after(&support::real_path(&root).join("ascribe.toml"));
+    assert!(after.contains("filter = \"on-prem 3.3\""), "the build's filter");
+    assert!(after.contains("[releases.on-prem]"), "its lines");
+    assert!(after.contains("versions = \"on-prem\""), "the build's lines");
     assert!(model.contains("filter = \"self-managed 3.3\""));
 }
 

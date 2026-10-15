@@ -1,0 +1,198 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "ascribe-page",
+  "build": "site@3.4",
+  "path": "quickstart.md",
+  "route": "/3.4/quickstart/",
+  "site": "https://docs.quill.dev",
+  "title": "Try Quill in the browser",
+  "frontmatter": {
+    "description": "Run Quill in the browser with no local setup.",
+    "title": "Try Quill in the browser",
+    "type": "page"
+  },
+  "availability": null,
+  "headings": [
+    {
+      "level": 2,
+      "text": "Try in the browser",
+      "id": "try-in-browser",
+      "sourceId": "try-in-browser",
+      "explicit": true,
+      "source": {
+        "file": "quickstart.md",
+        "span": [111, 132],
+        "lines": [7, 7]
+      }
+    }
+  ],
+  "assets": [
+    {
+      "source": "playground.png",
+      "path": "playground.png",
+      "reference": "./playground.png",
+      "kind": "image",
+      "fragment": null,
+      "writtenIn": "quickstart.md",
+      "span": [224, 274]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "try-in-browser",
+      "sourceId": "try-in-browser",
+      "explicit": true,
+      "text": "Try in the browser",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Try in the browser",
+          "span": [114, 132]
+        }
+      ],
+      "source": {
+        "file": "quickstart.md",
+        "span": [111, 132],
+        "lines": [7, 7]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "try-in-browser"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "quickstart.md",
+        "span": [133, 152],
+        "lines": [8, 8]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Open the playground at play.quill.dev and paste a page of your docs.",
+          "span": [154, 222]
+        }
+      ],
+      "source": {
+        "file": "quickstart.md",
+        "span": [154, 222],
+        "lines": [10, 10]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "image",
+          "destination": "playground.png",
+          "title": null,
+          "target": {
+            "type": "asset",
+            "source": "playground.png",
+            "path": "playground.png",
+            "reference": "./playground.png",
+            "url": null,
+            "fragment": null
+          },
+          "alt": "The Quill playground",
+          "attributes": [
+            {
+              "key": "width",
+              "values": ["600"]
+            }
+          ],
+          "span": [224, 274]
+        }
+      ],
+      "source": {
+        "file": "quickstart.md",
+        "span": [224, 274],
+        "lines": [12, 12]
+      },
+      "links": [
+        {
+          "span": [224, 274],
+          "kind": "image",
+          "destination": "playground.png",
+          "target": {
+            "type": "asset",
+            "source": "playground.png",
+            "path": "playground.png",
+            "reference": "./playground.png",
+            "url": null,
+            "fragment": null
+          }
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "To keep your changes, ",
+          "span": [276, 298]
+        },
+        {
+          "type": "link",
+          "destination": "/3.4/install-agent/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "install-agent.md",
+            "id": null,
+            "url": "/3.4/install-agent/",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "install the agent",
+              "span": [299, 316]
+            }
+          ],
+          "span": [298, 335]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [335, 336]
+        }
+      ],
+      "source": {
+        "file": "quickstart.md",
+        "span": [276, 336],
+        "lines": [14, 14]
+      },
+      "links": [
+        {
+          "span": [298, 335],
+          "kind": "link",
+          "destination": "install-agent.md",
+          "target": {
+            "type": "page",
+            "page": "install-agent.md",
+            "id": null,
+            "url": "/3.4/install-agent/",
+            "textFilled": false
+          }
+        }
+      ]
+    }
+  ]
+}

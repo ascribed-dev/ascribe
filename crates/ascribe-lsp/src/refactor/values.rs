@@ -1,6 +1,7 @@
 //! Renaming a dimension's value everywhere it's used: in `ascribe.toml`
 //! (the dimension's `values`, `labels`, and `versionless`, features' specs,
-//! and builds' `variants` and `filter`), and in pages (`@variant`
+//! a `[releases]` table's name, and builds' `variants`, `filter`, and
+//! `versions`), and in pages (`@variant`
 //! attributes, `variant` and `available` frontmatter, `@available` lines,
 //! and table rows' `available`).
 //!
@@ -212,8 +213,18 @@ fn model_edits(
             out.push(file.replace_value(&spec, Value::from(renamed)).ok()?);
         }
     }
-    // Builds' selections and filters.
-    for build in &ctx.model.builds {
+    // Its lines.
+    let releases = path(&["releases", old]);
+    if file.get(&releases).is_some() {
+        out.push(file.rename_key(&releases, new).ok()?);
+    }
+    // Builds' selections, filters, and the target they're versioned by: each
+    // as declared, not each line.
+    for build in ctx.model.builds.iter().filter(|b| b.line_folder().is_none()) {
+        let versions = path(&["builds", &build.name, "versions"]);
+        if file.get(&versions).and_then(Item::as_str) == Some(old) {
+            out.push(file.replace_value(&versions, Value::from(new)).ok()?);
+        }
         let variants = path(&["builds", &build.name, "variants", &value.dimension]);
         match file.get(&variants) {
             Some(item) if item.as_str() == Some(old) => {

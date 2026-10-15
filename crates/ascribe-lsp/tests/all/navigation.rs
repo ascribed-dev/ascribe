@@ -348,7 +348,10 @@ fn include_paths_and_ids() {
 
     // After `#`: the target's heading ids.
     let ids = complete(&mut client, &page, "@include: keys.md#$0\n");
-    assert_eq!(labels(&ids), ["Create a key", "Rotate keys"]);
+    assert_eq!(
+        labels(&ids),
+        ["Create a key", "Rotate keys", "Sign webhook events"]
+    );
     assert_eq!(new_text(&item(&ids, "Rotate keys")), "rotate-keys");
     let filtered = complete(&mut client, &page, "@include: keys.md#rot$0\n");
     assert_eq!(labels(&filtered), ["Rotate keys"]);

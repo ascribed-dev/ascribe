@@ -57,7 +57,7 @@ fn the_quill_schema_and_its_pages_frontmatter_are_the_fixtures() {
         .filter(|(path, _)| path.ends_with(".md"))
         .map(|(path, text)| (path.clone(), frontmatter_of(text)))
         .collect();
-    assert_eq!(pages.len(), 3);
+    assert_eq!(pages.len(), 4);
     let mut json = serde_json::to_string_pretty(&pages).expect("JSON");
     json.push('\n');
     check_fixture("quill.frontmatter.json", &json);

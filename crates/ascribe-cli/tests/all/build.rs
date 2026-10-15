@@ -287,7 +287,7 @@ fn unknown_builds_are_refused() {
     assert_eq!(code(&out), 2);
     assert!(stderr(&out).contains("no build `nope`"), "{}", stderr(&out));
     assert!(
-        stderr(&out).contains("its builds are site, cloud"),
+        stderr(&out).contains("its builds are site, site@3.4, cloud"),
         "{}",
         stderr(&out)
     );

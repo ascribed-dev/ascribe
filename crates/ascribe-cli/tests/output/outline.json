@@ -26,6 +26,15 @@
       "file": "docs/keys.md",
       "line": 12,
       "fragment": null
+    },
+    {
+      "level": 2,
+      "text": "Sign webhook events",
+      "id": "sign-webhooks",
+      "explicit_id": true,
+      "file": "docs/keys.md",
+      "line": 17,
+      "fragment": null
     }
   ]
 }
