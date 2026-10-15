@@ -38,7 +38,10 @@ After you install the extension, VS Code opens its walkthrough, **Get Started wi
 
 ### Diagnostics
 
-Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../content-model/output.md#16-buildsname) named by `[editor] build` in `ascribe.toml`. When that build is [versioned](../versions/index.md), they're for every line of it, and a problem only some lines have says which, such as "(only in build `site@3.4`)".
+Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../content-model/output.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
+
+@available: next
+When that build is [versioned](../versions/index.md), they're for every line of it, and a problem only some lines have says which, such as "(only in build `site@3.4`)".
 
 The [content checks](../checks/diagnostics/content-checks.md) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
 
@@ -225,7 +228,10 @@ In Restricted Mode, Ascribe runs nothing, since it would run the project's own `
 
 Click it for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
 
-Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](index.md#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. A [versioned](../versions/index.md) build's lines are listed under it, the current line first, such as `site@3.4` for line 3.4: the preview of a line is at its address, and the lens dims what that line leaves out, a page new in a later line whole. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
+Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](index.md#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
+
+@available: next
+A [versioned](../versions/index.md) build's lines are listed under it, the current line first, such as `site@3.4` for line 3.4: the preview of a line is at its address, and the lens dims what that line leaves out, a page new in a later line whole.
 
 ### The build lens
 @available: ascribe 0.3.0

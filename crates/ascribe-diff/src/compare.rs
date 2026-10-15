@@ -292,16 +292,12 @@ fn line_route(
     build: &ascribe_model::Build,
     route: &str,
 ) -> String {
-    if build.line_folder().is_none() {
+    // The current line keeps the build's declared name and the site's base path.
+    let current = model.build(build.declared_name());
+    let (Some(_), Some(current)) = (build.line_folder(), current) else {
         return route.to_owned();
-    }
-    let mut site = model.consumer.base_path.clone();
-    if !site.starts_with('/') {
-        site.insert(0, '/');
-    }
-    if !site.ends_with('/') {
-        site.push('/');
-    }
+    };
+    let site = ascribe_emit::line_base(model, current);
     let line = ascribe_emit::line_base(model, build);
     match route.strip_prefix(site.as_str()) {
         Some(rest) => format!("{line}{rest}"),

@@ -29,7 +29,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-model
 @available: ascribe 0.3.0
 
-Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, [release lines](../versions/index.md), builds, and sources with their folders and the files they make readable. Each target's release lines are listed with their status and the build that is each line, and a versioned build says which target versions it and which line it is. A source with an `ascribe.examples.toml` also says how many of its files are [tested examples](../examples/tested.md), and names each observation with what it was tested with and how many of its files are as it found them. For a source in another repository, that's read from its copies, and an observation's files are counted only where there's a copy. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
+Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. A source with an `ascribe.examples.toml` also says how many of its files are [tested examples](../examples/tested.md), and names each observation with what it was tested with and how many of its files are as it found them. For a source in another repository, that's read from its copies, and an observation's files are counted only where there's a copy. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
 
 @include: ../_generated/cli-model-options.md
 
@@ -42,7 +42,10 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 | `0` | It showed the model |
 | `2` | No `ascribe.toml`, or one with errors |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `releases`, `builds`, and `sources`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
+
+@available: next
+A project with [release lines](../versions/index.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
 
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
@@ -161,7 +164,10 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 
 A variant group the build keeps more than one arm of, which the site shows as tabs, is a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms, as the plain output writes it.
 
-`--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it. A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, renders the page as that line publishes it, its route and links under the line's folder.
+`--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
+
+@available: next
+A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, renders the page as that line publishes it, its route and links under the line's folder.
 
 | Code | Meaning |
 |---|---|

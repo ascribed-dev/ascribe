@@ -272,7 +272,7 @@ fn write_text(out: &mut dyn Write, report: &Report, model: &ContentModel) -> io:
     for group in line_groups(report, model) {
         match group.as_slice() {
             [build] => write_build(out, build)?,
-            lines => write_lines_of(out, lines)?,
+            lines => write_lines_of(out, lines, model)?,
         }
     }
     Ok(())
@@ -302,12 +302,25 @@ fn line_groups<'r>(report: &'r Report, model: &ContentModel) -> Vec<Vec<&'r Buil
 }
 
 /// The lines of one versioned build: each changed page once, with the
-/// lines it changed in, "in every line" when it changed in each of them.
-fn write_lines_of(out: &mut dyn Write, lines: &[&BuildDiff]) -> io::Result<()> {
+/// lines it changed in, "in every line" when it changed in each of them,
+/// as the HTML report says it.
+fn write_lines_of(
+    out: &mut dyn Write,
+    lines: &[&BuildDiff],
+    model: &ContentModel,
+) -> io::Result<()> {
     let name = lines
         .first()
-        .map(|b| b.build.split('@').next().unwrap_or(&b.build))
+        .and_then(|b| model.build(&b.build))
+        .map(|b| b.declared_name())
         .unwrap_or_default();
+    // A line by its number, `3.4`, as the report names it.
+    let line_of = |build: &str| {
+        model
+            .build(build)
+            .and_then(|b| b.line.as_ref())
+            .map_or_else(|| build.to_owned(), |l| l.line.text.clone())
+    };
     let mut paths: Vec<&str> = Vec::new();
     for line in lines {
         for page in &line.pages {
@@ -341,8 +354,15 @@ fn write_lines_of(out: &mut dyn Write, lines: &[&BuildDiff]) -> io::Result<()> {
                 if names.len() == lines.len() {
                     format!("{text}, in every line")
                 } else {
-                    let names: Vec<String> = names.iter().map(|n| format!("`{n}`")).collect();
-                    format!("{text}, only in {}", names.join(", "))
+                    let names: Vec<String> = names.iter().map(|n| line_of(n)).collect();
+                    let names = match names.as_slice() {
+                        [a, b] => format!("{a} and {b}"),
+                        [rest @ .., last] if !rest.is_empty() => {
+                            format!("{}, and {last}", rest.join(", "))
+                        }
+                        _ => names.join(""),
+                    };
+                    format!("{text}, only in {names}")
                 }
             })
             .collect();
