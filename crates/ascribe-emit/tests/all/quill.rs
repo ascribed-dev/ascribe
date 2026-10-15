@@ -71,12 +71,7 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
             if build == "site" {
                 expected.push(page("webhooks"));
             }
-            assert_eq!(
-                files,
-                expected,
-                "{build} {}",
-                emitter.name()
-            );
+            assert_eq!(files, expected, "{build} {}", emitter.name());
         }
     }
 }

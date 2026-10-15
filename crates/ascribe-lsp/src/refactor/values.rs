@@ -220,7 +220,12 @@ fn model_edits(
     }
     // Builds' selections, filters, and the target they're versioned by: each
     // as declared, not each line.
-    for build in ctx.model.builds.iter().filter(|b| b.line_folder().is_none()) {
+    for build in ctx
+        .model
+        .builds
+        .iter()
+        .filter(|b| b.line_folder().is_none())
+    {
         let versions = path(&["builds", &build.name, "versions"]);
         if file.get(&versions).and_then(Item::as_str) == Some(old) {
             out.push(file.replace_value(&versions, Value::from(new)).ok()?);
