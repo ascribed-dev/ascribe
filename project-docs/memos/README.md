@@ -114,7 +114,7 @@ Each phase's result is something a person or an agent can run or open. None buil
 
 - **Page templates** is finished, and its decisions 18 and 22 left the instructions to this plan. Phase 4 changes its conversion and regenerates its set. A project's copies are its own.
 - **Versions.** Nothing shared. A memo has no build and no line (decision 11), so a versioned build removes memos as every build does.
-- **The [glossary pages proposal](../proposals/glossary-pages.md)** would make a term a heading on a page. A memo about `term:<id>` then names the term, as `ascribe refs` does, whatever carries it.
+- **[Glossary pages](../glossary-pages/README.md)** makes a term a heading on a page. A memo about `term:<id>` then names the term, as `ascribe refs` does, whatever carries it.
 
 ## Rules for every phase
 

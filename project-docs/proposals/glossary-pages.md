@@ -2,6 +2,8 @@
 
 A proposal, not a plan. It says what the change is and what it would look like, so the idea can be judged before anything is designed in detail.
 
+The plan for building it is in [glossary-pages/](../glossary-pages/README.md).
+
 ## The goal
 
 A glossary's terms are written where the rest of the docs are written: in Markdown, on a page, by whoever writes the pages. A definition is written once.
