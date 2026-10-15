@@ -82,7 +82,13 @@ impl Loader<'_> {
             let reserved: &dyn Fn(&str) -> bool = &|n| {
                 matches!(
                     n,
-                    "available" | "variant" | "permalink" | "listing" | "intended" | "type"
+                    "available"
+                        | "variant"
+                        | "permalink"
+                        | "listing"
+                        | "replaces"
+                        | "intended"
+                        | "type"
                 )
             };
             for (name, span, _) in entries(ft) {
@@ -168,6 +174,7 @@ impl Loader<'_> {
                                 | "variant"
                                 | "permalink"
                                 | "listing"
+                                | "replaces"
                                 | "intended"
                                 | "type"
                                 | "slug"

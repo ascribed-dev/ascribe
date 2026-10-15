@@ -204,3 +204,9 @@
 | [ASC204](../checks/diagnostics/content-model.md#ASC204) | `model-releases-target` | Error | File | choose |
 | [ASC205](../checks/diagnostics/content-model.md#ASC205) | `model-releases-line` | Error | File | write |
 | [ASC206](../checks/diagnostics/content-model.md#ASC206) | `model-build-versions` | Error | File | write |
+| [ASC216](../checks/diagnostics/pages.md#ASC216) | `replaces-not-a-page` | Error | File | choose |
+| [ASC217](../checks/diagnostics/pages.md#ASC217) | `replaces-cycle` | Error | Page | write |
+| [ASC218](../checks/diagnostics/pages.md#ASC218) | `replaces-overlap` | Error | Page | write |
+| [ASC219](../checks/diagnostics/pages.md#ASC219) | `replaces-same-page` | Error | Page | write |
+| [ASC220](../checks/diagnostics/content-checks.md#ASC220) | `link-into-older-line` | Advice | Page | write |
+| [ASC221](../checks/diagnostics/content-checks.md#ASC221) | `link-fragment-dropped` | Advice | Page | write |

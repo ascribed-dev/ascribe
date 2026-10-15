@@ -236,7 +236,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**When:** Reserved key (`available`, `variant`, `permalink`, `listing`, `type`) on a fragment.
+**When:** Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment.
 
 **Message:** `{key}` is reserved for pages, and fragments can't use it
 
@@ -295,6 +295,58 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 **Fix:** Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
+
+### ASC216 `replaces-not-a-page`
+@id {permalink=true}: ASC216
+
+Error · file level · next step: choose · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** `replaces` that doesn't name a page.
+
+**Message:** `replaces` names `{path}`, which doesn't exist
+
+**Fix:** Write the path of the page this one takes the place of, relative to this page or from the content root with a leading `/`, as a link to it is written: `replaces: install-legacy.md`.
+
+**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+
+### ASC217 `replaces-cycle`
+@id {permalink=true}: ASC217
+
+Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** A page that `replaces` itself, or a chain of `replaces` that comes back to where it started.
+
+**Message:** `replaces` comes back to this page: \{chain}; a page replaces an older page, and the chain ends
+
+**Fix:** Keep `replaces` on the newer page alone, naming the page it takes the place of. A page replaced in turn names nothing that comes after it.
+
+**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+
+### ASC218 `replaces-overlap`
+@id {permalink=true}: ASC218
+
+Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+
+**When:** A page and the page it `replaces`, both published by one line of a versioned build.
+
+**Message:** `{build}` publishes both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares
+
+**Fix:** Mark the newer page with the line it starts in, `available: self-managed 3.5`, and the page it replaces with where it ends, `available: self-managed (ga 3.0, removed 3.5)`, so each line publishes one of them.
+
+**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
+
+### ASC219 `replaces-same-page`
+@id {permalink=true}: ASC219
+
+Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+
+**When:** Two pages that `replaces` the same page, both published by one line of a versioned build.
+
+**Message:** `{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line
+
+**Fix:** Keep `replaces` on one of the two pages, or give them availability that no line shares, so a line has one page in the old page's place. When one page is split in two, the other takes no `replaces`; link to it from the first.
+
+**Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
 
 ## Lists
 

@@ -291,7 +291,7 @@ impl Cx<'_> {
         if top
             && matches!(
                 key,
-                "available" | "variant" | "permalink" | "listing" | "type"
+                "available" | "variant" | "permalink" | "listing" | "replaces" | "type"
             )
         {
             match self.schema.owner {
