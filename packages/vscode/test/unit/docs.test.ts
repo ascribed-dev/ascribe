@@ -101,8 +101,8 @@ const available: Record<string, string> = {
   ascribe_review_threads: "ascribe 0.3.0",
   ascribe_review_changes: "ascribe 0.3.0",
   [ACTIONS_ROW]: "ascribe 0.3.0",
-  "ascribe.newPage": "next",
-  "ascribe.nextPlaceholder": "next",
+  "ascribe.newPage": "ascribe 0.3.1",
+  "ascribe.nextPlaceholder": "ascribe 0.3.1",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

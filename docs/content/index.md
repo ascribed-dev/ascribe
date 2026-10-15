@@ -25,7 +25,7 @@ permalink: docs
 - [Element library reference](astro/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.
 - @available: ascribe 0.3.0
   [Permalinks](permalinks/index.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
-- @available: next
+- @available: ascribe 0.3.1
   [Page templates](templates/index.md): starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it.
 - [Command reference](command/index.md): every `ascribe` command, its options, outputs, and exit codes.
 - [Files Ascribe writes](command/project-files.md): every file Ascribe puts in a project, and which to commit.

@@ -48,7 +48,7 @@ available: cloud, self-managed preview 3.3
 ---
 ```
 
-@available: next
+@available: ascribe 0.3.1
 A page says what type it is with `type`, the name of a [content type](../content-model/index.md#41-page-types) `ascribe.toml` declares, conventionally its first key. In a project that declares types, every page names one, wherever its file is; in a project that declares none, every page is of the implicit type `page`, and names none. A fragment has no type, and can't use `type`.
 
 ## Directive lines

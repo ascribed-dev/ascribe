@@ -2,7 +2,7 @@
 type: how-to
 title: Page templates
 description: Starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it, written into your project by ascribe templates eject.
-available: next
+available: ascribe 0.3.1
 ---
 
 A page of a known kind has a shape: a how-to has what to do before you start, then numbered steps, then what to do next. A template is a page with that shape and things to fill in, and its guide says what belongs in each part. Ascribe carries a set of six, and writes them into your project with one command, where they're your files.

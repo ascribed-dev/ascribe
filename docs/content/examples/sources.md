@@ -69,7 +69,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 
 ## `ascribe observe`
 @id {permalink=true}: cli-observe
-@available: next
+@available: ascribe 0.3.1
 
 Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is, and today that means Node, the way the [command is installed](../getting-started.md#install-the-command).
 
@@ -173,7 +173,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 
 ## `ascribe init`
 @id {permalink=true}: cli-init
-@available: next
+@available: ascribe 0.3.1
 
 Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. With `--templates`, it takes the page templates too, as [`ascribe templates eject`](sources.md#cli-templates-eject) with no name does.
 
@@ -207,7 +207,7 @@ With `--format json`, the document has `schema_version` (`2`), `ascribe_version`
 
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
-@available: next
+@available: ascribe 0.3.1
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, whose [`template` and `guide`](../content-model/index.md#41-page-types) name them. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages; [Page templates](../templates/index.md) says where they come from, and how to use them.
 

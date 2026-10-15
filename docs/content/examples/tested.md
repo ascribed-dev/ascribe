@@ -2,7 +2,7 @@
 type: how-to
 title: Show what an example was tested with
 description: Run a folder's tests with ascribe observe, commit what it records, and have each page say what its examples were tested with, and warn when one changed after its last test run.
-available: next
+available: ascribe 0.3.1
 ---
 
 A snippet keeps an example on the page the same as the file, but the page can't say whether the file still works. With a test for the examples and `ascribe observe`, a code block says what it was tested with, "Tested with Node 24.9.0 on Linux", and `ascribe check` says when an example changed after its last test run.

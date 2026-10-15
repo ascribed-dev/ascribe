@@ -1,6 +1,6 @@
 # Releasing Ascribe
 
-A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person pushes the version tag and starts it, and merges the Homebrew tap's pull request at the end. Nothing in a release is published until that person pushes the tag.
+A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person pushes the version tag and starts it, and merges the Homebrew tap's pull request at the end. The docs then need a pull request of their own ([step 10](#10-open-the-docs-follow-up-pull-request)). Nothing in a release is published until that person pushes the tag.
 
 The [nightly canary](#the-nightly-canary) is the one exception: the npm packages, built from `main` and published under the `next` tag every night, unattended. It never moves `latest`.
 
@@ -155,7 +155,7 @@ node scripts/release/version.ts 0.2.0
 
 This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
 
-Set the `version` phrase in `docs/ascribe.toml` to the new version too; a test fails until it matches.
+Set the `version` phrase in `docs/ascribe.toml` and in `site/home/ascribe.toml` to the new version too; a test fails until each matches.
 
 In `CHANGELOG.md`, write the release's section as `## 0.2.0 (YYYY-MM-DD)`, with today's date. For 0.1.0, replace `(unreleased)` with the date.
 
@@ -227,9 +227,23 @@ brew update && brew install ascribed-dev/tap/ascribe && ascribe --version   # or
 curl -fsSL https://ascribed-dev.com/install.sh | sh && ~/.local/bin/ascribe --version
 ```
 
-### 10. Check the docs site
+### 10. Open the docs' follow-up pull request
 
-The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` and `[versions] current` to the release, and change each `next` mark under `docs/content/` to `ascribe <version>`, as the comment above `[dimensions.release]` says. `[features.next]` stays unreleased, for what `main` adds after the release. Once that's merged and Netlify has built it, open <https://ascribed-dev.com/docs/getting-started/>: **Check:** it installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
+Every release needs one. The [docs site](#the-docs-site) follows `main`, not the release, so until this pull request merges, a page about something the release shipped still reads "In main, not yet released".
+
+1. **Find what's marked unreleased:**
+
+   ```sh
+   git grep -n -E 'available[:= ]+"?next' -- docs/content site/home/content
+   git grep -n '"next"' -- crates/ascribe-cli/src/docs.rs packages/vscode/test/unit/docs.test.ts
+   ```
+
+2. **Change each to `ascribe <version>`,** except a mark that a pull request merged after the tag added: `git diff v<version> main -- docs/content` shows those, and they stay `next`. A mark on the site's own pages (`site/home/content/`) is removed instead, as `site/home/ascribe.toml` says.
+3. **Set `[versions] current` to the release** in `docs/ascribe.toml` and `site/home/ascribe.toml`. The `version` phrase was set in step 2. `[features.next]` stays unreleased, for what `main` adds after the release.
+4. **Rewrite the generated tables:** `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` and `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`.
+5. **Check:** `ascribe check --deny-warnings` passes on `docs` and on `site/home`. A `next` mark inside a page or section that's now marked with the release is `available-exceeds-scope`: move the mark onto what's new, or, for a page marked as a whole, leave the new part unmarked until the next release.
+
+Once it's merged and Netlify has built it, open <https://ascribed-dev.com/docs/getting-started/>. **Check:** it installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
 
 ## When something goes wrong
 

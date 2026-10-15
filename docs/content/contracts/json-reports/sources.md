@@ -7,7 +7,7 @@ description: "The JSON Schemas of what ascribe init, ascribe sources, ascribe ob
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
 
 ## `ascribe init`
-@available: next
+@available: ascribe 0.3.1
 
 @include: ../../_generated/json-init.md
 
@@ -22,7 +22,7 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 @include: ../../_generated/json-sources-update.md
 
 ## `ascribe observe`
-@available: next
+@available: ascribe 0.3.1
 
 @include: ../../_generated/json-observe.md
 
