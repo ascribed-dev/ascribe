@@ -24,6 +24,8 @@ export interface RoutedPage {
   title: string | null;
   /** The title formatted, when its field sets `inline = "code"`. */
   formatted_title: FormattedPiece[] | null;
+  /** For a line of a versioned build, the build that is the line: `site@3.4`. */
+  build?: string;
 }
 
 /** How much of a page's JSON to read at a time. */

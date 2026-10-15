@@ -43,6 +43,12 @@ export interface BuildData {
   build: string;
   /** Its changed pages, in path order. */
   pages: PageData[];
+  /**
+   * For a line of a versioned build, which: the report lists the lines
+   * of one build together, each changed page once. Absent for a build
+   * that isn't versioned.
+   */
+  line?: LineData;
 }
 
 /** What changed in one build. */
@@ -151,6 +157,16 @@ export interface Limit {
   pages: number;
   /** How many it left out. */
   omitted: number;
+}
+
+/** The line of a versioned build a build is. */
+export interface LineData {
+  /** The versioned build's name, which its current line has. */
+  build: string;
+  /** The line, as `[releases.<target>]` writes it. */
+  line: string;
+  /** Whether it's the current line. */
+  current: boolean;
 }
 
 /** One changed page: `ascribe diff --format json`'s, and its renderings. */

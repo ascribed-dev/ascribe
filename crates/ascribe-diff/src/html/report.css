@@ -1053,6 +1053,13 @@ body {
   font-weight: 400;
 }
 
+.r-page-lines {
+  display: block;
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
+  color: var(--r-muted);
+}
+
 .r-omitted li {
   font: var(--r-caption) var(--r-mono);
   font-weight: 400;
@@ -1126,6 +1133,11 @@ body {
 .r-seg button[aria-pressed="true"] {
   background: var(--r-accent);
   color: var(--r-accent-ink);
+}
+
+.r-seg button:disabled {
+  color: var(--r-muted);
+  cursor: default;
 }
 
 .r-ghost {

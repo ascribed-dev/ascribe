@@ -265,17 +265,49 @@ pub fn compare_builds(base: Option<Side<'_>>, now: Side<'_>, builds: &[&str]) ->
             paths.extend(b.project.pages().map(|p| &p.path));
         }
         // A page nothing it uses changed in resolves the same on both sides.
-        let pages = paths
+        let mut pages: Vec<PageDiff> = paths
             .into_iter()
             .filter(|path| reach.as_ref().is_none_or(|reach| reach.contains(*path)))
             .filter_map(|path| sides.compare(path, &changed))
             .collect();
+        // An older line's pages are under its folder, as its output's are.
+        if let Some(build) = now.project.model().build(name) {
+            for page in &mut pages {
+                page.route = line_route(now.project.model(), build, &page.route);
+            }
+        }
         out.push(BuildDiff {
             build: (*name).to_owned(),
             pages,
         });
     }
     out
+}
+
+/// A page's route in the line `build` is, from its route under the
+/// project's base path: under the line's folder for an older line, and as
+/// it is otherwise.
+fn line_route(
+    model: &ascribe_model::ContentModel,
+    build: &ascribe_model::Build,
+    route: &str,
+) -> String {
+    if build.line_folder().is_none() {
+        return route.to_owned();
+    }
+    let mut site = model.consumer.base_path.clone();
+    if !site.starts_with('/') {
+        site.insert(0, '/');
+    }
+    if !site.ends_with('/') {
+        site.push('/');
+    }
+    let line = ascribe_emit::line_base(model, build);
+    match route.strip_prefix(site.as_str()) {
+        Some(rest) => format!("{line}{rest}"),
+        None if route == site.trim_end_matches('/') => line.trim_end_matches('/').to_owned(),
+        None => route.to_owned(),
+    }
 }
 
 /// What changed on the page at `path` in the build `build` between `base`

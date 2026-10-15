@@ -849,6 +849,31 @@
     const pages = paths.size === 1 ? "1 changed page" : `${paths.size} changed pages`;
     return builds.length > 1 ? `${pages} in ${builds.length} builds` : pages;
   }
+  function listBuilds(builds) {
+    const out = [];
+    for (const build of builds) {
+      const name = build.line?.build;
+      const same = name === void 0 ? void 0 : out.find((b) => b.lines[0]?.line?.build === name);
+      if (same) same.lines.push(build);
+      else out.push({ build: name ?? build.build, lines: [build], pages: [] });
+    }
+    for (const listed of out) {
+      const paths = [...new Set(listed.lines.flatMap((b) => b.pages.map((p) => p.path)))].sort(
+        (a, b) => a < b ? -1 : a > b ? 1 : 0
+      );
+      listed.pages = paths.map((path) => ({
+        path,
+        in: listed.lines.map((b) => b.pages.find((p) => p.path === path))
+      }));
+    }
+    return out.filter((b) => b.pages.length > 0);
+  }
+  function linesNote(listed, page) {
+    if (listed.lines.length < 2) return "";
+    const lines = listed.lines.filter((_, i) => page.in[i] !== void 0);
+    if (lines.length === listed.lines.length) return "in every line";
+    return `only in ${andList(lines.map((b) => b.line?.line ?? b.build))}`;
+  }
   function errorsNotice(errors) {
     if (!errors) return null;
     const one = errors === 1;
@@ -927,10 +952,11 @@
     return fragment;
   }
   function start(root, data2) {
-    const builds = data2.builds.filter((b) => b.pages.length > 0);
+    const builds = listBuilds(data2.builds);
     const state = {
       build: 0,
       page: 0,
+      line: 0,
       show: "changes",
       at: -1,
       breakdown: false,
@@ -938,26 +964,46 @@
     };
     let marks = [];
     let stopSources;
+    const lineOf = (page, wanted) => {
+      if (!page) return 0;
+      if (page.in[wanted] !== void 0) return wanted;
+      return Math.max(
+        page.in.findIndex((p) => p !== void 0),
+        0
+      );
+    };
+    const shown = () => builds[state.build]?.pages[state.page]?.in[state.line];
+    const hashOf = (b, p, line) => {
+      const listed = builds[b];
+      const page = listed?.pages[p];
+      const build = listed?.lines[line]?.build;
+      return page && build !== void 0 ? `#${encodeURIComponent(`${build}/${page.path}`)}` : void 0;
+    };
     const fromHash = () => {
       const hash = decodeURIComponent(location.hash.slice(1));
       const slash = hash.indexOf("/");
       if (slash < 0) return;
-      const b = builds.findIndex((x) => x.build === hash.slice(0, slash));
+      const name = hash.slice(0, slash);
+      const b = builds.findIndex((x) => x.lines.some((l) => l.build === name));
       if (b < 0) return;
-      const p = builds[b]?.pages.findIndex((x) => x.path === hash.slice(slash + 1)) ?? -1;
+      const listed = builds[b];
+      const p = listed?.pages.findIndex((x) => x.path === hash.slice(slash + 1)) ?? -1;
       state.build = b;
       state.page = Math.max(p, 0);
+      state.line = lineOf(
+        listed?.pages[state.page],
+        listed?.lines.findIndex((l) => l.build === name) ?? 0
+      );
     };
-    const open = (b, p, push = true) => {
+    const open = (b, p, push = true, line = state.line) => {
       state.build = b;
       state.page = p;
+      state.line = lineOf(builds[b]?.pages[p], line);
       state.at = -1;
       state.atEnd = false;
       state.breakdown = false;
-      const page = builds[b]?.pages[p];
-      if (push && page) {
-        history.replaceState(null, "", `#${encodeURIComponent(`${builds[b]?.build}/${page.path}`)}`);
-      }
+      const hash = hashOf(b, p, state.line);
+      if (push && hash !== void 0) history.replaceState(null, "", hash);
       render();
       root.querySelector(".r-main")?.scrollTo?.({ top: 0 });
     };
@@ -1037,13 +1083,16 @@
       }
       const build = builds[state.build];
       if (!build) return;
-      const included = build.pages.filter((p) => !p.omitted);
-      const omitted = build.pages.filter((p) => p.omitted);
+      const first = (listed) => listed.in[lineOf(listed, state.line)];
+      const included = build.pages.filter((p) => first(p)?.omitted === false);
+      const omitted = build.pages.filter((p) => first(p)?.omitted !== false);
       side.append(h("h2", {}, [`Changed pages (${build.pages.length})`]));
       const list = h("ul", { class: "r-pages" });
-      build.pages.forEach((page, i) => {
-        if (!included.includes(page)) return;
-        const link = h("a", { href: `#${encodeURIComponent(`${build.build}/${page.path}`)}` }, [
+      build.pages.forEach((listed, i) => {
+        const page = first(listed);
+        if (!page || !included.includes(listed)) return;
+        const lines = linesNote(build, listed);
+        const link = h("a", { href: hashOf(state.build, i, lineOf(listed, state.line)) ?? "#" }, [
           h(
             "span",
             { class: "r-page-title" },
@@ -1051,6 +1100,7 @@
           ),
           h("span", { class: "r-page-path" }, [page.path]),
           h("span", { class: "r-page-counts" }, [pageSummary(page)]),
+          lines === "" ? null : h("span", { class: "r-page-lines" }, [lines]),
           !page.own_file_changed && page.because.length > 0 ? h("span", { class: "r-page-via" }, [`via ${page.because.join(", ")}`]) : null
         ]);
         if (i === state.page) link.setAttribute("aria-current", "page");
@@ -1067,7 +1117,10 @@
           h(
             "ul",
             { class: "r-omitted" },
-            omitted.map((p) => h("li", {}, [`${p.path}: ${pageSummary(p)}`]))
+            omitted.map((p) => {
+              const page = first(p);
+              return h("li", {}, [page ? `${p.path}: ${pageSummary(page)}` : p.path]);
+            })
           )
         );
       }
@@ -1076,8 +1129,27 @@
     const renderControls = () => {
       controls.replaceChildren();
       const build = builds[state.build];
-      const page = build?.pages[state.page];
-      if (!build || !page) return;
+      const listed = build?.pages[state.page];
+      const page = shown();
+      if (!build || !listed || !page) return;
+      if (build.lines.length > 1) {
+        const lines = h("div", { class: "r-row r-lines" }, [
+          h("span", { class: "r-show" }, [`Line · ${linesNote(build, listed)}`])
+        ]);
+        const seg2 = h("div", { class: "r-seg", role: "group", "aria-label": "Line" });
+        build.lines.forEach((line, i) => {
+          const changed = listed.in[i] !== void 0;
+          const label = line.line ? `${line.line.line}${line.line.current ? " (current)" : ""}` : line.build;
+          const attributes = { "aria-pressed": String(i === state.line) };
+          if (!changed) {
+            attributes.disabled = "";
+            attributes.title = `No change in ${line.line?.line ?? line.build}`;
+          }
+          seg2.append(button(label, "", () => open(state.build, state.page, true, i), attributes));
+        });
+        lines.append(seg2);
+        controls.append(lines);
+      }
       const row = h("div", { class: "r-row" });
       const info = h("span", { class: "r-grow" }, [h("b", {}, [page.path]), ` ${page.route}`]);
       if (!page.own_file_changed && page.because.length > 0) {
@@ -1156,7 +1228,8 @@
       }
       if (state.atEnd) {
         const nextIndex = (state.page + 1) % build.pages.length;
-        const next = build.pages[nextIndex];
+        const nextListed = build.pages[nextIndex];
+        const next = nextListed?.in[lineOf(nextListed, state.line)];
         const notice = h("div", { class: "r-notice" }, [
           h("span", {}, ["That was the last change on this page."])
         ]);
@@ -1180,8 +1253,7 @@
       stopSources?.();
       stopSources = void 0;
       marks = [];
-      const build = builds[state.build];
-      const page = build?.pages[state.page];
+      const page = shown();
       main.replaceChildren(controls);
       status.textContent = "";
       article.replaceChildren();

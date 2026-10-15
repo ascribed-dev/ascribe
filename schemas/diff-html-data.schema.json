@@ -54,6 +54,17 @@
           "description": "The build's name.",
           "type": "string"
         },
+        "line": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LineData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a line of a versioned build, which: the report lists the lines\nof one build together, each changed page once. Absent for a build\nthat isn't versioned."
+        },
         "pages": {
           "description": "Its changed pages, in path order.",
           "items": {
@@ -263,6 +274,29 @@
       "required": [
         "pages",
         "omitted"
+      ],
+      "type": "object"
+    },
+    "LineData": {
+      "description": "The line of a versioned build a build is.",
+      "properties": {
+        "build": {
+          "description": "The versioned build's name, which its current line has.",
+          "type": "string"
+        },
+        "current": {
+          "description": "Whether it's the current line.",
+          "type": "boolean"
+        },
+        "line": {
+          "description": "The line, as `[releases.<target>]` writes it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "build",
+        "line",
+        "current"
       ],
       "type": "object"
     },

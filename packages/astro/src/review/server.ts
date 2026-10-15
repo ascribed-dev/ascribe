@@ -353,7 +353,8 @@ export class ReviewServer {
       this.connected(),
       this.readRoutes(),
     ]);
-    const pages = "result" in changes ? changes.result.pages : [];
+    // The line the route is in, for a versioned build: its changes are the ones shown.
+    const pages = "result" in changes ? linePages(changes.result, route, routes) : [];
     const shown = pages.filter((p) => p.status !== "removed");
     let page = shown.find((p) => normalizeRoute(p.route) === route) ?? null;
     const pagePath = page?.path ?? fromPage ?? routes.get(route)?.path ?? null;
@@ -382,6 +383,20 @@ export class ReviewServer {
   private changed(from: string): void {
     this.options.channel.send(CHANGED_EVENT, { from });
   }
+}
+
+/**
+ * The changed pages of the line `route` is in: of the line whose changed
+ * page or JSON output has the route, else the current line's. For a build
+ * that isn't versioned, its changed pages.
+ */
+function linePages(result: DiffResult, route: string, routes: Map<string, RoutedPage>): PageDiff[] {
+  const lines = result.lines;
+  if (lines === undefined) return result.pages;
+  const changed = lines.find((l) => l.pages.some((p) => normalizeRoute(p.route) === route));
+  if (changed) return changed.pages;
+  const build = routes.get(route)?.build;
+  return lines.find((l) => l.build === build)?.pages ?? result.pages;
 }
 
 /** A changed page as the list shows it: without its changes, with its title. */

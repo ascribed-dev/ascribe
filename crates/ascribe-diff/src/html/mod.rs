@@ -158,8 +158,25 @@ struct Limit {
 struct BuildData<'a> {
     /// The build's name.
     build: &'a str,
+    /// For a line of a versioned build, which: the report lists the lines
+    /// of one build together, each changed page once. Absent for a build
+    /// that isn't versioned.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    line: Option<LineData>,
     /// Its changed pages, in path order.
     pages: Vec<PageData<'a>>,
+}
+
+/// The line of a versioned build a build is.
+#[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+struct LineData {
+    /// The versioned build's name, which its current line has.
+    build: String,
+    /// The line, as `[releases.<target>]` writes it.
+    line: String,
+    /// Whether it's the current line.
+    current: bool,
 }
 
 /// One changed page: `ascribe diff --format json`'s, and its renderings.
@@ -330,8 +347,17 @@ pub fn write_report(
             }
             pages.push(data);
         }
+        let line = now.project.model().build(&build.build).and_then(|b| {
+            let line = b.line.as_ref()?;
+            Some(LineData {
+                build: line.build.clone(),
+                line: line.line.text.clone(),
+                current: line.current,
+            })
+        });
         builds.push(BuildData {
             build: &build.build,
+            line,
             pages,
         });
     }
@@ -340,7 +366,15 @@ pub fn write_report(
         .iter()
         .flat_map(|b| b.pages.iter().map(|p| p.path.as_str()))
         .collect();
-    let in_builds = report.builds.iter().filter(|b| !b.pages.is_empty()).count();
+    // The lines of a versioned build count as one build.
+    let mut named: Vec<&str> = builds
+        .iter()
+        .filter(|b| !b.pages.is_empty())
+        .map(|b| b.line.as_ref().map_or(b.build, |l| l.build.as_str()))
+        .collect();
+    named.sort_unstable();
+    named.dedup();
+    let in_builds = named.len();
     let data = Data {
         ascribe_version: report.ascribe_version,
         base: &report.base,
@@ -470,8 +504,11 @@ fn emit(
     build_name: &str,
     path: &RelPath,
 ) -> Option<(ascribe_emit::EmittedPage, PageTitle)> {
+    let build = project.model().build(build_name)?;
+    // An older line's addresses are under its folder, as its output's are.
+    let project = project.for_build(build);
+    let project = project.as_ref();
     let model = project.model();
-    let build = model.build(build_name)?;
     let router = AstroRouter::from_consumer(&model.consumer);
     let page = project.resolver(build, &router).page(path)?;
     let emitter = SiteEmitter::new(model).with_anchors(true);

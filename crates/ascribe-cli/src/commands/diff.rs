@@ -17,6 +17,7 @@ use ascribe_diff::{
     Anchor, BuildDiff, Change, ChangeKind, DiffError, DiffOptions, ProjectDiff, Report,
     diff_project,
 };
+use ascribe_model::ContentModel;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{self, FromDisk, Loaded, Projects};
@@ -169,7 +170,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     let written = match args.format {
         Format::Text => match &page {
             Some(path) => write_page_text(out, &diff, path, !args.pages_only),
-            None => write_text(out, report),
+            None => write_text(out, report, project.model()),
         },
         Format::Json => serde_json::to_writer_pretty(&mut *out, report)
             .map_err(io::Error::from)
@@ -266,10 +267,86 @@ fn errors_line(errors: usize, names: &[String]) -> String {
     format!("the working tree has {count}; `{check}` lists {them}")
 }
 
-fn write_text(out: &mut dyn Write, report: &Report) -> io::Result<()> {
+fn write_text(out: &mut dyn Write, report: &Report, model: &ContentModel) -> io::Result<()> {
     write_base(out, report)?;
+    for group in line_groups(report, model) {
+        match group.as_slice() {
+            [build] => write_build(out, build)?,
+            lines => write_lines_of(out, lines)?,
+        }
+    }
+    Ok(())
+}
+
+/// The builds of a report in its order, each line of a versioned build in
+/// one group with the build's other lines it compared.
+fn line_groups<'r>(report: &'r Report, model: &ContentModel) -> Vec<Vec<&'r BuildDiff>> {
+    let declared = |name: &str| {
+        model
+            .build(name)
+            .filter(|b| b.line.is_some())
+            .map(|b| b.declared_name().to_owned())
+    };
+    let mut groups: Vec<(Option<String>, Vec<&BuildDiff>)> = Vec::new();
     for build in &report.builds {
-        write_build(out, build)?;
+        let name = declared(&build.build);
+        match groups
+            .iter_mut()
+            .find(|(d, _)| name.is_some() && *d == name)
+        {
+            Some((_, group)) => group.push(build),
+            None => groups.push((name, vec![build])),
+        }
+    }
+    groups.into_iter().map(|(_, group)| group).collect()
+}
+
+/// The lines of one versioned build: each changed page once, with the
+/// lines it changed in, "in every line" when it changed in each of them.
+fn write_lines_of(out: &mut dyn Write, lines: &[&BuildDiff]) -> io::Result<()> {
+    let name = lines
+        .first()
+        .map(|b| b.build.split('@').next().unwrap_or(&b.build))
+        .unwrap_or_default();
+    let mut paths: Vec<&str> = Vec::new();
+    for line in lines {
+        for page in &line.pages {
+            if !paths.contains(&page.path.as_str()) {
+                paths.push(&page.path);
+            }
+        }
+    }
+    paths.sort_unstable();
+    match paths.len() {
+        0 => return writeln!(out, "{name}: no changes in any line"),
+        1 => writeln!(out, "{name}: 1 page changed")?,
+        n => writeln!(out, "{name}: {n} pages changed")?,
+    }
+    for path in paths {
+        // Each description, with the lines it's true in.
+        let mut said: Vec<(String, Vec<&str>)> = Vec::new();
+        for line in lines {
+            let Some(page) = line.pages.iter().find(|p| p.path == path) else {
+                continue;
+            };
+            let text = page.describe(str::to_owned);
+            match said.iter_mut().find(|(t, _)| *t == text) {
+                Some((_, names)) => names.push(&line.build),
+                None => said.push((text, vec![&line.build])),
+            }
+        }
+        let parts: Vec<String> = said
+            .iter()
+            .map(|(text, names)| {
+                if names.len() == lines.len() {
+                    format!("{text}, in every line")
+                } else {
+                    let names: Vec<String> = names.iter().map(|n| format!("`{n}`")).collect();
+                    format!("{text}, only in {}", names.join(", "))
+                }
+            })
+            .collect();
+        writeln!(out, "  {path}: {}", parts.join("; "))?;
     }
     Ok(())
 }
