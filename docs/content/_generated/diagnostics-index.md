@@ -209,3 +209,5 @@
 | [ASC209](../checks/diagnostics/content-model.md#ASC209) | `model-versions-current` | Error | File | write |
 | [ASC210](../checks/diagnostics/directives.md#ASC210) | `available-version-ahead` | Error | File | choose |
 | [ASC211](../checks/diagnostics/content-checks.md#ASC211) | `available-line-undeclared` | Advice | File | choose |
+| [ASC212](../checks/diagnostics/content-checks.md#ASC212) | `available-same-in-every-line` | Advice | File | write |
+| [ASC213](../checks/diagnostics/content-checks.md#ASC213) | `available-in-no-line` | Warning | File | write |

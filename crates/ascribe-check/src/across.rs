@@ -61,6 +61,8 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::AVAILABILITY_LEFT_BEHIND,
     diagnostics::AVAILABLE_VERSION_AHEAD,
     diagnostics::AVAILABLE_LINE_UNDECLARED,
+    diagnostics::AVAILABLE_SAME_IN_EVERY_LINE,
+    diagnostics::AVAILABLE_IN_NO_LINE,
     diagnostics::CRAWLERS_DISALLOWED,
 ];
 
@@ -175,7 +177,15 @@ pub(crate) fn for_every_build(
         }
     }
 
-    if on(diagnostics::AVAILABLE_VERSION_AHEAD) || on(diagnostics::AVAILABLE_LINE_UNDECLARED) {
+    if [
+        diagnostics::AVAILABLE_VERSION_AHEAD,
+        diagnostics::AVAILABLE_LINE_UNDECLARED,
+        diagnostics::AVAILABLE_SAME_IN_EVERY_LINE,
+        diagnostics::AVAILABLE_IN_NO_LINE,
+    ]
+    .into_iter()
+    .any(on)
+    {
         placement(project.model(), &mut issues);
     }
 
@@ -199,19 +209,19 @@ pub(crate) fn for_every_build(
     out
 }
 
-/// `available-version-ahead` and `available-line-undeclared` in
-/// `ascribe.toml`: each version a feature's spec or a build's filter names
-/// that its target's list can't place. A filter's version is reported at
-/// the whole filter, with no fix.
+/// What `[releases]` says about the specs in `ascribe.toml`: each version
+/// a feature's spec or a build's filter names that its target's list can't
+/// place, and each feature's entry that no output shows the version of or
+/// that no output has. A filter's version is reported at the whole filter,
+/// with no fix.
 fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
     let at = |span: Span| Location::new(FileId::new(0), span);
     for f in &model.features {
-        issues.extend(releases::placement_issues(
-            model,
-            &f.available.entries,
-            &at,
-            true,
-        ));
+        let placed = releases::placement_issues(model, &f.available.entries, &at, true);
+        if placed.is_empty() {
+            issues.extend(releases::inert_issues(model, &f.available, &at, true));
+        }
+        issues.extend(placed);
     }
     for build in &model.builds {
         if let AvailabilityMode::Filter {

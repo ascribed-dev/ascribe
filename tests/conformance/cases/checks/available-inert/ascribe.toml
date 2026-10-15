@@ -1,0 +1,35 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[releases.self-managed.archived]
+"3.3" = {}
+
+[features.old]
+name = "Shipped long ago"
+available = "self-managed 3.0"
+
+[builds.site]
+versions = "self-managed"
+
+[builds.cloud]
+availability = { filter = "cloud" }
+
+[builds.current]
+availability = { filter = "self-managed 3.5" }
+
+[checks]
+feature-unused = "off"
+availability-left-behind = "off"

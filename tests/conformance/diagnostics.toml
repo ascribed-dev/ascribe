@@ -3913,3 +3913,33 @@ reference = "content-model/content.md#71-releasestarget"
 when = "a version is in a line between two of its target's declared lines, and that line isn't declared"
 message = "`{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}`"
 fix = "Declare the line in `[releases.<target>]`: in `archived` with no address, as `\"3.3\" = {}`, for a line that shipped and that nothing publishes now. Or correct the number to a declared line, such as the one either side of it."
+
+[[diagnostic]]
+code = "ASC212"
+slug = "available-same-in-every-line"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and every version the mark names for the target is at or before the oldest live line, so no output shows it"
+message = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`"
+fix = "Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so nothing a reader sees changes."
+
+[[diagnostic]]
+code = "ASC213"
+slug = "available-in-no-line"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and the content is in no live or planned line of the target"
+message = "`{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it"
+fix = "Remove the content, which no line's output publishes, or, if a line still has it, correct the mark. A mark that makes content unavailable from a version before the oldest live line, such as `self-managed (ga 3.0, removed 3.2)` with 3.4 the oldest, leaves it in no line."

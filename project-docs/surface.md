@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-207 in all. By severity: 33 advice, 151 error, 23 warning. By level: 188 file, 19 page. By kind of next step: 48 choose, 13 fix, 7 outside, 11 review, 128 write.
+209 in all. By severity: 34 advice, 151 error, 24 warning. By level: 190 file, 19 page. By kind of next step: 48 choose, 13 fix, 7 outside, 11 review, 130 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -310,6 +310,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC209` | `model-versions-current` | error | write | `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live` |
 | `ASC210` | `available-version-ahead` | error | choose | `{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}` |
 | `ASC211` | `available-line-undeclared` | advice | choose | `{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}` |
+| `ASC212` | `available-same-in-every-line` | advice | write | `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}` |
+| `ASC213` | `available-in-no-line` | warning | write | `{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it |
 
 ## The VS Code extension
 

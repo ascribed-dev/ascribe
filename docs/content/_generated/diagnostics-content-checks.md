@@ -241,6 +241,32 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
+### ASC212 `available-same-in-every-line`
+@id {permalink=true}: ASC212
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** Every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and every version the mark names for the target is at or before the oldest live line, so no output shows it.
+
+**Message:** `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`
+
+**Fix:** Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so nothing a reader sees changes.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
+### ASC213 `available-in-no-line`
+@id {permalink=true}: ASC213
+
+Warning · file level · next step: write · configurable in `[checks]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+
+**When:** Every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and the content is in no live or planned line of the target.
+
+**Message:** `{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it
+
+**Fix:** Remove the content, which no line's output publishes, or, if a line still has it, correct the mark. A mark that makes content unavailable from a version before the oldest live line, such as `self-managed (ga 3.0, removed 3.2)` with 3.4 the oldest, leaves it in no line.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
 ## Outputs
 
 ### ASC163 `description-too-long`

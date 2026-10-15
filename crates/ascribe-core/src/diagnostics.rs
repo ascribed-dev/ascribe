@@ -659,6 +659,13 @@ pub const AVAILABLE_VERSION_AHEAD: DiagnosticSlug = DiagnosticSlug("available-ve
 /// `ASC211`, advice, file level: a content check (area `project`).
 pub const AVAILABLE_LINE_UNDECLARED: DiagnosticSlug = DiagnosticSlug("available-line-undeclared");
 
+/// `ASC212`, advice, file level: a content check (area `project`).
+pub const AVAILABLE_SAME_IN_EVERY_LINE: DiagnosticSlug =
+    DiagnosticSlug("available-same-in-every-line");
+
+/// `ASC213`, warning, file level: a content check (area `project`).
+pub const AVAILABLE_IN_NO_LINE: DiagnosticSlug = DiagnosticSlug("available-in-no-line");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -868,6 +875,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_VERSIONS_CURRENT,
     AVAILABLE_VERSION_AHEAD,
     AVAILABLE_LINE_UNDECLARED,
+    AVAILABLE_SAME_IN_EVERY_LINE,
+    AVAILABLE_IN_NO_LINE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
