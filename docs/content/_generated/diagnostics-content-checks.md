@@ -267,6 +267,19 @@ Warning · file level · next step: write · configurable in `[checks]` · [SPEC
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
+### ASC214 `release-line-ended`
+@id {permalink=true}: ASC214
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A live line's date in `[releases.<target>.ends]` is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
+
+**Message:** support for `{target}` \{line} ended on \{date}, and the line is still live
+
+**Fix:** Move the line from `live` to `archived` in `[releases.<target>]`, with its date as `ended` and, when it's still readable somewhere, its `url`; or, if its support goes on, change its date in `ends`.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
 ## Outputs
 
 ### ASC163 `description-too-long`

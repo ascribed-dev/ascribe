@@ -211,3 +211,4 @@
 | [ASC211](../checks/diagnostics/content-checks.md#ASC211) | `available-line-undeclared` | Advice | File | choose |
 | [ASC212](../checks/diagnostics/content-checks.md#ASC212) | `available-same-in-every-line` | Advice | File | write |
 | [ASC213](../checks/diagnostics/content-checks.md#ASC213) | `available-in-no-line` | Warning | File | write |
+| [ASC214](../checks/diagnostics/content-checks.md#ASC214) | `release-line-ended` | Advice | File | write |

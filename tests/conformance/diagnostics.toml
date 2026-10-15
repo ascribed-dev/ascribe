@@ -3943,3 +3943,18 @@ reference = "content-model/content.md#71-releasestarget"
 when = "every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and the content is in no live or planned line of the target"
 message = "`{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it"
 fix = "Remove the content, which no line's output publishes, or, if a line still has it, correct the mark. A mark that makes content unavailable from a version before the oldest live line, such as `self-managed (ga 3.0, removed 3.2)` with 3.4 the oldest, leaves it in no line."
+
+[[diagnostic]]
+code = "ASC214"
+slug = "release-line-ended"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+when = "a live line's date in `[releases.<target>.ends]` is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
+message = "support for `{target}` {line} ended on {date}, and the line is still live"
+fix = "Move the line from `live` to `archived` in `[releases.<target>]`, with its date as `ended` and, when it's still readable somewhere, its `url`; or, if its support goes on, change its date in `ends`."

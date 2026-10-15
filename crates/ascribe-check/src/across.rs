@@ -11,8 +11,9 @@
 //!   the image files under the content root, through the project's
 //!   [`FileSystem`](ascribe_resolve::FileSystem); and
 //!   `availability-left-behind` compares each feature's versions with each
-//!   target's current line in `[releases]`; and `crawlers-disallowed` reads
-//!   `[crawlers]`.
+//!   target's current line in `[releases]`; `release-line-ended` compares
+//!   each live line's `ends` with the day the check runs as; and
+//!   `crawlers-disallowed` reads `[crawlers]`.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, and `title-duplicate` and `description-duplicate`, two pages
@@ -28,7 +29,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
-use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
+use ascribe_core::{Date, DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{
     AvailabilityMode, CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission,
     Purpose, in_line,
@@ -63,6 +64,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::AVAILABLE_LINE_UNDECLARED,
     diagnostics::AVAILABLE_SAME_IN_EVERY_LINE,
     diagnostics::AVAILABLE_IN_NO_LINE,
+    diagnostics::RELEASE_LINE_ENDED,
     diagnostics::CRAWLERS_DISALLOWED,
 ];
 
@@ -189,6 +191,12 @@ pub(crate) fn for_every_build(
         placement(project.model(), &mut issues);
     }
 
+    if on(diagnostics::RELEASE_LINE_ENDED)
+        && let Some(today) = project.today()
+    {
+        line_ended(project.model(), today, &mut issues);
+    }
+
     if on(diagnostics::CRAWLERS_DISALLOWED) {
         crawlers_disallowed(project.model(), &mut issues);
     }
@@ -234,6 +242,24 @@ fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
             issues.extend(releases::placement_issue(
                 model, target, placed, version, &at, false,
             ));
+        }
+    }
+}
+
+/// `release-line-ended`: a live line whose `ends` date is before `today`,
+/// at its key in `[releases.<target>.ends]`.
+fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
+    for releases in &model.releases {
+        for end in releases.ends.iter().filter(|e| e.date < today) {
+            issues.push(
+                Issue::new(
+                    diagnostics::RELEASE_LINE_ENDED,
+                    Location::new(FileId::new(0), end.line.span),
+                )
+                .with_arg("target", releases.target.clone())
+                .with_arg("line", end.line.text.clone())
+                .with_arg("date", end.date.to_string()),
+            );
         }
     }
 }

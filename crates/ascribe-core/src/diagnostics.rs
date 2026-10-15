@@ -666,6 +666,9 @@ pub const AVAILABLE_SAME_IN_EVERY_LINE: DiagnosticSlug =
 /// `ASC213`, warning, file level: a content check (area `project`).
 pub const AVAILABLE_IN_NO_LINE: DiagnosticSlug = DiagnosticSlug("available-in-no-line");
 
+/// `ASC214`, advice, file level: a content check (area `project`).
+pub const RELEASE_LINE_ENDED: DiagnosticSlug = DiagnosticSlug("release-line-ended");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -877,6 +880,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     AVAILABLE_LINE_UNDECLARED,
     AVAILABLE_SAME_IN_EVERY_LINE,
     AVAILABLE_IN_NO_LINE,
+    RELEASE_LINE_ENDED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
