@@ -31,8 +31,9 @@ This is the thinnest slice through the second seam: a file that isn't a page, pl
 
 ## Context
 
-- README decisions 11 to 16, and phase 1's decisions 3 to 6.
-- `crates/ascribe-resolve/src/fs.rs` and `layout.rs`: `FileSystem`, `DiskFs` and `MemoryFs`, and what a project's layout knows about its folders.
+- README decisions 11 to 16 and 23 to 26.
+- `crates/ascribe-resolve/src/fs.rs` and `layout.rs`: `FileSystem`, its `files_in` and `read_file`, which list and read a folder relative to the project root for a source's copies, and what a project's layout knows about its folders.
+- `crates/ascribe-resolve/tests/all/file_reads.rs`: the test that catches a project read outside `FileSystem`.
 - `crates/ascribe-resolve/src/index/`: the source index's headings, ids, and references, and `references.rs` beside it.
 - `crates/ascribe-query/src/refs.rs`: the target grammar and `Place`; `outline.rs`: `Outline` and `OutlineHeading`.
 - `crates/ascribe-cli/src/commands/outline.rs` and `refs`, and the MCP tool `ascribe_outline` in `crates/ascribe-mcp/`.
@@ -43,13 +44,15 @@ This is the thinnest slice through the second seam: a file that isn't a page, pl
 
 ### Reading memos
 
-A memo store gives the memos a project has: each file's path, `about`, `quote`, body, and where each key is. The binary has one interface and, in this phase, one implementation: the committed folder, `memos/` beside `ascribe.toml`, read through `FileSystem`, every `.md` file in it and its subfolders. Phase 6 adds the personal one.
+A memo store gives the memos a project has: each file's path, `about`, `quote`, body, and where each key is. The binary has one interface and, in this phase, one implementation: the committed folder, `memos/` beside `ascribe.toml`, every `.md` file in it and its subfolders. Phase 6 adds the personal one.
+
+**It's read through `FileSystem`, with what's there.** `memos/` is outside the content root, so no page listing reaches it. `files_in` lists a folder relative to the project root and `read_file` reads a file there; they're how a source's copies under `sources/<name>/` are read, and every file system implements both: `DiskFs`, `MemoryFs`, the editor's `BufferFs` and `LayerFs`, which see an unsaved memo, and `GitFs`, which reads one at a commit. So the store adds no new kind of read, and `file_reads.rs` holds that it adds no read outside them.
 
 A memo file is parsed on its own: frontmatter, then a body that's kept as text. Nothing in the body is resolved, and it isn't a page: it has no route, no outputs, and no place in `ascribe build`.
 
 ### Placing
 
-Each time memos are read, each is placed against the source index, as phase 1's decision 4 says:
+Each time memos are read, each is placed against the source index, as decision 24 says:
 
 1. `about` is parsed by `ascribe refs`'s grammar. A target that doesn't exist makes the memo detached.
 2. With no `quote`, the memo is on its target: a page, a section, or a content model entry.
@@ -59,17 +62,19 @@ Nothing is cached between runs, and nothing is written to the memo.
 
 ### Checks
 
-`memo-invalid`, `memo-detached`, `memo-outdated`, and `memo-long`, as phase 1's decision 3 names them, each reported on the memo file, at its `about` or `quote` line. `ascribe check` reads the committed folder only. A `memos/` folder inside the content root is `memo-invalid`, once, at the folder's first file, and its files are read as pages, as they are today.
+`memo-invalid`, `memo-detached`, `memo-outdated`, and `memo-long` (decision 23), each reported on the memo file, at its `about` or `quote` line. `ascribe check` reads the committed folder only.
+
+`memos/` is beside `ascribe.toml` by definition, so it's inside the content root only in a project whose `content-root` is `.`. That's the case `memo-invalid` is for: once, at the folder's first file, saying to set a content root below the project folder, and the folder's files are read as pages, as they are today.
 
 ### `ascribe outline` and `ascribe refs`
 
-As phase 1's decision 5 says: the page and each heading gain `memos`, and a memo is a place in `ascribe refs` with `use` `memo`. Their schemas are rewritten and the text output gains a line for each. The MCP tool returns what the command does.
+As decision 25 says: the page and each heading gain `memos`, and a memo is a place in `ascribe refs` with `use` `memo`. Their schemas are rewritten and the text output gains a line for each. The MCP tool returns what the command does.
 
 ## Tasks
 
-1. The memo store, the committed folder, and parsing a memo file, with tests on `MemoryFs`.
+1. The memo store over `files_in` and `read_file`, the committed folder, and parsing a memo file, with tests on `MemoryFs` and `file_reads.rs` passing.
 2. Placing, with tests for each kind of target, a quote in the first of two blocks, a quote across two blocks, a quote in a fragment, and whitespace.
-3. The four checks, their registry entries, and conformance cases: a project with memos in `tests/conformance/cases/memos/`.
+3. The four checks, their registry entries, and conformance cases: a project with memos in `tests/conformance/cases/memos/`, and one with `content-root = "."` and a `memos/` folder.
 4. `ascribe outline` and `ascribe refs`, their JSON schemas, and the MCP tool.
 5. `examples/quill/memos/`, with the memo from the goal and one about `phrase:product`.
 6. A reference page for memo files in `docs/content/writing/`, the outline and refs references, the diagnostics reference, `docs/content/command/project-files.md` for `memos/`, `changes/`, and the surface map.

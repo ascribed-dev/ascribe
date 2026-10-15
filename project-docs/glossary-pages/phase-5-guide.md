@@ -20,7 +20,7 @@ A how-to in `docs/content/content-model/`, "Set up a glossary":
 1. Write the page: a heading for each term with `@term` under it, and the definition as the section's first paragraph, a sentence that stands on its own.
 2. List it in `[glossary] pages`.
 3. Choose how terms are linked: `first`, `every`, or `marked`, for the glossary and for a term.
-4. Aliases, and a term that's also an ordinary word.
+4. Aliases, and a term that's also an ordinary word: `match=marked`, and linking the occurrences that mean the term to its heading, as phase 1's decision 7 settles what such a link is.
 5. A term that's new in a version, or differs by product, with `@available` and variants on its section.
 6. A glossary in several pages, and terms shared through a fragment.
 7. What the checks report, and what a site gets: `data-ascribe-term` and the definition as the link's title.

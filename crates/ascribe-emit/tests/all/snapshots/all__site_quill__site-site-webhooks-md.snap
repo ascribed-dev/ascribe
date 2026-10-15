@@ -1,0 +1,20 @@
+---
+source: crates/ascribe-emit/tests/all/site_quill.rs
+expression: text
+---
+---
+type: page
+title: Webhooks
+description: Send an event to your own service when a page changes.
+available:
+- target: self-managed
+  dimension: deployment
+  states:
+  - ga
+  versions:
+  - '3.5'
+  text: self-managed (GA, 3.5+)
+source: webhooks.md
+---
+
+The agent posts an event to each webhook in `quill.yaml`. See [API keys](/keys/).

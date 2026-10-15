@@ -35,7 +35,7 @@ From the proposal:
 6. **`@term` on a page that isn't in `pages` is an error,** with a fix that adds the page. A restriction chosen for now, not a limit of the design.
 7. **A glossary page is an ordinary page otherwise:** a type, frontmatter, a route, fragments, `@available`, and variants.
 8. **The short definition is derived:** the first paragraph as plain text, phrases substituted, formatting dropped, links reduced to their words, for each build. The link's title, the editor's hover, and the JSON output take it.
-9. **Errors move to the page.** Two terms or aliases with the same text is an error at the second, naming the first. A term with no paragraph is an error. A definition longer than `description-too-long`'s limit is advice, counted on the derived text: one number for both, since both are a sentence shown where there's no room for more. That limit is a constant today, 300 characters (`DESCRIPTION_LIMIT` in `crates/ascribe-resolve/src/llms.rs`), so whether either gets a setting is phase 1's.
+9. **Errors move to the page.** Two terms or aliases with the same text is an error at the second, naming the first. A term with no paragraph is an error. A definition longer than `description-too-long`'s limit is advice, counted on the derived text: one number for both, since both are a sentence shown where there's no room for more. That limit is a constant, 300 characters (`DESCRIPTION_LIMIT` in `crates/ascribe-resolve/src/llms.rs`), and decision 19 keeps it one.
 10. **`model-glossary-link` goes,** and a term with nowhere to link goes with it: every term is on its page.
 11. **A term isn't linked on the page that defines it,** and matching never applies to headings.
 12. **The site output's contract doesn't change:** `data-ascribe-term`, with the definition as the link's title.
@@ -50,6 +50,8 @@ From [phase 1](phase-1-decisions.md), which keeps the options each was chosen fr
 18. **`ascribe model` lists a term as `id`, `term`, `aliases`, `match`, `case_sensitive`, `page`, and `line`,** with no `definition` and no `link`, and its `schema_version` goes to 3. `page` is the path from the content root.
 19. **The diagnostics:** `model-unknown-key` for `[glossary] terms`, naming `pages` and `@term`; `model-glossary-page` (error, `choose`); `glossary-term-duplicate` (error, `write`, at the second, naming the first), replacing `model-glossary-duplicate-term`; `glossary-definition-missing` (error, `write`); `glossary-definition-long` (advice, `write`); and `term-off-glossary-page` (error, `choose`, with the fix that adds the page). `model-glossary-link` and `glossary-link-target-missing` go, their codes left as gaps. One constant, `DESCRIPTION_LIMIT`, serves both length checks; a setting is added to both at once if a project ever asks.
 20. **Ascribe's docs keep their glossary at `docs/content/glossary.md`,** type `reference`: the root holds what belongs to no one feature.
+
+One is open: [phase 1's decision 7](phase-1-decisions.md#7-a-link-an-author-writes-to-a-terms-heading), whether a link an author writes to a term's heading is a use of the term. It was raised after the six were answered, and phase 2 can't start without it, since Ascribe's docs have three `marked` terms whose links it decides.
 
 ## The thread
 
@@ -76,17 +78,17 @@ From [phase 1](phase-1-decisions.md), which keeps the options each was chosen fr
 
 | Left out | Phase |
 |---|---|
-| A term with no definition, a long definition, `@term` off a glossary page, and a term in a build that doesn't publish its section | 3 |
+| A term with no definition, a long definition, `@term` off a glossary page, a term in a build that doesn't publish its section, and `@intended` at a term's heading in place of `[[intended]] term` | 3 |
 | Go to definition, completion, the quick fixes, rename, and the outline | 4 |
 | A guide to the glossary | 5 |
 
-After phase 2, a term with no paragraph has an empty definition, a long one is used whole, and `@term` on a page that isn't in `pages` is ignored. Two terms with the same text are an error from the start, since matching can't choose between them. The reference says what's true at each step.
+After phase 2, a term with no paragraph has an empty definition, a long one is used whole, `@term` on a page that isn't in `pages` is ignored, and `glossary-term-unused` is still acknowledged with `[[intended]] term`, which names the heading's id. Two terms with the same text are an error from the start, since matching can't choose between them. The reference says what's true at each step.
 
 ## Phases
 
 | Phase | Result |
 |---|---|
-| [1: Decisions](phase-1-decisions.md) | The maintainer settles the six contracts the phases ship. |
+| [1: Decisions](phase-1-decisions.md) | The maintainer settles the seven contracts the phases ship. |
 | [2: The thread](phase-2-thread.md) | A glossary is a page: its terms are headings, its definitions are paragraphs, and every project in the repository has moved. |
 | [3: A glossary page's rules](phase-3-rules.md) | An empty definition, a long one, and a term off a glossary page are each reported where they're written, and a term follows its section's availability. |
 | [4: The editor](phase-4-editor.md) | A term goes to its section, `@term` completes, a misplaced one has a fix, and renaming a heading keeps everything that names its term. |

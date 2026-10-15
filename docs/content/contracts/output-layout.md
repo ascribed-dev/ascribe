@@ -16,11 +16,14 @@ This contract says where `ascribe build` writes each build's output, how it reco
   <build>/
     <emitter>/                  one emitter's output: the emitter root
     <emitter>.manifest.json     what that emitter root holds (§3)
+  _ascribe/                     what the builds share, with [releases] (§1.5)
+    versions.json
+    manifest.json               what this folder holds (§3)
 ```
 
-- `<build>` is the build's name from `ascribe.toml`, as written (`site`, `cloud`, `self-managed-3.3`). Build names are unique ignoring case (content-model.md, `model-build-name-case`), and never start with `.`, so they can't clash with `.lock` or `.staging`.
+- `<build>` is the build's name from `ascribe.toml`, as written (`site`, `cloud`, `self-managed-3.3`). Build names are unique ignoring case (content-model.md, `model-build-name-case`), and start with a letter, so they can't clash with `.lock`, `.staging`, or `_ascribe`. A versioned build (content-model.md §16) has one `<build>` for each live line: its current line is named as the build is, and each other `<build>@<line>`, such as `site@3.4`.
 - `<emitter>` is `site`, `plain`, or `json`.
-- Each emitter root is complete on its own: its pages, and a copy of every asset they use ([asset contract](assets.md)). Nothing is shared between emitter roots or builds.
+- Each emitter root is complete on its own: its pages, and a copy of every asset they use ([asset contract](assets.md)). Nothing is shared between emitter roots or builds, with one exception: `_ascribe/versions.json` (§1.5), which says what each line of a versioned build knows about the others.
 
 ### 1.1 Inside an emitter root
 
@@ -177,11 +180,50 @@ The site output holds `_ascribe/headers.json`: the response headers the build's 
 
 Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, such as a list of redirects beside `headers`, or more headers to a rule; it doesn't change these.
 
+### 1.5 The versions file
+@available: next
+
+A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/versions.json`: for each versioned build, its lines and which of them publishes each page, at which route, so a site can link a page to the same page in another line. It's above the builds' folders, the one file they share, and it's owned through the folder's own manifest, `_ascribe/manifest.json`, in the format of §3, so the rules of §2 and §4 hold for it as for an emitter root. Every `ascribe build` of a project with `[releases]` writes it, for every versioned build, whichever builds it was asked for. The first build of a project without `[releases]` removes it, then the manifest, then the folder when nothing else is in it. An `_ascribe` folder that has files and no manifest isn't Ascribe's: a build that would write there fails and leaves it alone, and one that wouldn't leaves it alone too.
+
+```json
+{
+  "version": 1,
+  "builds": {
+    "site": {
+      "target": "self-managed",
+      "lines": [
+        { "line": "3.5", "status": "current", "build": "site", "base": "/docs/" },
+        { "line": "3.4", "status": "live", "build": "site@3.4", "base": "/docs/3.4/" }
+      ],
+      "pages": {
+        "install.md": { "lines": { "3.5": "/docs/install/", "3.4": "/docs/3.4/install/" } },
+        "webhooks.md": { "lines": { "3.5": "/docs/webhooks/" } }
+      }
+    }
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
+| `builds` | Each versioned build, by the name it's declared with, sorted by name. Empty when no build is versioned. |
+| `builds.<name>.target` | The target the build is versioned by. |
+| `builds.<name>.lines` | Its lines, newest first. |
+| `lines[].line` | The line, as `[releases.<target>] live` writes it. |
+| `lines[].status` | `current` for the newest live line, `live` for each other. |
+| `lines[].build` | The name of the line's output, `<build>/` under `<output-dir>`. |
+| `lines[].base` | The path the line's pages are under, starting and ending with `/`: the base path, then the line's number for every line but the current one. |
+| `builds.<name>.pages` | Each page a line publishes, by its source path from the content root, sorted by path. |
+| `pages.<path>.lines` | Its route in each line that publishes it, by line, newest first. A line that doesn't publish the page isn't in it. |
+
+A later version adds keys and changes none of these.
+
 ## 2. What Ascribe owns
 
 Ascribe owns exactly these, and touches nothing else under `<output-dir>`:
 
-- the files listed in a manifest (§3);
+- the files listed in a manifest (§3), the shared folder's included (§1.5);
 - the manifests themselves;
 - `<output-dir>/.staging/` and everything in it;
 - `<output-dir>/.lock`.

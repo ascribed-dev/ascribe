@@ -18,7 +18,7 @@ The agent opens the file and reads it whole. Nothing pastes a memo's text into a
 
 ## Context
 
-- README decision 17, and phase 1's decision 5.
+- README decisions 17 and 25.
 - `crates/ascribe-cli/src/agents/prompts.rs`: `fix` is `ascribe check`'s prompt format, and `review` is `ascribe diff`'s (`crates/ascribe-diff/src/prompt.rs`). The MCP server offers the same prompts.
 - `crates/ascribe-lsp/src/agent_prompt.rs`: the editor's Prompt agent.
 - `crates/ascribe-query/src/rules.rs`: the rules, `RULES_BUDGET`, and the order lines are cut in.
@@ -36,7 +36,7 @@ A memo in `.ascribe/memos/` is listed in prompts made on the machine that has it
 
 ### The rules
 
-In a project with a memo file, the rules gain a sentence after phase 3's: `ascribe outline <page>` lists the memos about a page, and a memo is read before the block it's about is changed. Both sentences are cut before the page types' lines when the rules are over budget, since they're the newest and the least needed in a project with few memos.
+In a project with a memo file, the rules gain a sentence after phase 3's: `ascribe outline <page>` lists the memos about a page, and a memo is read before the block it's about is changed. It's cut with phase 3's sentence, in the order phase 3 sets.
 
 ## Tasks
 

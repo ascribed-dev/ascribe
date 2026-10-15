@@ -50,6 +50,9 @@ A later profile that offers a choice will add a key for it.
 
 @include: ../_fragments/content-model/builds.md
 
+@available: next
+A versioned build's outputs, their names and addresses, and what each line keeps and shows are in [Versions](../versions/index.md#build-a-site-for-each-line). An older line's output says nothing to agents: it has no `llms.txt`, and its pages point to no Markdown version.
+
 ---
 
 ## 17. `[editor]`

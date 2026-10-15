@@ -12,7 +12,8 @@ use comrak_ascribe::nodes::NodeValue;
 use comrak_ascribe::{Arena, Options, parse_document};
 use support::{emit_build, load, quill};
 
-const BUILDS: [&str; 3] = ["site", "cloud", "self-managed-3.3"];
+/// Each build: `site` is versioned, so it's two, one for each live line.
+const BUILDS: [&str; 4] = ["site", "site@3.4", "cloud", "self-managed-3.3"];
 
 fn output(build: &str, emitter: &dyn Emitter) -> BTreeMap<String, String> {
     let root = quill();
@@ -59,18 +60,18 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
                     format!("{stem}.md")
                 }
             };
-            assert_eq!(
-                files,
-                [
-                    "_fragments/prerequisites.png".to_owned(),
-                    page("install-agent"),
-                    page("keys"),
-                    "playground.png".to_owned(),
-                    page("quickstart"),
-                ],
-                "{build} {}",
-                emitter.name()
-            );
+            let mut expected = vec![
+                "_fragments/prerequisites.png".to_owned(),
+                page("install-agent"),
+                page("keys"),
+                "playground.png".to_owned(),
+                page("quickstart"),
+            ];
+            // The page only self-managed 3.5 has.
+            if build == "site" {
+                expected.push(page("webhooks"));
+            }
+            assert_eq!(files, expected, "{build} {}", emitter.name());
         }
     }
 }

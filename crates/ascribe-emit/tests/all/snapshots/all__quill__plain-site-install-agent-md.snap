@@ -4,7 +4,7 @@ expression: text
 ---
 # Install the Quill agent
 
-Available: Quill Cloud (GA); self-managed (preview, 3.3+)
+Available: Quill Cloud (GA); self-managed (preview)
 
 The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see [Try Quill in the browser](https://docs.quill.dev/quickstart/#try-in-browser).
 
@@ -89,7 +89,7 @@ server:
 
 ## Streaming sync
 
-Available: Quill Cloud (GA); self-managed (preview, 3.4+)
+Available: Quill Cloud (GA); self-managed (preview)
 
 Streaming sync pushes changes as you save, instead of on each commit.
 

@@ -486,7 +486,7 @@ fn parity_over(source: &Path, min_slugs: usize) {
 fn quill_parity_for_every_build() {
     let quill = manifest_dir().join("../../examples/quill");
     let builds = builds_of(&quill);
-    assert_eq!(builds, ["site", "cloud", "self-managed-3.3"]);
+    assert_eq!(builds, ["site", "site@3.4", "cloud", "self-managed-3.3"]);
     for build in &builds {
         check_parity(&quill, build, false);
     }

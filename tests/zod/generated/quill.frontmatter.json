@@ -15,10 +15,7 @@
           "preview"
         ],
         "target": "self-managed",
-        "text": "self-managed (preview, 3.3+)",
-        "versions": [
-          "3.3"
-        ]
+        "text": "self-managed (preview)"
       }
     ],
     "description": "Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.",
@@ -36,6 +33,25 @@
     "description": "Run Quill in the browser with no local setup.",
     "source": "quickstart.md",
     "title": "Try Quill in the browser",
+    "type": "page"
+  },
+  "webhooks.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (GA, 3.5+)",
+        "versions": [
+          "3.5"
+        ]
+      }
+    ],
+    "description": "Send an event to your own service when a page changes.",
+    "source": "webhooks.md",
+    "title": "Webhooks",
     "type": "page"
   }
 }

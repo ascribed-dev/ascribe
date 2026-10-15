@@ -21,6 +21,7 @@
 //   import Elements from "@ascribed/astro/Elements.astro";           // <Elements /> in <head>
 //   import Availability from "@ascribed/astro/Availability.astro";   // the page's availability
 //   import Head from "@ascribed/astro/Head.astro";                   // <Head entry={entry} /> in <head>
+//   import Versions from "@ascribed/astro/Versions.astro";           // the lines that have the page
 //
 //   // the sidebar: src/nav.ts's list, checked against the collection
 //   import { sidebar } from "@ascribed/astro/content";
@@ -53,6 +54,7 @@ import {
   copyPublishedFiles,
   filesMiddleware,
   folderUnder,
+  inOrder,
 } from "./files.js";
 import { WARN as HEAD_WARN } from "./head-check.js";
 import { headersFor, headersOutcome, mergeRules, readHeaders } from "./headers.js";
@@ -97,6 +99,7 @@ import {
 import { anchorsFor, hasWarnings, reviewFor, runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
 import { copySchema } from "./schema.js";
+import { olderLines } from "./versions.js";
 
 export { default as rehypeAscribeAttributes } from "./rehype.js";
 export { satteriAscribeAttributes } from "./satteri.js";
@@ -235,6 +238,12 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       sitePages,
       excluded: [
         ...forwardingRoutes(entries.map((entry) => readPermalinks(entry.siteRoot))),
+        // An older line's pages, which aren't the site's own; what crawlers are told of them is to come.
+        ...entries.flatMap((entry) =>
+          olderLines(entry.siteRoot).flatMap((line) =>
+            pageList(readRecords(line.siteRoot)).map((page) => page.route),
+          ),
+        ),
         `${root}404`,
         `${root}500`,
         ...(options.sitemap?.exclude ?? []),
@@ -349,16 +358,20 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             logger.info(
               `running ${path.basename(found)} build for "${entry.build}"${named ? ` (${entry.name})` : ""}`,
             );
-            const result = await runBuild({
+            const run = {
               binary: found,
               configPath: entry.project.configPath,
-              build: entry.build,
               cwd: entry.project.dir,
               anchors: anchorsFor(options.anchors, command, entry === reviewed),
+            };
+            // `llms.txt` and each page's Markdown, which agents read.
+            const plain = entry.agentsRoot === undefined ? [] : (["plain"] as const);
+            const result = await runBuild({
+              ...run,
+              build: entry.build,
               outputs: [
                 "site",
-                // `llms.txt` and each page's Markdown, which agents read.
-                ...(entry.agentsRoot === undefined ? [] : (["plain"] as const)),
+                ...plain,
                 // While review is on, the JSON output says which page is at each route.
                 ...(entry === reviewed && review?.active ? (["json"] as const) : []),
               ],
@@ -366,6 +379,14 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             if (hasWarnings(result.diagnostics)) logger.warn(result.diagnostics);
             else if (result.diagnostics !== "") logger.info(result.diagnostics);
             if (result.summary !== "") logger.info(result.summary);
+            // A versioned build's other lines, which the build's `versions.json` names, once the
+            // current line's build has written it. An error in one fails this run as it would the
+            // first; `ascribe check` reports every line's warnings, so only what was built is said.
+            const older = olderLines(entry.siteRoot).map((line) => line.build);
+            if (older.length > 0) {
+              const lines = await runBuild({ ...run, build: older, outputs: ["site", ...plain] });
+              if (lines.summary !== "") logger.info(lines.summary);
+            }
             // The schema's copy inside the Astro root, for content.config.ts to import.
             mkdirSync(entry.schemaDir, { recursive: true });
             copySchema(entry.siteRoot, entry.schemaDir);
@@ -472,6 +493,17 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                   for (const entry of entries) {
                     const base = entry.project.consumer.basePath;
                     server.middlewares.use(filesMiddleware(entry.siteRoot, base));
+                    // Each older line's, at its own base path; the lines are read as each request comes.
+                    server.middlewares.use((req, res, next) =>
+                      inOrder(
+                        olderLines(entry.siteRoot).map((line) =>
+                          filesMiddleware(line.siteRoot, line.base),
+                        ),
+                        req,
+                        res,
+                        next,
+                      ),
+                    );
                     if (entry.agentsRoot !== undefined) {
                       const siteRoot = entry.siteRoot;
                       server.middlewares.use(
@@ -617,6 +649,11 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           const where = folder === "" ? "" : ` to ${folder}`;
           if (await copyPublishedFiles(entry.siteRoot, dir, folder))
             logger.info(`copied _ascribe/files/${where}`);
+          for (const line of olderLines(entry.siteRoot)) {
+            const lineFolder = folderUnder(line.base, base);
+            if (await copyPublishedFiles(line.siteRoot, dir, lineFolder))
+              logger.info(`copied ${line.build}'s _ascribe/files/ to ${lineFolder}`);
+          }
           if (
             entry.agentsRoot !== undefined &&
             (await copyAgentFiles(entry.agentsRoot, dir, folder))

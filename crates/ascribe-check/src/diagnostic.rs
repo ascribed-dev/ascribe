@@ -153,6 +153,17 @@ impl Diagnostic {
     /// registry message already names the builds (it has a `{build}`
     /// placeholder).
     pub fn builds_note(&self, total_builds: usize) -> Option<String> {
+        self.note_for(total_builds, &[])
+    }
+
+    /// [`Diagnostic::builds_note`] for the builds in `selected`, saying
+    /// "every line of `site`" for a versioned build each of whose lines the
+    /// problem is in.
+    pub fn builds_note_in(&self, selected: &[&ascribe_model::Build]) -> Option<String> {
+        self.note_for(selected.len(), selected)
+    }
+
+    fn note_for(&self, total_builds: usize, selected: &[&ascribe_model::Build]) -> Option<String> {
         if self.unpublished {
             return Some("in content that no build publishes".to_owned());
         }
@@ -163,17 +174,41 @@ impl Diagnostic {
         if self.builds.is_empty() || names_builds || self.builds.len() >= total_builds {
             return None;
         }
-        let list = self
-            .builds
-            .iter()
-            .map(|b| format!("`{b}`"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let noun = if self.builds.len() == 1 {
+        // A versioned build whose every line is here is named once.
+        let mut items: Vec<String> = Vec::new();
+        let mut whole: Vec<&str> = Vec::new();
+        for name in &self.builds {
+            let declared = selected
+                .iter()
+                .find(|b| &b.name == name)
+                .filter(|b| b.line.is_some())
+                .map(|b| b.declared_name());
+            if let Some(declared) = declared {
+                let lines: Vec<&&ascribe_model::Build> = selected
+                    .iter()
+                    .filter(|b| b.line.is_some() && b.declared_name() == declared)
+                    .collect();
+                if lines.len() > 1 && lines.iter().all(|b| self.builds.contains(&b.name)) {
+                    if !whole.contains(&declared) {
+                        whole.push(declared);
+                        items.push(format!("every line of `{declared}`"));
+                    }
+                    continue;
+                }
+            }
+            items.push(format!("`{name}`"));
+        }
+        let list = items.join(", ");
+        let noun = if !whole.is_empty() && items.len() == 1 {
+            ""
+        } else if self.builds.len() == 1 {
             "build"
         } else {
             "builds"
         };
+        if noun.is_empty() {
+            return Some(format!("only in {list}"));
+        }
         Some(format!("only in {noun} {list}"))
     }
 

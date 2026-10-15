@@ -47,25 +47,26 @@ export function reviewFor(review: boolean | string | undefined, command: string)
 }
 
 /**
- * Builds one build's outputs, the site output by default. Rejects, with the compiler's report as the
+ * Builds one build's outputs, or several builds', the site output by default. Rejects, with the compiler's report as the
  * message, if the build has errors: the Astro build fails with them.
  */
 export function runBuild(options: {
   binary: string;
   configPath: string;
-  build: string;
+  /** The build, or several, each a `--build`. */
+  build: string | readonly string[];
   cwd: string;
   /** Write source anchors (`--anchors`). */
   anchors?: boolean;
   /** The outputs to write. Default: `["site"]`. */
   outputs?: readonly ("site" | "plain" | "json")[];
 }): Promise<BuildResult> {
+  const builds = typeof options.build === "string" ? [options.build] : options.build;
   const args = [
     "build",
     "--emit",
     (options.outputs ?? ["site"]).join(","),
-    "--build",
-    options.build,
+    ...builds.flatMap((build) => ["--build", build]),
     "--config",
     options.configPath,
     "--color",
@@ -82,7 +83,7 @@ export function runBuild(options: {
           const report = `${stdout}${stderr}`.trim();
           reject(
             new Error(
-              `\`ascribe build --build ${options.build}\` failed${report === "" ? `: ${error.message}` : `:\n${report}`}`,
+              `\`ascribe build ${builds.map((build) => `--build ${build}`).join(" ")}\` failed${report === "" ? `: ${error.message}` : `:\n${report}`}`,
               { cause: error },
             ),
           );

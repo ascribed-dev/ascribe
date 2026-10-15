@@ -875,12 +875,14 @@ impl Loader<'_> {
                     (variants, availability, versions, name_ok)
                 {
                     self.excluded_warning(name, &variants, &availability, dimensions, bt);
-                    out.push(Build {
+                    let build = Build {
                         name: name.to_owned(),
                         variants,
                         availability,
                         versions,
-                    });
+                        line: None,
+                    };
+                    out.extend(lines_of(build, releases));
                 }
             }
         }
@@ -892,6 +894,7 @@ impl Loader<'_> {
                 variants: VariantMode::Switch,
                 availability: AvailabilityMode::Badge,
                 versions: None,
+                line: None,
             });
         }
         out
@@ -1531,6 +1534,13 @@ impl Loader<'_> {
         builds: &[Build],
     ) -> String {
         let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
+        // A versioned build's older lines can be chosen, and aren't counted
+        // when choosing a default: the build is one, named by its current line.
+        let declared: Vec<String> = builds
+            .iter()
+            .filter(|b| b.line.as_ref().is_none_or(|l| l.current))
+            .map(|b| b.name.clone())
+            .collect();
         let mut chosen: Option<String> = None;
         let mut at = builds_table.map_or(Span::empty(0), sp);
         if let Some(v) = v
@@ -1555,9 +1565,9 @@ impl Loader<'_> {
         if let Some(name) = chosen {
             return name;
         }
-        let default = match names.as_slice() {
+        let default = match declared.as_slice() {
             [only] => Some(only.clone()),
-            _ => names.iter().find(|n| *n == "site").cloned(),
+            _ => declared.iter().find(|n| *n == "site").cloned(),
         };
         match default {
             Some(d) => d,
@@ -1589,4 +1599,41 @@ fn is_origin(s: &str) -> bool {
         && !rest
             .chars()
             .any(|c| matches!(c, '/' | '?' | '#') || c.is_whitespace())
+}
+
+/// A declared build as the builds it gives: itself when it isn't versioned,
+/// and one for each live line, newest first, when it is.
+fn lines_of(build: Build, releases: &[Releases]) -> Vec<Build> {
+    let Some(live) = build
+        .versions
+        .as_deref()
+        .and_then(|t| releases.iter().find(|r| r.target == t))
+        .map(|r| &r.live)
+    else {
+        return vec![build];
+    };
+    let Some(oldest) = live.last() else {
+        return vec![build];
+    };
+    live.iter()
+        .enumerate()
+        .map(|(i, line)| {
+            let current = i == 0;
+            let name = if current {
+                build.name.clone()
+            } else {
+                format!("{}@{}", build.name, line.text)
+            };
+            Build {
+                name,
+                line: Some(BuildLine {
+                    build: build.name.clone(),
+                    line: line.clone(),
+                    current,
+                    oldest: oldest.clone(),
+                }),
+                ..build.clone()
+            }
+        })
+        .collect()
 }

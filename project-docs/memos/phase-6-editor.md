@@ -10,7 +10,7 @@ In VS Code, a heading with memos has a lens, "2 memos", that opens them. With th
 
 ## Context
 
-- README decisions 12, 15, 16, and 17, and phase 1's decisions 4 and 5.
+- README decisions 12, 15 to 17, 24, and 25.
 - `crates/ascribe-lsp/src/`: `links.rs` and `server.rs` for the lenses the server has, `code_action.rs`, `complete.rs`, `rename.rs`, `references.rs`, and `fsx.rs` for the files it watches.
 - `packages/vscode/src/`: the commands, `ui/buildLens.ts`, and the sidebar's Used by view in `ui/sidebarViews.ts`.
 - `crates/ascribe-cli/src/commands/rename.rs`, and how a rename rewrites a glossary term's `link` and a retired permalink's `to` in `ascribe.toml`.

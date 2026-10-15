@@ -16,6 +16,26 @@ const MANIFEST_FORMAT: &str = "ascribe-manifest";
 const MANIFEST_VERSION: u32 = 1;
 const LOCK_FILE: &str = ".lock";
 const STAGING_DIR: &str = ".staging";
+/// The folder above the builds' folders that holds what they share.
+const SHARED_DIR: &str = "_ascribe";
+/// The shared folder's manifest, inside it.
+const SHARED_MANIFEST: &str = "manifest.json";
+
+/// Where one output's files and manifest are.
+struct Place {
+    /// The manifest's `build`.
+    build: String,
+    /// The manifest's `emitter`.
+    emitter: String,
+    /// The folder the output's folder is in, which must be a folder.
+    parent: PathBuf,
+    /// The folder the files are written in.
+    files: PathBuf,
+    /// The manifest.
+    manifest: PathBuf,
+    /// Where the manifest is written before it's renamed into place.
+    temp: PathBuf,
+}
 
 /// What a file in an emitter root is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -296,8 +316,16 @@ impl OutputDir {
         refuse_link(&self.manifest_temp(build, emitter))?;
         refuse_links_below(&self.root, &format!("{build}/{emitter}"))?;
         refuse_link(&self.manifest_path(build, emitter))?;
+        let place = Place {
+            build: build.to_owned(),
+            emitter: emitter.to_owned(),
+            parent: self.root.join(build),
+            files: self.emitter_root(build, emitter),
+            manifest: self.manifest_path(build, emitter),
+            temp: self.manifest_temp(build, emitter),
+        };
         let staging = self.root.join(STAGING_DIR).join(build).join(emitter);
-        let result = self.replace_staged(build, emitter, files, &staging, options);
+        let result = self.replace_staged(&place, files, &staging, options);
         // Step 9: clean up, whatever happened. A failure to clean up doesn't
         // change what the build did.
         let _ = fs::remove_dir_all(&staging);
@@ -306,22 +334,135 @@ impl OutputDir {
         result
     }
 
+    /// The folder above the builds' folders, `<output-dir>/_ascribe/`, where
+    /// the files the builds share are, owned through its own manifest.
+    pub fn shared_root(&self) -> PathBuf {
+        self.root.join(SHARED_DIR)
+    }
+
+    fn shared_place(&self) -> Place {
+        let files = self.shared_root();
+        Place {
+            build: SHARED_DIR.to_owned(),
+            emitter: SHARED_DIR.to_owned(),
+            parent: files.clone(),
+            manifest: files.join(SHARED_MANIFEST),
+            temp: self
+                .root
+                .join(STAGING_DIR)
+                .join(format!(".manifest-{SHARED_DIR}.tmp")),
+            files,
+        }
+    }
+
+    /// Replaces the files the builds share, in `<output-dir>/_ascribe/`,
+    /// with `files`, by the same rules as a build's output, through the
+    /// folder's own manifest, `_ascribe/manifest.json`. A folder there that
+    /// has files and no manifest isn't Ascribe's, and is refused.
+    ///
+    /// # Errors
+    ///
+    /// As [`OutputDir::replace`].
+    pub fn replace_shared(&self, files: &[EmittedFile]) -> Result<Replaced, StoreError> {
+        let place = self.shared_place();
+        refuse_links_below(&self.root, &format!("{STAGING_DIR}/{SHARED_DIR}"))?;
+        refuse_link(&place.temp)?;
+        refuse_links_below(&self.root, SHARED_DIR)?;
+        refuse_link(&place.manifest)?;
+        self.refuse_unowned_shared(&place)?;
+        if files.iter().any(|f| f.path.as_str() == SHARED_MANIFEST) {
+            return Err(StoreError::Conflicts(vec![format!(
+                "two files would be written at {SHARED_DIR}/{SHARED_MANIFEST}"
+            )]));
+        }
+        let staging = self.root.join(STAGING_DIR).join(SHARED_DIR);
+        let result = self.replace_staged(&place, files, &staging, OutputOptions::default());
+        let _ = fs::remove_dir_all(&staging);
+        let _ = fs::remove_dir(self.root.join(STAGING_DIR));
+        result
+    }
+
+    /// Removes the files the builds share, when a project no longer has any:
+    /// each file `_ascribe/manifest.json` lists, then the manifest, then the
+    /// folder when nothing else is in it. A folder with no manifest isn't
+    /// Ascribe's, and is left alone. Returns how many files were removed.
+    ///
+    /// # Errors
+    ///
+    /// The manifest can't be read, or a file can't be removed.
+    pub fn remove_shared(&self) -> Result<usize, StoreError> {
+        let place = self.shared_place();
+        refuse_links_below(&self.root, SHARED_DIR)?;
+        if fs::symlink_metadata(&place.manifest).is_err() {
+            return Ok(0);
+        }
+        let previous = read_manifest(&place.manifest)?;
+        let mut removed = 0;
+        for old in &previous {
+            let path = place.files.join(&old.path);
+            if let Ok(meta) = fs::symlink_metadata(&path)
+                && !meta.is_dir()
+            {
+                fs::remove_file(&path).map_err(io_err("can't remove", &path))?;
+                removed += 1;
+            }
+            let mut dir = path.parent().map(Path::to_owned);
+            while let Some(d) = dir {
+                if d == place.files || fs::remove_dir(&d).is_err() {
+                    break;
+                }
+                dir = d.parent().map(Path::to_owned);
+            }
+        }
+        fs::remove_file(&place.manifest).map_err(io_err("can't remove", &place.manifest))?;
+        let _ = fs::remove_dir(&place.files);
+        Ok(removed)
+    }
+
+    /// Refuses `_ascribe/` when something is in it and no manifest says
+    /// Ascribe wrote it.
+    fn refuse_unowned_shared(&self, place: &Place) -> Result<(), StoreError> {
+        if fs::symlink_metadata(&place.manifest).is_ok() {
+            return Ok(());
+        }
+        match fs::symlink_metadata(&place.files) {
+            Err(_) => Ok(()),
+            Ok(meta) if !meta.is_dir() => Err(StoreError::Conflicts(vec![format!(
+                "{} is a file, and a directory is needed there",
+                place.files.display()
+            )])),
+            Ok(_) => {
+                let empty = fs::read_dir(&place.files)
+                    .map_err(io_err("can't read", &place.files))?
+                    .next()
+                    .is_none();
+                if empty {
+                    Ok(())
+                } else {
+                    Err(StoreError::Conflicts(vec![format!(
+                        "{} has files and no manifest, so it isn't a folder Ascribe wrote; move or remove it",
+                        place.files.display()
+                    )]))
+                }
+            }
+        }
+    }
+
     // Longer than the lint allows from before it was on. Split it only while
     // changing it for another reason.
     #[allow(clippy::too_many_lines)]
     fn replace_staged(
         &self,
-        build: &str,
-        emitter: &str,
+        place: &Place,
         files: &[EmittedFile],
         staging: &Path,
         options: OutputOptions,
     ) -> Result<Replaced, StoreError> {
-        let manifest_path = self.manifest_path(build, emitter);
-        let emitter_root = self.emitter_root(build, emitter);
+        let manifest_path = &place.manifest;
+        let emitter_root = place.files.clone();
 
         // Step 2: the previous manifest.
-        let previous = read_manifest(&manifest_path)?;
+        let previous = read_manifest(manifest_path)?;
         let previous_paths: BTreeSet<&str> = previous.iter().map(|f| f.path.as_str()).collect();
 
         // Nothing between the emitter root and a file this writes or removes
@@ -355,7 +496,7 @@ impl OutputDir {
         }
         // Step 4, second part: nothing that isn't Ascribe's is in the way.
         let mut blockers: BTreeSet<PathBuf> = BTreeSet::new();
-        for dir in [self.root.join(build), emitter_root.clone()] {
+        for dir in [place.parent.clone(), emitter_root.clone()] {
             if fs::symlink_metadata(&dir).is_ok() && !dir.is_dir() {
                 problems.push(format!(
                     "{} is a file, and a directory is needed there",
@@ -459,7 +600,7 @@ impl OutputDir {
             .map(|f| (f.path.clone(), f.clone()))
             .collect();
         union.extend(new_entries.iter().map(|f| (f.path.clone(), f.clone())));
-        self.write_manifest(build, emitter, union.into_values().collect(), options)?;
+        self.write_manifest(place, union.into_values().collect(), options)?;
 
         // Step 6: move the new files into place.
         for blocker in &blockers {
@@ -505,7 +646,7 @@ impl OutputDir {
         }
 
         // Step 8: the final manifest lists only this build's files.
-        self.write_manifest(build, emitter, new_entries, options)?;
+        self.write_manifest(place, new_entries, options)?;
         Ok(replaced)
     }
 
@@ -520,8 +661,7 @@ impl OutputDir {
     /// renaming it into place, so it's never half-written.
     fn write_manifest(
         &self,
-        build: &str,
-        emitter: &str,
+        place: &Place,
         mut files: Vec<ManifestFile>,
         options: OutputOptions,
     ) -> Result<(), StoreError> {
@@ -529,26 +669,26 @@ impl OutputDir {
         let manifest = Manifest {
             format: MANIFEST_FORMAT.to_owned(),
             version: MANIFEST_VERSION,
-            build: build.to_owned(),
-            emitter: emitter.to_owned(),
+            build: place.build.clone(),
+            emitter: place.emitter.clone(),
             anchors: options.anchors,
             files,
         };
         let mut text = serde_json::to_string_pretty(&manifest).map_err(|e| StoreError::Io {
             action: "can't serialize the manifest",
-            path: emitter.to_owned(),
+            path: place.emitter.clone(),
             source: io::Error::other(e),
         })?;
         text.push('\n');
         let staging = self.root.join(STAGING_DIR);
         fs::create_dir_all(&staging).map_err(io_err("can't create", &staging))?;
-        let temp = self.manifest_temp(build, emitter);
-        fs::write(&temp, text).map_err(io_err("can't write", &temp))?;
-        let dest = self.manifest_path(build, emitter);
+        let temp = &place.temp;
+        fs::write(temp, text).map_err(io_err("can't write", temp))?;
+        let dest = &place.manifest;
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent).map_err(io_err("can't create", parent))?;
         }
-        fs::rename(&temp, &dest).map_err(io_err("can't move into place", &dest))
+        fs::rename(temp, dest).map_err(io_err("can't move into place", dest))
     }
 }
 

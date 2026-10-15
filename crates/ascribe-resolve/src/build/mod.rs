@@ -282,6 +282,9 @@ impl<'p> BuildResolver<'p> {
                 .map(|(_, problem)| problem),
         );
         problems.extend(mode_problems);
+        // A line shows no version from before the window.
+        let mut page_availability = page_availability;
+        modes::show_for_line(self.build, &mut blocks, &mut page_availability);
         // Step 4: phrases.
         phrases::substitute_blocks(project, &mut blocks);
         let (frontmatter, formatted) = match &index.frontmatter {

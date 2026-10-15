@@ -586,6 +586,7 @@ What a site imports:
 | `@ascribed/astro/Availability.astro` | An import |
 | `@ascribed/astro/MissingPermalink.astro` | An import |
 | `@ascribed/astro/Head.astro` | An import |
+| `@ascribed/astro/Versions.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |
@@ -770,6 +771,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/index.md` | Review | how-to |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
+| `versions/index.md` | Versions | how-to |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/variants.md` | Content that varies | tutorial |
 

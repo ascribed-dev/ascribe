@@ -10,7 +10,8 @@ use std::collections::BTreeMap;
 use ascribe_emit::{SiteEmitter, render_site_html};
 use support::{emit_build, load, quill};
 
-const BUILDS: [&str; 3] = ["site", "cloud", "self-managed-3.3"];
+/// Each build: `site` is versioned, so it's two, one for each live line.
+const BUILDS: [&str; 4] = ["site", "site@3.4", "cloud", "self-managed-3.3"];
 
 fn output(build: &str) -> BTreeMap<String, String> {
     let root = quill();
@@ -40,21 +41,22 @@ fn site_snapshots() {
 fn each_build_lists_its_pages_assets_and_schema() {
     for build in BUILDS {
         let files: Vec<String> = output(build).into_keys().collect();
-        assert_eq!(
-            files,
-            [
-                "_ascribe/headers.json",
-                "_ascribe/pages.json",
-                "_ascribe/permalinks.json",
-                "_ascribe/schema.ts",
-                "_fragments/prerequisites.png",
-                "install-agent.md",
-                "keys.md",
-                "playground.png",
-                "quickstart.md",
-            ],
-            "{build}"
-        );
+        let mut expected = vec![
+            "_ascribe/headers.json",
+            "_ascribe/pages.json",
+            "_ascribe/permalinks.json",
+            "_ascribe/schema.ts",
+            "_fragments/prerequisites.png",
+            "install-agent.md",
+            "keys.md",
+            "playground.png",
+            "quickstart.md",
+        ];
+        // The page only self-managed 3.5 has.
+        if build == "site" {
+            expected.push("webhooks.md");
+        }
+        assert_eq!(files, expected, "{build}");
     }
 }
 
