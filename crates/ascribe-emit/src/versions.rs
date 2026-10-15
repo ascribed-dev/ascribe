@@ -1,5 +1,5 @@
 //! `_ascribe/versions.json`: what every line of each versioned build knows
-//! about the others (output layout contract §6). It's above the builds'
+//! about the others (output layout contract §1.5). It's above the builds'
 //! folders, the one file the builds share, and says, for each versioned
 //! build, its target, its lines, newest first, and each page's route in
 //! each line that publishes it.

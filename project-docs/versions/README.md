@@ -116,7 +116,7 @@ From [phase 2](phase-2-thread.md), made building it, for the maintainer to confi
 | Retiring a line | 9 |
 | Search inside an archive | 10 |
 
-After phase 2, a link to a page that isn't in a line is the error it is in any build today, `link-page-dropped`; an older line's pages carry their own address as canonical; and an older line's Markdown and `llms.txt` are built and not published. The reference says each while it's true.
+After phase 2, a link to a page that isn't in a line is the error it is in any build today, `link-page-dropped`; an older line's pages carry their own address as canonical; and an older line has no `llms.txt` and its pages point to neither it nor their Markdown (decision 35). The reference says each while it's true.
 
 ## Phases
 
