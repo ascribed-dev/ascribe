@@ -85,6 +85,15 @@ From [phase 2](phase-2-thread.md), made building it, for the maintainer to confi
 37. **`Versions.astro` renders nothing for a page only its own line has.** _Why:_ a list of one is no way across, and a project with one live line then renders as it did without versions.
 38. **The integration builds an older line in a second `ascribe build`, after the first has written `versions.json`.** It says only what that run built: its errors still fail the build, and `ascribe check` reports every line's warnings. _Why:_ the lines aren't known before the current line's build writes the file, and naming a line that has left the list would fail the run.
 
+From [phase 4](phase-4-links.md), made building it, for the maintainer to confirm in its pull request:
+
+39. **A link out of a line is marked with `data-ascribe-release-line`,** an attribute marker on the link holding the line as `[releases.<target>]` writes it; the library's stylesheet shows it after the link as " (3.5)", the plain output writes " (3.5)" after the link, and the JSON output's page target carries `line`. Nothing marks the paragraph. _Why:_ `data-ascribe-line` is already the source-line attribute the parser writes, and a link is the smallest thing to mark.
+40. **"Nearest" is the closest newer line first, then the closest older.** _Why:_ a reader is sent forward rather than back when they can be, and the current line never links back when a newer one has the page.
+41. **A `replaces` cycle is an error in every build; the page it replaces still published, or another page replacing the same one, is an error in each line where it happens.** `replaces` names a page by its file path, with no `#id`, and a fragment can't have one. _Why:_ a cycle is wrong whatever the build, while what a line publishes is a line's own question, and a problem in more than one line is reported once anyway.
+42. **A link that lands on another page keeps its `#id` when that page has the heading there, and otherwise drops it with advice,** `link-fragment-dropped`. _Why:_ a page rewritten under a new name often keeps a section's id, and losing the reader's place isn't worth failing a build for.
+43. **`replaces` isn't in the site output's frontmatter, and `versions.json` says it:** a page's `replaces` and `replaced-by`, each only when the other page is in the file; `replaced-by` is the first by path when more than one page replaces it. `Versions.astro` lists the lines of the pages these lead to with the page's own. _Why:_ the site needs the pair, not each page's key, and the file already holds every line's pages.
+44. **`ascribe link` says where a link goes in each line, under `lines`; `ascribe render` shows the plain output's " (3.5)" and nothing more.** _Why:_ `render` shows one build's output, and `link` is the question about a link.
+
 ## The thread
 
 **The use case:** `examples/quill` declares `live = ["3.4", "3.5"]` for `self-managed` and sets `versions = "self-managed"` on its site build. `ascribe build` writes two outputs. A page marked `self-managed 3.5` is in one and not the other, the pages about the cloud service are in both, and the Astro example serves the older line under `/3.4/`, where a list on each page links to the same page in the other line.
@@ -116,7 +125,7 @@ From [phase 2](phase-2-thread.md), made building it, for the maintainer to confi
 | Retiring a line | 9 |
 | Search inside an archive | 10 |
 
-After phase 2, a link to a page that isn't in a line is the error it is in any build today, `link-page-dropped`; an older line's pages carry their own address as canonical; and an older line has no `llms.txt` and its pages point to neither it nor their Markdown (decision 35). The reference says each while it's true.
+After phase 4, a link to a page that isn't in a line lands on the page that replaces it or in another line (decision 12); an older line's pages carry their own address as canonical; and an older line has no `llms.txt` and its pages point to neither it nor their Markdown (decision 35). The reference says each while it's true.
 
 ## Phases
 

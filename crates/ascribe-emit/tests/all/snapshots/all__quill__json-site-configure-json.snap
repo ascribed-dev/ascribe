@@ -1,0 +1,212 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "ascribe-page",
+  "build": "site",
+  "path": "configure.md",
+  "route": "/configure/",
+  "site": "https://docs.quill.dev",
+  "title": "Configure the agent",
+  "frontmatter": {
+    "available": "self-managed 3.5",
+    "description": "Set the Quill agent's API key and the folders it syncs.",
+    "replaces": "configure-legacy.md",
+    "title": "Configure the agent",
+    "type": "page"
+  },
+  "availability": {
+    "text": "self-managed 3.5",
+    "display": "self-managed (GA, 3.5+)",
+    "scope": "page",
+    "feature": null,
+    "source": {
+      "file": "configure.md",
+      "span": [0, 172]
+    }
+  },
+  "headings": [
+    {
+      "level": 2,
+      "text": "Set the API key",
+      "id": "set-the-api-key",
+      "sourceId": "set-the-api-key",
+      "explicit": true,
+      "source": {
+        "file": "configure.md",
+        "span": [281, 299],
+        "lines": [11, 11]
+      }
+    }
+  ],
+  "assets": [],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "The agent reads ",
+          "span": [174, 190]
+        },
+        {
+          "type": "code",
+          "value": "quill.d/",
+          "span": [190, 200]
+        },
+        {
+          "type": "text",
+          "value": ", a folder with a file for each setting. What changed from 3.4: ",
+          "span": [200, 264]
+        },
+        {
+          "type": "link",
+          "destination": "/upgrade/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "upgrade.md",
+            "id": null,
+            "url": "/upgrade/",
+            "textFilled": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Upgrade the agent",
+              "span": [264, 278]
+            }
+          ],
+          "span": [264, 278]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [278, 279]
+        }
+      ],
+      "source": {
+        "file": "configure.md",
+        "span": [174, 279],
+        "lines": [9, 9]
+      },
+      "links": [
+        {
+          "span": [264, 278],
+          "kind": "link",
+          "destination": "upgrade.md",
+          "target": {
+            "type": "page",
+            "page": "upgrade.md",
+            "id": null,
+            "url": "/upgrade/",
+            "textFilled": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "set-the-api-key",
+      "sourceId": "set-the-api-key",
+      "explicit": true,
+      "text": "Set the API key",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Set the API key",
+          "span": [284, 299]
+        }
+      ],
+      "source": {
+        "file": "configure.md",
+        "span": [281, 299],
+        "lines": [11, 11]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "set-the-api-key"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "configure.md",
+        "span": [300, 320],
+        "lines": [12, 12]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Put the key in ",
+          "span": [322, 337]
+        },
+        {
+          "type": "code",
+          "value": "quill.d/key",
+          "span": [337, 350]
+        },
+        {
+          "type": "text",
+          "value": ". To make one, see ",
+          "span": [350, 369]
+        },
+        {
+          "type": "link",
+          "destination": "/keys/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "keys.md",
+            "id": null,
+            "url": "/keys/",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "API keys",
+              "span": [370, 378]
+            }
+          ],
+          "span": [369, 388]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [388, 389]
+        }
+      ],
+      "source": {
+        "file": "configure.md",
+        "span": [322, 389],
+        "lines": [14, 14]
+      },
+      "links": [
+        {
+          "span": [369, 388],
+          "kind": "link",
+          "destination": "keys.md",
+          "target": {
+            "type": "page",
+            "page": "keys.md",
+            "id": null,
+            "url": "/keys/",
+            "textFilled": false
+          }
+        }
+      ]
+    }
+  ]
+}

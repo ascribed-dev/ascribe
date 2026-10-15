@@ -1,0 +1,24 @@
+---
+source: crates/ascribe-emit/tests/all/site_quill.rs
+expression: text
+---
+---
+type: page
+title: Configure the agent
+description: Set the Quill agent's API key and the folders it syncs.
+available:
+- target: self-managed
+  dimension: deployment
+  states:
+  - ga
+  versions:
+  - '3.5'
+  text: self-managed (GA, 3.5+)
+source: configure.md
+---
+
+The agent reads `quill.d/`, a folder with a file for each setting. What changed from 3.4: [Upgrade the agent](/upgrade/).
+
+## Set the API key <ascribe-attributes id="set-the-api-key"></ascribe-attributes>
+
+Put the key in `quill.d/key`. To make one, see [API keys](/keys/).

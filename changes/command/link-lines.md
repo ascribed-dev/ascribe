@@ -1,0 +1,1 @@
+- **`ascribe link` says where a link goes in each line of a versioned build.** Its text says so for each line where the link lands on another page or in another line, and its JSON has `lines`, with the page it lands on and the line a link out leads to. See [Versions](docs/content/versions/index.md#links-between-lines).

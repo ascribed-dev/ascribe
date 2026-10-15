@@ -102,7 +102,7 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 `<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
 
 @available: next
-`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the other lines of a [versioned build](#versions) that have the page. It renders nothing for a build that isn't versioned.
+`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the other lines of a [versioned build](#versions) that have the page, and those that have the page it replaces or the page that replaces it. It renders nothing for a build that isn't versioned.
 
 #### The sidebar
 @available: ascribe 0.3.0

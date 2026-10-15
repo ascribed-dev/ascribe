@@ -1,0 +1,13 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+# Configure the agent
+
+Available: self-managed (GA, 3.5+)
+
+The agent reads `quill.d/`, a folder with a file for each setting. What changed from 3.4: [Upgrade the agent](https://docs.quill.dev/upgrade/).
+
+## Set the API key
+
+Put the key in `quill.d/key`. To make one, see [API keys](https://docs.quill.dev/keys/).

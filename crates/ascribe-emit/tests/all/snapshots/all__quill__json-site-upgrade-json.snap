@@ -1,0 +1,131 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "ascribe-page",
+  "build": "site",
+  "path": "upgrade.md",
+  "route": "/upgrade/",
+  "site": "https://docs.quill.dev",
+  "title": "Upgrade the agent",
+  "frontmatter": {
+    "available": "self-managed 3.4",
+    "description": "What each release of self-managed Quill changes, and what to do when you upgrade.",
+    "title": "Upgrade the agent",
+    "type": "page"
+  },
+  "availability": {
+    "text": "self-managed",
+    "display": "self-managed (GA)",
+    "scope": "page",
+    "feature": null,
+    "source": {
+      "file": "upgrade.md",
+      "span": [0, 166]
+    }
+  },
+  "headings": [],
+  "assets": [],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Each release of self-managed Quill adds to the agent. 3.5 adds ",
+          "span": [168, 235]
+        },
+        {
+          "type": "link",
+          "destination": "/webhooks/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "webhooks.md",
+            "id": null,
+            "url": "/webhooks/",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "webhooks",
+              "span": [236, 244]
+            }
+          ],
+          "span": [235, 258]
+        },
+        {
+          "type": "text",
+          "value": ", and reads its settings from a new place: see ",
+          "span": [258, 305]
+        },
+        {
+          "type": "link",
+          "destination": "/configure/#set-the-api-key",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "configure.md",
+            "id": "set-the-api-key",
+            "url": "/configure/#set-the-api-key",
+            "textFilled": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Set the API key",
+              "span": [305, 337]
+            }
+          ],
+          "span": [305, 337]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [337, 338]
+        }
+      ],
+      "source": {
+        "file": "upgrade.md",
+        "span": [168, 338],
+        "lines": [8, 8]
+      },
+      "links": [
+        {
+          "span": [235, 258],
+          "kind": "link",
+          "destination": "webhooks.md",
+          "target": {
+            "type": "page",
+            "page": "webhooks.md",
+            "id": null,
+            "url": "/webhooks/",
+            "textFilled": false
+          }
+        },
+        {
+          "span": [305, 337],
+          "kind": "link",
+          "destination": "configure.md#set-the-api-key",
+          "target": {
+            "type": "page",
+            "page": "configure.md",
+            "id": "set-the-api-key",
+            "url": "/configure/#set-the-api-key",
+            "textFilled": true
+          }
+        }
+      ],
+      "substitutions": [
+        {
+          "span": [197, 206],
+          "key": "product",
+          "value": "Quill"
+        }
+      ]
+    }
+  ]
+}

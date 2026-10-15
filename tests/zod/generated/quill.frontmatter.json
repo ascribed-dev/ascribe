@@ -1,4 +1,23 @@
 {
+  "configure.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (GA, 3.5+)",
+        "versions": [
+          "3.5"
+        ]
+      }
+    ],
+    "description": "Set the Quill agent's API key and the folders it syncs.",
+    "source": "configure.md",
+    "title": "Configure the agent",
+    "type": "page"
+  },
   "install-agent.md": {
     "available": [
       {
@@ -33,6 +52,22 @@
     "description": "Run Quill in the browser with no local setup.",
     "source": "quickstart.md",
     "title": "Try Quill in the browser",
+    "type": "page"
+  },
+  "upgrade.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (GA)"
+      }
+    ],
+    "description": "What each release of self-managed Quill changes, and what to do when you upgrade.",
+    "source": "upgrade.md",
+    "title": "Upgrade the agent",
     "type": "page"
   },
   "webhooks.md": {

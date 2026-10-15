@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-202 in all. By severity: 32 advice, 147 error, 23 warning. By level: 183 file, 19 page. By kind of next step: 45 choose, 13 fix, 7 outside, 11 review, 126 write.
+208 in all. By severity: 34 advice, 151 error, 23 warning. By level: 184 file, 24 page. By kind of next step: 46 choose, 13 fix, 7 outside, 11 review, 131 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -305,6 +305,12 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` isn't a declared dimension value |
 | `ASC205` | `model-releases-line` | error | write | `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts |
 | `ASC206` | `model-build-versions` | error | write | build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = ["3.4"]` |
+| `ASC216` | `replaces-not-a-page` | error | choose | `replaces` names `{path}`, which doesn't exist |
+| `ASC217` | `replaces-cycle` | error | write | `replaces` comes back to this page: {chain}; a page replaces an older page, and the chain ends |
+| `ASC218` | `replaces-overlap` | error | write | `{build}` publishes both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares |
+| `ASC219` | `replaces-same-page` | error | write | `{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line |
+| `ASC220` | `link-into-older-line` | advice | write | `{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place |
+| `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
 
 ## The VS Code extension
 

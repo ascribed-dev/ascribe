@@ -1,0 +1,18 @@
+---
+source: crates/ascribe-emit/tests/all/site_quill.rs
+expression: text
+---
+---
+type: page
+title: Upgrade the agent
+description: What each release of self-managed Quill changes, and what to do when you upgrade.
+available:
+- target: self-managed
+  dimension: deployment
+  states:
+  - ga
+  text: self-managed (GA)
+source: upgrade.md
+---
+
+Each release of self-managed Quill adds to the agent. 3.5 adds [webhooks](/webhooks/), and reads its settings from a new place: see [Set the API key](/configure/#set-the-api-key).

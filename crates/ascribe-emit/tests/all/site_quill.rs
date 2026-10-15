@@ -52,10 +52,14 @@ fn each_build_lists_its_pages_assets_and_schema() {
             "playground.png",
             "quickstart.md",
         ];
-        // The page only self-managed 3.5 has.
-        if build == "site" {
-            expected.push("webhooks.md");
-        }
+        // The pages only some lines of self-managed have, in the lines
+        // that have them.
+        expected.extend(match build {
+            "site" => &["configure.md", "upgrade.md", "webhooks.md"][..],
+            "site@3.4" => &["configure-legacy.md", "upgrade.md"][..],
+            _ => &[][..],
+        });
+        expected.sort_unstable();
         assert_eq!(files, expected, "{build}");
     }
 }
@@ -131,7 +135,16 @@ const CONTRACT: &[(&str, &[&str])] = &[
         "ascribe-availability-target",
         &["target", "dimension", "states", "versions"],
     ),
-    ("ascribe-attributes", &["id", "width", "height"]),
+    (
+        "ascribe-attributes",
+        &[
+            "id",
+            "width",
+            "height",
+            "data-ascribe-term",
+            "data-ascribe-release-line",
+        ],
+    ),
     ("details", &[]),
     ("summary", &[]),
 ];

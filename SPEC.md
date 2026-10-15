@@ -82,9 +82,9 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves six keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, and `listing` (below).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves seven keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, `listing`, and `replaces` (below).
 
-- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, or one of `listing`'s values) is a frontmatter value of the wrong type (§8.2).
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, one of `listing`'s values, or a link destination) is a frontmatter value of the wrong type (§8.2).
 - `type` says which content type a page is (§7.2). Its value is the name of a type the content model declares. In a project that declares types, every page MUST name one, and a page that names none, or names one that isn't declared, is an error (§8.2). In a project that declares none, its pages have the implicit type `page` and name no type. Tools that write frontmatter put `type` first.
 
   ```yaml
@@ -107,6 +107,15 @@ An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY
   ---
   title: Migrating from 3.x
   listing: unlisted
+  ---
+  ```
+- `replaces` says which page this page takes the place of, for a build versioned by a target (§9.3): a page rewritten for a newer release line, at a new path. Its value is a link destination (§5.2) naming another page, without an `#id`. The page it names MUST exist and be a page, a page MUST NOT replace itself, and no chain of `replaces` may come back to the page it starts from. In each line of a versioned build, a page and the page it replaces MUST NOT both be published, and two pages that replace the same page MUST NOT both be published (§8.2). A versioned build follows it when a link names a page a line doesn't publish (§5.2); in any other build the two are different pages.
+
+  ```yaml
+  ---
+  title: Install the agent
+  available: self-managed 3.5
+  replaces: install-legacy.md
   ---
   ```
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
@@ -733,6 +742,7 @@ See [](keys.md#rotate-keys).
 
 - **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading of the target page by its source id: one of the target file's own headings, or one that a fragment it includes brings in (§4.2). The compiled link points at that heading's page id (§5.5).
 - The target file, and the id if present, MUST exist. A destination that is only `#id` names a heading in the file it's written in; in a fragment, that's a heading of the fragment itself, and the compiled link points at that heading's page id on each page that includes the fragment. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
+- **Links between lines.** In a line of a versioned build (§9.3), a link to a page the line doesn't publish resolves, in order, to: the page that replaces it, or that it replaces, in this line, following a chain of `replaces` (§2.1) to the page this line publishes; then the page in the nearest line that publishes it, the closest newer line first, then the closest older, as a **link out** of the line. It's an error in that line only when no live line publishes the page. A link's `#id` is kept when the page it lands on has a heading with that id there, and is otherwise dropped, with advice. A link out keeps its text; empty text is the title the page has in the line it leads to. Outputs say which line a link out leads to (§9.4).
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2). When the content model reads code spans in `title`, the link text keeps them.
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
 - **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion. A local destination looks like a route when it names no existing file and its last segment has no file extension or it ends in `/` (`/guides/install/`, `../guides/install`); it then gets that warning instead of a missing-file error.
@@ -1028,8 +1038,12 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
-| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `type`) on a fragment | Error |
+| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment | Error |
 | Frontmatter | `listing` looser than a rule of the content model the page is under | Error |
+| Frontmatter | `replaces` that doesn't name a page | Error |
+| Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level) | Error |
+| Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build) | Error |
+| Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build) | Error |
 | Frontmatter | Page names no content type, in a project that declares types | Error |
 | Frontmatter | Page's `type` names no declared content type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |
@@ -1135,7 +1149,7 @@ Content is **available** for target *T* at version *V* when its effective availa
 
 The state in effect at *V* is the last state in the target's history whose start version is at or before *V*. If *V* precedes the first state's start version, no state is in effect, and the content isn't available. A bare target with no version is in effect at every version. A versionless target has a single state, which is in effect at every version, so content marked `cloud removed` is never available for `cloud`. Content that has no spec, or reaches *T* through inheritance without a state, is treated as generally available.
 
-A build MAY instead be **versioned** by a versioned target *T* whose live release lines are declared (§7.2). Its availability mode is `badge`, and it gives one output for each live line *L*. Content is **in** *L* when its effective availability has no spec, or doesn't list *T*, directly or through *T*'s dimension name, or has a state that counts as available in effect for *T* at some version in *L*. Content that isn't in *L* is removed from *L*'s output as `filter` removes it, and what remains is annotated as in `badge`, except that a version at or before the oldest live line isn't shown, since every live line has that content. The current line's output also keeps content whose versions are all later than every live line; an older line's doesn't.
+A build MAY instead be **versioned** by a versioned target *T* whose live release lines are declared (§7.2). Its availability mode is `badge`, and it gives one output for each live line *L*. Content is **in** *L* when its effective availability has no spec, or doesn't list *T*, directly or through *T*'s dimension name, or has a state that counts as available in effect for *T* at some version in *L*. Content that isn't in *L* is removed from *L*'s output as `filter` removes it, and what remains is annotated as in `badge`, except that a version at or before the oldest live line isn't shown, since every live line has that content. The current line's output also keeps content whose versions are all later than every live line; an older line's doesn't. A link to a page a line doesn't publish resolves as §5.2 says, to the page that replaces it or to the page in another line.
 
 ### 9.4 Outputs
 
@@ -1175,6 +1189,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | `@snippet` | A fenced code block | A fenced code block |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
+| A link out of a line (§5.2) | The link, followed directly by an attribute marker setting `data-ascribe-release-line` on its `<a>` to the line it leads to | The link, then a space and the line in parentheses, outside its text: `[Configure tracing](…) (3.5)` |
 
 Labels for dimension values come from the content model's display labels.
 

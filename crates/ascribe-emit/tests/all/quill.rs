@@ -60,6 +60,13 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
                     format!("{stem}.md")
                 }
             };
+            // The pages only some lines of self-managed have, in the
+            // lines that have them.
+            let only: &[&str] = match build {
+                "site" => &["configure", "upgrade", "webhooks"],
+                "site@3.4" => &["configure-legacy", "upgrade"],
+                _ => &[],
+            };
             let mut expected = vec![
                 "_fragments/prerequisites.png".to_owned(),
                 page("install-agent"),
@@ -67,10 +74,8 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
                 "playground.png".to_owned(),
                 page("quickstart"),
             ];
-            // The page only self-managed 3.5 has.
-            if build == "site" {
-                expected.push(page("webhooks"));
-            }
+            expected.extend(only.iter().map(|stem| page(stem)));
+            expected.sort();
             assert_eq!(files, expected, "{build} {}", emitter.name());
         }
     }

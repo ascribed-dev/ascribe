@@ -9,7 +9,7 @@ A product a team supports in more than one version needs docs for each: a reader
 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
 2. **One site that knows its versions.** `[releases]` in `ascribe.toml` lists a target's live lines. So far it takes `live` alone; what's planned, when a line ends, and what's archived, with the checks they make possible, are to come.
-3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers. Links from one line to another, a banner on an older line's pages, and canonical links to the current line are to come.
+3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers, with links from one line to another. A banner on an older line's pages, and canonical links to the current line are to come.
 4. **An archive.** A line that's left the window, kept as a frozen copy. Not yet.
 
 ## List the live lines
@@ -50,17 +50,37 @@ A line keeps content whose `available` doesn't name the target, and content that
 
 What's left is marked as a badge build marks it, but a version at or before the oldest live line isn't shown, since every reader has it: with 3.4 and 3.5 live, `self-managed 3.3` shows the target alone, `self-managed deprecated 3.2` shows "deprecated", and `self-managed 3.4.2` shows its version. A build that isn't versioned shows them all.
 
-`ascribe check` checks each line as a build. A problem in more than one line is reported once, saying so. A link to a page that isn't in a line is [`link-page-dropped`](../checks/diagnostics/pages.md), as in any build.
+`ascribe check` checks each line as a build. A problem in more than one line is reported once, saying so.
+
+## Links between lines
+
+A link to a page that isn't in a line still goes somewhere, in three steps:
+
+1. **The page that takes its place.** A page that's rewritten under a new name says which page it replaces, with `replaces` in its frontmatter:
+
+   ```yaml
+   ---
+   title: Configure the agent
+   available: self-managed 3.5
+   replaces: configure-legacy.md
+   ---
+   ```
+
+   A link to either page lands on whichever one the line has. Neither page links to the other by hand, and a link keeps its `#id` when the page it lands on has a heading with that id.
+2. **The page in another line.** Otherwise the link leads to the page in the nearest line that has it, the closest newer line first. In 3.4, a link to a page new in 3.5 goes to `/docs/webhooks/`, and the line follows the link: "Webhooks (3.5)". A site styles it by its `data-ascribe-release-line` attribute; the plain output writes the line after the link.
+3. **Nowhere.** When no live line has the page, the link is [`link-page-dropped`](../checks/diagnostics/pages.md), as in any build.
+
+A link from the current line to a page only an older line has is [advice](../checks/diagnostics/pages.md): it's a reader on the newest docs sent back to an older line, which is usually a link the page no longer needs. Two pages that replace each other, or a page that replaces a page its own line still has, are errors. [`replaces`](../writing/directives.md#a-page-that-replaces-another) has the rules, and `ascribe link` says where a link goes in each line.
 
 ## What the lines know about each other
 
-Each `ascribe build` of a project with `[releases]` writes `.ascribe/build/_ascribe/versions.json`: for each versioned build, its lines, and for each page the lines that publish it, with its route in each. A site reads it to link a page to the same page in another line. The [output layout contract](../contracts/output-layout.md#15-the-versions-file) has its format.
+Each `ascribe build` of a project with `[releases]` writes `.ascribe/build/_ascribe/versions.json`: for each versioned build, its lines, and for each page the lines that publish it, with its route in each, and the page it replaces or that replaces it. A site reads it to link a page to the same page in another line. The [output layout contract](../contracts/output-layout.md#15-the-versions-file) has its format.
 
 ## Publish with Astro
 
 [`@ascribed/astro`](../astro/index.md) serves every line from one site, with no change to `astro.config.mjs` or `src/content.config.ts`. The collection has every line's pages: the current line's with their usual ids, and an older line's with the line in front, `3.4/install`, so the route `[...slug].astro` gives each is where Ascribe's links point. Each entry's data has `line` and `current`.
 
-`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines that publish the page, each a link to it there, with the page's own line marked `aria-current="page"`. It renders nothing for a page only its own line has, or a build that isn't versioned. The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes both into the layout.
+`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines that publish the page, each a link to it there, with the page's own line marked `aria-current="page"`. A page that replaces another lists the lines of the page it replaces too, and the other way around, so `configure/` in 3.5 and `3.4/configure-legacy/` link to each other. It renders nothing for a page only its own line has, or a build that isn't versioned. The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes both into the layout.
 
 `astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. Two things stay with the current line for now:
 
