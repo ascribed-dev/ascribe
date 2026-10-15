@@ -64,6 +64,40 @@ pub enum QueryError {
         /// Why not.
         why: String,
     },
+    /// A line isn't named as a mark names one.
+    #[error(
+        "`{given}` isn't a line: name one as a mark does, with its target, such as `self-managed 3.4`"
+    )]
+    BadLine {
+        /// The line, as given.
+        given: String,
+    },
+    /// A target has no lines in `[releases]`.
+    #[error("`{target}` has no lines in [releases]{}", targets_text(.targets))]
+    NoLines {
+        /// The target, as given.
+        target: String,
+        /// The targets that have lines.
+        targets: Vec<String>,
+    },
+    /// A target's list doesn't declare a line.
+    #[error("[releases.{target}] doesn't declare `{line}`; its lines are {}", .lines.join(", "))]
+    UndeclaredLine {
+        /// The target.
+        target: String,
+        /// The line, as given.
+        line: String,
+        /// The lines it declares, newest first.
+        lines: Vec<String>,
+    },
+}
+
+fn targets_text(targets: &[String]) -> String {
+    if targets.is_empty() {
+        "; the project lists none".to_owned()
+    } else {
+        format!("; the targets with lines are {}", targets.join(", "))
+    }
 }
 
 fn closest_text(closest: &[String]) -> String {
@@ -86,6 +120,9 @@ impl Coded for QueryError {
             QueryError::Render(e) => e.code(),
             QueryError::PermalinksListInvalid { .. } => "permalinks_list_invalid",
             QueryError::NotRetirable { .. } => "permalink_not_retirable",
+            QueryError::BadLine { .. } => "bad_line",
+            QueryError::NoLines { .. } => "no_lines",
+            QueryError::UndeclaredLine { .. } => "undeclared_line",
         }
     }
 }

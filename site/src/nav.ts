@@ -51,7 +51,7 @@ export const nav: NavGroup[] = [
     pages: ["astro/index.md", "astro/reference.md", "astro/elements.md"],
   },
   { label: "Permalinks", pages: ["permalinks/index.md"] },
-  { label: "Versions", pages: ["versions/index.md"] },
+  { label: "Versions", pages: ["versions/index.md", "versions/release.md"] },
   { label: "Page templates", pages: ["templates/index.md"] },
   {
     label: "The command",
@@ -75,6 +75,7 @@ export const nav: NavGroup[] = [
       "contracts/json-reports/sources.md",
       "contracts/json-reports/templates.md",
       "contracts/json-reports/questions.md",
+      "contracts/json-reports/versions.md",
       "contracts/permalinks-list.md",
     ],
   },

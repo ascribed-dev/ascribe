@@ -193,6 +193,10 @@ pub enum Command {
     /// project's own configuration.
     #[command(after_help = docs_link!("cli-vale"))]
     Vale(commands::vale::Args),
+    /// Show a project's release lines, say what differs between two, and
+    /// release one.
+    #[command(after_help = docs_link!("cli-versions"))]
+    Versions(commands::versions::Args),
 }
 
 impl Command {
@@ -220,6 +224,7 @@ impl Command {
             Command::Sources(args) => commands::sources::run(global, args),
             Command::Templates(args) => commands::templates::run(global, args),
             Command::Vale(args) => commands::vale::run(global, args),
+            Command::Versions(args) => commands::versions::run(global, args),
         }
     }
 }

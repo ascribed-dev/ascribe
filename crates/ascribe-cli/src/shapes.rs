@@ -201,6 +201,27 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::report::json::ReportJson>(),
     },
     Shape {
+        file: "versions-list",
+        title: "VersionsListReport",
+        written_by: "`ascribe versions list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::VersionsList>(),
+    },
+    Shape {
+        file: "versions-changes",
+        title: "VersionsChangesReport",
+        written_by: "`ascribe versions changes --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::VersionChanges>(),
+    },
+    Shape {
+        file: "versions-release",
+        title: "VersionsReleaseReport",
+        written_by: "`ascribe versions release --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::versions::ReleaseJson>(),
+    },
+    Shape {
         file: "diff-html-data",
         title: "ReportData",
         written_by: "`ascribe diff --format html`, for the report's script",

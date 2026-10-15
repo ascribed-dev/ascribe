@@ -305,6 +305,43 @@ impl Repository {
             .collect())
     }
 
+    /// Which of `paths` git couldn't put back as they are now: each one that
+    /// isn't tracked, is ignored, or differs from `HEAD`, staged or not, by
+    /// its path from the repository's root, through one `git status`. The
+    /// paths are from the folder `git` runs in, the project root. A file
+    /// listed nowhere is tracked and unchanged.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when the files can't be listed.
+    pub fn not_restorable(&self, paths: &[RelPath]) -> Result<Vec<RelPath>, DiffError> {
+        if paths.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut args = vec![
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--ignored=matching",
+            "--no-renames",
+            "--",
+        ];
+        // Literal paths, so a name with `*` in it names that file alone.
+        let specs: Vec<String> = paths
+            .iter()
+            .map(|p| format!(":(literal){}", p.as_str()))
+            .collect();
+        args.extend(specs.iter().map(String::as_str));
+        let out = self.run(&args)?;
+        Ok(out
+            .split(|b| *b == 0)
+            .filter_map(|entry| entry.get(3..))
+            .filter_map(|path| std::str::from_utf8(path).ok())
+            .filter_map(|path| RelPath::parse(path).ok())
+            .collect())
+    }
+
     /// The contents of several blobs, read through one `git cat-file --batch`.
     ///
     /// # Errors

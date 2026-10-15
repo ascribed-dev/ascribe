@@ -32,6 +32,7 @@ mod preview;
 mod prose;
 mod refactor;
 mod references;
+mod release;
 mod rename;
 mod retire;
 mod review;
@@ -67,6 +68,10 @@ pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
     PreviewParams, PreviewProblem, PreviewResult, PreviewReview, PreviewSection, ProblemSeverity,
+};
+pub use release::{
+    ChangedOutput, MovedFeature, ReleaseError, Released, ReleasedFile, Releasing, RewrittenMark,
+    release,
 };
 pub use rename::{RenameError, Renamed, Renaming, Rewritten, rename};
 pub use retire::{Retired, Retirement, retire};

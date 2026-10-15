@@ -154,6 +154,53 @@ fn entries_in_line(model: &ContentModel, entries: &[&Entry], line: &BuildLine) -
         })
 }
 
+/// What one spec says about content in a release line of `target`, from
+/// the spec alone, as `ascribe versions changes` compares two lines.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InLine {
+    /// Whether some version in the line makes the content available.
+    pub available: bool,
+    /// The state in effect at the newest version in the line where the
+    /// spec changes state, or at the line's own version: `ga` for a target
+    /// with no state. `None` before the spec's first version.
+    pub state: Option<String>,
+}
+
+/// What `spec` says about `target` in `line`, taking the line alone: a
+/// version in a later line isn't in it, whether or not the line is
+/// current. `None` when the spec doesn't name the target, directly or
+/// through its dimension, and so says the same of every line.
+pub fn in_release_line(
+    model: &ContentModel,
+    spec: &AvailabilitySpec,
+    target: &str,
+    line: &Version,
+) -> Option<InLine> {
+    let entry = entry_for(model, spec, target)?;
+    let mut tried: Vec<&Version> = vec![line];
+    let starts = match &entry.detail {
+        Detail::None => Vec::new(),
+        Detail::Version(v) => vec![v],
+        Detail::State { version, .. } => version.iter().collect(),
+        Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
+    };
+    tried.extend(
+        starts
+            .into_iter()
+            .filter(|v| v.compare(line).is_ge() && ascribe_model::in_line(line, v)),
+    );
+    tried.sort_by(|a, b| a.compare(b));
+    let available = tried.iter().any(|v| {
+        state_in_effect(entry, Some(v))
+            .is_some_and(|state| model.state_is_available(state).unwrap_or(true))
+    });
+    let state = tried
+        .last()
+        .and_then(|v| state_in_effect(entry, Some(v)))
+        .map(str::to_owned);
+    Some(InLine { available, state })
+}
+
 /// The entry of a spec that decides `target`: a direct one, else one through
 /// the target's dimension name.
 fn entry_for<'a>(
