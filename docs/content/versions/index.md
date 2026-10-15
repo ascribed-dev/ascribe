@@ -8,7 +8,7 @@ available: next
 A product a team supports in more than one version needs docs for each: a reader on 3.4 should read about 3.4, and find the same page for 3.5. Ascribe does this from one source, the marks the pages already have, in four levels a project opts into one at a time:
 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
-2. **One site that knows its versions.** `[releases]` in `ascribe.toml` lists a target's live lines. So far it takes `live` alone; what's planned, when a line ends, and what's archived, with the checks they make possible, are to come.
+2. **One site that knows its versions.** `[releases]` in `ascribe.toml` lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
 3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers. Links from one line to another, a banner on an older line's pages, and canonical links to the current line are to come.
 4. **An archive.** A line that's left the window, kept as a frozen copy. Not yet.
 
@@ -22,6 +22,45 @@ live = ["3.4", "3.5"]
 ```
 
 The order doesn't matter: the newest is the **current line**. Write lines as finely as you release: `["3.4", "3.5"]` for a line for each minor release, `["0.2.0", "0.3.0"]` for one for each patch release. Every line of a target has the same number of parts. The [`[releases]` reference](../content-model/content.md#71-releasestarget) has the rules.
+
+## Say what's planned, ending, and gone
+
+The rest of the list says what a reader can't be on yet, and what they can't be on any more:
+
+```toml
+[releases]
+planned-label = "planned"
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[releases.self-managed.ends]
+"3.4" = 2027-01-31
+
+[releases.self-managed.archived]
+"3.2" = { url = "https://docs.example.com/3.2/", ended = 2026-03-31 }
+"3.3" = {}
+```
+
+- **`planned`** lines haven't shipped. Content marked for a version in one reads "planned" in every output, `Self-managed (planned, 3.6)`, with `planned-label`'s word if you set one. When 3.6 ships, move it to `live`, and the same marks read "since 3.6" with no other edit.
+- **`ends`** gives the last day each live line is supported. Once it's passed, `ascribe check` reports [`release-line-ended`](../checks/diagnostics/content-checks.md): move the line to `archived`.
+- **`archived`** lines have left. `url` says where one can still be read, and `ended` when its support ended; both are optional.
+
+Every line of a target has the same number of parts, planned lines are newer than every live line, and archived lines older.
+
+## What the checks find
+
+With the list, `ascribe check` checks each version a mark names, in pages and in `ascribe.toml`'s features and builds:
+
+- **A version newer than every line** is an error, [`available-version-ahead`](../checks/diagnostics/directives.md): `self-managed 3.7` when 3.6 is the newest line is likely a typo, or a line to plan. The fix changes it to the newest line.
+- **A version between two declared lines** but in none, such as `3.5` when the lines are `3.4` and `3.6`, is [`available-line-undeclared`](../checks/diagnostics/content-checks.md), with a fix to each line beside it.
+- **A mark that no output shows** is reported when nothing builds the versions it names. On a versioned build, a version at or before the oldest live line isn't shown, since every reader has it: `self-managed 3.3` reads the same as `self-managed`, and [`available-same-in-every-line`](../checks/diagnostics/content-checks.md) offers to write it so. Content that's in no live or planned line at all is [`available-in-no-line`](../checks/diagnostics/content-checks.md). A build that badges or filters, and isn't versioned by the target, still shows every version, so while a project has one, these two report nothing.
+- **`availability-left-behind`** compares a feature's versions with its target's current line.
+
+A version older than every declared line isn't a mistake the first two report: it's before the window, so you needn't declare the releases before the ones you support.
+
+A phrase can follow the list too: `release = { line = "self-managed" }` makes `{release}` the current line, and in an older line's output of a versioned build, that line.
 
 ## Build a site for each line
 
