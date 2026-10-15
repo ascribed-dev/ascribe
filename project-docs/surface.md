@@ -577,6 +577,7 @@ What a site imports:
 | `@ascribed/astro/Availability.astro` | An import |
 | `@ascribed/astro/MissingPermalink.astro` | An import |
 | `@ascribed/astro/Head.astro` | An import |
+| `@ascribed/astro/Versions.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |

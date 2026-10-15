@@ -92,6 +92,18 @@ export function filesMiddleware(siteRoot: string, base: string): Middleware {
   return directoryMiddleware(publishedDir(siteRoot), `${base}_ascribe/files/`);
 }
 
+/** Runs `middlewares` in order, each passing a request it doesn't serve to the next, and the last to `next`. */
+export function inOrder(
+  middlewares: readonly Middleware[],
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void,
+): void {
+  const [first, ...rest] = middlewares;
+  if (first === undefined) return next();
+  first(req, res, () => inOrder(rest, req, res, next));
+}
+
 /**
  * A dev-server middleware serving the plain output for agents at `<base>`: `llms.txt`, each page's
  * `.md`, and their files, each with the headers `headers` gives its path from the host's root.

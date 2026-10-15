@@ -701,6 +701,28 @@ fn a_versioned_build_writes_an_output_for_each_live_line() {
 }
 
 #[test]
+fn only_the_current_line_points_agents_to_its_markdown() {
+    let dir = versioned();
+    let config = dir.path().join("ascribe.toml");
+    let text = read(&config).replace(
+        "base-path = \"/docs\"",
+        "base-path = \"/docs\"\nagents = true",
+    );
+    std::fs::write(&config, text).expect("write ascribe.toml");
+    let out = ascribe(dir.path(), &["build", "--emit", "site,plain"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let build = dir.path().join(".ascribe/build");
+    let current = read(&build.join("site/site/install.md"));
+    assert!(current.contains("(/docs/llms.txt)"), "{current}");
+    assert!(build.join("site/plain/llms.txt").exists());
+    // No line but the current one publishes them yet, so an older line's pages point to neither.
+    let older = read(&build.join("site@3.4/site/install.md"));
+    assert!(!older.contains("llms.txt"), "{older}");
+    assert!(!read(&build.join("site@3.4/site/_ascribe/pages.json")).contains("\"markdown\""));
+    assert!(!build.join("site@3.4/plain/llms.txt").exists());
+}
+
+#[test]
 fn build_names_one_line_and_refuses_a_line_that_isnt_live() {
     let dir = versioned();
     let out = ascribe(
