@@ -631,3 +631,172 @@ fn with_no_repository_a_build_reads_a_source_above_the_project() {
     let page = read(&build.join("plain").join("index.md"));
     assert!(page.contains("pub fn api() {}"), "{page}");
 }
+
+const VERSIONED: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[consumer]
+site = "https://docs.example.com"
+base-path = "/docs"
+
+[builds.site]
+versions = "self-managed"
+"#;
+
+fn versioned() -> TempDir {
+    project(
+        VERSIONED,
+        &[
+            (
+                "index.md",
+                "---\ntitle: Home\n---\n\nSee [Install](install.md) and ![a picture](shot.png).\n",
+            ),
+            (
+                "install.md",
+                "---\ntitle: Install\n---\n\nBack [home](index.md).\n",
+            ),
+            (
+                "webhooks.md",
+                "---\ntitle: Webhooks\navailable: self-managed 3.5\n---\n\n[Install](install.md).\n",
+            ),
+            ("shot.png", "not really a picture"),
+        ],
+    )
+}
+
+#[test]
+fn a_versioned_build_writes_an_output_for_each_live_line() {
+    let dir = versioned();
+    let out = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let build = dir.path().join(".ascribe/build");
+    // The current line keeps the build's name, and is at the base path.
+    let current = build.join("site/site");
+    assert!(current.join("webhooks.md").exists());
+    assert!(read(&current.join("index.md")).contains("](/docs/install/)"));
+    // The older line is `site@3.4`, under its number, without what 3.5 added.
+    let older = build.join("site@3.4/site");
+    assert!(!older.join("webhooks.md").exists());
+    let index = read(&older.join("index.md"));
+    assert!(index.contains("](/docs/3.4/install/)"), "{index}");
+    // An image is relative to the page, so it's under the line's folder too.
+    assert!(index.contains("](./shot.png)"), "{index}");
+    assert!(older.join("shot.png").exists());
+    assert!(read(&older.join("install.md")).contains("](/docs/3.4/)"));
+    let pages = read(&older.join("_ascribe/pages.json"));
+    assert!(
+        pages.contains("\"canonical\": \"https://docs.example.com/docs/3.4/install/\""),
+        "{pages}"
+    );
+    assert!(!pages.contains("\"/docs/install/\""), "{pages}");
+}
+
+#[test]
+fn build_names_one_line_and_refuses_a_line_that_isnt_live() {
+    let dir = versioned();
+    let out = ascribe(
+        dir.path(),
+        &["build", "--build", "site@3.4", "--emit", "site"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(dir.path().join(".ascribe/build/site@3.4/site").exists());
+    assert!(!dir.path().join(".ascribe/build/site").exists());
+    let out = ascribe(dir.path(), &["build", "--build", "site@3.3"]);
+    assert_eq!(code(&out), 2);
+    assert!(
+        stderr(&out).contains("no build `site@3.3`; its builds are site, site@3.4"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
+fn a_page_where_an_older_lines_pages_are_fails_the_build() {
+    let model = VERSIONED.replace(r#"["3.4", "3.5"]"#, r#"["3", "4"]"#);
+    let dir = project(
+        &model,
+        &[
+            ("index.md", &page("Home.\n")),
+            ("3/notes.md", &page("Notes.\n")),
+        ],
+    );
+    let out = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 2, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("`3/notes.md` is under `site@3`'s pages"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
+fn a_versioned_build_with_one_live_line_builds_what_it_built_before() {
+    let one = VERSIONED.replace(r#"["3.4", "3.5"]"#, r#"["3.5"]"#);
+    let plain = one.replace("versions = \"self-managed\"\n", "");
+    let files: &[(&str, &str)] = &[
+        (
+            "index.md",
+            "---\ntitle: Home\n---\n\nSee [Install](install.md).\n",
+        ),
+        ("install.md", "---\ntitle: Install\n---\n\nIn 3.5.\n"),
+    ];
+    let a = project(&one, files);
+    let b = project(&plain, files);
+    for dir in [&a, &b] {
+        let out = ascribe(dir.path(), &["build"]);
+        assert_eq!(code(&out), 0, "{}", stderr(&out));
+    }
+    let mut left = std::collections::BTreeMap::new();
+    let mut right = std::collections::BTreeMap::new();
+    files_of(&a.path().join(".ascribe/build/site"), "", &mut left);
+    files_of(&b.path().join(".ascribe/build/site"), "", &mut right);
+    assert_eq!(left, right);
+}
+
+fn files_of(dir: &Path, prefix: &str, into: &mut std::collections::BTreeMap<String, Vec<u8>>) {
+    for entry in fs::read_dir(dir).expect("a listing") {
+        let entry = entry.expect("an entry");
+        let rel = format!("{prefix}{}", entry.file_name().to_string_lossy());
+        if entry.file_type().expect("a type").is_dir() {
+            files_of(&entry.path(), &format!("{rel}/"), into);
+        } else {
+            into.insert(rel, fs::read(entry.path()).expect("read a file"));
+        }
+    }
+}
+
+#[test]
+fn a_problem_in_every_line_is_said_once() {
+    let model = format!(
+        "{VERSIONED}\n[builds.cloud]\navailability = {{ filter = \"cloud\" }}\n\n[editor]\nbuild = \"site\"\n"
+    );
+    let dir = project(
+        &model,
+        &[
+            (
+                "index.md",
+                "---\ntitle: Home\n---\n\nSee [Setup](setup.md).\n",
+            ),
+            (
+                "setup.md",
+                "---\ntitle: Setup\navailable: self-managed\n---\n\nSee [nowhere](index.md#nowhere).\n",
+            ),
+        ],
+    );
+    let out = ascribe(dir.path(), &["check"]);
+    let text = stdout(&out);
+    assert_eq!(text.matches("#nowhere").count(), 1, "{text}");
+    assert!(text.contains("(only in every line of `site`)"), "{text}");
+    let out = ascribe(dir.path(), &["check", "--format", "json"]);
+    let json = stdout(&out);
+    assert!(json.contains("\"site\",\n        \"site@3.4\""), "{json}");
+}

@@ -1,0 +1,70 @@
+description: >-
+  A versioned build gives one build for each live line, the current one
+  named as declared and the older one `<build>@<line>`. A line is taken
+  whole: content that starts at a patch of 3.4, and content removed at a
+  patch of 3.4, are both in 3.4, since 3.4.0 had the second. Content that
+  starts at 3.5 is in 3.5 alone, a page too. Content later than every live
+  line stays in the current line only. Content that doesn't name the
+  target is in every line.
+spec: ["9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Patch
+          - directive: available
+            primary: self-managed 3.4.2
+            binding: heading
+          - paragraph: In 3.4 from its second patch.
+          - heading: 2
+            text: New
+          - directive: available
+            primary: self-managed 3.5
+            binding: heading
+          - paragraph: Only in 3.5.
+          - heading: 2
+            text: Later
+          - directive: available
+            primary: self-managed 3.6
+            binding: heading
+          - paragraph: After every live line.
+          - heading: 2
+            text: Cloud
+          - directive: available
+            primary: cloud
+            binding: heading
+          - paragraph: Cloud only.
+      new.md:
+        outline:
+          - heading: 1
+            text: New page
+  site@3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Patch
+          - directive: available
+            primary: self-managed 3.4.2
+            binding: heading
+          - paragraph: In 3.4 from its second patch.
+          - heading: 2
+            text: Gone
+          - directive: available
+            primary: self-managed (ga 3.0, removed 3.4.2)
+            binding: heading
+          - paragraph: Removed in a patch of 3.4, so 3.4 has it.
+          - heading: 2
+            text: Cloud
+          - directive: available
+            primary: cloud
+            binding: heading
+          - paragraph: Cloud only.

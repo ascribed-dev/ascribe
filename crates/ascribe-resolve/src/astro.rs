@@ -77,7 +77,7 @@ impl AstroRouter {
     /// The entry id Astro's `glob` loader gives a page: its path without the
     /// extension, each segment slugged, and a final `/index` removed. The root
     /// `index.md` (and `index/index.md`) is `index`.
-    pub(crate) fn entry_id(page: &RelPath) -> String {
+    pub fn entry_id(page: &RelPath) -> String {
         // The extension is removed before slugging: `a.b.md` is `a.b`, then
         // `ab`.
         let count = page.segments().count();
