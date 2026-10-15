@@ -923,6 +923,10 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     EXAMPLE_UNOBSERVED,
     EXAMPLES_CONFIG_INVALID,
     OBSERVATION_FILE_MISSING,
+    AVAILABLE_LINE_UNDECLARED,
+    AVAILABLE_SAME_IN_EVERY_LINE,
+    AVAILABLE_IN_NO_LINE,
+    RELEASE_LINE_ENDED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
