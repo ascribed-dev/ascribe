@@ -669,6 +669,9 @@ pub const AVAILABLE_IN_NO_LINE: DiagnosticSlug = DiagnosticSlug("available-in-no
 /// `ASC214`, advice, file level: a content check (area `project`).
 pub const RELEASE_LINE_ENDED: DiagnosticSlug = DiagnosticSlug("release-line-ended");
 
+/// `ASC215`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_PHRASE_LINE: DiagnosticSlug = DiagnosticSlug("model-phrase-line");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -881,6 +884,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     AVAILABLE_SAME_IN_EVERY_LINE,
     AVAILABLE_IN_NO_LINE,
     RELEASE_LINE_ENDED,
+    MODEL_PHRASE_LINE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

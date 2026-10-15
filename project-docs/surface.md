@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-210 in all. By severity: 35 advice, 151 error, 24 warning. By level: 191 file, 19 page. By kind of next step: 48 choose, 13 fix, 7 outside, 11 review, 131 write.
+211 in all. By severity: 35 advice, 152 error, 24 warning. By level: 192 file, 19 page. By kind of next step: 49 choose, 13 fix, 7 outside, 11 review, 131 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -313,6 +313,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC212` | `available-same-in-every-line` | advice | write | `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}` |
 | `ASC213` | `available-in-no-line` | warning | write | `{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it |
 | `ASC214` | `release-line-ended` | advice | write | support for `{target}` {line} ended on {date}, and the line is still live |
+| `ASC215` | `model-phrase-line` | error | choose | phrase `{key}` is the line of `{target}`, which has no live line in `[releases]` |
 
 ## The VS Code extension
 

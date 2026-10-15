@@ -118,6 +118,8 @@ cloud = "Quill Cloud"
 version = "3.4.1"
 api = "https://api.quill.dev/v3/"
 support-email = "support@quill.dev"
+# The current line of [releases.self-managed]: "3.5".
+release = { line = "self-managed" }
 # :snippet-end:
 
 # :snippet-start: glossary

@@ -355,7 +355,7 @@ impl<'s> Loader<'s> {
         let (lifecycle, declared_states) = self.lifecycle(root.get("lifecycle"));
         let features = self.features_raw(root.get("features"));
         let notes = self.notes(root.get("notes"));
-        let phrases = self.phrases(root.get("phrases"));
+        let (mut phrases, phrase_lines) = self.phrases(root.get("phrases"));
         self.check_roles(
             &dimensions,
             &dim_spans,
@@ -372,6 +372,7 @@ impl<'s> Loader<'s> {
         let widgets = self.widgets(root.get("widgets"));
         let consumer = self.consumer(root.get("consumer"));
         let (releases, planned_label) = self.releases(root.get("releases"), &dimensions);
+        self.phrase_lines(&mut phrases, &phrase_lines, &releases);
         let builds = self.builds(root.get("builds"), &dimensions, &releases);
         let editor_build = self.editor(root.get("editor"), root.get("builds"), &builds);
         self.versions(root.get("versions"));
@@ -1018,11 +1019,16 @@ impl<'s> Loader<'s> {
         notes
     }
 
-    fn phrases(&mut self, v: Option<&V<'_>>) -> Vec<Phrase> {
+    /// `[phrases]`, and for each phrase whose value is a target's line,
+    /// where the target is named, for [`Loader::phrase_lines`].
+    fn phrases(&mut self, v: Option<&V<'_>>) -> (Vec<Phrase>, Vec<Span>) {
         let mut out = Vec::new();
-        let Some(v) = v else { return out };
+        let mut lines = Vec::new();
+        let Some(v) = v else {
+            return (out, lines);
+        };
         let Some(t) = self.as_table("phrases", v) else {
-            return out;
+            return (out, lines);
         };
         for (key, key_span, item) in entries(t) {
             self.name_ok(key, key_span, "phrase", NameRule::Key);
@@ -1030,8 +1036,23 @@ impl<'s> Loader<'s> {
                 DeValue::String(s) => out.push(Phrase {
                     key: key.to_owned(),
                     value: s.to_string(),
+                    line: None,
                     span: key_span,
                 }),
+                DeValue::Table(lt) if lt.get("line").is_some() => {
+                    let path = join("phrases", key);
+                    self.check_keys(&path, lt, &["line"]);
+                    let Some(lv) = lt.get("line") else { continue };
+                    if let Some(target) = self.string(&format!("{path}.line"), lv, true) {
+                        out.push(Phrase {
+                            key: key.to_owned(),
+                            value: String::new(),
+                            line: Some(target),
+                            span: key_span,
+                        });
+                        lines.push(sp(lv));
+                    }
+                }
                 other => {
                     let raw = self.text_of(sp(item)).to_owned();
                     let shown = match other {
@@ -1047,7 +1068,29 @@ impl<'s> Loader<'s> {
                 }
             }
         }
-        out
+        (out, lines)
+    }
+
+    /// Gives each phrase whose value is a target's line that target's
+    /// current line, or reports a target with none. `spans` are where each
+    /// such phrase names its target, in order.
+    fn phrase_lines(&mut self, phrases: &mut [Phrase], spans: &[Span], releases: &[Releases]) {
+        let lined = phrases.iter_mut().filter(|p| p.line.is_some());
+        for (phrase, span) in lined.zip(spans) {
+            let target = phrase.line.as_deref().unwrap_or_default();
+            match releases
+                .iter()
+                .find(|r| r.target == target)
+                .and_then(Releases::current)
+            {
+                Some(current) => phrase.value.clone_from(&current.text),
+                None => self.push(
+                    self.issue(diagnostics::MODEL_PHRASE_LINE, *span)
+                        .with_arg("key", phrase.key.as_str())
+                        .with_arg("target", target),
+                ),
+            }
+        }
     }
 
     // ---- names and roles -----------------------------------------------------

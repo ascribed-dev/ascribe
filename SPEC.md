@@ -819,7 +819,7 @@ A content model declares the following.
 | Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
-| Phrases registry | Phrase keys and values | §5.1 |
+| Phrases registry | Phrase keys and values. A value is text, or a versioned target whose current release line it is | §5.1 |
 | Glossary | Terms, definitions, and matching settings | §5.4 |
 | Image attributes | Accepted image attribute keys and types | §5.3 |
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |

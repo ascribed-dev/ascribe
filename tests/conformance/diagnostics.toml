@@ -2056,7 +2056,7 @@ spec = "5.1"
 reference = "content-model/content.md#phrases"
 group = "phrases"
 message = "phrase `{key}` must be a quoted string, but it's {found}; write {key} = \"{value}\""
-fix = "Quote the value."
+fix = "Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = \"self-managed\" }`."
 
 [[diagnostic]]
 code = "ASC098"
@@ -3958,3 +3958,16 @@ reference = "content-model/content.md#71-releasestarget"
 when = "a live line's date in `[releases.<target>.ends]` is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
 message = "support for `{target}` {line} ended on {date}, and the line is still live"
 fix = "Move the line from `live` to `archived` in `[releases.<target>]`, with its date as `ended` and, when it's still readable somewhere, its `url`; or, if its support goes on, change its date in `ends`."
+
+[[diagnostic]]
+code = "ASC215"
+slug = "model-phrase-line"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "5.1"
+reference = "content-model/content.md#phrases"
+group = "phrases"
+message = "phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`"
+fix = "Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one."

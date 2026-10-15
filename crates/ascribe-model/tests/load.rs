@@ -795,6 +795,18 @@ fn a_version_is_placed_among_the_declared_lines() {
 }
 
 #[test]
+fn a_phrase_can_be_a_targets_current_line() {
+    let m = example("full.toml");
+    assert_eq!(m.phrase("release"), Some("3.5"));
+    let p = m.phrases.iter().find(|p| p.key == "release").unwrap();
+    assert_eq!(p.line.as_deref(), Some("self-managed"));
+    assert_eq!(
+        m.phrases.iter().find(|p| p.key == "version").unwrap().line,
+        None
+    );
+}
+
+#[test]
 fn versions_current_is_removed_for_the_list() {
     let issues = load_str(
         "spec = \"0.1\"\n[versions]\ncurrent = \"3.10\"\n",

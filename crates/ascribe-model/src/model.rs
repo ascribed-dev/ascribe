@@ -1004,8 +1004,12 @@ pub struct NoteType {
 pub struct Phrase {
     /// The phrase key.
     pub key: String,
-    /// The literal replacement text.
+    /// The literal replacement text. For a phrase whose value is a target's
+    /// line, the target's current line.
     pub value: String,
+    /// `{ line = "<target>" }`: the target whose line the phrase is, as
+    /// `[releases]` lists it.
+    pub line: Option<String>,
     /// The key in `ascribe.toml`.
     pub span: Span,
 }

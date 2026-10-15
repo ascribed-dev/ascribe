@@ -663,6 +663,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nplanned = [\"3.5\"]\n[releases.a.ends]\n\"3.5\" = 2027-01-31 #!\n",
         ),
         case(
+            "model-phrase-line",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nplanned = [\"1.0\"]\n[phrases]\nversion = { line = \"a\" } #!\n",
+        ),
+        case(
             "model-versions-current",
             None,
             "spec = \"0.1\"\n[versions]\ncurrent = \"3.4\" #!\n",

@@ -549,7 +549,7 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Message:** phrase `{key}` must be a quoted string, but it's \{found}; write \{key} = "\{value}"
 
-**Fix:** Quote the value.
+**Fix:** Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = "self-managed" }`.
 
 **Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
 
@@ -574,6 +574,17 @@ Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.m
 **Fix:** Fix the link, or link to a page that includes the fragment.
 
 **Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
+
+### ASC215 `model-phrase-line`
+@id {permalink=true}: ASC215
+
+Error · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+
+**Message:** phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`
+
+**Fix:** Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one.
+
+**Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
 
 ## Widgets
 
