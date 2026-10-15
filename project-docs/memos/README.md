@@ -6,7 +6,7 @@ The people and agents who maintain a docs set can find out why a page is written
 
 - **Whoever edits a page next,** who today finds the reason for a table, an order, or a caveat in a wiki, an old pull request, or nowhere.
 - **An agent editing a page,** which most needs to know why a page is written the way it is and can't work it out. A reason handed over with the page does more than the same reason anywhere else.
-- **A writer starting from a page template,** whose template's instructions are quoted paragraphs today: text that would be published if it were left in.
+- **A writer starting from a page template,** whose template's instructions to the writer are placeholders today, such as `\{This section is optional}`: text that's published if it's left in.
 - **A team that writes HTML comments in pages,** which it takes for private and which are in every published page's source.
 
 ## What exists today
@@ -14,7 +14,7 @@ The people and agents who maintain a docs set can find out why a page is written
 - **`@intended` is the nearest thing.** A line in the page, bound to the block below, with a reason that's a line primary (SPEC §4.9). Build resolution removes it (`drop_acknowledgements` in `crates/ascribe-resolve/src/build/mod.rs`), so no output, renderer, or `ascribe diff` sees one. Its schema is a built-in in `crates/ascribe-core/src/schema.rs`, beside `@note` and `@details`, which have a container form.
 - **A container's contents are parsed as Markdown.** The comrak fork (`crates/comrak-ascribe`, changes listed in its `FORK.md`) makes each directive line a block, an `AscribeLine`, and parses everything between an opener and its `@end` as blocks of CommonMark. `ascribe-syntax` pairs openers with `@end` afterwards (`src/structure/`). No directive's contents are kept as raw text, and an unclosed code fence inside a container swallows its `@end`.
 - **An HTML comment isn't private,** and binds to nothing. It's kept in the site output and the JSON output, so it's in every published page's source, and a reworded one is a change to `ascribe diff`. The proposal's table has every place. Ascribe passes Vale's own comments, `<!-- vale off -->`, through to Vale (`crates/ascribe-check/src/prose/extract.rs`).
-- **The docs' generated fragments say what generates them in an HTML comment.** About 63 of the 76 comments under `docs/content/` are those, one at the top of each fragment a test rewrites with `ASCRIBE_BLESS=1`.
+- **The docs' generated fragments say what generates them in an HTML comment,** at the top of each fragment, with a blank line before its content. Five generators write them: `crates/ascribe-cli/src/docs.rs` and `shapes.rs`, `tests/conformance/tests/docs.rs`, `packages/vscode/test/unit/docs.test.ts`, and `scripts/docs-site/elements.test.ts`. They're 66 of the 70 HTML comments under `docs/content/`; two of the rest are Vale's, and two are examples inside a code block.
 - **Page templates shipped without `@memo`.** The page templates plan carried a template's instructions as quoted paragraphs until `@memo` exists, and said that then "the conversion gains one rule, the set is regenerated, and a project's existing copies are its own to change or not" ([its decisions 18, 22, 33, and 55](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md#decisions)). But none of the six templates it shipped has a quoted instruction inside a section. Their instructions to the writer are paragraphs that are one placeholder, `\{This section is optional}` or `\{Optional: Specify when and why your user might want to perform the task.}`, beside placeholders for content such as `\{insert a brief description of the task}`: 28 such paragraphs across the six. A placeholder is published as written until it's replaced, and `template-placeholder-left` reports it. The conversion is `scripts/templates/convert.ts`, whose `rules.toml` names each text it changes; the set is `crates/ascribe-templates/set/`; the check is `crates/ascribe-check/src/checks/template.rs`, and `template_places` gives the editor what's left to fill in.
 - **`ascribe refs` names anything in a project:** a page or fragment, a heading as `page#id`, `phrase:`, `feature:`, `term:`, `dimension:`, `note:`, and `widget:` (`TargetKind` in `crates/ascribe-query/src/refs.rs`). Each place it lists has a `use`.
 - **`ascribe outline` lists a page's headings,** with each one's id, file, and line, and has a `schema_version` (`crates/ascribe-query/src/outline.rs`). The MCP tool `ascribe_outline` returns the same.
@@ -68,8 +68,8 @@ From [phase 1](phase-1-decisions.md), which keeps the options each was chosen fr
 
 | Layer | Where | What the thread needs from it |
 |---|---|---|
-| The language | `SPEC.md`, `ascribe-core`'s schema | `@memo`, its two forms, and what's in a container |
-| The parser | `comrak-ascribe`, `ascribe-syntax` | A container whose contents nothing parses, if phase 1 decides so |
+| The language | `SPEC.md`, `ascribe-core`'s schema | `@memo`, its two forms, a raw container, and a container that binds the block after its `@end` |
+| The parser | `comrak-ascribe`, `ascribe-syntax` | A container whose lines nothing parses (decision 21) |
 | Resolve | `ascribe-resolve`, `src/build/` | The memo removed beside `@intended` |
 | Check | `ascribe-check` | Nothing in a memo checked, indexed, or given to Vale |
 | Format | `ascribe-fmt` | The text left as written |

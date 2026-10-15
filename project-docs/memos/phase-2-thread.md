@@ -22,8 +22,8 @@ This is the thinnest slice through every layer an in-page memo touches. It exist
 
 ## Context
 
-- README decisions 3 to 8, and phase 1's decision 1.
-- SPEC §3.5 and §4.9.
+- README decisions 3 to 8 and 21.
+- SPEC §3.5 (forms), §3.8 (binding), and §4.9.
 - `crates/ascribe-core/src/schema.rs`: the built-in schemas, and the test that holds them to the SPEC's table.
 - `crates/comrak-ascribe/src/ascribe.rs` and `src/parser/ascribe.rs`, and `FORK.md`'s table of changed locations.
 - `crates/ascribe-syntax/src/structure/`: how openers and `@end` are paired, and `bind.rs`, where a following-block directive finds its block.
@@ -37,11 +37,22 @@ This is the thinnest slice through every layer an in-page memo touches. It exist
 
 `@memo` is a built-in: forms both, binding following block (section at the top of one, as `@available`'s), primary a line primary in line form and empty in container form, no attributes. SPEC gains §4.10 after `@intended`, and its table of built-ins a row. A memo in a fragment is part of the fragment.
 
+### A container that binds
+
+Today a binding belongs to line form (SPEC §3.8), and a container's content is what it holds. A container memo is both: it holds its text, and by decision 4 it's about something. No directive has done that, so SPEC §3.5 and §3.8 each gain a sentence:
+
+- **What it's about** is decided from its opening line, as a line memo's is: at the top of a section, the section; anywhere else, the next block after its `@end` in the same container.
+- **Touching** is measured from the `@end`: the block it's about starts on the line after it. A blank line there is the same warning a following-block directive gets, and `ascribe fmt` removes it.
+- **Nothing after the `@end`** in its container, outside the top of a section, is the error any following-block directive with nothing below it gets, reported at the opening line.
+- **Stacking** works across forms: a line memo directly above a container memo is about what the container is about.
+
 ### What's in a container
 
-As phase 1 decides. With raw lines, the fork's scanner opens a raw container on `@memo:` and keeps every line to its `@end` as text, in one node that carries the lines' source span; SPEC §3.5 says what a raw container is and that `@memo` is the one built-in that has one. With parsed contents, every reader listed in the context skips a memo's children, and a test walks each of them over the same page.
+The fork's scanner opens a raw container on `@memo:` and keeps every line to its closing line as text, in one node that carries the lines' source span. The closing line is a line that's only `@end` at the memo's indent, inside the container's prefixes; so a memo can't hold such a line, and SPEC §3.5 says so. SPEC §3.5 also says what a raw container is, and that `@memo` is the one built-in that has one.
 
-Either way, `ascribe-syntax` gives a memo's text to anything that asks for it, as the source between its lines, prefixes stripped (`tree.rs` has the function). Phase 4's check is the first to ask.
+**The `@end` stays an `AscribeLine` of its own.** The raw node ends on the line before it, and the scanner then reads the `@end` as it reads any other, so `ascribe-syntax` pairs the opener with it exactly as it pairs every container today, and the pairing learns no exception. This is the one place the fork and the syntax crate meet, and the conformance cases below hold both sides of it.
+
+`ascribe-syntax` gives a memo's text to anything that asks for it, as the source between its lines, prefixes stripped (`tree.rs` has the function). Phase 4's conversion tests are the first to ask.
 
 ### Removed at resolution
 
@@ -61,11 +72,11 @@ The language server gives no diagnostic, link, phrase, id, or semantic token fro
 
 ## Tasks
 
-1. The schema and SPEC §4.10, and the table test.
-2. The container, as phase 1 decides: the fork's scanner and `FORK.md`, or a skip in each reader.
+1. The schema, SPEC §4.10, the sentences in §3.5 and §3.8, and the table test.
+2. The raw container: the fork's scanner and `FORK.md`, with the `@end` left to the scanner.
 3. Removal at resolution, and the diff test.
 4. The formatter.
-5. Conformance cases in `tests/conformance/cases/directives/memo/`: the line form, the container form, a memo at the top of a section, two stacked, one with nothing below it, one with attributes, one in a list item, one in a fragment, and the container from the goal: a link to a missing file, a `{word}`, an `@include`, a `# heading`, and an unclosed fence, none of which is read.
+5. Conformance cases in `tests/conformance/cases/directives/memo/`: the line form, the container form, a memo at the top of a section, two stacked, a line memo stacked on a container one, one with nothing below it, a container with nothing after its `@end`, a container with a blank line after its `@end`, one with attributes, one in a list item, one in a fragment, and the container from the goal: a link to a missing file, a `{word}`, an `@include`, a `# heading`, a nested `@note:`, and an unclosed fence, none of which is read, with the `@end` after them still closing the memo.
 6. `examples/quill/docs/keys.md` gains the memo from the goal, and the compare script shows the example's outputs unchanged.
 7. The directives reference (`docs/content/writing/directives.md`), and an entry in `changes/`.
 8. The surface map.

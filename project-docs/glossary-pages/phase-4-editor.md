@@ -10,7 +10,7 @@ In VS Code, `F12` on "rollouts" in `getting-started.md` opens `glossary.md` at "
 
 ## Context
 
-- README decisions 1 to 6, and phase 1's decision 3.
+- README decisions 1 to 6 and 17.
 - `crates/ascribe-lsp/src/`: `definition.rs`, which goes to `[glossary.terms.<id>]` in `ascribe.toml` today; `complete.rs`; `code_action.rs`; `references.rs`; `rename.rs`; `hover.rs`; and the document symbols the outline is built from.
 - `crates/ascribe-cli/src/commands/rename.rs`.
 - The quick fix **Add a stable @id**, for a term whose heading has none.
@@ -22,7 +22,7 @@ In VS Code, `F12` on "rollouts" in `getting-started.md` opens `glossary.md` at "
 - **Completion** offers `@term` at the top of a section on a glossary page, and `@term`'s attributes and their values.
 - **Hover** on a `@term` heading shows the definition for the editor's build and how many pages use the term.
 - **Quick fixes:** `term-off-glossary-page`'s, which adds the page to `pages`; `glossary-definition-missing`'s, which puts a paragraph with the cursor in it under the heading; and, on a term with no `@id`, **Add a stable @id**, since the term's id is its heading's.
-- **Rename.** Renaming a term's heading id, from the editor or `ascribe rename`, renames the term: every link to the heading changes, as now, and so does `[[intended]] term` if phase 1's decision 3 keeps it. Rewording the heading's text changes the term's text, and the editor says so when the heading has no `@id`, since its id changes too.
+- **Rename.** Renaming a term's heading id, from the editor or `ascribe rename`, renames the term: every link to the heading changes, as now. An acknowledgement of the term sits at its heading (decision 17), so nothing but links names the id. Rewording the heading's text changes the term's text, and the editor says so when the heading has no `@id`, since its id changes too.
 - **The outline.** A term's heading is a symbol of its own kind in the editor's outline, so a long glossary can be searched by term.
 
 ## Tasks

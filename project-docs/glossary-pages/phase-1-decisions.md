@@ -102,12 +102,26 @@ Decision 14 gives the docs a glossary page. The proposal said `reference/glossar
 
 **Decided: `docs/content/glossary.md`, at the root, type `reference`.** The root holds what belongs to no one feature, as getting started does, and a glossary is about the whole product; a reader who follows "fragment" wants the word, not the content model's folder. README decision 20.
 
+### 7. A link an author writes to a term's heading
+
+Raised in review, after the six were answered, and not yet decided. Phase 2 meets it on its first project: Ascribe's docs have three `marked` terms.
+
+A `marked` term isn't linked automatically: an author links the occurrences that mean it. Today that's an ordinary link to wherever the term's `link` points, a use of that page and nothing more: no `data-ascribe-term`, no definition as its title, and not a use of the term, so `ascribe refs term:` doesn't list it (SPEC §5.4, `crates/ascribe-resolve/src/uses.rs`). With `link` gone, the target is the term's heading, and the question is whether a link there is the term's.
+
+| Option | Means |
+|---|---|
+| **A link to a term's heading is a use of the term** (recommended) | It carries `data-ascribe-term` and the definition as its title, as an automatic link does, it's counted by `glossary-term-unused`, and `ascribe refs term:` lists it. It holds for any term, so a hand-written link to an automatically linked term's heading reads the same as the automatic one. A reader sees one kind of term link wherever it came from, and a marked term can be found unused like any other. The docs' three marked terms' links gain the attribute and the title, an output change named with `--accept` |
+| It stays an ordinary link | Today's behavior, with the heading as the target. A marked term's links have no title and aren't its uses, so `glossary-term-unused` has to count links to the heading as uses for a marked term only, and `ascribe refs term:` lists nothing for one |
+
+The guide's step on a term that's also an ordinary word (phase 5) teaches whichever is chosen.
+
 ## Tasks
 
 1. The maintainer reads the six and answers each. _Done,_ 15 October 2026.
 2. Record each answer in this file, under its heading, as **Decided:** with the reason, and in the README's decisions, numbered from 15. _Done._
 3. Record them in `project-docs/decisions/`, numbered by this plan's issue, as the repository does. _Waits:_ the plan has no issue and no pull request yet, and a decision file is named by one of the two.
 4. Add to the proposal what the answers change in it. _Done:_ the acknowledgement, and the limit.
+5. The maintainer answers decision 7, and it's recorded as decision 21 in the README, before phase 2 starts.
 
 ## Out of scope
 
@@ -116,7 +130,7 @@ Decision 14 gives the docs a glossary page. The proposal said `reference/glossar
 
 ## Acceptance criteria
 
-- Each of the six has an answer and a reason.
+- Each of the seven has an answer and a reason.
 - Nothing in a later phase file contradicts one.
 - Phase 2 can be started without asking the maintainer anything.
 
