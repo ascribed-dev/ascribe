@@ -47,6 +47,7 @@ mod plain;
 pub mod render;
 pub mod site;
 mod store;
+mod versions;
 mod write;
 pub mod zod;
 
@@ -63,4 +64,5 @@ pub use plain::PlainEmitter;
 pub use render::render_site_html;
 pub use site::{AstroProfile, SiteEmitter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};
+pub use versions::{VERSIONS_PATH, VERSIONS_VERSION, versions_json};
 pub use write::{Output, WriteEvent, WriteOptions, Written, write_outputs};

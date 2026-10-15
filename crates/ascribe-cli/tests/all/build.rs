@@ -800,3 +800,68 @@ fn a_problem_in_every_line_is_said_once() {
     let json = stdout(&out);
     assert!(json.contains("\"site\",\n        \"site@3.4\""), "{json}");
 }
+
+#[test]
+fn versions_json_says_which_lines_have_each_page_and_goes_with_releases() {
+    let dir = versioned();
+    // Building one line writes what every line knows.
+    let out = ascribe(
+        dir.path(),
+        &["build", "--build", "site@3.4", "--emit", "site"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let shared = dir.path().join(".ascribe/build/_ascribe");
+    let json: serde_json::Value =
+        serde_json::from_str(&read(&shared.join("versions.json"))).expect("JSON");
+    let site = &json["builds"]["site"];
+    assert_eq!(site["target"], "self-managed");
+    assert_eq!(site["lines"][0]["line"], "3.5");
+    assert_eq!(site["lines"][0]["status"], "current");
+    assert_eq!(site["lines"][0]["build"], "site");
+    assert_eq!(site["lines"][0]["base"], "/docs/");
+    assert_eq!(site["lines"][1]["build"], "site@3.4");
+    assert_eq!(site["lines"][1]["base"], "/docs/3.4/");
+    assert_eq!(
+        site["pages"]["install.md"]["lines"]["3.4"],
+        "/docs/3.4/install/"
+    );
+    assert_eq!(
+        site["pages"]["install.md"]["lines"]["3.5"],
+        "/docs/install/"
+    );
+    assert!(site["pages"]["webhooks.md"]["lines"].get("3.4").is_none());
+    assert!(shared.join("manifest.json").exists());
+
+    // Without `[releases]`, the next build removes the file and its folder.
+    let model = VERSIONED
+        .replace("[releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n", "")
+        .replace("versions = \"self-managed\"\n", "");
+    write(&dir.path().join("ascribe.toml"), &model);
+    let out = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(!shared.exists());
+}
+
+#[test]
+fn an_ascribe_folder_ascribe_didnt_write_is_refused_and_left_alone() {
+    let dir = versioned();
+    let shared = dir.path().join(".ascribe/build/_ascribe");
+    write(&shared.join("notes.txt"), "mine");
+    let out = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 2, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("isn't a folder Ascribe wrote"),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(read(&shared.join("notes.txt")), "mine");
+    assert!(!shared.join("versions.json").exists());
+    // Without `[releases]`, it's not Ascribe's to remove either.
+    let model = VERSIONED
+        .replace("[releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n", "")
+        .replace("versions = \"self-managed\"\n", "");
+    write(&dir.path().join("ascribe.toml"), &model);
+    let out = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert_eq!(read(&shared.join("notes.txt")), "mine");
+}

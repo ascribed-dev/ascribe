@@ -6,9 +6,11 @@ use std::path::Path;
 use ascribe_model::{Build, ContentModel};
 use ascribe_resolve::{AstroRouter, Project, ResolvedBuild};
 
+use ascribe_core::RelPath;
+
 use crate::{
-    EmitContext, EmitError, Emitter, FileKind, JsonEmitter, OutputDir, OutputOptions, PlainEmitter,
-    SiteEmitter, emit,
+    Contents, EmitContext, EmitError, EmittedFile, Emitter, FileKind, JsonEmitter, OutputDir,
+    OutputOptions, PlainEmitter, SiteEmitter, VERSIONS_PATH, emit, versions_json,
 };
 
 /// One of the outputs a build can write.
@@ -135,6 +137,25 @@ pub fn write_outputs(
             };
             on_event(&WriteEvent::Written(done.clone()));
             written.push(done);
+        }
+    }
+    // What the lines share is above the builds, written whichever builds
+    // were asked for, and removed with the project's last `[releases]`.
+    match versions_json(index)? {
+        Some(text) => {
+            let file = EmittedFile {
+                path: RelPath::parse(VERSIONS_PATH).map_err(|e| EmitError::Invalid {
+                    message: format!("{VERSIONS_PATH}: {e}"),
+                })?,
+                kind: FileKind::Generated,
+                source: None,
+                url: None,
+                contents: Contents::Text(text),
+            };
+            output.replace_shared(&[file])?;
+        }
+        None => {
+            output.remove_shared()?;
         }
     }
     Ok(written)
