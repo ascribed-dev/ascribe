@@ -13,6 +13,7 @@ export const availableTargetSchema = z.strictObject({
   dimension: z.string(),
   states: z.array(z.string()),
   versions: z.array(z.string()).optional(),
+  planned: z.literal(true).optional(),
   text: z.string(),
 });
 

@@ -19,6 +19,15 @@ expression: text
   "availability": {
     "text": "self-managed 3.5",
     "display": "self-managed (GA, 3.5+)",
+    "targets": [
+      {
+        "target": "self-managed",
+        "dimension": "deployment",
+        "states": ["ga"],
+        "versions": ["3.5"],
+        "text": "self-managed (GA, 3.5+)"
+      }
+    ],
     "scope": "page",
     "feature": null,
     "source": {

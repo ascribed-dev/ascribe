@@ -19,6 +19,21 @@ expression: text
   "availability": {
     "text": "cloud, self-managed preview 3.3",
     "display": "Quill Cloud (GA); self-managed (preview, 3.3+)",
+    "targets": [
+      {
+        "target": "cloud",
+        "dimension": "deployment",
+        "states": ["ga"],
+        "text": "Quill Cloud (GA)"
+      },
+      {
+        "target": "self-managed",
+        "dimension": "deployment",
+        "states": ["preview"],
+        "versions": ["3.3"],
+        "text": "self-managed (preview, 3.3+)"
+      }
+    ],
     "scope": "page",
     "feature": null,
     "source": {
