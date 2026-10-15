@@ -5,29 +5,76 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-# Guides are the default; the references and the contracts are `reference`.
-[types.guide]
-default = true
+# Every page names its type with `type:` in its frontmatter. Five of the
+# types are the set's, from `ascribe templates eject`: each one's template and
+# guide are in templates/, with Ascribe's notes on it, and templates.lock
+# records where they came from. What the set's types don't have is put back
+# here: each type's purpose, and the same frontmatter on all of them. Titles
+# can show code ("`ascribe.toml` reference"); the site's layout uses the
+# formatted title for the heading and the sidebar.
 
-# Titles can show code ("`ascribe.toml` reference"); the site's layout uses
-# the formatted title for the heading and the sidebar.
-[types.guide.frontmatter]
+# The home page, a list of the other pages. No template is for a landing page,
+# so the type has none.
+[types.index.frontmatter]
 title = { type = "string", inline = "code" }
-description = "string"
+description = { type = "string", role = "description" }
 
+# The reference's template is the set's, taken with `ascribe templates eject
+# reference --keep-type`; the type is the docs' own. The contracts are written
+# for implementers but shaped as references, and the editor's pages are its
+# reference.
 [types.reference]
-files = ["reference/**", "contracts/**"]
+template = "templates/reference.md"
+guide = ["templates/reference.guide.md", "templates/reference.ascribe.md"]
+purpose = "Looking up a command, a key of ascribe.toml, a directive, a diagnostic, the editor's features and settings, or a contract's rules."
 
 [types.reference.frontmatter]
 title = { type = "string", inline = "code" }
-description = "string"
-since = "string?"
+description = { type = "string", role = "description" }
+
+# The set's other four types, from `ascribe templates eject`.
+[types.how-to]
+template = "templates/how-to.md"
+guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
+purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, or taking the page templates."
+
+[types.how-to.frontmatter]
+title = { type = "string", inline = "code" }
+description = { type = "string", role = "description" }
+
+[types.tutorial]
+template = "templates/tutorial.md"
+guide = ["templates/tutorial.guide.md", "templates/tutorial.ascribe.md"]
+purpose = "Learning Ascribe by building an example project a step at a time: a first project, then content that varies."
+
+[types.tutorial.frontmatter]
+title = { type = "string", inline = "code" }
+description = { type = "string", role = "description" }
+
+[types.concept]
+template = "templates/concept.md"
+guide = ["templates/concept.guide.md", "templates/concept.ascribe.md"]
+purpose = "Understanding an idea behind the docs a team publishes, such as what Ascribe can't measure and where to look instead."
+
+[types.concept.frontmatter]
+title = { type = "string", inline = "code" }
+description = { type = "string", role = "description" }
+
+[types.troubleshooting]
+template = "templates/troubleshooting.md"
+guide = ["templates/troubleshooting.guide.md", "templates/troubleshooting.ascribe.md"]
+purpose = "Finding out why something isn't working, from what it shows, and what to do about it."
+
+[types.troubleshooting.frontmatter]
+title = { type = "string", inline = "code" }
+description = { type = "string", role = "description" }
 
 # What isn't in the latest release is marked with availability. A feature in
-# `main` that no release has yet is `@available: next`. When a release ships
-# it, `next` below becomes `ascribe <version>`, and every page marked with it
-# reads "since <version>". Something that shipped in an earlier release than
-# the current one can say so directly: `@available: ascribe 0.1.1`.
+# `main` that no release has yet is `@available: next`, the planned line in
+# `[releases.ascribe]`, so the page reads "planned". When a release ships it,
+# the line moves to `live` and the same marks read "since <version>".
+# Something that shipped in an earlier release says so directly:
+# `@available: ascribe 0.1.1`.
 [dimensions.release]
 label = "Ascribe"
 values = ["ascribe"]
@@ -39,18 +86,28 @@ labels = { ascribe = "Ascribe" }
 label = "Package manager"
 values = ["npm", "pnpm"]
 
-[lifecycle.unreleased]
-available = true
-label = "in main, not yet released"
+# The releases the docs know of: the latest release is the live line, and
+# the one `main` is building is planned. Earlier releases aren't declared: a
+# mark for one is before the window and reads as written. RELEASING.md's
+# step moves the lines when a release ships. `availability-left-behind`
+# reports a feature whose versions are all at or before the live line, such
+# as `next` once its release ships.
+[releases]
+planned-label = "in main, not yet released"
+
+[releases.ascribe]
+live = ["0.3.1"]
+planned = ["0.4.0"]
 
 [features.next]
-name = "Ascribe 0.2.0"
-available = "ascribe 0.2.0"
+name = "In main, not yet released"
+available = "ascribe 0.4.0"
 
 [phrases]
-# The latest release: the workspace version in Cargo.toml, and every
-# package.json under packages/.
-version = "0.2.0"
+# The latest release: `[releases.ascribe]`'s live line, which
+# tests/conformance/tests/docs.rs compares with the workspace version in
+# Cargo.toml and every package.json under packages/.
+version = { line = "ascribe" }
 # `engines.node` in package.json. scripts/docs-site/facts.test.ts checks it,
 # and every other file that names the Node version.
 node = "24"
@@ -70,7 +127,7 @@ match = "first"
 term = "build"
 aliases = ["builds"]
 definition = "A named set of choices, in ascribe.toml, for which variants and which availability a page's output keeps."
-link = "reference/content-model.md#16-buildsname"
+link = "content-model/output.md#16-buildsname"
 # Also an ordinary word: link the occurrences that mean the term.
 match = "marked"
 
@@ -78,7 +135,7 @@ match = "marked"
 term = "variant"
 aliases = ["variants"]
 definition = "Alternative content for a value of a dimension, written with @variant."
-link = "reference/directives.md#variant"
+link = "writing/directives.md#variant"
 # Also an ordinary word: link the occurrences that mean the term.
 match = "marked"
 
@@ -86,19 +143,19 @@ match = "marked"
 term = "dimension"
 aliases = ["dimensions"]
 definition = "An axis content varies along, such as a package manager or a deployment, declared in ascribe.toml."
-link = "reference/content-model.md#6-dimensionsname"
+link = "content-model/content.md#dimensions"
 
 [glossary.terms.fragment]
 term = "fragment"
 aliases = ["fragments"]
 definition = "A source file that exists only to be included in other files: any file with a path segment starting with _."
-link = "reference/directives.md#files"
+link = "writing/directives.md#files"
 
 [glossary.terms.phrase]
 term = "phrase"
 aliases = ["phrases"]
 definition = "A reusable string declared in ascribe.toml and written {key} in a page."
-link = "reference/directives.md#phrases"
+link = "writing/directives.md#phrases"
 # Also an ordinary word: link the occurrences that mean the term.
 match = "marked"
 
@@ -106,17 +163,17 @@ match = "marked"
 term = "content model"
 aliases = ["content models"]
 definition = "A project's schema, ascribe.toml: its content types, dimensions, phrases, and builds."
-link = "reference/content-model.md"
+link = "content-model/index.md"
 
 [glossary.terms.page-preview]
 term = "page preview"
 definition = "The editor's preview of the active page, rendered as the site shows it."
-link = "guides/editor.md#preview"
+link = "editor/index.md#preview"
 
 [glossary.terms.site-preview]
 term = "site preview"
 definition = "The active page on the project's own dev server, in the browser or the preview panel."
-link = "guides/editor.md#site-preview"
+link = "editor/index.md#site-preview"
 
 # Where the pages' code examples come from: files in this repository that are
 # built, tested, or run, taken with `@snippet`. Netlify builds from a clone of
@@ -124,28 +181,56 @@ link = "guides/editor.md#site-preview"
 # Code examples come from these files. The same folders are listed in three
 # other places, which need the same change when `include` changes: the paths
 # in .github/workflows/site-npm.yml, the site path pattern in
-# .github/workflows/ci.yml, and `ignore` in site/netlify.toml.
-# scripts/docs-site/facts.test.ts fails until they agree.
+# .github/workflows/ci.yml, and `ignore` in site/netlify.toml. Those three
+# also name CHANGELOG.md, which the site renders as its changelog, and the
+# source's ascribe.examples.toml and examples.observations/, which say what
+# the examples were tested with. scripts/docs-site/facts.test.ts fails until
+# they agree.
 [sources.code]
 path = ".."                               # relative to the folder ascribe.toml is in
 include = [                               # what's readable; everything else isn't
   ".github/workflows/**",
   "crates/ascribe-cli/tests/output/**",
   "examples/**",
+  "site/demo/**",
 ]
 ignore = ["**/node_modules/**"]
 
-# How the site in site/ routes. `site`, `base-path`, and `trailing-slash` must
-# agree with site/astro.config.mjs; @ascribed/astro checks that they do.
+# How the site in site/ routes. @ascribed/astro gives Astro its `site` and
+# `trailingSlash` from here (site/astro.config.mjs leaves them out), and
+# checks that `base-path` is under Astro's `base`.
 [consumer]
 profile = "astro"
-# The site's address, its domain on Netlify. astro.config.mjs, the READMEs, the
-# extension's manifest, and the binary's help repeat it, and tests check each
-# against this line. A pull request's preview is built with its own address
-# here and in astro.config.mjs (.github/workflows/site.yml).
+# The site's address, its domain on Netlify. The READMEs, the extension's
+# manifest, the binary's help, and site/home/ascribe.toml repeat it, and tests
+# check each against this line. A pull request's preview is built with its
+# own address here and in site/home/ascribe.toml (.github/workflows/site.yml).
 site = "https://ascribed-dev.com"
-base-path = "/"
+# The docs are under /docs/, and the site's own pages, site/home/, at its
+# root. The READMEs' links to pages, site/src/site.ts's `docsPath`, and
+# .github/workflows/report.yml's `--site` repeat it, and tests check each.
+base-path = "/docs/"
 trailing-slash = "always"
+# llms.txt and each page's Markdown, for AI agents: `@ascribed/astro` publishes
+# them with the site.
+agents = true
+# Each Markdown version's response headers, `X-Robots-Tag` for a page that
+# isn't listed and a canonical `Link` to its page, written into the built
+# site's `_headers`, which Netlify reads. site/test/headers.test.ts checks them.
+headers = "netlify"
+# Where each permalink's address is: /go/cli-check/ forwards to the section
+# `ascribe check --help` links to. Set from the site's root, so the addresses
+# the binary prints don't move when base-path does; crates/ascribe-cli checks
+# its help links against it.
+permalink-path = "/go/"
+
+# What each kind of AI crawler may do. Docs for a tool are for people to
+# find through any assistant, so every kind may read them; `allow` writes no
+# lines, and keeps each of them under the lines for every crawler.
+[crawlers]
+training = "allow"
+search = "allow"
+on-request = "allow"
 
 [builds.site]
 variants = "switch"
@@ -153,3 +238,18 @@ availability = "badge"
 
 [editor]
 build = "site"
+
+# Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
+# later installed; `ascribe check --vale` runs them too. Vale isn't needed
+# to work on the docs, so a machine without it isn't told so.
+[checks]
+prose-not-checked = "off"
+# The examples ../ascribe.examples.toml lists say on the page what they were
+# tested with. One changed since its last test run is an error here, so the
+# docs never publish a tested line that's no longer true; run `ascribe
+# observe` in the repository's root and commit what it writes.
+example-stale = "error"
+
+[checks.vale]
+preset = "quiet"
+

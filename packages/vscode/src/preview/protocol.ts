@@ -41,6 +41,8 @@ export interface AvailabilityTarget {
   dimension: string;
   states: string[];
   versions?: string[];
+  /** Present, and `true`, when the target's last version is in a planned line. */
+  planned?: boolean;
   text: string;
 }
 
@@ -79,15 +81,30 @@ export interface ThreadsView {
   local: { state: LocalState; behind: number; ahead: number } | null;
   /** Signed out: whether `gh` is signed in, so it can be used instead. */
   gh: boolean;
-  /** For `error`: what went wrong, as a sentence. */
+  /**
+   * For `error`: what went wrong, as a sentence. For `signed-out`: why no
+   * sign-in can be offered, when the remote's host gets none.
+   */
   message: string | null;
   /** A thread to go to once the overlay has read the threads: one opened from another page. */
   goTo: string | null;
 }
 
-/** The overlay's requests to its host, over the webview's messages (`OverlayHost`). */
+/**
+ * The overlay's requests to its host, over the webview's messages
+ * (`OverlayHost`), and the review header's: `promptAgent`, whose `request` is
+ * a `PromptRequest`, the preview answers itself.
+ */
 export type ThreadsMethod =
-  "load" | "commentTarget" | "comment" | "reply" | "allThreads" | "resolve" | "submit" | "discard";
+  | "load"
+  | "commentTarget"
+  | "comment"
+  | "reply"
+  | "allThreads"
+  | "resolve"
+  | "submit"
+  | "discard"
+  | "promptAgent";
 
 /**
  * A problem as the preview shows it: one from the server, or one of the

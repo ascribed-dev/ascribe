@@ -35,6 +35,23 @@ describe("threadsNotice", () => {
     ]);
   });
 
+  it("says why there's no sign-in to offer when the remote isn't GitHub's", () => {
+    const view: ThreadsView = {
+      ...ON,
+      state: "signed-out",
+      pullRequest: null,
+      local: null,
+      message: "The remote is on gitlab.example, which isn't GitHub.",
+    };
+    expect(threadsNotice(view)).toEqual({
+      text: "Showing changes only. The remote is on gitlab.example, which isn't GitHub.",
+      actions: [],
+    });
+    expect(threadsNotice({ ...view, gh: true })?.actions.map((a) => a.label)).toEqual([
+      "Use GitHub CLI",
+    ]);
+  });
+
   it("says why the comments couldn't be read, and offers to try again", () => {
     expect(
       threadsNotice({ ...ON, state: "error", message: "Couldn't reach github.com: offline" }),

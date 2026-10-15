@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use ascribe_core::{DiagnosticSlug, Issue};
+use ascribe_core::{DiagnosticSlug, Issue, Place};
 
 use crate::Severity;
 
@@ -21,6 +21,52 @@ pub enum Level {
     File,
     /// Each expanded page, per build.
     Page,
+}
+
+/// The kind of next step a diagnostic has: what the author, or their agent,
+/// does about it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Next {
+    /// Every instance has a fix Ascribe can apply: a diagnostic's fix, or
+    /// the editor's quick fix.
+    Fix,
+    /// The author picks among things Ascribe can list: a link's target, a
+    /// key's allowed values, a declared phrase.
+    Choose,
+    /// It needs writing or judgment.
+    Write,
+    /// Nothing in the source can fix it: it's set somewhere else, such as
+    /// the hosting.
+    Outside,
+    /// It may be fine as it is.
+    Review,
+}
+
+impl Next {
+    /// Every kind, in the order the docs list them.
+    pub const ALL: [Next; 5] = [
+        Next::Fix,
+        Next::Choose,
+        Next::Write,
+        Next::Outside,
+        Next::Review,
+    ];
+
+    /// `"fix"`, `"choose"`, `"write"`, `"outside"`, or `"review"`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Next::Fix => "fix",
+            Next::Choose => "choose",
+            Next::Write => "write",
+            Next::Outside => "outside",
+            Next::Review => "review",
+        }
+    }
+
+    /// The kind with this name.
+    pub fn from_name(name: &str) -> Option<Next> {
+        Next::ALL.into_iter().find(|n| n.as_str() == name)
+    }
 }
 
 /// One registry entry.
@@ -38,9 +84,51 @@ pub struct Entry {
     pub message: String,
     /// Alternative templates, by variant name.
     pub messages: HashMap<String, String>,
+    /// How to fix the problem, in general: the entry's `fix` paragraph,
+    /// which every entry has.
+    pub fix: Option<String>,
+    /// A short wrong-and-right example: the registry's `example`.
+    pub example: Option<Example>,
+    /// The kind of next step, which every entry has.
+    pub next: Option<Next>,
+    /// The named pieces of context an agent prompt about it carries, beyond
+    /// the message and the line, such as `allowed-values`.
+    pub evidence: Vec<String>,
+    /// Whether a project may set its level in `[checks]`.
+    pub configurable: bool,
+    /// For a check whose next step is review: where it reports its problems,
+    /// and so where one is acknowledged (SPEC §4.9).
+    pub place: Option<Place>,
+    /// Whether only `ascribe report` runs it (`stage = "report"`), since it
+    /// needs the network or a built site: never `ascribe check` or the
+    /// editor.
+    pub report_only: bool,
+}
+
+/// A diagnostic's example: a page that has the problem, and the same page
+/// without it. Each is checked under the explain model
+/// (`tests/conformance/explain-model.toml`), with `model` laid over it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Example {
+    /// A page, `page.md`, that has the problem.
+    pub wrong: String,
+    /// The same page, fixed.
+    pub right: String,
+    /// Content model text laid over the explain model, for an example that
+    /// needs something it doesn't declare.
+    pub model: Option<String>,
+    /// Other files of the project, by content path, in path order.
+    pub files: Vec<(String, String)>,
 }
 
 impl Entry {
+    /// The address of the entry's section in the diagnostics reference: the
+    /// docs' permalink named by its code, such as
+    /// `https://ascribed-dev.com/go/ASC036/`.
+    pub fn docs(&self) -> String {
+        ascribe_core::docs_permalink(&self.code)
+    }
+
     /// Whether the message names the build: its template, or one of its
     /// variants, has a `{build}` placeholder. Such a message already says
     /// which builds it's about.
@@ -89,11 +177,7 @@ impl Registry {
 
     fn entry(t: &toml::Table) -> Option<Entry> {
         let text = |k: &str| t.get(k).and_then(toml::Value::as_str).map(str::to_owned);
-        let severity = match text("severity")?.as_str() {
-            "error" => Severity::Error,
-            "warning" => Severity::Warning,
-            _ => return None,
-        };
+        let severity = Severity::from_name(&text("severity")?)?;
         let level = match text("level")?.as_str() {
             "file" => Level::File,
             "page" => Level::Page,
@@ -108,6 +192,25 @@ impl Registry {
                     .collect()
             })
             .unwrap_or_default();
+        let example = t.get("example").and_then(toml::Value::as_table).map(|e| {
+            let text = |k: &str| e.get(k).and_then(toml::Value::as_str).map(str::to_owned);
+            let mut files: Vec<(String, String)> = e
+                .get("files")
+                .and_then(toml::Value::as_table)
+                .map(|f| {
+                    f.iter()
+                        .filter_map(|(k, v)| Some((k.clone(), v.as_str()?.to_owned())))
+                        .collect()
+                })
+                .unwrap_or_default();
+            files.sort();
+            Example {
+                wrong: text("wrong").unwrap_or_default(),
+                right: text("right").unwrap_or_default(),
+                model: text("model"),
+                files,
+            }
+        });
         Some(Entry {
             code: text("code")?,
             slug: text("slug")?,
@@ -115,12 +218,38 @@ impl Registry {
             level,
             message: text("message")?,
             messages,
+            fix: text("fix"),
+            example,
+            next: text("next").and_then(|n| Next::from_name(&n)),
+            evidence: t
+                .get("evidence")
+                .and_then(toml::Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            configurable: t
+                .get("configurable")
+                .and_then(toml::Value::as_bool)
+                .unwrap_or(false),
+            place: text("place").and_then(|p| Place::from_name(&p)),
+            report_only: text("stage").as_deref() == Some("report"),
         })
     }
 
     /// The entry for a slug.
     pub fn get(&self, slug: DiagnosticSlug) -> Option<&Entry> {
         self.entries.get(slug.as_str())
+    }
+
+    /// The entry with this slug, or this code (`ASC036`, in any case).
+    pub fn find(&self, code_or_slug: &str) -> Option<&Entry> {
+        self.entries.get(code_or_slug).or_else(|| {
+            self.entries()
+                .find(|e| e.code.eq_ignore_ascii_case(code_or_slug))
+        })
     }
 
     /// Every entry, in registry order.

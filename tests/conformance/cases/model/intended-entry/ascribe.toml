@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[phrases]
+product = "Quill"
+
+[[intended]]
+check = "link-target-missing"
+phrase = "produkt"
+reason = "The entry must be declared."

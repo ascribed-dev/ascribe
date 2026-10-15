@@ -106,6 +106,12 @@ export interface DiffReport {
   working_tree_errors: number;
   /** What changed, per build, in the order asked for. */
   builds: BuildDiff[];
+  /**
+   * Whether every page's `changes` was left empty, as `ascribe diff
+   * --pages-only` leaves them: its `counts` still count them. Only there
+   * when it's `true`.
+   */
+  blocks_omitted?: boolean;
 }
 
 /** What changed on one page of a build. */
@@ -139,7 +145,8 @@ export interface PageDiff {
   counts: Counts;
   /**
    * The block-level changes, in the page's order, a removed block where
-   * it was. Empty for an added or removed page.
+   * it was. Empty for an added or removed page, and for every page when
+   * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
 }

@@ -7,8 +7,8 @@ name: CI
 #
 # What runs depends on what changed and where:
 #
-# - A change to plans and reports alone (project-docs/, reports/,
-#   research_notes/) runs the formatter and nothing else.
+# - A change to plans and reports alone (project-docs/) runs the formatter
+#   and nothing else.
 # - A pull request runs Linux and Windows. `main` runs Linux and macOS. The
 #   rest of the platforms (the Astro end-to-end on arm64, macOS, and Windows)
 #   run every night and by hand, here, and the canary's smoke test installs
@@ -21,10 +21,12 @@ name: CI
 #   base's (scripts/compare/outputs.ts): a clean-up must change none. Adding
 #   or removing a label starts a run, so the label counts as soon as it's
 #   added, and stops counting as soon as it's removed. A change to the
-#   outputs that a decision in project-docs/decisions.md accepts adds the
+#   outputs that a recorded decision (project-docs/decisions/) accepts adds the
 #   label `outputs changed` too, and lists the files it accepts in the
 #   description (see the job): those still show, but only another difference
 #   fails.
+# - The install script and the Homebrew formula install the last release, on
+#   every night and when either changed.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -51,6 +53,7 @@ jobs:
     outputs:
       code: ${{ steps.find.outputs.code }}
       site: ${{ steps.find.outputs.site }}
+      install: ${{ steps.find.outputs.install }}
       rust-os: ${{ steps.find.outputs.rust-os }}
       vscode-os: ${{ steps.find.outputs.vscode-os }}
       astro-targets: ${{ steps.find.outputs.astro-targets }}
@@ -73,18 +76,24 @@ jobs:
           fi
 
           # Plans and reports are prose nothing builds or tests; only the formatter reads them.
-          # The decision log and the change checklists are the exception: a test checks them.
+          # The decisions and the change checklists are the exception: tests check them.
           code=true
           if [ "$files" != all ] && [ -n "$files" ] &&
-            ! printf '%s\n' "$files" | grep -qvE '^(project-docs|reports|research_notes)/' &&
-            ! printf '%s\n' "$files" | grep -qE '^project-docs/(decisions|checklists)\.md$'; then
+            ! printf '%s\n' "$files" | grep -qvE '^project-docs/' &&
+            ! printf '%s\n' "$files" | grep -qE '^project-docs/((decisions|checklists)\.md|decisions/)'; then
             code=false
           fi
 
           site=false
           if [ "$files" = all ] ||
-            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates|examples)/|^(Cargo\.lock|pnpm-lock\.yaml)$|^\.github/workflows/(ci|site|drift|review)\.yml$'; then
+            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates|examples|changes|examples\.observations)/|^(Cargo\.lock|pnpm-lock\.yaml|CHANGELOG\.md|ascribe\.examples\.toml|scripts/release/changes\.ts)$|^\.github/workflows/(ci|site|drift|review|report)\.yml$'; then
             site=true
+          fi
+
+          install=false
+          if [ "$files" = all ] ||
+            printf '%s\n' "$files" | grep -qE '^(site/public/install\.sh|scripts/release/formula\.ts|\.github/workflows/ci\.yml)$'; then
+            install=true
           fi
 
           linux_x64='{"os":"ubuntu-24.04","target":"linux-x64","env_target":"LINUX_X64","exe":"ascribe"}'
@@ -112,6 +121,7 @@ jobs:
           {
             echo "code=$code"
             echo "site=$site"
+            echo "install=$install"
             echo "rust-os=$rust_os"
             echo "vscode-os=$vscode_os"
             echo "astro-targets=$astro"
@@ -127,7 +137,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -179,7 +189,7 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -229,11 +239,75 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  # The install script (site/public/install.sh) installs the last release on
+  # Linux, in a container with no Node and the oldest glibc the binaries run
+  # on, and on macOS; and the formula scripts/release/formula.ts writes for it
+  # installs it with Homebrew on macOS and Linux, from a tap made here, as
+  # `brew install ascribed-dev/tap/ascribe` does from the real one.
+  install:
+    name: install (${{ matrix.target }})
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && needs.changes.outputs.install == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: linux-x64, os: ubuntu-24.04, brew: true }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, brew: false }
+          - { target: darwin-arm64, os: macos-latest, brew: true }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)
+          echo "version=${tag#v}" | tee -a "$GITHUB_OUTPUT"
+      # AlmaLinux 8 has glibc 2.28, the floor (GLIBC in release-build.yml), and no Node.
+      - name: Install the last release with the script, on glibc 2.28 with no Node
+        if: runner.os == 'Linux'
+        env:
+          IMAGE: almalinux:8@sha256:8b469a3a78515e8a18ea8fc727e6a3679e1d0c5ba6f58d5b30be3d0d9b86cffe
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE/site/public:/site:ro" -e VERSION "$IMAGE" sh -euc '
+            command -v tar > /dev/null || dnf install -y -q tar gzip
+            if command -v node; then echo "node is installed"; exit 1; fi
+            sh /site/install.sh
+            test "$("$HOME/.local/bin/ascribe" --version)" = "ascribe $VERSION"
+          '
+      - name: Install the last release with the script
+        if: runner.os == 'macOS'
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          sh site/public/install.sh --to "$RUNNER_TEMP/bin"
+          test "$("$RUNNER_TEMP/bin/ascribe" --version)" = "ascribe $VERSION"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: matrix.brew
+        with:
+          node-version-file: .nvmrc
+      - name: Install the last release with Homebrew
+        if: matrix.brew
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
+        run: |
+          if ! command -v brew > /dev/null; then eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; fi
+          brew tap-new --no-git ascribe-ci/tap
+          node scripts/release/formula.ts "$VERSION" --out "$(brew --repository ascribe-ci/tap)/Formula/ascribe.rb"
+          brew install ascribe-ci/tap/ascribe
+          test "$("$(brew --prefix)/bin/ascribe" --version)" = "ascribe $VERSION"
+          brew test ascribe-ci/tap/ascribe
+
   # The one check branch protection requires. It passes when every job above
   # passed or was skipped, and fails when one failed or was cancelled.
   gate:
     name: all checks
-    needs: [changes, prose, rust, js, site, compare]
+    needs: [changes, prose, rust, js, site, compare, install]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 30

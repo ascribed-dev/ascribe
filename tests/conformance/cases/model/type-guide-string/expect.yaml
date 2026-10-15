@@ -1,0 +1,8 @@
+description: >-
+  `guide` is always a list of paths, as `files` is, even with one file in
+  it: a string is the wrong type.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-wrong-type, file: ascribe.toml, line: 7}

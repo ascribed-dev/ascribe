@@ -25,6 +25,7 @@
   --type-h3: 650 1.125rem/1.4;
   --type-h2: 650 1.375rem/1.3;
   --type-h1: 700 1.875rem/1.2;
+  --type-hero: 750 2.75rem/1.1;
   /* End of generated root. */
 
   --header-height: 3.5rem;
@@ -32,6 +33,8 @@
   --toc-width: 14rem;
   /* The page's line length: about 70 characters of body text. */
   --measure: 38rem;
+  /* A landing page's width: its hero, wider than a docs page's text. */
+  --wide-measure: 52rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,9 +52,8 @@
   }
 }
 
-/* Unreleased features are this site's one lifecycle state. */
-ascribe-availability-target[states="unreleased"],
-ascribe-availability-target[states$=" unreleased"] {
+/* What's in main and not yet released: the planned line, in preview's colors. */
+ascribe-availability-target[planned] {
   --_color: var(--ascribe-state-preview-color);
   --_background: var(--ascribe-state-preview-background);
 }
@@ -174,6 +176,31 @@ pre {
   color: var(--text);
 }
 
+/* Without search, on a page outside the docs, the links go to the right. */
+.docs-link,
+.why-link {
+  padding: 0.375rem 0.25rem;
+  white-space: nowrap;
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+  text-decoration: none;
+}
+
+.docs-link {
+  margin-left: auto;
+}
+
+.search-button + .docs-link {
+  margin-left: 0;
+}
+
+.docs-link:hover,
+.docs-link[aria-current],
+.why-link:hover,
+.why-link[aria-current] {
+  color: var(--text);
+}
+
 .search-button {
   margin-left: auto;
   min-width: 12rem;
@@ -244,11 +271,25 @@ pre {
 
 /* The body: sidebar, page, table of contents --------------------------------- */
 
+/* The sidebar follows the page in the HTML (src/layouts/Base.astro); the areas put it first. */
 .site-body {
   display: grid;
+  grid-template-areas: "sidebar page toc";
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--toc-width);
   max-width: 90rem;
   margin-inline: auto;
+}
+
+.site-body > * {
+  grid-area: page;
+}
+
+.site-body > .sidebar {
+  grid-area: sidebar;
+}
+
+.site-body > .toc {
+  grid-area: toc;
 }
 
 .sidebar,
@@ -290,6 +331,10 @@ pre {
   border-radius: var(--radius);
   color: var(--text);
   text-decoration: none;
+}
+
+.sidebar li.nested a {
+  padding-left: 1.25rem;
 }
 
 .sidebar a:hover,
@@ -437,6 +482,348 @@ pre {
   height: auto;
 }
 
+/* A page outside the docs: its hero, then text at the page's measure. */
+
+.landing {
+  max-width: var(--wide-measure);
+  margin-inline: auto;
+}
+
+.landing article {
+  max-width: none;
+}
+
+.landing article > :not(hero-banner, source-and-result, claim-example) {
+  max-width: var(--measure);
+}
+
+/*
+ * The changelog: its title, then the releases, with their contents beside
+ * them where they fit and above them where they don't.
+ */
+.changelog {
+  display: grid;
+  grid-template-areas: "intro contents" "body contents";
+  grid-template-columns: minmax(0, var(--measure)) var(--toc-width);
+  grid-template-rows: auto 1fr;
+  column-gap: 3rem;
+  justify-content: center;
+}
+
+.changelog-intro {
+  grid-area: intro;
+}
+
+.changelog article {
+  grid-area: body;
+}
+
+/* A long path in code wraps rather than widening the page. */
+.changelog :not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+/* What's on `main` and in no release yet says so under its heading. */
+.changelog .unreleased-note {
+  margin-top: -0.25rem;
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+}
+
+.changelog .count {
+  color: var(--muted);
+  font: var(--type-small) var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The contents: each release, and the newest ones' areas. */
+.changelog .contents {
+  grid-area: contents;
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  max-height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+  padding-block: 2rem;
+  font: var(--type-small) var(--font);
+}
+
+.changelog .contents > summary {
+  display: none;
+}
+
+.changelog .contents ul {
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--border);
+  list-style: none;
+}
+
+.changelog .contents ul ul {
+  border-left: 0;
+}
+
+.changelog .contents a {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.changelog .contents ul ul a {
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.changelog .contents a:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Expand all, Collapse all, and Behavior changes only. */
+.changelog-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.changelog-controls[hidden] {
+  display: none;
+}
+
+.changelog-controls button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--text);
+  font: var(--type-small) var(--font);
+  cursor: pointer;
+}
+
+.changelog-controls button:hover {
+  background: var(--surface);
+}
+
+.changelog-controls button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  color: var(--accent);
+}
+
+/* An entry: what it says first, and the rest a click away. */
+.changelog .entries {
+  padding-left: 0;
+  list-style: none;
+}
+
+.changelog .entry {
+  border-bottom: 1px solid var(--border);
+}
+
+.changelog .entry > p.summary,
+.changelog .entry > details > summary {
+  margin: 0;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+}
+
+.changelog .entry > details > summary {
+  position: relative;
+  list-style: none;
+  cursor: pointer;
+}
+
+.changelog .entry > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The disclosure triangle, drawn so it lines up with an entry that has none. */
+.changelog .entry > details > summary::before {
+  position: absolute;
+  top: 0.95rem;
+  left: 0.25rem;
+  border-block: 0.3rem solid transparent;
+  border-left: 0.4rem solid var(--muted);
+  content: "";
+  transition: transform 0.1s;
+}
+
+.changelog .entry > details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.changelog .entry > details > summary:hover::before {
+  border-left-color: var(--accent);
+}
+
+.changelog .entry-body {
+  padding: 0 0 0.5rem 1.25rem;
+}
+
+.changelog .entry-body > :first-child {
+  margin-top: 0;
+}
+
+.changelog .badge {
+  display: inline-block;
+  margin-right: 0.25rem;
+  padding: 0 0.375rem;
+  border-radius: var(--radius);
+  background: var(--ascribe-warning-background);
+  color: var(--ascribe-warning-color);
+  font: var(--type-caption) var(--font);
+  vertical-align: 0.1em;
+}
+
+/* Behavior changes only: the rest, and areas and releases without any, are hidden. */
+.changelog .no-behavior {
+  display: none;
+  color: var(--muted);
+}
+
+.changelog.behavior-only .entry:not(.behavior),
+.changelog.behavior-only .area[data-behavior="0"] {
+  display: none;
+}
+
+.changelog.behavior-only .release[data-behavior="0"] .no-behavior {
+  display: block;
+}
+
+/*
+ * The hero widget (`[widgets.hero-banner]` in home/ascribe.toml): the page's
+ * heading and its first sentence, and how far along Ascribe is.
+ */
+hero-banner {
+  display: block;
+  padding: 2.5rem 0 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+hero-banner[status]::before {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.125rem 0.625rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-surface);
+  color: var(--accent);
+  font: var(--type-caption) var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+hero-banner[status="early"]::before {
+  content: "Early";
+}
+
+hero-banner[status="stable"]::before {
+  content: "Stable";
+}
+
+.page hero-banner h1 {
+  margin: 0 0 1rem;
+  font: var(--type-hero) var(--font);
+  letter-spacing: -0.02em;
+}
+
+hero-banner p {
+  margin: 0;
+  color: var(--muted);
+  font: var(--type-lead) var(--font);
+}
+
+/*
+ * The demonstration (`[widgets.source-and-result]` in home/ascribe.toml): a
+ * page's source, and beside it the page as the site draws it, which the route
+ * adds inside the element (src/demo.ts). One above the other when narrow.
+ */
+source-and-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin: 1.5rem 0 2.5rem;
+}
+
+source-and-result > :is(figure, pre) {
+  margin: 0;
+}
+
+source-and-result .result {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+source-and-result .result > :first-child {
+  margin-top: 0;
+}
+
+source-and-result .result-title {
+  margin: 0 0 1rem;
+  font: var(--type-h1) var(--font);
+}
+
+.page source-and-result .result h2 {
+  margin: 1.5rem 0 0.75rem;
+  font: var(--type-h3) var(--font);
+}
+
+/*
+ * A claim (`[widgets.claim-example]` in home/ascribe.toml): its heading and
+ * its sentences at the page's measure, then its example, which can be wider.
+ */
+claim-example {
+  display: block;
+  padding-top: 0.25rem;
+  margin: 2rem 0;
+  border-top: 1px solid var(--border);
+}
+
+claim-example > :not(pre, figure, ascribe-tabs) {
+  max-width: var(--measure);
+}
+
+.page claim-example h3 {
+  margin-top: 1.25rem;
+}
+
+/*
+ * A screenshot (home/content/screenshots/): a picture for each scheme, each
+ * marked with `scheme` (`[images.attributes]` in home/ascribe.toml), and only
+ * the reader's shown. As wide as the claim's example, with a border, since
+ * the picture's own background can be the page's.
+ */
+.page p:has(> img[scheme]) {
+  max-width: none;
+}
+
+.page img[scheme] {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.page img[scheme="dark"] {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page img[scheme="light"] {
+    display: none;
+  }
+
+  .page img[scheme="dark"] {
+    display: block;
+  }
+}
+
 .page-footer {
   max-width: var(--measure);
   margin-top: 3rem;
@@ -445,10 +832,67 @@ pre {
   font: var(--type-small) var(--font);
 }
 
+/* The footer ---------------------------------------------------------------- */
+
+.site-footer {
+  padding: 1.5rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font: var(--type-small) var(--font);
+}
+
+/* The links wrap, so the footer fits at any width. */
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+  max-width: 90rem;
+  margin-inline: auto;
+}
+
+.site-footer a {
+  padding: 0.25rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-footer a:hover,
+.site-footer a[aria-current] {
+  color: var(--text);
+}
+
 /* Narrower screens ------------------------------------------------------------ */
+
+@media (max-width: 60rem) {
+  .changelog {
+    grid-template-areas: "intro" "contents" "body";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .changelog .contents {
+    position: static;
+    max-height: none;
+    padding-block: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .changelog .contents > summary {
+    display: list-item;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .changelog .contents nav {
+    padding: 0 0.75rem 0.75rem;
+  }
+}
 
 @media (max-width: 75rem) {
   .site-body {
+    grid-template-areas: "sidebar page";
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   }
 
@@ -459,7 +903,13 @@ pre {
 
 @media (max-width: 50rem) {
   .site-body {
+    grid-template-areas: "page";
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The sidebar is a drawer here, which the menu opens. */
+  .skip[href="#sidebar"] {
+    display: none;
   }
 
   .menu-button {
@@ -473,6 +923,20 @@ pre {
   .search-button kbd,
   .repo-link span {
     display: none;
+  }
+
+  /* A docs page's header holds the menu and search too, so Why Ascribe is on the site's own pages only. */
+  .search-button ~ .why-link {
+    display: none;
+  }
+
+  /* Docs, Why Ascribe, and GitHub fit beside the mark at phone width. */
+  .site-header {
+    gap: 0.5rem;
+  }
+
+  .site-header .site-name svg {
+    height: 1.25rem;
   }
 
   .sidebar {
@@ -499,5 +963,24 @@ pre {
 
   .page h1 {
     font-size: 1.625rem;
+  }
+
+  .page hero-banner h1 {
+    font: var(--type-h1) var(--font);
+  }
+
+  source-and-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * At the narrowest widths the site's own pages leave GitHub out of the header,
+ * for Docs and Why Ascribe; the footer links to the repository. A docs page's
+ * header, which hides Why Ascribe, keeps it.
+ */
+@media (max-width: 26rem) {
+  .site-header:not(:has(.search-button)) .repo-link {
+    display: none;
   }
 }

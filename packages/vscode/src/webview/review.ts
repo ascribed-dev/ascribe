@@ -17,6 +17,7 @@ import {
 } from "@ascribed/review/marks";
 import { countsText as breakdown, errorsText } from "../preview/counts.js";
 import type { FromWebview, ReviewView } from "../preview/protocol.js";
+import type { HostError, PromptRequest } from "@ascribed/review/overlay";
 import { againstText, threadsNotice } from "../preview/threadsText.js";
 import type { Threads } from "./threads.js";
 import {
@@ -35,6 +36,9 @@ function position(total: number, at: number): string {
   return total === 1 ? "1 change on this page" : `${total} changes on this page`;
 }
 
+/** The model file, which a page can change through but isn't a file of content. */
+const MODEL_FILE = "ascribe.toml";
+
 const SHOWS: [Show, string][] = [
   ["changes", "Changes"],
   ["will", "As it will be"],
@@ -50,6 +54,8 @@ export class Review {
   private at = -1;
   private atEnd = false;
   private open = false;
+  /** Whether the More review actions menu is open. */
+  private menuOpen = false;
   /** The next changed page: `undefined` while asking. */
   private next: { page: { path: string; title: string } | null; first: boolean } | undefined;
   private stopSources: (() => void) | undefined;
@@ -61,6 +67,13 @@ export class Review {
     private readonly threads?: Threads,
   ) {
     content.addEventListener("click", (event) => this.clickLabel(event));
+    // A click anywhere but the menu closes it.
+    document.addEventListener("click", (event) => {
+      if (!this.menuOpen) return;
+      if (event.target instanceof Element && event.target.closest(".more")) return;
+      this.menuOpen = false;
+      this.drawBar();
+    });
     content.addEventListener("keydown", (event) => {
       if (event.key === "Enter") this.clickLabel(event);
     });
@@ -75,6 +88,7 @@ export class Review {
       this.at = -1;
       this.atEnd = false;
       this.open = false;
+      this.menuOpen = false;
       this.next = undefined;
     }
     this.view = view;
@@ -178,6 +192,70 @@ export class Review {
     this.threads?.layout();
   }
 
+  /**
+   * More review actions (⋯): Prompt agent about the page's changes, and about
+   * each file it changed through. `undefined` when the page didn't change.
+   */
+  private moreMenu(view: ReviewView): HTMLElement | undefined {
+    const page = view.page;
+    if (!this.threads || !page || page.status === "removed") return undefined;
+    const items: [string, PromptRequest][] = [
+      ["Prompt agent: review this page", { kind: "page-changes" }],
+    ];
+    for (const fragment of page.because) {
+      if (fragment === MODEL_FILE) continue;
+      items.push([
+        page.because.length === 1
+          ? "Prompt agent: check this fragment's pages"
+          : `Prompt agent: check the pages that show ${fragment}`,
+        { kind: "fragment-reach", fragment },
+      ]);
+    }
+    const wrap = span("more", "");
+    const toggle = button("⋯", "square", () => {
+      this.menuOpen = !this.menuOpen;
+      this.drawBar();
+      if (this.menuOpen) this.bar.querySelector<HTMLElement>(".menu button")?.focus();
+    });
+    toggle.setAttribute("aria-label", "More review actions");
+    toggle.title = "More review actions";
+    toggle.setAttribute("aria-haspopup", "menu");
+    toggle.setAttribute("aria-expanded", String(this.menuOpen));
+    wrap.append(toggle);
+    if (!this.menuOpen) return wrap;
+    const menu = document.createElement("div");
+    menu.className = "menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "More review actions");
+    const close = (): void => {
+      this.menuOpen = false;
+      this.drawBar();
+      this.bar.querySelector<HTMLElement>('[aria-label="More review actions"]')?.focus();
+    };
+    for (const [label, request] of items) {
+      const item = button(label, "", () => {
+        close();
+        this.threads?.prompt(request).catch((error: HostError) => {
+          this.post({ type: "notify", message: `The prompt couldn't be built: ${error.message}` });
+        });
+      });
+      item.setAttribute("role", "menuitem");
+      menu.append(item);
+    }
+    menu.addEventListener("keydown", (event) => {
+      const buttons = [...menu.querySelectorAll<HTMLElement>("button")];
+      const at = buttons.indexOf(document.activeElement as HTMLElement);
+      if (event.key === "Escape") close();
+      else if (event.key === "ArrowDown") buttons[(at + 1) % buttons.length]?.focus();
+      else if (event.key === "ArrowUp")
+        buttons[(at - 1 + buttons.length) % buttons.length]?.focus();
+      else return;
+      event.preventDefault();
+    });
+    wrap.append(menu);
+    return wrap;
+  }
+
   private drawBar(): void {
     const view = this.view;
     this.bar.hidden = view === null;
@@ -249,6 +327,8 @@ export class Review {
       all.setAttribute("aria-haspopup", "dialog");
       cells.splice(1, 0, all);
     }
+    const more = this.moreMenu(view);
+    if (more) cells.push(more);
     const header = row(cells);
     if (this.open && counts) header.append(span("legend", breakdown(counts) || "No changes"));
     const parts = [header];

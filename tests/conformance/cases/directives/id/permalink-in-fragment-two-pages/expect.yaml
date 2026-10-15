@@ -1,0 +1,11 @@
+description: >-
+  A marked heading in a fragment is published on every page that includes
+  it, so a fragment with a permalink included by two pages of a build puts
+  it on both. It's reported at the second page's include.
+spec: ["4.1", "4.2", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: permalink-duplicate, file: b.md, line: 5}

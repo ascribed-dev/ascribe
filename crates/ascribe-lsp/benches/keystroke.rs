@@ -8,7 +8,12 @@
 //! headings, an include of a fragment, links to other pages, an image, and one
 //! page in ten has an availability marker), starts the server in-process over a memory
 //! connection, opens a page, types into it, and prints the load time and the
-//! min, median, and 95th percentile of the keystroke latency. A plain `main`
+//! min, median, and 95th percentile of the keystroke latency. Then it writes
+//! a page that isn't open on disk, as an agent's edit tool does, and times
+//! `workspace/didChangeWatchedFiles` to that page's diagnostics. Each size
+//! runs again with `[checks.vale]` and a stand-in for Vale that takes 50 ms
+//! and finds nothing, which shows what checking the prose on open and on save
+//! costs a keystroke: it should cost nothing. A plain `main`
 //! rather than a benchmark framework: nothing here needs more statistics than
 //! that.
 
@@ -19,7 +24,10 @@
     clippy::panic
 )]
 
+use std::collections::BTreeMap;
 use std::str::FromStr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -29,8 +37,9 @@ use ascribe_synthetic::{
 };
 use lsp_server::{Connection, Message, Notification, Request, RequestId, Response};
 use lsp_types::{
-    DidChangeTextDocumentParams, DidOpenTextDocumentParams, Position, PublishDiagnosticsParams,
-    Range, TextDocumentContentChangeEvent, TextDocumentItem, Uri, VersionedTextDocumentIdentifier,
+    DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidOpenTextDocumentParams,
+    FileChangeType, FileEvent, Position, PublishDiagnosticsParams, Range,
+    TextDocumentContentChangeEvent, TextDocumentItem, Uri, VersionedTextDocumentIdentifier,
 };
 use serde_json::json;
 mod synthetic;
@@ -38,21 +47,50 @@ use synthetic::Client;
 
 const KEYSTROKES: usize = 100;
 
+/// A stand-in for Vale: as slow as a small run of the real one, and it
+/// finds nothing. It counts its runs, so the benchmark knows it ran.
+struct SlowVale(AtomicUsize);
+
+impl ascribe_check::prose::Linter for SlowVale {
+    fn lint(
+        &self,
+        request: &ascribe_check::prose::Request,
+    ) -> Result<BTreeMap<String, Vec<ascribe_check::prose::Alert>>, ascribe_check::prose::ValeError>
+    {
+        self.0.fetch_add(1, Ordering::SeqCst);
+        thread::sleep(Duration::from_millis(50));
+        Ok(request
+            .files
+            .iter()
+            .map(|(path, _)| (path.clone(), Vec::new()))
+            .collect())
+    }
+}
+
 // Longer than the lint allows from before it was on. Split it only while
 // changing it for another reason.
 #[allow(clippy::too_many_lines)]
-fn run(pages: usize) {
+fn run(pages: usize, vale: bool) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
     let project = Synthetic::new(pages);
     project.write_to(&root).unwrap();
+    let mut options = Options::default();
+    let slow_vale = Arc::new(SlowVale(AtomicUsize::new(0)));
+    if vale {
+        let model = root.join("ascribe.toml");
+        let mut text = std::fs::read_to_string(&model).unwrap();
+        text.push_str("\n[checks.vale]\npreset = \"quiet\"\n");
+        std::fs::write(&model, text).unwrap();
+        options.linter = Some(slow_vale.clone());
+    }
     let edited = pages / 2;
     let path = root.join(format!("{CONTENT_ROOT}/{}", project.page_path(edited)));
     let uri = Uri::from_str(&format!("file://{}", path.display())).unwrap();
     let text = project.page_text(edited, "typed: ");
 
     let (client_side, server_side) = Connection::memory();
-    let server = thread::spawn(move || serve(server_side, Options::default()).unwrap());
+    let server = thread::spawn(move || serve(server_side, options).unwrap());
     let mut client = Client {
         conn: client_side,
         next: 0,
@@ -276,8 +314,52 @@ fn run(pages: usize) {
     }
     fragment_times.sort();
     let f = |x: f64| fragment_times[((fragment_times.len() as f64 - 1.0) * x).round() as usize];
+
+    // Write a page that isn't open, as an agent's edit tool does, and tell
+    // the server as the editor's file watcher would. Every other write adds a
+    // link to a page that doesn't exist, so each one changes the page's
+    // diagnostics, and the server publishes them.
+    let written = pages / 3;
+    let written_path = root.join(format!("{CONTENT_ROOT}/{}", project.page_path(written)));
+    let written_uri = Uri::from_str(&format!("file://{}", written_path.display())).unwrap();
+    let mut disk_times = Vec::new();
+    for k in 0..KEYSTROKES {
+        let tail = if k % 2 == 0 {
+            format!("see [nothing](/missing-{k}.md).")
+        } else {
+            format!("revision {k}.")
+        };
+        std::fs::write(&written_path, project.page_text(written, &tail)).unwrap();
+        let began = Instant::now();
+        client
+            .conn
+            .sender
+            .send(
+                Notification::new(
+                    "workspace/didChangeWatchedFiles".into(),
+                    DidChangeWatchedFilesParams {
+                        changes: vec![FileEvent {
+                            uri: written_uri.clone(),
+                            typ: FileChangeType::CHANGED,
+                        }],
+                    },
+                )
+                .into(),
+            )
+            .unwrap();
+        let published = client.wait_publish(&written_uri, None);
+        assert_eq!(
+            published.diagnostics.is_empty(),
+            k % 2 == 1,
+            "{published:?}"
+        );
+        disk_times.push(began.elapsed());
+    }
+    disk_times.sort();
+    let d = |x: f64| disk_times[((disk_times.len() as f64 - 1.0) * x).round() as usize];
     println!(
-        "{pages:>5} pages: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
+        "{pages:>5} pages{}: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
+        if vale { ", Vale on" } else { "" },
         q(0.5),
         q(0.95),
         pages / FRAGMENTS,
@@ -291,6 +373,11 @@ fn run(pages: usize) {
         wp(0.5),
         wp(0.95)
     );
+    println!(
+        "        a page written on disk: change to diagnostics median {:>9.3?} p95 {:>9.3?}",
+        d(0.5),
+        d(0.95)
+    );
     client.request("shutdown", json!(null));
     client
         .conn
@@ -298,11 +385,17 @@ fn run(pages: usize) {
         .send(Notification::new("exit".into(), json!(null)).into())
         .unwrap();
     server.join().unwrap();
+    assert_eq!(
+        slow_vale.0.load(Ordering::SeqCst) > 0,
+        vale,
+        "Vale ran only with `[checks.vale]`"
+    );
 }
 
 fn main() {
     println!("keystroke-to-diagnostics latency, {KEYSTROKES} keystrokes per size");
     for pages in [20, 100, 300, 1000, 3000] {
-        run(pages);
+        run(pages, false);
+        run(pages, true);
     }
 }

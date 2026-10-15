@@ -14,6 +14,8 @@
 //! - the edges between files, forward and back: [`Project::includers`],
 //!   [`Project::including_pages`], [`Project::links_to`],
 //!   [`Project::links_to_id`], and [`Project::asset_users`];
+//! - where each page, fragment, heading, and content model entry is used
+//!   ([`Project::uses`], [`Project::use_counts`]);
 //! - the problems that follow from the source ([`Project::problems`]), by
 //!   registry slug, for the checks to report.
 //!
@@ -74,27 +76,39 @@
 
 mod astro;
 pub mod build;
+mod closest;
 mod expand;
 pub mod fs;
 pub mod incremental;
 mod index;
 mod layout;
+mod links;
+pub mod llms;
+pub mod pages;
 mod project;
 pub mod references;
+mod replaces;
 pub mod slug;
 pub mod snippet;
+mod uses;
 
 pub use astro::AstroRouter;
 pub use build::{
-    Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage,
-    FormattedField, GlossaryUse, HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild,
+    Annotation, Availability, BuildResolver, DeclaredPermalink, DefaultRouter, Destination,
+    DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds, InLine, LinkTarget,
+    PagePermalink, Permalink, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild,
     ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
-    glossary_targets,
+    glossary_targets, in_release_line, permalinks,
 };
+pub use closest::{Closest, closest_fixes, closest_targets, link_href};
 pub use expand::{
-    ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,
+    ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
+    MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,
 };
-pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources, in_nested_project, is_source_path};
+pub use fs::{
+    DiskFs, FileSystem, LinkCheck, MemoryFs, Probe, Sources, in_nested_project, is_link,
+    is_source_path, link_on_the_way,
+};
 pub use incremental::{
     Affected, ApplyError, Change, FileIds, IncrementalProject, ModelImpact, ResolvedCache,
     Snapshot, Stats, Version,
@@ -104,6 +118,7 @@ pub use index::{
     PhraseUse, RefKind, Reference, Target, heading_text, index_file,
 };
 pub use layout::Layout;
+pub use links::{encode_destination, link_path, named_headings};
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };
@@ -111,7 +126,12 @@ pub use references::{
     IncludeTarget, SourceSet, destination_phrases, destination_span, include_issue, include_target,
     reference_issue, reference_target, resolve_reference,
 };
-pub use snippet::{
-    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, resolve_snippet,
-    snippet_issues,
+pub use replaces::{REPLACES, replaces_span, replaces_target};
+pub use snippet::examples::{
+    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, example,
 };
+pub use snippet::{
+    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,
+    snippet_issues, source_files,
+};
+pub use uses::{Usable, Use, UseKind};

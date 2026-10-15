@@ -2,12 +2,11 @@
 # ascribe.toml (tests/conformance/README.md, "The content model").
 #
 # It is examples/content-models/quill.toml (the model SPEC Appendix B assumes),
-# extended only where a rule needs something the Quill model lacks:
+# without its page type, so that a case's pages name no type and have the
+# implicit `page` type's `title` (SPEC §7.2), and extended only where a rule
+# needs something the Quill model lacks:
 #
 #   - a fragment pattern (`includes/**`) and a fragment schema (`owner`);
-#   - a second page type (`reference`) whose patterns overlap a third (`api`),
-#     so one path can match two types;
-#   - page fields of each type (number, date, list, enum, boolean);
 #   - a feature with and without a history, and a lifecycle state (`sunset`)
 #     that doesn't count as available;
 #   - an extra note type (`security`);
@@ -17,8 +16,8 @@
 #
 # Keep additions here rare and purposeful: every case that uses this model
 # sees them. A case that needs something the shared model shouldn't have (a
-# glossary, a required image attribute, no default type, a broken model) has
-# its own ascribe.toml.
+# glossary, a required image attribute, page types and their fields, a broken
+# model) has its own ascribe.toml.
 #
 # Where the content root is. The model says `files`, which is the content root
 # of every project case. A single-file case has `input.md` in its directory,
@@ -32,38 +31,8 @@ content-root = "files"
 output-dir = ".ascribe/build"
 
 ###############################################################################
-# Content types and fragments (SPEC §2.2, §7.2)
+# Fragments (SPEC §2.2, §7.2)
 ###############################################################################
-
-# The default type: Appendix B's `title` and `description`, plus one field of
-# each other type for the frontmatter cases.
-[types.page]
-default = true
-
-[types.page.frontmatter]
-title = "string"
-description = "string?"
-order = "number?"
-updated = "date?"
-draft = "boolean?"
-level = "enum(beginner, intermediate, advanced)?"
-tags = "list(string)?"
-
-# `reference/**` pages need `api-version`.
-[types.reference]
-files = ["reference/**"]
-
-[types.reference.frontmatter]
-title = "string"
-api-version = "string"
-
-# Overlaps `reference` on `reference/api/**`, so a page there matches two types
-# (SPEC §7.2, "no precedence between types").
-[types.api]
-files = ["reference/api/**"]
-
-[types.api.frontmatter]
-title = "string"
 
 # Files under `includes/` are fragments without a `_` segment.
 [fragments]
@@ -225,3 +194,16 @@ availability = { filter = "self-managed 3.4" }
 
 [editor]
 build = "site"
+
+# The content checks are about a project's quality, not the spec's rules,
+# so the cases that share this model leave them out; the cases about them,
+# in cases/checks/, have models of their own.
+[checks]
+page-orphan = "off"
+fragment-unused = "off"
+phrase-unused = "off"
+feature-unused = "off"
+glossary-term-unused = "off"
+image-unused = "off"
+image-large = "off"
+title-duplicate = "off"

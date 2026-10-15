@@ -1,0 +1,110 @@
+# The content model for the site's own pages: the landing page and, later, the
+# pages beside it, outside the docs. The pages are in content/, and the site in
+# ../ builds them at its root, with the docs under /docs/ (../astro.config.mjs).
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+# A page of the site, outside the docs. Its heading is the page's own, in the
+# hero, so `title` is for the <title> only.
+[types.page.frontmatter]
+title = "string"
+description = { type = "string", role = "description" }
+
+# A page's opening: its heading and a sentence, drawn by the site's
+# stylesheet. `status`, on the landing page, says how far along Ascribe is.
+[widgets.hero-banner]
+description = "A page's opening: its heading and a sentence, and on the landing page how far along Ascribe is."
+forms = ["container"]
+attributes = { status = "enum(early, stable)?" }
+
+# A page's source beside what a reader sees. Its content is the source, a
+# `@snippet` of the page's file; `page` names that page in ../demo, and the
+# site draws its rendered content beside the source (../src/demo.ts).
+# test/demo.test.ts fails if the two aren't the same file.
+[widgets.source-and-result]
+description = "A page's source, as a snippet of its file, beside the page as the site draws it."
+forms = ["container"]
+attributes = { page = "string" }
+
+# One of the page's claims: its heading and a sentence or two, then the
+# smallest example that shows it, which the site sets below them.
+[widgets.claim-example]
+description = "A claim about Ascribe, then the smallest example that shows it."
+forms = ["container"]
+
+# A screenshot is a picture for each scheme, `![…](screenshots/review-light.png){scheme=light}`
+# beside its dark one; the site shows the reader's (../src/styles/site.css).
+[images.attributes]
+scheme = "enum(light, dark)"
+
+# Commands that differ by package manager, as in the docs.
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm"]
+
+# What follows are copies of ../../docs/ascribe.toml's, so a claim here is
+# marked as the docs mark it. scripts/docs-site/facts.test.ts fails until
+# each agrees with the docs': the release dimension, the releases and their
+# planned label, the `next` feature, the `version` and `site`
+# phrases, the sources, and `[consumer]`'s `site`, `trailing-slash`, and `permalink-path`.
+[dimensions.release]
+label = "Ascribe"
+values = ["ascribe"]
+labels = { ascribe = "Ascribe" }
+
+[releases]
+planned-label = "in main, not yet released"
+
+[releases.ascribe]
+live = ["0.3.1"]
+planned = ["0.4.0"]
+
+[features.next]
+name = "In main, not yet released"
+available = "ascribe 0.4.0"
+
+[phrases]
+version = { line = "ascribe" }
+# `[consumer] site`, for links into the docs, which are another project: a
+# link that starts with `/` names a file in this one. Write a docs page by its
+# permalink, `{site}/go/<name>/`; the site's tests check each name.
+site = "https://ascribed-dev.com"
+# The release of comrak the parser is forked from, for the credits page. Its
+# home is ../../crates/comrak-ascribe/FORK.md, which a page can't read prose
+# from: scripts/docs-site/credits.test.ts fails until the two agree.
+comrak-release = "v0.55.0"
+
+[sources.code]
+path = "../.."                            # relative to the folder ascribe.toml is in
+include = [
+  ".github/workflows/**",
+  "crates/ascribe-cli/tests/output/**",
+  "examples/**",
+  "site/demo/**",
+]
+ignore = ["**/node_modules/**"]
+
+# The site's root. A pull request's preview is built with its own address
+# here too (.github/workflows/site.yml).
+[consumer]
+profile = "astro"
+site = "https://ascribed-dev.com"
+base-path = "/"
+trailing-slash = "always"
+# The docs publish what agents read; these pages publish nothing for them.
+agents = false
+permalink-path = "/go/"
+
+[builds.site]
+availability = "badge"
+
+[checks]
+# The site prints no page's title as a heading: the hero holds the page's
+# one level-1 heading.
+heading-level-skipped = "off"
+# The `next` feature is the docs', copied for marks, and a page uses it only
+# while it says something no release has.
+feature-unused = "off"

@@ -4,6 +4,86 @@
 ```json
 {
   "$defs": {
+    "AcknowledgedEntry": {
+      "description": "A problem acknowledged as intended.",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Place",
+          "description": "Where the acknowledgement is written."
+        },
+        "builds": {
+          "description": "The builds it appears in, as a diagnostic's `builds` are.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "code": {
+          "description": "The code of the check that found it, such as `ASC036`.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "message": {
+          "description": "What the check found.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/Range",
+          "description": "Where in the file."
+        },
+        "reason": {
+          "description": "Why it's intended: the acknowledgement's reason.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The check's name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "message",
+        "file",
+        "range",
+        "builds",
+        "reason",
+        "at"
+      ],
+      "type": "object"
+    },
+    "CodeCount": {
+      "description": "How many diagnostics have one code.",
+      "properties": {
+        "code": {
+          "description": "The code, such as `ASC036`.",
+          "type": "string"
+        },
+        "count": {
+          "description": "How many.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "severity": {
+          "description": "`error`, `warning`, or `advice`.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The diagnostic's name, such as `link-target-missing`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "severity",
+        "count"
+      ],
+      "type": "object"
+    },
     "Edit": {
       "description": "One edit of a fix.",
       "properties": {
@@ -36,6 +116,10 @@
           "description": "The code, such as `ASC036`.",
           "type": "string"
         },
+        "docs": {
+          "description": "The address of its entry in the diagnostics reference: the docs'\npermalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,\nwhich forwards to the entry wherever it is.",
+          "type": "string"
+        },
         "file": {
           "description": "The file, relative to the project root (the directory of\n`ascribe.toml`), with `/` separators. `ascribe.toml` for a\ncontent-model problem.",
           "type": "string"
@@ -47,8 +131,16 @@
           },
           "type": "array"
         },
+        "help": {
+          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode.",
+          "type": "string"
+        },
         "message": {
           "description": "What's wrong, and what to do about it.",
+          "type": "string"
+        },
+        "next": {
+          "description": "The kind of next step: `fix` when Ascribe can make the edit,\n`choose` when the author picks among things Ascribe can list,\n`write` when it needs writing or judgment, `outside` when nothing in\nthe source can fix it, and `review` when it may be fine as it is.",
           "type": "string"
         },
         "range": {
@@ -62,8 +154,20 @@
           },
           "type": "array"
         },
+        "repeats": {
+          "description": "For a problem in included content reported because one of its related\nplaces is in a path named: at how many other includes it's reported\ntoo, collapsed into this one. `0` otherwise.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rule": {
+          "description": "The rule of the program that found it, such as `Ascribe.Repeated`\nfrom Vale, for a `prose` diagnostic. Absent for Ascribe's own.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "severity": {
-          "description": "`error` or `warning`.",
+          "description": "`error`, `warning`, or `advice`. Advice never fails the command.\nMore severities may be added; a reader treats one it doesn't know as\nit treats advice.",
           "type": "string"
         },
         "slug": {
@@ -79,19 +183,58 @@
         "code",
         "slug",
         "severity",
+        "next",
         "message",
         "file",
         "range",
         "related",
         "fixes",
         "builds",
-        "unpublished"
+        "unpublished",
+        "help",
+        "docs",
+        "repeats"
+      ],
+      "type": "object"
+    },
+    "FileCount": {
+      "description": "How many diagnostics are in one file.",
+      "properties": {
+        "advice": {
+          "description": "How many advice.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "errors": {
+          "description": "How many errors.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "warnings": {
+          "description": "How many warnings.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file",
+        "errors",
+        "warnings",
+        "advice"
       ],
       "type": "object"
     },
     "Fix": {
       "description": "Edits that would fix a diagnostic.",
       "properties": {
+        "applicability": {
+          "description": "`safe` when applying the edits as they are can't change what the page\nsays and leaves nothing to decide; `unsafe` otherwise.",
+          "type": "string"
+        },
         "edits": {
           "description": "The edits, each replacing the text of its range.",
           "items": {
@@ -111,7 +254,54 @@
       "required": [
         "title",
         "file",
-        "edits"
+        "edits",
+        "applicability"
+      ],
+      "type": "object"
+    },
+    "FixedEntry": {
+      "description": "A safe fix `--fix` applied.",
+      "properties": {
+        "code": {
+          "description": "The code of the diagnostic it fixed, such as `ASC036`.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file it changed, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The diagnostic's name.",
+          "type": "string"
+        },
+        "title": {
+          "description": "What the fix did.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "title",
+        "file"
+      ],
+      "type": "object"
+    },
+    "Place": {
+      "description": "A place in a file.",
+      "properties": {
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/Range",
+          "description": "Where in the file."
+        }
+      },
+      "required": [
+        "file",
+        "range"
       ],
       "type": "object"
     },
@@ -120,19 +310,16 @@
       "properties": {
         "column": {
           "description": "The column, from 1, in Unicode characters (not bytes or UTF-16\nunits).",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "line": {
           "description": "The line, from 1.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "offset": {
           "description": "The byte offset from the start of the file.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -188,22 +375,51 @@
     "Summary": {
       "description": "How many diagnostics of each severity.",
       "properties": {
+        "acknowledged": {
+          "description": "How many problems are acknowledged as intended. Left out when there\nare none.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "advice": {
+          "description": "How many advice.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "by_code": {
+          "description": "With `--summary`: how many diagnostics have each code, most first.",
+          "items": {
+            "$ref": "#/$defs/CodeCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "by_file": {
+          "description": "With `--summary`: how many diagnostics are in each file, most first.",
+          "items": {
+            "$ref": "#/$defs/FileCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "errors": {
           "description": "How many errors.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "warnings": {
           "description": "How many warnings.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
       },
       "required": [
         "errors",
-        "warnings"
+        "warnings",
+        "advice"
       ],
       "type": "object"
     }
@@ -211,12 +427,26 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe check --format json` and `ascribe build --format json`\nwrite: one document, whatever the outcome. Fields can be added without a\nnew `schema_version`, so a reader ignores fields it doesn't know.",
   "properties": {
+    "acknowledged": {
+      "description": "The problems acknowledged as intended, which `diagnostics` leaves\nout and which don't fail the command, in file order. Left out when\nthere are none, and with `--summary`.",
+      "items": {
+        "$ref": "#/$defs/AcknowledgedEntry"
+      },
+      "type": "array"
+    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
+    "builds_checked": {
+      "description": "The builds whose page-level checks ran, in `ascribe.toml`'s order:\nevery build, the ones named with `--build`, or the editor's with\n`--editor-build`. Empty when the project couldn't be checked.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "diagnostics": {
-      "description": "Every diagnostic, in file order, and in source order within a file.",
+      "description": "Every diagnostic, in file order, and in source order within a file;\nadvice after the errors and warnings, in the same order.\nWith paths, only those that count for them. With `--summary`, none:\nsee `truncated`.",
       "items": {
         "$ref": "#/$defs/Entry"
       },
@@ -230,20 +460,51 @@
       ]
     },
     "files_checked": {
-      "description": "How many source files were checked.",
-      "format": "uint",
+      "description": "How many source files were checked: the project's.",
       "minimum": 0,
       "type": "integer"
     },
+    "files_reported": {
+      "description": "How many of them the report covers: the source files in the paths\nnamed, or every one when no path was.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "fixed": {
+      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. Left out when none was applied.",
+      "items": {
+        "$ref": "#/$defs/FixedEntry"
+      },
+      "type": "array"
+    },
+    "next_command": {
+      "description": "The command that lists the ones left out, when `truncated`; `null`\notherwise.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "shown": {
+      "description": "How many diagnostics `diagnostics` lists.",
       "minimum": 0,
       "type": "integer"
     },
     "summary": {
       "$ref": "#/$defs/Summary",
-      "description": "How many errors and warnings."
+      "description": "How many errors, warnings, and advice."
+    },
+    "total": {
+      "description": "How many diagnostics there are.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "truncated": {
+      "description": "Whether `diagnostics` leaves some out. It does with `--summary`,\nwhich lists none.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -251,7 +512,13 @@
     "ascribe_version",
     "error",
     "files_checked",
+    "files_reported",
+    "builds_checked",
     "diagnostics",
+    "truncated",
+    "shown",
+    "total",
+    "next_command",
     "summary"
   ],
   "title": "CheckReport",

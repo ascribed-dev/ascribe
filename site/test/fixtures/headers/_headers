@@ -1,0 +1,10 @@
+/docs/guide.md
+  Link: <https://example.com/docs/guide/>; rel="canonical"
+/docs/hidden.md
+  Link: <https://example.com/docs/hidden/>; rel="canonical"
+  X-Robots-Tag: noindex
+/docs/index.md
+  Link: <https://example.com/docs/>; rel="canonical"
+/docs/quoted.md
+  Link: <https://example.com/docs/quoted/>; rel="canonical"
+  X-Robots-Tag: nosnippet

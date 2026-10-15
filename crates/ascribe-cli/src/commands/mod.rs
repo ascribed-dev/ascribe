@@ -1,9 +1,25 @@
 //! One module per subcommand.
 
+pub mod agents;
 pub mod build;
 pub mod check;
 pub mod diff;
 pub mod drift;
+pub mod explain;
 pub mod fmt;
+pub mod init;
+pub mod link;
 pub mod lsp;
+pub mod mcp;
+pub mod model;
+pub mod observe;
+pub mod outline;
+pub mod permalinks;
+pub mod refs;
+pub mod rename;
+pub mod render;
+pub mod report;
 pub mod sources;
+pub mod templates;
+pub mod vale;
+pub mod versions;

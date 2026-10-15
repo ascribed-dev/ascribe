@@ -8,17 +8,20 @@ It's the largest of our crates, and the one the others reach the file system thr
 
 | Module | Main types and functions | What it does |
 |---|---|---|
-| `src/fs.rs` | `FileSystem`, `DiskFs`, `MemoryFs`, `Probe`, `Sources`, `is_source_path`, `in_nested_project` | The one way to read a project's files. It decides which files are sources (`.md`, not under a `.` name, not in a nested project's folder), reads them, probes for files with exact-case names on every platform, follows symbolic links, and finds a file's real path. `DiskFs` reads a real project, optionally caching directory listings; `MemoryFs` holds one for tests and for unsaved text. `ascribe_diff::GitFs` implements it over a commit. |
+| `src/fs.rs` | `FileSystem`, `DiskFs`, `MemoryFs`, `Probe`, `Sources`, `is_source_path`, `in_nested_project`, `is_link`, `LinkCheck`, `link_on_the_way` | The one way to read a project's files. It decides which files are sources (`.md`, not under a `.` name, not in a nested project's folder), reads them, probes for files with exact-case names on every platform, follows symbolic links, and finds a file's real path. `DiskFs` reads a real project, optionally caching directory listings; `MemoryFs` holds one for tests and for unsaved text. `ascribe_diff::GitFs` implements it over a commit. `is_link` and `LinkCheck` find a symbolic link or junction on the way to a file Ascribe writes, which every writer into a project refuses. |
 | `src/layout.rs` | `Layout` | Where the content root and the output directory are, and the boundary a local file must stay inside (`Layout::is_allowed`). |
 | `src/index/` | `index_file`, `FileIndex`, `Heading`, `Reference`, `Include` | What's true of one file alone: its tree, frontmatter, title, headings and their source ids (SPEC §5.5), includes, links, images, phrases, snippets, and availability markers. A pure function of the file's text, path, and the content model; it never touches the file system. |
 | `src/project.rs` | `Project`, `Resolution` | Every file's index, what each reference names, and the edges between files, forward and back (`includers`, `links_to`, `asset_users`). `Project::load` builds it from a `FileSystem`. |
+| `src/uses.rs` | `Usable`, `Use`, `Project::uses`, `Project::use_counts` | Where each page, fragment, heading, and content model entry is used. The language server's Find All References and its inventory both ask it, so a count is the length of the list. |
 | `src/references.rs` | `reference_target`, `include_target`, `resolve_reference` | The one implementation of the rules for links, images, and includes: what a destination names, whether it's inside the boundary, and whether it's there. The index and `ascribe-check`'s file-level checks both call it. |
 | `src/snippet/` | `Address`, `resolve_snippet`, `snippet_issues`, `CodeFiles` | The one implementation of the rules for `@snippet` (SPEC §4.8): reading an address, finding its file through a source, and taking a region out by its tags (`src/snippet/tags.rs`). |
-| `src/expand.rs` | `Project::expand`, `ExpandedPage` | Includes replaced by their targets, and snippets by their code, recursively. Every block keeps the file and span it was written in, and the includes it came through. |
+| `src/expand.rs` | `Project::expand`, `ExpandedPage`, `MAX_EXPANDED_BLOCKS`, `MAX_EXPANDED_BYTES` | Includes replaced by their targets, and snippets by their code, recursively, up to `MAX_EXPANDED_BLOCKS` blocks and `MAX_EXPANDED_BYTES` of text a page. Every block keeps the file and span it was written in, and the includes it came through. |
 | `src/build/` | `BuildResolver`, `ResolvedPage`, `ResolvedBuild`, `DefaultRouter` | Resolving a page for one build, in SPEC §9.2's order: availability, build modes, phrases, page ids, links and assets, glossary. Each pass is its own module; `src/build/mod.rs` lists them. |
 | `src/incremental/` | `IncrementalProject`, `Change`, `Affected`, `Snapshot`, `Version` | Keeping a project current as files change, redoing only what each change affects. The language server runs on it. `src/incremental/mod.rs` says what each change invalidates and how file ids are kept. |
 | `src/slug/` | `GithubSlugger`, `slugger_by_name` | Heading slugs: a port of `github-slugger`, with a table and fixtures generated from the npm package by `src/slug/generate.mjs`. |
-| `src/astro.rs` | `AstroRouter` | The `astro` profile's routes: the URL Astro gives each page. |
+| `src/astro.rs` | `AstroRouter` | The `astro` profile's routes: the URL Astro gives each page, and the path and URL of its Markdown version (`markdown_path`, `markdown_url`). |
+| `src/pages.rs` | `records`, `PageRecords`, `PageRecord`, `header_rules`, `HeaderRule`, `robots_lines`, `host_line`, `disallowing` | A build's page records: each page's route, source, plain title and description, canonical address, `listing` and where it comes from, and Markdown address, and the project's `[crawlers] lines` from the host's root. The site emitter writes them as `_ascribe/pages.json`, and the headers each Markdown version needs, `header_rules`, as `_ascribe/headers.json`; `llms.txt` is built from them, and `listing-disallowed` reads the lines as RFC 9309 says. |
+| `src/llms.rs` | `llms_files`, `LlmsFile`, `description`, `DELIVERY_SPEC` | `llms.txt` for `[consumer] agents = true`: the index of a build's offered pages, from their records, split by folder past 50,000 characters, which the plain emitter writes and `ascribe check` measures, so what's reported is what's published. |
 
 ```rust,ignore
 let layout = Layout::from_model(&model);
@@ -42,14 +45,16 @@ It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crat
 
 ## Tests
 
-- `tests/headings.rs`: source ids, titles, and the rest of the per-file index.
-- `tests/includes.rs`: include expansion.
-- `tests/references.rs`: links, images, and assets: what each names, from which file, and what's wrong with it.
-- `tests/snippets.rs`: the code block a `@snippet` becomes, and which problem `snippet_issues` reports.
-- `tests/build_content.rs`, `tests/build_modes.rs`: build resolution: phrases, page ids, links, assets, the glossary, build modes, and availability.
-- `tests/quill.rs`, `tests/build_quill.rs`: `examples/quill` indexes, expands, and resolves under each of its builds with no problems.
-- `tests/incremental.rs`: what each kind of change invalidates and caches.
-- `tests/file_reads.rs`: every read of the disk in the workspace's crates outside `FileSystem` says why, in a comment starting `Outside FileSystem:`.
-- `tests/incremental_differential.rs`: a property test that, after each step of random edits, the incremental project equals a load from scratch.
+- `tests/all/headings.rs`: source ids, titles, and the rest of the per-file index.
+- `tests/all/includes.rs`: include expansion, and its limit.
+- `tests/all/include_graphs.rs`: include expansion over random include graphs, against a model written from the spec (proptest).
+- `tests/all/uses.rs`: where pages, headings, and the content model's entries are used.
+- `tests/all/references.rs`: links, images, and assets: what each names, from which file, and what's wrong with it.
+- `tests/all/snippets.rs`: the code block a `@snippet` becomes, and which problem `snippet_issues` reports.
+- `tests/all/build_content.rs`, `tests/all/build_modes.rs`: build resolution: phrases, page ids, links, assets, the glossary, build modes, and availability.
+- `tests/all/build_quill.rs`: `examples/quill` resolves under each of its builds with no problems, and its install page's index is what it should be.
+- `tests/all/incremental.rs`: what each kind of change invalidates and caches.
+- `tests/all/file_reads.rs`: every read of the disk in the workspace's crates outside `FileSystem` says why, in a comment starting `Outside FileSystem:`.
+- `tests/all/incremental_differential.rs`: a property test that, after each step of random edits, the incremental project equals a load from scratch.
 - Unit tests in `src/fs.rs` cover discovery and links on a real disk; the slugger's run the upstream fixtures.
 - `benches/incremental.rs`: an incremental update on 3,000 pages, run with `cargo bench -p ascribe-resolve --bench incremental`.

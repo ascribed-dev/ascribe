@@ -34,6 +34,7 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Th
 - A link to an empty-text target, a same-file `#id`, an external URL, and `mailto:` are valid. A link to a non-page local file is an asset link.
 - A link or an include naming a Markdown file that isn't a source because it's in a directory whose name starts with `.`, or in a nested project's folder (§2.1), is reported as a target that doesn't exist, with the plain message; an image or another file there is an ordinary local file, and is copied.
 - `heading-duplicate-without-id` and `id-duplicate` are checked on the expanded page, so a fragment's headings count. They are reported once each, at the later occurrence.
+- A processor limits how many blocks a page's includes expand it to (§4.2 allows one, set far above what a real page reaches). The `expansion-limit` case expects a page that would be a million paragraphs to pass it, and the limit to be reported once, at the page's include that passes it.
 
 **Builds**
 
@@ -48,6 +49,6 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Th
 - **Outputs (§9.4).** The plain, site, and JSON outputs aren't checked by these cases; `ascribe-emit`'s tests snapshot them.
 - **Registry-change reports (§5.1).** "When a key is added to the registry, the pages whose existing literal `{key}` text would change" is a report between two versions of a model, which a case can't state.
 - **Phrases in frontmatter (§5.1).** Nothing in a resolved outline shows them.
-- **Loader rules (`docs/content/reference/content-model.md`).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; the rest are tested in `ascribe-model`. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
+- **Loader rules (`docs/content/content-model/checks.md`).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; the rest are tested in `ascribe-model`. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
 - **Symbolic links (§2.1).** A case is files checked into git, which can't keep a link on every platform, so a link on the way to a source file is tested in the crates instead: `ascribe-resolve`'s `includes` test for `check`, and `ascribe-cli`'s `fmt` test for the formatter.
 - **Editor features (§10).** Completion, hover, and refactoring are tested in `ascribe-lsp`.

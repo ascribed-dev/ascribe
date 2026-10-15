@@ -1,27 +1,9 @@
-// What the preview keeps and says for each project: the build chosen in it,
-// and why there is no page when there isn't one.
+// What the preview says for each project: why there is no page when there
+// isn't one.
 
 import type { ServerState } from "../client.js";
-import { comparable, within } from "../projects.js";
+import { within } from "../projects.js";
 import type { PreviewResult, ShownProblem } from "./protocol.js";
-
-/**
- * The build chosen in the preview for each project, by project folder. A
- * project with no choice previews its editor's build.
- */
-export class BuildChoices {
-  private readonly chosen = new Map<string, string>();
-
-  get(folder: string): string | undefined {
-    return this.chosen.get(comparable(folder));
-  }
-
-  /** Records a project's choice; `undefined` goes back to its editor's build. */
-  set(folder: string, build: string | undefined): void {
-    if (build === undefined) this.chosen.delete(comparable(folder));
-    else this.chosen.set(comparable(folder), build);
-  }
-}
 
 /** Where the previewed file stands, for choosing what the preview says. */
 export interface PreviewSituation {

@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { UNRELEASED, changesDir, readChanges } from "./changes.ts";
 
 export const root = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 
@@ -83,6 +84,27 @@ export function cargoVersion(): string {
   return version;
 }
 
+/**
+ * The skill `@ascribed/cli` ships, whose metadata names the version. The
+ * binary writes the same file, and `crates/ascribe-cli/src/agents/skill.rs`
+ * fails when this copy differs.
+ */
+export const skill = "packages/cli/skills/ascribe/SKILL.md";
+
+/**
+ * The plugin's copy of the skill, and its two manifests, which name the
+ * version too. The binary writes them, and
+ * `crates/ascribe-cli/src/agents/plugin.rs` fails when they differ.
+ */
+export const pluginSkill = "plugins/ascribe/skills/ascribe/SKILL.md";
+export const pluginManifests = [
+  "plugins/ascribe/.claude-plugin/plugin.json",
+  "plugins/ascribe/plugin.json",
+];
+
+/** The skill's version line, with the version as its one group. */
+export const SKILL_VERSION = /^ {2}ascribe-version: "([^"]+)"$/m;
+
 /** A file that carries the version, and the version it says. */
 export interface FoundVersion {
   file: string;
@@ -101,13 +123,23 @@ export function versions(): FoundVersion[] {
     file: `${extension.dir}/package.json (ascribe.minServerVersion)`,
     version: vscode.ascribe?.minServerVersion,
   });
+  for (const file of [skill, pluginSkill]) {
+    found.push({
+      file,
+      version: SKILL_VERSION.exec(readFileSync(join(root, file), "utf8"))?.[1],
+    });
+  }
+  for (const file of pluginManifests) {
+    found.push({ file, version: readJson(file).version });
+  }
   return found;
 }
 
 /**
  * Checks that every file carries the same version, that it's a version, that
- * the changelog has a section for it, and, given a tag, that the tag is
- * `v<version>`. Returns the version and the problems found.
+ * the changelog has a section for it, that a release has no entry left in
+ * `changes/`, and, given a tag, that the tag is `v<version>`. Returns the
+ * version and the problems found.
  */
 export function checkVersion(tag?: string): { version: string; problems: string[] } {
   const found = versions();
@@ -124,8 +156,16 @@ export function checkVersion(tag?: string): { version: string; problems: string[
     if (unreleasedSection(readChangelog()) === undefined) {
       problems.push(`CHANGELOG.md has no "## Unreleased" section, which a canary needs`);
     }
-  } else if (changelogSection(version) === undefined) {
-    problems.push(`CHANGELOG.md has no "## ${version}" section`);
+  } else {
+    if (changelogSection(version) === undefined) {
+      problems.push(`CHANGELOG.md has no "## ${version}" section`);
+    }
+    const left = readChanges(root);
+    if (left.length > 0) {
+      problems.push(
+        `${changesDir}/ has ${left.length} ${left.length === 1 ? "entry" : "entries"} the changelog doesn't; run node scripts/release/changes.ts gather`,
+      );
+    }
   }
   return { version, problems };
 }
@@ -141,7 +181,7 @@ function readChangelog(): string {
  */
 export function unreleasedSection(changelog: string): { version: string | undefined } | undefined {
   for (const line of changelog.split("\n")) {
-    const match = /^## (?:Unreleased|(\d+\.\d+\.\d+) \(unreleased\))\s*$/i.exec(line);
+    const match = UNRELEASED.exec(line);
     if (match) return { version: match[1] };
   }
   return undefined;

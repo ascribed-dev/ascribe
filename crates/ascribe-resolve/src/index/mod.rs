@@ -13,10 +13,13 @@
 //! - the **includes**, each with the path it names, resolved (SPEC §4.2);
 //! - the **references**: links and images, each resolved from this file,
 //!   and so each **asset reference** among them;
-//! - every **phrase candidate**, and every **`@available`** directive;
+//! - every **phrase candidate**, those in the frontmatter fields that take
+//!   phrases included, and every **`@available`** directive;
 //! - every **`@snippet`**, with its address read (SPEC §4.8).
 
+mod frontmatter;
 mod headings;
+mod mentions;
 mod refs;
 pub(crate) mod walk;
 
@@ -24,7 +27,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilityError, AvailabilitySpec, parse_availability};
 use ascribe_core::{AttributeValue, FileId, RelPath, Slugger, Span};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, ContentType};
 use ascribe_syntax::{
     Block, BlockKind, Bound, DirectiveLine, InlineKind, ParseOptions, ParsedDocument, Phrase,
     PrimaryValue, TableRow, parse,
@@ -32,9 +35,10 @@ use ascribe_syntax::{
 
 use crate::snippet::SnippetUse;
 
+pub(crate) use frontmatter::key_line as frontmatter_key;
 pub use headings::{ExplicitId, Heading, plain_text as heading_text};
 pub use refs::{Local, RefKind, Reference, Target};
-pub(crate) use refs::{substitute, target_of};
+pub(crate) use refs::{substitute_with, target_of};
 
 /// Whether a file is published (SPEC §2.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -82,6 +86,18 @@ pub struct FileIndex {
 }
 
 impl FileIndex {
+    /// The page's content type (SPEC §7.2): the one its frontmatter's `type`
+    /// names, or the implicit `page` type of a project that declares none.
+    /// `None` for a fragment, and for a page whose type isn't declared or
+    /// that names none in a project that declares types, which
+    /// `ascribe check` reports.
+    pub fn content_type<'m>(&self, model: &'m ContentModel) -> Option<&'m ContentType> {
+        match self.kind {
+            FileKind::Fragment => None,
+            FileKind::Page => model.type_of(self.frontmatter.as_ref()).found(),
+        }
+    }
+
     /// The heading with this source id: the first, if a file repeats one
     /// (which page-level checks report). An empty id names nothing.
     pub fn heading_by_id(&self, id: &str) -> Option<&Heading> {
@@ -91,15 +107,32 @@ impl FileIndex {
         self.headings.iter().find(|h| h.source_id == id)
     }
 
+    /// The heading with this span.
+    pub fn heading_at(&self, span: Span) -> Option<&Heading> {
+        at_span(&self.headings, span, |h| h.span)
+    }
+
     /// The include whose directive has this span.
     pub(crate) fn include_at(&self, span: Span) -> Option<&Include> {
-        self.includes.iter().find(|i| i.span == span)
+        at_span(&self.includes, span, |i| i.span)
     }
 
     /// The `@snippet` whose directive has this span.
     pub fn snippet_at(&self, span: Span) -> Option<&SnippetUse> {
-        self.snippets.iter().find(|s| s.span == span)
+        at_span(&self.snippets, span, |s| s.span)
     }
+}
+
+/// The item of a list in document order whose span is `span`, found by where
+/// it starts, so that looking up every heading of a page with many headings
+/// isn't quadratic.
+fn at_span<T>(items: &[T], span: Span, span_of: impl Fn(&T) -> Span) -> Option<&T> {
+    let first = items.partition_point(|item| span_of(item).start() < span.start());
+    items
+        .get(first..)?
+        .iter()
+        .take_while(|item| span_of(item).start() == span.start())
+        .find(|item| span_of(item) == span)
 }
 
 /// An `@include` directive (SPEC §4.2).
@@ -139,6 +172,9 @@ pub enum PhrasePlace {
     Destination,
     /// In a fenced code block that opts in with `phrases=true`.
     Code,
+    /// In a frontmatter field that takes phrases. Only declared candidates
+    /// are listed here: in the frontmatter, the rest is literal text.
+    Frontmatter,
 }
 
 /// A phrase candidate: `{key}` (SPEC §5.1), declared or not.
@@ -168,6 +204,14 @@ pub struct AvailabilityMarker {
     /// The primary read as an availability spec. A bare name may be a feature
     /// key instead; build resolution decides, from the model.
     pub spec: Option<Result<AvailabilitySpec, AvailabilityError>>,
+}
+
+impl AvailabilityMarker {
+    /// Whether the mark is on the section under a heading: written at the
+    /// top of the section, after its heading.
+    pub fn binds_section(&self) -> bool {
+        matches!(self.binding, Some(Bound::Heading))
+    }
 }
 
 /// Indexes one file.
@@ -272,6 +316,13 @@ pub(crate) fn index_parsed(
         }
     };
     walk::walk_blocks(&document.blocks, &mut visit);
+    if let Some(fm) = &document.frontmatter {
+        let fields = model
+            .type_of(frontmatter.as_ref())
+            .found()
+            .map(|t| t.frontmatter.fields.as_slice());
+        phrases.extend(frontmatter::phrases(text, fm.content, fields, model));
+    }
     // A definition's destination holds phrases too, once, wherever the
     // links that use it are.
     for definition in &document.definitions {

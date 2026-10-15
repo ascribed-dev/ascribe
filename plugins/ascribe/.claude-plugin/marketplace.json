@@ -1,0 +1,14 @@
+{
+  "name": "ascribe",
+  "owner": {
+    "name": "Ascribe",
+    "url": "https://github.com/ascribed-dev"
+  },
+  "plugins": [
+    {
+      "description": "Ascribe for AI agents. The Ascribe skill, for every agent: how to write, check, and fix pages. The MCP server's tools, for an agent with no shell. The stop hook, and the language server's diagnostics after each edit, for an agent that doesn't check its own work. Commands for the named prompts.",
+      "name": "ascribe",
+      "source": "./"
+    }
+  ]
+}

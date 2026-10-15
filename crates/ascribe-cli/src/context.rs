@@ -35,7 +35,8 @@ impl Coded for Failure {
 /// [`Project::load_model`].
 pub fn load_project(global: &Global) -> Result<Project, Failure> {
     let config = locate(global).map_err(Failure::Config)?;
-    Project::load(&config).map_err(Failure::Load)
+    let project = Project::load(&config).map_err(Failure::Load)?;
+    Ok(project.with_today(crate::clock::today()))
 }
 
 /// The content model `--config` names, or the nearest one.

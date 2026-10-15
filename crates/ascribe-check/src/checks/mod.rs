@@ -10,25 +10,33 @@
 //! | `attrs` | Attribute keys and types, `@variant` dimensions, required attributes |
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
+//! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
+//! | `content` | A page's description and review date, code blocks' languages |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
+//! | `template` | What a page still has of its type's template, never filled in |
 
+mod acknowledge;
 mod attrs;
 mod avail;
+mod content;
 mod frontmatter;
 mod refs;
 mod sources;
+pub(crate) mod template;
 mod text;
 
-use ascribe_core::{DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics};
-use ascribe_model::ContentModel;
+use ascribe_core::{
+    Applicability, DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics,
+};
+use ascribe_model::{ContentModel, ContentType};
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Heading, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
 };
 
 use crate::{Diagnostic, Project, SourceFile};
 
-pub(crate) use sources::check_sources;
+pub(crate) use sources::{check_examples, check_sources};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {
@@ -40,6 +48,12 @@ struct Ctx<'a> {
     /// The file's link reference definitions, whose destinations hold the
     /// phrases of the reference forms that use them.
     definitions: Vec<ascribe_syntax::LinkDefinition>,
+    /// The text of the file's first paragraph, for a prompt about its
+    /// description.
+    first_paragraph: Option<String>,
+    /// The page's content type, once the frontmatter is checked: `None` for
+    /// a fragment, and for a page whose type is missing or unknown.
+    page_type: Option<&'a ContentType>,
     issues: Vec<Issue>,
 }
 
@@ -58,6 +72,10 @@ impl Ctx<'_> {
 
     fn location(&self, span: Span) -> Location {
         Location::new(self.id, span)
+    }
+
+    fn page_type(&self) -> Option<&ContentType> {
+        self.page_type
     }
 }
 
@@ -87,10 +105,13 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         id: file.id,
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
+        first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        page_type: None,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
     cx.blocks(&doc.blocks);
+    cx.check_template_body(&doc.blocks);
     cx.parser_fixes();
     // A stable sort keeps the parser's issues before a check's at one place.
     let mut issues = cx.issues;
@@ -126,6 +147,8 @@ impl Ctx<'_> {
                     title: format!("Replace with `{suggestion}`"),
                     file: id,
                     edits: vec![TextEdit::replace(Span::new(span.start(), end), suggestion)],
+                    // The nearest name, which may not be the one meant.
+                    applicability: Applicability::Unsafe,
                 }
             } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT {
                 let before = &text[..span.start()];
@@ -134,6 +157,8 @@ impl Ctx<'_> {
                     title: format!("Remove `{}`", issue.arg("extra").unwrap_or_default()),
                     file: id,
                     edits: vec![TextEdit::delete(Span::new(start, span.end()))],
+                    // The text may be meant for the primary or the content.
+                    applicability: Applicability::Unsafe,
                 }
             } else {
                 continue;
@@ -177,8 +202,8 @@ impl Ctx<'_> {
                         self.blocks(&arm.children);
                     }
                 }
-                BlockKind::CodeBlock(_)
-                | BlockKind::HtmlBlock(_)
+                BlockKind::CodeBlock(code) => self.check_code_language(block, code),
+                BlockKind::HtmlBlock(_)
                 | BlockKind::ThematicBreak
                 | BlockKind::End(_)
                 | BlockKind::Title(_) => {}
@@ -288,7 +313,7 @@ impl Ctx<'_> {
             return;
         }
         match (d.name.as_str(), &d.primary) {
-            ("id", Some(PrimaryValue::Identifier(p))) => self.check_id(&p.text, p.span),
+            ("id", Some(PrimaryValue::Identifier(p))) => self.check_name(&p.text, p.span, None),
             ("include", Some(PrimaryValue::Identifier(p))) => {
                 self.check_include(&p.text, p.span);
                 self.check_include_heading(d, &p.text);
@@ -297,6 +322,7 @@ impl Ctx<'_> {
                 self.check_availability_text(&p.text, p.span.start(), p.span, true);
             }
             ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),
+            ("intended", _) => self.check_intended_directive(d),
             _ => {}
         }
     }
@@ -344,20 +370,22 @@ impl Ctx<'_> {
                     TextEdit::delete(Span::new(start - 1, start)),
                     TextEdit::delete(Span::new(end, end + 1)),
                 ],
+                // The page shows the braces now, and one may be meant.
+                applicability: Applicability::Unsafe,
             });
         self.report(issue);
     }
 
-    /// `@id` values: letters, digits, hyphens, underscores, and periods
+    /// An `@id`, or with the variant `permalink` a page's `permalink`
+    /// (SPEC §2.1): letters, digits, hyphens, underscores, and periods
     /// (SPEC §4.1).
-    fn check_id(&mut self, id: &str, span: Span) {
-        let valid = !id.is_empty()
-            && id
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
-        if !valid {
-            let issue = Issue::new(diagnostics::ID_INVALID, self.location(span))
+    fn check_name(&mut self, id: &str, span: Span, variant: Option<&'static str>) {
+        if !ascribe_core::is_id(id) {
+            let mut issue = Issue::new(diagnostics::ID_INVALID, self.location(span))
                 .with_arg("id", id.to_owned());
+            if let Some(variant) = variant {
+                issue = issue.with_variant(variant);
+            }
             self.report(issue);
         }
     }

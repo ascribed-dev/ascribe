@@ -13,10 +13,12 @@
 # Required fields:
 #
 #   code      "ASC" and three digits, assigned in file order. Codes are never
-#             reused or renumbered: a new diagnostic is appended with the next
-#             code, and a retired one keeps its entry, with `retired` set.
+#             renumbered: a new diagnostic is appended with the next code,
+#             and one that's removed is deleted, which leaves a gap.
 #   slug      Kebab-case, unique, and stable. Loader rules start with `model-`.
-#   severity  "error" or "warning". For a §8.2 row, the row's severity.
+#   severity  "error", "warning", or "advice". For a §8.2 row, the row's
+#             severity. Advice is below a warning: shown, and never failing
+#             `ascribe check`.
 #   level     "file" or "page" (SPEC §8.1). File-level diagnostics are checked
 #             on each file on its own (with the content model and the file
 #             system); a conformance case expects them in its top-level
@@ -24,24 +26,69 @@
 #             expanded page, per build; a case expects them under
 #             `builds.<name>.diagnostics`.
 #   spec      The SPEC.md section the rule comes from.
+#   reference The section of the docs written for the person who meets the
+#             problem: a heading of docs/content/writing/directives.md
+#             or of a page in docs/content/content-model/, written from the
+#             content root, as `writing/directives.md#links`. The entry in
+#             the diagnostics reference links to it.
+#   next      The kind of next step (docs/content/checks/diagnostics.md):
+#             "fix" when every instance has a fix Ascribe can apply, as a
+#             diagnostic's fix or the editor's quick fix; "choose" when the
+#             author picks among things Ascribe can list (a link's target, a
+#             key's allowed values); "write" when it needs writing or
+#             judgment; "outside" when nothing in the source can fix it;
+#             "review" when it may be fine as it is.
+#   evidence  The named pieces of context an agent prompt about it carries,
+#             beyond the message and the line; may be empty. The names
+#             (`ascribe_check::prompt::EVIDENCE`): "allowed-values", the
+#             values the content model allows, from the `values` placeholder;
+#             "mentions", the pages that mention a page's title or share its
+#             folder; "image-size", an image's size and dimensions; and
+#             "descriptions", the descriptions of the pages a diagnostic
+#             names.
 #   message   The message template. `{name}` is a placeholder, filled from the
 #             issue's arguments; `{{` and `}}` are literal braces. A message
 #             says what's wrong and, when there's a likely fix, what to do.
 #
 # Optional fields:
 #
+#   configurable  `true` when a project may set the check's level in
+#                 `[checks]`; `false` when absent. A diagnostic about whether
+#                 the project is valid is never configurable, and every
+#                 "review" entry is.
+#   place         For a "review" entry, and only for one: where it reports its
+#                 problems, and so where an author acknowledges one (SPEC §4.9).
+#                 "page" for a page or fragment as a whole (its `intended`
+#                 frontmatter), "block" for one block (`@intended` above it),
+#                 or "entry" for a content model entry or an image
+#                 (`[[intended]]` in ascribe.toml). An "entry" check names its
+#                 entry in the issue argument `entry`, as `<kind> <name>`.
 #   messages     Named alternative templates, for cases of the rule that need
 #                different wording. An issue names the one it uses
 #                (`Issue::variant`); otherwise `message` is used.
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
 #                exactly. Every row has exactly one entry.
-#   group        The group of docs/content/reference/diagnostics.md a loader rule is listed in:
+#   area         For a quality check, which is neither a SPEC §8.2 row nor a
+#                loader rule: what it checks, one of `AREAS` in
+#                tests/conformance/tests/docs.rs. Only a configurable entry has one; its `severity`
+#                is its default level, and its `spec` is the SPEC section of
+#                the construct it checks. The diagnostics reference lists it
+#                under "Content checks", in its area's section.
+#   when         For a quality check: when it's reported, as a sentence
+#                without its full stop.
+#   group        The group of docs/content/checks/diagnostics/content-model.md a loader rule is listed in:
 #                file, project, sources, content-types, names, phrases, widgets, or
 #                consumer. Every loader rule has one.
-#   retired      Why the diagnostic is no longer reported. Its code and slug
-#                stay reserved.
-#   fix          How to fix the problem, for docs/content/reference/diagnostics.md, which is
-#                generated from this file. Every entry that isn't retired has one.
+#   fix          How to fix the problem, for docs/content/checks/diagnostics/, which is
+#                generated from this file. Every entry has one.
+#   example      A short wrong-and-right example, which `ascribe explain` shows:
+#                `example.wrong` is a page, `page.md`, with the problem, and
+#                `example.right` the same page fixed. Both are checked under the
+#                content model in tests/conformance/explain-model.toml, with
+#                `example.model` (a fragment of a content model) laid over it, and
+#                with the files `example.files` maps by content path beside them.
+#                The wrong page must report this diagnostic and nothing else; the
+#                right page, nothing (crates/ascribe-query/tests/explain_examples.rs).
 
 ###############################################################################
 # SPEC §8.2, in table order.
@@ -52,7 +99,10 @@ code = "ASC001"
 slug = "attribute-unknown-key"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "3.3"
+reference = "writing/directives.md#attributes"
 row = "Attributes | Unknown key for the directive, image, or table row"
 message = "`@{name}` has no attribute `{key}`; its attributes are: {keys}"
 messages.suggestion = "`@{name}` has no attribute `{key}`; did you mean `{suggestion}`?"
@@ -61,78 +111,219 @@ messages.image = "images have no attribute `{key}`; the accepted attributes are:
 messages.image-none = "images take no attributes in this project; declare `{key}` in [images.attributes] to allow it"
 messages.row = "table rows have no attribute `{key}`; a row's only attribute is `available`"
 fix = "Fix the key's spelling, or remove it. To accept a new image attribute, declare it in `[images.attributes]`; for a project widget, in its `attributes`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {kind=tip}: Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC002"
 slug = "attribute-type-mismatch"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "3.3"
+reference = "writing/directives.md#attributes"
 row = "Attributes | Value doesn't match the key's declared type"
 message = "`{key}` must be {expected}, but it's \"{value}\""
 messages.enum = "`{key}` can't be \"{value}\"; use one of: {values}"
 messages.boolean = "`{key}` must be true or false, but it's \"{value}\""
 messages.set = "`{key}` takes a single value, so it can't be a value set"
 fix = "Give a value of the key's declared type: one of the enumeration's values, `true` or `false` for a boolean, or a plain number such as `600` for a number."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=hint}: Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC003"
 slug = "attribute-bare-key"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.3"
+reference = "writing/directives.md#attributes"
 row = "Attributes | Bare key without a value"
 message = "`{key}` needs a value, such as `{key}=<value>`; booleans are written out too: `{key}=true`"
 fix = "Give the key a value: `key=value`. Booleans are written out too: `open=true`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@include {heading}: _setup.md#install
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include {heading=true}: _setup.md#install
+'''
+example.files."_setup.md" = '''
+## Install
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC004"
 slug = "attribute-unquoted-reserved"
 severity = "error"
 level = "file"
+next = "fix"
+evidence = []
 spec = "3.3"
+reference = "writing/directives.md#attributes"
 row = "Attributes | Unquoted value containing a reserved character"
 message = "the value of `{key}` contains `{character}`, so it must be quoted: `{key}=\"{value}\"`"
 fix = "Quote the value: `label=\"Using other images\"`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+![The installer](installer.png){caption=The first screen}
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+![The installer](installer.png){caption="The first screen"}
+'''
+example.model = '''
+[images.attributes]
+caption = "string?"
+'''
+example.files."installer.png" = '''
+PNG'''
 
 [[diagnostic]]
 code = "ASC005"
 slug = "directive-unknown"
 severity = "warning"
 level = "file"
+next = "choose"
+evidence = []
 spec = "3.2"
+reference = "writing/directives.md#directive-lines"
 row = "Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name"
 message = "`@{name}` isn't a known directive, so this line is text; write `\\@{name}` if that's what you mean"
 messages.suggestion = "`@{name}` isn't a known directive, so this line is text; did you mean `{suggestion}`?"
 fix = "Correct the directive's name, or declare a project widget with that name in `ascribe.toml`. If the line is meant as text, write `\\@` at its start."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@warning: Back up your data first.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}: Back up your data first.
+'''
 
 [[diagnostic]]
 code = "ASC006"
 slug = "directive-primary"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.4"
+reference = "writing/directives.md#directive-lines"
 row = "Directives | Primary given to a directive that takes none, or a required primary missing"
 message = "`@{name}` doesn't take a primary; remove the text after its colon"
 messages.missing = "`@{name}` needs {kind} after its colon, such as `@{name}: {example}`"
 fix = "Remove the text after the colon, or add the primary the directive needs, such as the path in `@include: setup.md`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@steps: Install
+1. Download the installer.
+2. Run it.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@steps
+1. Download the installer.
+2. Run it.
+'''
 
 [[diagnostic]]
 code = "ASC007"
 slug = "container-unclosed"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.5"
+reference = "writing/directives.md#forms-line-and-container"
 row = "Container | Container not closed before its enclosing block ends"
 message = "the `@{name}` container opened here isn't closed before {end}; add `@end` where it should end"
 fix = "Add an `@end` line where the container's content ends, indented like its opener."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}:
+Back up your data first.
+
+Then run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}:
+Back up your data first.
+@end
+
+Then run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC008"
 slug = "container-colon-unexpected"
 severity = "error"
 level = "file"
+next = "fix"
+evidence = []
 spec = "3.5"
+reference = "writing/directives.md#forms-line-and-container"
 row = "Container | Trailing `:` on a directive with no container form"
 message = "`@{name}` has no container form, so its line can't end in a colon; remove the trailing `:`"
 fix = "Remove the trailing colon. The directive applies to what its binding says, such as the block after it."
@@ -142,17 +333,45 @@ code = "ASC009"
 slug = "container-colon-missing"
 severity = "error"
 level = "file"
+next = "fix"
+evidence = []
 spec = "3.5"
+reference = "writing/directives.md#forms-line-and-container"
 row = "Container | Container-only directive without a trailing `:`"
 message = "`@{name}` is always a container; end its line with a colon to open it"
 fix = "End the opener's line with a colon, and close the container with `@end`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}
+Run `npm install quill`.
+@variant {pm=pnpm}
+Run `pnpm add quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC010"
 slug = "container-open-at-arm"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.6"
+reference = "writing/directives.md#groups"
 row = "Container | Container still open when the next arm of its group begins (reported at that arm's opener)"
 message = "the `@{name}` container opened on line {line} is still open where this `@{group}` arm begins; close it with `@end` first"
 fix = "Close the inner container with `@end` before the next arm's opener."
@@ -162,17 +381,41 @@ code = "ASC011"
 slug = "end-unmatched"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.5"
+reference = "writing/directives.md#forms-line-and-container"
 row = "Container | End line with no open container"
 message = "this `@end` has no open container to close; if a directive above should be a container, end its line with a colon"
 fix = "Remove the `@end`, or make the directive it should close a container by ending that directive's line with a colon."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}
+Back up your data first.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}:
+Back up your data first.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC012"
 slug = "end-indent-mismatch"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.9"
+reference = "writing/directives.md#lists-and-block-quotes"
 row = "Container | End line indented differently from its opener"
 message = "this `@end` is indented differently from the `@{name}` it would close; indent them the same"
 fix = "Indent the `@end` exactly as its opener is indented."
@@ -182,7 +425,10 @@ code = "ASC013"
 slug = "container-nesting-deep"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.10"
+reference = "writing/directives.md#forms-line-and-container"
 row = "Container | Nesting deeper than two levels"
 message = "containers are nested {depth} levels deep here; more than two is hard to follow, so flatten them, for example with a following-block form"
 fix = "Flatten the structure: use a directive's following-block form instead of a container, or split the content into sections."
@@ -192,7 +438,10 @@ code = "ASC014"
 slug = "binding-no-block"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.8"
+reference = "writing/directives.md#binding-what-a-directive-applies-to"
 row = "Binding | Following-block directive with no following block in its container"
 message = "`@{name}` applies to the block after it, but nothing follows it in this {container}"
 fix = "Put the block the directive applies to directly below it, in the same container, or remove the directive."
@@ -202,27 +451,73 @@ code = "ASC015"
 slug = "binding-heading"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.8"
+reference = "writing/directives.md#binding-what-a-directive-applies-to"
 row = "Binding | Following-block directive bound to a heading"
 message = "`@{name}` applies to the next block, and the next block here is a heading; a directive can't be bound to a heading"
 fix = "Move the directive below the heading, directly above the block it describes."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}
+## Install
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+
+@note {type=tip}
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC016"
 slug = "binding-blank-line"
 severity = "warning"
 level = "file"
+next = "fix"
+evidence = []
 spec = "3.8"
+reference = "writing/directives.md#binding-what-a-directive-applies-to"
 row = "Binding | Blank line between a following-block directive and its block"
 message = "a blank line separates `@{name}` from the block it applies to; remove it so the directive touches its block"
 fix = "Remove the blank line, so the directive touches its block. `ascribe fmt` does this."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}
+
+Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}
+Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC017"
 slug = "binding-not-section-top"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.8"
+reference = "writing/directives.md#binding-what-a-directive-applies-to"
 row = "Binding | Heading-bound directive that isn't at the top of its section"
 message = "`@{name}` applies to its heading's section, so it must come directly under the heading, before any other content"
 fix = "Move the directive directly under its heading, before any other content of the section."
@@ -232,7 +527,10 @@ code = "ASC018"
 slug = "title-not-accepted"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.7"
+reference = "writing/directives.md#titles"
 row = "Title | Title given to a directive that doesn't accept one"
 message = "this line looks like a title, but `@{name}` below it doesn't take one, so it's text; if that's intended, start it with `\\.` to silence this"
 fix = "Remove the title line, or start it with `\\.` if it's text that begins with a dot."
@@ -242,7 +540,10 @@ code = "ASC019"
 slug = "title-dot-space"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.7"
+reference = "writing/directives.md#titles"
 row = "Title | A `. ` line (dot and space) directly above a directive that accepts a title"
 message = "a title line has no space after its dot; write `.{title}` to make this the title of the `@{name}` below"
 fix = "Remove the space after the dot (`.Title`) to make the line a title, or separate it from the directive with a blank line if it's text."
@@ -252,40 +553,118 @@ code = "ASC020"
 slug = "id-duplicate"
 severity = "error"
 level = "page"
+next = "write"
+evidence = []
 spec = "4.1"
+reference = "writing/directives.md#id"
 row = "`@id` | Duplicate id on a page, including ids from included content (page level)"
 message = "the id `{id}` is used more than once on this page; every id on a page must be unique"
 messages.include = "including `{path}` here puts the id `{id}` on this page twice; every id on a page must be unique"
 fix = "Give one of the headings a different `@id`. When the second id comes from an included fragment, change it in the page or in the fragment, or include the fragment once."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: setup
+
+Run the installer.
+
+## Configure
+@id: setup
+
+Edit `quill.yaml`.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: install
+
+Run the installer.
+
+## Configure
+@id: configure
+
+Edit `quill.yaml`.
+'''
 
 [[diagnostic]]
 code = "ASC021"
 slug = "include-target-missing"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.2"
+reference = "writing/directives.md#include"
 row = "`@include` | Target file doesn't exist"
 message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.not-source = "`{path}` isn't an Ascribe source file, so it can't be included: only `.md` files under the content root can"
 fix = "Fix the path. It's relative to the including file, or to the content root when it starts with `/`, and the file must be a Markdown source file inside the content root."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@include: _prerequisites.md
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include: _fragments/prerequisites.md
+'''
+example.files."_fragments/prerequisites.md" = '''
+You need Node 20 or later.
+'''
 
 [[diagnostic]]
 code = "ASC022"
 slug = "include-id-missing"
 severity = "error"
 level = "page"
+next = "choose"
+evidence = []
 spec = "4.2"
+reference = "writing/directives.md#include"
 row = "`@include` | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
 fix = "Fix the `#id`, or give the heading you want to include that id with `@id`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@include: _setup.md#configure
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include: _setup.md#install
+'''
+example.files."_setup.md" = '''
+## Install
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC023"
 slug = "include-cycle"
 severity = "error"
 level = "page"
+next = "write"
+evidence = []
 spec = "4.2"
+reference = "writing/directives.md#include"
 row = "`@include` | Include cycle"
 message = "including `{path}` here creates a cycle: {cycle}"
 fix = "Remove one of the includes in the cycle. A section can't include itself, directly or through other files."
@@ -295,7 +674,10 @@ code = "ASC024"
 slug = "variant-no-arm-survives"
 severity = "warning"
 level = "page"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "writing/directives.md#variant"
 row = "`@variant` | No arm of a group survives a build's selection (page level)"
 message = "build `{build}` removes every arm of this `@variant` group, so none of its content is published in that build"
 messages.builds = "builds {builds} remove every arm of this `@variant` group, so none of its content is published in those builds"
@@ -306,39 +688,120 @@ code = "ASC025"
 slug = "variant-unknown"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "4.3"
+reference = "writing/directives.md#variant"
 row = "`@variant` | Unknown dimension or value"
 message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
 messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
 fix = "Use a dimension and value declared in `[dimensions]`, or declare them there."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@variant {os=linux}:
+Run `apt install quill`.
+@variant {os=macos}:
+Run `brew install quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC026"
 slug = "variant-mixed-arms"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.3"
+reference = "writing/directives.md#variant"
 row = "`@variant` | Group mixes labeled and dimensional arms"
 message = "this group mixes labeled and dimensional arms; give every arm attributes, or every arm a title"
 fix = "Make every arm of the group dimensional (attributes, such as `{pm=npm}`) or every arm labeled (a title line)."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+.With npm
+@variant:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC027"
 slug = "variant-arm-kind"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.3"
+reference = "writing/directives.md#variant"
 row = "`@variant` | Arm has both a title and attributes, or neither"
 message = "this `@variant` arm has both a title and attributes; use one or the other"
 messages.neither = "this `@variant` arm has neither attributes nor a title; add dimension attributes, or a title line above it"
 fix = "Give the arm either attributes or a title line: one, not both and not neither."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+.With npm
+@variant {pm=npm}:
+Run `npm install quill`.
+.With pnpm
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC028"
 slug = "variant-no-shared-dimension"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.3"
+reference = "writing/directives.md#variant"
 row = "`@variant` | Dimensional arms share no dimension key"
 message = "the arms of this group have no dimension in common; every arm must name at least one of the same dimensions"
 fix = "Name at least one dimension that every arm of the group shares."
@@ -348,18 +811,44 @@ code = "ASC029"
 slug = "available-unknown"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.4"
+reference = "writing/directives.md#available"
 row = "`@available` | Unknown target or state"
 message = "`{name}` isn't a declared dimension value, dimension, or feature key"
 messages.state = "`{name}` isn't a declared lifecycle state; the states are: {states}"
 fix = "Use a declared dimension value, dimension, feature key, or lifecycle state, or declare the name in `ascribe.toml`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: enterprise
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: sso
+
+Sign in with your company's identity provider.
+'''
 
 [[diagnostic]]
 code = "ASC030"
 slug = "available-history-order"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "writing/directives.md#availability-specs"
 row = "`@available` | History out of chronological order"
 message = "the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
 fix = "List the target's states oldest first: `self-managed (preview 3.3, ga 3.5)`."
@@ -369,18 +858,44 @@ code = "ASC031"
 slug = "available-versionless"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "writing/directives.md#availability-specs"
 row = "`@available` | Versions given for a versionless target"
 message = "`{target}` is versionless, so it takes a state but no version"
 messages.dimension = "`{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
 fix = "Remove the version. A versionless target, or a dimension name, takes a state but no version: `cloud beta`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud 3.2
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud, self-managed 3.2
+
+Sign in with your company's identity provider.
+'''
 
 [[diagnostic]]
 code = "ASC032"
 slug = "available-exceeds-scope"
 severity = "error"
 level = "page"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "writing/directives.md#available"
 row = "`@available` | Spec exceeds its enclosing scope"
 message = "this availability includes `{target}`, which the enclosing {scope} doesn't"
 messages.version = "this availability starts `{target}` at {version}, earlier than the enclosing {scope}, which starts it at {enclosing}"
@@ -391,20 +906,67 @@ code = "ASC033"
 slug = "steps-not-ordered-list"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.6"
+reference = "writing/directives.md#steps"
 row = "`@steps` | Bound block isn't an ordered list"
 message = "`@steps` must be followed by an ordered list (`1.`, `2.`, …), but the next block is {found}"
 fix = "Put an ordered list directly below `@steps`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@steps
+- Download the installer.
+- Run it.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@steps
+1. Download the installer.
+2. Run it.
+'''
 
 [[diagnostic]]
 code = "ASC034"
 slug = "details-title-missing"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.7"
+reference = "writing/directives.md#details"
 row = "`@details` | Missing title"
 message = "`@details` needs a title line directly above it: the text readers see while the content is collapsed"
 fix = "Add a title line directly above `@details`: `.Show the full configuration`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@details
+```yaml
+agent:
+  watch: docs/
+```
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+.Show the full configuration
+@details
+```yaml
+agent:
+  watch: docs/
+```
+'''
 
 # Widgets are validated exactly like built-in directives (SPEC §6), so the
 # generic rows above apply to them. This entry covers what only a widget
@@ -414,7 +976,10 @@ code = "ASC035"
 slug = "widget-schema"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "6"
+reference = "writing/directives.md#project-widgets"
 row = "Project widget | Violates its declared schema"
 message = "`@{name}` doesn't match its declaration in ascribe.toml: {detail}"
 messages.missing-attribute = "`@{name}` is missing the required attribute `{key}`"
@@ -425,48 +990,112 @@ code = "ASC036"
 slug = "link-target-missing"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "5.2"
+reference = "writing/directives.md#links"
 row = "Links | Target file doesn't exist"
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
 fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](api-key.md).
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](keys.md).
+'''
+example.files."keys.md" = '''
+---
+title: API keys
+---
+
+Create a key in **Settings**.
+'''
 
 [[diagnostic]]
 code = "ASC037"
 slug = "link-id-missing"
 severity = "error"
 level = "page"
+next = "choose"
+evidence = []
 spec = "5.2"
+reference = "writing/directives.md#links"
 row = "Links | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
 fix = "Fix the `#id`, or give the heading you mean that id with `@id`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+See [Rotate keys](keys.md#rotate).
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+See [Rotate keys](keys.md#rotate-keys).
+'''
+example.files."keys.md" = '''
+---
+title: API keys
+---
+
+## Rotate keys
+
+Generate a new key.
+'''
 
 [[diagnostic]]
 code = "ASC038"
 slug = "link-to-fragment"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.2"
+reference = "writing/directives.md#links"
 row = "Links | Target is a fragment"
 message = "`{path}` is a fragment, which isn't published on its own; link to a page that includes it"
 fix = "Link to a page that includes the fragment."
+example.wrong = '''
+---
+title: Install Quill
+---
 
-[[diagnostic]]
-code = "ASC039"
-slug = "link-id-in-fragment"
-severity = "error"
-level = "page"
-spec = "4.2"
-message = "`{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment"
-retired = "A link can name a heading from a fragment the target page includes (SPEC §4.2), so this is no longer an error. A heading a build removes is `link-id-removed`."
+Check the [prerequisites](_prerequisites.md) first.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include: _prerequisites.md
+'''
+example.files."_prerequisites.md" = '''
+You need Node 20 or later.
+'''
 
 [[diagnostic]]
 code = "ASC040"
 slug = "link-id-removed"
 severity = "error"
 level = "page"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "writing/directives.md#links"
 row = "Links | Target id is removed by a build (page level, per build)"
 message = "build `{build}` removes the heading `{id}` from `{path}`, so this link would be broken in that build"
 messages.builds = "builds {builds} remove the heading `{id}` from `{path}`, so this link would be broken in those builds"
@@ -477,60 +1106,164 @@ code = "ASC041"
 slug = "link-route"
 severity = "warning"
 level = "file"
+next = "choose"
+evidence = []
 spec = "5.2"
+reference = "writing/directives.md#links"
 row = "Links | Destination is a route rather than a file path"
 message = "this looks like the published route of `{page}`; link to the file instead: `{suggestion}`"
 fix = "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](/keys/).
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](keys.md).
+'''
+example.files."keys.md" = '''
+---
+title: API keys
+---
+
+Create a key in **Settings**.
+'''
 
 [[diagnostic]]
 code = "ASC042"
 slug = "image-source-missing"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "5.3"
+reference = "writing/directives.md#images"
 row = "Images | Local source doesn't exist"
 message = "the image `{path}` doesn't exist"
 messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
 messages.empty = "this image has no source; put the image's path between the parentheses"
 fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+![The installer's first screen](installer.png)
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+![The installer's first screen](images/installer.png)
+'''
+example.files."images/installer.png" = '''
+PNG'''
 
 [[diagnostic]]
 code = "ASC043"
 slug = "image-alt-missing"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "5.3"
+reference = "writing/directives.md#images"
 row = "Images | Missing alt text"
 message = "this image has no alt text; describe it between the brackets for readers who can't see it"
 fix = "Describe the image between the brackets: `![The settings page](settings.png)`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+![](installer.png)
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+![The installer's first screen](installer.png)
+'''
+example.files."installer.png" = '''
+PNG'''
 
 [[diagnostic]]
 code = "ASC044"
 slug = "phrase-undeclared"
 severity = "warning"
 level = "file"
+next = "choose"
+evidence = []
 spec = "5.1"
+reference = "writing/directives.md#phrases"
 row = "Phrases | `{key}` in prose whose key isn't declared"
 message = "`{key}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{{` to keep it literal"
 fix = "Declare the key in `[phrases]` if it's meant as a phrase. Otherwise write `\\{` to keep the braces as text."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+Install {app} with your package manager.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+Install {product} with your package manager.
+'''
 
 [[diagnostic]]
 code = "ASC045"
 slug = "heading-phrase-without-id"
 severity = "warning"
 level = "file"
+next = "fix"
+evidence = []
 spec = "5.5"
+reference = "writing/directives.md#heading-ids"
 row = "Headings | No `@id`, and the heading contains a phrase"
 message = "this heading contains a phrase, so its id changes whenever the phrase's value does; give it a stable id with `@id`"
 fix = "Give the heading a stable id: an `@id` line directly under it."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install {product}
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install {product}
+@id: install
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC046"
 slug = "heading-duplicate-without-id"
 severity = "warning"
 level = "page"
+next = "fix"
+evidence = []
 spec = "5.5"
+reference = "writing/directives.md#heading-ids"
 row = "Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level)"
 message = "this heading's text gives the same slug as another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
 fix = "Give the heading a stable id: an `@id` line directly under it."
@@ -540,62 +1273,126 @@ code = "ASC047"
 slug = "frontmatter-unknown-key"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "7.2"
-row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page"
+reference = "content-model/index.md#42-frontmatter-values"
+row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment"
 message = "`{key}` isn't a field of the content type `{type}`"
 messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
 messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
 fix = "Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment)."
+example.wrong = '''
+---
+title: Install Quill
+author: Mira
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC048"
 slug = "frontmatter-missing-field"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#42-frontmatter-values"
 row = "Frontmatter | Required field missing"
 message = "the required field `{field}` is missing; the content type `{type}` needs it"
 fix = "Add the field to the page's frontmatter, or give it a default in the content type."
+example.wrong = '''
+---
+type: guide
+description: Install the Quill agent.
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+type: guide
+title: Install Quill
+description: Install the Quill agent.
+---
+
+Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+description = "string?"
+'''
 
 [[diagnostic]]
 code = "ASC049"
 slug = "frontmatter-type-mismatch"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#42-frontmatter-values"
 row = "Frontmatter | Value doesn't match the field's declared type"
 message = "`{field}` must be {expected}, but it's {found}"
 messages.quote = "`{field}` must be a string, but YAML reads {value} as {found}; quote it: {field}: \"{value}\""
 fix = "Give a value of the field's type. Quote a string that YAML would read as something else: `version: \"3.10\"`."
+example.wrong = '''
+---
+type: guide
+title: Install Quill
+audience: everyone
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+type: guide
+title: Install Quill
+audience: admin
+---
+
+Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+audience = "enum(admin, developer)?"
+'''
 
 [[diagnostic]]
 code = "ASC050"
 slug = "frontmatter-reserved-in-fragment"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.2"
-row = "Frontmatter | Reserved key (`available`, `variant`) on a fragment"
+reference = "content-model/index.md#43-fragments"
+row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment"
 message = "`{key}` is reserved for pages, and fragments can't use it"
 messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
 fix = "Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it."
-
-[[diagnostic]]
-code = "ASC051"
-slug = "content-type-unresolved"
-severity = "error"
-level = "file"
-spec = "7.2"
-row = "Frontmatter | Page matches more than one content type, or matches none and there's no default type"
-message = "this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive"
-messages.none = "no content type's `files` match this page, and no type is the default; add a pattern, or set `default = true` on a type"
-fix = "Make the content types' `files` patterns match each page once, or mark one type `default = true` for the pages no pattern matches."
 
 [[diagnostic]]
 code = "ASC052"
 slug = "list-ended-by-directive"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.9"
+reference = "writing/directives.md#lists-and-block-quotes"
 row = "Lists | Unindented directive line ends a list"
 message = "this unindented `@{name}` ends the list above it; indent it to the list item's content to keep it in the item"
 fix = "Indent the directive to the list item's content, to keep it in the item. To end the list there, put a blank line before the directive."
@@ -605,7 +1402,10 @@ code = "ASC053"
 slug = "directive-indented-code"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.9"
+reference = "writing/directives.md#lists-and-block-quotes"
 row = "Lists | Directive line over-indented into an indented code block"
 message = "this `@{name}` is indented four or more spaces past its container's content, so it's part of an indented code block, not a directive"
 fix = "Indent the directive less, to its container's content. If it's meant as code, put it in a fenced code block."
@@ -615,7 +1415,10 @@ code = "ASC054"
 slug = "steps-numbering-continued"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.6"
+reference = "writing/directives.md#steps"
 row = "Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list)"
 message = "this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list"
 fix = "Indent the line that splits the list, so the steps stay one list."
@@ -629,47 +1432,131 @@ code = "ASC055"
 slug = "attribute-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.3"
+reference = "writing/directives.md#attributes"
 row = "Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)"
 message = "this attribute block isn't valid: {detail}"
 fix = "Fix the attribute block: close every quote and brace, give every `=` a value, and separate pairs with commas."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip: Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC056"
 slug = "attribute-duplicate-key"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.3"
+reference = "writing/directives.md#attributes"
 row = "Attributes | The same key given more than once"
 message = "`{key}` is given more than once; give each attribute once"
 fix = "Give the key once. For several values of a set-valued key, write a value set: `platform=cloud|on-prem`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip, type=warning}: Back up your data first.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}: Back up your data first.
+'''
 
 [[diagnostic]]
 code = "ASC057"
 slug = "available-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "writing/directives.md#availability-specs"
 row = "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter"
 message = "\"{spec}\" isn't a valid availability spec: {detail}"
-fix = "Fix the availability spec. Its syntax is in the [directive reference](directives.md#availability-specs)."
+fix = "Fix the availability spec. Its syntax is in the [directive reference](writing/directives.md#availability-specs)."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud,, self-managed 3.2
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud, self-managed 3.2
+
+Sign in with your company's identity provider.
+'''
 
 [[diagnostic]]
 code = "ASC058"
 slug = "id-invalid"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.1"
-row = "`@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods"
+reference = "writing/directives.md#id"
+row = "`@id` | Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods"
 message = "`{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods"
-fix = "Use only letters, digits, hyphens, underscores, and periods in the id."
+messages.permalink = "`{id}` isn't a valid permalink: use only letters, digits, hyphens, underscores, and periods"
+fix = "Use only letters, digits, hyphens, underscores, and periods in the id, or in the page's `permalink`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: install/quill
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: install-quill
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC059"
 slug = "image-attribute-missing"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "5.3"
+reference = "writing/directives.md#images"
 row = "Images | Required image attribute missing"
 message = "this image is missing the required attribute `{key}`"
 fix = "Add the attribute in the block after the image: `![Alt](image.png){width=600}`."
@@ -684,7 +1571,10 @@ code = "ASC060"
 slug = "model-toml-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.1"
+reference = "content-model/index.md#11-the-file"
 group = "file"
 message = "ascribe.toml isn't valid TOML: {detail}"
 fix = "Fix the TOML syntax at the place the message names."
@@ -694,18 +1584,25 @@ code = "ASC061"
 slug = "model-unknown-key"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "7.1"
+reference = "content-model/index.md#11-the-file"
 group = "file"
 message = "unknown key `{key}` in `[{table}]`"
 messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
-fix = "Fix the key's spelling, or remove it."
+messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
+fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages."
 
 [[diagnostic]]
 code = "ASC062"
 slug = "model-missing-key"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.1"
+reference = "content-model/index.md#11-the-file"
 group = "file"
 message = "`[{table}]` is missing the required key `{key}`"
 fix = "Add the key."
@@ -715,7 +1612,10 @@ code = "ASC063"
 slug = "model-wrong-type"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.1"
+reference = "content-model/index.md#11-the-file"
 group = "file"
 message = "`{key}` must be {expected}, but it's {found}"
 messages.quote = "`{key}` must be a string, but it's a number; quote it: {key} = \"{value}\""
@@ -726,7 +1626,10 @@ code = "ASC064"
 slug = "model-invalid-value"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "7.1"
+reference = "content-model/index.md#11-the-file"
 group = "file"
 message = "`{key}` can't be \"{value}\"; use one of: {values}"
 fix = "Use one of the values the message lists."
@@ -736,7 +1639,10 @@ code = "ASC065"
 slug = "model-spec-unsupported"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "11"
+reference = "content-model/index.md#2-top-level-spec"
 group = "file"
 message = "ascribe.toml targets spec version \"{spec}\", but this processor implements {supported}"
 fix = "Set `spec = \"0.1\"`, the specification version this release implements, or update Ascribe."
@@ -746,7 +1652,10 @@ code = "ASC066"
 slug = "model-invalid-name"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#12-names"
 group = "file"
 message = "`{name}` isn't a valid {role} name: {rule}"
 fix = "Rename it following the rule the message gives."
@@ -756,7 +1665,10 @@ code = "ASC067"
 slug = "model-empty-text"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#11-the-file"
 group = "file"
 message = "`{key}` can't be empty"
 fix = "Give the key a value, or remove it."
@@ -766,7 +1678,10 @@ code = "ASC068"
 slug = "model-path-absolute"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.2"
+reference = "content-model/index.md#13-paths-and-patterns"
 group = "project"
 message = "`{key}` must be a path relative to ascribe.toml, not an absolute path"
 fix = "Write the path relative to the directory of `ascribe.toml`."
@@ -776,7 +1691,10 @@ code = "ASC069"
 slug = "model-content-root-missing"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.2"
+reference = "content-model/index.md#3-project"
 group = "project"
 message = "content root `{path}` doesn't exist"
 messages.not-directory = "content root `{path}` isn't a directory"
@@ -787,7 +1705,10 @@ code = "ASC070"
 slug = "model-output-overlaps-content"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.4"
+reference = "content-model/index.md#3-project"
 group = "project"
 message = "output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source"
 messages.content-inside-output = "content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output"
@@ -795,31 +1716,14 @@ messages.same = "output directory and content root are both `{path}`"
 fix = "Keep the output directory and the content root apart: neither inside the other, and not the same. The default output directory, `.ascribe/build`, is outside the default content root, `docs`."
 
 [[diagnostic]]
-code = "ASC071"
-slug = "model-type-multiple-defaults"
-severity = "error"
-level = "file"
-spec = "7.2"
-group = "content-types"
-message = "only one content type can be the default, but `{a}` and `{b}` both set default = true"
-fix = "Keep `default = true` on one content type only."
-
-[[diagnostic]]
-code = "ASC072"
-slug = "model-type-unreachable"
-severity = "error"
-level = "file"
-spec = "7.2"
-group = "content-types"
-message = "content type `{type}` has no `files` and isn't the default, so no page can use it"
-fix = "Give the type `files` patterns, make it the default type, or remove it."
-
-[[diagnostic]]
 code = "ASC073"
 slug = "model-type-title"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#41-page-types"
 group = "content-types"
 message = "content type `{type}` must declare title = \"string\": it's the page title, used for empty link text"
 messages.not-string = "content type `{type}`: `title` must be a required string, not \"{found}\""
@@ -830,12 +1734,17 @@ code = "ASC074"
 slug = "model-field-reserved"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.1"
+reference = "content-model/index.md#41-page-types"
 group = "content-types"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
+messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
 messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]`"
+messages.source = "`source` is reserved by the site output, which writes each page's path from the content root under it; remove it from `[types.{type}.frontmatter]`"
 fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
 
 [[diagnostic]]
@@ -843,7 +1752,10 @@ code = "ASC075"
 slug = "model-type-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#51-short-form"
 group = "content-types"
 message = "\"{type}\" isn't a valid {kind} type: {detail}"
 fix = "Fix the type. The types are `string`, `number`, `boolean`, `date`, `enum(a, b)`, `list(T)`, and, for attributes, `set(T)`; a `?` at the end makes one optional."
@@ -853,7 +1765,10 @@ code = "ASC076"
 slug = "model-type-fields"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#52-table-form"
 group = "content-types"
 message = "field `{field}` is an object, so it needs `fields`"
 messages.not-object = "`fields` is only allowed on object fields, and `{field}` is \"{type}\""
@@ -864,7 +1779,10 @@ code = "ASC077"
 slug = "model-enum-values"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#51-short-form"
 group = "content-types"
 message = "`{field}` has an empty enumeration"
 messages.duplicate = "\"{value}\" appears twice in the enumeration for `{field}`"
@@ -877,7 +1795,10 @@ code = "ASC078"
 slug = "model-set-token"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "3.3"
+reference = "content-model/index.md#51-short-form"
 group = "content-types"
 message = "\"{value}\" can't be in a value set: members can't contain spaces or any of , | {{ }} = \""
 fix = "Remove spaces and the characters `,` `|` `{` `}` `=` `\"` from the value, or make the attribute a single value instead of a set."
@@ -887,7 +1808,10 @@ code = "ASC079"
 slug = "model-default-type"
 severity = "error"
 level = "file"
+next = "write"
+evidence = ["allowed-values"]
 spec = "7.2"
+reference = "content-model/index.md#52-table-form"
 group = "content-types"
 message = "default for `{field}` must be {type}, but it's {found}"
 messages.not-a-value = "default \"{value}\" for `{field}` isn't one of: {values}"
@@ -898,7 +1822,10 @@ code = "ASC080"
 slug = "model-phrases-field-type"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "5.1"
+reference = "content-model/content.md#phrases"
 group = "content-types"
 message = "phrases = true only works on string and list(string) fields, and `{field}` is \"{type}\""
 fix = "Remove `phrases = true`, or make the field a `string` or `list(string)`."
@@ -908,7 +1835,10 @@ code = "ASC081"
 slug = "model-pattern-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.2"
+reference = "content-model/index.md#13-paths-and-patterns"
 group = "content-types"
 message = "\"{pattern}\" isn't a valid pattern: {detail}"
 messages.leading-slash = "pattern \"{pattern}\" is already relative to the content root; remove the leading /"
@@ -920,7 +1850,10 @@ code = "ASC082"
 slug = "model-name-multiple-roles"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#12-names"
 row = "Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension"
 group = "names"
 message = "`{name}` is used as both {role-a} and {role-b}; a name can have only one role, so availability specs stay unambiguous"
@@ -931,7 +1864,10 @@ code = "ASC083"
 slug = "model-name-case"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#12-names"
 group = "names"
 message = "`{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse"
 fix = "Rename one of them, so they differ by more than case."
@@ -941,7 +1877,10 @@ code = "ASC084"
 slug = "model-dimension-empty"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/content.md#dimensions"
 group = "names"
 message = "dimension `{dimension}` has no values"
 fix = "Add the dimension's values, or remove the dimension."
@@ -951,7 +1890,10 @@ code = "ASC085"
 slug = "model-dimension-value-duplicate"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/content.md#dimensions"
 group = "names"
 message = "`{value}` appears twice in dimensions.{dimension}.values"
 fix = "Remove the repeated value."
@@ -963,7 +1905,10 @@ code = "ASC086"
 slug = "model-dimension-value-shared"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/content.md#dimensions"
 group = "names"
 message = "`{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension"
 fix = "Rename the value in one of the dimensions."
@@ -973,7 +1918,10 @@ code = "ASC087"
 slug = "model-label-undeclared"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "7.2"
+reference = "content-model/content.md#dimensions"
 group = "names"
 message = "dimensions.{dimension}.labels has a label for `{value}`, which isn't one of its values: {values}"
 fix = "Correct the label's key, or add the value to the dimension's `values`."
@@ -983,7 +1931,10 @@ code = "ASC088"
 slug = "model-versionless-undeclared"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "7.2"
+reference = "content-model/content.md#dimensions"
 group = "names"
 message = "dimensions.{dimension}.versionless lists `{value}`, which isn't one of its values: {values}"
 fix = "Correct the entry, or add the value to the dimension's `values`."
@@ -993,7 +1944,10 @@ code = "ASC089"
 slug = "model-lifecycle-available-required"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "7.2"
+reference = "content-model/content.md#8-lifecyclestate"
 group = "names"
 message = "new lifecycle state `{state}` must set available = true or available = false"
 fix = "Add `available = true` or `available = false` to the state."
@@ -1003,7 +1957,10 @@ code = "ASC090"
 slug = "model-lifecycle-ga-unavailable"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/content.md#8-lifecyclestate"
 group = "names"
 message = "`ga` must count as available: content with no lifecycle state is ga"
 fix = "Remove `available = false` from `[lifecycle.ga]`."
@@ -1013,7 +1970,10 @@ code = "ASC091"
 slug = "model-note-label-required"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.5"
+reference = "content-model/content.md#10-notestype"
 group = "names"
 message = "new note type `{type}` needs a label, such as label = \"{Type}\""
 fix = "Give the note type a `label`."
@@ -1023,17 +1983,23 @@ code = "ASC092"
 slug = "model-availability-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "content-model/content.md#9-featureskey"
 group = "names"
 message = "feature `{key}`: \"{spec}\" isn't a valid availability spec: {detail}"
-fix = "Fix the feature's `available` spec. Its syntax is in the [directive reference](directives.md#availability-specs)."
+fix = "Fix the feature's `available` spec. Its syntax is in the [directive reference](writing/directives.md#availability-specs)."
 
 [[diagnostic]]
 code = "ASC093"
 slug = "model-availability-unknown-name"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.4"
+reference = "content-model/content.md#9-featureskey"
 group = "names"
 message = "feature `{key}`: `{name}` isn't a declared dimension value or dimension name"
 messages.state = "feature `{key}`: `{name}` isn't a declared lifecycle state"
@@ -1044,7 +2010,10 @@ code = "ASC094"
 slug = "model-availability-versionless"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "content-model/content.md#9-featureskey"
 group = "names"
 message = "feature `{key}`: `{target}` is versionless, so it takes a state but no version"
 messages.dimension = "feature `{key}`: `{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
@@ -1055,7 +2024,10 @@ code = "ASC095"
 slug = "model-availability-history-order"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "content-model/content.md#9-featureskey"
 group = "names"
 message = "feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
 fix = "List the target's states oldest first."
@@ -1065,7 +2037,10 @@ code = "ASC096"
 slug = "model-feature-nested"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.4"
+reference = "content-model/content.md#9-featureskey"
 group = "names"
 message = "feature `{key}`: available must be an availability spec, not another feature (`{other}`)"
 fix = "Write the feature's availability out in full. One feature can't refer to another."
@@ -1075,17 +2050,23 @@ code = "ASC097"
 slug = "model-phrase-value-type"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "5.1"
+reference = "content-model/content.md#phrases"
 group = "phrases"
 message = "phrase `{key}` must be a quoted string, but it's {found}; write {key} = \"{value}\""
-fix = "Quote the value."
+fix = "Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = \"self-managed\" }`."
 
 [[diagnostic]]
 code = "ASC098"
 slug = "model-glossary-duplicate-term"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "5.4"
+reference = "content-model/content.md#122-terms"
 group = "phrases"
 message = "\"{text}\" is declared by both glossary terms `{a}` and `{b}`"
 fix = "Remove the text from one of the terms, or make the terms distinct."
@@ -1095,7 +2076,10 @@ code = "ASC099"
 slug = "model-glossary-link"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "5.4"
+reference = "content-model/content.md#122-terms"
 group = "phrases"
 message = "glossary term `{id}` links to {path}, which doesn't exist"
 messages.fragment = "glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it"
@@ -1106,7 +2090,10 @@ code = "ASC100"
 slug = "model-widget-reserved-name"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "6"
+reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
 message = "widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library"
 messages.html = "widget name `{name}` is reserved by HTML and can't be a custom element"
@@ -1117,7 +2104,10 @@ code = "ASC101"
 slug = "model-widget-forms"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "6"
+reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
 message = "forms must be [\"line\"], [\"container\"], or [\"line\", \"container\"]"
 fix = "Set `forms` to `[\"line\"]`, `[\"container\"]`, or `[\"line\", \"container\"]`."
@@ -1127,7 +2117,10 @@ code = "ASC102"
 slug = "model-widget-binding"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "6"
+reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
 message = "widget `{name}` has a line form, so it needs a binding: \"self\", \"heading\", \"block\", or \"heading-or-block\""
 messages.container-only = "widget `{name}` is container-only, and a container holds its own content; remove binding"
@@ -1138,7 +2131,10 @@ code = "ASC103"
 slug = "model-widget-container-primary"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "6"
+reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
 message = "widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use \"{kind}?\""
 messages.container-only = "widget `{name}` is container-only, so it can't take a primary"
@@ -1149,7 +2145,10 @@ code = "ASC104"
 slug = "model-widget-groupable-form"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "6"
+reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
 message = "widget `{name}` is groupable, so it must be container-only: forms = [\"container\"]"
 fix = "Set `forms = [\"container\"]`, or remove `groupable`."
@@ -1159,7 +2158,10 @@ code = "ASC105"
 slug = "model-widget-plain-content"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "6"
+reference = "content-model/content.md#14-widgetsname"
 group = "widgets"
 message = "widget `{name}` doesn't wrap content, so plain-content has no effect; remove it"
 fix = "Remove `plain-content`."
@@ -1169,7 +2171,10 @@ code = "ASC106"
 slug = "model-consumer-unsupported"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "9.5"
+reference = "content-model/output.md#consumer"
 group = "consumer"
 message = "the {profile} profile doesn't support {key} = {value}; use {values}"
 fix = "Use one of the values the message lists."
@@ -1179,7 +2184,10 @@ code = "ASC107"
 slug = "model-consumer-site"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.5"
+reference = "content-model/output.md#consumer"
 group = "consumer"
 message = "site must be an origin such as \"https://docs.example.com\"; put any path in base-path"
 fix = "Set `site` to the origin alone, such as `\"https://docs.example.com\"`, and put any path in `base-path`."
@@ -1189,7 +2197,10 @@ code = "ASC108"
 slug = "model-consumer-base-path"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.5"
+reference = "content-model/output.md#consumer"
 group = "consumer"
 message = "base-path must start with \"/\", such as \"/docs/\""
 fix = "Start `base-path` with `/`: `\"/docs/\"`."
@@ -1199,7 +2210,10 @@ code = "ASC109"
 slug = "model-build-name-case"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems"
 fix = "Rename one of the builds."
@@ -1209,7 +2223,10 @@ code = "ASC110"
 slug = "model-build-variants"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "variants must be \"switch\" or a selection such as {{ deployment = \"cloud\" }}"
 messages.empty = "build `{build}` selects nothing; write variants = \"switch\""
@@ -1220,7 +2237,10 @@ code = "ASC111"
 slug = "model-build-unknown-dimension"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "build `{build}` selects dimension `{dimension}`, which isn't declared"
 fix = "Correct the dimension's name, or declare the dimension in `[dimensions]`."
@@ -1230,7 +2250,10 @@ code = "ASC112"
 slug = "model-build-unknown-value"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "build `{build}`: `{value}` isn't a value of `{dimension}`; values: {values}"
 fix = "Use one of the values the message lists."
@@ -1240,7 +2263,10 @@ code = "ASC113"
 slug = "model-build-availability"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "availability must be \"badge\" or {{ filter = \"<target> <version>\" }}"
 fix = "Set `availability` to `\"badge\"`, or to `{ filter = \"<target> <version>\" }`."
@@ -1250,7 +2276,10 @@ code = "ASC114"
 slug = "model-build-filter-target"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = ["allowed-values"]
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "build `{build}` filters for `{target}`, which isn't a declared dimension value"
 messages.dimension = "build `{build}` filters for `{target}`, which is a dimension; filter for one of its values: {values}"
@@ -1261,7 +2290,10 @@ code = "ASC115"
 slug = "model-build-filter-version"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as \"{target} 3.3\""
 messages.versionless = "build `{build}`: `{target}` is versionless, so the filter can't name a version"
@@ -1273,7 +2305,10 @@ code = "ASC116"
 slug = "model-build-filter-excluded"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
 group = "consumer"
 message = "build `{build}` filters for `{target}`, but its selection keeps only {dimension} = {values}, so pages marked for `{target}` are dropped"
 fix = "Make the build's `variants` selection keep the target it filters for, or filter for a target it keeps."
@@ -1283,7 +2318,10 @@ code = "ASC117"
 slug = "model-editor-build-unknown"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "10"
+reference = "content-model/output.md#17-editor"
 group = "consumer"
 message = "editor.build is `{build}`, which isn't a declared build; builds: {builds}"
 fix = "Set `[editor] build` to one of the builds the message lists."
@@ -1293,7 +2331,10 @@ code = "ASC118"
 slug = "model-editor-build-required"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "10"
+reference = "content-model/output.md#17-editor"
 group = "consumer"
 message = "there are several builds and none is named site; set [editor] build to the one the editor should check"
 fix = "Set `[editor] build` to the build the editor should check, or name one of the builds `site`."
@@ -1303,7 +2344,10 @@ code = "ASC119"
 slug = "model-attribute-reserved"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/content.md#13-images"
 group = "content-types"
 message = "`{key}` can't be an image attribute: HTML already uses it on the <img> element"
 messages.widget = "`{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element"
@@ -1318,7 +2362,10 @@ code = "ASC120"
 slug = "directive-extra-text"
 severity = "error"
 level = "file"
+next = "fix"
+evidence = []
 spec = "3.1"
+reference = "writing/directives.md#directive-lines"
 row = "Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary"
 message = "`@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it"
 messages.head = "`{extra}` isn't part of `@{name}`: a directive line has only its name, `{{attributes}}` in braces, and `:` with a primary; remove it, or put attributes in braces"
@@ -1330,7 +2377,10 @@ code = "ASC121"
 slug = "link-page-dropped"
 severity = "error"
 level = "page"
+next = "write"
+evidence = []
 spec = "5.2"
+reference = "writing/directives.md#links"
 row = "Links | Target page isn't published by a build (page level, per build)"
 message = "build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes"
 messages.builds = "builds {builds} don't publish `{path}`, so this link would be broken in those builds; move the link into a `@variant` arm those builds remove"
@@ -1345,17 +2395,37 @@ code = "ASC122"
 slug = "frontmatter-syntax"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.1"
+reference = "writing/directives.md#files"
 row = "Frontmatter | Frontmatter that isn't valid YAML"
 message = "the frontmatter isn't valid YAML: {detail}"
 fix = "Fix the YAML between the `---` lines."
+example.wrong = '''
+---
+title: Install Quill: the agent
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+title: "Install Quill: the agent"
+---
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC123"
 slug = "source-unreadable"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "2.1"
+reference = "writing/directives.md#files"
 row = "Files | Source file that can't be read, or isn't valid UTF-8"
 message = "this file can't be read: {reason}"
 messages.encoding = "this file isn't valid UTF-8, and Ascribe reads source files as UTF-8 text; save it as UTF-8"
@@ -1366,7 +2436,10 @@ code = "ASC124"
 slug = "heading-empty-slug"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "5.5"
+reference = "writing/directives.md#heading-ids"
 row = "Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji)"
 message = "this heading's text gives it an empty id, so nothing can link to it reliably; give it an `@id`"
 fix = "Give the heading an id: an `@id` line directly under it."
@@ -1376,7 +2449,10 @@ code = "ASC125"
 slug = "include-heading-without-id"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.2"
+reference = "writing/directives.md#include"
 row = "`@include` | `{heading=false}` without an `#id`, which has no effect"
 message = "`heading=false` only applies to an include of a section (`file.md#id`), so it does nothing here; remove it, or name the section"
 fix = "Remove `heading=false`, or include a section: `file.md#id`."
@@ -1386,17 +2462,37 @@ code = "ASC126"
 slug = "phrase-double-braces"
 severity = "warning"
 level = "file"
+next = "fix"
+evidence = []
 spec = "5.1"
+reference = "writing/directives.md#phrases"
 row = "Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool"
 message = "`{key}` is a declared phrase between two more braces, so its value appears between literal braces; remove the outer braces, or write `\\{{` to keep them"
 fix = "Remove the outer braces, or write `\\{` for a brace that's meant."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+The command prints {{product}}.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+The command prints {product}.
+'''
 
 [[diagnostic]]
 code = "ASC127"
 slug = "snippet-address"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.8"
+reference = "writing/directives.md#snippet"
 row = "`@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>`"
 message = "`{address}` isn't a snippet address: {detail}; write `<source>:<path>`, optionally with `#<region>`"
 messages.no-source = "`{address}` doesn't name a source: a snippet's file is named through a source declared in ascribe.toml, as `<source>:<path>`; declare one with `[sources.<name>]` and the `path` of the folder the code is in"
@@ -1407,7 +2503,10 @@ code = "ASC128"
 slug = "snippet-source-unknown"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.8"
+reference = "writing/directives.md#snippet"
 row = "`@snippet` | Source the content model doesn't declare"
 message = "there's no source named `{source}`; the declared sources are: {sources}"
 messages.suggestion = "there's no source named `{source}`; did you mean `{suggestion}`?"
@@ -1419,7 +2518,10 @@ code = "ASC129"
 slug = "snippet-file-missing"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.8"
+reference = "writing/directives.md#snippet"
 row = "`@snippet` | File doesn't exist, or its source doesn't include it"
 message = "`{path}` doesn't exist in source `{source}`"
 messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` does: names must match exactly, including case"
@@ -1434,7 +2536,10 @@ code = "ASC130"
 slug = "snippet-file-not-text"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.8"
+reference = "writing/directives.md#snippet"
 row = "`@snippet` | File isn't text"
 message = "`{path}` isn't text ({reason}), so it can't be a snippet"
 fix = "Take the snippet from a text file: UTF-8, with no NUL characters."
@@ -1444,7 +2549,10 @@ code = "ASC131"
 slug = "snippet-region-missing"
 severity = "error"
 level = "file"
+next = "choose"
+evidence = []
 spec = "4.8"
+reference = "writing/directives.md#snippet"
 row = "`@snippet` | Region doesn't exist in the file"
 message = "`{path}` has no region `{region}`; its regions are: {regions}"
 messages.suggestion = "`{path}` has no region `{region}`; did you mean `{suggestion}`? Its regions are: {regions}"
@@ -1457,7 +2565,10 @@ code = "ASC132"
 slug = "snippet-tags"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "4.8"
+reference = "writing/directives.md#snippet"
 row = "`@snippet` | The file's tags are unbalanced, name a region twice, or use a reserved tag"
 message = "`{path}` can't be used: `{tag}` on line {line} is never closed"
 messages.unmatched = "`{path}` can't be used: `{tag}` on line {line} has nothing to close"
@@ -1471,7 +2582,10 @@ code = "ASC133"
 slug = "model-source-path-missing"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
 group = "sources"
 message = "the folder of source `{source}`, `{path}`, doesn't exist"
 messages.not-directory = "the folder of source `{source}`, `{path}`, isn't a directory"
@@ -1482,17 +2596,24 @@ code = "ASC134"
 slug = "model-source-outside-repository"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
 group = "sources"
 message = "the folder of source `{source}`, `{path}`, is outside the git repository the project is in"
-fix = "Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead."
+messages.opened = "the folder of source `{source}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a source isn't read from outside it; open the folder that contains it"
+fix = "Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead. With no repository, the editor and `ascribe mcp` read a source only inside the folder they were opened on: open the folder that contains the source."
 
 [[diagnostic]]
 code = "ASC135"
 slug = "model-source-remote"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.4"
+reference = "content-model/output.md#a-source-in-another-repository"
 group = "sources"
 message = "source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both"
 messages.neither = "source `{source}` needs `path`, a folder in this repository, or `git`, another repository's URL"
@@ -1507,7 +2628,10 @@ code = "ASC136"
 slug = "lock-invalid"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.4"
+reference = "content-model/output.md#a-source-in-another-repository"
 row = "Source copies | `ascribe.lock` isn't valid TOML, or doesn't have the shape §7.4 gives it"
 message = "ascribe.lock can't be read: {detail}"
 fix = "ascribe.lock is written by `ascribe sources fetch` and `ascribe sources update`. Undo the change made to it by hand, or delete it and run `ascribe sources fetch`."
@@ -1517,7 +2641,10 @@ code = "ASC137"
 slug = "lock-source-unknown"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.4"
+reference = "content-model/output.md#a-source-in-another-repository"
 row = "Source copies | `ascribe.lock` pins a source the content model doesn't declare with `git`, or pins it with another `git`"
 message = "ascribe.lock pins source `{source}`, which ascribe.toml doesn't declare; run `ascribe sources fetch` to remove it"
 messages.path = "ascribe.lock pins source `{source}`, which ascribe.toml gives a `path` in this repository; run `ascribe sources fetch` to remove the pin"
@@ -1529,7 +2656,10 @@ code = "ASC138"
 slug = "source-copy-changed"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.4"
+reference = "content-model/output.md#a-source-in-another-repository"
 row = "Source copies | A file `ascribe.lock` lists is missing from the source's folder, or its hash differs"
 message = "`{path}` isn't the file ascribe.lock pins: it was changed here. Change the code in source `{source}`'s repository and run `ascribe sources update {source}`, or run `ascribe sources fetch` to undo the change"
 messages.missing = "ascribe.lock lists `{path}`, which isn't there; run `ascribe sources fetch` to copy it again"
@@ -1540,7 +2670,10 @@ code = "ASC139"
 slug = "source-copy-unlocked"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.4"
+reference = "content-model/output.md#a-source-in-another-repository"
 row = "Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list"
 message = "`{path}` is in source `{source}`'s copies, but ascribe.lock doesn't list it, so there's no telling which commit it's from; run `ascribe sources fetch`"
 fix = "Run `ascribe sources fetch`: it copies the files snippets use at the pinned commit and records them, and removes the rest."
@@ -1550,7 +2683,10 @@ code = "ASC140"
 slug = "source-copy-unused"
 severity = "warning"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.4"
+reference = "content-model/output.md#a-source-in-another-repository"
 row = "Source copies | A copy that no snippet uses"
 message = "no snippet uses `{path}` any more; `ascribe sources fetch` removes it"
 fix = "Run `ascribe sources fetch`, which removes the copies no snippet uses."
@@ -1560,9 +2696,1367 @@ code = "ASC141"
 slug = "model-inline-field"
 severity = "error"
 level = "file"
+next = "write"
+evidence = []
 spec = "7.2"
+reference = "content-model/index.md#53-code-in-a-field"
 group = "content-types"
 message = "inline = \"code\" only works on string fields, and `{field}` is \"{type}\""
 messages.value = "inline must be \"code\", not \"{value}\""
 messages.nested = "inline = \"code\" only works on a content type's top-level fields, and `{field}` is in {place}"
 fix = "Remove `inline`, or set it to \"code\" on a string field of a content type's `frontmatter`."
+
+[[diagnostic]]
+code = "ASC142"
+slug = "model-check-not-configurable"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "8.2"
+reference = "content-model/checks.md#19-checks"
+group = "checks"
+message = "`{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off"
+fix = "Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](checks/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity."
+
+[[diagnostic]]
+code = "ASC143"
+slug = "intended-check"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+reference = "writing/directives.md#intended"
+row = "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else"
+message = "`{check}` isn't a check"
+messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
+messages.missing = "an acknowledgement names the check it's for: add `{example}`"
+messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
+messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}"
+fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
+
+[[diagnostic]]
+code = "ASC144"
+slug = "intended-entry"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.9"
+reference = "writing/directives.md#intended"
+row = "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder"
+message = "`intended` is a list of acknowledgements, each with a `check` and a `reason`"
+messages.reason = "acknowledging `{check}` needs a reason: say why the problem is intended"
+messages.key = "`{key}` isn't part of an acknowledgement, which has only `check` and `reason`"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{check}`'s problem is intended"
+fix = "Write `intended` as a list, each entry with the `check` it acknowledges and a `reason` that says why the problem is intended:\n\n```yaml\nintended:\n  - check: page-orphan\n    reason: Linked from the site's sidebar.\n```\n\nThe editor's quick fix writes a placeholder reason for you to replace: until you do, the acknowledgement is reported."
+
+[[diagnostic]]
+code = "ASC145"
+slug = "intended-unused"
+severity = "advice"
+level = "page"
+next = "fix"
+evidence = []
+spec = "4.9"
+reference = "writing/directives.md#intended"
+row = "`@intended` | An acknowledgement that matches no problem in any build"
+message = "nothing here needs acknowledging any more: `{check}` reports no problem here in any build"
+fix = "Remove the acknowledgement: what it excused has gone. `ascribe check` reports this only when it checks every build, since a problem may appear in one build alone."
+
+[[diagnostic]]
+code = "ASC146"
+slug = "model-intended-check"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+reference = "content-model/checks.md#intended-acknowledgements"
+group = "checks"
+message = "`{check}` isn't a check"
+messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
+messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
+messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}, not in ascribe.toml"
+fix = "Name a check whose next step is review and whose problems are about a phrase, feature, glossary term, or image, by its name in the [diagnostics reference](checks/diagnostics.md). A page's or a block's problem is acknowledged in the page itself."
+
+[[diagnostic]]
+code = "ASC147"
+slug = "model-intended-entry"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+reference = "content-model/checks.md#intended-acknowledgements"
+group = "checks"
+message = "an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`"
+messages.several = "an acknowledgement in [[intended]] is about one thing, and this one names {keys}"
+messages.unknown = "there's no {kind} `{name}` in this content model"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why the problem is intended"
+fix = "Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes."
+
+[[diagnostic]]
+code = "ASC148"
+slug = "model-field-role"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/index.md#54-field-roles"
+group = "content-types"
+message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
+messages.value = "role must be \"description\", \"review-date\", or \"owner\", not \"{value}\""
+messages.nested = "role only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
+fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"review-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
+
+[[diagnostic]]
+code = "ASC149"
+slug = "page-size"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["page-sections"]
+spec = "9.4"
+reference = "content-model/checks.md#19-checks"
+configurable = true
+area = "pages"
+message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
+messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report agents` names this check for it, and for the spec's other checks of a page's size."
+
+[[diagnostic]]
+code = "ASC150"
+slug = "page-description-missing"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = ["page-opening"]
+spec = "7.2"
+reference = "content-model/index.md#54-field-roles"
+configurable = true
+area = "pages"
+message = "this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title"
+fix = "Add the field the content type marks with `role = \"description\"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for."
+
+[[diagnostic]]
+code = "ASC151"
+slug = "heading-level-skipped"
+severity = "advice"
+level = "page"
+next = "fix"
+evidence = []
+spec = "9.4"
+reference = "content-model/checks.md#19-checks"
+configurable = true
+area = "pages"
+message = "this heading is level {level}, after a level-{previous} heading; make it level {expected}, so the outline has no gap"
+messages.title = "this heading is level 1, which the page's title already is; make it level 2"
+fix = "Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too."
+
+[[diagnostic]]
+code = "ASC152"
+slug = "code-language-missing"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = ["code-lines"]
+spec = "1.4"
+reference = "content-model/checks.md#19-checks"
+configurable = true
+area = "pages"
+message = "this code block has no language; write it after the opening fence, or `text` for output"
+fix = "Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is."
+
+[[diagnostic]]
+code = "ASC153"
+slug = "review-overdue"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+spec = "7.2"
+reference = "content-model/index.md#54-field-roles"
+configurable = true
+area = "pages"
+place = "page"
+message = "this page was due for review on {date}; check it still holds, then move `{field}` to the next review"
+fix = "Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
+
+###############################################################################
+# Content checks across the project (area "project"): about the content's
+# quality, not whether it's valid. Each says when it's reported in `when`.
+###############################################################################
+
+[[diagnostic]]
+code = "ASC154"
+slug = "page-orphan"
+severity = "advice"
+level = "page"
+next = "review"
+evidence = ["mentions"]
+configurable = true
+place = "page"
+area = "project"
+spec = "5.2"
+reference = "writing/directives.md#links"
+when = "No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported"
+message = "no other page links to this page or includes it, so readers reach it only through the site's own navigation or search, if those list it"
+fix = "Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model/checks.md#19-checks) (`page-orphan = \"off\"`) when your navigation lists every page."
+
+[[diagnostic]]
+code = "ASC155"
+slug = "fragment-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "page"
+area = "project"
+spec = "4.2"
+reference = "writing/directives.md#include"
+when = "No file includes the fragment"
+message = "no file includes this fragment, so nothing publishes it"
+fix = "Include the fragment where it belongs with `@include`, or delete it when nothing needs it any more."
+
+[[diagnostic]]
+code = "ASC156"
+slug = "phrase-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.1"
+reference = "content-model/content.md#phrases"
+when = "No file writes the phrase, in its text or in a frontmatter field that takes phrases"
+message = "no file uses the phrase `{key}`"
+fix = "Write the phrase where its value belongs, or remove it from `[phrases]`. A phrase is used wherever a page or a fragment writes its key in braces, in the text or in a frontmatter field that takes phrases."
+
+[[diagnostic]]
+code = "ASC157"
+slug = "feature-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#9-featureskey"
+when = "No availability spec names the feature: no `@available`, table row's `available`, or page's `available`"
+message = "no file uses the feature `{key}`"
+fix = "Mark the content the feature covers with its key (`@available: <key>`, or `available: <key>` in a page's frontmatter), or remove the feature from `[features]` once nothing needs it."
+
+[[diagnostic]]
+code = "ASC158"
+slug = "glossary-term-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.4"
+reference = "content-model/content.md#122-terms"
+when = "The term, and each of its aliases, appears in no file's prose. A term with `match = \"marked\"` isn't reported"
+message = "the glossary term `{term}` appears in no file's prose, so it's never linked"
+fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements)."
+
+[[diagnostic]]
+code = "ASC159"
+slug = "image-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.3"
+reference = "writing/directives.md#images"
+when = "An image file under the content root that no file shows or links to: no Markdown image or link, no `src`, `srcset`, `href`, or `poster` in raw HTML, and no frontmatter string names it"
+message = "no file shows or links to `{path}`"
+fix = "Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](content-model/checks.md#19-checks) when your site uses images that way."
+
+[[diagnostic]]
+code = "ASC160"
+slug = "image-large"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = ["image-size"]
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.3"
+reference = "content-model/checks.md#19-checks"
+when = "An image file under the content root is larger than the limit: 500 KB, or `[checks.image-large] limit`"
+message = "`{path}` is {size}, over the {limit} limit for an image"
+fix = "Make the image smaller: save it at the size it's shown, or compress it (a screenshot as an optimized PNG, a photo as JPEG or WebP). The limit is 500 KB; set another in `ascribe.toml`, such as `[checks.image-large] limit = \"1 MB\"`."
+
+[[diagnostic]]
+code = "ASC161"
+slug = "title-duplicate"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["descriptions"]
+configurable = true
+area = "project"
+spec = "2.2"
+reference = "content-model/checks.md#19-checks"
+when = "Two pages the build publishes have the same title, ignoring case"
+message = "`{title}` is also the title of {others}, so readers can't tell the pages apart in search results or a list of pages"
+fix = "Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."
+[[diagnostic]]
+code = "ASC162"
+slug = "model-consumer-agents-site"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.5"
+reference = "content-model/output.md#consumer"
+group = "consumer"
+message = "agents = true needs `site`: every link in llms.txt and the Markdown pages is an absolute URL"
+fix = "Set `site` in `[consumer]` to the published site's origin, such as `\"https://docs.example.com\"`, or remove `agents`."
+
+[[diagnostic]]
+code = "ASC163"
+slug = "description-too-long"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.4"
+reference = "content-model/index.md#54-field-roles"
+configurable = true
+area = "outputs"
+message = "this description is {length} characters, and its line in llms.txt reads best under {limit}; shorten it to one sentence"
+fix = "Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short."
+example.wrong = '''
+---
+type: page
+title: Install
+description: This page walks you through everything you need to know about installing the product, from checking that your machine meets the requirements and downloading the right package for your platform, to running the installer, answering each of its prompts, and confirming afterward that everything works as it should before you go on.
+---
+
+Install the product.
+'''
+example.right = '''
+---
+type: page
+title: Install
+description: Install the product on your machine and confirm that it works.
+---
+
+Install the product.
+'''
+example.model = '''
+[consumer]
+site = "https://docs.example.com"
+agents = true
+
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }
+'''
+
+[[diagnostic]]
+code = "ASC164"
+slug = "llms-section-large"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+spec = "9.4"
+reference = "content-model/output.md#consumer"
+configurable = true
+area = "outputs"
+message = "{file} is {size} characters in build `{build}`, over the {limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions"
+messages.builds = "{file} is over the {limit} characters an agent reads in one fetch in builds {builds}; move some of its pages into folders of their own, or shorten their descriptions"
+fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions. It's the delivery spec's `llms-txt-size` check, made from the build before a deploy; `ascribe report agents` names this check for it."
+
+[[diagnostic]]
+code = "ASC165"
+slug = "prose"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = ["rule", "rule-link"]
+spec = "2.1"
+reference = "content-model/checks.md#checksvale"
+area = "prose"
+configurable = true
+message = "{rule}: {message}"
+messages.phrase = "{rule}: {message} (in the text of phrase `{key}`)"
+fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](checks/vale.md)."
+
+[[diagnostic]]
+code = "ASC166"
+slug = "prose-not-checked"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+spec = "2.1"
+reference = "content-model/checks.md#checksvale"
+area = "prose"
+configurable = true
+message = "the prose wasn't checked: `{command}` couldn't be run ({reason}). Install Vale, or set `[checks.vale] command` to where it is"
+messages.failed = "the prose wasn't checked: `{command}` failed: {reason}"
+messages.timeout = "the prose wasn't checked: `{command}` didn't finish within {seconds} seconds"
+messages.not-started = "the prose wasn't checked: {reason}. `ascribe check --vale` checks it"
+fix = "Install [Vale](https://vale.sh) 3.16 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = \"off\"` in `[checks]`. The agents' tools never start Vale; the agents' hook never starts a `command` that's a program in the project, and the editor asks before it does. Run `ascribe check --vale` in a terminal to check the prose then."
+
+[[diagnostic]]
+code = "ASC167"
+slug = "model-checks-vale"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "8.2"
+reference = "content-model/checks.md#checksvale"
+group = "checks"
+message = "`[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini`"
+messages.neither = "`[checks.vale]` needs `preset`, one of Ascribe's presets, or `config`, the path of the project's own `.vale.ini`"
+messages.off = "`[checks.vale] off` turns off a preset's rules, so it goes with `preset`; with `config`, turn a rule off in the project's `.vale.ini`"
+messages.off-rule = "the `{preset}` preset has no rule `{rule}`; its rules are {rules}"
+fix = "Give `[checks.vale]` one of `preset = \"quiet\"` or `config = \"<path to .vale.ini>\"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset."
+
+[[diagnostic]]
+code = "ASC168"
+slug = "link-external-broken"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = ["link-status", "link-sentence"]
+configurable = true
+place = "block"
+area = "links"
+stage = "report"
+spec = "5.2"
+reference = "content-model/checks.md#checkslinks"
+when = "`ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. A host `[checks.links] ignore` names isn't checked"
+message = "`{url}` answered {status}, so the link is broken for readers"
+messages.timeout = "`{url}` didn't answer in time, so the link may be broken for readers"
+messages.error = "`{url}` couldn't be reached: {reason}"
+fix = "Open the address. When the page is gone, link to where its content went, or remove the link. A site that turns link checkers away, or one that's down for a while, may be fine as it is: acknowledge the link with `@intended {check=link-external-broken}: <why>` directly above its block, or leave the whole host out with `[checks.links] ignore`. Only `ascribe report links` checks external links; `ascribe check` never reaches the network."
+
+[[diagnostic]]
+code = "ASC169"
+slug = "link-external-moved"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = []
+configurable = true
+area = "links"
+stage = "report"
+spec = "5.2"
+reference = "content-model/checks.md#checkslinks"
+when = "`ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers. A site's root that redirects to another of its own pages, a landing page, hasn't moved"
+message = "`{url}` moved permanently to `{to}`; link to the new address"
+fix = "Link to the address it redirects to; the fix writes it. Check first that it's the page you meant: some sites send every old address to their home page, and then the link needs a new target, not this one. Only `ascribe report links` checks external links."
+
+[[diagnostic]]
+code = "ASC170"
+slug = "delivery-hosting"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "site"
+stage = "report"
+spec = "9.5"
+reference = "content-model/output.md#consumer"
+when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation"
+message = "the site fails the delivery spec's `{check}` check: {result}. {setting}"
+messages.warning = "the site passes the delivery spec's `{check}` check with a warning: {result}. {setting}"
+fix = "Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](astro/index.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site."
+
+[[diagnostic]]
+code = "ASC171"
+slug = "delivery-output"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "site"
+stage = "report"
+spec = "9.5"
+reference = "content-model/output.md#consumer"
+when = "`ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`"
+message = "the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues}"
+messages.warning = "the site passes the delivery spec's `{check}` check with a warning, which what Ascribe writes should pass without one: {result}. Report it at {issues}"
+fix = "First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing."
+
+[[diagnostic]]
+code = "ASC172"
+slug = "availability-left-behind"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "a feature's availability names a version for every target, each target lists its lines in `[releases]`, and no version is later than its target's current line"
+message = "feature `{key}` names releases up to {version}, and the current line of `{target}` is {current}, so what it marks has shipped"
+fix = "When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the next planned line. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](content-model/content.md#71-releasestarget)."
+
+[[diagnostic]]
+code = "ASC173"
+slug = "permalink-duplicate"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.1"
+reference = "writing/directives.md#permalinks"
+row = "`@id` | Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's (page level)"
+message = "the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only"
+messages.include = "including `{path}` here puts the permalink `{name}` on this page, and it's also on `{page}`; a build can publish each permalink in one place only"
+messages.case = "the permalink `{name}` differs only in case from `{other}` on `{page}`, and a site may serve both at one address; a build can publish each permalink in one place only, ignoring case"
+messages.include-case = "including `{path}` here puts the permalink `{name}` on this page, and `{other}`, which differs only in case, is on `{page}`; a site may serve both at one address, so a build can publish each permalink in one place only, ignoring case"
+fix = "Give one of them a different name (a heading's `@id`, or a page's `permalink`), or stop it being a permalink: remove `{permalink=true}` from the `@id`, or `permalink` from the frontmatter. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages."
+
+[[diagnostic]]
+code = "ASC174"
+slug = "model-consumer-permalink-path"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.5"
+reference = "content-model/output.md#consumer"
+group = "consumer"
+message = "permalink-path must start with \"/\", such as \"/go/\""
+fix = "Start `permalink-path` with `/`: `\"/go/\"`. It's a path from the site's root, not from `base-path`."
+
+[[diagnostic]]
+code = "ASC175"
+slug = "permalinks-list-invalid"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.5"
+reference = "writing/directives.md#permalinks"
+row = "Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it"
+message = "ascribe.permalinks can't be read: {detail}"
+fix = "ascribe.permalinks is written by `ascribe permalinks sync`. Undo the change made to it by hand, or, for a list from a newer version of Ascribe, update Ascribe. Don't delete the file to quiet this: it's how a removed permalink is noticed, and a new one written by `sync` doesn't know the names the content no longer has."
+
+[[diagnostic]]
+code = "ASC176"
+slug = "permalinks-list-behind"
+severity = "warning"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.5"
+reference = "writing/directives.md#permalinks"
+row = "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is"
+message = "the permalink `{name}` isn't in ascribe.permalinks yet; run `ascribe permalinks sync`"
+messages.moved = "ascribe.permalinks has the permalink `{name}` in `{was}`; run `ascribe permalinks sync` to record that it's here now"
+messages.alias = "ascribe.permalinks doesn't have the alias `{name}` as it's declared here; run `ascribe permalinks sync`"
+messages.retired = "ascribe.permalinks doesn't record that `{name}` was retired, as it is here; run `ascribe permalinks sync`"
+fix = "Run `ascribe permalinks sync`, which adds each new permalink to ascribe.permalinks, records where each is declared now, and records each alias and retired permalink as `ascribe.toml` has it, and commit the file with the change. In the editor, the quick fix does the same."
+
+[[diagnostic]]
+code = "ASC177"
+slug = "permalink-removed"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.5"
+reference = "writing/directives.md#permalinks"
+row = "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired"
+message = "`{name}` was a permalink, in `{was}`, and nothing declares it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+messages.alias = "`{name}` was an alias of `{target}`, and ascribe.toml doesn't declare it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+messages.retired = "`{name}` was retired, and ascribe.toml doesn't retire it now. Links to it from outside these docs, such as from a product, aren't found by this check"
+fix = "Something outside the docs may link to the name. When what it named is still in the docs, put it back: `@id {permalink=true}: <name>` under the heading that now covers it, `permalink: <name>` in a page's frontmatter, or an alias in `[permalinks.aliases]` that leads to the permalink that covers it now. When it's gone, retire it: `ascribe permalinks retire <name> --reason \"…\"`, with `--to` for a page that covers it now, writes it in `[permalinks.retired]`, and its address shows the reason. In the editor, the quick fix writes the entry for you to give a reason. A permalink can move to another page or heading and keep working; run `ascribe permalinks sync` after moving it. Running `sync` doesn't quiet this: it keeps every name that's gone."
+
+[[diagnostic]]
+code = "ASC178"
+slug = "model-permalinks"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.6"
+reference = "content-model/checks.md#20-permalinks"
+group = "permalinks"
+message = "`{name}` is both retired and an alias; a name is one thing"
+messages.loop = "the alias `{name}` leads back to itself, through aliases alone, and never to a permalink"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{name}` was retired"
+fix = "Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it."
+
+[[diagnostic]]
+code = "ASC179"
+slug = "permalink-alias-target-missing"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.6"
+reference = "content-model/checks.md#20-permalinks"
+row = "Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares"
+message = "the alias `{name}` leads to `{target}`, which no heading or page declares"
+messages.retired = "the alias `{name}` leads to `{target}`, which is retired; an alias leads to a permalink that's there"
+fix = "Point the alias at a permalink a heading's `@id {permalink=true}` or a page's `permalink` declares, or at another alias that leads to one. When what it named is gone, retire the alias instead: move it to `[permalinks.retired]`, with a reason."
+
+[[diagnostic]]
+code = "ASC180"
+slug = "permalink-name-conflict"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.6"
+reference = "content-model/checks.md#20-permalinks"
+row = "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too"
+message = "`{name}` is retired here, and `{place}` declares it as a permalink; a name is one thing"
+messages.alias = "`{name}` is an alias here, and `{place}` declares it as a permalink; a name is one thing"
+fix = "When the permalink is back, delete its entry from `[permalinks.retired]` or `[permalinks.aliases]`. When it's going, remove the `@id {permalink=true}` or the page's `permalink` that still declares it: a name retired on purpose is retired once what declared it has gone."
+
+[[diagnostic]]
+code = "ASC181"
+slug = "permalink-retired-target-missing"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.6"
+reference = "content-model/checks.md#20-permalinks"
+row = "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it"
+message = "`{name}` is retired to `{to}`, and there's no page `{path}`"
+messages.fragment = "`{name}` is retired to `{to}`, which is a fragment; lead to a page that includes it"
+messages.heading = "`{name}` is retired to `{to}`, and `{path}` has no heading with the id `{id}`"
+fix = "Write `to` as a link from the content root is written: a page's path, such as `guides/security.md`, and `#` and a heading's id, such as `guides/security.md#rotate-keys`. Leave `to` out to show the reason alone."
+
+[[diagnostic]]
+code = "ASC182"
+slug = "include-limit"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.2"
+reference = "writing/directives.md#include"
+row = "`@include` | A page's includes expand it past the processor's limit (page level)"
+message = "including `{path}` here takes this page past {limit}, the most a page's includes may expand it to; it isn't expanded, and no include after it is"
+fix = "Include less on this page. Usually a fragment is included more than once on the way: a few files that each include the next twice double the page at every step. Include each fragment once, or split the page."
+
+[[diagnostic]]
+code = "ASC183"
+slug = "model-crawlers-line"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/checks.md#21-crawlers"
+group = "crawlers"
+message = "`{key}` has a line break; each string in `lines` is one line of robots.txt"
+fix = "Split the string into one string per line: `lines = [\"User-agent: *\", \"Disallow: /drafts/\"]`."
+
+[[diagnostic]]
+code = "ASC184"
+slug = "listing-disallowed"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "2.1"
+reference = "content-model/checks.md#21-crawlers"
+configurable = true
+area = "outputs"
+when = "A page is `unlisted`, and what the project says in `[crawlers]` keeps a search crawler from fetching it: its own lines, for every crawler or in a group that names the crawler, or a disallowed purpose"
+message = "this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address, so a crawler never fetches it to read that it isn't to be listed; a search engine can still list the address alone"
+messages.crawler = "this page is unlisted, and `{line}` in `[crawlers] lines` disallows its address for {crawler}, so that crawler never fetches it to read that it isn't to be listed; its search can still list the address alone"
+messages.purpose = "this page is unlisted, and `{purpose} = \"disallow\"` in `[crawlers]` keeps {crawler} from fetching it to read that it isn't to be listed; its search can still list the address alone"
+fix = "Remove one of the two. A crawler reads `noindex` only on a page it may fetch, so to keep a page out of search results, let crawlers fetch it: remove the `Disallow` line, or narrow it so it doesn't cover the page, or allow the purpose. If the page only needs to stay out of what crawlers fetch, remove `listing: unlisted`. The editor's quick fix removes `listing`."
+example.wrong = '''
+---
+title: Drafts
+listing: unlisted
+---
+
+Work in progress.
+'''
+example.right = '''
+---
+title: Drafts
+---
+
+Work in progress.
+'''
+example.model = '''
+[crawlers]
+lines = ["Disallow: /page/"]
+'''
+
+[[diagnostic]]
+code = "ASC185"
+slug = "model-listing-folder"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/checks.md#22-listing"
+group = "listing"
+message = "`{folder}` in `[listing.folders]` doesn't exist under the content root"
+messages.not-directory = "`{folder}` in `[listing.folders]` isn't a folder"
+messages.shape = "`{folder}` in `[listing.folders]` isn't a folder's path; write it from the content root, with `/` between its parts and at its end, such as `internal/`"
+fix = "Write the folder's path from the content root, ending in `/`, with its name's case as it is on disk: `\"internal/\" = \"unlisted\"`. A rule is for a folder and everything under it; patterns aren't read."
+
+[[diagnostic]]
+code = "ASC186"
+slug = "model-listing-type"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model/checks.md#22-listing"
+group = "listing"
+message = "`{type}` in `[listing.types]` isn't a content type; use one of: {values}"
+fix = "Name a content type the project declares in `[types]`, or `page` when it declares none."
+
+[[diagnostic]]
+code = "ASC187"
+slug = "model-listing-looser"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/checks.md#22-listing"
+group = "listing"
+message = "`{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict"
+messages.default = "`{rule}` is looser than the site's `{wider}` on line {line}; with that default, no folder or type can be listed more openly"
+fix = "Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own."
+
+[[diagnostic]]
+code = "ASC188"
+slug = "listing-loosened"
+severity = "error"
+level = "file"
+next = "fix"
+evidence = []
+spec = "2.1"
+reference = "content-model/checks.md#22-listing"
+row = "Frontmatter | `listing` looser than a rule of the content model the page is under"
+message = "this page is `{listing}`, looser than `{rule}` on line {line} of ascribe.toml, which it's under; a page can only be as strict as its rule, or stricter"
+messages.default = "this page is `{listing}`, and the site's `{rule}` on line {line} of ascribe.toml makes every page at least `{strict}`, so none can be `{listing}`"
+fix = "Remove the page's `listing`, which the rule already sets, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list the page more openly, change the rule in `[listing]`: a page can only restrict what it's under. The editor's quick fix removes `listing`."
+example.wrong = '''
+---
+title: Roadmap
+listing: listed
+---
+
+What's coming next.
+'''
+example.right = '''
+---
+title: Roadmap
+---
+
+What's coming next.
+'''
+example.model = '''
+[listing]
+default = "unlisted"
+'''
+
+[[diagnostic]]
+code = "ASC189"
+slug = "model-crawlers-named-twice"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/checks.md#21-crawlers"
+group = "crawlers"
+message = "`{key}` names `{token}`, which a group on line {line} names already; a crawler obeys only one group, so write everything for it in one"
+messages.purpose = "`{key}` names `{token}`, a `{purpose}` crawler, and `{purpose} = \"disallow\"` writes the group for it; a crawler obeys only one group"
+fix = "Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`."
+
+[[diagnostic]]
+code = "ASC190"
+slug = "crawlers-disallowed"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.2"
+reference = "content-model/checks.md#21-crawlers"
+configurable = true
+area = "outputs"
+when = "`[crawlers]` disallows `search` or `on-request`, and the site's pages are listed unless they say otherwise"
+message = "`{purpose} = \"disallow\"` keeps AI search products from indexing the site, so its pages aren't in their answers, while the pages are listed for every other search engine"
+messages.on-request = "`{purpose} = \"disallow\"` asks assistants not to fetch the site's pages when a person asks about them, so they answer from what they already have, or from another site, while the pages are listed for every other search engine"
+fix = "Choose what the site wants. To be in AI search answers, and fetched when a person asks, `allow` the purpose or remove it. To keep it, turn this check off in `[checks]`, saying so in a comment: the choice is the project's, and this only says what it costs. A purpose's group asks only the crawlers Ascribe knows, and some of them say they may not follow `robots.txt`."
+
+[[diagnostic]]
+code = "ASC191"
+slug = "description-duplicate"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "9.4"
+reference = "content-model/index.md#54-field-roles"
+when = "Two pages the build publishes have the same description, ignoring case"
+message = "this is also the description of {others}, so a search result, a link preview, and `llms.txt` say the same of each page, and a reader can't tell which one they want"
+fix = "Give each page a description that says what it's for and what sets it apart from the others. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."
+
+[[diagnostic]]
+code = "ASC192"
+slug = "title-heading-differs"
+severity = "advice"
+level = "page"
+next = "review"
+evidence = []
+configurable = true
+place = "page"
+area = "pages"
+spec = "2.1"
+reference = "content-model/checks.md#19-checks"
+when = "A page writes its own level-1 heading, and neither it nor the page's title contains the other, ignoring case. A page without a level-1 heading, which most pages are, since the layout draws the title as one, isn't looked at"
+message = "the title, `{title}`, says something the page's own top heading, `{heading}`, doesn't; a search engine may show either one as the page's name, so a reader can be promised one page and land on what reads like another"
+fix = "Make the two agree: change the title or the heading so one says what the other does, or remove the heading and let the layout draw the title, as it does on most pages. When they differ on purpose, as a landing page's title is often the site's name and its heading a tagline, acknowledge it in the page's `intended` frontmatter, saying why."
+example.wrong = '''
+---
+title: Install
+---
+
+# Get started in five minutes
+
+Download the installer.
+'''
+example.right = '''
+---
+title: Install
+---
+
+# Install in five minutes
+
+Download the installer.
+'''
+example.model = '''
+[checks]
+heading-level-skipped = "off"
+'''
+
+[[diagnostic]]
+code = "ASC193"
+slug = "model-type-file"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+group = "content-types"
+message = "`{path}`, the {key} of content type `{type}`, doesn't exist"
+messages.case = "`{path}`, the {key} of content type `{type}`, doesn't exist; `{actual}` differs from it only in case"
+messages.inside-content = "`{path}`, the {key} of content type `{type}`, is inside the content root `{content}`, where it would be read as a page"
+messages.output = "`{path}`, the {key} of content type `{type}`, is inside the output directory `{output}`, which a build writes and removes"
+messages.outside = "`{path}`, the {key} of content type `{type}`, is outside the folder ascribe.toml is in"
+messages.link = "`{path}`, the {key} of content type `{type}`, leads through a symbolic link to a file outside the folder ascribe.toml is in"
+fix = "Name a file by its path from the folder ascribe.toml is in, with its name's case as it is on disk, outside the content root and the output directory: `template = \"templates/how-to.md\"`. A type's template and guide are read by people and tools starting a page, and aren't pages themselves."
+
+[[diagnostic]]
+code = "ASC194"
+slug = "model-type-template"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+group = "content-types"
+message = "can't read `{path}`, the template of content type `{type}`: {reason}"
+messages.parse = "`{path}`, the template of content type `{type}`, isn't a page Ascribe can read: on its line {line}, {detail}"
+fix = "Fix the template so it reads as a page: valid YAML between its `---` lines, and no error in its Ascribe syntax. A template is read when the content model loads, so a problem in it is reported once, here, and not on every page made from it."
+
+[[diagnostic]]
+code = "ASC195"
+slug = "template-placeholder-left"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+configurable = true
+area = "pages"
+when = "A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped; a paragraph the template quotes as an instruction; or a frontmatter field with the template's value. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found"
+message = "this page still has its template's placeholder `{placeholder}`; write what it asks for in its place"
+messages.field = "`{field}` is still the template's `{value}`; write this page's own"
+messages.instruction = "this page still has its template's instruction, \"{instruction}\"; do what it says, then remove it"
+fix = "Write the page's own text where the template's placeholder is, the text in braces, and remove each instruction the template quotes once you've followed it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it."
+
+[[diagnostic]]
+code = "ASC196"
+slug = "content-type-missing"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+row = "Frontmatter | Page names no content type, in a project that declares types"
+message = "this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values}"
+fix = "Add `type:` to the page's frontmatter, naming one of the content types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+type: guide
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+'''
+
+[[diagnostic]]
+code = "ASC197"
+slug = "content-type-unknown"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+row = "Frontmatter | Page's `type` names no declared content type"
+message = "`{type}` isn't a content type; the types are: {values}"
+messages.suggestion = "`{type}` isn't a content type; did you mean `{suggestion}`? The types are: {values}"
+messages.none = "`{type}` isn't a content type: this project declares none, so its pages don't name one"
+messages.not-a-name = "`type` names a content type, so it's a string, but it's {found}; the types are: {values}"
+fix = "Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it."
+example.wrong = '''
+---
+type: giude
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+type: guide
+title: Install Quill
+---
+
+Run the installer.
+'''
+example.model = '''
+[types.guide.frontmatter]
+title = "string"
+'''
+
+[[diagnostic]]
+code = "ASC198"
+slug = "description-link"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "pages"
+spec = "9.4"
+reference = "content-model/index.md#54-field-roles"
+when = "A page's description, the field its type marks `role = \"description\"`, holds a Markdown link"
+message = "a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it"
+fix = "Keep the link's text and remove the brackets and the destination; for a description that isn't quoted, the editor's quick fix does it. Link to the page from the page's body instead, where it's a link that's checked and kept up to date."
+example.wrong = '''
+---
+type: page
+title: Install
+description: Install the product, then [configure](configure.md) it.
+---
+
+Install the product.
+'''
+example.right = '''
+---
+type: page
+title: Install
+description: Install the product, then configure it.
+---
+
+Install the product.
+'''
+example.model = '''
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }
+'''
+
+[[diagnostic]]
+code = "ASC199"
+slug = "example-stale"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "examples"
+spec = "4.8"
+reference = "writing/directives.md#snippet"
+when = "A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and the file has changed since the observation that lists it was made. For a source in another repository, the config, the observation, and the file are the copies `ascribe sources fetch` made. Reported once for each snippet of the file, whichever region it shows"
+message = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again"
+messages.other-repository = "`{path}` changed after its last test run, so the page doesn't say what it was tested with; the fix is in source `{source}`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update {source}`"
+fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. It runs the folder's test command, and writes the observation only when the command passes. An observation covers a whole file: an edit anywhere in it, even outside the region a page shows, needs a new test run. For a source in another repository, that's done in the code's repository, and `ascribe sources update` copies the new observation here; nothing in this repository runs the test."
+
+[[diagnostic]]
+code = "ASC200"
+slug = "example-unobserved"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "examples"
+spec = "4.8"
+reference = "writing/directives.md#snippet"
+when = "A `@snippet` shows a file that its source's `ascribe.examples.toml` makes an example, and no observation lists the file. For a source in another repository, the config and the observation are the copies `ascribe sources fetch` made. Reported once for each snippet of the file"
+message = "`{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}`"
+messages.other-repository = "`{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; the fix is in source `{source}`'s repository: run `ascribe observe` there and commit, and it arrives with the next `ascribe sources update {source}`"
+fix = "Run `ascribe observe` in the folder named, where `ascribe.examples.toml` is, and commit the observation it writes. When the file isn't meant to be an example, add it to the config's `ignore`, or narrow its `include`. For a source in another repository, both are done in the code's repository, and `ascribe sources update` copies the result here."
+
+[[diagnostic]]
+code = "ASC201"
+slug = "examples-config-invalid"
+severity = "warning"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "examples"
+spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
+when = "A source has an `ascribe.examples.toml`, or an observation beside it, that can't be read: in its folder, or, for a source in another repository, in its copies. Reported at the source in ascribe.toml, once for each problem in each file"
+message = "the examples of source `{source}` can't be checked: `{file}` can't be read: {detail}"
+fix = "Fix the file named, in the source's folder: `ascribe.examples.toml` is written by the code's owners, and an observation by `ascribe observe`, which writes it again when it's run there. Until it can be read, no snippet of the source says what it was tested with."
+
+[[diagnostic]]
+code = "ASC202"
+slug = "observation-file-missing"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+configurable = true
+area = "examples"
+spec = "7.3"
+reference = "content-model/output.md#18-sourcesname"
+when = "An observation beside the `ascribe.examples.toml` of a source in the same repository lists a file that isn't in the source's folder. Reported at the file's line in the observation, once for each file"
+message = "`{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again"
+fix = "The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file."
+
+[[diagnostic]]
+code = "ASC203"
+slug = "glossary-link-target-missing"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "5.4"
+reference = "content-model/content.md#122-terms"
+row = "Glossary | A term's `link` that names a heading its page doesn't have"
+message = "glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}`"
+fix = "Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included."
+
+[[diagnostic]]
+code = "ASC204"
+slug = "model-releases-target"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}]`: `{target}` isn't a declared dimension value"
+messages.versionless = "`[releases.{target}]`: `{target}` is versionless, so it has no releases"
+messages.dimension = "`[releases.{target}]`: `{target}` is a dimension; name one of its versioned values: {values}"
+fix = "Name the table after a versioned dimension value, the target a mark gives a version to, such as `[releases.self-managed]`. A versionless value has no versions to list."
+
+[[diagnostic]]
+code = "ASC205"
+slug = "model-releases-line"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts"
+messages.duplicate = "`[releases.{target}]` lists the line `{line}` twice"
+messages.invalid = "`[releases.{target}]`: \"{line}\" isn't a valid version, such as \"3.4\""
+fix = "Write each line as a version, once, with as many parts as the target's other lines: `[\"3.4\", \"3.5\"]` for a line for each minor release, or `[\"0.2.0\"]` for one for each patch release. A line holds every version that starts with it."
+
+[[diagnostic]]
+code = "ASC206"
+slug = "model-build-versions"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
+group = "consumer"
+message = "build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = [\"3.4\"]`"
+messages.filter = "build `{build}` is versioned by `{target}` and filtered too; a filtered build is already one version of one target, so a versioned build's availability is `badge`"
+fix = "Give the target its lines in `[releases.<target>]`, with `live`, or remove `versions` from the build. A build is either versioned, with one output for each live line, or filtered for one version; not both."
+
+[[diagnostic]]
+code = "ASC207"
+slug = "model-releases-order"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}`"
+messages.archived = "`[releases.{target}]`: the archived line `{line}` isn't older than every live line, and the oldest is `{live}`"
+messages.twice = "`[releases.{target}]` lists `{line}` in both `{a}` and `{b}`; a line is in one list"
+fix = "Keep each line in one list, in the order the lists mean: `planned` lines are newer than every `live` line, and `archived` lines older. A line that has shipped moves from `planned` to `live`, and one that has left the window from `live` to `archived`."
+
+[[diagnostic]]
+code = "ASC208"
+slug = "model-releases-ends"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live}"
+messages.none = "`[releases.{target}.ends]`: `{line}` isn't a live line, and `{target}` has none"
+fix = "Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`."
+
+[[diagnostic]]
+code = "ASC209"
+slug = "model-versions-current"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`"
+fix = "Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = [\"3.4\"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line."
+
+[[diagnostic]]
+code = "ASC210"
+slug = "available-version-ahead"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+row = "`@available` | Version newer than every release line its target declares"
+message = "`{version}` is newer than every line `[releases.{target}]` declares, and the newest is `{newest}`"
+fix = "Correct the number to a declared line, such as the newest, or, for a line that's planned, add it to `planned` in `[releases.<target>]`. Work whose number isn't known yet is marked with a feature, such as `next`, that names the planned line."
+
+[[diagnostic]]
+code = "ASC211"
+slug = "available-line-undeclared"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = []
+configurable = true
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "a version is in a line between two of its target's declared lines, and that line isn't declared"
+message = "`{version}` is in the line `{line}`, which `[releases.{target}]` doesn't declare; declare it, or correct the number to `{older}` or `{newer}`"
+fix = "Declare the line in `[releases.<target>]`, in the list where it falls: `live` for a line readers are on, `planned` for one newer than every live line that hasn't shipped, or, for one older than every live line that shipped and that nothing publishes now, `archived` with no address, as `\"3.3\" = {}`. Or correct the number to a declared line, such as the one either side of it."
+
+[[diagnostic]]
+code = "ASC212"
+slug = "available-same-in-every-line"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and every version the mark names for the target is at or before the oldest live line, so no output shows it"
+message = "`{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`"
+fix = "Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so nothing a reader sees changes."
+
+[[diagnostic]]
+code = "ASC213"
+slug = "available-in-no-line"
+severity = "warning"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "4.4"
+reference = "content-model/content.md#71-releasestarget"
+when = "every build that publishes a mark's content is versioned by its target, or filtered for it at a version in the window or after it, and the content is in no live or planned line of the target"
+message = "`{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it"
+fix = "Remove the content, which no line's output publishes, or, if a line still has it, correct the mark. A mark that makes content unavailable from a version before the oldest live line, such as `self-managed (ga 3.0, removed 3.2)` with 3.4 the oldest, leaves it in no line."
+
+[[diagnostic]]
+code = "ASC214"
+slug = "release-line-ended"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+when = "a live line's date in `[releases.<target>.ends]` is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
+message = "support for `{target}` {line} ended on {date}, and the line is still live"
+fix = "Move the line from `live` to `archived` in `[releases.<target>]`, with its date as `ended` and, when it's still readable somewhere, its `url`; or, if its support goes on, change its date in `ends`."
+
+[[diagnostic]]
+code = "ASC215"
+slug = "model-phrase-line"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "5.1"
+reference = "content-model/content.md#phrases"
+group = "phrases"
+message = "phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`"
+fix = "Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one."
+
+[[diagnostic]]
+code = "ASC216"
+slug = "replaces-not-a-page"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "2.1"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | `replaces` that doesn't name a page"
+message = "`replaces` names `{path}`, which doesn't exist"
+messages.fragment = "`replaces` names `{path}`, which is a fragment; a page replaces a page"
+messages.heading = "`replaces` names a heading, `{path}`; write the page's path without `#` and the id"
+messages.other = "`replaces` names `{path}`, which isn't a page; write the path of the page this one replaces, as a link to it is written"
+fix = "Write the path of the page this one takes the place of, relative to this page or from the content root with a leading `/`, as a link to it is written: `replaces: install-legacy.md`."
+
+[[diagnostic]]
+code = "ASC217"
+slug = "replaces-cycle"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "2.1"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level)"
+message = "`replaces` comes back to this page: {chain}; a page replaces an older page, and the chain ends"
+messages.itself = "`{path}` replaces itself; name the page it takes the place of"
+fix = "Keep `replaces` on the newer page alone, naming the page it takes the place of. A page replaced in turn names nothing that comes after it."
+
+[[diagnostic]]
+code = "ASC218"
+slug = "replaces-overlap"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "9.3"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build)"
+message = "`{build}` publishes both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares"
+messages.builds = "builds {builds} publish both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares"
+fix = "Mark the newer page with the line it starts in, `available: self-managed 3.5`, and the page it replaces with where it ends, `available: self-managed (ga 3.0, removed 3.5)`, so each line publishes one of them."
+
+[[diagnostic]]
+code = "ASC219"
+slug = "replaces-same-page"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "9.3"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build)"
+message = "`{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line"
+messages.builds = "builds {builds} publish both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line"
+fix = "Keep `replaces` on one of the two pages, or give them availability that no line shares, so a line has one page in the old page's place. When one page is split in two, the other takes no `replaces`; link to it from the first."
+
+[[diagnostic]]
+code = "ASC220"
+slug = "link-into-older-line"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "pages"
+spec = "9.3"
+reference = "writing/directives.md#links-between-lines"
+when = "A link in the current line of a versioned build names a page the current line doesn't publish, and nothing takes its place there, so it leads to the page in an older line"
+message = "`{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place"
+fix = "Give the current line a page in its place: mark the page so the current line has it, or write the page that takes its place and give it `replaces`. When the link is meant to lead to an older line, as on a page about migrating from it, leave it."
+
+[[diagnostic]]
+code = "ASC221"
+slug = "link-fragment-dropped"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "pages"
+spec = "9.3"
+reference = "writing/directives.md#links-between-lines"
+when = "A link to a heading leads, in a line of a versioned build, to a page that takes its target's place or to its target in another line, and the page it lands on has no heading with that id"
+message = "in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page"
+messages.builds = "in builds {builds}, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page"
+fix = "Give the heading on the page it lands on the same id, with `@id`, or link to the page without `#` and the id."

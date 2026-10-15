@@ -13,8 +13,11 @@
 //!   [`CodeFiles`];
 //! - the tags in the file and the snippet they mark ([`tags`]);
 //! - the code block it becomes ([`Snippet`]), and the file-level issues when
-//!   it can't be one ([`snippet_issues`]).
+//!   it can't be one ([`snippet_issues`]);
+//! - whether its file is a tested example, and what it was tested with
+//!   ([`examples`]).
 
+pub mod examples;
 pub mod tags;
 
 use std::collections::HashMap;
@@ -22,7 +25,7 @@ use std::fmt;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics, percent_decode};
-use ascribe_model::{ContentModel, suggest};
+use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
 
 use crate::fs::{FileSystem, Probe};
@@ -179,17 +182,21 @@ impl SnippetUse {
     }
 
     /// The fenced code block's info string (SPEC §4.8): the language, then
-    /// `title="…"`, then `phrases=true`. With no language but other words,
+    /// `title="…"`, then `tested="…"` for an example with a current
+    /// observation, then `phrases=true`. With no language but other words,
     /// it starts with `text`, so no word is read as the language.
-    pub fn info(&self, file: &CodeFile) -> String {
+    pub fn info(&self, file: &CodeFile, tested: Option<&str>) -> String {
         let lang = self
             .lang
             .clone()
             .or_else(|| file.path.extension().map(str::to_ascii_lowercase));
+        let quoted = |text: &str| text.replace('\\', "\\\\").replace('"', "\\\"");
         let mut words: Vec<String> = Vec::new();
         if let Some(title) = &self.title {
-            let escaped = title.replace('\\', "\\\\").replace('"', "\\\"");
-            words.push(format!("title=\"{escaped}\""));
+            words.push(format!("title=\"{}\"", quoted(title)));
+        }
+        if let Some(tested) = tested {
+            words.push(format!("tested=\"{}\"", quoted(tested)));
         }
         if self.phrases {
             words.push("phrases=true".to_owned());
@@ -252,6 +259,9 @@ pub enum ReadError {
 #[derive(Debug, Default)]
 pub struct CodeFiles {
     files: Mutex<HashMap<RelPath, Result<Arc<CodeFile>, ReadError>>>,
+    /// Each source folder's `ascribe.examples.toml` and observation, read
+    /// once ([`CodeFiles::examples`]).
+    examples: Mutex<HashMap<RelPath, Arc<examples::FolderExamples>>>,
 }
 
 impl CodeFiles {
@@ -333,6 +343,18 @@ pub struct Snippet {
     /// The lines of the code file it covers, from 1; `None` when they're
     /// none.
     pub lines: Option<(u32, u32)>,
+    /// The file as a tested example: its status, the observations current
+    /// for it, and what it was tested with. `None` when it isn't one.
+    pub example: Option<examples::Example>,
+}
+
+impl Snippet {
+    /// For a file that's a tested example with a current observation, what
+    /// it was tested with: `Node 24.9.0 on Linux`. It's in the info string
+    /// too, as `tested="…"`.
+    pub fn tested(&self) -> Option<&str> {
+        self.example.as_ref()?.tested.as_deref()
+    }
 }
 
 /// Why a snippet's address doesn't give a snippet.
@@ -385,18 +407,8 @@ pub fn resolve_snippet(
             _ => SnippetError::NotIncluded,
         });
     }
-    // The file is read where its links lead, so that must be in the source
-    // too: a link can't step over the folder, the patterns, or the
-    // repository's edge.
-    if fs.probe(&path) == Probe::File {
-        let inside = fs
-            .real_path(&path)
-            .zip(fs.real_path(&folder))
-            .and_then(|(real, folder)| real.relative_to(&folder))
-            .is_some_and(|rest| source.reads(rest.as_str()));
-        if !inside {
-            return Err(SnippetError::Link);
-        }
+    if fs.probe(&path) == Probe::File && !links_stay_in(source, &folder, &path, fs) {
+        return Err(SnippetError::Link);
     }
     let file = code.read(fs, &path).map_err(|e| match e {
         ReadError::Missing => SnippetError::Missing { actual: None },
@@ -413,14 +425,96 @@ pub fn resolve_snippet(
     let Some(extracted) = file.extract(address.region.as_deref()) else {
         return Err(SnippetError::RegionMissing(file));
     };
+    let example = examples::example(source, &address.path, &file.text, fs, code);
+    let tested = example.as_ref().and_then(|e| e.tested.as_deref());
     Ok(Snippet {
         address: snippet.written.clone(),
         path: file.path.clone(),
         file: file.id,
-        info: snippet.info(&file),
+        info: snippet.info(&file, tested),
         code: extracted.code,
         lines: extracted.lines,
+        example,
     })
+}
+
+/// Whether a file of a source is still in it once its links are followed.
+/// The file is read where its links lead, so that must be in the source
+/// too: a link can't step over the folder, the patterns, or the repository's
+/// edge.
+fn links_stay_in(source: &Source, folder: &RelPath, path: &RelPath, fs: &dyn FileSystem) -> bool {
+    fs.real_path(path)
+        .zip(fs.real_path(folder))
+        .and_then(|(real, folder)| real.relative_to(&folder))
+        .is_some_and(|rest| source.reads(rest.as_str()))
+}
+
+/// A file a snippet can take code from, through a source.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceFile {
+    /// Its path relative to the source's folder.
+    pub path: String,
+    /// The address of the whole file: `<source>:<path>`, the path
+    /// percent-encoded where it has to be.
+    pub address: String,
+    /// The names of its regions, in the order they start; append
+    /// `#<region>` to the address for one.
+    pub regions: Vec<String>,
+}
+
+/// The files of a source that give a snippet (SPEC §4.8): those its `include`
+/// and `ignore` take in, listed through `fs` and read as [`resolve_snippet`]
+/// reads them, so every address listed resolves. A file that isn't text, or
+/// whose tags have problems, gives no snippet and isn't listed. A source in
+/// another repository lists its copies; nothing reaches the network.
+pub fn source_files(source: &Source, fs: &dyn FileSystem, code: &CodeFiles) -> Vec<SourceFile> {
+    let Ok(folder) = RelPath::parse(&source.path) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for path in fs.files_in(&folder) {
+        let Some(rest) = path.relative_to(&folder) else {
+            continue;
+        };
+        if !source.reads(rest.as_str())
+            || fs.probe(&path) != Probe::File
+            || !links_stay_in(source, &folder, &path, fs)
+        {
+            continue;
+        }
+        let Ok(file) = code.read(fs, &path) else {
+            continue;
+        };
+        if !file.tags.problems.is_empty() {
+            continue;
+        }
+        out.push(SourceFile {
+            path: rest.as_str().to_owned(),
+            address: format!("{}:{}", source.name, encode_address_path(rest.as_str())),
+            regions: file.region_names().into_iter().map(str::to_owned).collect(),
+        });
+    }
+    out
+}
+
+/// Percent-encodes what would end an address early or be read as part of it
+/// (whitespace, `#`, `%`), the reverse of the decoding `parse_address` does.
+fn encode_address_path(path: &str) -> String {
+    let mut out = String::with_capacity(path.len());
+    for c in path.chars() {
+        match c {
+            '%' => out.push_str("%25"),
+            '#' => out.push_str("%23"),
+            c if c.is_whitespace() => {
+                let mut buf = [0; 4];
+                for byte in c.encode_utf8(&mut buf).bytes() {
+                    out.push_str(&format!("%{byte:02X}"));
+                }
+            }
+            c => out.push(c),
+        }
+    }
+    out
 }
 
 /// The file-level issues of a `@snippet` (SPEC §8.2), reported at its

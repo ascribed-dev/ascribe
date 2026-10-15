@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**The tested examples' diagnostics are `example-stale`, `example-unobserved`, and `observation-file-missing`: advice, in a new area, `examples`, each with the next step `outside`.** The first is a file that changed after its last test run, the second an example no observation lists, both reported at the `@snippet` line; the third is an observation listing a file that isn't there, reported at the observation. The next step is `outside` wherever the code is, and the message says what to do: run `ascribe observe` in the named folder, or wait for the next `ascribe sources update`. _Why:_ the five kinds of next step say what the source can do, and in both cases nothing in a page fixes it: someone runs the tests. A sixth kind for "run a command" would be one more thing for every reader of the report to learn, for one check. _From:_ Kyle, on [issue #458](https://github.com/ascribed-dev/ascribe/issues/458), taking [phase 1](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/tested-examples/phase-1-decisions.md)'s recommendation, 13 October 2026.

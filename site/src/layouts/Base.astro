@@ -1,27 +1,71 @@
 ---
-// The page shell: the header, the sidebar, and a slot for the page. Every
-// page, the 404 included, uses it.
+// The page shell: the header, a slot for the page, and the footer. Every page,
+// the 404 included, uses it. A docs page's frame (`docs`) adds the sidebar, the
+// menu that opens it at narrow widths, and search, which covers the docs only.
+// The header links to the site's main pages; the footer, to the rest.
+//
+// The sidebar comes after the page in the HTML, and the stylesheet places it
+// on the left: a reader without the styles, an agent among them, meets the
+// page's content before the list of every page (the delivery spec's
+// `content-start-position`). A second skip link reaches it from the top, and
+// the menu that opens it at narrow widths moves focus into it.
+//
+// A page of a project, a docs page or one of home/'s, has everything its head
+// says about it from its record, through `Head.astro`, as the sitemap and
+// llms.txt do: its title, description, canonical link, robots rule, link to
+// its Markdown version, link preview, and breadcrumbs, with the site's name
+// and its social card given here. A page with no record, the changelog and the
+// 404 page, writes those itself. The rest of the head, the character set, the
+// icons, the theme color, and the styles, is the site's own either way.
 import Elements from "@ascribed/astro/Elements.astro";
+import Head from "@ascribed/astro/Head.astro";
 import Search from "../components/Search.astro";
 import Sidebar from "../components/Sidebar.astro";
 import Logo from "../assets/logo.svg";
-import { name, repo } from "../site.ts";
+import { docsPath, name, repo } from "../site.ts";
 import { themeColor } from "../theme.ts";
 import "../styles/site.css";
 
 interface Props {
-  title: string;
+  /** The page's collection entry, when it's a project's page. */
+  entry?: { filePath?: string | undefined; data?: unknown } | undefined;
+  /** The title of a page with no record: a page with a record has its own. */
+  title?: string | undefined;
+  /** The description of a page with no record. */
   description?: string | undefined;
-  /** The current page's entry id, to mark it in the sidebar. */
+  /** The current docs page's entry id, to mark it in the sidebar. */
   current?: string | undefined;
+  /** The docs' frame: the sidebar, its menu, and search. */
+  docs?: boolean;
+  /**
+   * The page's own social card, under public/cards/ (generated, see
+   * ../design/README.md), and what it says. A page without one, such as a
+   * docs page, shares public/social-card.png.
+   */
+  card?: { name: string; alt: string } | undefined;
+  /** Whether a page with no record has a canonical link: the 404 page has no address of its own. */
+  canonical?: boolean;
 }
 
-const { title, description, current } = Astro.props;
+const {
+  entry,
+  title,
+  description,
+  current,
+  docs = false,
+  card: own,
+  canonical: linked = true,
+} = Astro.props;
 const base = import.meta.env.BASE_URL;
-const pageTitle = current === "index" ? name : `${title} · ${name}`;
+const docsHome = `${base}${docsPath}`;
+const why = `${base}why/`;
+const credits = `${base}credits/`;
+const changelog = `${base}changelog/`;
+const pageTitle = title === undefined ? name : `${title} · ${name}`;
 // Shared links need absolute addresses: the site's, which a preview's build changes.
 const site = Astro.site ?? Astro.url;
-const card = new URL(`${base}social-card.png`, site).href;
+const cardSrc = own ? `${base}cards/${own.name}.png` : `${base}social-card.png`;
+const cardAlt = own?.alt ?? "Ascribe: documentation written as code";
 const canonical = new URL(Astro.url.pathname, site).href;
 ---
 
@@ -31,43 +75,66 @@ const canonical = new URL(Astro.url.pathname, site).href;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>{pageTitle}</title>
-    {description && <meta name="description" content={description} />}
+    {
+      entry ? (
+        <Head
+          entry={entry}
+          title={(page, record) => (record.route === base ? name : `${page} · ${name}`)}
+          name={name}
+          card={{ src: cardSrc, alt: cardAlt, width: 1200, height: 630 }}
+        />
+      ) : (
+        <>
+          <title>{pageTitle}</title>
+          {description && <meta name="description" content={description} />}
+          {linked && <link rel="canonical" href={canonical} />}
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content={name} />
+          <meta property="og:title" content={pageTitle} />
+          {description && <meta property="og:description" content={description} />}
+          <meta property="og:url" content={canonical} />
+          <meta property="og:image" content={new URL(cardSrc, site).href} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content={cardAlt} />
+        </>
+      )
+    }
     <link rel="icon" href={`${base}favicon.ico`} sizes="32x32" />
     <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`} />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content={themeColor.light} />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content={themeColor.dark} />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={name} />
-    <meta property="og:title" content={pageTitle} />
-    {description && <meta property="og:description" content={description} />}
-    <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={card} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Ascribe: documentation written as code" />
     <meta name="twitter:card" content="summary_large_image" />
     <Elements />
   </head>
   <body>
     <a class="skip" href="#content">Skip to content</a>
+    {docs && <a class="skip" href="#sidebar">Skip to the docs' pages</a>}
     <header class="site-header">
-      <button
-        class="menu-button"
-        type="button"
-        aria-controls="sidebar"
-        aria-expanded="false"
-        aria-label="Menu"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true"
-          ><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2"></path></svg
-        >
-      </button>
+      {
+        docs && (
+          <button
+            class="menu-button"
+            type="button"
+            aria-controls="sidebar"
+            aria-expanded="false"
+            aria-label="Menu"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+        )
+      }
       <a class="site-name" href={base}>
         <Logo role="img" aria-label={name} />
       </a>
-      <Search />
+      {docs && <Search />}
+      <a class="docs-link" href={docsHome} aria-current={docs ? "true" : undefined}>Docs</a>
+      <a class="why-link" href={why} aria-current={Astro.url.pathname === why ? "page" : undefined}
+        >Why Ascribe</a
+      >
       <a class="repo-link" href={repo} aria-label="Ascribe on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true"
           ><path
@@ -78,12 +145,32 @@ const canonical = new URL(Astro.url.pathname, site).href;
         <span>GitHub</span>
       </a>
     </header>
-    <div class="site-body">
-      <Sidebar current={current} />
-      <slot />
-    </div>
+    {
+      docs ? (
+        <div class="site-body">
+          <slot />
+          <Sidebar current={current} />
+        </div>
+      ) : (
+        <slot />
+      )
+    }
+    <footer class="site-footer">
+      <nav aria-label="More">
+        <a href={credits} aria-current={Astro.url.pathname === credits ? "page" : undefined}
+          >Credits</a
+        >
+        <a href={changelog} aria-current={Astro.url.pathname === changelog ? "page" : undefined}
+          >Changelog</a
+        >
+        <a href={`${repo}/blob/main/LICENSE`}>License</a>
+        <a href={repo}>Repository</a>
+      </nav>
+    </footer>
     <script>
       // The sidebar is a drawer at narrow widths.
+      // It follows the page in the HTML, so opening it moves focus into it,
+      // to the current page's link, and focus leaving it closes it.
       const button = document.querySelector<HTMLButtonElement>(".menu-button");
       const sidebar = document.getElementById("sidebar");
       function setOpen(open: boolean): void {
@@ -91,7 +178,18 @@ const canonical = new URL(Astro.url.pathname, site).href;
         sidebar?.classList.toggle("open", open);
       }
       button?.addEventListener("click", () => {
-        setOpen(button.getAttribute("aria-expanded") !== "true");
+        const open = button.getAttribute("aria-expanded") !== "true";
+        setOpen(open);
+        if (open) {
+          const link =
+            sidebar?.querySelector<HTMLAnchorElement>('a[aria-current="page"]') ??
+            sidebar?.querySelector<HTMLAnchorElement>("a");
+          link?.focus();
+        }
+      });
+      sidebar?.addEventListener("focusout", (event) => {
+        const to = event.relatedTarget;
+        if (to instanceof Node && !sidebar.contains(to) && to !== button) setOpen(false);
       });
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && sidebar?.classList.contains("open")) {

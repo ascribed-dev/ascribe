@@ -3,13 +3,17 @@
 use ascribe_core::{DiagnosticSlug, Fix, Issue, Location};
 use serde::Serialize;
 
-use crate::registry::{Entry, Registry};
+use crate::registry::{Entry, Next, Registry};
 
 /// How serious a diagnostic is. An error means the document isn't
 /// conforming and a build fails; a warning doesn't fail a build (SPEC §8.2).
+/// Advice is below a warning: it's shown, and never fails `ascribe check`,
+/// even with `--deny-warnings`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
+    /// Advice.
+    Advice,
     /// A warning.
     Warning,
     /// An error.
@@ -17,11 +21,22 @@ pub enum Severity {
 }
 
 impl Severity {
-    /// `"error"` or `"warning"`.
+    /// `"error"`, `"warning"`, or `"advice"`.
     pub fn as_str(self) -> &'static str {
         match self {
             Severity::Error => "error",
             Severity::Warning => "warning",
+            Severity::Advice => "advice",
+        }
+    }
+
+    /// The severity named `"error"`, `"warning"`, or `"advice"`.
+    pub fn from_name(name: &str) -> Option<Severity> {
+        match name {
+            "error" => Some(Severity::Error),
+            "warning" => Some(Severity::Warning),
+            "advice" => Some(Severity::Advice),
+            _ => None,
         }
     }
 }
@@ -66,6 +81,34 @@ pub struct Diagnostic {
     /// Whether the diagnostic is in content that no build publishes, and so
     /// belongs to none of them.
     pub unpublished: bool,
+    /// What an agent prompt about it carries beyond the message and the
+    /// line, as its registry entry's `evidence` names it: the values the
+    /// content model allows, a long page's sections, and so on.
+    #[serde(skip)]
+    pub evidence: Vec<Evidence>,
+    /// The kind of next step, when this diagnostic's isn't its registry
+    /// entry's: a `prose` alert that carries a replacement is `fix`.
+    #[serde(skip)]
+    pub next: Option<Next>,
+    /// For a finding of a tool Ascribe runs, such as Vale, the tool's rule
+    /// (`Microsoft.Contractions`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rule: Option<String>,
+    /// The content model entry or image the problem is about, for a check
+    /// that reports problems about one: its issue's `entry` argument
+    /// (`phrase old-name`), which `[[intended]]` is matched against.
+    #[serde(skip)]
+    pub subject: Option<String>,
+}
+
+/// One piece of context for an agent prompt: what Ascribe knows that an
+/// agent can't cheaply find.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Evidence {
+    /// What the prompt calls it: `Allowed values`.
+    pub label: &'static str,
+    /// The text, which may be several lines.
+    pub text: String,
 }
 
 impl Diagnostic {
@@ -94,6 +137,12 @@ impl Diagnostic {
             fixes: issue.fixes.clone(),
             builds: Vec::new(),
             unpublished: false,
+            evidence: evidence(entry, issue),
+            next: None,
+            rule: None,
+            subject: issue
+                .arg(ascribe_core::intended::ENTRY_ARG)
+                .map(str::to_owned),
         }
     }
 
@@ -104,6 +153,17 @@ impl Diagnostic {
     /// registry message already names the builds (it has a `{build}`
     /// placeholder).
     pub fn builds_note(&self, total_builds: usize) -> Option<String> {
+        self.note_for(total_builds, &[])
+    }
+
+    /// [`Diagnostic::builds_note`] for the builds in `selected`, saying
+    /// "every line of `site`" for a versioned build each of whose lines the
+    /// problem is in.
+    pub fn builds_note_in(&self, selected: &[&ascribe_model::Build]) -> Option<String> {
+        self.note_for(selected.len(), selected)
+    }
+
+    fn note_for(&self, total_builds: usize, selected: &[&ascribe_model::Build]) -> Option<String> {
         if self.unpublished {
             return Some("in content that no build publishes".to_owned());
         }
@@ -114,18 +174,49 @@ impl Diagnostic {
         if self.builds.is_empty() || names_builds || self.builds.len() >= total_builds {
             return None;
         }
-        let list = self
-            .builds
-            .iter()
-            .map(|b| format!("`{b}`"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let noun = if self.builds.len() == 1 {
+        // A versioned build whose every line is here is named once.
+        let mut items: Vec<String> = Vec::new();
+        let mut whole: Vec<&str> = Vec::new();
+        for name in &self.builds {
+            let declared = selected
+                .iter()
+                .find(|b| &b.name == name)
+                .filter(|b| b.line.is_some())
+                .map(|b| b.declared_name());
+            if let Some(declared) = declared {
+                let lines: Vec<&&ascribe_model::Build> = selected
+                    .iter()
+                    .filter(|b| b.line.is_some() && b.declared_name() == declared)
+                    .collect();
+                if lines.len() > 1 && lines.iter().all(|b| self.builds.contains(&b.name)) {
+                    if !whole.contains(&declared) {
+                        whole.push(declared);
+                        items.push(format!("every line of `{declared}`"));
+                    }
+                    continue;
+                }
+            }
+            items.push(format!("`{name}`"));
+        }
+        let list = items.join(", ");
+        let noun = if !whole.is_empty() && items.len() == 1 {
+            ""
+        } else if self.builds.len() == 1 {
             "build"
         } else {
             "builds"
         };
+        if noun.is_empty() {
+            return Some(format!("only in {list}"));
+        }
         Some(format!("only in {noun} {list}"))
+    }
+
+    /// The kind of next step: this diagnostic's own, or its registry
+    /// entry's.
+    pub fn next(&self) -> Option<Next> {
+        self.next
+            .or_else(|| Registry::global().get(self.slug).and_then(|e| e.next))
     }
 
     /// Whether this is an error.
@@ -133,3 +224,45 @@ impl Diagnostic {
         self.severity == Severity::Error
     }
 }
+
+/// The evidence of an issue whose registry entry's prompt carries some: each
+/// name its `evidence` lists, from the issue's argument for it, in the
+/// registry's order. A name the issue has no argument for is left out.
+fn evidence(entry: Option<&Entry>, issue: &Issue) -> Vec<Evidence> {
+    let Some(entry) = entry else {
+        return Vec::new();
+    };
+    entry
+        .evidence
+        .iter()
+        .filter_map(|name| {
+            let (_, arg, label) = EVIDENCE.iter().find(|(n, _, _)| n == name)?;
+            let text = issue.args.iter().find(|a| a.name == *arg)?.value.clone();
+            Some(Evidence { label, text })
+        })
+        .collect()
+}
+
+/// The evidence an agent prompt can carry: its name in the registry's
+/// `evidence`, the issue's argument that holds it, and the label the prompt
+/// gives it.
+pub const EVIDENCE: &[(&str, &str, &str)] = &[
+    // The values the content model allows, as the message lists them, when
+    // the problem is a value that isn't one of them.
+    ("allowed-values", "values", "Allowed values"),
+    // A long page's sections, each with its size, largest first.
+    ("page-sections", "sections", "Its sections, largest first"),
+    // A page's title and its first paragraph.
+    ("page-opening", "opening", "How the page begins"),
+    // The first lines of a code block.
+    ("code-lines", "lines", "The block begins"),
+    // The rule of a tool Ascribe runs, such as Vale, that found the problem.
+    ("rule", "rule", "Vale rule"),
+    // The address of that rule's own documentation.
+    ("rule-link", "link", "The rule explained"),
+    // What the link checker said about an external link that didn't answer
+    // in time, which the message doesn't.
+    ("link-status", "said", "The link checker said"),
+    // The sentence an external link is in.
+    ("link-sentence", "sentence", "The sentence around it"),
+];

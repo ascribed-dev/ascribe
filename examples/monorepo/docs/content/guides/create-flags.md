@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Create feature flags
 description: Choose a flag type, name it well, and set safe defaults.
 ---

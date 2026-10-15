@@ -37,7 +37,6 @@
       "properties": {
         "added": {
           "description": "Lines only in the code now.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -51,7 +50,6 @@
         },
         "removed": {
           "description": "Lines only in the code at the base.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -100,7 +98,6 @@
       "properties": {
         "count": {
           "description": "How many.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
@@ -162,6 +159,56 @@
         "page_changed",
         "examples",
         "broken"
+      ],
+      "type": "object"
+    },
+    "ExampleState": {
+      "description": "Where a tested example stands against the observation copied with it.",
+      "oneOf": [
+        {
+          "const": "current",
+          "description": "The observation lists the file as it is: the page says what it was\ntested with.",
+          "type": "string"
+        },
+        {
+          "const": "stale",
+          "description": "The file changed, and the observation didn't follow.",
+          "type": "string"
+        },
+        {
+          "const": "unobserved",
+          "description": "No observation lists the file.",
+          "type": "string"
+        }
+      ]
+    },
+    "ExampleUpdate": {
+      "description": "A tested example whose status an update changed.",
+      "properties": {
+        "path": {
+          "description": "Its path in the source.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ExampleState",
+          "description": "Its status at the new pin."
+        },
+        "was": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExampleState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its status before; `null` when it wasn't an example, or had no\ncopy."
+        }
+      },
+      "required": [
+        "path",
+        "status",
+        "was"
       ],
       "type": "object"
     },
@@ -239,6 +286,13 @@
           ],
           "description": "The commits after the old pin up to the new one, when it moved\nforward from one and the repository could say."
         },
+        "examples": {
+          "description": "The tested examples snippets use whose status the new pin changed:\neach one that went stale, lost its observation, or became current,\nby path.",
+          "items": {
+            "$ref": "#/$defs/ExampleUpdate"
+          },
+          "type": "array"
+        },
         "failed": {
           "description": "The files snippets name that couldn't be copied.",
           "items": {
@@ -295,6 +349,7 @@
         "back",
         "commits",
         "files",
+        "examples",
         "failed",
         "first_copy"
       ],
@@ -331,7 +386,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },

@@ -1,0 +1,9 @@
+description: >-
+  A content type names its template, one path, and its guide, a list of
+  paths, both from the folder ascribe.toml is in and outside the content
+  root. When the files are there and the template reads as a page, there's
+  nothing to report.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics: []

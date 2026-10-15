@@ -35,7 +35,7 @@
 // compared, not built outputs.
 //
 // --accept, given once per pattern, accepts a difference a decision in
-// project-docs/decisions.md accepts: a file whose heading line
+// project-docs/decisions/ or decisions.md accepts: a file whose heading line
 // (`<project>: <file>`) matches a pattern still prints its diff, marked
 // `(accepted)`, but doesn't make the exit 1. In a pattern `*` stands for
 // anything, `/` and spaces included; the rest is matched as it is, whole. A
@@ -71,7 +71,15 @@ export const ROOT = "<root>";
 const DIFF_LINES = 40;
 
 /** What's copied: the projects, and what docs/ascribe.toml's `[sources.code]` reads besides them. */
-const COPIED = ["examples", "docs", ".github/workflows", "crates/ascribe-cli/tests/output"];
+const COPIED = [
+  "examples",
+  "docs",
+  ".github/workflows",
+  "crates/ascribe-cli/tests/output",
+  // What the source's examples were tested with.
+  "ascribe.examples.toml",
+  "examples.observations",
+];
 
 /** Projects whose `check` and `build` stop with errors, by design. */
 export const FAILING = ["examples/docs-repository", "examples/getting-started"];
@@ -85,7 +93,7 @@ const COMMANDS = [
   ["diff", "--base", "HEAD", "--format", "html"],
   ["drift", "--base", "HEAD"],
   ["drift", "--base", "HEAD", "--format", "json"],
-  ["drift", "--base", "HEAD", "--format", "summary"],
+  ["drift", "--base", "HEAD", "--format", "markdown"],
   ["build"],
   ["build", "--emit", "site", "--anchors"],
 ];

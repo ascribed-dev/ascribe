@@ -1,0 +1,12 @@
+description: >-
+  A page whose plain Markdown is as long as `[checks.page-size] limit` or
+  longer is reported at its first line, as advice, in the build that
+  publishes it.
+spec: ["8.2", "9.4"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: page-size, line: 1, severity: advice}

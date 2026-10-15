@@ -12,6 +12,9 @@ members = [
     "crates/ascribe-sources",
     "crates/ascribe-fmt",
     "crates/ascribe-lsp",
+    "crates/ascribe-query",
+    "crates/ascribe-mcp",
+    "crates/ascribe-templates",
     "crates/ascribe-cli",
     "tests/conformance",
     "tests/commonmark",
@@ -20,7 +23,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.1"
 edition = "2024"
 rust-version = "1.98"
 license = "MPL-2.0"
@@ -39,6 +42,9 @@ ascribe-diff = { path = "crates/ascribe-diff" }
 ascribe-sources = { path = "crates/ascribe-sources" }
 ascribe-fmt = { path = "crates/ascribe-fmt" }
 ascribe-lsp = { path = "crates/ascribe-lsp" }
+ascribe-query = { path = "crates/ascribe-query" }
+ascribe-mcp = { path = "crates/ascribe-mcp" }
+ascribe-templates = { path = "crates/ascribe-templates" }
 # The synthetic project the benchmarks share. A dev-dependency only.
 ascribe-synthetic = { path = "tests/corpora/synthetic" }
 # The comrak fork. Depend on it as `comrak-ascribe.workspace = true`.
@@ -58,9 +64,12 @@ schemars = { version = "1", default-features = false, features = ["derive", "std
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml_ng = "0.10"
-sha2 = "0.10"
+sha2 = "0.11"
 thiserror = "2"
 toml = "1.1"
+# Edits `ascribe.toml` in place, keeping its comments: the language server
+# finds where a change goes and renders it, never rewriting the file.
+toml_edit = "0.25"
 
 [workspace.lints.rust]
 missing_docs = "warn"
@@ -68,19 +77,19 @@ unsafe_code = "forbid"
 
 [workspace.lints.clippy]
 # Libraries never panic on user input. Tests are
-# exempt through clippy.toml; documented invariants use a local `#[allow]`.
+# exempt through .cargo/clippy.toml; documented invariants use a local `#[allow]`.
 unwrap_used = "warn"
 expect_used = "warn"
 panic = "warn"
 dbg_macro = "warn"
 todo = "warn"
-# Stops new long functions; the threshold is in clippy.toml. Functions that
+# Stops new long functions; the threshold is in .cargo/clippy.toml. Functions that
 # were already longer allow it by name.
 too_many_lines = "warn"
 # Only the binary prints: a library returns what happened and its caller
 # reports it. The crates that print (the CLI, the language server's log, the
 # benchmarks and corpus tools) allow these where they do; tests are exempt
-# through clippy.toml.
+# through .cargo/clippy.toml.
 print_stdout = "warn"
 print_stderr = "warn"
 

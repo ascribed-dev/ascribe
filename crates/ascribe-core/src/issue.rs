@@ -104,6 +104,34 @@ pub struct Fix {
     pub file: FileId,
     /// Simultaneous edits to that file's current text (see [`TextEdit`]).
     pub edits: Vec<TextEdit>,
+    /// Whether the edits can be applied as they are, without a person
+    /// deciding. Every fix says, where it's made.
+    pub applicability: Applicability,
+}
+
+/// Whether a [`Fix`] can be applied as it is. The label lets a reader, such
+/// as an agent, tell a fix that only rewrites what's already meant from one
+/// that guesses; `ascribe check --fix` applies the safe ones, and nothing
+/// applies an unsafe one without a person choosing it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Applicability {
+    /// Applying it can't change what the page says, and leaves nothing to
+    /// decide.
+    Safe,
+    /// Anything else: it changes what the page says, or it's one guess among
+    /// others, such as the nearest spelling. When unsure, a fix is unsafe.
+    Unsafe,
+}
+
+impl Applicability {
+    /// `"safe"` or `"unsafe"`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Applicability::Safe => "safe",
+            Applicability::Unsafe => "unsafe",
+        }
+    }
 }
 
 impl Issue {
@@ -190,6 +218,7 @@ mod tests {
                 title: "Rename the id".into(),
                 file,
                 edits: vec![TextEdit::replace(14..20, "install-2")],
+                applicability: Applicability::Unsafe,
             });
         assert_eq!(issue.arg("id"), Some("install"));
         assert_eq!(issue.arg("path"), None);

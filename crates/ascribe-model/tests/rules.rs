@@ -39,7 +39,7 @@ fn line_of(text: &str, offset: usize) -> usize {
 
 fn cases() -> Vec<Case> {
     vec![
-        // 21.1 File and structure
+        // 22.1 File and structure
         case("model-toml-syntax", None, "spec = \"0.1\"\nx = = 1 #!\n"),
         case(
             "model-unknown-key",
@@ -52,6 +52,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[project]\ncontent-rot = \"docs\" #!\n",
         ),
         case("model-unknown-key", None, "spec = \"0.1\"\nbogus = 1 #!\n"),
+        case(
+            "model-unknown-key",
+            Some("suggestion"),
+            "spec = \"0.1\"\n[checks]\nlink-target-mising = \"off\" #!\n",
+        ),
         case("model-missing-key", None, "[project]\n"),
         case(
             "model-missing-key",
@@ -69,6 +74,16 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[versions]\nscheme = \"semver\" #!\n",
         ),
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\n[releases.a.ends]\n\"3.4\" = \"2027-01-31\" #!\n",
+        ),
+        case(
+            "model-wrong-type",
+            Some("quote"),
+            "spec = \"0.1\"\n[releases]\nplanned-label = 3.4 #!\n",
+        ),
         case("model-spec-unsupported", None, "spec = \"9.9\" #!\n"),
         case(
             "model-invalid-name",
@@ -80,7 +95,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[notes.tip]\nlabel = \"\" #!\n",
         ),
-        // 21.2 Project
+        // 22.2 Project
         case(
             "model-path-absolute",
             None,
@@ -101,7 +116,7 @@ fn cases() -> Vec<Case> {
             Some("same"),
             "spec = \"0.1\"\n[project]\ncontent-root = \"x\"\noutput-dir = \"./x\" #!\n",
         ),
-        // 21.8 Sources
+        // 22.8 Sources
         case(
             "model-source-remote",
             None,
@@ -137,41 +152,51 @@ fn cases() -> Vec<Case> {
             Some("inside-content"),
             "spec = \"0.1\"\n[project]\ncontent-root = \".\"\n[sources.code] #!\ngit = \"https://example.com/x.git\"\n",
         ),
-        // 21.3 Content types, fragments, and fields
+        // 22.3 Content types, fragments, and fields
         case(
-            "model-type-multiple-defaults",
-            None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\n[types.b]\ndefault = true #!\n[types.b.frontmatter]\ntitle = \"string\"\n",
+            "model-unknown-key",
+            Some("type-key"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true #!\n[types.a.frontmatter]\ntitle = \"string\"\n",
         ),
         case(
-            "model-type-unreachable",
+            "model-unknown-key",
+            Some("type-key"),
+            "spec = \"0.1\"\n[types.a]\nfiles = [\"a/**\"] #!\n[types.a.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-field-reserved",
             None,
-            "spec = \"0.1\"\n[types.a.frontmatter] #!\ntitle = \"string\"\n[types.b]\nfiles = [\"b/**\"]\n[types.b.frontmatter]\ntitle = \"string\"\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\ntype = \"string?\" #!\n",
         ),
         case(
             "model-type-title",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter] #!\nother = \"string\"\n",
+            "spec = \"0.1\"\n[types.a.frontmatter] #!\nother = \"string\"\n",
         ),
         case(
             "model-type-title",
             Some("not-string"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\navailable = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\navailable = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             Some("slug"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nslug = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nslug = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
             Some("formatted"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nformatted = \"string?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nformatted = \"string?\" #!\n",
+        ),
+        case(
+            "model-field-reserved",
+            Some("source"),
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsource = \"string?\" #!\n",
         ),
         case(
             "model-field-reserved",
@@ -181,7 +206,7 @@ fn cases() -> Vec<Case> {
         case(
             "model-type-syntax",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nx = \"strng?\" #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nx = \"strng?\" #!\n",
         ),
         case(
             "model-type-syntax",
@@ -256,12 +281,12 @@ fn cases() -> Vec<Case> {
         case(
             "model-inline-field",
             None,
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\ntags = { type = \"list(string)\", inline = \"code\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\ntags = { type = \"list(string)\", inline = \"code\" } #!\n",
         ),
         case(
             "model-inline-field",
             Some("value"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = { type = \"string\", inline = \"emphasis\" } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = { type = \"string\", inline = \"emphasis\" } #!\n",
         ),
         case(
             "model-inline-field",
@@ -271,7 +296,27 @@ fn cases() -> Vec<Case> {
         case(
             "model-inline-field",
             Some("nested"),
-            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nmeta = { type = \"object\", fields = { label = { type = \"string\", inline = \"code\" } } } #!\n",
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nmeta = { type = \"object\", fields = { label = { type = \"string\", inline = \"code\" } } } #!\n",
+        ),
+        case(
+            "model-field-role",
+            None,
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"date\", role = \"description\" } #!\n",
+        ),
+        case(
+            "model-field-role",
+            Some("value"),
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string\", role = \"summary\" } #!\n",
+        ),
+        case(
+            "model-field-role",
+            Some("nested"),
+            "spec = \"0.1\"\n[fragments.frontmatter]\nsummary = { type = \"string\", role = \"description\" } #!\n",
+        ),
+        case(
+            "model-field-role",
+            Some("duplicate"),
+            "spec = \"0.1\"\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string?\", role = \"description\" }\nabout = { type = \"string?\", role = \"description\" } #!\n",
         ),
         case(
             "model-pattern-syntax",
@@ -303,7 +348,7 @@ fn cases() -> Vec<Case> {
             Some("widget"),
             "spec = \"0.1\"\n[widgets.quill-lab]\nforms = [\"line\"]\nbinding = \"self\"\n[widgets.quill-lab.attributes]\nheading = \"string?\" #!\n",
         ),
-        // 21.4 Dimensions, names, lifecycle, notes, and features
+        // 22.4 Dimensions, names, lifecycle, notes, and features
         case(
             "model-name-multiple-roles",
             None,
@@ -399,7 +444,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[features.x]\nname = \"X\"\navailable = \"y\" #!\n[features.y]\nname = \"Y\"\navailable = \"y\"\n",
         ),
-        // 21.5 Versions, phrases, glossary, and images
+        // 22.5 Versions, phrases, glossary, and images
         case(
             "model-phrase-value-type",
             None,
@@ -415,7 +460,7 @@ fn cases() -> Vec<Case> {
             Some("fragment"),
             "spec = \"0.1\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nlink = \"/_shared/a.md\" #!\n",
         ),
-        // 21.6 Widgets
+        // 22.6 Widgets
         case(
             "model-widget-reserved-name",
             None,
@@ -461,7 +506,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[widgets.quill-lab]\nforms = [\"line\"]\nbinding = \"self\"\nplain-content = \"drop\" #!\n",
         ),
-        // 21.7 Consumer, builds, and editor
+        // 22.7 Consumer, builds, and editor
         case(
             "model-consumer-unsupported",
             None,
@@ -473,9 +518,19 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[consumer]\nsite = \"https://docs.example.com/docs\" #!\n",
         ),
         case(
+            "model-consumer-agents-site",
+            None,
+            "spec = \"0.1\"\n[consumer]\nagents = true #!\n",
+        ),
+        case(
             "model-consumer-base-path",
             None,
             "spec = \"0.1\"\n[consumer]\nbase-path = \"docs\" #!\n",
+        ),
+        case(
+            "model-consumer-permalink-path",
+            None,
+            "spec = \"0.1\"\n[consumer]\npermalink-path = \"go/\" #!\n",
         ),
         case(
             "model-build-name-case",
@@ -538,6 +593,86 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\", \"b\"]\nversionless = [\"a\", \"b\"]\n[builds.site]\nvariants = { d = \"a\" }\navailability = { filter = \"b\" } #!\n",
         ),
         case(
+            "model-build-versions",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[builds.site]\nversions = \"a\" #!\n",
+        ),
+        case(
+            "model-build-versions",
+            Some("filter"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"1.0\"]\n[builds.site]\navailability = { filter = \"a 1.0\" }\nversions = \"a\" #!\n",
+        ),
+        case(
+            "model-releases-target",
+            None,
+            "spec = \"0.1\"\n[releases.mars] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-target",
+            Some("versionless"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\nversionless = [\"a\"]\n[releases.a] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-target",
+            Some("dimension"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.d] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-line",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\",\n  \"3.5.0\"] #!\n",
+        ),
+        case(
+            "model-releases-line",
+            Some("duplicate"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\",\n  \"3.4\"] #!\n",
+        ),
+        case(
+            "model-releases-line",
+            Some("invalid"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"v3\"] #!\n",
+        ),
+        case(
+            "model-releases-line",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.5.0\"] #!\n",
+        ),
+        case(
+            "model-releases-order",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.3\"] #!\n",
+        ),
+        case(
+            "model-releases-order",
+            Some("archived"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\n[releases.a.archived]\n\"3.5\" = {} #!\n",
+        ),
+        case(
+            "model-releases-order",
+            Some("twice"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.4\"] #!\n",
+        ),
+        case(
+            "model-releases-ends",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.5\"]\n[releases.a.ends]\n\"3.5\" = 2027-01-31 #!\n",
+        ),
+        case(
+            "model-releases-ends",
+            Some("none"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nplanned = [\"3.5\"]\n[releases.a.ends]\n\"3.5\" = 2027-01-31 #!\n",
+        ),
+        case(
+            "model-phrase-line",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nplanned = [\"1.0\"]\n[phrases]\nversion = { line = \"a\" } #!\n",
+        ),
+        case(
+            "model-versions-current",
+            None,
+            "spec = \"0.1\"\n[versions]\ncurrent = \"3.4\" #!\n",
+        ),
+        case(
             "model-editor-build-unknown",
             None,
             "spec = \"0.1\"\n[builds.site]\n[editor]\nbuild = \"nope\" #!\n",
@@ -546,6 +681,175 @@ fn cases() -> Vec<Case> {
             "model-editor-build-required",
             None,
             "spec = \"0.1\"\n[builds.a] #!\n[builds.b]\n",
+        ),
+        // 22.9 Checks
+        case(
+            "model-check-not-configurable",
+            None,
+            "spec = \"0.1\"\n[checks]\nlink-target-missing = \"warning\" #!\n",
+        ),
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[checks.page-size]\nlimit = -1 #!\n",
+        ),
+        // Acknowledgements
+        case(
+            "model-intended-check",
+            None,
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"bogus\" #!\nphrase = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-check",
+            Some("suggestion"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"link-target-mising\" #!\nphrase = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-check",
+            Some("not-review"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"link-target-missing\" #!\nphrase = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-entry",
+            None,
+            "spec = \"0.1\"\n[[intended]] #!\ncheck = \"link-target-missing\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-entry",
+            Some("several"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]] #!\ncheck = \"link-target-missing\"\nphrase = \"x\"\nterm = \"x\"\nreason = \"r\"\n",
+        ),
+        case(
+            "model-intended-entry",
+            Some("placeholder"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"x\"\nreason = \"why this is intended\" #!\n",
+        ),
+        case(
+            "model-intended-entry",
+            Some("unknown"),
+            "spec = \"0.1\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"nope\" #!\nreason = \"r\"\n",
+        ),
+        case(
+            "model-permalinks",
+            None,
+            "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"r\" }\n[permalinks.aliases]\na = \"b\" #!\n",
+        ),
+        case(
+            "model-permalinks",
+            Some("loop"),
+            "spec = \"0.1\"\n[permalinks.aliases]\na = \"a\" #!\n",
+        ),
+        case(
+            "model-permalinks",
+            Some("placeholder"),
+            "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"why this permalink was retired\" } #!\n",
+        ),
+        case(
+            "model-crawlers-line",
+            None,
+            "spec = \"0.1\"\n[crawlers]\nlines = [\"Disallow: /a/\\nDisallow: /b/\"] #!\n",
+        ),
+        case(
+            "model-empty-text",
+            None,
+            "spec = \"0.1\"\n[crawlers]\nlines = [\" \"] #!\n",
+        ),
+        case(
+            "model-invalid-value",
+            None,
+            "spec = \"0.1\"\n[crawlers]\ntraining = \"block\" #!\n",
+        ),
+        case(
+            "model-crawlers-named-twice",
+            Some("purpose"),
+            "spec = \"0.1\"\n[crawlers]\ntraining = \"disallow\"\nlines = [\n\"User-agent: gptbot\", #!\n\"Disallow: /a/\",\n]\n",
+        ),
+        case(
+            "model-crawlers-named-twice",
+            None,
+            "spec = \"0.1\"\n[crawlers]\nlines = [\n\"User-agent: Bot\",\n\"Disallow: /a/\",\n\"User-agent: bot\", #!\n\"Disallow: /b/\",\n]\n",
+        ),
+        case(
+            "model-invalid-value",
+            None,
+            "spec = \"0.1\"\n[listing]\ndefault = \"hidden\" #!\n",
+        ),
+        case(
+            "model-listing-folder",
+            Some("shape"),
+            "spec = \"0.1\"\n[listing.folders]\n\"internal\" = \"unlisted\" #!\n",
+        ),
+        case(
+            "model-listing-folder",
+            Some("shape"),
+            "spec = \"0.1\"\n[listing.folders]\n\"drafts/**\" = \"unlisted\" #!\n",
+        ),
+        case(
+            "model-listing-folder",
+            Some("shape"),
+            "spec = \"0.1\"\n[listing.folders]\n\"../shared/\" = \"unlisted\" #!\n",
+        ),
+        case(
+            "model-listing-type",
+            None,
+            "spec = \"0.1\"\n[listing.types]\nchangelog = \"unquoted\" #!\n",
+        ),
+        case(
+            "model-listing-looser",
+            None,
+            "spec = \"0.1\"\n[listing.folders]\n\"a/\" = \"unlisted\"\n\"a/b/\" = \"unquoted\" #!\n",
+        ),
+        case(
+            "model-listing-looser",
+            Some("default"),
+            "spec = \"0.1\"\n[listing]\ndefault = \"unquoted\"\n[listing.types]\npage = \"listed\" #!\n",
+        ),
+        case(
+            "model-checks-vale",
+            None,
+            "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\nconfig = \".vale.ini\" #!\n",
+        ),
+        case(
+            "model-checks-vale",
+            Some("neither"),
+            "spec = \"0.1\"\n[checks.vale] #!\ncommand = \"vale\"\n",
+        ),
+        case(
+            "model-checks-vale",
+            Some("off"),
+            "spec = \"0.1\"\n[checks.vale]\nconfig = \".vale.ini\"\noff = [\"A.B\"] #!\n",
+        ),
+        case(
+            "model-checks-vale",
+            Some("off-rule"),
+            "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Nope\"] #!\n",
+        ),
+        // A type's `purpose` is text.
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\npurpose = [\"One task\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-empty-text",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\npurpose = \" \" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        // A type's `guide` is always a list, as `files` is.
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nguide = \"templates/how-to.guide.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-path-absolute",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\ntemplate = \"/templates/how-to.md\" #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
+        ),
+        case(
+            "model-empty-text",
+            None,
+            "spec = \"0.1\"\n[types.how-to]\nguide = [\"\"] #!\n[types.how-to.frontmatter]\ntitle = \"string\"\n",
         ),
     ]
 }
@@ -613,6 +917,10 @@ fn every_registered_rule_is_covered() {
             "model-glossary-link",
             "model-source-path-missing",
             "model-source-outside-repository",
+            // Checked with the project's files, where they're read:
+            // crates/ascribe-check/tests/all/type_files.rs.
+            "model-type-file",
+            "model-type-template",
         ]
         .map(String::from),
     );

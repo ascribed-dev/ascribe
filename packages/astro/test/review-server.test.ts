@@ -128,6 +128,11 @@ function serve(init: Partial<ReviewServerOptions> = {}) {
         ],
       ]),
   );
+  const prompt = vi.fn(async (path: string, base: string | undefined) =>
+    path === "unchanged.md"
+      ? undefined
+      : `Prompt about ${path} against ${base ?? "the default"}.\n`,
+  );
   const server = new ReviewServer({
     channel,
     logger: { info: () => undefined, warn: () => undefined },
@@ -135,13 +140,15 @@ function serve(init: Partial<ReviewServerOptions> = {}) {
     contentRoot: "/p/content",
     channelProblem: undefined,
     diff,
+    prompt,
+    projectDir: "/p",
     connect,
     writeRoutes,
     readRoutes,
     debounceMs: 0,
     ...init,
   });
-  return { channel, server, calls, diff, connect, writeRoutes, readRoutes };
+  return { channel, server, calls, diff, prompt, connect, writeRoutes, readRoutes };
 }
 
 afterEach(() => {
@@ -300,6 +307,31 @@ describe("ReviewServer", () => {
     expect(answer.error?.code).toBe("refused");
     expect((await channel.request("nonsense")).error?.message).toBe("Unknown request: nonsense.");
     expect(calls.some((c) => c[0] === "submit")).toBe(false);
+  });
+
+  it("builds agent prompts: a page's and a fragment's with ascribe diff, threads' from the session", async () => {
+    const { channel, prompt, server } = serve();
+    expect(
+      (await channel.request("prompt", { request: { kind: "page-changes" } })).error?.message,
+    ).toBe("Review is off.");
+    await channel.request("start");
+    const ask = async (request: unknown, path: string | null = "guide.md") =>
+      channel.request("prompt", { request, path });
+    expect((await ask({ kind: "page-changes" })).result).toBe(
+      "Prompt about guide.md against origin/main.\n",
+    );
+    expect((await ask({ kind: "fragment-reach", fragment: "_f/prereqs.md" })).result).toBe(
+      "Prompt about _f/prereqs.md against origin/main.\n",
+    );
+    expect(prompt).toHaveBeenCalledTimes(2);
+    expect((await ask({ kind: "page-changes" }, "unchanged.md")).result).toBeNull();
+    // No thread is open: nothing to prompt about; a thread that's gone is an error.
+    expect((await ask({ kind: "open-threads" })).result).toBeNull();
+    expect((await ask({ kind: "thread", threadId: "T9" })).error?.message).toBe(
+      "That comment isn't on the pull request any more.",
+    );
+    expect((await ask({ kind: "nonsense" })).error?.message).toBe("Unknown prompt.");
+    server.dispose();
   });
 
   it("shows changes only without a pull request, compared with the default branch", async () => {

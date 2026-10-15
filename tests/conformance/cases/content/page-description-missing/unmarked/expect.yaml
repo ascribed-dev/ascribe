@@ -1,0 +1,7 @@
+description: >-
+  Without a field marked `role = "description"`, a page with no description
+  isn't reported, even when its type declares a field named `description`.
+spec: ["7.2", "8.2"]
+tags: [check]
+
+diagnostics: []

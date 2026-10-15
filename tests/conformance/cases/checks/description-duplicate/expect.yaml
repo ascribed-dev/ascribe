@@ -1,0 +1,15 @@
+description: >-
+  Two pages a build publishes with the same description, ignoring case and
+  runs of spaces, are each reported at their description. A build that drops
+  one of them has no duplicate, and a page without a description is never
+  one.
+spec: ["9.4", "9.3"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: description-duplicate, file: install.md, line: 4}
+      - {slug: description-duplicate, file: server.md, line: 4}
+  cloud:
+    diagnostics: []

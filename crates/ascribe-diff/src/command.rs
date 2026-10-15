@@ -2,13 +2,18 @@
 //! working tree against a base revision, from choosing the builds to the
 //! finished report.
 
-use ascribe_check::{diagnose, select_builds};
-use ascribe_core::RelPath;
+use ascribe_check::{count_errors, select_builds};
+use ascribe_core::{RelPath, percent_decode};
 use ascribe_resolve::Project;
 
 use crate::drift::{BaseProject, drift_with, read_base};
-use crate::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
+use crate::html::{
+    AssetFiles, DiskAssets, GitAssets, MAX_PAGES, ReportOptions, Version, write_report,
+};
+use crate::prompt::{self, Review};
+use crate::{Anchor, BuildDiff, PageDiff};
 use crate::{Base, DiffError, DriftReport, Report, Repository, Side, compare_builds};
+use ascribe_check::prompt::{Builds, Context};
 
 /// What [`diff_project`] compares.
 #[derive(Clone, Copy, Debug, Default)]
@@ -34,6 +39,9 @@ pub struct ProjectDiff {
     before: BaseProject,
     now: Project,
     root: std::path::PathBuf,
+    /// The folder the prompts are for: where the command was run; the
+    /// repository's root when `None`.
+    here: Option<std::path::PathBuf>,
 }
 
 impl std::fmt::Debug for ProjectDiff {
@@ -45,6 +53,17 @@ impl std::fmt::Debug for ProjectDiff {
 }
 
 impl ProjectDiff {
+    /// Writes the prompts, and the HTML report's, for an agent in `here`,
+    /// the folder the command was run in, as [`Context::seen_from`] has it.
+    pub fn seen_from(&mut self, here: std::path::PathBuf) {
+        self.here = Some(here);
+    }
+
+    /// The context of a prompt about `builds`.
+    fn context(&self, builds: Builds) -> Context {
+        Context::seen_from(&self.root, self.here.as_deref(), builds)
+    }
+
     /// The report as one self-contained HTML file, every changed page
     /// rendered with its changes marked.
     pub fn html(&self) -> String {
@@ -65,7 +84,81 @@ impl ProjectDiff {
             project: &self.now,
             files: &now_files,
         };
-        write_html(&self.report, base, now)
+        let page_prompt = |build: &str, page: &PageDiff| self.page_prompt(build, page);
+        write_report(
+            &self.report,
+            base,
+            now,
+            &ReportOptions {
+                max_pages: MAX_PAGES,
+                prompt: Some(&page_prompt),
+            },
+        )
+    }
+
+    /// What the prompts are compared with, and where the content is.
+    fn review(&self) -> Review<'_> {
+        Review {
+            base: &self.report.base,
+            content_root: &self.now.layout().content_root,
+        }
+    }
+
+    /// The agent prompt about a changed page of `build`, as the report's Copy
+    /// prompt button and `ascribe diff --format prompt <PAGE>` give it.
+    pub fn page_prompt(&self, build: &str, page: &PageDiff) -> String {
+        let context = self.context(Builds::Named(vec![build.to_owned()]));
+        prompt::page(&context, &self.review(), build, page)
+    }
+
+    /// The agent prompt about the page or fragment at a content path: the
+    /// page's, in the first build it changed in; else the fragment's reach,
+    /// in the first build with a page that changed through it. `None` when
+    /// neither changed.
+    pub fn prompt_about(&self, path: &RelPath) -> Option<String> {
+        let builds = &self.report.builds;
+        if let Some((build, page)) = builds.iter().find_map(|b| {
+            b.pages
+                .iter()
+                .find(|p| p.path == path.as_str())
+                .map(|p| (b, p))
+        }) {
+            return Some(self.page_prompt(&build.build, page));
+        }
+        builds.iter().find_map(|build: &BuildDiff| {
+            let context = self.context(Builds::Named(vec![build.build.clone()]));
+            prompt::fragment_reach(&context, &self.review(), build, path)
+        })
+    }
+
+    /// A block's lines as they're written, in the base when `base` is true
+    /// and in the working tree when it isn't. `None` when the file isn't in
+    /// that version, or doesn't have those lines.
+    pub fn written(&self, anchor: &Anchor, base: bool) -> Option<Vec<&str>> {
+        let (path, lines) = anchor.source.rsplit_once(':')?;
+        let (first, last) = lines.split_once('-').unwrap_or((lines, lines));
+        let first: usize = first.parse().ok()?;
+        let last: usize = last.parse().ok()?;
+        let path = RelPath::parse(&percent_decode(path)).ok()?;
+        let project = if base {
+            &self.before.as_ref()?.1
+        } else {
+            &self.now
+        };
+        let source = &project.file(&path)?.source;
+        let lines: Vec<&str> = source
+            .lines()
+            .skip(first.checked_sub(1)?)
+            .take((last + 1).checked_sub(first)?)
+            .collect();
+        (!lines.is_empty()).then_some(lines)
+    }
+
+    /// The agent prompt about every changed page; `builds` are the builds
+    /// compared, as the prompt names them. `None` when nothing changed.
+    pub fn pages_prompt(&self, builds: Builds) -> Option<String> {
+        let context = self.context(builds);
+        prompt::pages(&context, &self.review(), &self.report.builds)
     }
 }
 
@@ -94,15 +187,7 @@ pub fn diff_project(
     // part: it runs beside everything else, as reading and indexing the base
     // does beside indexing the working tree.
     let (before, now, diffs, errors) = std::thread::scope(|scope| {
-        let errors = scope.spawn(|| {
-            diagnose(project, options.builds).map_or(0, |found| {
-                found
-                    .diagnostics
-                    .iter()
-                    .filter(|d| d.severity == ascribe_check::Severity::Error)
-                    .count()
-            })
-        });
+        let errors = scope.spawn(|| count_errors(project, options.builds).unwrap_or(0));
         let before = scope.spawn(|| read_base(&repo, base.compared()));
         let now = project.index();
         let before = joined(before)?;
@@ -125,6 +210,7 @@ pub fn diff_project(
         before,
         now,
         root: project.root().to_owned(),
+        here: None,
     })
 }
 

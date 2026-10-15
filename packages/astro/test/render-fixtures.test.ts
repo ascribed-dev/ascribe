@@ -5,7 +5,8 @@
 // optimization would replace every `src`.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { markdownToHtml } from "satteri";
+import type { Element, ElementContent, Root } from "hast";
+import { markdownToHtml, type HastNode as SatteriNode, type HastVisitorInstance } from "satteri";
 import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
 import remarkGfm from "remark-gfm";
@@ -14,6 +15,8 @@ import remarkRehype from "remark-rehype";
 import remarkSmartypants from "remark-smartypants";
 import { unified } from "unified";
 import { describe, expect, it } from "vitest";
+import type { HastNode } from "../src/attributes.js";
+import { captioned } from "../src/code-titles.js";
 import rehypeAscribeAttributes from "../src/rehype.js";
 import { satteriAscribeAttributes } from "../src/satteri.js";
 import { firstDifference } from "./html.js";
@@ -48,6 +51,43 @@ const pairs: { name: string; anchored: string; unanchored: string }[] = [
   ),
 ];
 
+// A code block whose meta has a title or a tested line, captioned as Astro's
+// highlighting does with the code-titles transformer, which runs before the
+// user's plugins: `undefined` for any other node.
+function highlighted(node: HastNode): Element | undefined {
+  if (node.type !== "element" || node.tagName !== "pre") return undefined;
+  const code = node.children?.[0] as (HastNode & { data?: { meta?: string } }) | undefined;
+  const meta = code?.data?.meta;
+  return meta === undefined ? undefined : captioned(meta, node as unknown as Element);
+}
+
+function rehypeHighlighting() {
+  return (tree: Root) => {
+    const visit = (parent: { children: ElementContent[] | Root["children"] }) => {
+      parent.children.forEach((child, i) => {
+        const figure = highlighted(child as HastNode);
+        if (figure !== undefined) parent.children[i] = figure;
+        else if ("children" in child) visit(child as Element);
+      });
+    };
+    visit(tree);
+  };
+}
+
+function satteriHighlighting(): HastVisitorInstance & { name: string } {
+  return {
+    name: "highlighting",
+    before(root, ctx) {
+      const visit = (node: HastNode) => {
+        const figure = highlighted(node);
+        if (figure !== undefined) ctx.replaceNode(node as unknown as SatteriNode, figure as never);
+        else node.children?.forEach(visit);
+      };
+      visit(root as HastNode);
+    },
+  };
+}
+
 // Astro's `unified()` processor, up to the user's rehype plugins and `rehype-raw`.
 async function withUnified(markdown: string): Promise<string> {
   const file = await unified()
@@ -55,6 +95,7 @@ async function withUnified(markdown: string): Promise<string> {
     .use(remarkGfm)
     .use(remarkSmartypants)
     .use(remarkRehype, { allowDangerousHtml: true, passThrough: [] })
+    .use(rehypeHighlighting)
     .use(rehypeAscribeAttributes)
     .use(rehypeRaw)
     .use(rehypeStringify, { allowDangerousHtml: true })
@@ -65,7 +106,7 @@ async function withUnified(markdown: string): Promise<string> {
 // Astro's default Sätteri processor: GFM and smart punctuation on.
 async function withSatteri(markdown: string): Promise<string> {
   const { html } = await markdownToHtml(markdown, {
-    hastPlugins: [satteriAscribeAttributes()],
+    hastPlugins: [satteriHighlighting(), satteriAscribeAttributes()],
     features: { gfm: true, smartPunctuation: true },
   });
   return html;

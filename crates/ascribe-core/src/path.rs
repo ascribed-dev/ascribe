@@ -368,6 +368,22 @@ pub fn upper_drive(text: &str) -> String {
     text.to_owned()
 }
 
+/// The media type of an image file, by its extension, compared without
+/// case: the image formats a browser shows. `None` for any other file.
+pub fn image_media_type(extension: &str) -> Option<&'static str> {
+    Some(match extension.to_ascii_lowercase().as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "webp" => "image/webp",
+        "avif" => "image/avif",
+        "ico" => "image/x-icon",
+        "bmp" => "image/bmp",
+        _ => return None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

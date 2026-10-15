@@ -55,6 +55,7 @@ fn spec_rows() -> Vec<(String, Severity)> {
             let severity = match c[2].as_str() {
                 "Error" => Severity::Error,
                 "Warning" => Severity::Warning,
+                "Advice" => Severity::Advice,
                 other => panic!("severity {other:?}"),
             };
             (format!("{} | {}", c[0], c[1]), severity)
@@ -72,7 +73,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 77, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 96, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -115,16 +116,51 @@ fn loader_rules_are_file_level_and_grouped() {
     }
 }
 
+/// The reference says when a content check is reported; only a content
+/// check has `when`.
 #[test]
-fn codes_are_sequential_and_slugs_unique() {
+fn only_content_checks_say_when() {
+    for e in &registry().entries {
+        assert!(
+            e.when.is_none() || e.area.is_some(),
+            "{}: only a content check has `when`",
+            e.slug
+        );
+    }
+}
+
+/// A check's stage is written only when it runs at one stage alone, and the
+/// only such stage is `report`, for a content check that needs the network
+/// or a built site.
+#[test]
+fn only_content_checks_have_a_stage() {
+    for e in &registry().entries {
+        assert!(
+            e.stage.is_none() || (e.stage.as_deref() == Some("report") && e.area.is_some()),
+            "{}: `stage` is \"report\", on a content check",
+            e.slug
+        );
+    }
+}
+
+#[test]
+fn codes_go_up_and_slugs_are_unique() {
     let reg = registry();
     let mut slugs = BTreeSet::new();
-    for (i, e) in reg.entries.iter().enumerate() {
-        assert_eq!(
-            e.code,
-            format!("ASC{:03}", i + 1),
-            "codes go up by one, in file order"
+    let mut last = 0u32;
+    for e in &reg.entries {
+        // A removed diagnostic leaves a gap; nothing is renumbered.
+        let number = e
+            .code
+            .strip_prefix("ASC")
+            .filter(|digits| digits.len() == 3)
+            .and_then(|digits| digits.parse::<u32>().ok());
+        assert!(
+            number.is_some_and(|n| n > last),
+            "{}: codes are `ASC` and three digits, going up in file order",
+            e.code
         );
+        last = number.unwrap_or(last);
         assert!(slugs.insert(&e.slug), "{} appears twice", e.slug);
         let kebab = e.slug.split('-').all(|w| {
             !w.is_empty()
@@ -133,8 +169,13 @@ fn codes_are_sequential_and_slugs_unique() {
         });
         assert!(kebab, "{} isn't kebab-case", e.slug);
         assert!(
-            e.row.is_some() || e.group.is_some() || e.retired.is_some(),
-            "{}: every entry comes from a §8.2 row or a loader rule, or is retired",
+            e.row.is_some() || e.group.is_some() || e.area.is_some(),
+            "{}: every entry comes from a §8.2 row, a loader rule, or a content check's area",
+            e.slug
+        );
+        assert!(
+            e.area.is_none() || (e.configurable && e.row.is_none() && e.group.is_none()),
+            "{}: `area` is for content checks, which are configurable and have no §8.2 row or group",
             e.slug
         );
     }

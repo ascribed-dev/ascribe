@@ -14,6 +14,7 @@ import {
   type Overlay,
   type OverlayData,
   type OverlayHost,
+  type PromptRequest,
 } from "@ascribed/review/overlay";
 import type {
   Change,
@@ -95,6 +96,11 @@ export class Threads {
     this.overlay?.showAllComments();
   }
 
+  /** Asks the extension to build and deliver a prompt; rejects with what went wrong. */
+  prompt(request: PromptRequest): Promise<void> {
+    return this.request("promptAgent", { request });
+  }
+
   /** Places the threads again: the page moved under them (the header grew, what shows changed). */
   layout(): void {
     this.overlay?.layout();
@@ -152,6 +158,7 @@ export class Threads {
       submit: (event, body) =>
         this.request("submit", body === undefined ? { event } : { event, body }),
       discard: () => this.request("discard"),
+      promptAgent: (request) => this.prompt(request),
       openSource: (anchor) => this.post({ type: "openSource", source: anchor.source }),
       openThread: (threadId, path) => this.post({ type: "openThread", threadId, path }),
       openLink: (url) => this.post({ type: "open", href: url }),

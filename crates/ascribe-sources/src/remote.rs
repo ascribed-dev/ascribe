@@ -22,7 +22,8 @@ use ascribe_model::file_hash;
 
 use crate::SourcesError;
 
-/// The settings every call runs with.
+/// The settings every call runs with, after `ascribe_core::git::OPTIONS`,
+/// which every `git` Ascribe starts runs with.
 const SETTINGS: &[&str] = &[
     // Only these transports: not `ext::`, which runs a command.
     "protocol.allow=never",
@@ -35,20 +36,8 @@ const SETTINGS: &[&str] = &[
     "credential.interactive=false",
     "fetch.recurseSubmodules=false",
     "submodule.recurse=false",
-    "core.fsmonitor=false",
     "gc.auto=0",
     "maintenance.auto=false",
-];
-
-/// Environment variables that would point `git` at another repository than
-/// the cache's.
-const CLEARED: &[&str] = &[
-    "GIT_WORK_TREE",
-    "GIT_INDEX_FILE",
-    "GIT_OBJECT_DIRECTORY",
-    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-    "GIT_NAMESPACE",
-    "GIT_COMMON_DIR",
 ];
 
 /// The cache of fetched repositories.
@@ -423,8 +412,13 @@ impl Remote {
 
     fn command(&self, args: &[&str]) -> Command {
         let mut command = Command::new("git");
-        for setting in SETTINGS {
+        for setting in ascribe_core::git::OPTIONS.iter().chain(SETTINGS) {
             command.args(["-c", setting]);
+        }
+        // Nothing that would point `git` at another repository than the
+        // cache's, which `GIT_DIR` names.
+        for name in ascribe_core::git::CLEARED {
+            command.env_remove(name);
         }
         // A hooks folder that doesn't exist: the cache runs no hooks.
         let hooks = format!("core.hooksPath={}", self.dir.join("no-hooks").display());
@@ -435,9 +429,6 @@ impl Remote {
             .env("GIT_DIR", &self.dir)
             .env("GIT_TERMINAL_PROMPT", "0")
             .stdin(Stdio::null());
-        for name in CLEARED {
-            command.env_remove(name);
-        }
         if self.batch_ssh {
             command.env("GIT_SSH_COMMAND", "ssh -o BatchMode=yes");
         }
@@ -486,9 +477,9 @@ fn parse_size(header: &str, object: &str) -> io::Result<usize> {
     }
 }
 
-/// The folder the cache is in: `ASCRIBE_CACHE_DIR`, or `ascribe` in the
-/// user's cache folder.
-pub(crate) fn cache_root() -> Option<PathBuf> {
+/// The folder Ascribe's caches are in: `ASCRIBE_CACHE_DIR`, or `ascribe`
+/// in the user's cache folder. `None` when neither can be found.
+pub fn cache_root() -> Option<PathBuf> {
     let var = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty());
     if let Some(dir) = var("ASCRIBE_CACHE_DIR") {
         return Some(PathBuf::from(dir));

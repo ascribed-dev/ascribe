@@ -1,0 +1,10 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.guide.frontmatter]
+title = "string"
+
+[types.reference.frontmatter]
+title = "string"

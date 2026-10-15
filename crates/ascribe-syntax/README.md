@@ -33,10 +33,10 @@ assert!(doc.issues.is_empty());
 
 ## Tests
 
-- `tests/parse.rs`: directive heads, primaries, issues, and lines that only look like directives.
-- `tests/structure.rs`: containers, groups, titles, bindings, and the structural issues.
-- `tests/inline.rs`: phrase candidates and image attribute blocks, in every place the spec allows them.
-- `tests/definitions.rs`: link reference definitions, with their spans and phrases.
-- `tests/spans.rs`: every span covers exactly its source text, over the CommonMark examples, the example projects, and every conformance case.
-- `tests/agreement.rs`: a property test that the head parser and the fork's block scanner agree, and that `parse` never panics.
+- `tests/all/parse.rs`: directive heads, primaries, issues, and lines that only look like directives.
+- `tests/all/structure.rs`: containers, groups, titles, bindings, and the structural issues.
+- `tests/all/inline.rs`: phrase candidates and image attribute blocks, in every place the spec allows them.
+- `tests/all/definitions.rs`: link reference definitions, with their spans and phrases.
+- `tests/all/spans.rs`: every span covers exactly its source text, over the CommonMark examples, the example projects, and every conformance case.
+- `tests/all/agreement.rs`: a property test that the head parser and the fork's block scanner agree, and that `parse` never panics.
 - The conformance suite (`tests/conformance`) runs the spec's own examples through `parse`, and `tests/commonmark` runs the CommonMark examples against the fork.

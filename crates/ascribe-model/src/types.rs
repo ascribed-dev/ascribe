@@ -42,8 +42,68 @@ pub struct Field {
     /// The inline markup the value is read with (`inline = "code"`), on a
     /// content type's top-level `string` fields.
     pub inline: Option<InlineMarkup>,
+    /// What the field is to the page (`role = "description"`), on a content
+    /// type's top-level fields.
+    pub role: Option<FieldRole>,
     /// Help text.
     pub description: Option<String>,
+}
+
+/// What a field is to the page, beyond its value: the checks and the
+/// outputs read the field that has a role, whatever it's named.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FieldRole {
+    /// A sentence saying what the page is for (`role = "description"`): a
+    /// string field.
+    Description,
+    /// When the page is next due for review (`role = "review-date"`): a date
+    /// field.
+    ReviewDate,
+    /// Who looks after the page (`role = "owner"`), such as a team: a string
+    /// or enum field.
+    Owner,
+}
+
+impl FieldRole {
+    /// Every role, in the order the docs list them.
+    pub const ALL: [FieldRole; 3] = [
+        FieldRole::Description,
+        FieldRole::ReviewDate,
+        FieldRole::Owner,
+    ];
+
+    /// The setting's value in `ascribe.toml`.
+    pub fn name(self) -> &'static str {
+        match self {
+            FieldRole::Description => "description",
+            FieldRole::ReviewDate => "review-date",
+            FieldRole::Owner => "owner",
+        }
+    }
+
+    /// The role a setting's value names, if any.
+    pub fn from_name(name: &str) -> Option<FieldRole> {
+        FieldRole::ALL.into_iter().find(|r| r.name() == name)
+    }
+
+    /// Whether a field of type `ty` can have this role.
+    pub fn accepts(self, ty: &FieldType) -> bool {
+        match self {
+            FieldRole::Description => *ty == FieldType::String,
+            FieldRole::ReviewDate => *ty == FieldType::Date,
+            FieldRole::Owner => matches!(ty, FieldType::String | FieldType::Enum(_)),
+        }
+    }
+
+    /// The types a field with this role can have, for messages: `string`,
+    /// `date`, or `string or enum`.
+    pub fn expected(self) -> &'static str {
+        match self {
+            FieldRole::Description => "string",
+            FieldRole::ReviewDate => "date",
+            FieldRole::Owner => "string or enum",
+        }
+    }
 }
 
 /// Whose schema this is, for messages.
@@ -62,6 +122,13 @@ pub struct FrontmatterSchema {
     pub owner: SchemaOwner,
     /// The fields, in declaration order.
     pub fields: Vec<Field>,
+}
+
+impl FrontmatterSchema {
+    /// The top-level field with `role`, if one has it.
+    pub fn field_with_role(&self, role: FieldRole) -> Option<&Field> {
+        self.fields.iter().find(|f| f.role == Some(role))
+    }
 }
 
 impl FieldType {
@@ -104,7 +171,7 @@ impl FieldType {
 }
 
 /// How YAML (core schema) reads a value, for messages.
-fn found(v: &Value) -> String {
+pub fn found(v: &Value) -> String {
     match v {
         Value::Null => "empty".into(),
         Value::Bool(_) => "a boolean".into(),
@@ -118,30 +185,7 @@ fn found(v: &Value) -> String {
 
 /// Whether `s` is a real calendar date written `YYYY-MM-DD`.
 pub(crate) fn is_calendar_date(s: &str) -> bool {
-    let b = s.as_bytes();
-    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
-        return false;
-    }
-    let digits = |r: std::ops::Range<usize>| b[r].iter().all(u8::is_ascii_digit);
-    if !(digits(0..4) && digits(5..7) && digits(8..10)) {
-        return false;
-    }
-    let (Ok(y), Ok(m), Ok(d)) = (
-        s[0..4].parse::<u32>(),
-        s[5..7].parse::<u32>(),
-        s[8..10].parse::<u32>(),
-    ) else {
-        return false;
-    };
-    let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
-    let days = match m {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if leap => 29,
-        2 => 28,
-        _ => return false,
-    };
-    (1..=days).contains(&d)
+    ascribe_core::Date::parse(s).is_some()
 }
 
 /// Validates parsed frontmatter against a schema.
@@ -156,11 +200,12 @@ pub(crate) fn is_calendar_date(s: &str) -> bool {
 ///   field is close;
 /// - `frontmatter-missing-field`;
 /// - `frontmatter-type-mismatch`;
-/// - `frontmatter-reserved-in-fragment`, for `available` and `variant` in a
-///   fragment. On a page, those two keys are accepted here; their values are
+/// - `frontmatter-reserved-in-fragment`, for a page's reserved keys
+///   (`available`, `variant`, `permalink`, `listing`, and `type`) in a
+///   fragment. On a page, those keys are accepted here; their values are
 ///   checked elsewhere (SPEC §4.3).
 ///
-/// Choosing which schema applies to a page is [`crate::ContentModel::type_for`].
+/// Choosing which schema applies to a page is [`crate::ContentModel::type_of`].
 pub fn validate_frontmatter(schema: &FrontmatterSchema, value: &Value, at: Location) -> Vec<Issue> {
     let mut cx = Cx {
         schema,
@@ -239,7 +284,16 @@ impl Cx<'_> {
             format!("{path}.{key}")
         };
         let top = path.is_empty();
-        if top && matches!(key, "available" | "variant") {
+        // SPEC §4.9: pages and fragments both accept `intended`.
+        if top && key == "intended" {
+            return;
+        }
+        if top
+            && matches!(
+                key,
+                "available" | "variant" | "permalink" | "listing" | "replaces" | "type"
+            )
+        {
             match self.schema.owner {
                 SchemaOwner::Type(_) => {}
                 SchemaOwner::Fragment => {
@@ -314,6 +368,7 @@ pub(crate) fn default_mismatch(ty: &FieldType, v: &Value) -> Option<String> {
             default: None,
             phrases: false,
             inline: None,
+            role: None,
             description: None,
         }],
     };
@@ -338,6 +393,7 @@ mod tests {
             default: None,
             phrases: false,
             inline: None,
+            role: None,
             description: None,
         }
     }

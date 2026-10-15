@@ -104,7 +104,7 @@ server:
 ## Streaming sync <ascribe-attributes id="streaming-sync"></ascribe-attributes>
 
 <ascribe-availability scope="section">
-<ascribe-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</ascribe-availability-target>; <ascribe-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.4">self-managed (preview, 3.4+)</ascribe-availability-target>
+<ascribe-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</ascribe-availability-target>; <ascribe-availability-target target="self-managed" dimension="deployment" states="preview">self-managed (preview)</ascribe-availability-target>
 </ascribe-availability>
 
 Streaming sync pushes changes as you save, instead of on each commit.

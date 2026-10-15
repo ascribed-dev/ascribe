@@ -1,0 +1,14 @@
+description: >-
+  Each search crawler reads the one group that applies to it: a group of
+  the project's own `lines` that names it, or `*`. A page that's `unlisted`
+  at an address a group naming a search crawler disallows is advice, and so
+  is one `*` disallows, which a search crawler named in a group of its own
+  isn't under but every other search engine is. A page disallowed only for
+  a crawler that isn't a search crawler isn't reported. `search = "allow"`
+  writes nothing.
+spec: ["2.1", "7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: listing-disallowed, file: answers/page.md, line: 4}
+  - {slug: listing-disallowed, file: drafts/page.md, line: 4}

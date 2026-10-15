@@ -1,0 +1,9 @@
+# API keys
+
+## Create a key
+
+Sign in to Quill Cloud and open **Settings → Keys**.
+
+## Rotate keys
+
+Generate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [Install the agent](https://docs.quill.dev/install-agent/#install-agent).

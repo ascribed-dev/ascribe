@@ -1,0 +1,7 @@
+description: >-
+  With `[listing] default = "unlisted"` no page is listed, so disallowing
+  `search` or `on-request` costs nothing more, and isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

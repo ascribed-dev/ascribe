@@ -251,3 +251,119 @@ fn two_sources_at_once_and_one_by_name() {
         Err(SourcesError::ToNeedsOneSource)
     ));
 }
+
+/// An observation listing each of `files` (path and contents) as tested.
+fn observation(files: &[(&str, &str)]) -> String {
+    let mut text = String::from(
+        "version = 1\nascribe = \"0.3.0\"\ncommand = \"npm test\"\n\n[environment]\nos = \"linux\"\narch = \"x64\"\n\n[files]\n",
+    );
+    for (path, contents) in files {
+        text.push_str(&format!(
+            "\"{path}\" = \"{}\"\n",
+            ascribe_model::example_hash(contents.as_bytes())
+        ));
+    }
+    text
+}
+
+#[test]
+fn an_update_says_which_examples_went_stale_lost_their_observation_or_are_current() {
+    use ascribe_sources::{ExampleState, ExampleUpdate};
+    let code = Code::new();
+    code.write("ascribe.examples.toml", "include = [\"*.rs\"]\n")
+        .write("a.rs", "a\n")
+        .write("b.rs", "b\n")
+        .write("c.rs", "c\n")
+        .write(
+            "examples.observations/default.toml",
+            observation(&[("a.rs", "a\n"), ("b.rs", "b\n")]),
+        );
+    code.commit("first");
+    let docs = Docs::new(&source("api", &code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:a.rs\n\n@snippet: api:b.rs\n\n@snippet: api:c.rs\n",
+    );
+    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let examples = |report: ascribe_sources::UpdateReport| report.sources[0].examples.clone();
+    let example = |path: &str, status, was| ExampleUpdate {
+        path: path.to_owned(),
+        status,
+        was: Some(was),
+    };
+
+    // `a` changes without a test run; the observation drops `b`, and lists
+    // `c` as it is.
+    code.write("a.rs", "a2\n").write(
+        "examples.observations/default.toml",
+        observation(&[("a.rs", "a\n"), ("c.rs", "c\n")]),
+    );
+    code.commit("second");
+    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    assert_eq!(
+        examples(report),
+        [
+            example("a.rs", ExampleState::Stale, ExampleState::Current),
+            example("b.rs", ExampleState::Unobserved, ExampleState::Current),
+            example("c.rs", ExampleState::Current, ExampleState::Unobserved),
+        ]
+    );
+
+    // The observation follows `a`: it's current again, and nothing else
+    // changed.
+    code.write(
+        "examples.observations/default.toml",
+        observation(&[("a.rs", "a2\n"), ("c.rs", "c\n")]),
+    );
+    code.commit("third");
+    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    assert_eq!(
+        examples(report),
+        [example("a.rs", ExampleState::Current, ExampleState::Stale)]
+    );
+
+    // No move, nothing to say.
+    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    assert!(examples(report).is_empty());
+}
+
+#[test]
+fn an_update_counts_an_example_current_when_any_observation_has_it_as_it_is() {
+    use ascribe_sources::{ExampleState, ExampleUpdate};
+    let code = Code::new();
+    code.write("ascribe.examples.toml", "include = [\"*.rs\"]\n")
+        .write("a.rs", "a\n")
+        .write("b.rs", "b\n")
+        .write(
+            "examples.observations/default.toml",
+            observation(&[("a.rs", "a\n"), ("b.rs", "b\n")]),
+        )
+        .write(
+            "examples.observations/node-22.toml",
+            observation(&[("a.rs", "a\n"), ("b.rs", "b\n")]),
+        );
+    code.commit("first");
+    let docs = Docs::new(&source("api", &code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:a.rs\n\n@snippet: api:b.rs\n",
+    );
+    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+
+    // Both change; only `node-22` is run again, and only `a` passes it as
+    // it is now. `a` stays current, by `node-22`; `b` goes stale.
+    code.write("a.rs", "a2\n").write("b.rs", "b2\n").write(
+        "examples.observations/node-22.toml",
+        observation(&[("a.rs", "a2\n")]),
+    );
+    code.commit("second");
+    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    assert_eq!(
+        report.sources[0].examples,
+        [ExampleUpdate {
+            path: "b.rs".to_owned(),
+            status: ExampleState::Stale,
+            was: Some(ExampleState::Current),
+        }]
+    );
+}

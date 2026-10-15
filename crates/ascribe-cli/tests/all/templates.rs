@@ -1,0 +1,736 @@
+//! `ascribe templates`, by running the binary in temporary projects: what
+//! `list` shows, what `eject` says it wrote, its JSON, what it exits with
+//! when it refuses, where there's no `ascribe.toml`, and `--to` from another
+//! folder; and what `status` says, exits with, and prints with `--diff`, with
+//! the network closed. What eject writes, and every case it refuses, is held
+//! by `crates/ascribe-templates/tests/all/eject.rs`, and each state `status`
+//! tells by `crates/ascribe-templates/tests/all/status.rs`.
+
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+
+use std::fs;
+use std::path::Path;
+use std::process::{Command, Output};
+
+use serde_json::Value;
+use tempfile::TempDir;
+
+const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n";
+
+fn project() -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("ascribe.toml"), MODEL).unwrap();
+    fs::create_dir(dir.path().join("docs")).unwrap();
+    fs::write(
+        dir.path().join("docs/index.md"),
+        "---\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
+    dir
+}
+
+fn ascribe(dir: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(args)
+        .env("NO_COLOR", "1")
+        .output()
+        .expect("run ascribe")
+}
+
+fn stdout(output: &Output) -> String {
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+fn stderr(output: &Output) -> String {
+    String::from_utf8_lossy(&output.stderr).into_owned()
+}
+
+fn code_of(output: &Output) -> i32 {
+    output.status.code().expect("exited with a code")
+}
+
+#[test]
+fn list_shows_each_template_with_its_summary_and_where_the_set_is_from() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["templates", "list"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    let set = ascribe_templates::set();
+    let width = set.templates.iter().map(|t| t.name.len()).max().unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), set.templates.len() + 1, "{text}");
+    for (line, template) in lines.iter().zip(&set.templates) {
+        assert_eq!(
+            *line,
+            format!("{:width$}  {}", template.name, template.summary),
+            "{text}"
+        );
+    }
+    assert!(text.contains("The Good Docs Project"), "{text}");
+}
+
+#[test]
+fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert_eq!(
+        stdout(&output),
+        "wrote templates/how-to.md\n\
+         wrote templates/how-to.guide.md\n\
+         wrote templates/how-to.ascribe.md\n\
+         wrote templates/templates.lock\n\
+         wrote ascribe.toml\n\
+         added [types.page] to ascribe.toml: it declared no types, so every page was of this one, and a page that isn't of a new type names it, with `type: page`\n\
+         added [types.how-to] to ascribe.toml\n\
+         1 page names no type. In a project whose ascribe.toml declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:\n  \
+         docs/index.md\n\
+         To start a page, copy templates/how-to.md to where the page goes, and read templates/how-to.guide.md and templates/how-to.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
+    );
+    fs::write(
+        dir.path().join("docs/index.md"),
+        "---\ntype: page\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
+    fs::create_dir(dir.path().join("docs/how-to")).unwrap();
+    fs::copy(
+        dir.path().join("templates/how-to.md"),
+        dir.path().join("docs/how-to/rotate-keys.md"),
+    )
+    .unwrap();
+    let check = ascribe(dir.path(), &["check", "--format", "json"]);
+    let report: Value = serde_json::from_slice(&check.stdout).unwrap();
+    let errors: Vec<&Value> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["severity"] != "advice")
+        .collect();
+    assert!(errors.is_empty(), "{errors:#?}");
+}
+
+#[test]
+fn eject_s_json_lists_what_it_wrote_and_added() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "--format", "json"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(
+        answer["schema_version"],
+        ascribe_templates::eject::SCHEMA_VERSION
+    );
+    let set = ascribe_templates::set();
+    let written = answer["written"].as_array().unwrap();
+    assert_eq!(written.len(), set.templates.len() * 3 + 2, "{written:#?}");
+    assert_eq!(written.last().unwrap(), "ascribe.toml");
+    let added = answer["added"].as_array().unwrap();
+    assert_eq!(added.len(), set.templates.len());
+    for (added, template) in added.iter().zip(&set.templates) {
+        assert_eq!(added["name"], template.name.as_str());
+        assert_eq!(
+            added["guide"],
+            serde_json::json!([
+                format!("templates/{}", template.guide),
+                format!("templates/{}.ascribe.md", template.name)
+            ])
+        );
+    }
+    assert_eq!(answer["refused"], Value::Array(Vec::new()));
+    assert_eq!(answer["page_declared"], true);
+    assert_eq!(answer["untyped"], serde_json::json!(["docs/index.md"]));
+    assert_eq!(added[0]["copied"], serde_json::json!([]));
+}
+
+/// A project whose pages name no type: each type added takes the other
+/// types' declarations, and the pages are listed, up to ten.
+#[test]
+fn eject_lists_the_pages_that_name_no_type() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.guide.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\n",
+    )
+    .unwrap();
+    fs::create_dir_all(dir.path().join("docs/guides")).unwrap();
+    for n in 0..12 {
+        fs::write(
+            dir.path().join(format!("docs/guides/{n:02}.md")),
+            "---\ntitle: A\n---\n",
+        )
+        .unwrap();
+    }
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to", "concept"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    let after = text.split("wrote ascribe.toml\n").nth(1).unwrap();
+    let listed: String = (0..10)
+        .map(|n| format!("  docs/guides/{n:02}.md\n"))
+        .collect();
+    assert_eq!(
+        after,
+        format!(
+            "added [types.how-to] to ascribe.toml, with `title` declared as the project's other types declare it\n\
+             added [types.concept] to ascribe.toml, with `title` declared as the project's other types declare it\n\
+             12 pages name no type. In a project whose ascribe.toml declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:\n\
+             {listed}  and 2 more, which `--format json` lists\n\
+             To start a page, copy its type's template to where the page goes, and read its guide and Ascribe's notes on it first. The page names its type in its frontmatter, as the template does.\n"
+        )
+    );
+}
+
+#[test]
+fn eject_with_no_name_gives_six_types_whose_templates_check_and_are_formatted() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::write(
+        dir.path().join("docs/index.md"),
+        "---\ntype: page\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
+    for template in ascribe_templates::set().templates {
+        let folder = dir.path().join("docs").join(&template.name);
+        fs::create_dir(&folder).unwrap();
+        fs::copy(
+            dir.path().join("templates").join(&template.template),
+            folder.join("page.md"),
+        )
+        .unwrap();
+    }
+    let check = ascribe(dir.path(), &["check", "--format", "json"]);
+    let report: Value = serde_json::from_slice(&check.stdout).unwrap();
+    let errors: Vec<&Value> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["severity"] != "advice")
+        .collect();
+    assert!(errors.is_empty(), "{errors:#?}");
+    let fmt = ascribe(dir.path(), &["fmt", "--check"]);
+    assert_eq!(code_of(&fmt), 0, "{}{}", stdout(&fmt), stderr(&fmt));
+}
+
+#[test]
+fn eject_refused_writes_nothing_and_exits_2() {
+    let dir = project();
+    assert_eq!(code_of(&ascribe(dir.path(), &["templates", "eject"])), 0);
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 2);
+    assert_eq!(stdout(&output), "");
+    let err = stderr(&output);
+    assert!(
+        err.starts_with("error: how-to: ascribe.toml declares [types.how-to] already; `ascribe templates eject how-to --keep-type` takes the template for it\n"),
+        "{err}"
+    );
+    assert!(err.ends_with("wrote nothing\n"), "{err}");
+    assert_eq!(
+        fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
+        model
+    );
+
+    let json = ascribe(dir.path(), &["templates", "eject", "--format", "json"]);
+    assert_eq!(code_of(&json), 2);
+    let answer: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(answer["refused"][0]["reason"], "declared");
+    assert_eq!(answer["refused"][1]["reason"], "file_in_the_way");
+    assert_eq!(answer["refused"][1]["path"], "templates/how-to.md");
+}
+
+#[test]
+fn eject_keep_type_adds_the_template_and_guide_and_says_what_it_left() {
+    let dir = project();
+    let model = format!(
+        "{MODEL}\n[types.reference]\n\n# Titles show code.\n[types.reference.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\ndescription = {{ type = \"string\", role = \"description\" }}\n"
+    );
+    fs::write(dir.path().join("ascribe.toml"), &model).unwrap();
+    let output = ascribe(
+        dir.path(),
+        &["templates", "eject", "reference", "--keep-type"],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert_eq!(
+        stdout(&output),
+        "wrote templates/reference.md\n\
+         wrote templates/reference.guide.md\n\
+         wrote templates/reference.ascribe.md\n\
+         wrote templates/templates.lock\n\
+         wrote ascribe.toml\n\
+         added `template` and `guide` to [types.reference] in ascribe.toml, and left `frontmatter` as it was\n\
+         To start a page, copy templates/reference.md to where the page goes, and read templates/reference.guide.md and templates/reference.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
+        model.replace(
+            "[types.reference]\n",
+            "[types.reference]\ntemplate = \"templates/reference.md\"\nguide = [\"templates/reference.guide.md\", \"templates/reference.ascribe.md\"]\n"
+        )
+    );
+    let again = ascribe(
+        dir.path(),
+        &[
+            "templates",
+            "eject",
+            "reference",
+            "--keep-type",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(code_of(&again), 2);
+    let answer: Value = serde_json::from_slice(&again.stdout).unwrap();
+    assert_eq!(answer["refused"][0]["reason"], "type_has_template");
+    assert_eq!(answer["kept"], Value::Array(Vec::new()));
+}
+
+#[test]
+fn eject_s_json_lists_what_it_kept() {
+    let dir = project();
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        format!("{MODEL}\n[types.how-to]\n\n[types.how-to.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"),
+    )
+    .unwrap();
+    let output = ascribe(
+        dir.path(),
+        &[
+            "templates",
+            "eject",
+            "how-to",
+            "--keep-type",
+            "--format",
+            "json",
+        ],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(answer["added"], Value::Array(Vec::new()));
+    assert_eq!(
+        answer["kept"],
+        serde_json::json!([{
+            "name": "how-to",
+            "summary": ascribe_templates::set().templates[0].summary,
+            "template": "templates/how-to.md",
+            "guide": ["templates/how-to.guide.md", "templates/how-to.ascribe.md"],
+            "left": ["frontmatter"],
+        }])
+    );
+}
+
+#[test]
+fn eject_with_no_ascribe_toml_names_ascribe_init() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 2);
+    let err = stderr(&output);
+    assert!(err.starts_with("error: no ascribe.toml found"), "{err}");
+    assert!(err.contains("run `ascribe init --templates`"), "{err}");
+    assert!(fs::read_dir(dir.path()).unwrap().next().is_none());
+}
+
+#[test]
+fn to_is_a_folder_from_the_current_folder() {
+    let dir = project();
+    let here = dir.path().join("docs");
+    let output = ascribe(&here, &["templates", "eject", "--to", "../writing"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    // Paths are shown from where it ran; ascribe.toml has them from its
+    // own folder.
+    assert!(text.starts_with("wrote ../writing/how-to.md\n"), "{text}");
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    assert!(
+        model.contains("template = \"writing/how-to.md\"\n"),
+        "{model}"
+    );
+
+    let outside = ascribe(dir.path(), &["templates", "eject", "--to", "../elsewhere"]);
+    assert_eq!(code_of(&outside), 2);
+    assert!(stderr(&outside).contains("isn't inside the folder ascribe.toml is in"));
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    fs::create_dir_all(to).unwrap();
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), &target).unwrap();
+        }
+    }
+}
+
+/// The diagnostics `ascribe check` reports on `file`, a path from the
+/// project's folder.
+fn reported_on(dir: &Path, file: &str) -> Vec<Value> {
+    let check = ascribe(dir, &["check", "--format", "json"]);
+    let report: Value = serde_json::from_slice(&check.stdout).unwrap();
+    report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["file"].as_str().is_some_and(|f| f.ends_with(file)))
+        .cloned()
+        .collect()
+}
+
+const FILLED: &str = "---
+type: how-to
+title: \"Rotate keys\"
+description: \"Replace the keys Quill signs releases with, without a release going unsigned.\"
+---
+
+## Overview
+
+This guide explains how to replace the keys Quill signs releases with.
+
+## Before you start
+
+Before you rotate the keys, ensure:
+
+* You can publish a release.
+* You have the old key's passphrase.
+
+## Rotate the keys
+
+@steps
+1. Run `quill keys new`.
+
+2. Run `quill keys retire` with the old key's name.
+
+## See also
+
+* [Install Quill](../install.md)
+";
+
+/// The phase's goal, in a copy of `examples/getting-started`: eject the
+/// how-to, copy its template to a page, and `ascribe check` gives one advice
+/// for each placeholder the page still has, its two frontmatter fields among
+/// them, and the placeholder that runs across blocks once. Filled in, the
+/// page has nothing to report.
+#[test]
+fn a_page_copied_from_the_template_has_an_advice_for_each_placeholder() {
+    let dir = tempfile::tempdir().unwrap();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started");
+    copy_dir(&example, dir.path());
+    let eject = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    let template = fs::read_to_string(dir.path().join("templates/how-to.md")).unwrap();
+    fs::create_dir_all(dir.path().join("docs/how-to")).unwrap();
+    fs::write(dir.path().join("docs/how-to/rotate-keys.md"), &template).unwrap();
+    // Linked to, so whether it's an orphan isn't in the way.
+    let install = dir.path().join("docs/install.md");
+    let mut text = fs::read_to_string(&install).unwrap();
+    text.push_str("\nTo change its keys, see [Rotate keys](how-to/rotate-keys.md).\n");
+    fs::write(&install, text).unwrap();
+
+    let found = reported_on(dir.path(), "how-to/rotate-keys.md");
+    assert!(
+        found
+            .iter()
+            .all(|d| d["slug"] == "template-placeholder-left"),
+        "{found:#?}"
+    );
+    // Each placeholder opens with the one brace the template escapes, and
+    // the title and the description are the template's.
+    let placeholders = template.matches("\\{").count();
+    assert_eq!(found.len(), placeholders + 2, "{found:#?}");
+    let see_also = found
+        .iter()
+        .filter(|d| {
+            d["message"]
+                .as_str()
+                .is_some_and(|m| m.contains("{Include references"))
+        })
+        .count();
+    assert_eq!(see_also, 1, "{found:#?}");
+
+    fs::write(dir.path().join("docs/how-to/rotate-keys.md"), FILLED).unwrap();
+    let found = reported_on(dir.path(), "how-to/rotate-keys.md");
+    assert!(found.is_empty(), "{found:#?}");
+}
+
+/// A project that took the how-to, with its copy made from an older set:
+/// the template's first section reads otherwise, and `templates.lock`
+/// records the file as it is, so the set has changed it since and the
+/// project hasn't.
+fn copied_from_an_older_set() -> TempDir {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let template = dir.path().join("templates/how-to.md");
+    let was = fs::read_to_string(&template).unwrap();
+    let older = was.replace("\n## Before you start\n", "\n## Before you begin\n");
+    assert_ne!(older, was);
+    fs::write(&template, &older).unwrap();
+    let lock = dir.path().join("templates/templates.lock");
+    let text = fs::read_to_string(&lock).unwrap().replace(
+        &ascribe_model::file_hash(was.as_bytes()),
+        &ascribe_model::file_hash(older.as_bytes()),
+    );
+    fs::write(&lock, text).unwrap();
+    dir
+}
+
+/// Runs `ascribe` with every way out to the network closed: proxies that
+/// lead nowhere, and `git` allowed no protocol.
+fn offline(dir: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(args)
+        .env("NO_COLOR", "1")
+        .env("HTTP_PROXY", "http://127.0.0.1:9")
+        .env("HTTPS_PROXY", "http://127.0.0.1:9")
+        .env("ALL_PROXY", "http://127.0.0.1:9")
+        .env("GIT_ALLOW_PROTOCOL", "none")
+        .output()
+        .expect("run ascribe")
+}
+
+#[test]
+fn status_of_an_untouched_copy_says_nothing_changed_and_exits_0() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to", "concept"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let output = offline(dir.path(), &["templates", "status", "--exit-code"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let tag = ascribe_templates::set().tag;
+    assert_eq!(
+        stdout(&output),
+        format!(
+            "This ascribe's templates are The Good Docs Project's, https://gitlab.com/tgdp/templates, at {tag}.\n\
+             how-to: unchanged in the set since the copy from {tag}; the project's copy is as written\n\
+             concept: unchanged in the set since the copy from {tag}; the project's copy is as written\n\
+             Not taken: tutorial, reference, troubleshooting, release-notes. `ascribe templates eject <NAME>` writes one.\n"
+        )
+    );
+}
+
+/// The acceptance criterion, from the outside: with the network closed, a
+/// copy older than the set is listed with what changed by section, and
+/// exits 0, or 1 with `--exit-code`.
+#[test]
+fn status_names_what_changed_in_the_set_with_the_network_closed() {
+    let dir = copied_from_an_older_set();
+    let output = offline(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    let tag = ascribe_templates::set().tag;
+    assert!(
+        text.contains(&format!(
+            "how-to: changed in the set since the copy from {tag}; the project's copy is as written\n  \
+             templates/how-to.md: changed in the set\n    \
+             added: \"Before you start\"\n    \
+             removed: \"Before you begin\"\n"
+        )),
+        "{text}"
+    );
+    assert!(
+        text.ends_with(
+            "To see a change, run `ascribe templates status --diff <NAME>`. Nothing was changed.\n"
+        ),
+        "{text}"
+    );
+    let output = offline(dir.path(), &["templates", "status", "--exit-code"]);
+    assert_eq!(code_of(&output), 1, "{}", stderr(&output));
+
+    let output = offline(dir.path(), &["templates", "status", "--format", "json"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let json: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["upstream_changed"], true);
+    let how_to = &json["templates"][0];
+    assert_eq!(how_to["name"], "how-to");
+    assert_eq!(how_to["record"], "entry");
+    assert_eq!(how_to["upstream"], "changed");
+    assert_eq!(how_to["project"], "unchanged");
+    assert_eq!(how_to["files"][0]["path"], "templates/how-to.md");
+    assert_eq!(how_to["files"][0]["sections"][0]["change"], "added");
+}
+
+#[test]
+fn status_diff_prints_the_change_to_one_template_and_applies_nothing() {
+    let dir = copied_from_an_older_set();
+    let before = fs::read_to_string(dir.path().join("templates/how-to.md")).unwrap();
+    let output = offline(dir.path(), &["templates", "status", "--diff", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let text = stdout(&output);
+    assert!(
+        text.starts_with("--- a/templates/how-to.md\n+++ b/templates/how-to.md\n@@ "),
+        "{text}"
+    );
+    assert!(
+        text.contains("\n-## Before you begin\n+## Before you start\n"),
+        "{text}"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("templates/how-to.md")).unwrap(),
+        before
+    );
+
+    let output = ascribe(dir.path(), &["templates", "status", "--diff", "concept"]);
+    assert_eq!(code_of(&output), 1, "{}", stdout(&output));
+    assert!(
+        stderr(&output).contains("`ascribe templates eject concept` writes it"),
+        "{}",
+        stderr(&output)
+    );
+    let output = ascribe(dir.path(), &["templates", "status", "--diff", "nope"]);
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(
+        stderr(&output).starts_with("error: there's no template named `nope`"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+#[test]
+fn status_reports_a_deleted_template_the_model_still_names() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::remove_file(dir.path().join("templates/how-to.md")).unwrap();
+    let output = ascribe(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let tag = ascribe_templates::set().tag;
+    assert!(
+        stdout(&output).contains(&format!(
+            "how-to: unchanged in the set since the copy from {tag}; the project has changed its copy\n  \
+             templates/how-to.md: deleted\n"
+        )),
+        "{}",
+        stdout(&output)
+    );
+}
+
+#[test]
+fn status_of_a_model_that_doesn_t_load_exits_2() {
+    let dir = project();
+    let output = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    fs::remove_dir_all(dir.path().join("docs")).unwrap();
+    let output = ascribe(dir.path(), &["templates", "status"]);
+    assert_eq!(code_of(&output), 2, "{}", stdout(&output));
+    assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+}
+
+/// `ascribe agents prompt new-page` for a type eject gave: the template with
+/// the title set, the guide to read first, and a check command that works
+/// from the folder the prompt was asked for in, the repository's root or
+/// the project's.
+#[test]
+fn the_new_page_prompt_has_the_template_and_the_guide_and_its_check_runs_where_it_was_asked() {
+    let repo = tempfile::tempdir().unwrap();
+    let site = repo.path().join("site");
+    fs::create_dir(&site).unwrap();
+    let dir = project();
+    copy_dir(dir.path(), &site);
+    let git = Command::new("git")
+        .current_dir(repo.path())
+        .args(["init", "-q"])
+        .output()
+        .expect("run git");
+    assert!(git.status.success());
+    let eject = ascribe(&site, &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    fs::write(
+        site.join("docs/index.md"),
+        "---\ntype: page\ntitle: Home\n---\n\nText.\n",
+    )
+    .unwrap();
+    let template = fs::read_to_string(site.join("templates/how-to.md")).unwrap();
+    let body = &template[template.find("\n---\n").unwrap()..];
+
+    for (here, base, path) in [
+        (repo.path(), "site/", "path=site"),
+        (site.as_path(), "", "path=."),
+    ] {
+        let output = ascribe(
+            here,
+            &[
+                "agents",
+                "prompt",
+                "new-page",
+                "--arg",
+                "type=how-to",
+                "--arg",
+                "title=Rotate keys",
+                "--arg",
+                path,
+            ],
+        );
+        assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+        let text = stdout(&output);
+        assert!(
+            text.contains(&format!(
+                "when it doesn't say, `{base}docs/rotate-keys.md`."
+            )),
+            "{text}"
+        );
+        let guide = text
+            .find(&format!(
+                "read the type's guide, in this order: `{base}templates/how-to.guide.md`, then \
+                 `{base}templates/how-to.ascribe.md`"
+            ))
+            .unwrap_or_else(|| panic!("{text}"));
+        let started = text
+            .find("title: \"Rotate keys\"\n")
+            .unwrap_or_else(|| panic!("{text}"));
+        assert!(guide < started, "{text}");
+        assert!(text.contains(body), "{text}");
+        assert!(
+            !text.contains(&format!("{base}templates/how-to.md")),
+            "{text}"
+        );
+
+        let command = text
+            .lines()
+            .find_map(|l| l.strip_prefix("When you're done, run `"))
+            .and_then(|l| l.split('`').next())
+            .unwrap_or_else(|| panic!("{text}"));
+        assert_eq!(command, format!("ascribe check {base}docs"));
+        let words: Vec<&str> = command.split(' ').skip(1).collect();
+        let check = ascribe(here, &words);
+        assert_eq!(code_of(&check), 0, "{command}: {}", stderr(&check));
+    }
+}
+
+/// `new-page`'s `path` says where the page goes: its file or a folder, from
+/// the current directory or the content root.
+#[test]
+fn the_new_page_prompt_puts_the_page_where_path_says() {
+    let dir = project();
+    let eject = ascribe(dir.path(), &["templates", "eject", "how-to"]);
+    assert_eq!(code_of(&eject), 0, "{}", stderr(&eject));
+    let prompt = |path: &str| {
+        let output = ascribe(
+            dir.path(),
+            &[
+                "agents",
+                "prompt",
+                "new-page",
+                "--arg",
+                "type=how-to",
+                "--arg",
+                "title=Rotate keys",
+                "--arg",
+                path,
+            ],
+        );
+        (code_of(&output), stdout(&output), stderr(&output))
+    };
+    for (path, place) in [
+        ("path=how-to/keys/rotate.md", "docs/how-to/keys/rotate.md"),
+        ("path=docs/how-to/keys", "docs/how-to/keys/rotate-keys.md"),
+    ] {
+        let (code, text, err) = prompt(path);
+        assert_eq!(code, 0, "{err}");
+        assert!(text.contains(&format!("Where: `{place}`.\n")), "{text}");
+    }
+    let (code, _, err) = prompt("path=_parts/rotate.md");
+    assert_eq!(code, 2);
+    assert!(err.contains("it's a fragment's path"), "{err}");
+}

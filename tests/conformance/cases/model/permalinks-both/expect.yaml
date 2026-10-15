@@ -1,0 +1,8 @@
+description: >-
+  A name both retired and an alias is an error at the alias: a name is one
+  thing.
+spec: ["7.6"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-permalinks, file: ascribe.toml, line: 7}

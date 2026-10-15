@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[checks.page-size]
+level = "warning"
+limit = 0
+
+[checks.heading-level-skipped]
+limit = 3

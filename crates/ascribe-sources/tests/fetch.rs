@@ -294,3 +294,102 @@ fn a_copy_cant_be_written_through_a_link_out_of_its_folder() {
     assert!(matches!(error, SourcesError::Write { .. }), "{error}");
     assert!(!outside.path().join("auth.rs").exists());
 }
+
+#[test]
+fn the_lock_isnt_written_through_a_link() {
+    let code = Code::new();
+    code.write("src/auth.rs", AUTH);
+    code.commit("first");
+    let docs = Docs::new(&api(&code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
+    );
+    let outside = tempfile::tempdir().unwrap();
+    // A link to a file that isn't there yet, so nothing is read through it.
+    let victim = outside.path().join("victim.txt");
+    if !links::file(&victim, docs.root().join("ascribe.lock")) {
+        return;
+    }
+    let error = fetch(&docs.workspace(), &[], &docs.options()).unwrap_err();
+    assert!(matches!(error, SourcesError::Write { .. }), "{error}");
+    assert!(!victim.exists(), "the lock was written through the link");
+}
+
+#[test]
+fn the_examples_config_and_observations_come_with_the_copies() {
+    let code = Code::new();
+    code.write("src/auth.rs", AUTH)
+        .write(
+            "ascribe.examples.toml",
+            "include = [\"src/**\"]\ntest = \"rm -rf ~\"\n",
+        )
+        .write("examples.observations/default.toml", "version = 1\n")
+        .write("examples.observations/windows.toml", "version = 1\n")
+        // Not an observation, and not something a snippet uses.
+        .write("examples.observations.md", "notes\n");
+    code.commit("first");
+    let docs = Docs::new(&api(&code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
+    );
+
+    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    assert_eq!(
+        report.sources[0].copied,
+        [
+            "src/auth.rs",
+            "ascribe.examples.toml",
+            "examples.observations/default.toml",
+            "examples.observations/windows.toml",
+        ]
+    );
+    assert!(!docs.exists("sources/api/examples.observations.md"));
+    let lock = docs.read("ascribe.lock").unwrap();
+    assert!(
+        lock.contains("\"ascribe.examples.toml\" = \"sha256:"),
+        "{lock}"
+    );
+    // They're in order: neither unused nor unlocked.
+    let state = status(&docs.workspace());
+    assert!(state.in_order(), "{state:?}");
+
+    // With every copy in order, the pin says which there are: the
+    // repository isn't reached.
+    let moved = code.root().with_extension("moved");
+    std::fs::rename(code.root(), &moved).unwrap();
+    let again = fetch(&docs.workspace(), &[], &docs.options());
+    std::fs::rename(&moved, code.root()).unwrap();
+    let again = again.unwrap();
+    assert!(again.sources[0].copied.is_empty() && again.sources[0].removed.is_empty());
+
+    // A deleted copy of one is put back, as any locked file is.
+    std::fs::remove_file(common::path(
+        docs.root(),
+        "sources/api/examples.observations/default.toml",
+    ))
+    .unwrap();
+    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    assert_eq!(
+        report.sources[0].copied,
+        ["examples.observations/default.toml"]
+    );
+}
+
+#[test]
+fn a_source_with_no_examples_config_copies_what_it_did() {
+    let code = Code::new();
+    code.write("src/auth.rs", AUTH)
+        .write("README.md", "# API\n");
+    code.commit("first");
+    let docs = Docs::new(&api(&code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
+    );
+    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    assert_eq!(report.sources[0].copied, ["src/auth.rs"]);
+    let lock = docs.read("ascribe.lock").unwrap();
+    assert_eq!(lock.matches(" = \"sha256:").count(), 1, "{lock}");
+}

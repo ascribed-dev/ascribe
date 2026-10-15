@@ -1,4 +1,5 @@
-// Running `ascribe diff --format json` for the integration's build.
+// Running `ascribe diff` for the integration's build: its changes as JSON, and
+// its agent prompts.
 import { execFile } from "node:child_process";
 import type { DiffReport } from "../shapes.js";
 import type { BaseInfo, PageDiff } from "./protocol.js";
@@ -65,4 +66,48 @@ export function parseDiff(json: string, build: string): DiffResult {
   const pages = report.builds.find((b) => b.build === build)?.pages ?? [];
   const errors = typeof report.working_tree_errors === "number" ? report.working_tree_errors : 0;
   return { base: report.base, pages, errors };
+}
+
+/**
+ * `ascribe diff --format prompt`'s prompt about a page, or a fragment's reach,
+ * at a content path; `undefined` when it didn't change. Rejects with
+ * `ascribe diff`'s reason as the message.
+ */
+export function runPrompt(options: {
+  binary: string;
+  configPath: string;
+  build: string;
+  cwd: string;
+  base: string | undefined;
+  path: string;
+}): Promise<string | undefined> {
+  const args = [
+    "diff",
+    "--format",
+    "prompt",
+    "--build",
+    options.build,
+    "--config",
+    options.configPath,
+    "--color",
+    "never",
+  ];
+  if (options.base !== undefined) args.push("--base", options.base);
+  // After `--`: a content path that starts with `-` is still a path.
+  args.push("--", options.path);
+  return new Promise((resolve, reject) => {
+    execFile(
+      options.binary,
+      args,
+      { cwd: options.cwd, maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+      (error, stdout, stderr) => {
+        if (error !== null) {
+          const reason = stderr.trim();
+          reject(new Error(reason === "" ? error.message : reason, { cause: error }));
+          return;
+        }
+        resolve(stdout === "" ? undefined : stdout);
+      },
+    );
+  });
 }

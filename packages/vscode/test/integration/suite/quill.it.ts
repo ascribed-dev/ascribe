@@ -1,7 +1,157 @@
 import * as assert from "node:assert/strict";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import * as path from "node:path";
+import { shellWord } from "@ascribed/review/prompt";
 import * as vscode from "vscode";
-import { activated, diagnosticsOf, uriOf } from "./helpers.js";
+import { ascribeElsewhere } from "../../../src/agents/reach.js";
+import { nodePathEnvironment } from "../../../src/environment.js";
+import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
+import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
+
+// The sidebar's views run first, while the project's pages are the example's own.
+describe("the sidebar's Used by, Pages, and Content model views on examples/quill", () => {
+  const keys = uriOf("docs", "keys.md");
+  const quickstart = uriOf("docs", "quickstart.md");
+
+  /** A view's items as `label (description)`, with their children, depth first. */
+  function flat(items: SidebarItem[], depth = 0): string[] {
+    return items.flatMap((item) => [
+      `${"  ".repeat(depth)}${item.label}${item.description ? ` (${item.description})` : ""}`,
+      ...flat(item.children, depth + 1),
+    ]);
+  }
+
+  async function settled(): Promise<ReturnType<typeof flat>> {
+    const api = await activated();
+    await api.ui.sidebar.whenSettled();
+    return flat(api.ui.sidebar.items("usedBy"));
+  }
+
+  /** Opens a page with the cursor at the start of the line that starts with `line`. */
+  async function openAt(uri: vscode.Uri, line?: string): Promise<void> {
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uri),
+    );
+    const at = line === undefined ? 0 : editor.document.getText().split("\n").indexOf(line);
+    assert.ok(at >= 0, `no line ${line}`);
+    editor.selection = new vscode.Selection(at, 0, at, 0);
+  }
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("lists the project's pages by type, its fragments, and what includes each", async () => {
+    const api = await activated();
+    await openAt(keys);
+    const expected = [
+      "page (8)",
+      "  Broken (broken.md)",
+      "  Configure the agent (3.4) (configure-legacy.md)",
+      "  Configure the agent (configure.md)",
+      "  Install the Quill agent (install-agent.md)",
+      "  API keys (keys.md)",
+      "  Try Quill in the browser (quickstart.md)",
+      "  Upgrade the agent (upgrade.md)",
+      "  Webhooks (webhooks.md)",
+      "Fragments (1)",
+      "  _fragments/prerequisites.md (1 file)",
+      "    install-agent.md (includes it)",
+      // No page links to configure-legacy.md by name: a versioned build
+      // reaches it through configure.md's `replaces`.
+      "Orphans (2)",
+      "  Broken (broken.md)",
+      "  Configure the agent (3.4) (configure-legacy.md)",
+    ];
+    // These run before the tests that add and rename pages: a page that's
+    // still open in the editor stays in the project after it's deleted.
+    const pages = await waitFor("the Pages view", async () => {
+      await api.ui.sidebar.whenSettled();
+      const items = flat(api.ui.sidebar.items("pages"));
+      return items.join("\n") === expected.join("\n") ? items : undefined;
+    }).catch(() => flat(api.ui.sidebar.items("pages")));
+    assert.deepEqual(pages, expected);
+    const page = api.ui.sidebar.items("pages")[0]?.children[4];
+    assert.ok(page?.opens?.endsWith("/docs/keys.md"), page?.opens);
+  });
+
+  it("lists the content model with each entry's uses, and opens its declaration", async () => {
+    const api = await activated();
+    await api.ui.sidebar.whenSettled();
+    const items = api.ui.sidebar.items("model");
+    const model = flat(items);
+    assert.ok(model.includes("Phrases (4)"), model.join("\n"));
+    assert.ok(
+      model.some((line) => /^  product \(\d+ uses\)$/.test(line)),
+      model.join("\n"),
+    );
+    assert.ok(model.includes("  api (1 use)"), model.join("\n"));
+    assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
+    assert.ok(model.includes("Builds (4)"), model.join("\n"));
+    const product = items[0]?.children.find((item) => item.label === "product");
+    assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
+  });
+
+  it("follows the active page and narrows to the heading at the cursor", async () => {
+    // Used by asks only while it's showing.
+    await vscode.commands.executeCommand("ascribe.usedBy.focus");
+    await openAt(keys);
+    assert.deepEqual(
+      await waitFor("Used by for keys.md", async () => {
+        const items = await settled();
+        return items.length > 0 ? items : undefined;
+      }),
+      [
+        "Linked from (4)",
+        "  configure-legacy.md (docs/configure-legacy.md)",
+        "    Put the key under `key:` in `quill.yaml`. To make one, see [API keys](keys.md). (line 13)",
+        "  configure.md (docs/configure.md)",
+        "    Put the key in `quill.d/key`. To make one, see [API keys](keys.md). (line 14)",
+        "  install-agent.md (docs/install-agent.md)",
+        "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)",
+        "  webhooks.md (docs/webhooks.md)",
+        "    The agent posts an event to each webhook in `quill.yaml`. See [API keys](keys.md). (line 8)",
+      ],
+    );
+    const api = await activated();
+    /** Waits for Used by's message, which says what it answered. */
+    const answered = (message: string) =>
+      waitFor(message, async () => {
+        const items = await settled();
+        return api.ui.sidebar.message("usedBy") === message ? items : undefined;
+      });
+    await openAt(keys, "## Rotate keys");
+    assert.equal((await answered("What links to “Rotate keys”")).length, 3);
+    await openAt(keys, "## Create a key");
+    assert.deepEqual(await answered("Nothing links to or includes “Create a key”."), []);
+  });
+
+  it("counts again when a page of the project is saved", async () => {
+    const api = await activated();
+    const original = readFileSync(quickstart.fsPath, "utf8");
+    const incoming = (): string | undefined =>
+      flat(api.ui.sidebar.items("pages")).find((line) => line.includes("(keys.md)"));
+    try {
+      await openAt(quickstart);
+      const document = await vscode.workspace.openTextDocument(quickstart);
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(quickstart, document.positionAt(original.length), "\nSee [keys](keys.md).\n");
+      assert.ok(await vscode.workspace.applyEdit(edit));
+      assert.ok(await document.save());
+      await waitFor("the new link counted", async () => {
+        await api.ui.sidebar.whenSettled();
+        const page = api.ui.sidebar
+          .items("pages")[0]
+          ?.children.find((p) => p.description === "keys.md");
+        return page?.tooltip.includes("5 links and includes") ? page : undefined;
+      });
+      assert.ok(incoming());
+    } finally {
+      writeFileSync(quickstart.fsPath, original);
+      await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
+    }
+  });
+});
 
 // The real `ascribe lsp` on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).
@@ -41,7 +191,7 @@ describe("with the real language server on examples/quill", () => {
   it("delivers diagnostics for a page that isn't open", async () => {
     const diagnostics = await diagnosticsOf(broken, (all) => all.length > 0);
     assert.ok(diagnostics.every((diagnostic) => diagnostic.severity !== undefined));
-    assert.ok(diagnostics.some((diagnostic) => diagnostic.range.start.line === 7));
+    assert.ok(diagnostics.some((diagnostic) => diagnostic.range.start.line === 8));
   });
 
   it("reports nothing for the pages of the example that are correct", async () => {
@@ -49,6 +199,56 @@ describe("with the real language server on examples/quill", () => {
     for (const page of ["quickstart.md", "install-agent.md", "keys.md"]) {
       assert.deepEqual(vscode.languages.getDiagnostics(uriOf("docs", page)), [], page);
     }
+  });
+
+  it("offers Prompt agent on a problem after its quick fixes, and copies the prompt", async () => {
+    const api = await activated();
+    const [problem] = await diagnosticsOf(broken, (all) => all.length > 0);
+    assert.ok(problem);
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(broken));
+    const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+      "vscode.executeCodeActionProvider",
+      broken,
+      problem.range,
+    );
+    const titles = actions.map((action) => action.title);
+    const at = titles.indexOf("Prompt agent: fix this problem");
+    assert.ok(at >= 0, `the actions: ${titles.join(", ")}`);
+    const lastFix = actions.findLastIndex((action) => (action.diagnostics?.length ?? 0) > 0);
+    assert.ok(lastFix < at, `after the quick fixes: ${titles.join(", ")}`);
+    const command = actions[at]?.command;
+    assert.ok(command);
+    await vscode.env.clipboard.writeText("");
+    const before = api.promptAgent.deliveries.length;
+    await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
+    await waitFor("the delivery", () => api.promptAgent.deliveries.length > before);
+    assert.equal(api.promptAgent.deliveries[before]?.delivered, "clipboard");
+    const prompt = await vscode.env.clipboard.readText();
+    assert.ok(
+      prompt.startsWith("Fix this problem in `docs/broken.md`.\n\nWhere: docs/broken.md:9\n"),
+      prompt,
+    );
+    // The binary the editor runs, as an agent beside it can run it.
+    const binary = api.binary()?.path;
+    assert.ok(binary);
+    const elsewhere = await ascribeElsewhere(binary, nodePathEnvironment());
+    const ascribe = elsewhere ? shellWord(elsewhere.program) : "ascribe";
+    assert.ok(prompt.includes(`When you're done, run \`${ascribe} check docs/broken.md\``), prompt);
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("puts the binary the editor runs on the terminals' path when `ascribe` isn't it", async () => {
+    const api = await activated();
+    await api.agents.terminals.whenSettled();
+    const binary = api.binary()?.path;
+    assert.ok(binary);
+    const elsewhere = await ascribeElsewhere(binary, nodePathEnvironment());
+    const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    assert.ok(folder);
+    assert.equal(
+      api.agents.terminals.directories().get(folder),
+      elsewhere ? path.dirname(binary) : undefined,
+    );
   });
 
   it("updates diagnostics after the file changes on disk", async () => {
@@ -70,7 +270,7 @@ describe("with the real language server on examples/quill", () => {
       await vscode.workspace.openTextDocument(broken),
     );
     await diagnosticsOf(broken, (all) => all.length > 0);
-    const line = editor.document.lineAt(7);
+    const line = editor.document.lineAt(8);
     await editor.edit((edit) => edit.replace(line.range, "@note {type=tip}: Now it is fine."));
     await diagnosticsOf(broken, (all) => all.length === 0);
   });

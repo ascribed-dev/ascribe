@@ -22,14 +22,24 @@
 //               threads in the preview and the source editor from a fake
 //               GitHub, against the real `ascribe lsp`. Opened through a
 //               symlink, except on Windows. Needs ASCRIBE_BIN and `git`.
+//   actions     a copy of examples/quill, the editor's actions run through
+//               their commands with scripted answers, against the real
+//               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   lens        a copy of examples/monorepo/docs, the build lens with the
+//               preview and the status bar, against the real `ascribe lsp`.
+//               Needs ASCRIBE_BIN as well.
+//   templates   a copy of examples/templates, the six page types with their
+//               templates, New Page and Go to Next Placeholder, against the
+//               real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { execFileSync } from "node:child_process";
 import {
+  appendFileSync,
   cpSync,
   mkdirSync,
   mkdtempSync,
@@ -113,6 +123,8 @@ const suites: Suite[] = [
         path.join(workspace, "docs"),
         { recursive: true },
       );
+      // Nothing links to broken.md, and its tests count every diagnostic.
+      appendFileSync(path.join(workspace, "ascribe.toml"), '\n[checks]\npage-orphan = "off"\n');
       return { "ascribe.path": realServer, ...startAll };
     },
   },
@@ -182,8 +194,23 @@ const suites: Suite[] = [
     },
   },
   {
+    name: "actions",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
     name: "site",
     fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
+    name: "lens",
+    fixture: path.join(repositoryRoot, "examples/monorepo/docs"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
+    name: "templates",
+    fixture: path.join(repositoryRoot, "examples/templates"),
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
   {
@@ -210,7 +237,17 @@ const suites: Suite[] = [
 ];
 
 /** The suites that run the real language server. */
-const needsServer = new Set(["quill", "preview", "review", "threads", "site", "monorepo"]);
+const needsServer = new Set([
+  "quill",
+  "preview",
+  "review",
+  "threads",
+  "actions",
+  "site",
+  "lens",
+  "templates",
+  "monorepo",
+]);
 
 /** VS Code's output, kept for later. */
 class Captured extends Writable {
@@ -331,7 +368,11 @@ async function main(): Promise<void> {
       rmSync(scratch, { recursive: true, force: true });
     }
   }
-  if (failed) process.exit(1);
+  // Not process.exit, which would cut off VS Code's output while it's still being written.
+  if (failed) {
+    process.exitCode = 1;
+    return;
+  }
   console.log(`\n${ran} integration suite(s) passed.`);
 }
 

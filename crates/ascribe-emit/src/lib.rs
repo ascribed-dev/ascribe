@@ -26,9 +26,10 @@
 //! # fn demo(project: &ascribe_resolve::Project, build: &ascribe_model::Build, resolved: &ascribe_resolve::ResolvedBuild) -> Result<(), Box<dyn std::error::Error>> {
 //! let root = Path::new(".");
 //! let cx = EmitContext::new(project, root, build);
-//! let emission = emit(&PlainEmitter, &cx, resolved)?;
+//! let plain = PlainEmitter::new(project.model());
+//! let emission = emit(&plain, &cx, resolved)?;
 //! let output = OutputDir::lock(&root.join(".ascribe/build"))?;
-//! output.replace(&build.name, PlainEmitter.name(), &emission.files)?;
+//! output.replace(&build.name, plain.name(), &emission.files)?;
 //! # Ok(()) }
 //! ```
 //!
@@ -46,6 +47,7 @@ mod plain;
 pub mod render;
 pub mod site;
 mod store;
+mod versions;
 mod write;
 pub mod zod;
 
@@ -62,4 +64,5 @@ pub use plain::PlainEmitter;
 pub use render::render_site_html;
 pub use site::{AstroProfile, SiteEmitter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};
-pub use write::{Output, WriteEvent, WriteOptions, Written, write_outputs};
+pub use versions::{VERSIONS_PATH, VERSIONS_VERSION, line_base, versions_json};
+pub use write::{Output, WriteEvent, WriteOptions, Written, outputs_in_memory, write_outputs};

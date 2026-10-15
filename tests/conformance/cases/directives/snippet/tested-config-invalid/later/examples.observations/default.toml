@@ -1,0 +1,11 @@
+# Written by `ascribe observe`. Don't edit it by hand.
+version = 2
+ascribe = "9.0.0"
+command = "true"
+
+[environment]
+os = "linux"
+arch = "x64"
+
+[files]
+"examples/two.ts" = "sha256-lf:0000000000000000000000000000000000000000000000000000000000000000"

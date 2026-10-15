@@ -4,6 +4,8 @@
 //! Every call runs the `git` executable with a fixed argument list (never
 //! through a shell), with `core.quotepath` off so paths come back as they
 //! are, and `-z` wherever a listing is parsed. No git library is linked.
+//! Every call also runs with `ascribe_core::git`'s options, so that `git`
+//! runs no command the repository supplies.
 
 use std::collections::BTreeMap;
 use std::io::{self, BufRead, BufReader, Write};
@@ -275,6 +277,71 @@ impl Repository {
         Ok(files)
     }
 
+    /// The files under the project's folder that the working tree changes
+    /// against `HEAD`, staged or not, untracked ones included and deleted
+    /// ones too: by their path from the repository's root, through one `git
+    /// status`. Ignored files aren't listed.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when the files can't be listed.
+    pub fn working_changes(&self) -> Result<Vec<RelPath>, DiffError> {
+        let out = self.run(&[
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--no-renames",
+            "--",
+            // The whole working tree, wherever in it `git` runs.
+            ":/",
+        ])?;
+        // `XY <path>` entries, NUL-separated; the paths are from the root.
+        Ok(out
+            .split(|b| *b == 0)
+            .filter_map(|entry| entry.get(3..))
+            .filter_map(|path| std::str::from_utf8(path).ok())
+            .filter_map(|path| RelPath::parse(path).ok())
+            .collect())
+    }
+
+    /// Which of `paths` git couldn't put back as they are now: each one that
+    /// isn't tracked, is ignored, or differs from `HEAD`, staged or not, by
+    /// its path from the repository's root, through one `git status`. The
+    /// paths are from the folder `git` runs in, the project root. A file
+    /// listed nowhere is tracked and unchanged.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when the files can't be listed.
+    pub fn not_restorable(&self, paths: &[RelPath]) -> Result<Vec<RelPath>, DiffError> {
+        if paths.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut args = vec![
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--ignored=matching",
+            "--no-renames",
+            "--",
+        ];
+        // Literal paths, so a name with `*` in it names that file alone.
+        let specs: Vec<String> = paths
+            .iter()
+            .map(|p| format!(":(literal){}", p.as_str()))
+            .collect();
+        args.extend(specs.iter().map(String::as_str));
+        let out = self.run(&args)?;
+        Ok(out
+            .split(|b| *b == 0)
+            .filter_map(|entry| entry.get(3..))
+            .filter_map(|path| std::str::from_utf8(path).ok())
+            .filter_map(|path| RelPath::parse(path).ok())
+            .collect())
+    }
+
     /// The contents of several blobs, read through one `git cat-file --batch`.
     ///
     /// # Errors
@@ -324,10 +391,15 @@ impl Repository {
 
     fn command(&self, args: &[&str]) -> Command {
         let mut command = Command::new("git");
-        command
-            .current_dir(&self.dir)
-            .args(["-c", "core.quotepath=off"])
-            .args(args);
+        command.current_dir(&self.dir);
+        // Reading the repository runs nothing it supplies.
+        for option in ascribe_core::git::OPTIONS {
+            command.args(["-c", option]);
+        }
+        for name in ascribe_core::git::CLEARED {
+            command.env_remove(name);
+        }
+        command.args(["-c", "core.quotepath=off"]).args(args);
         command
     }
 

@@ -1,0 +1,7 @@
+spec = "0.1"
+
+[phrases]
+product = "Big Big Product"
+
+[checks.vale]
+preset = "quiet"

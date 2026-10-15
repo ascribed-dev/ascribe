@@ -1,0 +1,10 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.how-to]
+purpose = ["Do one task", "step by step"]
+
+[types.how-to.frontmatter]
+title = "string"

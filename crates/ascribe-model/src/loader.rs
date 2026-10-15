@@ -7,9 +7,10 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use ascribe_core::availability::{AvailabilitySpec, parse_availability};
-use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
+use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Place, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 
+use crate::SourceBound;
 use crate::model::*;
 use crate::names::{self, is_key, is_name_word, list, suggest};
 use crate::toml_util::{V, describe, entries, join, sp};
@@ -18,6 +19,13 @@ pub(crate) struct Loader<'s> {
     pub src: &'s str,
     pub file: FileId,
     pub project_dir: Option<&'s Path>,
+    /// Where a source may be when no repository is around the project.
+    pub bound: SourceBound<'s>,
+    /// The checks `[checks]` may name: the registry's configurable ones.
+    pub configurable: &'s [DiagnosticSlug],
+    /// The checks `[[intended]]` may name, with where each reports its
+    /// problems: the registry's review checks.
+    pub review: &'s [(DiagnosticSlug, Place)],
     pub issues: Vec<Issue>,
     pub warnings: Vec<Issue>,
 }
@@ -27,10 +35,76 @@ pub(crate) fn load(
     file: FileId,
     project_dir: Option<&Path>,
 ) -> Result<ContentModel, Vec<Issue>> {
+    load_configurable(src, file, project_dir, diagnostics::CONFIGURABLE)
+}
+
+/// [`load`] in `project_dir`, with a source bounded by `bound` when no
+/// repository is around the project.
+pub(crate) fn load_bounded(
+    src: &str,
+    file: FileId,
+    project_dir: &Path,
+    bound: SourceBound<'_>,
+) -> Result<ContentModel, Vec<Issue>> {
+    load_with(
+        src,
+        file,
+        Some(project_dir),
+        bound,
+        diagnostics::CONFIGURABLE,
+        diagnostics::ACKNOWLEDGEABLE,
+    )
+}
+
+/// [`load`], with `review` as the checks `[[intended]]` may name.
+#[cfg(test)]
+pub(crate) fn load_reviewing(
+    src: &str,
+    file: FileId,
+    review: &[(DiagnosticSlug, Place)],
+) -> Result<ContentModel, Vec<Issue>> {
+    load_with(
+        src,
+        file,
+        None,
+        SourceBound::Anywhere,
+        diagnostics::CONFIGURABLE,
+        review,
+    )
+}
+
+/// [`load`], with `configurable` as the checks `[checks]` may name.
+pub(crate) fn load_configurable(
+    src: &str,
+    file: FileId,
+    project_dir: Option<&Path>,
+    configurable: &[DiagnosticSlug],
+) -> Result<ContentModel, Vec<Issue>> {
+    load_with(
+        src,
+        file,
+        project_dir,
+        SourceBound::Anywhere,
+        configurable,
+        diagnostics::ACKNOWLEDGEABLE,
+    )
+}
+
+fn load_with(
+    src: &str,
+    file: FileId,
+    project_dir: Option<&Path>,
+    bound: SourceBound<'_>,
+    configurable: &[DiagnosticSlug],
+    review: &[(DiagnosticSlug, Place)],
+) -> Result<ContentModel, Vec<Issue>> {
     let mut l = Loader {
         src,
         file,
         project_dir,
+        bound,
+        configurable,
+        review,
         issues: Vec::new(),
         warnings: Vec::new(),
     };
@@ -255,6 +329,7 @@ impl<'s> Loader<'s> {
                 "fragments",
                 "dimensions",
                 "versions",
+                "releases",
                 "lifecycle",
                 "features",
                 "notes",
@@ -266,6 +341,11 @@ impl<'s> Loader<'s> {
                 "builds",
                 "editor",
                 "sources",
+                "checks",
+                "intended",
+                "permalinks",
+                "crawlers",
+                "listing",
             ],
         );
 
@@ -275,7 +355,7 @@ impl<'s> Loader<'s> {
         let (lifecycle, declared_states) = self.lifecycle(root.get("lifecycle"));
         let features = self.features_raw(root.get("features"));
         let notes = self.notes(root.get("notes"));
-        let phrases = self.phrases(root.get("phrases"));
+        let (mut phrases, phrase_lines) = self.phrases(root.get("phrases"));
         self.check_roles(
             &dimensions,
             &dim_spans,
@@ -291,11 +371,18 @@ impl<'s> Loader<'s> {
         let image_attributes = self.images(root.get("images"));
         let widgets = self.widgets(root.get("widgets"));
         let consumer = self.consumer(root.get("consumer"));
-        let builds = self.builds(root.get("builds"), &dimensions);
+        let (releases, planned_label) = self.releases(root.get("releases"), &dimensions);
+        self.phrase_lines(&mut phrases, &phrase_lines, &releases);
+        let builds = self.builds(root.get("builds"), &dimensions, &releases);
         let editor_build = self.editor(root.get("editor"), root.get("builds"), &builds);
-        self.version_scheme(root.get("versions"));
+        self.versions(root.get("versions"));
         self.project_paths(&project, root.get("project"));
         let sources = self.sources(root.get("sources"), &project.value.content_root);
+        let checks = self.checks(root.get("checks"));
+        let intended = self.intended(root.get("intended"), &phrases, &features, &glossary);
+        let permalinks = self.permalinks(root.get("permalinks"));
+        let crawlers = self.crawlers(root.get("crawlers"));
+        let listing = self.listing(root.get("listing"), &types, &project.value.content_root);
 
         Some(ContentModel {
             spec: spec?,
@@ -304,6 +391,8 @@ impl<'s> Loader<'s> {
             fragments,
             dimensions,
             version_scheme: VersionScheme::Numeric,
+            releases,
+            planned_label,
             lifecycle,
             features,
             notes,
@@ -315,6 +404,11 @@ impl<'s> Loader<'s> {
             builds,
             sources,
             editor_build,
+            checks,
+            intended,
+            permalinks,
+            crawlers,
+            listing,
             warnings: Vec::new(),
         })
     }
@@ -344,14 +438,18 @@ impl<'s> Loader<'s> {
         }
     }
 
-    fn version_scheme(&mut self, v: Option<&V<'_>>) {
-        let Some(v) = v else { return };
-        let Some(t) = self.as_table("versions", v) else {
+    /// `[versions]`: checks `scheme`, and returns `current`.
+    fn versions(&mut self, v: Option<&V<'_>>) {
+        let Some(t) = v.and_then(|v| self.as_table("versions", v)) else {
             return;
         };
-        self.check_keys("versions", t, &["scheme"]);
+        // `current` is checked apart, so its error can name `[releases]`.
+        self.check_keys("versions", t, &["scheme", "current"]);
         if let Some(s) = t.get("scheme") {
             self.choice("versions.scheme", s, &["numeric"]);
+        }
+        if let Some((_, span, _)) = entries(t).find(|(key, _, _)| *key == "current") {
+            self.push(self.issue(diagnostics::MODEL_VERSIONS_CURRENT, span));
         }
     }
 
@@ -564,7 +662,10 @@ impl<'s> Loader<'s> {
     }
 
     /// A source's folder exists, is a directory, and is in the project's git
-    /// repository, when it's in one. Only when the project directory is known.
+    /// repository, when it's in one. With none, it's inside a folder
+    /// [`SourceBound::Within`] names, when the model is loaded with one: the
+    /// editor's workspace, or the folder `ascribe mcp` was started in.
+    /// Only when the project directory is known.
     fn source_folder(&mut self, name: &str, folder: &str, span: Span) {
         // Outside FileSystem: the content model is checked before there's a
         // project. This asks only whether the folder it names is there.
@@ -587,14 +688,37 @@ impl<'s> Loader<'s> {
             );
             return;
         }
-        if let Some(repository) = repository_root(dir)
-            && !self.resolve(folder).starts_with(&repository)
-        {
-            self.push(
-                self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
-                    .with_arg("source", name)
-                    .with_arg("path", folder),
-            );
+        match repository_root(dir) {
+            Some(repository) => {
+                if !self.resolve(folder).starts_with(&repository) {
+                    self.push(
+                        self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
+                            .with_arg("source", name)
+                            .with_arg("path", folder),
+                    );
+                }
+            }
+            None => {
+                if let SourceBound::Within(opened) = self.bound {
+                    let resolved = self.resolve(folder);
+                    // Outside FileSystem: the folders the user opened, compared
+                    // as the source's folder is, with links resolved.
+                    let inside = opened.iter().any(|o| {
+                        let o = o
+                            .canonicalize()
+                            .unwrap_or_else(|_| ascribe_core::path::normalize(o));
+                        resolved.starts_with(o)
+                    });
+                    if !inside {
+                        self.push(
+                            self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
+                                .with_variant("opened")
+                                .with_arg("source", name)
+                                .with_arg("path", folder),
+                        );
+                    }
+                }
+            }
         }
     }
 
@@ -895,11 +1019,16 @@ impl<'s> Loader<'s> {
         notes
     }
 
-    fn phrases(&mut self, v: Option<&V<'_>>) -> Vec<Phrase> {
+    /// `[phrases]`, and for each phrase whose value is a target's line,
+    /// where the target is named, for [`Loader::phrase_lines`].
+    fn phrases(&mut self, v: Option<&V<'_>>) -> (Vec<Phrase>, Vec<Span>) {
         let mut out = Vec::new();
-        let Some(v) = v else { return out };
+        let mut lines = Vec::new();
+        let Some(v) = v else {
+            return (out, lines);
+        };
         let Some(t) = self.as_table("phrases", v) else {
-            return out;
+            return (out, lines);
         };
         for (key, key_span, item) in entries(t) {
             self.name_ok(key, key_span, "phrase", NameRule::Key);
@@ -907,7 +1036,23 @@ impl<'s> Loader<'s> {
                 DeValue::String(s) => out.push(Phrase {
                     key: key.to_owned(),
                     value: s.to_string(),
+                    line: None,
+                    span: key_span,
                 }),
+                DeValue::Table(lt) if lt.get("line").is_some() => {
+                    let path = join("phrases", key);
+                    self.check_keys(&path, lt, &["line"]);
+                    let Some(lv) = lt.get("line") else { continue };
+                    if let Some(target) = self.string(&format!("{path}.line"), lv, true) {
+                        out.push(Phrase {
+                            key: key.to_owned(),
+                            value: String::new(),
+                            line: Some(target),
+                            span: key_span,
+                        });
+                        lines.push(sp(lv));
+                    }
+                }
                 other => {
                     let raw = self.text_of(sp(item)).to_owned();
                     let shown = match other {
@@ -923,7 +1068,29 @@ impl<'s> Loader<'s> {
                 }
             }
         }
-        out
+        (out, lines)
+    }
+
+    /// Gives each phrase whose value is a target's line that target's
+    /// current line, or reports a target with none. `spans` are where each
+    /// such phrase names its target, in order.
+    fn phrase_lines(&mut self, phrases: &mut [Phrase], spans: &[Span], releases: &[Releases]) {
+        let lined = phrases.iter_mut().filter(|p| p.line.is_some());
+        for (phrase, span) in lined.zip(spans) {
+            let target = phrase.line.as_deref().unwrap_or_default();
+            match releases
+                .iter()
+                .find(|r| r.target == target)
+                .and_then(Releases::current)
+            {
+                Some(current) => phrase.value.clone_from(&current.text),
+                None => self.push(
+                    self.issue(diagnostics::MODEL_PHRASE_LINE, *span)
+                        .with_arg("key", phrase.key.as_str())
+                        .with_arg("target", target),
+                ),
+            }
+        }
     }
 
     // ---- names and roles -----------------------------------------------------
@@ -1113,6 +1280,7 @@ impl<'s> Loader<'s> {
                 name: f.name,
                 available_text: f.text,
                 available: spec,
+                span: f.key_span,
             });
         }
         out
@@ -1238,7 +1406,7 @@ pub(crate) fn is_branch_name(branch: &str) -> bool {
         && !branch.split('/').any(|s| s.starts_with('.'))
 }
 
-fn is_absolute(s: &str) -> bool {
+pub(crate) fn is_absolute(s: &str) -> bool {
     let b = s.as_bytes();
     s.starts_with('/')
         || s.starts_with('\\')

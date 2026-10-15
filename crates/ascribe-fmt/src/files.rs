@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use ascribe_core::{SourceBoundary, apply_edits};
+use ascribe_core::{SourceBoundary, TextEdit, Visited, apply_edits};
 use ascribe_model::{ContentModel, MODEL_FILE};
 
 use crate::{format, options_from_model};
@@ -68,8 +68,8 @@ pub struct Refused {
 /// Formats every `.md` file under `paths` (each a file, or a directory
 /// searched recursively) or, with no path, under the content root of the
 /// project whose content model, `model`, is at `config`. Each file that
-/// changes is passed to `on_changed` as it's done, and all of them are
-/// returned.
+/// changes is passed to `on_changed` as it's done, with its text before and
+/// the edits that format it, and all of them are returned.
 ///
 /// With `check`, nothing is written: the files returned are the ones that
 /// would change.
@@ -92,7 +92,7 @@ pub fn format_files(
     paths: &[PathBuf],
     check: bool,
     boundary: &dyn SourceBoundary,
-    on_changed: &mut dyn FnMut(&Path),
+    on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
 ) -> Result<Formatted, FormatFilesError> {
     let project = config
         .parent()
@@ -109,8 +109,9 @@ pub fn format_files(
     };
     let own = std::fs::canonicalize(&project).ok();
     let mut files = Vec::new();
+    let mut visited = Visited::default();
     for root in &roots {
-        collect(root, own.as_deref(), &mut files)?;
+        collect(root, own.as_deref(), &mut visited, &mut files)?;
     }
     files.sort();
     files.dedup();
@@ -142,7 +143,7 @@ pub fn format_files(
                 source,
             })?;
         }
-        on_changed(&file);
+        on_changed(&file, &source, &edits);
         done.changed.push(file);
     }
     Ok(done)
@@ -164,10 +165,13 @@ fn holds_model(dir: &Path, own: Option<&Path>) -> bool {
 }
 
 /// Adds every `.md` file at or under `path` to `files`. `own` is the project's
-/// folder, canonical.
+/// folder, canonical. Each folder is gone into once, by its real path, as the
+/// source index walks the content root: a link back to a folder already
+/// walked isn't followed.
 fn collect(
     path: &Path,
     own: Option<&Path>,
+    visited: &mut Visited,
     files: &mut Vec<PathBuf>,
 ) -> Result<(), FormatFilesError> {
     // Outside FileSystem: as in `format_files`.
@@ -180,15 +184,23 @@ fn collect(
         files.push(path.to_owned());
         return Ok(());
     }
-    let entries = std::fs::read_dir(path).map_err(io)?;
+    if visited.enter(path).map_err(io)?.is_none() {
+        return Ok(());
+    }
+    let mut entries = std::fs::read_dir(path)
+        .map_err(io)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(io)?;
+    // In name order, so which of two names for one folder is walked doesn't
+    // depend on the order the system lists them in.
+    entries.sort_by_key(std::fs::DirEntry::file_name);
     for entry in entries {
-        let entry = entry.map_err(io)?;
         let child = entry.path();
         let name = entry.file_name();
         let name = name.to_string_lossy();
         if child.is_dir() {
             if !name.starts_with('.') && name != "node_modules" && !holds_model(&child, own) {
-                collect(&child, own, files)?;
+                collect(&child, own, visited, files)?;
             }
         } else if child.extension().is_some_and(|e| e == "md") {
             files.push(child);

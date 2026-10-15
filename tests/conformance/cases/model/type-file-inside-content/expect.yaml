@@ -1,0 +1,10 @@
+description: >-
+  A type's template and guide are outside the content root, where they
+  aren't read as pages: a path into it is an error at the path, though the
+  file is there.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-type-file, file: ascribe.toml, line: 7}
+  - {slug: model-type-file, file: ascribe.toml, line: 8}

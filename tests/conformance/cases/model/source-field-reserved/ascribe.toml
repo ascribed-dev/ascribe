@@ -1,0 +1,5 @@
+spec = "0.1"
+
+[types.guide.frontmatter]
+title = "string"
+source = "string"

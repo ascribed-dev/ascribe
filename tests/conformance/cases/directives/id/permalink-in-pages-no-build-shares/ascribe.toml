@@ -1,0 +1,25 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = "badge"
+
+[builds.self-managed]
+variants = { deployment = "self-managed" }
+availability = "badge"
+
+[checks]
+page-orphan = "off"
+title-duplicate = "off"
+
+[editor]
+build = "cloud"

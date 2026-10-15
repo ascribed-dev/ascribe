@@ -22,7 +22,7 @@ fn walk(project: &Project, blocks: &mut [ResolvedBlock], scope: &mut dyn SlugSco
         if let ResolvedKind::Leaf(b) = &block.kind
             && matches!(b.kind, BlockKind::Heading(_))
             && let Some(index) = project.file_by_id(block.file)
-            && let Some(heading) = index.headings.iter().find(|h| h.span == block.span)
+            && let Some(heading) = index.heading_at(block.span)
         {
             // Only headings without `@id` go through the scope: explicit ids
             // don't take part in numbering.
@@ -40,6 +40,7 @@ fn walk(project: &Project, blocks: &mut [ResolvedBlock], scope: &mut dyn SlugSco
                     .explicit_id
                     .as_ref()
                     .map(|e| Location::new(block.file, e.span)),
+                permalink: heading.explicit_id.as_ref().is_some_and(|e| e.permalink),
             });
         }
         for children in block.child_lists_mut() {

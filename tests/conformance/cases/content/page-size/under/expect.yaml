@@ -1,0 +1,9 @@
+description: >-
+  A page shorter than the limit isn't reported.
+spec: ["8.2", "9.4"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

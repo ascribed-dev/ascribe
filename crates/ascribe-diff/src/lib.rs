@@ -15,6 +15,7 @@
 //!   around them did.
 //! - [`html`]: the report as one self-contained HTML file, every changed
 //!   page rendered with its changes marked.
+//! - [`prompt`]: agent prompts about a change, for a reviewer's agent.
 //! - [`diff_project`] and [`drift_project`]: `ascribe diff` and `ascribe
 //!   drift` on a project loaded from disk, from choosing the builds to the
 //!   finished report.
@@ -47,6 +48,7 @@ mod drift;
 pub mod git;
 mod gitfs;
 pub mod html;
+pub mod prompt;
 mod tree;
 mod words;
 
@@ -171,6 +173,11 @@ pub struct Report {
     /// error may not render as it will once it's fixed, so a reviewer should
     /// know. [`diff_project`] sets it; [`Report::new`] leaves it zero.
     pub working_tree_errors: usize,
+    /// Whether every page's `changes` was left empty, as `ascribe diff
+    /// --pages-only` leaves them: its `counts` still count them. Only there
+    /// when it's `true`.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub blocks_omitted: bool,
     /// What changed, per build, in the order asked for.
     pub builds: Vec<BuildDiff>,
 }
@@ -231,12 +238,53 @@ impl Report {
             base: BaseInfo::of(base),
             repository: RepositoryInfo::of(repo),
             working_tree_errors: 0,
+            blocks_omitted: false,
             builds,
         }
+    }
+
+    /// Leaves out every page's block-level changes, keeping their counts,
+    /// for a report of which pages changed.
+    pub fn omit_blocks(&mut self) {
+        for page in self.builds.iter_mut().flat_map(|b| b.pages.iter_mut()) {
+            page.changes.clear();
+        }
+        self.blocks_omitted = true;
     }
 
     /// Whether anything changed in any build.
     pub fn has_changes(&self) -> bool {
         self.builds.iter().any(|b| !b.pages.is_empty())
+    }
+
+    /// Whether any build's change is about the file at `path`, a content
+    /// path: the page there changed, or a page changed through it.
+    pub fn reaches(&self, path: &ascribe_core::RelPath) -> bool {
+        self.builds
+            .iter()
+            .flat_map(|b| &b.pages)
+            .any(|p| p.path == path.as_str() || p.because.iter().any(|c| c == path.as_str()))
+    }
+
+    /// Keeps only what's about the file at `path`, a content path, as
+    /// `ascribe diff <PAGE>` shows it: the page there, in each build it
+    /// changed in; or, when it's no changed page, such as a fragment, the
+    /// pages that changed through it. A build with none keeps no pages.
+    pub fn narrow_to(&mut self, path: &ascribe_core::RelPath) {
+        let path = path.as_str();
+        let is_page = self
+            .builds
+            .iter()
+            .flat_map(|b| &b.pages)
+            .any(|p| p.path == path);
+        for build in &mut self.builds {
+            build.pages.retain(|p| {
+                if is_page {
+                    p.path == path
+                } else {
+                    p.because.iter().any(|c| c == path)
+                }
+            });
+        }
     }
 }

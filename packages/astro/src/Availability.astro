@@ -14,6 +14,7 @@ interface Props {
         dimension: string;
         states: readonly string[];
         versions?: readonly string[] | undefined;
+        planned?: boolean | undefined;
         text: string;
       }[]
     | undefined;
@@ -33,6 +34,7 @@ const { available } = Astro.props;
             dimension={item.dimension}
             states={item.states.join(" ")}
             versions={item.versions?.join(" ")}
+            planned={item.planned ? "" : undefined}
           >
             {item.text}
           </ascribe-availability-target>

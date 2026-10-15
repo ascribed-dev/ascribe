@@ -1,0 +1,10 @@
+description: >-
+  `[checks.page-size]` sets the check's level beside its limit.
+spec: ["8.2", "9.4"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: page-size, line: 1, severity: warning}

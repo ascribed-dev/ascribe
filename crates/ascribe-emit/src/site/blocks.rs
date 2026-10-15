@@ -24,7 +24,7 @@ use super::anchor::{Anchor, html_tag};
 use super::element::{Attrs, close, empty, marker, open, wrap};
 use super::inline::{Mode, render, value_text};
 use crate::emitter::PageContext;
-use crate::labels::{availability_target_text, plain_text};
+use crate::labels::{availability_target_text, is_planned, plain_text};
 use crate::plain::{Prev, escape_closing_hash, fenced, list, quote, starts_nested};
 
 pub(crate) struct Renderer<'a> {
@@ -668,7 +668,9 @@ impl Renderer<'_> {
 }
 
 /// `<ascribe-availability>` with one `<ascribe-availability-target>` per
-/// entry, as one HTML block (contract §4): no blank line inside.
+/// entry, as one HTML block (contract §4): no blank line inside. A table
+/// row's targets are between a visually hidden `(Available: ` and `)`, so
+/// its text is the plain output's (decision #430).
 pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &[Entry]) -> String {
     let targets: Vec<String> = entries
         .iter()
@@ -682,6 +684,11 @@ pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &
                     "versions",
                     (!view.versions.is_empty()).then(|| view.versions.join(" ")),
                 );
+            let attrs = if view.planned {
+                attrs.with("planned", "")
+            } else {
+                attrs
+            };
             format!(
                 "{}{}{}",
                 open(names::ELEMENT_AVAILABILITY_TARGET, &attrs),
@@ -690,13 +697,27 @@ pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &
             )
         })
         .collect();
+    let mut targets = targets.join("; ");
+    if scope == "row" {
+        let lead_in = |text: &str| {
+            format!(
+                "{}{text}{}",
+                open(
+                    "span",
+                    &Attrs::new().with("class", names::CLASS_AVAILABILITY_LEAD_IN)
+                ),
+                close("span")
+            )
+        };
+        targets = format!("{}{targets}{}", lead_in("(Available: "), lead_in(")"));
+    }
     format!(
         "{}\n{}\n{}",
         open(
             names::ELEMENT_AVAILABILITY,
             &Attrs::new().with("scope", scope)
         ),
-        targets.join("; "),
+        targets,
         close(names::ELEMENT_AVAILABILITY)
     )
 }
@@ -708,11 +729,13 @@ pub(crate) struct TargetView {
     pub(crate) dimension: String,
     pub(crate) states: Vec<String>,
     pub(crate) versions: Vec<String>,
+    /// Whether its last version is in a planned line.
+    pub(crate) planned: bool,
     pub(crate) text: String,
 }
 
-/// Works out a spec entry's `dimension`, `states`, and `versions` (contract
-/// §4), and the text a reader sees.
+/// Works out a spec entry's `dimension`, `states`, `versions`, and
+/// `planned` (contract §4), and the text a reader sees.
 pub(crate) fn availability_target(model: &ContentModel, entry: &Entry) -> TargetView {
     let target = entry.target.text.clone();
     let dimension = model
@@ -733,6 +756,7 @@ pub(crate) fn availability_target(model: &ContentModel, entry: &Entry) -> Target
     };
     TargetView {
         text: availability_target_text(model, entry),
+        planned: is_planned(model, entry),
         target,
         dimension,
         states,

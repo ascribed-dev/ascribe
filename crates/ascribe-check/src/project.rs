@@ -4,19 +4,32 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
-use ascribe_core::{FileId, Issue, LineIndex, RelPath};
-use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource};
+use ascribe_core::path::{normalize, relative_path};
+use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
+use ascribe_model::{
+    ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList, SourceBound,
+};
 use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
+use crate::checks::template::Template;
 
 pub use ascribe_model::MODEL_FILE;
 
 /// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
 /// source file's, and before the code files'.
 pub const LOCK_FILE_ID: FileId = FileId::new(0x7FFF_FFFF);
+
+/// The id of `ascribe.permalinks` (SPEC §7.5), for locations in it: just
+/// before the lock's.
+pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
+
+/// The id of the first image file under the content root, for locations
+/// in image files: the image checks list them in path order, and number them
+/// from here ([`Project::images`]).
+pub const IMAGE_FILE_IDS: u32 = 0x4000_0000;
 
 /// One source file: a Markdown file under the content root.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,8 +64,9 @@ pub struct FileEntry<'a> {
     pub display_path: String,
     /// The text.
     pub text: &'a str,
-    /// The path relative to the content root, for a source file; `None` for
-    /// the content model.
+    /// The path relative to the content root, for a source file or an image
+    /// file under it; `None` for the content model, the lock, and the
+    /// permalinks list.
     pub content_path: Option<&'a RelPath>,
 }
 
@@ -94,14 +108,14 @@ pub enum LocateError {
     #[error("can't read the current directory: {0}")]
     CurrentDir(io::Error),
     /// No `ascribe.toml` is in the current directory or a parent.
-    #[error(
-        "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
-        MODEL_FILE,
-        dir.display()
-    )]
+    #[error("{}", not_found(dir, below))]
     NotFound {
         /// The directory the search started in.
         dir: PathBuf,
+        /// The folders below it that hold an `ascribe.toml`, as
+        /// [`Project::find_below`] finds them: the first eleven, of which
+        /// the message names ten.
+        below: Vec<PathBuf>,
     },
     /// The content model named isn't a file.
     #[error("{} doesn't exist or isn't a file", path.display())]
@@ -109,6 +123,56 @@ pub enum LocateError {
         /// The path named.
         path: PathBuf,
     },
+}
+
+/// The most projects below the directory searched that
+/// [`LocateError::NotFound`] names.
+const NOT_FOUND_NAMED: usize = 10;
+
+impl LocateError {
+    /// No `ascribe.toml` in `dir` or a parent; the error names the projects
+    /// below `dir`, if there are any.
+    pub fn not_found(dir: PathBuf) -> LocateError {
+        let below = Project::find_below(&dir, NOT_FOUND_NAMED + 1);
+        LocateError::NotFound { dir, below }
+    }
+}
+
+/// What [`LocateError::NotFound`] says: with the projects below, where to
+/// run ascribe instead, each folder from the current directory.
+fn not_found(dir: &Path, below: &[PathBuf]) -> String {
+    let none = format!(
+        "no {MODEL_FILE} found in {} or any parent directory",
+        dir.display()
+    );
+    // Each folder as it's typed where ascribe was run.
+    let base = normalize(&std::env::current_dir().unwrap_or_else(|_| dir.to_owned()));
+    let named: Vec<String> = below
+        .iter()
+        .take(NOT_FOUND_NAMED)
+        .map(|child| match relative_path(&base, &normalize(child)) {
+            Some(rel) => rel.as_str().to_owned(),
+            None => child.display().to_string(),
+        })
+        .collect();
+    match named.as_slice() {
+        [] => format!("{none}; run ascribe from a project, or pass --config"),
+        [one] => format!(
+            "{none}; the project below it is in {one}: run ascribe there, or pass --config {one}"
+        ),
+        several => {
+            let more = if below.len() > NOT_FOUND_NAMED {
+                ", and more"
+            } else {
+                ""
+            };
+            format!(
+                "{none}; the projects below it are in {}{more}: run ascribe in one of them, \
+                 or pass --config with its folder",
+                several.join(", ")
+            )
+        }
+    }
 }
 
 impl ascribe_core::Coded for LocateError {
@@ -167,6 +231,23 @@ pub struct Project {
     lock_text: Option<String>,
     /// `ascribe.lock` read, or its problems, when there's one.
     lock: Option<Result<Lock, Vec<Issue>>>,
+    /// The text of `ascribe.permalinks`, when there is one.
+    permalinks_text: Option<String>,
+    /// `ascribe.permalinks` read, or its problems, when there's one.
+    permalinks: Option<Result<PermalinkList, Vec<Issue>>>,
+    /// The image files under the content root, by path from the project
+    /// root and from the content root, once the image checks have listed
+    /// them.
+    images: OnceLock<Vec<(RelPath, RelPath)>>,
+    /// The source index a broken link's closest targets are looked for in:
+    /// the one the caller gave ([`Project::with_link_index`]), or one built
+    /// from the held texts the first time a link is broken.
+    link_index: OnceLock<Arc<ascribe_resolve::Project>>,
+    /// The day the checks run on, which `review-overdue` compares with.
+    today: Option<Date>,
+    /// The templates the content types name, by type, read the first time a
+    /// page of one is checked.
+    templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -190,6 +271,43 @@ impl Project {
             .find(|p| p.is_file())
     }
 
+    /// The folders below `dir` that hold an `ascribe.toml`, in path order,
+    /// at most `limit`: a project's folder, and those below it too. Folders
+    /// whose names start with `.`, `node_modules`, and `target` aren't
+    /// looked in.
+    pub fn find_below(dir: &Path, limit: usize) -> Vec<PathBuf> {
+        fn walk(dir: &Path, limit: usize, found: &mut Vec<PathBuf>) {
+            // Outside FileSystem: looking for projects, before there is one.
+            let Ok(entries) = fs::read_dir(dir) else {
+                return;
+            };
+            let mut dirs: Vec<PathBuf> = entries
+                .flatten()
+                .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
+                .filter(|e| {
+                    let name = e.file_name();
+                    let name = name.to_string_lossy();
+                    !name.starts_with('.') && name != "node_modules" && name != "target"
+                })
+                .map(|e| e.path())
+                .collect();
+            dirs.sort();
+            for child in dirs {
+                if found.len() >= limit {
+                    return;
+                }
+                // Outside FileSystem: as above.
+                if child.join(MODEL_FILE).is_file() {
+                    found.push(child.clone());
+                }
+                walk(&child, limit, found);
+            }
+        }
+        let mut found = Vec::new();
+        walk(dir, limit, &mut found);
+        found
+    }
+
     /// The content model a command works on: `config` when given (a file, or
     /// a directory that holds `ascribe.toml`), or else the nearest
     /// `ascribe.toml` in the current directory or a parent.
@@ -206,7 +324,7 @@ impl Project {
             Some(path) => path.to_owned(),
             None => {
                 let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
-                Project::find_config(&cwd).ok_or(LocateError::NotFound { dir: cwd })?
+                Project::find_config(&cwd).ok_or_else(|| LocateError::not_found(cwd))?
             }
         };
         if config.is_file() {
@@ -224,7 +342,17 @@ impl Project {
     /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
     /// `check_files` reports it and checks the rest.
     pub fn load(config: &Path) -> Result<Project, LoadError> {
-        let ModelFile { root, text, model } = Project::load_model(config)?;
+        Project::load_bounded(config, SourceBound::Anywhere)
+    }
+
+    /// [`Project::load`], with a local source bounded by `bound` when no git
+    /// repository is around the project ([`SourceBound`]).
+    ///
+    /// # Errors
+    ///
+    /// As [`Project::load`].
+    pub fn load_bounded(config: &Path, bound: SourceBound<'_>) -> Result<Project, LoadError> {
+        let ModelFile { root, text, model } = Project::load_model_bounded(config, bound)?;
         let content_root =
             RelPath::parse(&model.project.content_root).map_err(|e| LoadError::Read {
                 path: config.display().to_string(),
@@ -249,6 +377,19 @@ impl Project {
     /// The file can't be read or isn't valid UTF-8 ([`LoadError::Read`]), or
     /// the content model has errors ([`LoadError::Model`]).
     pub fn load_model(config: &Path) -> Result<ModelFile, LoadError> {
+        Project::load_model_bounded(config, SourceBound::Anywhere)
+    }
+
+    /// [`Project::load_model`], with a local source bounded by `bound` when
+    /// no git repository is around the project ([`SourceBound`]).
+    ///
+    /// # Errors
+    ///
+    /// As [`Project::load_model`].
+    pub fn load_model_bounded(
+        config: &Path,
+        bound: SourceBound<'_>,
+    ) -> Result<ModelFile, LoadError> {
         // Outside FileSystem: the content model says where the content root is,
         // so it's read before there's a FileSystem to read through.
         let text = fs::read(config)
@@ -263,7 +404,7 @@ impl Project {
             Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
             _ => PathBuf::from("."),
         };
-        match ascribe_model::load_str_in(&text, FileId::new(0), &root) {
+        match crate::type_files::load_model(&text, &root, bound) {
             Ok(model) => Ok(ModelFile { root, text, model }),
             Err(issues) => Err(LoadError::Model {
                 text,
@@ -392,6 +533,13 @@ impl Project {
         let lock = lock_text
             .as_deref()
             .map(|text| Lock::parse(text, LOCK_FILE_ID));
+        let permalinks_text = RelPath::parse(PERMALINKS_FILE)
+            .ok()
+            .and_then(|path| fs.read_file(&path).ok())
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+        let permalinks = permalinks_text
+            .as_deref()
+            .map(|text| PermalinkList::parse(text, PERMALINKS_FILE_ID));
         Project {
             root,
             layout,
@@ -404,6 +552,12 @@ impl Project {
             code: Arc::default(),
             lock_text,
             lock,
+            permalinks_text,
+            permalinks,
+            images: OnceLock::new(),
+            link_index: OnceLock::new(),
+            today: None,
+            templates: Arc::default(),
         }
     }
 
@@ -448,6 +602,15 @@ impl Project {
             self.layout.clone(),
             self.file_system(),
         )
+    }
+
+    /// The source index over the texts this project holds, which can differ
+    /// from the files on disk: text laid over it with
+    /// [`Project::with_source`], or a project built in memory. Only its
+    /// sources are what's held; images and other files are read as
+    /// [`Project::index`] reads them.
+    pub fn held_index(&self) -> ascribe_resolve::Project {
+        crate::page::held_index(self)
     }
 
     /// The content model's text.
@@ -503,6 +666,16 @@ impl Project {
         self.lock.as_ref()
     }
 
+    /// The text of `ascribe.permalinks`, when the project has one.
+    pub fn permalinks_text(&self) -> Option<&str> {
+        self.permalinks_text.as_deref()
+    }
+
+    /// `ascribe.permalinks` read, or its problems, when the project has one.
+    pub fn permalinks(&self) -> Option<&Result<PermalinkList, Vec<Issue>>> {
+        self.permalinks.as_ref()
+    }
+
     /// The pin of the source `name` in another repository, when
     /// `ascribe.lock` can be read and pins it to the repository the content
     /// model names.
@@ -513,8 +686,36 @@ impl Project {
         lock.source(name).filter(|l| &l.git == url)
     }
 
+    /// The image files under the content root, by path from the project
+    /// root and from the content root, in path order, listed by `list` the
+    /// first time they're asked for. The image at position `i` has the id
+    /// `IMAGE_FILE_IDS + i`.
+    pub(crate) fn images_or(
+        &self,
+        list: impl FnOnce() -> Vec<(RelPath, RelPath)>,
+    ) -> &[(RelPath, RelPath)] {
+        self.images.get_or_init(list)
+    }
+
+    /// The ids of the image files the image checks listed; none when they
+    /// haven't run.
+    pub fn image_ids(&self) -> impl Iterator<Item = FileId> + '_ {
+        (0..self.images.get().map_or(0, Vec::len)).map(image_id)
+    }
+
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
+        if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
+            && id.index() < PERMALINKS_FILE_ID.index()
+        {
+            let (path, content) = self.images.get()?.get(i as usize)?;
+            return Some(FileEntry {
+                id,
+                display_path: path.to_string(),
+                text: "",
+                content_path: Some(content),
+            });
+        }
         if id == FileId::new(0) {
             return Some(FileEntry {
                 id,
@@ -531,6 +732,14 @@ impl Project {
                 content_path: None,
             });
         }
+        if id == PERMALINKS_FILE_ID {
+            return self.permalinks_text.as_deref().map(|text| FileEntry {
+                id,
+                display_path: PERMALINKS_FILE.to_owned(),
+                text,
+                content_path: None,
+            });
+        }
         let source = self.sources.iter().find(|s| s.id == id)?;
         Some(FileEntry {
             id,
@@ -542,6 +751,128 @@ impl Project {
             text: &source.text,
             content_path: Some(&source.path),
         })
+    }
+
+    /// The path a report shows for a file id: [`FileEntry::display_path`] for
+    /// the content model, the lock, the permalinks list, and a source file, and the code file's
+    /// path for a code file a snippet read.
+    pub fn display_path(&self, id: FileId) -> Option<String> {
+        match self.file(id) {
+            Some(entry) => Some(entry.display_path),
+            None => self.code_file(id).map(|code| code.path.to_string()),
+        }
+    }
+
+    /// This project with the source file at `path` (a content path) holding
+    /// `text` instead of what was read, or added when there's none: a file
+    /// checked before it's saved. The ids are numbered again, in path order.
+    pub fn with_source(&self, path: &RelPath, text: String) -> Project {
+        let (readable, unreadable): (Vec<&SourceFile>, Vec<&SourceFile>) = self
+            .sources
+            .iter()
+            .filter(|s| &s.path != path)
+            .partition(|s| s.unreadable.is_none());
+        let mut files: Vec<(RelPath, String)> = readable
+            .into_iter()
+            .map(|s| (s.path.clone(), s.text.clone()))
+            .collect();
+        files.push((path.clone(), text));
+        let mut sources = Project::from_sources(files);
+        let first = sources.len() as u32 + 1;
+        sources.extend(unreadable.into_iter().enumerate().map(|(i, s)| SourceFile {
+            id: FileId::new(first + i as u32),
+            ..s.clone()
+        }));
+        Project::assemble(
+            self.root.clone(),
+            self.layout.content_root.clone(),
+            self.model.clone(),
+            self.model_text.clone(),
+            sources,
+            Some(self.fs.0.clone()),
+        )
+        .with_today(self.today)
+        .with_templates(self.templates.clone())
+    }
+
+    /// This project, with the templates another read of the same project
+    /// has, since a page's text doesn't change them.
+    fn with_templates(self, templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>) -> Project {
+        Project { templates, ..self }
+    }
+
+    /// The template content type `name` names, read through the project's
+    /// [`FileSystem`]. None when it names none, or when the file can't be
+    /// read, which is the content model's error (`model-type-template`).
+    pub(crate) fn template(&self, name: &str) -> Option<Arc<Template>> {
+        let templates = self.templates.get_or_init(|| {
+            let mut out = HashMap::new();
+            for t in &self.model.types {
+                let Some(path) = t
+                    .template
+                    .as_ref()
+                    .and_then(|f| RelPath::parse(&f.path).ok())
+                else {
+                    continue;
+                };
+                let Some(text) = self
+                    .fs
+                    .0
+                    .read_file(&path)
+                    .ok()
+                    .and_then(|bytes| String::from_utf8(bytes).ok())
+                else {
+                    continue;
+                };
+                out.insert(t.name.clone(), Arc::new(Template::read(&text, &self.model)));
+            }
+            out
+        });
+        templates.get(name).cloned()
+    }
+
+    /// Where `text`, a page of type `type_name`, still has what the type's
+    /// template left to fill in, in source order: each frontmatter field
+    /// whose value is the template's, and each placeholder of the body,
+    /// whole, from the first piece of one that runs across blocks to its
+    /// last. They're found as `template-placeholder-left` finds them, whether
+    /// or not the check is on. Empty when the type has no template, or its
+    /// template can't be read.
+    pub fn template_places(&self, type_name: &str, text: &str) -> Vec<Span> {
+        self.template(type_name)
+            .map(|template| crate::checks::template::places(&template, text, &self.model))
+            .unwrap_or_default()
+    }
+
+    /// This project, checked as on `today`: the day `review-overdue`
+    /// compares a page's review date with. A library doesn't read the clock,
+    /// so a project has no day until its caller gives it one, and without
+    /// one, no review is overdue.
+    #[must_use]
+    pub fn with_today(mut self, today: Option<Date>) -> Project {
+        self.today = today;
+        self
+    }
+
+    /// This project, with `index` as the source index a broken link's
+    /// closest targets are looked for in, so none is built for them: the
+    /// language server gives its incremental index. `index` must be an index
+    /// of the same files.
+    #[must_use]
+    pub fn with_link_index(self, index: Arc<ascribe_resolve::Project>) -> Project {
+        let link_index = OnceLock::new();
+        let _ = link_index.set(index);
+        Project { link_index, ..self }
+    }
+
+    /// The source index a broken link's closest targets are looked for in.
+    pub(crate) fn link_index(&self) -> &ascribe_resolve::Project {
+        self.link_index.get_or_init(|| Arc::new(self.held_index()))
+    }
+
+    /// The day the checks run on, if the caller gave one.
+    pub fn today(&self) -> Option<Date> {
+        self.today
     }
 
     /// A line index for a file's text, for turning spans into lines and columns.
@@ -569,6 +900,14 @@ impl SourceSet for Project {
         pages.sort();
         pages
     }
+}
+
+/// The id of the image at position `i` of [`Project::images`].
+pub(crate) fn image_id(i: usize) -> FileId {
+    // A project has far fewer images than the ids from IMAGE_FILE_IDS to the
+    // permalinks list's.
+    #[allow(clippy::cast_possible_truncation)]
+    FileId::new(IMAGE_FILE_IDS + i as u32)
 }
 
 fn read_error(path: &Path, e: std::io::Error) -> LoadError {

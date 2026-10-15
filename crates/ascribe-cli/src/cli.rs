@@ -13,26 +13,44 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::{commands, exit};
 
-/// The docs site's address, with no trailing slash. It's `[consumer] site` in
-/// `docs/ascribe.toml`, and a test checks that they agree. Help links to the
-/// site's pages from here, through [`docs_page!`].
-macro_rules! docs_site {
-    () => {
-        "https://ascribed-dev.com"
+/// A line for the end of a command's help, linking to the docs' permalink
+/// for it, which forwards to wherever its section is: `docs_link!("cli-check")`.
+/// A command's permalink is `cli-` and its name, with a `-` for each space.
+macro_rules! docs_link {
+    ($name:literal) => {
+        concat!("Documentation: ", ascribe_core::docs_permalink!($name))
     };
 }
 
-/// A line for the end of a command's help, linking to its page on the docs
-/// site: `docs_page!("reference/cli/#ascribe-check")`.
-macro_rules! docs_page {
-    ($path:literal) => {
-        concat!("Documentation: ", docs_site!(), "/", $path)
-    };
-}
-
-/// [`docs_site!`], for the test that checks it.
+/// `ascribe_core::docs_site!`, for the test that checks it.
 #[cfg(test)]
-pub(crate) const DOCS_SITE: &str = docs_site!();
+pub(crate) const DOCS_SITE: &str = ascribe_core::docs_site!();
+
+/// `ascribe_core::docs_permalinks!`, for the test that checks it.
+#[cfg(test)]
+pub(crate) const DOCS_PERMALINKS: &str = ascribe_core::docs_permalinks!();
+
+/// What `ascribe --help` shows before the commands and options: examples,
+/// and the commands an agent needs first, since agents read `--help` before
+/// anything else.
+const EXAMPLES: &str = "\
+Examples:
+  ascribe check                          Check the project in this folder or above
+  ascribe build                          Check it, then build every output
+  ascribe explain ASC036                 What a diagnostic means, and how to fix it
+  ascribe model                          What the content model allows
+  ascribe outline guides/install.md      A page's headings, with the ids links use
+  ascribe link keys.md --from guides/install.md
+                                         Whether a link works, and what to write
+  ascribe refs phrase:product            Where a phrase is used
+  ascribe rename phrase:product brand    Rename a phrase, and every use of it
+  ascribe render guides/install.md --build cloud
+                                         A page as one build's readers see it
+
+For agents: after each edit, run `ascribe check --format concise` and fix
+what it reports; `ascribe explain <CODE>` says how to fix a diagnostic, with
+an example. Before writing frontmatter, a directive's attributes, or a
+phrase, read `ascribe model` for what this project allows.";
 
 /// Ascribe: check, build, format, and serve documentation written as code.
 #[derive(Debug, Parser)]
@@ -40,7 +58,9 @@ pub(crate) const DOCS_SITE: &str = docs_site!();
     name = "ascribe",
     version = env!("ASCRIBE_VERSION"),
     arg_required_else_help = true,
-    after_help = docs_page!("reference/cli/"),
+    help_template = "{about-with-newline}\n{usage-heading} {usage}\n\n{before-help}{all-args}{after-help}",
+    before_help = EXAMPLES,
+    after_help = docs_link!("cli-reference"),
 )]
 pub struct Cli {
     #[command(flatten)]
@@ -57,7 +77,8 @@ pub struct Global {
     ///
     /// By default, the nearest `ascribe.toml` in the current directory or a
     /// parent, so the commands work from anywhere inside a project. Not for
-    /// `lsp`, whose project comes from the editor.
+    /// `lsp`, whose project comes from the editor, `init`, which starts
+    /// one, or `observe`, which runs in a folder of code.
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
 
@@ -80,41 +101,130 @@ pub enum Color {
 /// The subcommands.
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Write the files agents read on their own: the project's rules, and
+    /// the Ascribe skill.
+    #[command(after_help = docs_link!("cli-agents"))]
+    Agents(commands::agents::Args),
     /// Build the documentation set's outputs.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-build"))]
+    #[command(after_help = docs_link!("cli-build"))]
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-check"))]
+    #[command(after_help = docs_link!("cli-check"))]
     Check(commands::check::Args),
     /// Show what changed between a git revision and the working tree, page
     /// by page, as readers will see it.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-diff"))]
+    #[command(after_help = docs_link!("cli-diff"))]
     Diff(commands::diff::Args),
     /// List the pages whose code examples changed between a git revision and
     /// the working tree, and whether the words around them changed too.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-drift"))]
+    #[command(after_help = docs_link!("cli-drift"))]
     Drift(commands::drift::Args),
+    /// Explain a diagnostic: what it means, how to fix it, and an example.
+    #[command(
+        after_help = docs_link!("cli-explain"),
+        override_usage = "ascribe explain [OPTIONS] <CODE>\n       ascribe explain [OPTIONS] --list"
+    )]
+    Explain(commands::explain::Args),
     /// Rewrite Ascribe constructs into canonical form.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-fmt"))]
+    #[command(after_help = docs_link!("cli-fmt"))]
     Fmt(commands::fmt::Args),
+    /// Start a project: write its first ascribe.toml, and make the folder its
+    /// pages go in. With --templates, take the page templates too.
+    ///
+    /// Writes nothing where there's an ascribe.toml at or above the folder.
+    #[command(after_help = docs_link!("cli-init"))]
+    Init(commands::init::Args),
+    /// Say whether a link target exists as seen from a page, its title, and
+    /// the link to write.
+    #[command(after_help = docs_link!("cli-link"))]
+    Link(commands::link::Args),
     /// Run the language server, speaking LSP over standard input and output.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-lsp"))]
+    #[command(after_help = docs_link!("cli-lsp"))]
     Lsp(commands::lsp::Args),
+    /// Run the MCP server, speaking the Model Context Protocol over standard
+    /// input and output: the commands that answer questions, as tools.
+    #[command(after_help = docs_link!("cli-mcp"))]
+    Mcp(commands::mcp::Args),
+    /// Show what the content model allows: page types and their
+    /// frontmatter, dimensions, phrases, features, glossary terms, widgets,
+    /// and builds.
+    #[command(after_help = docs_link!("cli-model"))]
+    Model(commands::model::Args),
+    /// Run the test of the ascribe.examples.toml in this folder, and when it
+    /// passes, write down what it passed and where: an observation, which
+    /// pages read to say what an example was tested with.
+    ///
+    /// Runs the config's commands as lines of shell (`sh`, or `cmd` on
+    /// Windows), as you, with nothing added: only the config in the current
+    /// folder, never one in a parent folder or another project.
+    #[command(after_help = docs_link!("cli-observe"))]
+    Observe(commands::observe::Args),
+    /// Show a page's title, type, and headings, with their ids and lines.
+    #[command(after_help = docs_link!("cli-outline"))]
+    Outline(commands::outline::Args),
+    /// Keep the list of the project's permalinks, ascribe.permalinks, and
+    /// check names against it.
+    #[command(after_help = docs_link!("cli-permalinks"))]
+    Permalinks(commands::permalinks::Args),
+    /// Show where a page, a heading, a fragment, a phrase, a feature, or
+    /// another content model entry is used.
+    #[command(after_help = docs_link!("cli-refs"))]
+    Refs(commands::refs::Args),
+    /// Rename a phrase, a dimension's value, a heading's id, or a page, and
+    /// change everything that uses it, as the editor's rename does.
+    #[command(after_help = docs_link!("cli-rename"))]
+    Rename(commands::rename::Args),
+    /// Show a page as a reader of one build sees it, as plain Markdown.
+    #[command(after_help = docs_link!("cli-render"))]
+    Render(commands::render::Args),
+    /// Report what state the project is in: problems, inventory, what each
+    /// build leaves out, external links, and the published site's delivery
+    /// to agents.
+    #[command(after_help = docs_link!("cli-report"))]
+    Report(commands::report::Args),
     /// Copy code from sources in other repositories, and move their pins.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-sources"))]
+    #[command(after_help = docs_link!("cli-sources"))]
     Sources(commands::sources::Args),
+    /// Write a page template, and its guide, into the project, and declare
+    /// its type; or list the templates Ascribe carries.
+    #[command(after_help = docs_link!("cli-templates"))]
+    Templates(commands::templates::Args),
+    /// Set up Vale, which checks the prose: write a preset out as the
+    /// project's own configuration.
+    #[command(after_help = docs_link!("cli-vale"))]
+    Vale(commands::vale::Args),
+    /// Show a project's release lines, say what differs between two, and
+    /// release one.
+    #[command(after_help = docs_link!("cli-versions"))]
+    Versions(commands::versions::Args),
 }
 
 impl Command {
     fn run(self, global: &Global) -> ExitCode {
         match self {
+            Command::Agents(args) => commands::agents::run(global, args),
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
             Command::Diff(args) => commands::diff::run(global, args),
             Command::Drift(args) => commands::drift::run(global, args),
+            Command::Explain(args) => commands::explain::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
+            Command::Init(args) => commands::init::run(global, args),
+            Command::Link(args) => commands::link::run(global, args),
             Command::Lsp(args) => commands::lsp::run(global, args),
+            Command::Mcp(args) => commands::mcp::run(global, args),
+            Command::Model(args) => commands::model::run(global, args),
+            Command::Observe(args) => commands::observe::run(global, args),
+            Command::Outline(args) => commands::outline::run(global, args),
+            Command::Permalinks(args) => commands::permalinks::run(global, args),
+            Command::Refs(args) => commands::refs::run(global, args),
+            Command::Rename(args) => commands::rename::run(global, args),
+            Command::Render(args) => commands::render::run(global, args),
+            Command::Report(args) => commands::report::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),
+            Command::Templates(args) => commands::templates::run(global, args),
+            Command::Vale(args) => commands::vale::run(global, args),
+            Command::Versions(args) => commands::versions::run(global, args),
         }
     }
 }

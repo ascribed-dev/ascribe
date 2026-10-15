@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Version, parse_availability};
 use ascribe_core::{Issue, Location, Span, diagnostics};
-use ascribe_model::ContentModel;
+use ascribe_model::{BuildLine, ContentModel};
 use ascribe_syntax::{Block, BlockKind, Bound, Table};
 
 use super::tree::ResolvedKind;
@@ -97,6 +97,209 @@ impl Availability {
                 .as_ref()
                 .is_none_or(|e| e.is_available(model, target, version))
     }
+}
+
+impl Availability {
+    /// Whether content with this availability is in a line of a versioned
+    /// build (SPEC §9.3): every spec in its chain either doesn't list
+    /// `target`, or makes it available at one version in the line, the same
+    /// version for every spec. The current line also holds every later
+    /// version.
+    pub(crate) fn in_line(&self, model: &ContentModel, target: &str, line: &BuildLine) -> bool {
+        let mut entries = Vec::new();
+        let mut at = Some(self);
+        while let Some(a) = at {
+            entries.extend(entry_for(model, &a.spec, target));
+            at = a.enclosing.as_deref();
+        }
+        entries_in_line(model, &entries, line)
+    }
+}
+
+/// Whether one spec, on its own, holds content in a line (see
+/// [`Availability::in_line`]).
+pub(crate) fn spec_in_line(
+    model: &ContentModel,
+    spec: &AvailabilitySpec,
+    target: &str,
+    line: &BuildLine,
+) -> bool {
+    let entries: Vec<&Entry> = entry_for(model, spec, target).into_iter().collect();
+    entries_in_line(model, &entries, line)
+}
+
+/// Whether some version in `line` makes every one of `entries` available. A
+/// state only changes at a version a history names, so the line's own
+/// version and each such version inside the line are the only ones to try.
+fn entries_in_line(model: &ContentModel, entries: &[&Entry], line: &BuildLine) -> bool {
+    if entries.is_empty() {
+        return true;
+    }
+    let inside = |v: &Version| {
+        v.compare(&line.line).is_ge() && (line.current || ascribe_model::in_line(&line.line, v))
+    };
+    let starts = entries.iter().flat_map(|e| match &e.detail {
+        Detail::None => Vec::new(),
+        Detail::Version(v) => vec![v],
+        Detail::State { version, .. } => version.iter().collect(),
+        Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
+    });
+    std::iter::once(&line.line)
+        .chain(starts.filter(|v| inside(v)))
+        .any(|v| {
+            entries.iter().all(|e| {
+                state_in_effect(e, Some(v))
+                    .is_some_and(|state| model.state_is_available(state).unwrap_or(true))
+            })
+        })
+}
+
+/// What one spec says about content in a release line of `target`, from
+/// the spec alone, as `ascribe versions changes` compares two lines.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InLine {
+    /// Whether some version in the line makes the content available.
+    pub available: bool,
+    /// The state in effect at the newest version in the line where the
+    /// spec changes state, or at the line's own version: `ga` for a target
+    /// with no state. `None` before the spec's first version.
+    pub state: Option<String>,
+}
+
+/// What `spec` says about `target` in `line`, taking the line alone: a
+/// version in a later line isn't in it, whether or not the line is
+/// current. `None` when the spec doesn't name the target, directly or
+/// through its dimension, and so says the same of every line.
+pub fn in_release_line(
+    model: &ContentModel,
+    spec: &AvailabilitySpec,
+    target: &str,
+    line: &Version,
+) -> Option<InLine> {
+    let entry = entry_for(model, spec, target)?;
+    let mut tried: Vec<&Version> = vec![line];
+    let starts = match &entry.detail {
+        Detail::None => Vec::new(),
+        Detail::Version(v) => vec![v],
+        Detail::State { version, .. } => version.iter().collect(),
+        Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
+    };
+    tried.extend(
+        starts
+            .into_iter()
+            .filter(|v| v.compare(line).is_ge() && ascribe_model::in_line(line, v)),
+    );
+    tried.sort_by(|a, b| a.compare(b));
+    let available = tried.iter().any(|v| {
+        state_in_effect(entry, Some(v))
+            .is_some_and(|state| model.state_is_available(state).unwrap_or(true))
+    });
+    let state = tried
+        .last()
+        .and_then(|v| state_in_effect(entry, Some(v)))
+        .map(str::to_owned);
+    Some(InLine { available, state })
+}
+
+/// The entry of a spec that decides `target`: a direct one, else one through
+/// the target's dimension name.
+fn entry_for<'a>(
+    model: &ContentModel,
+    spec: &'a AvailabilitySpec,
+    target: &str,
+) -> Option<&'a Entry> {
+    let dimension = model.dimension_of_value(target).map(|d| d.name.as_str());
+    spec.entries
+        .iter()
+        .find(|e| e.target.text == target)
+        .or_else(|| {
+            spec.entries
+                .iter()
+                .find(|e| Some(e.target.text.as_str()) == dimension)
+        })
+}
+
+/// A spec as a line's output shows it: a version of `target` at or before
+/// the oldest live line is left out, since every live line has the content,
+/// and the state stays (`self-managed deprecated 3.2` shows `self-managed
+/// deprecated`). A history whose states all start at or before it becomes
+/// its last state; one that changes state after it is kept whole. `None`
+/// when nothing changes.
+pub(crate) fn without_old_versions(
+    spec: &AvailabilitySpec,
+    target: &str,
+    oldest: &Version,
+) -> Option<AvailabilitySpec> {
+    let old = |v: &Version| v.compare(oldest).is_le();
+    let mut changed = false;
+    let entries = spec
+        .entries
+        .iter()
+        .map(|e| {
+            let detail = match &e.detail {
+                _ if e.target.text != target => None,
+                Detail::Version(v) if old(v) => Some(Detail::None),
+                Detail::State {
+                    state,
+                    version: Some(v),
+                } if old(v) => Some(Detail::State {
+                    state: state.clone(),
+                    version: None,
+                }),
+                Detail::History(steps) if steps.iter().all(|s| old(&s.version)) => {
+                    steps.last().map(|last| Detail::State {
+                        state: last.state.clone(),
+                        version: None,
+                    })
+                }
+                _ => None,
+            };
+            match detail {
+                Some(detail) => {
+                    changed = true;
+                    Entry {
+                        detail,
+                        ..e.clone()
+                    }
+                }
+                None => e.clone(),
+            }
+        })
+        .collect();
+    changed.then_some(AvailabilitySpec {
+        entries,
+        span: spec.span,
+    })
+}
+
+/// A spec written out as an author would write it (SPEC §4.4).
+pub(crate) fn spec_text(spec: &AvailabilitySpec) -> String {
+    spec.entries
+        .iter()
+        .map(|e| {
+            let target = &e.target.text;
+            match &e.detail {
+                Detail::None => target.clone(),
+                Detail::Version(v) => format!("{target} {}", v.text),
+                Detail::State {
+                    state,
+                    version: None,
+                } => format!("{target} {}", state.text),
+                Detail::State {
+                    state,
+                    version: Some(v),
+                } => format!("{target} {} {}", state.text, v.text),
+                Detail::History(steps) => {
+                    let steps: Vec<String> = steps
+                        .iter()
+                        .map(|s| format!("{} {}", s.state.text, s.version.text))
+                        .collect();
+                    format!("{target} ({})", steps.join(", "))
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Whether one spec makes content available for `target` at `version`.

@@ -1,4 +1,5 @@
 ---
+type: page
 title: Broken
 description: A page with a problem, added to a copy of examples/quill.
 ---

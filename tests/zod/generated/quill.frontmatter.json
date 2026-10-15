@@ -1,4 +1,23 @@
 {
+  "configure.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (GA, 3.5+)",
+        "versions": [
+          "3.5"
+        ]
+      }
+    ],
+    "description": "Set the Quill agent's API key and the folders it syncs.",
+    "source": "configure.md",
+    "title": "Configure the agent",
+    "type": "page"
+  },
   "install-agent.md": {
     "available": [
       {
@@ -15,21 +34,59 @@
           "preview"
         ],
         "target": "self-managed",
-        "text": "self-managed (preview, 3.3+)",
-        "versions": [
-          "3.3"
-        ]
+        "text": "self-managed (preview)"
       }
     ],
     "description": "Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.",
-    "title": "Install the Quill agent"
+    "source": "install-agent.md",
+    "title": "Install the Quill agent",
+    "type": "page"
   },
   "keys.md": {
     "description": "Create and rotate the API keys the Quill agent uses.",
-    "title": "API keys"
+    "source": "keys.md",
+    "title": "API keys",
+    "type": "page"
   },
   "quickstart.md": {
     "description": "Run Quill in the browser with no local setup.",
-    "title": "Try Quill in the browser"
+    "source": "quickstart.md",
+    "title": "Try Quill in the browser",
+    "type": "page"
+  },
+  "upgrade.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (GA)"
+      }
+    ],
+    "description": "What each release of self-managed Quill changes, and what to do when you upgrade.",
+    "source": "upgrade.md",
+    "title": "Upgrade the agent",
+    "type": "page"
+  },
+  "webhooks.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (GA, 3.5+)",
+        "versions": [
+          "3.5"
+        ]
+      }
+    ],
+    "description": "Send an event to your own service when a page changes.",
+    "source": "webhooks.md",
+    "title": "Webhooks",
+    "type": "page"
   }
 }

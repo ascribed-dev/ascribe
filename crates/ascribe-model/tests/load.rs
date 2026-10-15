@@ -10,8 +10,9 @@ mod links;
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use ascribe_model::{
-    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, TrailingSlash, TypeMatch,
-    VariantMode, load, load_str, load_str_in,
+    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, HeadersFormat, Listing,
+    ListingFrom, ListingLevel, Placement, SourceBound, TrailingSlash, TypeMatch, VariantMode, load,
+    load_str, load_str_bounded, load_str_in,
 };
 
 fn examples() -> PathBuf {
@@ -37,7 +38,7 @@ fn minimal_gets_every_default() {
     assert_eq!(m.project.output_dir, ".ascribe/build");
     assert_eq!(m.types.len(), 1);
     assert_eq!(m.types[0].name, "page");
-    assert!(m.types[0].default);
+    assert!(m.types[0].implicit && !m.declares_types());
     assert_eq!(m.builds.len(), 1);
     assert_eq!(m.builds[0].name, "site");
     assert_eq!(m.editor_default_build().name, "site");
@@ -47,7 +48,10 @@ fn minimal_gets_every_default() {
     assert_eq!(m.consumer.profile, "astro");
     assert_eq!(m.consumer.base_path, "/");
     assert_eq!(m.consumer.trailing_slash, TrailingSlash::Always);
+    assert_eq!(m.consumer.permalink_path(), "/go/");
     assert!(m.consumer.html);
+    assert!(m.releases.is_empty());
+    assert_eq!(m.planned_label, "planned");
     // Only the built-in directives.
     assert_eq!(
         m.directive_keywords(),
@@ -59,9 +63,82 @@ fn minimal_gets_every_default() {
             "note",
             "steps",
             "details",
-            "snippet"
+            "snippet",
+            "intended"
         ]
     );
+}
+
+#[test]
+fn permalinks_are_under_the_base_path_unless_a_path_is_set() {
+    let path = |consumer: &str| {
+        load_str(
+            &format!("spec = \"0.1\"\n[consumer]\n{consumer}"),
+            FileId::new(0),
+        )
+        .unwrap()
+        .consumer
+        .permalink_path()
+    };
+    assert_eq!(path("base-path = \"/docs/\"\n"), "/docs/go/");
+    assert_eq!(path("base-path = \"/docs\"\n"), "/docs/go/");
+    assert_eq!(
+        path("base-path = \"/docs/\"\npermalink-path = \"/go/\"\n"),
+        "/go/"
+    );
+    assert_eq!(path("permalink-path = \"/links\"\n"), "/links/");
+}
+
+#[test]
+fn headers_name_the_hosts_format_and_nothing_else() {
+    let load = |consumer: &str| {
+        load_str(
+            &format!("spec = \"0.1\"\n[consumer]\n{consumer}"),
+            FileId::new(0),
+        )
+    };
+    assert_eq!(load("").unwrap().consumer.headers, None);
+    assert_eq!(
+        load("headers = \"netlify\"\n").unwrap().consumer.headers,
+        Some(HeadersFormat::Netlify)
+    );
+    let issues = load("headers = \"apache\"\n").unwrap_err();
+    assert_eq!(issues.len(), 1, "{issues:#?}");
+    assert_eq!(issues[0].slug.as_str(), "model-invalid-value");
+}
+
+#[test]
+fn releases_list_each_targets_lines_newest_first() {
+    let m = example("full.toml");
+    let r = m.releases_of("self-managed").unwrap();
+    let lines: Vec<&str> = r.live.iter().map(|l| l.text.as_str()).collect();
+    assert_eq!(lines, ["3.5", "3.4"]);
+    assert_eq!(r.current().unwrap().text, "3.5");
+    assert!(m.releases_of("cloud").is_none());
+    assert!(m.builds.iter().all(|b| b.versions.is_none()));
+
+    let m = load_str(
+        "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\", \"b\"]\nversionless = [\"b\"]\n\
+         [releases.a]\nlive = [\"3.10\", \"3.9\", \"4.0\"]\n[builds.site]\nversions = \"a\"\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    let lines: Vec<&str> = m.releases[0].live.iter().map(|l| l.text.as_str()).collect();
+    assert_eq!(lines, ["4.0", "3.10", "3.9"]);
+    assert_eq!(m.builds[0].versions.as_deref(), Some("a"));
+    assert_eq!(m.builds[0].availability, AvailabilityMode::Badge);
+}
+
+#[test]
+fn a_version_is_in_the_line_it_starts_with() {
+    let v = |t: &str| ascribe_core::availability::parse_version(t, 0).unwrap();
+    assert!(ascribe_model::in_line(&v("3.4"), &v("3.4")));
+    assert!(ascribe_model::in_line(&v("3.4"), &v("3.4.2")));
+    assert!(ascribe_model::in_line(&v("3.4"), &v("3.4.2.1")));
+    assert!(!ascribe_model::in_line(&v("3.4"), &v("3.40")));
+    assert!(!ascribe_model::in_line(&v("3.4"), &v("3")));
+    assert!(ascribe_model::in_line(&v("0.2.0"), &v("0.2.0")));
+    assert!(!ascribe_model::in_line(&v("0.2.0"), &v("0.2.1")));
 }
 
 #[test]
@@ -124,9 +201,16 @@ fn full_covers_lifecycle_features_notes_widgets_and_fields() {
         .find(|f| f.name == "title")
         .unwrap();
     assert!(title.required && title.phrases);
-    // Which type applies.
-    assert!(matches!(m.type_for("reference/api.md"), TypeMatch::One(t) if t.name == "reference"));
-    assert!(matches!(m.type_for("guides/setup.md"), TypeMatch::One(t) if t.name == "guide"));
+    // Which type applies: the one a page names.
+    assert!(m.declares_types());
+    assert!(matches!(m.type_named(Some("reference")), TypeMatch::One(t) if t.name == "reference"));
+    assert!(matches!(m.type_named(Some("guide")), TypeMatch::One(t) if t.name == "guide"));
+    assert_eq!(m.type_named(Some("guides")), TypeMatch::Unknown);
+    assert_eq!(m.type_named(None), TypeMatch::Missing);
+    let page: serde_yaml_ng::Value = serde_yaml_ng::from_str("type: guide\ntitle: T").unwrap();
+    assert!(matches!(m.type_of(Some(&page)), TypeMatch::One(t) if t.name == "guide"));
+    let number: serde_yaml_ng::Value = serde_yaml_ng::from_str("type: 3\ntitle: T").unwrap();
+    assert_eq!(m.type_of(Some(&number)), TypeMatch::Unknown);
     assert!(
         m.is_fragment("includes/x.md")
             && m.is_fragment("a/_x.md")
@@ -140,7 +224,7 @@ fn widgets_become_directive_schemas() {
     let m = example("full.toml");
     assert!(!m.widgets.is_empty());
     let schemas = m.directive_schemas();
-    assert_eq!(schemas.len(), 8 + m.widgets.len());
+    assert_eq!(schemas.len(), 9 + m.widgets.len());
     for w in &m.widgets {
         let s = m.widget_schema(&w.schema.name).unwrap();
         assert!(matches!(s.origin, ascribe_core::Origin::Widget));
@@ -322,7 +406,131 @@ fn a_version_on_a_dimension_name_is_an_error() {
     }
 }
 
+// ---- listing ----------------------------------------------------------------
+
+const LISTING: &str = "spec = \"0.1\"\n\
+    [types.guide.frontmatter]\ntitle = \"string\"\n\
+    [types.changelog.frontmatter]\ntitle = \"string\"\n";
+
+fn listing_model(rules: &str) -> ContentModel {
+    load_str(&format!("{LISTING}{rules}"), FileId::new(0)).unwrap()
+}
+
+#[test]
+fn a_page_is_listed_with_no_rules() {
+    let m = listing_model("");
+    assert!(m.listing.is_empty());
+    assert_eq!(m.listing_rule("a.md", None), None);
+    assert_eq!(
+        m.listing_of("a.md", None, None),
+        (Listing::Listed, ListingFrom::Default)
+    );
+    assert_eq!(
+        m.listing_of("a.md", None, Some(Listing::Unquoted)),
+        (Listing::Unquoted, ListingFrom::Page)
+    );
+}
+
+#[test]
+fn the_strictest_rule_a_page_is_under_wins() {
+    let m = listing_model(
+        "[listing]\ndefault = \"listed\"\n\
+         [listing.folders]\n\"internal/\" = \"unquoted\"\n\"internal/old/\" = \"unlisted\"\n\
+         \"changes/\" = \"unlisted\"\n\
+         [listing.types]\nchangelog = \"unquoted\"\n",
+    );
+    let level = |path: &str, ty: Option<&str>| m.listing_rule(path, ty).map(|r| r.level.clone());
+    assert_eq!(level("a.md", Some("guide")), Some(ListingLevel::Site));
+    assert_eq!(
+        level("internal/a.md", Some("guide")),
+        Some(ListingLevel::Folder("internal/".into()))
+    );
+    assert_eq!(
+        level("internal/old/a.md", Some("guide")),
+        Some(ListingLevel::Folder("internal/old/".into()))
+    );
+    // Not a folder's page: the folder's name is a prefix of it only.
+    assert_eq!(
+        level("internal-notes.md", Some("guide")),
+        Some(ListingLevel::Site)
+    );
+    // A folder and a type: the stricter, and the folder of two as strict.
+    assert_eq!(
+        level("changes/a.md", Some("changelog")),
+        Some(ListingLevel::Folder("changes/".into()))
+    );
+    let rule = m.listing_rule("internal/a.md", Some("guide")).unwrap();
+    assert_eq!(rule.text, "\"internal/\" = \"unquoted\"");
+    assert_eq!(rule.line, 9);
+}
+
+#[test]
+fn a_page_may_tighten_its_rule_and_never_loosen_it() {
+    let m = listing_model("[listing.folders]\n\"internal/\" = \"unquoted\"\n");
+    let rule = ListingFrom::Rule(
+        m.listing_rule("internal/a.md", Some("guide"))
+            .unwrap()
+            .clone(),
+    );
+    assert_eq!(
+        m.listing_of("internal/a.md", Some("guide"), None),
+        (Listing::Unquoted, rule.clone())
+    );
+    assert_eq!(
+        m.listing_of("internal/a.md", Some("guide"), Some(Listing::Unlisted)),
+        (Listing::Unlisted, ListingFrom::Page)
+    );
+    assert_eq!(
+        m.listing_of("internal/a.md", Some("guide"), Some(Listing::Unquoted)),
+        (Listing::Unquoted, ListingFrom::Page)
+    );
+    assert_eq!(
+        m.listing_of("internal/a.md", Some("guide"), Some(Listing::Listed)),
+        (Listing::Unquoted, rule)
+    );
+}
+
+#[test]
+fn a_rule_as_strict_as_the_one_it_is_under_is_fine() {
+    let m = listing_model(
+        "[listing]\ndefault = \"unquoted\"\n[listing.folders]\n\"a/\" = \"unquoted\"\n\
+         \"a/b/\" = \"unlisted\"\n[listing.types]\nchangelog = \"unlisted\"\n",
+    );
+    assert_eq!(m.listing.folders.len(), 2);
+}
+
 // ---- the filesystem rules ---------------------------------------------------
+
+#[test]
+fn a_listing_folder_must_exist_by_its_exact_name() {
+    let dir = scratch("listing");
+    std::fs::create_dir_all(dir.join("docs/internal/old")).unwrap();
+    std::fs::write(dir.join("docs/page.md"), "").unwrap();
+    let model = |folder: &str| {
+        format!(
+            "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n\
+             [listing.folders]\n\"{folder}\" = \"unlisted\"\n"
+        )
+    };
+    let slug = |folder: &str| {
+        load_str_in(&model(folder), FileId::new(0), &dir)
+            .err()
+            .map(|issues| (issues[0].slug.as_str().to_owned(), issues[0].variant))
+    };
+    assert_eq!(slug("internal/"), None);
+    assert_eq!(slug("internal/old/"), None);
+    assert_eq!(slug("drafts/"), Some(("model-listing-folder".into(), None)));
+    assert_eq!(
+        slug("Internal/"),
+        Some(("model-listing-folder".into(), None))
+    );
+    assert_eq!(
+        slug("page.md/"),
+        Some(("model-listing-folder".into(), Some("not-directory")))
+    );
+    // Loading text alone skips the rule.
+    assert!(load_str(&model("drafts/"), FileId::new(0)).is_ok());
+}
 
 fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("ascribe-model-{name}-{}", std::process::id()));
@@ -482,4 +690,204 @@ fn the_output_directory_is_compared_after_resolving_links() {
 fn an_unreadable_file_is_reported_not_a_panic() {
     let issues = load("/no/such/dir/ascribe.toml").unwrap_err();
     assert_eq!(issues[0].slug.as_str(), "model-toml-syntax");
+}
+
+#[test]
+fn full_marks_its_description_and_review_date() {
+    use ascribe_model::{CheckLevel, FieldRole};
+    let m = example("full.toml");
+    let guide = &m.types[0].frontmatter;
+    let name = |role| guide.field_with_role(role).map(|f| f.name.as_str());
+    assert_eq!(name(FieldRole::Description), Some("description"));
+    assert_eq!(name(FieldRole::ReviewDate), Some("review-by"));
+    assert_eq!(
+        m.types[1]
+            .frontmatter
+            .field_with_role(FieldRole::Description),
+        None
+    );
+    let page_size = ascribe_core::diagnostics::PAGE_SIZE;
+    assert_eq!(m.checks.limit(page_size), Some(40_000));
+    assert_eq!(
+        m.checks
+            .level(ascribe_core::diagnostics::CODE_LANGUAGE_MISSING),
+        Some(CheckLevel::Warning)
+    );
+}
+
+#[test]
+fn releases_say_which_lines_are_planned_ending_and_archived() {
+    let m = example("full.toml");
+    let r = m.releases_of("self-managed").unwrap();
+    let texts = |lines: &[&ascribe_core::availability::Version]| -> Vec<String> {
+        lines.iter().map(|l| l.text.clone()).collect()
+    };
+    assert_eq!(texts(&r.planned.iter().collect::<Vec<_>>()), ["3.6"]);
+    let archived: Vec<_> = r.archived.iter().map(|a| &a.line).collect();
+    assert_eq!(texts(&archived), ["3.3", "3.2"]);
+    assert_eq!(
+        r.archived[0].url.as_deref(),
+        Some("https://docs.example.com/archive/3.3/")
+    );
+    assert_eq!(r.archived[0].ended, ascribe_core::Date::parse("2026-06-30"));
+    assert_eq!(r.archived[1].url, None);
+    assert_eq!(r.ends[0].line.text, "3.4");
+    assert_eq!(
+        r.ends[0].date,
+        ascribe_core::Date::parse("2027-01-31").unwrap()
+    );
+    let statuses: Vec<(&str, &str)> = r
+        .lines()
+        .into_iter()
+        .map(|(l, s)| (l.text.as_str(), s.as_str()))
+        .collect();
+    assert_eq!(
+        statuses,
+        [
+            ("3.6", "planned"),
+            ("3.5", "current"),
+            ("3.4", "live"),
+            ("3.3", "archived"),
+            ("3.2", "archived")
+        ]
+    );
+    assert_eq!(m.planned_label, "planned");
+}
+
+#[test]
+fn a_version_is_placed_among_the_declared_lines() {
+    let m = example("full.toml");
+    let r = m.releases_of("self-managed").unwrap();
+    let v = |t: &str| ascribe_core::availability::parse_version(t, 0).unwrap();
+    let place = |t: &str| match r.place(&v(t)).unwrap() {
+        Placement::In(line, status) => format!("in {} ({})", line.text, status.as_str()),
+        Placement::Ahead { newest } => format!("ahead of {}", newest.text),
+        Placement::Between { line, older, newer } => {
+            format!("{line} between {} and {}", older.text, newer.text)
+        }
+        Placement::Before => "before".to_owned(),
+    };
+    assert_eq!(place("3.4.2"), "in 3.4 (live)");
+    assert_eq!(place("3.6"), "in 3.6 (planned)");
+    assert_eq!(place("3.2"), "in 3.2 (archived)");
+    assert_eq!(place("3.45"), "ahead of 3.6");
+    assert_eq!(place("3.7.1"), "ahead of 3.6");
+    assert_eq!(place("4"), "ahead of 3.6");
+    assert_eq!(place("3"), "before");
+    assert_eq!(place("3.1"), "before");
+    assert!(r.is_planned(&v("3.6.1")) && !r.is_planned(&v("3.5")));
+
+    let m = load_str(
+        "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n\
+         [releases.a]\nlive = [\"3.4\"]\n[releases.a.archived]\n\"3.1\" = {}\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    let r = m.releases_of("a").unwrap();
+    assert_eq!(
+        r.place(&v("3.2.5")),
+        Some(Placement::Between {
+            line: "3.2".to_owned(),
+            older: &r.archived[0].line,
+            newer: &r.live[0],
+        })
+    );
+}
+
+#[test]
+fn a_phrase_can_be_a_targets_current_line() {
+    let m = example("full.toml");
+    assert_eq!(m.phrase("release"), Some("3.5"));
+    let p = m.phrases.iter().find(|p| p.key == "release").unwrap();
+    assert_eq!(p.line.as_deref(), Some("self-managed"));
+    assert_eq!(
+        m.phrases.iter().find(|p| p.key == "version").unwrap().line,
+        None
+    );
+}
+
+#[test]
+fn versions_current_is_removed_for_the_list() {
+    let issues = load_str(
+        "spec = \"0.1\"\n[versions]\ncurrent = \"3.10\"\n",
+        FileId::new(0),
+    )
+    .unwrap_err();
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].slug.as_str(), "model-versions-current");
+}
+
+/// With no repository around the project, a source is bounded by what was
+/// opened when the loader is given it (the language server, `ascribe mcp`),
+/// and is anywhere the model says when it isn't (the commands): decision
+/// 77.
+#[test]
+fn with_no_repository_a_source_is_bounded_by_what_was_opened() {
+    let outer = scratch("opened");
+    let project = outer.join("archive").join("docs");
+    std::fs::create_dir_all(project.join("content")).unwrap();
+    std::fs::create_dir_all(outer.join("archive").join("code")).unwrap();
+    let text = |path: &str| {
+        format!(
+            "spec = \"0.1\"\n[project]\ncontent-root = \"content\"\n[sources.code]\npath = \"{path}\"\n"
+        )
+    };
+    let load = |path: &str, opened: &[PathBuf]| {
+        load_str_bounded(
+            &text(path),
+            FileId::new(0),
+            &project,
+            SourceBound::Within(opened),
+        )
+    };
+    // The commands: anywhere, as before.
+    assert!(load_str_in(&text("../../.."), FileId::new(0), &project).is_ok());
+    assert!(
+        load_str_bounded(
+            &text("../../.."),
+            FileId::new(0),
+            &project,
+            SourceBound::Anywhere
+        )
+        .is_ok()
+    );
+    // Opened on the project's folder: a source above it is refused.
+    let issues = load("../code", std::slice::from_ref(&project)).unwrap_err();
+    assert_eq!(
+        (issues[0].slug.as_str(), issues[0].variant),
+        ("model-source-outside-repository", Some("opened"))
+    );
+    assert!(load("../../..", std::slice::from_ref(&project)).is_err());
+    // Opened on the folder that contains it: read.
+    assert!(load("../code", &[outer.join("archive")]).is_ok());
+    // Any of several folders will do.
+    assert!(load("../code", &[outer.join("elsewhere"), outer.join("archive")]).is_ok());
+    // With a repository, the repository is the rule, whatever was opened.
+    std::fs::create_dir(outer.join("archive").join(".git")).unwrap();
+    assert!(load("../code", std::slice::from_ref(&project)).is_ok());
+    let _ = std::fs::remove_dir_all(&outer);
+}
+
+#[test]
+fn full_names_a_template_and_a_guide_for_reference_pages() {
+    let m = example("full.toml");
+    let reference = m.types.iter().find(|t| t.name == "reference").unwrap();
+    let template = reference.template.as_ref().map(|t| t.path.as_str());
+    assert_eq!(template, Some("templates/reference.md"));
+    let guide: Vec<&str> = reference.guide.iter().map(|g| g.path.as_str()).collect();
+    assert_eq!(guide, ["templates/reference.guide.md"]);
+    let guide_type = m.types.iter().find(|t| t.name == "guide").unwrap();
+    assert!(guide_type.template.is_none() && guide_type.guide.is_empty());
+}
+
+#[test]
+fn full_says_what_reference_pages_are_for() {
+    let m = example("full.toml");
+    let reference = m.types.iter().find(|t| t.name == "reference").unwrap();
+    assert_eq!(
+        reference.purpose.as_deref(),
+        Some("What each command, option, and setting does, to look up.")
+    );
+    let guide = m.types.iter().find(|t| t.name == "guide").unwrap();
+    assert_eq!(guide.purpose, None);
 }

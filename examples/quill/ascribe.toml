@@ -6,14 +6,12 @@ spec = "0.1"
 content-root = "docs"
 output-dir = ".ascribe/build"
 
-# Every page is a `page`. Appendix B's frontmatter has `title` and
-# `description`; `available` is reserved and always accepted.
-[types.page]
-default = true
-
+# Every page is a `page`, and says so with `type: page`. Appendix B's
+# frontmatter has `title` and `description`; `available` is reserved and
+# always accepted.
 [types.page.frontmatter]
 title = "string"
-description = "string?"
+description = { type = "string?", role = "description" }
 
 # `@variant {pm=npm}:` and friends.
 [dimensions.pm]
@@ -46,10 +44,17 @@ height = "number?"
 profile = "astro"
 site = "https://docs.quill.dev"
 
-# The published site: every arm as a switcher, availability as badges.
+# Self-managed Quill's live lines, oldest first: 3.5 is the current line.
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+# The published site: every arm as a switcher, availability as badges, and
+# an output for each live line of self-managed: 3.5's at the root, and
+# 3.4's as `site@3.4`, under `/3.4/`.
 [builds.site]
 variants = "switch"
 availability = "badge"
+versions = "self-managed"
 
 # Quill Cloud only: deployment groups reduce to their cloud arm, and content
 # not available on cloud is removed. The `pm` group stays a full switcher.

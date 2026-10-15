@@ -2,24 +2,32 @@
   "schema_version": 1,
   "ascribe_version": "{version}",
   "error": null,
-  "files_checked": 4,
+  "files_checked": 8,
+  "files_reported": 8,
+  "builds_checked": [
+    "site",
+    "site@3.4",
+    "cloud",
+    "self-managed-3.3"
+  ],
   "diagnostics": [
     {
       "code": "ASC041",
       "slug": "link-route",
       "severity": "warning",
+      "next": "choose",
       "message": "this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`",
       "file": "docs/keys.md",
       "range": {
         "start": {
-          "line": 7,
+          "line": 8,
           "column": 15,
-          "offset": 121
+          "offset": 132
         },
         "end": {
-          "line": 7,
+          "line": 8,
           "column": 30,
-          "offset": 136
+          "offset": 147
         }
       },
       "related": [],
@@ -31,27 +39,36 @@
             {
               "range": {
                 "start": {
-                  "line": 7,
+                  "line": 8,
                   "column": 15,
-                  "offset": 121
+                  "offset": 132
                 },
                 "end": {
-                  "line": 7,
+                  "line": 8,
                   "column": 30,
-                  "offset": 136
+                  "offset": 147
                 }
               },
               "new_text": "/install-agent.md"
             }
-          ]
+          ],
+          "applicability": "safe"
         }
       ],
       "builds": [],
-      "unpublished": false
+      "unpublished": false,
+      "help": "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.",
+      "docs": "https://ascribed-dev.com/go/ASC041/",
+      "repeats": 0
     }
   ],
+  "truncated": false,
+  "shown": 1,
+  "total": 1,
+  "next_command": null,
   "summary": {
     "errors": 0,
-    "warnings": 1
+    "warnings": 1,
+    "advice": 0
   }
 }

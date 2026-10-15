@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.guide.frontmatter]
+title = "string"
+
+[types.changelog.frontmatter]
+title = "string"
+
+[listing.folders]
+"internal/" = "unlisted"
+
+[listing.types]
+changelog = "unquoted"

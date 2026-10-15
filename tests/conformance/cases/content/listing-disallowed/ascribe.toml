@@ -1,0 +1,17 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[crawlers]
+lines = [
+  "Disallow: /drafts/",
+  "Allow: /drafts/open/",
+  "User-agent: Bot",
+  "Disallow: /bots/",
+  "User-agent: *",
+  "Disallow: /archive/",
+]

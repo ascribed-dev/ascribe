@@ -1,7 +1,11 @@
 //! The typed content model and the queries other crates ask of it.
 
+use std::cmp::Ordering;
+
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
-use ascribe_core::{AttributeSchema, DirectiveSchema, Issue, Span, builtin_schemas};
+use ascribe_core::{
+    AttributeSchema, Date, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span, builtin_schemas,
+};
 
 use crate::pattern::Pattern;
 use crate::types::FrontmatterSchema;
@@ -31,6 +35,12 @@ pub struct ContentModel {
     pub dimensions: Vec<Dimension>,
     /// `[versions] scheme`.
     pub version_scheme: VersionScheme,
+    /// `[releases.<target>]`, in declaration order: the lines of each
+    /// versioned target a project lists.
+    pub releases: Vec<Releases>,
+    /// `[releases] planned-label`: the word a reader sees for a version in a
+    /// planned line. `planned` by default.
+    pub planned_label: String,
     /// Lifecycle states: the built-ins (possibly adjusted), then declared ones.
     pub lifecycle: Vec<LifecycleState>,
     /// `[features.<key>]`.
@@ -53,10 +63,569 @@ pub struct ContentModel {
     pub sources: Vec<Source>,
     /// The build the editor checks by default (`[editor] build`).
     pub editor_build: String,
+    /// `[checks]`: the level the project sets for each check it names.
+    pub checks: Checks,
+    /// `[[intended]]`: the acknowledged problems about an entry or an image
+    /// (SPEC §4.9), in declaration order.
+    pub intended: Vec<Intended>,
+    /// `[permalinks]`: the retired permalinks and the aliases.
+    pub permalinks: ModelPermalinks,
+    /// `[crawlers]`: what the project says to crawlers.
+    pub crawlers: Crawlers,
+    /// `[listing]`: how the site's, a folder's, or a type's pages are listed.
+    pub listing: ListingRules,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
     pub warnings: Vec<Issue>,
+}
+
+/// `[checks]`: how loudly each check the project names speaks. Only checks
+/// the diagnostics registry marks configurable can be named.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Checks {
+    /// Each check named, in declaration order.
+    pub settings: Vec<CheckSetting>,
+    /// `[checks.links]`: how `ascribe report links` checks external links.
+    pub links: LinkSettings,
+    /// `[checks.vale]`: checking the prose with Vale, when it's there.
+    pub vale: Option<ValeSettings>,
+}
+
+/// `[checks.links]`: how `ascribe report links` checks the project's
+/// external links.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LinkSettings {
+    /// The command that runs the link checker (`command`, `lychee` by
+    /// default).
+    pub command: String,
+    /// The hosts whose links aren't checked (`ignore`): each a host name,
+    /// such as `example.com`, or `*.` and a host name, which covers every
+    /// host under it, such as `*.example.com`.
+    pub ignore: Vec<String>,
+    /// How many days an address's answer is reused (`reuse-days`, 14 by
+    /// default): each address's own limit falls between half of it and all
+    /// of it. `0` asks about every address on every run.
+    pub reuse_days: u32,
+    /// How many days a link that answered before and fails now is held as
+    /// unconfirmed before it's reported (`confirm-days`, 3 by default). `0`
+    /// reports every failure at once.
+    pub confirm_days: u32,
+}
+
+impl LinkSettings {
+    /// The command `[checks.links] command` defaults to.
+    pub const COMMAND: &'static str = "lychee";
+
+    /// The days `[checks.links] reuse-days` defaults to.
+    pub const REUSE_DAYS: u32 = 14;
+
+    /// The days `[checks.links] confirm-days` defaults to.
+    pub const CONFIRM_DAYS: u32 = 3;
+
+    /// Whether `ignore` leaves out links to `host`, ignoring case.
+    pub fn ignores(&self, host: &str) -> bool {
+        let host = host.trim_end_matches('.').to_ascii_lowercase();
+        self.ignore.iter().any(|pattern| {
+            let pattern = pattern.to_ascii_lowercase();
+            match pattern.strip_prefix("*.") {
+                Some(parent) => host
+                    .strip_suffix(parent)
+                    .is_some_and(|rest| rest.ends_with('.')),
+                None => host == pattern,
+            }
+        })
+    }
+}
+
+impl Default for LinkSettings {
+    fn default() -> LinkSettings {
+        LinkSettings {
+            command: LinkSettings::COMMAND.to_owned(),
+            ignore: Vec::new(),
+            reuse_days: LinkSettings::REUSE_DAYS,
+            confirm_days: LinkSettings::CONFIRM_DAYS,
+        }
+    }
+}
+
+/// `[checks.vale]`: how the prose is checked with Vale.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ValeSettings {
+    /// The configuration Vale runs with.
+    pub source: ValeSource,
+    /// The command that runs Vale (`command`, `vale` by default).
+    pub command: String,
+    /// Whether `ascribe check` runs Vale without `--vale` (`in-check`).
+    pub in_check: bool,
+    /// The loudest an alert is reported at (`max-level`): an alert above it
+    /// is lowered to it. [`CheckLevel::Error`] by default, which lowers
+    /// nothing; never [`CheckLevel::Off`].
+    pub max_level: CheckLevel,
+    /// The preset's rules turned off (`off`), as Vale names them.
+    pub off: Vec<String>,
+    /// The span of the `vale` key in `ascribe.toml`, where a problem with
+    /// running Vale is reported.
+    pub span: Span,
+}
+
+/// Where Vale's configuration comes from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ValeSource {
+    /// One of Ascribe's presets, by name (`preset`).
+    Preset(String),
+    /// The project's own `.vale.ini`, relative to the project root
+    /// (`config`).
+    Config(String),
+}
+
+impl ValeSettings {
+    /// The command `[checks.vale] command` defaults to.
+    pub const COMMAND: &'static str = "vale";
+}
+
+impl Checks {
+    /// The level the project sets for a check, if it sets one.
+    pub fn level(&self, slug: DiagnosticSlug) -> Option<CheckLevel> {
+        self.settings
+            .iter()
+            .find(|s| s.slug == slug)
+            .and_then(|s| s.level)
+    }
+
+    /// Whether the project turns a check off.
+    pub fn is_off(&self, slug: DiagnosticSlug) -> bool {
+        self.level(slug) == Some(CheckLevel::Off)
+    }
+
+    /// The `limit` the project sets for a check, if it sets one: a number
+    /// of characters for `page-size`, of bytes for `image-large`.
+    pub fn limit(&self, slug: DiagnosticSlug) -> Option<u64> {
+        self.settings
+            .iter()
+            .find(|s| s.slug == slug)
+            .and_then(|s| s.limit)
+    }
+}
+
+/// One acknowledgement in `[[intended]]` (SPEC §4.9): a review check's
+/// problem about a content model entry or an image, which is intended.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Intended {
+    /// The check it acknowledges.
+    pub check: DiagnosticSlug,
+    /// What it's about: a phrase, feature, glossary term, or image.
+    pub kind: EntryKind,
+    /// Its key, id, or path.
+    pub name: String,
+    /// Why the problem is intended.
+    pub reason: String,
+    /// The table's `[[intended]]` header, in `ascribe.toml`, or the table
+    /// itself when it's written inline.
+    pub span: Span,
+    /// The `check` value.
+    pub check_span: Span,
+}
+
+/// `[crawlers]`: what the project says to the crawlers that read its site.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Crawlers {
+    /// `lines`: the project's own `robots.txt` lines, in order. A path in an
+    /// `Allow` or `Disallow` line is from the project's base path.
+    pub lines: Vec<CrawlerLine>,
+    /// `training`, `search`, and `on-request`, as the project set them, in
+    /// [`Purpose::ALL`]'s order.
+    pub purposes: Vec<PurposeChoice>,
+}
+
+impl Crawlers {
+    /// What the project says of `purpose`, if it says anything.
+    pub fn choice(&self, purpose: Purpose) -> Option<&PurposeChoice> {
+        self.purposes.iter().find(|c| c.purpose == purpose)
+    }
+
+    /// Whether the project disallows `purpose`.
+    pub fn disallows(&self, purpose: Purpose) -> bool {
+        self.choice(purpose)
+            .is_some_and(|c| c.permission == Permission::Disallow)
+    }
+}
+
+/// What a kind of crawler is for: a key of `[crawlers]`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Purpose {
+    /// Gathering text to train a model.
+    Training,
+    /// Building the index an AI search product answers from.
+    Search,
+    /// Fetching a page because a person asked an assistant about it.
+    OnRequest,
+}
+
+impl Purpose {
+    /// Every purpose, in the order `robots.txt` has their groups.
+    pub const ALL: [Purpose; 3] = [Purpose::Training, Purpose::Search, Purpose::OnRequest];
+
+    /// The key, as it's written.
+    pub fn name(self) -> &'static str {
+        match self {
+            Purpose::Training => "training",
+            Purpose::Search => "search",
+            Purpose::OnRequest => "on-request",
+        }
+    }
+
+    /// The purpose written `name`.
+    pub fn from_name(name: &str) -> Option<Purpose> {
+        Purpose::ALL.into_iter().find(|p| p.name() == name)
+    }
+}
+
+/// What a project says a kind of crawler may do.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Permission {
+    /// `allow`: it may fetch what every crawler may. Writes nothing.
+    Allow,
+    /// `disallow`: it may fetch nothing. Writes a group naming every token
+    /// of the purpose, with `Disallow: /`.
+    Disallow,
+}
+
+impl Permission {
+    /// Both values.
+    pub const ALL: [Permission; 2] = [Permission::Allow, Permission::Disallow];
+
+    /// The value, as it's written.
+    pub fn name(self) -> &'static str {
+        match self {
+            Permission::Allow => "allow",
+            Permission::Disallow => "disallow",
+        }
+    }
+
+    /// The value written `name`.
+    pub fn from_name(name: &str) -> Option<Permission> {
+        Permission::ALL.into_iter().find(|p| p.name() == name)
+    }
+}
+
+/// One of `[crawlers] training`, `search`, and `on-request`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct PurposeChoice {
+    /// The key.
+    pub purpose: Purpose,
+    /// Its value.
+    pub permission: Permission,
+    /// `key = value`, in `ascribe.toml`.
+    pub span: Span,
+}
+
+/// One of `[crawlers] lines`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CrawlerLine {
+    /// The line, as written: one line, not empty.
+    pub text: String,
+    /// The string, in `ascribe.toml`.
+    pub span: Span,
+}
+
+/// A page's reserved frontmatter key `listing` (SPEC §2.1): whether a page
+/// is offered to readers that aren't people, from open to closed. A page
+/// that doesn't set it is [`Listing::Listed`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Listing {
+    /// Listed by search engines, and offered to agents.
+    #[default]
+    Listed,
+    /// Listed, and asks not to be quoted.
+    Unquoted,
+    /// Not listed, and not offered: out of the sitemap and `llms.txt`.
+    Unlisted,
+}
+
+impl Listing {
+    /// The frontmatter key.
+    pub const KEY: &'static str = "listing";
+
+    /// Every value, from open to closed.
+    pub const ALL: [Listing; 3] = [Listing::Listed, Listing::Unquoted, Listing::Unlisted];
+
+    /// The value as it's written.
+    pub fn name(self) -> &'static str {
+        match self {
+            Listing::Listed => "listed",
+            Listing::Unquoted => "unquoted",
+            Listing::Unlisted => "unlisted",
+        }
+    }
+
+    /// The value written `name`.
+    pub fn from_name(name: &str) -> Option<Listing> {
+        Listing::ALL.into_iter().find(|l| l.name() == name)
+    }
+
+    /// The rule a crawler is given for a page with this listing, in a robots
+    /// meta tag or an `X-Robots-Tag` header: `noindex` for `unlisted`,
+    /// `nosnippet` for `unquoted`, and none for `listed`.
+    pub fn robots(self) -> Option<&'static str> {
+        match self {
+            Listing::Listed => None,
+            Listing::Unquoted => Some("nosnippet"),
+            Listing::Unlisted => Some("noindex"),
+        }
+    }
+}
+
+/// `[listing]`: how pages are listed, set for many at once: the whole site,
+/// a folder, or a content type. A page's listing is the strictest of the
+/// rules it's under and its own, and a page can't be looser than its rules.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ListingRules {
+    /// `default`: the site's, for every page.
+    pub default: Option<ListingRule>,
+    /// `[listing.folders]`, in declaration order.
+    pub folders: Vec<ListingRule>,
+    /// `[listing.types]`, in declaration order.
+    pub types: Vec<ListingRule>,
+}
+
+/// One rule of `[listing]`.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ListingRule {
+    /// What it applies to.
+    pub level: ListingLevel,
+    /// Its value.
+    pub listing: Listing,
+    /// The rule as written, `key = value`.
+    pub text: String,
+    /// Its line in `ascribe.toml`, from 1.
+    pub line: usize,
+    /// The rule, `key = value`, in `ascribe.toml`.
+    pub span: Span,
+}
+
+/// What a rule of `[listing]` applies to.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ListingLevel {
+    /// Every page: `default`.
+    Site,
+    /// The pages under a folder, written from the content root and ending in
+    /// `/`: a key of `[listing.folders]`.
+    Folder(String),
+    /// The pages of a content type: a key of `[listing.types]`.
+    Type(String),
+}
+
+/// Where a page's listing comes from.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ListingFrom {
+    /// Nothing sets it: the page is `listed`.
+    #[default]
+    Default,
+    /// The page's own `listing`.
+    Page,
+    /// A rule of `[listing]`.
+    Rule(ListingRule),
+}
+
+impl ListingFrom {
+    /// The level, as the page records write it: `default`, `page`, `site`,
+    /// `folder`, or `type`.
+    pub fn level_name(&self) -> &'static str {
+        match self {
+            ListingFrom::Default => "default",
+            ListingFrom::Page => "page",
+            ListingFrom::Rule(rule) => match rule.level {
+                ListingLevel::Site => "site",
+                ListingLevel::Folder(_) => "folder",
+                ListingLevel::Type(_) => "type",
+            },
+        }
+    }
+}
+
+impl ListingRules {
+    /// Whether the project has no rules.
+    pub fn is_empty(&self) -> bool {
+        self.default.is_none() && self.folders.is_empty() && self.types.is_empty()
+    }
+}
+
+impl ContentModel {
+    /// The strictest rule of `[listing]` a page at `path` (from the content
+    /// root, with `/`) of the type named `type_name` is under, or `None` when
+    /// it's under none. Of rules
+    /// equally strict, the narrowest is given: the deepest folder, then the
+    /// type, then the site's default. A folder and a type have no order
+    /// between them; the folder is named first.
+    pub fn listing_rule(&self, path: &str, type_name: Option<&str>) -> Option<&ListingRule> {
+        let mut folders: Vec<&ListingRule> = self
+            .listing
+            .folders
+            .iter()
+            .filter(|r| matches!(&r.level, ListingLevel::Folder(f) if path.starts_with(f.as_str())))
+            .collect();
+        folders.sort_by_key(|r| match &r.level {
+            ListingLevel::Folder(f) => std::cmp::Reverse(f.len()),
+            _ => std::cmp::Reverse(0),
+        });
+        let types =
+            self.listing.types.iter().filter(
+                |r| matches!(&r.level, ListingLevel::Type(t) if Some(t.as_str()) == type_name),
+            );
+        let mut best: Option<&ListingRule> = None;
+        for rule in folders
+            .into_iter()
+            .chain(types)
+            .chain(self.listing.default.iter())
+        {
+            if best.is_none_or(|b| rule.listing > b.listing) {
+                best = Some(rule);
+            }
+        }
+        best
+    }
+
+    /// A page's listing, given its type's name and its own `listing` (`None` when it sets none
+    /// or a value that isn't one), and where it comes from: the strictest of
+    /// the page's own and the rules it's under. A page as strict as its
+    /// rule, or stricter, has its own; a looser one, which `ascribe check`
+    /// reports, has its rule's.
+    pub fn listing_of(
+        &self,
+        path: &str,
+        type_name: Option<&str>,
+        own: Option<Listing>,
+    ) -> (Listing, ListingFrom) {
+        let rule = self.listing_rule(path, type_name);
+        match (own, rule) {
+            (Some(own), Some(rule)) if own < rule.listing => {
+                (rule.listing, ListingFrom::Rule(rule.clone()))
+            }
+            (Some(own), _) => (own, ListingFrom::Page),
+            (None, Some(rule)) => (rule.listing, ListingFrom::Rule(rule.clone())),
+            (None, None) => (Listing::Listed, ListingFrom::Default),
+        }
+    }
+}
+
+/// `[permalinks]`: the names `ascribe.toml` gives somewhere to lead that
+/// no heading or page declares (SPEC §7.6). Each name is in one of them.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ModelPermalinks {
+    /// `[permalinks.retired]`, in declaration order.
+    pub retired: Vec<RetiredPermalink>,
+    /// `[permalinks.aliases]`, in declaration order.
+    pub aliases: Vec<PermalinkAlias>,
+}
+
+/// A permalink retired on purpose, in `[permalinks.retired]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RetiredPermalink {
+    /// The name.
+    pub name: String,
+    /// Why it was retired, as the author wrote it.
+    pub reason: String,
+    /// Where its address leads now, written as a link from the content
+    /// root is: a page's content path, and `#` and a heading's id.
+    pub to: Option<String>,
+    /// The name's key, in `ascribe.toml`.
+    pub span: Span,
+    /// The `to` value.
+    pub to_span: Option<Span>,
+}
+
+/// A second name for a permalink, in `[permalinks.aliases]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PermalinkAlias {
+    /// The alias.
+    pub name: String,
+    /// The name it leads to: a permalink, or another alias.
+    pub target: String,
+    /// The alias's key, in `ascribe.toml`.
+    pub span: Span,
+    /// The target's value.
+    pub target_span: Span,
+}
+
+impl ModelPermalinks {
+    /// Whether `ascribe.toml` retires or aliases nothing.
+    pub fn is_empty(&self) -> bool {
+        self.retired.is_empty() && self.aliases.is_empty()
+    }
+
+    /// The retired permalink `name`.
+    pub fn retired(&self, name: &str) -> Option<&RetiredPermalink> {
+        self.retired.iter().find(|r| r.name == name)
+    }
+
+    /// The alias `name`.
+    pub fn alias(&self, name: &str) -> Option<&PermalinkAlias> {
+        self.aliases.iter().find(|a| a.name == name)
+    }
+
+    /// The name the alias `name` ends at, following aliases of aliases: a
+    /// name that isn't an alias. `None` when `name` isn't an alias, or its
+    /// aliases make a loop.
+    pub fn alias_end<'a>(&'a self, name: &'a str) -> Option<&'a str> {
+        let mut at = self.alias(name)?;
+        let mut seen = vec![name];
+        loop {
+            let next = at.target.as_str();
+            if seen.contains(&next) {
+                return None;
+            }
+            match self.alias(next) {
+                Some(further) => {
+                    seen.push(next);
+                    at = further;
+                }
+                None => return Some(next),
+            }
+        }
+    }
+}
+
+/// One check named in `[checks]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CheckSetting {
+    /// The check.
+    pub slug: DiagnosticSlug,
+    /// The level it's set to; `None` for a table without `level`, which
+    /// keeps the check's own.
+    pub level: Option<CheckLevel>,
+    /// `limit`, for a check that takes one: characters for `page-size`,
+    /// bytes for `image-large`.
+    pub limit: Option<u64>,
+}
+
+/// The level a project sets a check to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CheckLevel {
+    /// Not reported.
+    Off,
+    /// Reported as advice, which never fails `ascribe check`.
+    Advice,
+    /// Reported as a warning.
+    Warning,
+    /// Reported as an error.
+    Error,
+}
+
+impl CheckLevel {
+    /// The names `[checks]` accepts, from quietest to loudest.
+    pub const NAMES: [&'static str; 4] = ["off", "advice", "warning", "error"];
+
+    /// The level with this name.
+    pub fn from_name(name: &str) -> Option<CheckLevel> {
+        match name {
+            "off" => Some(CheckLevel::Off),
+            "advice" => Some(CheckLevel::Advice),
+            "warning" => Some(CheckLevel::Warning),
+            "error" => Some(CheckLevel::Error),
+            _ => None,
+        }
+    }
 }
 
 /// `[project]`.
@@ -104,9 +673,13 @@ pub const COPIES_FOLDER: &str = "sources";
 
 impl Source {
     /// Whether the file at `path`, relative to the source's folder, is
-    /// readable: `include` matches it (or is empty) and `ignore` doesn't.
+    /// readable: `include` matches it (or is empty), `ignore` doesn't, and
+    /// it isn't the source's tested examples' config or one of their
+    /// observations ([`crate::examples::is_examples_file`]), which no
+    /// snippet can address.
     pub fn reads(&self, path: &str) -> bool {
-        (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
+        !crate::examples::is_examples_file(path)
+            && (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
             && !self.ignore.iter().any(|p| p.matches(path))
     }
 
@@ -122,12 +695,31 @@ impl Source {
 pub struct ContentType {
     /// The type's name.
     pub name: String,
-    /// The pages it applies to.
-    pub files: Vec<Pattern>,
-    /// Whether it applies to pages no type's `files` match.
-    pub default: bool,
+    /// Whether it's the implicit `page` type of a project that declares no
+    /// types, which every page has without naming it.
+    pub implicit: bool,
     /// The frontmatter schema.
     pub frontmatter: FrontmatterSchema,
+    /// What a page of the type is for, in a few words, `purpose`.
+    pub purpose: Option<String>,
+    /// The page a page of the type starts from, `template`.
+    pub template: Option<TypeFile>,
+    /// What to read before writing a page of the type, `guide`, in the order
+    /// to read it.
+    pub guide: Vec<TypeFile>,
+}
+
+/// A file a content type names, its `template` or one of its `guide`, from
+/// the folder `ascribe.toml` is in. Loading checks only what's written: that
+/// the file is there, outside the content root, and that a template reads as
+/// a page, is checked where the project's files are read
+/// (`ascribe_check::type_files`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypeFile {
+    /// The path, as written.
+    pub path: String,
+    /// The path's string in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// `[fragments]`.
@@ -169,6 +761,236 @@ pub enum VersionScheme {
     Numeric,
 }
 
+/// `[releases.<target>]`: the release lines of one versioned target.
+///
+/// A line is a version as the list writes it, and stands for every version
+/// that starts with it: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line
+/// of one target has the same number of parts, in every list, and a line is
+/// in one list. Planned lines are newer than every live line, and archived
+/// lines older.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Releases {
+    /// The target: a versioned dimension value.
+    pub target: String,
+    /// `live`: the lines a reader can be on, newest first. The first is the
+    /// current line.
+    pub live: Vec<Version>,
+    /// `planned`: lines that haven't shipped, newest first. A version in one
+    /// is planned.
+    pub planned: Vec<Version>,
+    /// `ends`: the day support for a live line ends, in declaration order.
+    pub ends: Vec<LineEnd>,
+    /// `archived`: lines that have left the window, newest first.
+    pub archived: Vec<ArchivedLine>,
+}
+
+/// An entry of `[releases.<target>.ends]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LineEnd {
+    /// The live line, spanning its key.
+    pub line: Version,
+    /// The last day it's supported.
+    pub date: Date,
+}
+
+/// An entry of `[releases.<target>.archived]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ArchivedLine {
+    /// The line, spanning its key.
+    pub line: Version,
+    /// `url`: where the line can still be read, when anywhere.
+    pub url: Option<String>,
+    /// `ended`: the day its support ended.
+    pub ended: Option<Date>,
+}
+
+/// Which list a declared line is in, with the current line apart from the
+/// other live ones.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum LineStatus {
+    /// The newest live line.
+    Current,
+    /// A live line older than the current one.
+    Live,
+    /// A line in `planned`.
+    Planned,
+    /// A line in `archived`.
+    Archived,
+}
+
+impl LineStatus {
+    /// The word for it: `current`, `live`, `planned`, or `archived`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            LineStatus::Current => "current",
+            LineStatus::Live => "live",
+            LineStatus::Planned => "planned",
+            LineStatus::Archived => "archived",
+        }
+    }
+}
+
+/// Where a version falls among a target's declared lines.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Placement<'a> {
+    /// In a declared line.
+    In(&'a Version, LineStatus),
+    /// Newer than every declared line: `newest` is the newest one.
+    Ahead {
+        /// The newest declared line.
+        newest: &'a Version,
+    },
+    /// In a line between two declared ones that isn't declared itself.
+    Between {
+        /// The line the version starts, as text: `3.3`.
+        line: String,
+        /// The declared line just older than it.
+        older: &'a Version,
+        /// The declared line just newer than it.
+        newer: &'a Version,
+    },
+    /// Older than every declared line, or shorter than the lines and so in
+    /// whichever lines follow it: nothing to say.
+    Before,
+}
+
+impl Releases {
+    /// The current line: the newest live one.
+    pub fn current(&self) -> Option<&Version> {
+        self.live.first()
+    }
+
+    /// The oldest live line.
+    pub fn oldest_live(&self) -> Option<&Version> {
+        self.live.last()
+    }
+
+    /// The live line spelled `text`, as the list writes it.
+    pub fn live_line(&self, text: &str) -> Option<&Version> {
+        self.live.iter().find(|l| l.text == text)
+    }
+
+    /// Every declared line with its status, newest first.
+    pub fn lines(&self) -> Vec<(&Version, LineStatus)> {
+        let mut out: Vec<(&Version, LineStatus)> = self
+            .planned
+            .iter()
+            .map(|l| (l, LineStatus::Planned))
+            .collect();
+        out.extend(self.live.iter().enumerate().map(|(i, l)| {
+            let status = if i == 0 {
+                LineStatus::Current
+            } else {
+                LineStatus::Live
+            };
+            (l, status)
+        }));
+        out.extend(
+            self.archived
+                .iter()
+                .map(|a| (&a.line, LineStatus::Archived)),
+        );
+        out
+    }
+
+    /// Whether `version` is in a planned line.
+    pub fn is_planned(&self, version: &Version) -> bool {
+        self.planned.iter().any(|l| in_line(l, version))
+    }
+
+    /// Where `version` falls among the declared lines, or `None` when the
+    /// target declares none.
+    pub fn place(&self, version: &Version) -> Option<Placement<'_>> {
+        let lines = self.lines();
+        let (newest, _) = *lines.first()?;
+        let (oldest, _) = *lines.last()?;
+        let parts = newest.components.len();
+        if version.components.len() < parts {
+            return Some(if version.compare(newest) == Ordering::Greater {
+                Placement::Ahead { newest }
+            } else {
+                Placement::Before
+            });
+        }
+        let start = &version.components[..parts];
+        if let Some((line, status)) = lines.iter().find(|(l, _)| l.components == start) {
+            return Some(Placement::In(line, *status));
+        }
+        let compare = |line: &Version| compare_components(start, &line.components);
+        if compare(newest) == Ordering::Greater {
+            return Some(Placement::Ahead { newest });
+        }
+        if compare(oldest) == Ordering::Less {
+            return Some(Placement::Before);
+        }
+        // Newest first: the first line older than it, and the one before.
+        let at = lines
+            .iter()
+            .position(|(l, _)| compare(l) == Ordering::Greater)?;
+        Some(Placement::Between {
+            line: start
+                .iter()
+                .map(u64::to_string)
+                .collect::<Vec<_>>()
+                .join("."),
+            older: lines[at].0,
+            newer: lines[at.checked_sub(1)?].0,
+        })
+    }
+}
+
+/// Compares two component lists numerically, missing parts as `0`.
+fn compare_components(a: &[u64], b: &[u64]) -> Ordering {
+    for i in 0..a.len().max(b.len()) {
+        match a
+            .get(i)
+            .copied()
+            .unwrap_or(0)
+            .cmp(&b.get(i).copied().unwrap_or(0))
+        {
+            Ordering::Equal => {}
+            other => return other,
+        }
+    }
+    Ordering::Equal
+}
+
+/// Whether `version` is in `line`: whether it starts with the line's parts.
+pub fn in_line(line: &Version, version: &Version) -> bool {
+    version.components.starts_with(&line.components)
+}
+
+/// A line named as a mark names it, `self-managed 3.4`: the target, and the
+/// line, with spans in `text`. `None` when it isn't a name and a version
+/// with space between.
+pub fn named_line(text: &str) -> Option<(String, Version)> {
+    let text = text.trim();
+    let (target, line) = text.split_once(char::is_whitespace)?;
+    let line = line.trim_start();
+    let at = text.len() - line.len();
+    let version = ascribe_core::availability::parse_version(line, at).ok()?;
+    crate::is_name_word(target).then(|| (target.to_owned(), version))
+}
+
+impl Releases {
+    /// The oldest planned line newer than `line`: the one a feature that
+    /// names `line` moves to when `line` is released.
+    pub fn following(&self, line: &Version) -> Option<&Version> {
+        self.planned
+            .iter()
+            .rev()
+            .find(|l| l.compare(line) == Ordering::Greater)
+    }
+
+    /// The status of the line spelled as `line` is, when it's declared.
+    pub fn status_of(&self, line: &Version) -> Option<LineStatus> {
+        self.lines()
+            .into_iter()
+            .find(|(l, _)| l.components == line.components)
+            .map(|(_, status)| status)
+    }
+}
+
 /// A lifecycle state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LifecycleState {
@@ -193,6 +1015,8 @@ pub struct Feature {
     pub available_text: String,
     /// The parsed spec. Spans are offsets into `ascribe.toml`.
     pub available: AvailabilitySpec,
+    /// The `[features.<key>]` key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// A note type.
@@ -211,8 +1035,14 @@ pub struct NoteType {
 pub struct Phrase {
     /// The phrase key.
     pub key: String,
-    /// The literal replacement text.
+    /// The literal replacement text. For a phrase whose value is a target's
+    /// line, the target's current line.
     pub value: String,
+    /// `{ line = "<target>" }`: the target whose line the phrase is, as
+    /// `[releases]` lists it.
+    pub line: Option<String>,
+    /// The key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// Which glossary occurrences are linked.
@@ -258,6 +1088,10 @@ pub struct GlossaryTerm {
     /// Which occurrences of this term are linked (the term's setting, else
     /// the glossary's).
     pub match_mode: GlossaryMatch,
+    /// The term id's key in `ascribe.toml`.
+    pub span: Span,
+    /// The `link` value in `ascribe.toml`, when it has one.
+    pub link_span: Option<Span>,
 }
 
 /// A project widget.
@@ -304,6 +1138,51 @@ pub struct Consumer {
     pub slugger: String,
     /// Whether the consumer renders raw HTML.
     pub html: bool,
+    /// Whether each build publishes what agents read (`agents = true`): an
+    /// `llms.txt`, a Markdown version of every page, and a pointer to the
+    /// index on each page. Only with a `site`, since every link they hold is
+    /// absolute.
+    pub agents: bool,
+    /// Where permalinks' addresses are published, as written in
+    /// `permalink-path`: a path from the site's root, starting with `/`.
+    /// [`Consumer::permalink_path`] gives the path with its default.
+    pub permalink_path: Option<String>,
+    /// The host whose format the site's response headers are written in
+    /// (`headers`), by the site generator's integration from
+    /// `_ascribe/headers.json`. `None`: nothing is written for a host.
+    pub headers: Option<HeadersFormat>,
+}
+
+/// A host's format for response headers, `[consumer] headers`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HeadersFormat {
+    /// A `_headers` file at the root of what's deployed, as Netlify reads it.
+    Netlify,
+}
+
+impl HeadersFormat {
+    /// The value as `ascribe.toml` writes it.
+    pub fn name(self) -> &'static str {
+        match self {
+            HeadersFormat::Netlify => "netlify",
+        }
+    }
+}
+
+impl Consumer {
+    /// The path each permalink's address is published under, from the
+    /// site's root and ending in `/`: `permalink-path`, or `go/` under the
+    /// base path when it isn't set.
+    pub fn permalink_path(&self) -> String {
+        let mut path = match &self.permalink_path {
+            Some(path) => path.clone(),
+            None => format!("{}/go/", self.base_path.trim_end_matches('/')),
+        };
+        if !path.ends_with('/') {
+            path.push('/');
+        }
+        path
+    }
 }
 
 /// A build's variant mode.
@@ -338,17 +1217,72 @@ pub struct Build {
     pub variants: VariantMode,
     /// The availability mode.
     pub availability: AvailabilityMode,
+    /// `versions`: the target the build is versioned by, which gives it one
+    /// output for each of the target's live lines. Its availability mode is
+    /// `Badge`, and the target has at least one live line.
+    pub versions: Option<String>,
+    /// The line this build is, for a versioned build: the model holds one
+    /// `Build` for each live line, the current line named as the build is
+    /// declared and each other `<build>@<line>`. `None` for a build that
+    /// isn't versioned.
+    pub line: Option<BuildLine>,
 }
 
-/// Which content type applies to a page.
+/// One live line of a versioned build.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuildLine {
+    /// The name the build is declared with, which the current line keeps.
+    pub build: String,
+    /// The line, as `[releases.<target>] live` writes it.
+    pub line: Version,
+    /// Whether it's the current line, the newest live one.
+    pub current: bool,
+    /// The oldest live line of the target. A version at or before it isn't
+    /// shown in any line's output, since every live line has the content.
+    pub oldest: Version,
+}
+
+impl Build {
+    /// The folder a line's pages are under, after the base path: `3.4/` for
+    /// an older line, and nothing for the current line or a build that
+    /// isn't versioned.
+    pub fn line_folder(&self) -> Option<String> {
+        let line = self.line.as_ref()?;
+        (!line.current).then(|| format!("{}/", line.line.text))
+    }
+
+    /// The name the build is declared with: a line's build's, or its own.
+    pub fn declared_name(&self) -> &str {
+        self.line.as_ref().map_or(&self.name, |l| &l.build)
+    }
+}
+
+/// The reserved frontmatter key a page names its content type with (SPEC
+/// §2.1).
+pub const TYPE_KEY: &str = "type";
+
+/// Which content type a page has (SPEC §7.2).
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeMatch<'a> {
-    /// Exactly one type applies (by `files`, or the default).
+    /// The type the page names, or the implicit `page` type of a project
+    /// that declares none.
     One(&'a ContentType),
-    /// Several types' `files` match: an error (`content-type-unresolved`).
-    Ambiguous(Vec<&'a ContentType>),
-    /// None match and there's no default: an error (`content-type-unresolved`).
-    None,
+    /// The project declares types and the page names none: an error
+    /// (`content-type-missing`).
+    Missing,
+    /// The page names a type the project doesn't declare, or its `type`
+    /// isn't a string: an error (`content-type-unknown`).
+    Unknown,
+}
+
+impl<'a> TypeMatch<'a> {
+    /// The type, when the page has one.
+    pub fn found(self) -> Option<&'a ContentType> {
+        match self {
+            TypeMatch::One(t) => Some(t),
+            TypeMatch::Missing | TypeMatch::Unknown => None,
+        }
+    }
 }
 
 /// A problem in an availability spec that needs the model to detect. The
@@ -405,6 +1339,20 @@ impl ContentModel {
             .map(|p| p.value.as_str())
     }
 
+    /// A phrase's replacement text in `build`'s output. A phrase that's a
+    /// target's line is the line the build is for, in a line of a build the
+    /// target versions, and the target's current line elsewhere.
+    pub fn phrase_in<'a>(&'a self, key: &str, build: &'a Build) -> Option<&'a str> {
+        let phrase = self.phrases.iter().find(|p| p.key == key)?;
+        if let (Some(target), Some(versions), Some(line)) =
+            (&phrase.line, &build.versions, &build.line)
+            && target == versions
+        {
+            return Some(&line.line.text);
+        }
+        Some(&phrase.value)
+    }
+
     /// A dimension by name.
     pub fn dimension(&self, name: &str) -> Option<&Dimension> {
         self.dimensions.iter().find(|d| d.name == name)
@@ -430,6 +1378,35 @@ impl ContentModel {
                 .find(|v| v.value == value)
                 .map(|v| v.label.as_str())
         })
+    }
+
+    /// The model a build's pages are routed and written with. For an older
+    /// line of a versioned build, the base path is under the line's folder,
+    /// `/docs/3.4/`, so every address in its output starts there; a
+    /// permalink's address doesn't move. Its output says nothing to agents
+    /// (`[consumer] agents` is off): no line but the current one publishes
+    /// `llms.txt` and the pages' Markdown yet, so its pages point to
+    /// neither. Otherwise, the model itself.
+    pub fn for_build(&self, build: &Build) -> std::borrow::Cow<'_, ContentModel> {
+        let Some(folder) = build.line_folder() else {
+            return std::borrow::Cow::Borrowed(self);
+        };
+        let mut model = self.clone();
+        model.consumer.permalink_path = Some(self.consumer.permalink_path());
+        let base = &self.consumer.base_path;
+        let base = if base.ends_with('/') {
+            base.clone()
+        } else {
+            format!("{base}/")
+        };
+        model.consumer.base_path = format!("{base}{folder}");
+        model.consumer.agents = false;
+        std::borrow::Cow::Owned(model)
+    }
+
+    /// `[releases.<target>]` for a target, when the project lists its lines.
+    pub fn releases_of(&self, target: &str) -> Option<&Releases> {
+        self.releases.iter().find(|r| r.target == target)
     }
 
     /// Whether `value` is a declared, versionless dimension value.
@@ -520,21 +1497,35 @@ impl ContentModel {
             || self.fragments.patterns.iter().any(|p| p.matches(path))
     }
 
-    /// Which content type applies to a page. Don't
-    /// call it for fragments.
-    pub fn type_for(&self, path: &str) -> TypeMatch<'_> {
-        let matching: Vec<&ContentType> = self
-            .types
-            .iter()
-            .filter(|t| t.files.iter().any(|p| p.matches(path)))
-            .collect();
-        match matching.len() {
-            1 => TypeMatch::One(matching[0]),
-            0 => match self.types.iter().find(|t| t.default) {
+    /// Whether the project declares its own content types, rather than
+    /// having the implicit `page` type.
+    pub fn declares_types(&self) -> bool {
+        !self.types.iter().any(|t| t.implicit)
+    }
+
+    /// The content type a page has, given its frontmatter (`None` when it
+    /// has none, or it isn't valid YAML): the type its `type` names (SPEC
+    /// §7.2). Don't call it for fragments.
+    pub fn type_of(&self, frontmatter: Option<&serde_yaml_ng::Value>) -> TypeMatch<'_> {
+        match frontmatter.and_then(|f| f.get(TYPE_KEY)) {
+            None => self.type_named(None),
+            Some(serde_yaml_ng::Value::String(name)) => self.type_named(Some(name)),
+            Some(_) => TypeMatch::Unknown,
+        }
+    }
+
+    /// The content type a page that names `declared` with `type` has, or,
+    /// for `None`, one that names none.
+    pub fn type_named(&self, declared: Option<&str>) -> TypeMatch<'_> {
+        match declared {
+            None => match self.types.iter().find(|t| t.implicit) {
                 Some(t) => TypeMatch::One(t),
-                None => TypeMatch::None,
+                None => TypeMatch::Missing,
             },
-            _ => TypeMatch::Ambiguous(matching),
+            Some(name) => match self.types.iter().find(|t| !t.implicit && t.name == name) {
+                Some(t) => TypeMatch::One(t),
+                None => TypeMatch::Unknown,
+            },
         }
     }
 

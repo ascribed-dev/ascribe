@@ -248,6 +248,14 @@ fn link_inline(
         "[{text}]({destination}{})",
         title(link.title.as_deref())
     ));
+    // A link out of a line: the line it leads to, outside its text, as a
+    // fact about where it leads (SPEC §9.4).
+    if let Some(LinkTarget::Page {
+        line: Some(line), ..
+    }) = resolved.map(|l| &l.target)
+    {
+        st.out.push_str(&format!(" ({line})"));
+    }
     st.line_start = false;
 }
 

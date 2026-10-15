@@ -37,9 +37,11 @@ pub fn emit_build(
     emitter: &dyn Emitter,
 ) -> BTreeMap<String, String> {
     let model_build = project.model().build(build).expect("a build of that name");
+    // An older line's output is under its folder, as `write_outputs` writes it.
+    let project = project.for_build(model_build);
     let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(model_build, &router);
-    let cx = EmitContext::new(project, root, model_build);
+    let cx = EmitContext::new(&project, root, model_build);
     let emission = emit(emitter, &cx, &resolved).expect("the build emits");
     emission
         .files
@@ -79,7 +81,7 @@ pub fn plain(project: &Project, build: &str, page: &str) -> String {
         Path::new("/nowhere"),
         project,
         build,
-        &ascribe_emit::PlainEmitter,
+        &ascribe_emit::PlainEmitter::default(),
     )
     .remove(page)
     .unwrap_or_else(|| panic!("the build has no page {page}"))

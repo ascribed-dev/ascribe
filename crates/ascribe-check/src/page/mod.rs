@@ -8,9 +8,12 @@
 //! |---|---|
 //! | `id-duplicate`, `heading-duplicate-without-id` | the page's resolved headings |
 //! | `link-id-missing` | the source index, for the links the build publishes |
-//! | `include-id-missing`, `include-cycle` | include expansion |
+//! | `include-id-missing`, `include-cycle`, `include-limit` | include expansion |
 //! | `variant-no-arm-survives`, `available-exceeds-scope` | build modes and the availability scope check |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
+//! | `heading-level-skipped` | the page's resolved headings |
+//! | `page-size` | the page's plain Markdown, per build |
+//! | `permalink-duplicate` | every page the build publishes |
 //!
 //! The entry points are [`check_project`], for one build, and
 //! [`check_all_builds`], for every build of the project. `ascribe check`,
@@ -44,19 +47,23 @@
 
 mod bridge;
 mod collect;
+mod permalinks;
+mod size;
 
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
-use ascribe_core::{FileId, RelPath, Span};
-use ascribe_model::{AvailabilityMode, Build, VariantMode};
-use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage};
+use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
+use ascribe_model::{AvailabilityMode, Build, CheckLevel, VariantMode};
+use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage, llms, pages};
 
-use crate::{Diagnostic, Project, check_files};
+use crate::{Diagnostic, Project, check_files_with};
 
 use bridge::Indexed;
-use collect::{Found, Identity, LinkProblems, check_page, identity};
+pub(crate) use bridge::held_index;
+pub(crate) use collect::Found;
+use collect::{Identity, LinkProblems, check_page, identity};
 
 /// The name of the build that keeps everything, used to look for content no
 /// build publishes. It never appears in a diagnostic.
@@ -69,8 +76,9 @@ const KEEP_EVERYTHING: &str = "(everything)";
 /// project each time; to check several builds, call [`check_all_builds`], or
 /// keep a [`PageChecker`].
 pub fn check_project(project: &Project, build: &Build) -> Vec<Diagnostic> {
-    let mut out = check_files(project);
-    out.extend(PageChecker::new(project).check(build));
+    let checker = PageChecker::new(project);
+    let mut out = check_files_with(project, Some(&checker));
+    out.extend(checker.check(build));
     out
 }
 
@@ -79,8 +87,9 @@ pub fn check_project(project: &Project, build: &Build) -> Vec<Diagnostic> {
 /// it appears in (as [`check_all_builds`] does, without the pass over content
 /// no build publishes, which needs every build).
 pub fn check_builds(project: &Project, builds: &[&Build]) -> Vec<Diagnostic> {
-    let mut out = check_files(project);
-    out.extend(PageChecker::new(project).check_builds(builds));
+    let checker = PageChecker::new(project);
+    let mut out = check_files_with(project, Some(&checker));
+    out.extend(checker.check_builds(builds));
     out
 }
 
@@ -93,8 +102,9 @@ pub fn check_pages(project: &Project, build: &Build) -> Vec<Diagnostic> {
 /// page-level ones of every build, each distinct problem once with the builds
 /// it appears in, then the problems in content no build publishes.
 pub fn check_all_builds(project: &Project) -> Vec<Diagnostic> {
-    let mut out = check_files(project);
-    out.extend(PageChecker::new(project).check_all());
+    let checker = PageChecker::new(project);
+    let mut out = check_files_with(project, Some(&checker));
+    out.extend(checker.check_all());
     out
 }
 
@@ -104,15 +114,40 @@ pub struct PageChecker<'p> {
     project: &'p Project,
     indexed: Indexed<'p>,
     links: LinkProblems,
+    errors_only: bool,
+}
+
+/// A project's source index as a [`PageChecker`] reads it, made once and
+/// kept, so the checks of a project kept loaded don't index it each time.
+/// It's of the project it was made from, which mustn't change.
+pub struct PageIndex(Indexed<'static>);
+
+impl PageIndex {
+    /// Indexes the project, as [`PageChecker::new`] does.
+    pub fn new(project: &Project) -> PageIndex {
+        PageIndex(Indexed::new(project))
+    }
 }
 
 impl<'p> PageChecker<'p> {
+    /// A checker over `index`, made from `project` by [`PageIndex::new`]:
+    /// the same checks as [`PageChecker::new`]'s, without indexing again.
+    pub fn with_page_index(project: &'p Project, index: &'p PageIndex) -> PageChecker<'p> {
+        PageChecker {
+            project,
+            indexed: index.0.borrowed(),
+            links: RefCell::new(HashMap::new()),
+            errors_only: false,
+        }
+    }
+
     /// Indexes the project.
     pub fn new(project: &'p Project) -> PageChecker<'p> {
         PageChecker {
             project,
             indexed: Indexed::new(project),
             links: RefCell::new(HashMap::new()),
+            errors_only: false,
         }
     }
 
@@ -130,21 +165,62 @@ impl<'p> PageChecker<'p> {
             project,
             indexed: Indexed::shared(index),
             links: RefCell::new(HashMap::new()),
+            errors_only: false,
         }
+    }
+
+    /// The same checker, leaving out the checks that cost the most and can't
+    /// report an error: `page-size`, which renders every page, unless
+    /// `[checks]` raises it to an error. For a caller that only counts
+    /// errors; its errors are the same.
+    #[must_use]
+    pub fn errors_only(mut self) -> PageChecker<'p> {
+        self.errors_only = true;
+        self
     }
 
     /// The page-level diagnostics of `build` for these resolved pages alone:
     /// what [`PageChecker::check`] reports for them, and nothing about the
-    /// rest of the project. A diagnostic is located in the page's own file,
+    /// rest of the project, so not the content checks that need every page
+    /// of the build (`page-orphan`, `title-duplicate`, `description-duplicate`). A diagnostic is located in the page's own file,
     /// except an `include-cycle`, which is located where the cycle closes (in
     /// a fragment), so the diagnostics located in a file are those of the
     /// pages that are the file or include it, transitively.
     pub fn check_resolved(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
         let found = pages
             .iter()
-            .flat_map(|page| check_page(&self.indexed.index, page, &self.links))
+            .flat_map(|page| self.page(build, page))
             .collect();
         self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
+    /// The page-level diagnostics of `build` for these pages alone, each
+    /// resolved from the checker's index: what [`PageChecker::check`]
+    /// reports for them, apart from the content checks that need every page
+    /// of the build. A path that isn't a page, or that the build drops, has
+    /// none.
+    pub fn check_pages(&self, build: &Build, pages: &[RelPath]) -> Vec<Diagnostic> {
+        let router = DefaultRouter::from_consumer(&self.project.model().consumer);
+        let found = pages
+            .iter()
+            .filter_map(|path| self.indexed.index.resolve_page(path, build, &router))
+            .flat_map(|page| self.page(build, &page))
+            .collect();
+        self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
+    /// The page-level diagnostics of `build` for the pages that are one of
+    /// `files` or include one, transitively: every page-level diagnostic
+    /// located in those files or with a related place in them.
+    pub fn check_reaching(&self, build: &Build, files: &[RelPath]) -> Vec<Diagnostic> {
+        let index = &self.indexed.index;
+        let mut pages: BTreeSet<RelPath> = BTreeSet::new();
+        for file in files {
+            pages.insert(file.clone());
+            pages.extend(index.including_pages(file));
+        }
+        let pages: Vec<RelPath> = pages.into_iter().collect();
+        self.check_pages(build, &pages)
     }
 
     /// The page-level diagnostics of one build.
@@ -194,9 +270,90 @@ impl<'p> PageChecker<'p> {
         let mut found = Vec::new();
         for page in &resolved.pages {
             on_page(page);
-            found.extend(check_page(&self.indexed.index, page, &self.links));
+            found.extend(self.page(build, page));
+        }
+        let pages: Vec<&ResolvedPage> = resolved.pages.iter().collect();
+        permalinks::duplicates(&self.indexed.index, &pages, &mut found);
+        found.extend(crate::across::for_build(
+            &self.indexed.index,
+            &self.project.model().checks,
+            &pages,
+            self.errors_only,
+        ));
+        // Like `page-size`, measured for errors only when raised to one.
+        if !self.errors_only
+            || self
+                .project
+                .model()
+                .checks
+                .level(diagnostics::LLMS_SECTION_LARGE)
+                == Some(CheckLevel::Error)
+        {
+            found.extend(llms_sizes(&self.indexed.index, build, &resolved.pages));
         }
         found
+    }
+
+    /// The page-level problems of one page a build publishes: those of its
+    /// resolved form, and its size.
+    fn page(&self, build: &Build, page: &ResolvedPage) -> Vec<Found> {
+        let index = &self.indexed.index;
+        let mut found = check_page(index, page, &self.links);
+        let counted = !self.errors_only
+            || index.model().checks.level(diagnostics::PAGE_SIZE) == Some(CheckLevel::Error);
+        if counted
+            && let Some(limit) = size::limit(index)
+            && let Some(f) = size::page_size(index, self.project.root(), build, page, limit)
+        {
+            found.push(f);
+        }
+        found
+    }
+
+    /// The checks across the project that the editor reports, for `build`:
+    /// `permalink-duplicate`, `page-orphan`, `title-duplicate`, and `description-duplicate` from `pages`, which must
+    /// be every page the build publishes, in path order, and the checks
+    /// that hold for every build apart from the image checks
+    /// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)). The language server runs
+    /// them on save; levels aren't applied.
+    pub fn check_across(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
+        let mut found = Vec::new();
+        permalinks::duplicates(&self.indexed.index, pages, &mut found);
+        found.extend(crate::across::for_build(
+            &self.indexed.index,
+            &self.project.model().checks,
+            pages,
+            false,
+        ));
+        let mut out = self.finish(vec![(Some(build.name.as_str()), found)]);
+        out.extend(self.for_every_build(false).into_values().flatten());
+        out
+    }
+
+    /// The diagnostics of the checks that hold for every build
+    /// (`fragment-unused`, the unused entries of the content model, the
+    /// permalinks list's, the glossary's links, and, when `images` is set,
+    /// the image checks), by file, over this checker's index.
+    pub(crate) fn for_every_build(
+        &self,
+        images: bool,
+    ) -> std::collections::BTreeMap<FileId, Vec<Diagnostic>> {
+        let file = |id| self.indexed.file(id);
+        let mut out = crate::across::for_every_build(
+            self.project,
+            &self.indexed.index,
+            &file,
+            images,
+            self.errors_only,
+        );
+        let permalinks = crate::permalinks::check(self.project, &self.indexed.index, &file);
+        let glossary = crate::glossary::check(self.project, &self.indexed.index);
+        for (id, found) in permalinks.into_iter().chain(glossary) {
+            let list = out.entry(id).or_default();
+            list.extend(found);
+            list.sort_by_key(|d| d.location.span);
+        }
+        out
     }
 
     /// The problems in content that no build publishes: those a build that
@@ -206,6 +363,8 @@ impl<'p> PageChecker<'p> {
             name: KEEP_EVERYTHING.to_owned(),
             variants: VariantMode::Switch,
             availability: AvailabilityMode::Badge,
+            versions: None,
+            line: None,
         };
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
         let resolved = self.indexed.index.resolve_build(&everything, &router);
@@ -232,6 +391,7 @@ impl<'p> PageChecker<'p> {
             builds: Vec<String>,
             unpublished: bool,
         }
+        let per_build = largest_page_sizes(per_build);
         let mut merged: Vec<(Identity, Merged)> = Vec::new();
         for (build, list) in per_build {
             for found in list {
@@ -299,6 +459,90 @@ impl<'p> PageChecker<'p> {
             renumber(&mut fix.file);
         }
     }
+}
+
+/// The builds' `page-size` problems, each page's as it is in the build where
+/// the page is largest, so a page over the limit in several builds is one
+/// problem that names them.
+fn largest_page_sizes(
+    mut per_build: Vec<(Option<&str>, Vec<Found>)>,
+) -> Vec<(Option<&str>, Vec<Found>)> {
+    let mut largest: HashMap<FileId, ascribe_core::Issue> = HashMap::new();
+    for (_, list) in &per_build {
+        for f in list
+            .iter()
+            .filter(|f| f.issue.slug == diagnostics::PAGE_SIZE)
+        {
+            let file = f.issue.location.file;
+            let bigger = largest
+                .get(&file)
+                .is_none_or(|l| size::size_of(&f.issue) > size::size_of(l));
+            if bigger {
+                largest.insert(file, f.issue.clone());
+            }
+        }
+    }
+    for (_, list) in &mut per_build {
+        for f in list
+            .iter_mut()
+            .filter(|f| f.issue.slug == diagnostics::PAGE_SIZE)
+        {
+            if let Some(l) = largest.get(&f.issue.location.file) {
+                // Every argument but the build, which says where it's found.
+                let build = f.issue.arg("build").unwrap_or_default().to_owned();
+                f.issue.args = l.args.clone();
+                for arg in &mut f.issue.args {
+                    if arg.name == "build" {
+                        arg.value.clone_from(&build);
+                    }
+                }
+            }
+        }
+    }
+    per_build
+}
+
+/// The `llms.txt` files of a build that are over the limit even when the
+/// index is split, each reported at the page its file is about
+/// (`llms-section-large`), when the project publishes them.
+fn llms_sizes(
+    index: &ascribe_resolve::Project,
+    build: &Build,
+    pages: &[ResolvedPage],
+) -> Vec<Found> {
+    let model = index.model();
+    if !model.consumer.agents {
+        return Vec::new();
+    }
+    let mut found = Vec::new();
+    for file in llms::llms_files(model, &pages::records(model, pages)) {
+        let size = file.chars();
+        if size <= llms::LLMS_TXT_LIMIT {
+            continue;
+        }
+        let Some(page) = file
+            .page
+            .and_then(|p| pages.iter().find(|page| page.path == p))
+        else {
+            continue;
+        };
+        // The page's first line: the problem is with the page as a whole.
+        let source = index.file_by_id(page.file).map_or("", |f| &*f.source);
+        let at = Span::new(0, source.find(['\n', '\r']).unwrap_or(source.len()));
+        let issue = Issue::new(
+            diagnostics::LLMS_SECTION_LARGE,
+            Location::new(page.file, at),
+        )
+        .with_arg("file", file.url)
+        .with_arg("size", size.to_string())
+        .with_arg("limit", llms::LLMS_TXT_LIMIT.to_string())
+        .with_arg("build", build.name.as_str());
+        found.push(Found {
+            issue,
+            cause: (page.file, at, Arc::from([])),
+        });
+    }
+    found
 }
 
 /// A block of a page as one build publishes it: the page, the file and span

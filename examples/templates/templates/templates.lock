@@ -1,0 +1,99 @@
+# Written by `ascribe templates eject`, which adds to it. Don't edit it: it
+# records what each template was copied from, and a hash of it as written.
+version = 1
+
+[[template]]
+name = "how-to"
+summary = "A how-to is a concise set of numbered steps to do one task with the product."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
+
+[template.files]
+"templates/how-to.md" = "sha256:eac239e27ac995f752cdf8ad3987d17273cd044251629eb91112c8f431d582ca"
+"templates/how-to.guide.md" = "sha256:df5131d0547ae2c4d164f6078ecb87170e36d86676a7f22a6ed858775e7196ff"
+
+[template.ascribe-files]
+"templates/how-to.ascribe.md" = "sha256:a68945ebc6c55dbea89b911081c95598c53f2bef4394047bc5b8799b5eb54075"
+
+[[template]]
+name = "concept"
+summary = "An explanation of a concept, context, or background information about a product or its features."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
+
+[template.files]
+"templates/concept.md" = "sha256:f3ae998c53daffb606df627ea2c47dc5cd52be14fef637fbbd58ec0a75f544de"
+"templates/concept.guide.md" = "sha256:f8dbbc7d22767132398444bedd913a83f6cd0cbefa289669f9fb92b6172a008b"
+
+[template.ascribe-files]
+"templates/concept.ascribe.md" = "sha256:9da7fc5e4d0d20b09d2a5125c817636bbc43404de742c7e5ab7b68c9a5155fd0"
+
+[[template]]
+name = "tutorial"
+summary = "Instructions for setting up an example project using the product, intended for the purpose of hands-on learning."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
+
+[template.files]
+"templates/tutorial.md" = "sha256:f1cc75e56fa2447524b4ff551422339079999ef5d3c2dc162e97ff64b5238b03"
+"templates/tutorial.guide.md" = "sha256:f6fd7a466c461645eb3c5fcb97124c9c28006ff2b1fa070c49cfa6443355d18b"
+
+[template.ascribe-files]
+"templates/tutorial.ascribe.md" = "sha256:c86841f0f22e64d9ec65dc10ec1220f211319698fc7d95fa02c44284cf51f84f"
+
+[[template]]
+name = "reference"
+summary = "A reference article provides users with descriptions of specific components or characteristics of an application."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
+
+[template.files]
+"templates/reference.md" = "sha256:bd0906de737673582c3e371aff56768ff061b097d629ebaf9bc5e51c4e24f784"
+"templates/reference.guide.md" = "sha256:1f7296d6eb5883abffab43d694c82cac7c8f2c2a0b325921caa0a713a137b3ff"
+
+[template.ascribe-files]
+"templates/reference.ascribe.md" = "sha256:f7aa2cc47c90c902378c0a056b48631b7bd63943c47e498d85b0ea40f6c13637"
+
+[[template]]
+name = "troubleshooting"
+summary = "A list of common problems (referred to as symptoms) experienced by users, an explanation of the causes, and steps to resolve the issue."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
+
+[template.files]
+"templates/troubleshooting.md" = "sha256:a93be2803eb96b8ebca2df33357ee9137e0500c362e94a705bc1c625f1fd3120"
+"templates/troubleshooting.guide.md" = "sha256:8a80f32d8e4c4cf68ac051dfa38b58ba71a2a4b144f80dc159040f8ab46844a6"
+
+[template.ascribe-files]
+"templates/troubleshooting.ascribe.md" = "sha256:0182aee0e6da5780f234fc1886a3c6988375418ecbd45e79207e35e178458e25"
+
+[[template]]
+name = "release-notes"
+summary = "Release notes communicate new features, improvements, bug fixes, and known issues about a product to users and stakeholders."
+repository = "https://gitlab.com/tgdp/templates"
+tag = "v1.6.0"
+commit = "41645d9cc4b7d80db06d03cd7b862c16ece849b8"
+license = "MIT No Attribution License"
+ascribe = "0.3.0+dev (8a2e7e3ba23c)"
+
+[template.files]
+"templates/release-notes.md" = "sha256:212bf8e6eb1e3cae5a8f39856069718c408fca19940a700690b24a55480134f0"
+"templates/release-notes.guide.md" = "sha256:9ed139afdcbd046ca22da3ecb86740b1e9eb33733710f3cfc465588ed02bfcd2"
+
+[template.ascribe-files]
+"templates/release-notes.ascribe.md" = "sha256:eb75cc43216eb160ed133c017138f5a208d42bfbfd1f64edbbf7a4e4a649dbc9"

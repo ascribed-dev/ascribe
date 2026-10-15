@@ -311,6 +311,15 @@ impl Suite {
                         }
                     }
                 }
+                if let Some(listing) = &expect.listing {
+                    match &result.listing {
+                        None => problems.push(format!("{pat}.listing: the adapter produced none")),
+                        Some(actual) if actual != listing => problems.push(format!(
+                            "{pat}.listing: expected `{listing}`, got `{actual}`"
+                        )),
+                        Some(_) => {}
+                    }
+                }
                 for (kind, slot) in &expect.outputs {
                     let Some(output) = result.outputs.get(kind) else {
                         problems.push(format!("{pat}.outputs.{kind}: the adapter produced none"));
@@ -523,6 +532,10 @@ fn compare_diagnostics(
                 && a.file == file
                 && a.line == exp.line
                 && exp.column.is_none_or(|c| c == a.column)
+                && exp
+                    .severity
+                    .as_ref()
+                    .is_none_or(|s| a.severity.as_ref() == Some(s))
         });
         match found {
             Some(i) => used[i] = true,

@@ -1,4 +1,5 @@
 ---
+type: page
 title: Engineering handbook
 description: How engineering at Lantern Labs works.
 owner: platform

@@ -1,0 +1,37 @@
+# The content model for the Ascribe version of the comparison page, in
+# ascribe/install-agent.md: what that page needs and no more. examples/quill
+# is the same page in a fuller project, with builds and images.
+spec = "0.1"
+
+[project]
+content-root = "ascribe"
+
+# `available` in the page's frontmatter is reserved and always accepted.
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }
+
+# `@variant {pm=npm}:` and friends.
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+labels = { yarn = "Yarn" }
+
+# `@variant {deployment=cloud}:`, `available: cloud, self-managed preview 3.3`,
+# and `@available: cloud, self-managed preview 3.4`.
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+labels = { cloud = "Quill Cloud" }
+
+[phrases]
+product = "Quill"
+cloud = "Quill Cloud"
+version = "3.4.1"
+api = "https://api.quill.dev/v3/"
+
+# The comparison is one page; quickstart.md and keys.md are there only as
+# its link targets, and nothing links to the page itself.
+[checks]
+page-orphan = "off"

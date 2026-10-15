@@ -11,12 +11,12 @@ use ascribe_core::{LineIndex, Span};
 use lsp_server::{Connection, ErrorCode, Message, Notification, Request, RequestId, Response};
 use lsp_types::notification::{
     DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument, DidOpenTextDocument,
-    Notification as _,
+    DidSaveTextDocument, Notification as _,
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, Rename, Request as _,
-    SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, PrepareRenameRequest, References,
+    Rename, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
     CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
@@ -25,7 +25,8 @@ use lsp_types::{
     SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
     ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    Uri, WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
+    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 
 use crate::compute::{Outcome, compute};
@@ -78,6 +79,8 @@ pub enum Exit {
 struct Shared {
     core: Mutex<Core>,
     wake: Condvar,
+    /// Wakes the thread that runs Vale (`prose.rs`).
+    prose_wake: Condvar,
     options: Options,
     idle: Arc<AtomicBool>,
     /// Whether the client can be asked to show a document
@@ -119,6 +122,9 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 TextDocumentSyncOptions {
                     open_close: Some(true),
                     change: Some(TextDocumentSyncKind::INCREMENTAL),
+                    // The content checks across the project run on save, and
+                    // Vale checks a document's prose.
+                    save: Some(TextDocumentSyncSaveOptions::Supported(true)),
                     ..TextDocumentSyncOptions::default()
                 },
             )),
@@ -141,6 +147,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             definition_provider: Some(OneOf::Left(true)),
+            references_provider: Some(OneOf::Left(true)),
             document_link_provider: Some(DocumentLinkOptions {
                 resolve_provider: Some(false),
                 work_done_progress_options: Default::default(),
@@ -152,7 +159,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
             document_formatting_provider: Some(OneOf::Left(true)),
             rename_provider: Some(OneOf::Right(RenameOptions {
-                prepare_provider: Some(false),
+                prepare_provider: Some(true),
                 work_done_progress_options: Default::default(),
             })),
             workspace: Some(WorkspaceServerCapabilities {
@@ -185,6 +192,12 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
     core.folders = workspace_folders(&params);
+    core.prose.can_ask = params
+        .capabilities
+        .window
+        .as_ref()
+        .is_some_and(|w| w.show_message.is_some());
+    core.clock = options.today.clone();
     let idle = options.idle.clone().unwrap_or_default();
     let show_document = params
         .capabilities
@@ -195,6 +208,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
     let shared = Arc::new(Shared {
         core: Mutex::new(core),
         wake: Condvar::new(),
+        prose_wake: Condvar::new(),
         options,
         idle,
         show_document,
@@ -203,17 +217,22 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         let shared = shared.clone();
         thread::spawn(move || worker(&shared))
     };
+    let prose_worker = {
+        let shared = shared.clone();
+        thread::spawn(move || prose_worker(&shared))
+    };
     {
         let mut core = shared.lock();
         guarded("start", || {
             core.start();
             core.register_watchers();
-            if core.has_work() {
+            if core.busy() {
                 shared.idle.store(false, Ordering::SeqCst);
             }
         });
     }
     shared.wake.notify_all();
+    shared.prose_wake.notify_all();
 
     let mut shutdown_requested = false;
     let exit = loop {
@@ -259,13 +278,21 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 }
                 handle_notification(&shared, notification);
                 shared.wake.notify_all();
+                shared.prose_wake.notify_all();
             }
-            Message::Response(_) => {}
+            Message::Response(response) => {
+                // The answer about running a program in the project.
+                shared.lock().answered(&response);
+                shared.prose_wake.notify_all();
+            }
         }
     };
     shared.lock().shutdown = true;
     shared.wake.notify_all();
+    shared.prose_wake.notify_all();
     let _ = worker.join();
+    // A check running now ends within its time limit.
+    let _ = prose_worker.join();
     Ok(exit)
 }
 
@@ -324,6 +351,11 @@ fn handle_notification(shared: &Shared, notification: Notification) {
                     );
                 }
             }
+            DidSaveTextDocument::METHOD => {
+                if let Some(p) = parse::<lsp_types::DidSaveTextDocumentParams>(&notification) {
+                    core.did_save(&p.text_document.uri);
+                }
+            }
             DidCloseTextDocument::METHOD => {
                 if let Some(p) = parse::<lsp_types::DidCloseTextDocumentParams>(&notification) {
                     core.did_close(&p.text_document.uri);
@@ -335,10 +367,10 @@ fn handle_notification(shared: &Shared, notification: Notification) {
                 }
             }
             // `initialized` was consumed by the handshake; the rest need no
-            // action (`didSave`, `$/cancelRequest`, `$/setTrace`, …).
+            // action (`$/cancelRequest`, `$/setTrace`, …).
             _ => {}
         }
-        if core.has_work() {
+        if core.busy() {
             shared.idle.store(false, Ordering::SeqCst);
         }
     });
@@ -366,6 +398,9 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
         match request.method.as_str() {
             SemanticTokensFullRequest::METHOD => semantic_tokens_request(shared, &request, false),
             SemanticTokensRangeRequest::METHOD => semantic_tokens_request(shared, &request, true),
+            Completion::METHOD if let Some(items) = config_completion(shared, &request) => {
+                to_json(&request, items)
+            }
             Completion::METHOD => navigation(shared, &request, |p: lsp_types::CompletionParams| {
                 let at = p.text_document_position;
                 (at.text_document.uri, move |ctx: &Ctx| {
@@ -387,6 +422,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            References::METHOD => navigation(shared, &request, |p: lsp_types::ReferenceParams| {
+                let at = p.text_document_position;
+                (at.text_document.uri, move |ctx: &Ctx| {
+                    crate::references::references(ctx, at.position, p.context.include_declaration)
+                })
+            }),
             DocumentLinkRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::DocumentLinkParams| {
                     (p.text_document.uri, |ctx: &Ctx| {
@@ -408,22 +449,46 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            CodeActionRequest::METHOD => {
-                navigation(shared, &request, |p: lsp_types::CodeActionParams| {
-                    (p.text_document.uri.clone(), move |ctx: &Ctx| {
-                        Some(crate::code_action::actions(ctx, p))
-                    })
-                })
-            }
+            CodeActionRequest::METHOD => code_action_request(shared, &request),
             Formatting::METHOD => navigation(shared, &request, |p: DocumentFormattingParams| {
                 (p.text_document.uri.clone(), move |ctx: &Ctx| {
                     Some(crate::formatting::format(ctx, p))
                 })
             }),
             Rename::METHOD => rename_request(shared, &request),
+            PrepareRenameRequest::METHOD => prepare_rename_request(shared, &request),
             WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
+            crate::build_view::METHOD => {
+                answer(shared, &request, |p: crate::build_view::BuildViewParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::build_view::build_view(ctx, p.build.as_deref())
+                    })
+                })
+            }
+            crate::context::METHOD => {
+                answer(shared, &request, |p: crate::context::ContextParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::context::context(ctx, p.range)
+                    })
+                })
+            }
+            // A new page is asked for through any of the project's files.
+            crate::edit::METHOD => edit_request(shared, &request),
+            crate::targets::METHOD => {
+                project_answer(shared, &request, |p: crate::targets::TargetsParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::targets::targets(ctx, &p.kinds, p.range, p.folder.as_deref())
+                    })
+                })
+            }
+            crate::inventory::METHOD => {
+                project_answer(shared, &request, |p: crate::inventory::InventoryParams| {
+                    (p.text_document.uri, crate::inventory::inventory)
+                })
+            }
+            crate::agent_prompt::METHOD => agent_prompt_request(shared, &request),
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
             crate::review::CHANGES_METHOD => changes_request(shared, &request),
             method => Err(Response::new_err(
@@ -487,6 +552,91 @@ where
     }
 }
 
+/// Answers a custom request about one document as [`navigation`] does, but
+/// with the empty answer (`R::default()`), not `null`, for a document that
+/// isn't a source file of the project.
+fn answer<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize + Default,
+    F: FnOnce(&Ctx) -> R,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, compute) = read(params);
+    let target = shared.lock().nav_target(&uri);
+    let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// `ascribe/edit`, as [`answer`] answers it, but asked through any of the
+/// project's files for `newPage`, which isn't about a page.
+fn edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    use crate::edit::{EditAction, EditParams, edit};
+    let params: EditParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri.clone();
+    let target = {
+        let core = shared.lock();
+        if params.action == EditAction::NewPage {
+            core.project_target(&uri)
+        } else {
+            core.nav_target(&uri)
+        }
+    };
+    let result = target
+        .map(|ctx| edit(&ctx, &uri, &params))
+        .unwrap_or_default();
+    to_json(request, result)
+}
+
+/// Answers a custom request about the whole project as [`answer`] does,
+/// asked through any of the project's files ([`Core::project_target`]).
+fn project_answer<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize + Default,
+    F: FnOnce(&Ctx) -> R,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, compute) = read(params);
+    let target = shared.lock().project_target(&uri);
+    let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// Completion in a source's `ascribe.examples.toml`, which isn't a page;
+/// `None` for any other document.
+fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::CompletionItem>> {
+    let params: lsp_types::CompletionParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position;
+    shared
+        .lock()
+        .config_completion(&at.text_document.uri, at.position)
+}
+
+/// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
+/// too, whose problems about an entry can be marked as intended.
+fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::CodeActionParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let target = shared.lock().code_action_target(&params.text_document.uri);
+    let Some(ctx) = target else {
+        return Ok(serde_json::Value::Null);
+    };
+    to_json(request, crate::code_action::actions(&ctx, params))
+}
+
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: lsp_types::RenameParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
@@ -520,6 +670,48 @@ fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Valu
             )
         }),
         None => Ok(serde_json::Value::Null),
+    }
+}
+
+/// What a rename at a position would rename, or, as an error the client
+/// shows, why nothing there can be renamed.
+fn prepare_rename_request(
+    shared: &Shared,
+    request: &Request,
+) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::TextDocumentPositionParams =
+        serde_json::from_value(request.params.clone())
+            .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri;
+    let answer = {
+        let core = shared.lock();
+        let is_model = core
+            .config
+            .as_ref()
+            .zip(crate::uri::uri_to_path(&uri))
+            .is_some_and(|(config, path)| normalize(config) == normalize(&path));
+        if is_model {
+            core.project_nav_target()
+                .map(|ctx| crate::refactor::prepare_model(&ctx, params.position))
+        } else {
+            core.nav_target(&uri)
+                .map(|ctx| crate::refactor::prepare(&ctx, params.position))
+        }
+    };
+    match answer {
+        None => Ok(serde_json::Value::Null),
+        Some(Err(message)) => Err(Response::new_err(
+            request.id.clone(),
+            ErrorCode::RequestFailed as i32,
+            message,
+        )),
+        Some(Ok(answer)) => serde_json::to_value(answer).map_err(|e| {
+            Response::new_err(
+                request.id.clone(),
+                ErrorCode::InternalError as i32,
+                e.to_string(),
+            )
+        }),
     }
 }
 
@@ -641,6 +833,32 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
     })
 }
 
+/// Answers `ascribe/agentPrompt`. A prompt about a problem, a file, or a
+/// page's changes needs a source file of the project; one about the project
+/// or a fragment's reach takes any of its files, or none.
+fn agent_prompt_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    use crate::agent_prompt::{AgentPromptParams, PromptKind, agent_prompt};
+    let params: AgentPromptParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (target, review) = {
+        let core = shared.lock();
+        // Any file of the project: a source the index can't read is still
+        // one whose problems a prompt is about.
+        let target = match (&params.text_document, params.kind) {
+            (Some(document), _) => core.project_target(&document.uri),
+            (None, PromptKind::Project | PromptKind::FragmentReach) => core
+                .config
+                .as_deref()
+                .and_then(crate::uri::path_to_uri)
+                .and_then(|uri| core.project_target(&uri)),
+            (None, _) => None,
+        };
+        (target, core.review.clone())
+    };
+    let result = target.and_then(|ctx| agent_prompt(&ctx, &params, review));
+    to_json(request, result)
+}
+
 fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     use crate::review::{SetBaseParams, SetBaseResult, info_of, read_base, resolve_base};
     let params: SetBaseParams = serde_json::from_value(request.params.clone())
@@ -729,10 +947,12 @@ fn worker(shared: &Shared) {
                     return;
                 }
                 if let Some(job) = core.plan() {
+                    core.computing = true;
                     shared.idle.store(false, Ordering::SeqCst);
                     break job;
                 }
-                shared.idle.store(true, Ordering::SeqCst);
+                core.computing = false;
+                shared.idle.store(!core.busy(), Ordering::SeqCst);
                 core = shared
                     .wake
                     .wait(core)
@@ -741,7 +961,8 @@ fn worker(shared: &Shared) {
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| {
             let outcome = compute(&job, &|| job.snapshot.is_current());
-            if let (Some(hook), Outcome::Done(results)) = (&shared.options.before_publish, &outcome)
+            if let (Some(hook), Outcome::Done(results, _)) =
+                (&shared.options.before_publish, &outcome)
             {
                 hook(&PublishInfo {
                     version: job.snapshot.version().get(),
@@ -764,6 +985,49 @@ fn worker(shared: &Shared) {
         };
         let mut core = shared.lock();
         guarded("publishing diagnostics", || core.finish(&job, outcome));
+    }
+}
+
+/// The thread that runs Vale: takes one document at a time, checks it
+/// without the lock, and keeps what's still current (`prose.rs`).
+fn prose_worker(shared: &Shared) {
+    let program = ascribe_check::prose::Program;
+    let linter: &dyn ascribe_check::prose::Linter = match &shared.options.linter {
+        Some(linter) => &**linter,
+        None => &program,
+    };
+    loop {
+        let job = {
+            let mut core = shared.lock();
+            loop {
+                if core.shutdown {
+                    return;
+                }
+                if let Some(job) = core.take_prose() {
+                    shared.idle.store(false, Ordering::SeqCst);
+                    break job;
+                }
+                shared.idle.store(!core.busy(), Ordering::SeqCst);
+                core = shared
+                    .prose_wake
+                    .wait(core)
+                    .unwrap_or_else(PoisonError::into_inner);
+            }
+        };
+        let results = match catch_unwind(AssertUnwindSafe(|| job.run(linter))) {
+            Ok(results) => results,
+            Err(panic) => {
+                crate::log::line(format_args!(
+                    "panic checking the prose: {}",
+                    panic_message(&*panic)
+                ));
+                Vec::new()
+            }
+        };
+        let mut core = shared.lock();
+        guarded("publishing the prose's diagnostics", || {
+            core.finish_prose(&job, results);
+        });
     }
 }
 

@@ -7,14 +7,14 @@ content-root = "docs"
 output-dir = ".ascribe/build"
 # :snippet-end:
 
-# `guide` is the default type; `reference` applies to reference/**.
-[types.guide]
-default = true
-
+# Two types, `guide` and `reference`: each page names one, with `type:`.
 # Short forms, then table forms.
 [types.guide.frontmatter]
 title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
-description = "string?"
+# A role says what a field is to the page: the content checks read the
+# description and the review date from the fields that have them.
+description = { type = "string?", role = "description" }
+review-by = { type = "date?", role = "review-date" }
 order = "number?"
 featured = "boolean?"
 updated = "date?"
@@ -28,7 +28,12 @@ author = { type = "object?", fields = { name = "string", email = "string?" } }
 related = { type = "list(object)?", fields = { title = "string", url = "string" } }
 
 [types.reference]
-files = ["reference/**", "api/**/*.md"]
+# What a reference page is for, which the rules for agents say.
+purpose = "What each command, option, and setting does, to look up."
+# The page a reference page starts from, and what to read before writing
+# one, in order: files from this folder, outside the content root.
+template = "templates/reference.md"
+guide = ["templates/reference.guide.md"]
 
 [types.reference.frontmatter]
 # Code spans in the title, as in "`ascribe.toml` reference".
@@ -59,6 +64,22 @@ labels = { yarn = "Yarn" }
 # :snippet-start: versions
 [versions]
 scheme = "numeric"
+# :snippet-end:
+
+# :snippet-start: releases
+[releases]
+planned-label = "planned"
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[releases.self-managed.ends]
+"3.4" = 2027-01-31
+
+[releases.self-managed.archived]
+"3.3" = { url = "https://docs.example.com/archive/3.3/", ended = 2026-06-30 }
+"3.2" = {}
 # :snippet-end:
 
 # A new state, and a built-in state relabeled.
@@ -97,6 +118,8 @@ cloud = "Quill Cloud"
 version = "3.4.1"
 api = "https://api.quill.dev/v3/"
 support-email = "support@quill.dev"
+# The current line of [releases.self-managed]: "3.5".
+release = { line = "self-managed" }
 # :snippet-end:
 
 # :snippet-start: glossary
@@ -195,6 +218,7 @@ trailing-slash = "never"
 slugger = "github"
 html = true
 
+# :snippet-start: builds
 [builds.site]
 variants = "switch"
 availability = "badge"
@@ -206,8 +230,18 @@ availability = { filter = "cloud" }
 [builds."self-managed-3.5"]
 variants = { deployment = "self-managed", pm = ["npm", "pnpm"] }
 availability = { filter = "self-managed 3.5" }
+# :snippet-end:
 
 # :snippet-start: editor
 [editor]
 build = "site"
 # :snippet-end:
+
+# How loudly each check about the content's quality speaks. A key is a
+# check's name, and its value a level ("off", "advice", "warning", or
+# "error") or a table with `level` and the check's settings.
+[checks]
+code-language-missing = "warning"
+
+[checks.page-size]
+limit = 40_000

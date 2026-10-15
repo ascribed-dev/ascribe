@@ -1,0 +1,3 @@
+self-managed, versioning `site`
+  3.5  current   site at /, 6 pages
+  3.4  live      site@3.4 at /3.4/, 5 pages

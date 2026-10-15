@@ -1,0 +1,78 @@
+---
+// A permalink's address: a page that sends the reader on to the heading it
+// names, wherever that is now. The integration adds it as a route at
+// `<path>[id]`, one page for each entry of the site output's
+// `_ascribe/permalinks.json`. It forwards without a script, links to the same
+// place for a browser that doesn't follow, and isn't indexed. Its script
+// first takes the reader's choices from the address's parameters
+// (`?platform=macos`), as if they'd picked those tabs, then forwards.
+//
+// A retired permalink with nowhere to lead gets a page that says what was
+// here was removed, gives the reason as its authors wrote it, as text, and
+// links to the docs' home: the root of the project whose list named it.
+import { home as root, permalinks } from "virtual:ascribe/site";
+import { forwardingPaths, type Forwarding } from "@ascribed/astro/permalinks";
+
+export function getStaticPaths() {
+  return forwardingPaths(permalinks);
+}
+
+const props = Astro.props as Forwarding;
+const to = "to" in props ? props.to : undefined;
+const dimensions = "to" in props ? props.dimensions : {};
+const reason = "reason" in props ? props.reason : undefined;
+const home = ("reason" in props ? props.home : undefined) ?? root;
+const canonical =
+  to === undefined || Astro.site === undefined ? to : new URL(to, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {to === undefined ? <title>Removed from these docs</title> : <title>Redirecting to {to}</title>}
+    <meta name="robots" content="noindex" />
+    {to !== undefined && <meta http-equiv="refresh" content={`0;url=${to}`} />}
+    {canonical !== undefined && <link rel="canonical" href={canonical} />}
+  </head>
+  <body>
+    {
+      to === undefined ? (
+        <main>
+          <h1>Removed from these docs</h1>
+          <p>What this link led to was removed from these docs.</p>
+          <p data-reason>{reason}</p>
+          <p>
+            <a href={home}>Go to the docs' home page</a>
+          </p>
+        </main>
+      ) : (
+        <p>
+          This link leads to <a href={to} data-dimensions={JSON.stringify(dimensions)}>{to}</a>.
+        </p>
+      )
+    }
+    <script>
+      import { choose } from "@ascribed/elements";
+
+      // A parameter that names one of the content model's dimensions, with one of
+      // its values, is the reader's choice for it. Anything else is ignored, so a
+      // product sends what it knows without asking what the docs accept.
+      const link = document.querySelector<HTMLAnchorElement>("a[data-dimensions]");
+      if (link !== null) {
+        const dimensions = JSON.parse(link.dataset["dimensions"] ?? "{}") as Record<string, string[]>;
+        const chosen = new Set<string>();
+        for (const [name, value] of new URLSearchParams(location.search)) {
+          if (chosen.has(name) || !Object.hasOwn(dimensions, name)) continue;
+          if (dimensions[name]?.includes(value)) {
+            chosen.add(name);
+            choose(name, value);
+          }
+        }
+        // Sooner than the refresh, which waits for the page to load.
+        location.replace(link.href);
+      }
+    </script>
+  </body>
+</html>

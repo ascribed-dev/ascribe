@@ -1,0 +1,106 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "ascribe-page",
+  "build": "site",
+  "path": "webhooks.md",
+  "route": "/webhooks/",
+  "site": "https://docs.quill.dev",
+  "title": "Webhooks",
+  "frontmatter": {
+    "available": "self-managed 3.5",
+    "description": "Send an event to your own service when a page changes.",
+    "title": "Webhooks",
+    "type": "page"
+  },
+  "availability": {
+    "text": "self-managed 3.5",
+    "display": "self-managed (GA, 3.5+)",
+    "targets": [
+      {
+        "target": "self-managed",
+        "dimension": "deployment",
+        "states": ["ga"],
+        "versions": ["3.5"],
+        "text": "self-managed (GA, 3.5+)"
+      }
+    ],
+    "scope": "page",
+    "feature": null,
+    "source": {
+      "file": "webhooks.md",
+      "span": [0, 130]
+    }
+  },
+  "headings": [],
+  "assets": [],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "The agent posts an event to each webhook in ",
+          "span": [132, 176]
+        },
+        {
+          "type": "code",
+          "value": "quill.yaml",
+          "span": [176, 188]
+        },
+        {
+          "type": "text",
+          "value": ". See ",
+          "span": [188, 194]
+        },
+        {
+          "type": "link",
+          "destination": "/keys/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "keys.md",
+            "id": null,
+            "url": "/keys/",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "API keys",
+              "span": [195, 203]
+            }
+          ],
+          "span": [194, 213]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [213, 214]
+        }
+      ],
+      "source": {
+        "file": "webhooks.md",
+        "span": [132, 214],
+        "lines": [8, 8]
+      },
+      "links": [
+        {
+          "span": [194, 213],
+          "kind": "link",
+          "destination": "keys.md",
+          "target": {
+            "type": "page",
+            "page": "keys.md",
+            "id": null,
+            "url": "/keys/",
+            "textFilled": false
+          }
+        }
+      ]
+    }
+  ]
+}

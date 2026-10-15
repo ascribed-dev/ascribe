@@ -115,6 +115,12 @@ export interface DiffReport {
   working_tree_errors: number;
   /** What changed, per build, in the order asked for. */
   builds: BuildDiff[];
+  /**
+   * Whether every page's `changes` was left empty, as `ascribe diff
+   * --pages-only` leaves them: its `counts` still count them. Only there
+   * when it's `true`.
+   */
+  blocks_omitted?: boolean;
 }
 
 /**
@@ -178,7 +184,8 @@ export interface PageData {
   counts: Counts;
   /**
    * The block-level changes, in the page's order, a removed block where
-   * it was. Empty for an added or removed page.
+   * it was. Empty for an added or removed page, and for every page when
+   * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
   /** Its title, when the build has one. */
@@ -194,6 +201,12 @@ export interface PageData {
   was: string | null;
   /** Whether it's beyond the limit, so not rendered. */
   omitted: boolean;
+  /**
+   * The agent prompt about the page, which its Copy prompt button copies:
+   * what `ascribe diff --format prompt` writes for it. Absent when the
+   * report was written without prompts.
+   */
+  prompt?: string;
 }
 
 /** What changed on one page of a build. */
@@ -227,7 +240,8 @@ export interface PageDiff {
   counts: Counts;
   /**
    * The block-level changes, in the page's order, a removed block where
-   * it was. Empty for an added or removed page.
+   * it was. Empty for an added or removed page, and for every page when
+   * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
 }

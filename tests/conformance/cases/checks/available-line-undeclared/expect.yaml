@@ -1,0 +1,11 @@
+description: >-
+  With `[releases]`, a version in a line between two declared lines that
+  isn't declared itself is advice, in a page's mark and in a feature. A line
+  declared as archived, even with no address, places its versions, and a
+  version older than every declared line is before the window.
+spec: ["4.4", "7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-line-undeclared, file: ascribe.toml, line: 22, column: 27}
+  - {slug: available-line-undeclared, file: index.md, line: 6, column: 26}

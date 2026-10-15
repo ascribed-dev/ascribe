@@ -3,6 +3,23 @@ import type { ProjectServer, ServerState } from "./client.js";
 import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
+import { ActionsController, type ActionsApi } from "./actions/controller.js";
+import { NewPage, type NewPageApi } from "./actions/newPage.js";
+import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
+import { McpRegistration, type McpApi } from "./agents/mcp.js";
+import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
+import { AgentTools, type ToolsApi } from "./agents/tools.js";
+import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
+import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
+import { ChosenBuilds } from "./ui/chosenBuild.js";
+import { STATE_NAMES } from "./ui/describe.js";
+import { BuildLenses } from "./ui/lens.js";
+import { ProjectBuilds } from "./ui/projectBuilds.js";
+import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
+import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
+import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
+import { Walkthrough } from "./ui/walkthrough.js";
+import { FormatterOffer } from "./ui/formatter.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -21,16 +38,77 @@ export interface AscribeApi {
   whenSettled(): Promise<void>;
   /** The preview, for tests. */
   preview: PreviewApi;
+  /** The editor's actions, for tests. */
+  actions: ActionsApi;
+  /** New Page, for tests. */
+  newPage: NewPageApi;
+  /** Prompt agent, for tests. */
+  promptAgent: PromptAgentApi;
+  /** What agents in VS Code get: the MCP server, the tools, and the terminals' path, for tests. */
+  agents: { mcp: McpApi; tools: ToolsApi; terminals: TerminalsApi };
+  /** The status bar item and the sidebar's views, for tests. */
+  ui: {
+    statusBar: StatusBarApi;
+    projects: ProjectsViewApi;
+    lens: BuildLensApi;
+    /** The Used by, Pages, and Content model views. */
+    sidebar: SidebarApi;
+    /** Check Every Build's problems. */
+    everyBuild: EveryBuildApi;
+    /** Settles when every request for a project's builds has been answered. */
+    whenBuildsKnown(): Promise<void>;
+  };
 }
 
 let registry: ProjectRegistry | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
+  // In Restricted Mode the extension runs nothing, since it would run the
+  // project's own binary; it only says so, and starts once the folder is trusted.
+  if (!vscode.workspace.isTrusted) {
+    const notice = showRestricted();
+    context.subscriptions.push(notice);
+    await new Promise<void>((resolve) => {
+      context.subscriptions.push(vscode.workspace.onDidGrantWorkspaceTrust(resolve));
+    });
+    notice.dispose();
+  }
   const projects = new ProjectRegistry(context);
   registry = projects;
 
-  const preview = new PreviewController(context, projects);
+  const chosen = new ChosenBuilds();
+  const promptAgent = new PromptAgent(context, projects);
+  promptAgent.register();
+  const preview = new PreviewController(context, projects, chosen, promptAgent);
   preview.register();
+  const mcp = new McpRegistration(context, projects);
+  mcp.register();
+  const tools = new AgentTools(projects, preview.review);
+  tools.register();
+  const terminals = new TerminalPath(context, projects);
+
+  const lenses = new BuildLenses();
+  const checks = new EveryBuildChecks(projects);
+  checks.register();
+  const builds = new ProjectBuilds(projects, chosen, lenses, checks);
+  builds.register();
+  const statusBar = new StatusBar(projects, builds, chosen, lenses);
+  statusBar.register();
+  const lens = new BuildLens(projects, builds, chosen, lenses);
+  lens.register();
+  const projectsView = new ProjectsView(projects, builds);
+  projectsView.register();
+  const sidebar = new SidebarViews(projects);
+  sidebar.register();
+
+  const actions = new ActionsController(projects);
+  actions.register();
+  const newPage = new NewPage(projects);
+  newPage.register();
+  const walkthrough = new Walkthrough(projects);
+  walkthrough.register();
+  const formatter = new FormatterOffer(context, projects);
+  formatter.register();
 
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument((event) => {
@@ -67,6 +145,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   context.subscriptions.push(
     projects,
     preview,
+    mcp,
+    tools,
+    terminals,
+    actions,
+    newPage,
+    formatter,
+    promptAgent,
+    chosen,
+    lenses,
+    checks,
+    builds,
+    statusBar,
+    lens,
+    projectsView,
+    sidebar,
+    walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
       if (projects.projects.length === 0) {
@@ -90,6 +184,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         arguments: args,
       }),
     ),
+    // The server's quick fix on an example that's out of date: it puts the
+    // command to run on the clipboard, for a terminal, where the person sees
+    // what it starts. The extension runs nothing an example's config names.
+    vscode.commands.registerCommand("ascribe.copyCommand", async (line: unknown) => {
+      if (typeof line !== "string") return;
+      await vscode.env.clipboard.writeText(line);
+      void vscode.window.showInformationMessage(
+        `Ascribe: copied \`${line}\`. Run it in a terminal.`,
+      );
+    }),
     vscode.commands.registerCommand("ascribe.showOutput", async () => {
       const active = vscode.window.activeTextEditor?.document.uri;
       const server = (active && projects.serverFor(active)) ?? (await pickServer(projects));
@@ -103,6 +207,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   projects.register();
   await projects.refresh();
   await updateActive(projects);
+  terminals.register();
   return {
     binary: (folder) => projects.serverAt(folder)?.binary,
     state: (folder) => projects.serverAt(folder)?.state ?? "stopped",
@@ -116,6 +221,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       ),
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
+    actions: actions.api,
+    newPage: newPage.api,
+    promptAgent: promptAgent.api,
+    agents: { mcp: mcp.api, tools: tools.api, terminals: terminals.api },
+    ui: {
+      statusBar: statusBar.api,
+      projects: projectsView.api,
+      lens: lens.api,
+      sidebar: sidebar.api,
+      everyBuild: checks.api,
+      whenBuildsKnown: () => builds.whenSettled(),
+    },
   };
 }
 
@@ -136,13 +253,6 @@ async function pickServer(projects: ProjectRegistry): Promise<ProjectServer | un
   );
   return picked?.server;
 }
-
-const STATE_NAMES: Record<ServerState, string> = {
-  stopped: "not started",
-  starting: "starting",
-  running: "running",
-  failed: "failed",
-};
 
 /** Tells VS Code whether the workspace has a project, for the `ascribe.active` conditions. */
 function updateActive(projects: ProjectRegistry): Thenable<unknown> {

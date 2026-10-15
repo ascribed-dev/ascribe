@@ -162,16 +162,12 @@ pub trait Emitter {
     /// and a relative reference, which is what the plain-markdown and JSON
     /// outputs do.
     fn place_asset(&self, page_output: &RelPath, asset: &RelPath, _usage: AssetUse) -> Placement {
-        let copy_to = mirrored_path(asset);
-        Placement {
-            reference: relative_reference(page_output, &copy_to),
-            copy_to,
-            url: None,
-        }
+        mirrored_placement(page_output, asset)
     }
 
-    /// Generated files the emitter adds to the root besides pages and assets,
-    /// under `_ascribe/`.
+    /// Generated files the emitter adds to the root besides pages and assets:
+    /// under `_ascribe/`, apart from the plain output's `llms.txt` files for
+    /// agents.
     ///
     /// # Errors
     ///
@@ -189,6 +185,17 @@ pub trait Emitter {
     /// less useful.
     fn warnings(&self, _cx: &EmitContext<'_>) -> Vec<String> {
         Vec::new()
+    }
+}
+
+/// An asset at its mirrored path, with a reference relative to the page
+/// written at `page_output`: [`Emitter::place_asset`]'s default.
+pub(crate) fn mirrored_placement(page_output: &RelPath, asset: &RelPath) -> Placement {
+    let copy_to = mirrored_path(asset);
+    Placement {
+        reference: relative_reference(page_output, &copy_to),
+        copy_to,
+        url: None,
     }
 }
 

@@ -23,8 +23,27 @@ export const ELEMENT_AVAILABILITY = "ascribe-availability";
  */
 export const ELEMENT_AVAILABILITY_TARGET = "ascribe-availability-target";
 
+/**
+ * On the visually hidden `(Available: ` and `)` around a table row's
+ * `<ascribe-availability>` targets (packages/elements/CONTRACT.md §4).
+ */
+export const CLASS_AVAILABILITY_LEAD_IN = "ascribe-availability-lead-in";
+
+/**
+ * On the line of a code block's caption that says what a tested example
+ * was tested with; its lead-in, "Tested with", is the stylesheet's
+ * (packages/elements/CONTRACT.md §9).
+ */
+export const CLASS_CODE_TESTED = "ascribe-code-tested";
+
 /** `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6). */
 export const ELEMENT_GROUP = "ascribe-group";
+
+/**
+ * `<ascribe-for-agents>`: the visually hidden pointer to `llms.txt` at the top
+ * of a page, for agents (packages/elements/CONTRACT.md §8).
+ */
+export const ELEMENT_FOR_AGENTS = "ascribe-for-agents";
 
 /** `<ascribe-attributes>`: the attribute marker (site-render contract §1). */
 export const ELEMENT_ATTRIBUTES = "ascribe-attributes";
@@ -41,6 +60,9 @@ export const DATA_VIA = "data-ascribe-via";
 /** A glossary term's id, on its link (packages/elements/CONTRACT.md §7). */
 export const DATA_TERM = "data-ascribe-term";
 
+/** The line a link out of a line leads to, on its link (packages/elements/CONTRACT.md §10). */
+export const DATA_RELEASE_LINE = "data-ascribe-release-line";
+
 /** The element the report draws into. */
 export const ID_REPORT = "ascribe-review";
 
@@ -49,7 +71,7 @@ export const ID_REPORT_DATA = "ascribe-review-data";
 
 /**
  * The page's light or dark scheme, `light` or `dark`, on the root
- * element (docs/content/guides/astro.md).
+ * element (docs/content/astro/reference.md).
  */
 export const DATA_SCHEME = "data-ascribe-scheme";
 

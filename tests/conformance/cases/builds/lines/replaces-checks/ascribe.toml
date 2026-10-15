@@ -1,0 +1,17 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[builds.site]
+versions = "self-managed"
+
+[checks]
+page-orphan = "off"

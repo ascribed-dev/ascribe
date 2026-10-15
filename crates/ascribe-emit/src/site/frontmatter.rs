@@ -21,7 +21,10 @@
 //! ```
 //!
 //! Each entry has the attributes of a `<ascribe-availability-target>` and its
-//! text. `variant` passes through as written.
+//! text. `variant` passes through as written. `listing` is left out: the
+//! page's record in `_ascribe/pages.json` holds it, as every output reads
+//! it. So is `replaces`, a source path a layout can't use:
+//! `_ascribe/versions.json` says which page replaces which.
 //!
 //! A field that sets `inline = "code"` is written as its plain text, for a
 //! layout's `<title>`, search, and sorting, and its formatted form goes under
@@ -32,9 +35,18 @@
 //! formatted:
 //!   title: <code>ascribe.toml</code> reference
 //! ```
+//!
+//! Every page ends with the reserved `source`: its path from the content
+//! root, with `/`, as `_ascribe/permalinks.json` writes it, so a layout's
+//! edit link needn't take apart the path its collection loaded the page from.
+//!
+//! ```yaml
+//! title: Install
+//! source: guides/install.md
+//! ```
 
-use ascribe_model::Segment;
-use ascribe_resolve::ResolvedPage;
+use ascribe_model::{Listing, Segment};
+use ascribe_resolve::{REPLACES, ResolvedPage};
 use serde_yaml_ng::{Mapping, Value};
 
 use super::blocks::availability_target;
@@ -42,8 +54,8 @@ use super::element::escape;
 use crate::emitter::PageContext;
 use crate::error::EmitError;
 
-/// The page's frontmatter block, `---` lines included and a blank line after,
-/// or an empty string when the page has nothing to put in it.
+/// The page's frontmatter block, `---` lines included and a blank line after.
+/// Every page has one, since every page has its `source`.
 pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
     let mut map = match &page.frontmatter {
         Some(Value::Mapping(map)) => map.clone(),
@@ -64,6 +76,8 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
             map.remove(&key);
         }
     }
+    map.remove(Listing::KEY);
+    map.remove(REPLACES);
     let key = Value::String("formatted".to_owned());
     map.remove(&key);
     if !page.formatted.is_empty() {
@@ -76,9 +90,10 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
         }
         map.insert(key, Value::Mapping(formatted));
     }
-    if map.is_empty() {
-        return Ok(String::new());
-    }
+    map.insert(
+        Value::String("source".to_owned()),
+        Value::String(page.path.to_string()),
+    );
     let yaml = serde_yaml_ng::to_string(&Value::Mapping(map)).map_err(|e| EmitError::Render {
         page: page.path.to_string(),
         message: format!("can't write the frontmatter: {e}"),
@@ -107,6 +122,9 @@ fn target_value(view: &super::blocks::TargetView) -> Value {
     map.insert("states".into(), strings(&view.states));
     if !view.versions.is_empty() {
         map.insert("versions".into(), strings(&view.versions));
+    }
+    if view.planned {
+        map.insert("planned".into(), Value::Bool(true));
     }
     map.insert("text".into(), Value::String(view.text.clone()));
     Value::Mapping(map)

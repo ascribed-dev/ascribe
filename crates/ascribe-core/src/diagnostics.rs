@@ -128,9 +128,6 @@ pub const LINK_ID_MISSING: DiagnosticSlug = DiagnosticSlug("link-id-missing");
 /// `ASC038`, error, file level: SPEC §8.2, "Links | Target is a fragment".
 pub const LINK_TO_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-to-fragment");
 
-/// `ASC039`, retired: a link can name a heading from a fragment the target page includes (SPEC §4.2).
-pub const LINK_ID_IN_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-id-in-fragment");
-
 /// `ASC040`, error, page level: SPEC §8.2, "Links | Target id is removed by a build (page level, per build)".
 pub const LINK_ID_REMOVED: DiagnosticSlug = DiagnosticSlug("link-id-removed");
 
@@ -153,7 +150,7 @@ pub const HEADING_PHRASE_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("heading-ph
 pub const HEADING_DUPLICATE_WITHOUT_ID: DiagnosticSlug =
     DiagnosticSlug("heading-duplicate-without-id");
 
-/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page".
+/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment".
 pub const FRONTMATTER_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("frontmatter-unknown-key");
 
 /// `ASC048`, error, file level: SPEC §8.2, "Frontmatter | Required field missing".
@@ -165,9 +162,6 @@ pub const FRONTMATTER_TYPE_MISMATCH: DiagnosticSlug = DiagnosticSlug("frontmatte
 /// `ASC050`, error, file level: SPEC §8.2, "Frontmatter | Reserved key (`available`, `variant`) on a fragment".
 pub const FRONTMATTER_RESERVED_IN_FRAGMENT: DiagnosticSlug =
     DiagnosticSlug("frontmatter-reserved-in-fragment");
-
-/// `ASC051`, error, file level: SPEC §8.2, "Frontmatter | Page matches more than one content type, or matches none and there's no default type".
-pub const CONTENT_TYPE_UNRESOLVED: DiagnosticSlug = DiagnosticSlug("content-type-unresolved");
 
 /// `ASC052`, warning, file level: SPEC §8.2, "Lists | Unindented directive line ends a list".
 pub const LIST_ENDED_BY_DIRECTIVE: DiagnosticSlug = DiagnosticSlug("list-ended-by-directive");
@@ -226,13 +220,6 @@ pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-con
 /// `ASC070`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
     DiagnosticSlug("model-output-overlaps-content");
-
-/// `ASC071`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_TYPE_MULTIPLE_DEFAULTS: DiagnosticSlug =
-    DiagnosticSlug("model-type-multiple-defaults");
-
-/// `ASC072`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_TYPE_UNREACHABLE: DiagnosticSlug = DiagnosticSlug("model-type-unreachable");
 
 /// `ASC073`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_TITLE: DiagnosticSlug = DiagnosticSlug("model-type-title");
@@ -456,6 +443,253 @@ pub const SOURCE_COPY_UNUSED: DiagnosticSlug = DiagnosticSlug("source-copy-unuse
 /// `ASC141`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-field");
 
+/// `ASC142`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
+    DiagnosticSlug("model-check-not-configurable");
+
+/// `ASC143`, error, file level: SPEC §8.2, "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else".
+pub const INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("intended-check");
+
+/// `ASC144`, error, file level: SPEC §8.2, "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason".
+pub const INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("intended-entry");
+
+/// `ASC145`, advice, page level: SPEC §8.2, "`@intended` | An acknowledgement that matches no problem in any build".
+pub const INTENDED_UNUSED: DiagnosticSlug = DiagnosticSlug("intended-unused");
+
+/// `ASC146`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("model-intended-check");
+
+/// `ASC147`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("model-intended-entry");
+
+/// `ASC148`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
+
+/// `ASC149`, advice, page level: a content check (area `pages`).
+pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
+
+/// `ASC150`, advice, file level: a content check (area `pages`).
+pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
+
+/// `ASC151`, advice, page level: a content check (area `pages`).
+pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
+
+/// `ASC152`, advice, file level: a content check (area `pages`).
+pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
+
+/// `ASC153`, advice, file level: a content check (area `pages`).
+pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+
+/// `ASC154`, advice, page level: a content check (area `project`).
+pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
+
+/// `ASC155`, advice, file level: a content check (area `project`).
+pub const FRAGMENT_UNUSED: DiagnosticSlug = DiagnosticSlug("fragment-unused");
+
+/// `ASC156`, advice, file level: a content check (area `project`).
+pub const PHRASE_UNUSED: DiagnosticSlug = DiagnosticSlug("phrase-unused");
+
+/// `ASC157`, advice, file level: a content check (area `project`).
+pub const FEATURE_UNUSED: DiagnosticSlug = DiagnosticSlug("feature-unused");
+
+/// `ASC158`, advice, file level: a content check (area `project`).
+pub const GLOSSARY_TERM_UNUSED: DiagnosticSlug = DiagnosticSlug("glossary-term-unused");
+
+/// `ASC159`, advice, file level: a content check (area `project`).
+pub const IMAGE_UNUSED: DiagnosticSlug = DiagnosticSlug("image-unused");
+
+/// `ASC160`, advice, file level: a content check (area `project`).
+pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
+
+/// `ASC161`, advice, page level: a content check (area `project`).
+pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
+
+/// `ASC162`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CONSUMER_AGENTS_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-agents-site");
+
+/// `ASC163`, advice, file level: a content check (area `outputs`).
+pub const DESCRIPTION_TOO_LONG: DiagnosticSlug = DiagnosticSlug("description-too-long");
+
+/// `ASC164`, advice, page level: a content check (area `outputs`).
+pub const LLMS_SECTION_LARGE: DiagnosticSlug = DiagnosticSlug("llms-section-large");
+
+/// `ASC165`, advice, file level: a content check (area `prose`): an alert
+/// from Vale about the prose.
+pub const PROSE: DiagnosticSlug = DiagnosticSlug("prose");
+
+/// `ASC166`, advice, file level: a content check (area `prose`): Vale
+/// couldn't be run, so the prose wasn't checked.
+pub const PROSE_NOT_CHECKED: DiagnosticSlug = DiagnosticSlug("prose-not-checked");
+
+/// `ASC167`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CHECKS_VALE: DiagnosticSlug = DiagnosticSlug("model-checks-vale");
+/// `ASC168`, advice, file level: a content check (area `links`).
+pub const LINK_EXTERNAL_BROKEN: DiagnosticSlug = DiagnosticSlug("link-external-broken");
+
+/// `ASC169`, advice, file level: a content check (area `links`).
+pub const LINK_EXTERNAL_MOVED: DiagnosticSlug = DiagnosticSlug("link-external-moved");
+
+/// `ASC170`, advice, file level: a content check (area `site`).
+pub const DELIVERY_HOSTING: DiagnosticSlug = DiagnosticSlug("delivery-hosting");
+
+/// `ASC171`, advice, file level: a content check (area `site`).
+pub const DELIVERY_OUTPUT: DiagnosticSlug = DiagnosticSlug("delivery-output");
+
+/// `ASC172`, advice, file level: a content check (area `project`).
+pub const AVAILABILITY_LEFT_BEHIND: DiagnosticSlug = DiagnosticSlug("availability-left-behind");
+
+/// `ASC173`, error, page level: SPEC §8.2, "`@id` | Permalink published by one build on more than one page (page level)".
+pub const PERMALINK_DUPLICATE: DiagnosticSlug = DiagnosticSlug("permalink-duplicate");
+
+/// `ASC174`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CONSUMER_PERMALINK_PATH: DiagnosticSlug =
+    DiagnosticSlug("model-consumer-permalink-path");
+
+/// `ASC175`, error, file level: SPEC §8.2, "Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it".
+pub const PERMALINKS_LIST_INVALID: DiagnosticSlug = DiagnosticSlug("permalinks-list-invalid");
+
+/// `ASC176`, warning, file level: SPEC §8.2, "Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is".
+pub const PERMALINKS_LIST_BEHIND: DiagnosticSlug = DiagnosticSlug("permalinks-list-behind");
+
+/// `ASC177`, warning, file level: SPEC §8.2, "Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired".
+pub const PERMALINK_REMOVED: DiagnosticSlug = DiagnosticSlug("permalink-removed");
+
+/// `ASC178`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_PERMALINKS: DiagnosticSlug = DiagnosticSlug("model-permalinks");
+
+/// `ASC179`, error, file level: SPEC §8.2, "Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares".
+pub const PERMALINK_ALIAS_TARGET_MISSING: DiagnosticSlug =
+    DiagnosticSlug("permalink-alias-target-missing");
+
+/// `ASC180`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too".
+pub const PERMALINK_NAME_CONFLICT: DiagnosticSlug = DiagnosticSlug("permalink-name-conflict");
+
+/// `ASC181`, error, file level: SPEC §8.2, "Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it".
+pub const PERMALINK_RETIRED_TARGET_MISSING: DiagnosticSlug =
+    DiagnosticSlug("permalink-retired-target-missing");
+
+/// `ASC182`, error, page level: SPEC §8.2, "`@include` | A page's includes expand it past the processor's limit (page level)".
+pub const INCLUDE_LIMIT: DiagnosticSlug = DiagnosticSlug("include-limit");
+
+/// `ASC183`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CRAWLERS_LINE: DiagnosticSlug = DiagnosticSlug("model-crawlers-line");
+
+/// `ASC184`, advice, file level: a content check (area `outputs`).
+pub const LISTING_DISALLOWED: DiagnosticSlug = DiagnosticSlug("listing-disallowed");
+
+/// `ASC185`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_LISTING_FOLDER: DiagnosticSlug = DiagnosticSlug("model-listing-folder");
+
+/// `ASC186`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_LISTING_TYPE: DiagnosticSlug = DiagnosticSlug("model-listing-type");
+
+/// `ASC187`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_LISTING_LOOSER: DiagnosticSlug = DiagnosticSlug("model-listing-looser");
+
+/// `ASC188`, error, file level: SPEC §8.2, "Frontmatter | `listing` looser than a rule of the content model the page is under".
+pub const LISTING_LOOSENED: DiagnosticSlug = DiagnosticSlug("listing-loosened");
+
+/// `ASC189`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CRAWLERS_NAMED_TWICE: DiagnosticSlug = DiagnosticSlug("model-crawlers-named-twice");
+
+/// `ASC190`, advice, file level: a content check (area `outputs`).
+pub const CRAWLERS_DISALLOWED: DiagnosticSlug = DiagnosticSlug("crawlers-disallowed");
+
+/// `ASC191`, advice, page level: a content check (area `project`).
+pub const DESCRIPTION_DUPLICATE: DiagnosticSlug = DiagnosticSlug("description-duplicate");
+
+/// `ASC192`, advice, page level: a content check (area `pages`).
+pub const TITLE_HEADING_DIFFERS: DiagnosticSlug = DiagnosticSlug("title-heading-differs");
+
+/// `ASC193`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_TYPE_FILE: DiagnosticSlug = DiagnosticSlug("model-type-file");
+
+/// `ASC194`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_TYPE_TEMPLATE: DiagnosticSlug = DiagnosticSlug("model-type-template");
+
+/// `ASC195`, advice, file level: a content check (area `pages`).
+pub const TEMPLATE_PLACEHOLDER_LEFT: DiagnosticSlug = DiagnosticSlug("template-placeholder-left");
+
+/// `ASC196`, error, file level: SPEC §8.2, "Frontmatter | Page names no content type, in a project that declares types".
+pub const CONTENT_TYPE_MISSING: DiagnosticSlug = DiagnosticSlug("content-type-missing");
+
+/// `ASC197`, error, file level: SPEC §8.2, "Frontmatter | Page's `type` names no declared content type".
+pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-unknown");
+
+/// `ASC198`, advice, file level: a content check (area `pages`).
+pub const DESCRIPTION_LINK: DiagnosticSlug = DiagnosticSlug("description-link");
+
+/// `ASC199`, advice, file level: a content check (area `examples`).
+pub const EXAMPLE_STALE: DiagnosticSlug = DiagnosticSlug("example-stale");
+
+/// `ASC200`, advice, file level: a content check (area `examples`).
+pub const EXAMPLE_UNOBSERVED: DiagnosticSlug = DiagnosticSlug("example-unobserved");
+
+/// `ASC201`, warning, file level: a content check (area `examples`).
+pub const EXAMPLES_CONFIG_INVALID: DiagnosticSlug = DiagnosticSlug("examples-config-invalid");
+
+/// `ASC202`, advice, file level: a content check (area `examples`).
+pub const OBSERVATION_FILE_MISSING: DiagnosticSlug = DiagnosticSlug("observation-file-missing");
+
+/// `ASC203`, error, file level: SPEC §8.2, "Glossary | A term's `link` that names a heading its page doesn't have".
+pub const GLOSSARY_LINK_TARGET_MISSING: DiagnosticSlug =
+    DiagnosticSlug("glossary-link-target-missing");
+
+/// `ASC204`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_TARGET: DiagnosticSlug = DiagnosticSlug("model-releases-target");
+
+/// `ASC205`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_LINE: DiagnosticSlug = DiagnosticSlug("model-releases-line");
+
+/// `ASC206`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_BUILD_VERSIONS: DiagnosticSlug = DiagnosticSlug("model-build-versions");
+
+/// `ASC207`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_ORDER: DiagnosticSlug = DiagnosticSlug("model-releases-order");
+
+/// `ASC208`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_ENDS: DiagnosticSlug = DiagnosticSlug("model-releases-ends");
+
+/// `ASC209`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_VERSIONS_CURRENT: DiagnosticSlug = DiagnosticSlug("model-versions-current");
+
+/// `ASC210`, error, file level: SPEC §8.2, "`@available` | Version newer than every release line its target declares".
+pub const AVAILABLE_VERSION_AHEAD: DiagnosticSlug = DiagnosticSlug("available-version-ahead");
+
+/// `ASC211`, advice, file level: a content check (area `project`).
+pub const AVAILABLE_LINE_UNDECLARED: DiagnosticSlug = DiagnosticSlug("available-line-undeclared");
+
+/// `ASC212`, advice, file level: a content check (area `project`).
+pub const AVAILABLE_SAME_IN_EVERY_LINE: DiagnosticSlug =
+    DiagnosticSlug("available-same-in-every-line");
+
+/// `ASC213`, warning, file level: a content check (area `project`).
+pub const AVAILABLE_IN_NO_LINE: DiagnosticSlug = DiagnosticSlug("available-in-no-line");
+
+/// `ASC214`, advice, file level: a content check (area `project`).
+pub const RELEASE_LINE_ENDED: DiagnosticSlug = DiagnosticSlug("release-line-ended");
+
+/// `ASC215`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_PHRASE_LINE: DiagnosticSlug = DiagnosticSlug("model-phrase-line");
+
+/// `ASC216`, error, file level: SPEC §8.2, "Frontmatter | `replaces` that doesn't name a page".
+pub const REPLACES_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("replaces-not-a-page");
+
+/// `ASC217`, error, page level: SPEC §8.2, "Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level)".
+pub const REPLACES_CYCLE: DiagnosticSlug = DiagnosticSlug("replaces-cycle");
+
+/// `ASC218`, error, page level: SPEC §8.2, "Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build)".
+pub const REPLACES_OVERLAP: DiagnosticSlug = DiagnosticSlug("replaces-overlap");
+
+/// `ASC219`, error, page level: SPEC §8.2, "Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build)".
+pub const REPLACES_SAME_PAGE: DiagnosticSlug = DiagnosticSlug("replaces-same-page");
+
+/// `ASC220`, advice, page level: a content check (area `pages`).
+pub const LINK_INTO_OLDER_LINE: DiagnosticSlug = DiagnosticSlug("link-into-older-line");
+
+/// `ASC221`, advice, page level: a content check (area `pages`).
+pub const LINK_FRAGMENT_DROPPED: DiagnosticSlug = DiagnosticSlug("link-fragment-dropped");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -496,7 +730,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_TARGET_MISSING,
     LINK_ID_MISSING,
     LINK_TO_FRAGMENT,
-    LINK_ID_IN_FRAGMENT,
     LINK_ID_REMOVED,
     LINK_ROUTE,
     IMAGE_SOURCE_MISSING,
@@ -508,7 +741,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     FRONTMATTER_MISSING_FIELD,
     FRONTMATTER_TYPE_MISMATCH,
     FRONTMATTER_RESERVED_IN_FRAGMENT,
-    CONTENT_TYPE_UNRESOLVED,
     LIST_ENDED_BY_DIRECTIVE,
     DIRECTIVE_INDENTED_CODE,
     STEPS_NUMBERING_CONTINUED,
@@ -528,8 +760,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_PATH_ABSOLUTE,
     MODEL_CONTENT_ROOT_MISSING,
     MODEL_OUTPUT_OVERLAPS_CONTENT,
-    MODEL_TYPE_MULTIPLE_DEFAULTS,
-    MODEL_TYPE_UNREACHABLE,
     MODEL_TYPE_TITLE,
     MODEL_FIELD_RESERVED,
     MODEL_TYPE_SYNTAX,
@@ -599,4 +829,145 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNLOCKED,
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
+    MODEL_CHECK_NOT_CONFIGURABLE,
+    INTENDED_CHECK,
+    INTENDED_ENTRY,
+    INTENDED_UNUSED,
+    MODEL_INTENDED_CHECK,
+    MODEL_INTENDED_ENTRY,
+    MODEL_FIELD_ROLE,
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
+    PAGE_ORPHAN,
+    FRAGMENT_UNUSED,
+    PHRASE_UNUSED,
+    FEATURE_UNUSED,
+    GLOSSARY_TERM_UNUSED,
+    IMAGE_UNUSED,
+    IMAGE_LARGE,
+    TITLE_DUPLICATE,
+    MODEL_CONSUMER_AGENTS_SITE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
+    PROSE,
+    PROSE_NOT_CHECKED,
+    MODEL_CHECKS_VALE,
+    LINK_EXTERNAL_BROKEN,
+    LINK_EXTERNAL_MOVED,
+    DELIVERY_HOSTING,
+    DELIVERY_OUTPUT,
+    AVAILABILITY_LEFT_BEHIND,
+    PERMALINK_DUPLICATE,
+    MODEL_CONSUMER_PERMALINK_PATH,
+    PERMALINKS_LIST_INVALID,
+    PERMALINKS_LIST_BEHIND,
+    PERMALINK_REMOVED,
+    MODEL_PERMALINKS,
+    PERMALINK_ALIAS_TARGET_MISSING,
+    PERMALINK_NAME_CONFLICT,
+    PERMALINK_RETIRED_TARGET_MISSING,
+    INCLUDE_LIMIT,
+    MODEL_CRAWLERS_LINE,
+    LISTING_DISALLOWED,
+    MODEL_LISTING_FOLDER,
+    MODEL_LISTING_TYPE,
+    MODEL_LISTING_LOOSER,
+    LISTING_LOOSENED,
+    MODEL_CRAWLERS_NAMED_TWICE,
+    CRAWLERS_DISALLOWED,
+    DESCRIPTION_DUPLICATE,
+    TITLE_HEADING_DIFFERS,
+    MODEL_TYPE_FILE,
+    MODEL_TYPE_TEMPLATE,
+    TEMPLATE_PLACEHOLDER_LEFT,
+    CONTENT_TYPE_MISSING,
+    CONTENT_TYPE_UNKNOWN,
+    DESCRIPTION_LINK,
+    EXAMPLE_STALE,
+    EXAMPLE_UNOBSERVED,
+    EXAMPLES_CONFIG_INVALID,
+    OBSERVATION_FILE_MISSING,
+    GLOSSARY_LINK_TARGET_MISSING,
+    MODEL_RELEASES_TARGET,
+    MODEL_RELEASES_LINE,
+    MODEL_BUILD_VERSIONS,
+    MODEL_RELEASES_ORDER,
+    MODEL_RELEASES_ENDS,
+    MODEL_VERSIONS_CURRENT,
+    AVAILABLE_VERSION_AHEAD,
+    AVAILABLE_LINE_UNDECLARED,
+    AVAILABLE_SAME_IN_EVERY_LINE,
+    AVAILABLE_IN_NO_LINE,
+    RELEASE_LINE_ENDED,
+    MODEL_PHRASE_LINE,
+    REPLACES_NOT_A_PAGE,
+    REPLACES_CYCLE,
+    REPLACES_OVERLAP,
+    REPLACES_SAME_PAGE,
+    LINK_INTO_OLDER_LINE,
+    LINK_FRAGMENT_DROPPED,
+];
+
+/// The diagnostics a project may set the level of in `[checks]`: the
+/// registry's entries with `configurable = true`, in registry order. A test
+/// keeps it equal to the registry.
+pub const CONFIGURABLE: &[DiagnosticSlug] = &[
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
+    PAGE_ORPHAN,
+    FRAGMENT_UNUSED,
+    PHRASE_UNUSED,
+    FEATURE_UNUSED,
+    GLOSSARY_TERM_UNUSED,
+    IMAGE_UNUSED,
+    IMAGE_LARGE,
+    TITLE_DUPLICATE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
+    PROSE,
+    PROSE_NOT_CHECKED,
+    LINK_EXTERNAL_BROKEN,
+    LINK_EXTERNAL_MOVED,
+    DELIVERY_HOSTING,
+    DELIVERY_OUTPUT,
+    AVAILABILITY_LEFT_BEHIND,
+    LISTING_DISALLOWED,
+    CRAWLERS_DISALLOWED,
+    DESCRIPTION_DUPLICATE,
+    TITLE_HEADING_DIFFERS,
+    TEMPLATE_PLACEHOLDER_LEFT,
+    DESCRIPTION_LINK,
+    EXAMPLE_STALE,
+    EXAMPLE_UNOBSERVED,
+    EXAMPLES_CONFIG_INVALID,
+    OBSERVATION_FILE_MISSING,
+    AVAILABLE_LINE_UNDECLARED,
+    AVAILABLE_SAME_IN_EVERY_LINE,
+    AVAILABLE_IN_NO_LINE,
+    RELEASE_LINE_ENDED,
+    LINK_INTO_OLDER_LINE,
+    LINK_FRAGMENT_DROPPED,
+];
+
+/// The checks an author can acknowledge (SPEC §4.9): the registry's entries
+/// whose next step is `review`, each with the place its problems are reported
+/// at, in registry order. A test keeps it equal to the registry.
+pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
+    (REVIEW_OVERDUE, crate::Place::Page),
+    (PAGE_ORPHAN, crate::Place::Page),
+    (FRAGMENT_UNUSED, crate::Place::Page),
+    (PHRASE_UNUSED, crate::Place::Entry),
+    (FEATURE_UNUSED, crate::Place::Entry),
+    (GLOSSARY_TERM_UNUSED, crate::Place::Entry),
+    (IMAGE_UNUSED, crate::Place::Entry),
+    (IMAGE_LARGE, crate::Place::Entry),
+    (LINK_EXTERNAL_BROKEN, crate::Place::Block),
+    (AVAILABILITY_LEFT_BEHIND, crate::Place::Entry),
+    (TITLE_HEADING_DIFFERS, crate::Place::Page),
 ];

@@ -1,0 +1,12 @@
+description: >-
+  A crawler obeys only the one group that names it, so a token in two groups
+  is an error, at the second `User-agent` line: one a disallowed purpose's
+  group names already, or one an earlier group of `lines` names, compared
+  without case. A token on two `User-agent` lines of one group, and `*` in
+  several groups, which a crawler reads as one, are fine.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-crawlers-named-twice, file: ascribe.toml, line: 7}
+  - {slug: model-crawlers-named-twice, file: ascribe.toml, line: 15}

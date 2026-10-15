@@ -1,0 +1,11 @@
+description: >-
+  In a project that declares content types, a page that names none in its
+  frontmatter is an error at its first line, whether it has frontmatter or
+  not. A page's folder says nothing about its type, and a fragment names no
+  type.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: content-type-missing, file: other/b.md, line: 1}
+  - {slug: content-type-missing, file: other/c.md, line: 1}

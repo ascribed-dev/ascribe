@@ -1,4 +1,5 @@
 ---
+type: page
 title: Security handbook
 description: How the security team protects Lantern and its customers.
 ---

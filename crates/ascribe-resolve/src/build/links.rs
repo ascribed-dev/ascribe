@@ -12,11 +12,12 @@
 //! surviving content references.
 
 use ascribe_core::{Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::Segment;
+use ascribe_model::{Build, Segment};
 use ascribe_syntax::{Inline, InlineKind};
 
 use super::BuildResolver;
 use super::inlines::{find_mut, own_lists_mut, own_ranges};
+use super::lines::Landing;
 use super::tree::{LinkTarget, ResolvedBlock, ResolvedLink, ResolvedPage};
 use crate::expand::PageProblem;
 use crate::index::{FileIndex, RefKind, Reference, Target};
@@ -43,7 +44,7 @@ struct Links<'a, 'p> {
     problems: Vec<PageProblem>,
 }
 
-impl Links<'_, '_> {
+impl<'p> Links<'_, 'p> {
     fn blocks(&mut self, blocks: &mut [ResolvedBlock]) {
         for block in blocks {
             self.block(block);
@@ -156,20 +157,46 @@ impl Links<'_, '_> {
             index.file,
             reference.destination_span.unwrap_or(reference.span),
         );
-        if !is_fragment && !self.resolver.is_published(target) {
-            self.problem(
-                Issue::new(diagnostics::LINK_PAGE_DROPPED, here)
-                    .with_arg("build", self.resolver.build_name())
-                    .with_arg("path", target.to_string()),
-                block,
-            );
-            return (LinkTarget::Unresolved, None);
-        }
         let project = self.resolver.project();
         if project.file(target).is_none() {
             return (LinkTarget::Unresolved, None);
         }
         let text_empty = reference.text_empty && reference.kind == RefKind::Link;
+        if !is_fragment && !self.resolver.is_published(target) {
+            // In a line of a versioned build, the page that takes its place,
+            // or the page in another line (SPEC §5.2).
+            return match self.resolver.landing(target) {
+                Some(Landing::Replaced(page)) => {
+                    self.landed(block, here, &page, id, None, text_empty)
+                }
+                Some(Landing::Line(line)) => {
+                    let current = self
+                        .resolver
+                        .build_def()
+                        .line
+                        .as_ref()
+                        .is_some_and(|l| l.current);
+                    if current && let Some(to) = &line.line {
+                        self.problem(
+                            Issue::new(diagnostics::LINK_INTO_OLDER_LINE, here)
+                                .with_arg("path", target.to_string())
+                                .with_arg("line", to.line.text.clone()),
+                            block,
+                        );
+                    }
+                    self.landed(block, here, target, id, Some(line), text_empty)
+                }
+                None => {
+                    self.problem(
+                        Issue::new(diagnostics::LINK_PAGE_DROPPED, here)
+                            .with_arg("build", self.resolver.build_name())
+                            .with_arg("path", target.to_string()),
+                        block,
+                    );
+                    (LinkTarget::Unresolved, None)
+                }
+            };
+        }
         match id {
             None => {
                 let title = self.resolver.title_of(&page);
@@ -179,6 +206,7 @@ impl Links<'_, '_> {
                     id: None,
                     url,
                     text_filled: text_empty && title.is_some(),
+                    line: None,
                 };
                 (target, title)
             }
@@ -211,10 +239,74 @@ impl Links<'_, '_> {
                     id: Some(page_id),
                     url,
                     text_filled: text_empty && !heading.text.is_empty(),
+                    line: None,
                 };
                 (target, Some(vec![Segment::Text(heading.text.clone())]))
             }
         }
+    }
+
+    /// A link that lands somewhere other than where it's written to, in a
+    /// line of a versioned build: on `page`, in this line or, for a link
+    /// out, in `line`. Its `#id` is kept when `page` has a heading with that
+    /// id there, and dropped with advice otherwise; empty text takes the
+    /// title `page` has where it lands.
+    fn landed(
+        &mut self,
+        block: &ResolvedBlock,
+        here: Location,
+        page: &RelPath,
+        id: Option<&str>,
+        line: Option<&'p Build>,
+        text_empty: bool,
+    ) -> (LinkTarget, Option<Vec<Segment>>) {
+        let project = self.resolver.project();
+        let other = line.map(|l| self.resolver.line_resolver(l));
+        let resolver = other.as_deref().unwrap_or(self.resolver);
+        let mut heading = None;
+        if let Some(id) = id {
+            let found = project.page_heading(page, id).and_then(|(written_in, h)| {
+                let file = project.file(&written_in)?.file;
+                let page_id = resolver.page_id_of(page, file, h.span)?;
+                Some((page_id, h.text.clone()))
+            });
+            if found.is_none() {
+                self.problem(
+                    Issue::new(diagnostics::LINK_FRAGMENT_DROPPED, here)
+                        .with_arg("build", self.resolver.build_name())
+                        .with_arg("page", page.to_string())
+                        .with_arg("id", id),
+                    block,
+                );
+            }
+            heading = found;
+        }
+        let page_id = heading.as_ref().map(|(page_id, _)| page_id.as_str());
+        let url = match line {
+            Some(line) => self.resolver.line_link(line, page, page_id),
+            None => self.resolver.router().link(page, page_id),
+        };
+        let (title, text_filled) = match &heading {
+            Some((_, text)) => (
+                Some(vec![Segment::Text(text.clone())]),
+                text_empty && !text.is_empty(),
+            ),
+            None => {
+                let title = resolver.title_of(page);
+                let filled = text_empty && title.is_some();
+                (title, filled)
+            }
+        };
+        let target = LinkTarget::Page {
+            page: page.clone(),
+            id: page_id.map(str::to_owned),
+            url,
+            text_filled,
+            line: line
+                .and_then(|l| l.line.as_ref())
+                .map(|l| l.line.text.clone()),
+        };
+        (target, title)
     }
 
     fn problem(&mut self, issue: Issue, block: &ResolvedBlock) {

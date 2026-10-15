@@ -1,0 +1,37 @@
+---
+// A page of home/ as `render()` draws it, the slot, with each
+// demonstration's page from demo/ drawn after its source (src/demo.ts). The
+// slot is rendered to HTML first, so the page's images are Astro's
+// optimized ones; a page with no demonstration is its HTML alone.
+import { getEntry, render } from "astro:content";
+import { splitAtResults } from "../demo.ts";
+
+interface Props {
+  /** The page's entry id, for the error that names a missing demo page. */
+  id: string;
+}
+
+const { id } = Astro.props;
+const parts = splitAtResults(await Astro.slots.render("default"));
+const results = await Promise.all(
+  parts.map(async (part) => {
+    if (!("page" in part)) return undefined;
+    const page = await getEntry("demo", part.page);
+    if (page === undefined) throw new Error(`${id}: demo/ has no page "${part.page}"`);
+    return { title: page.data.title, Content: (await render(page)).Content };
+  }),
+);
+---
+
+{
+  parts.map((part, index) => {
+    const result = results[index];
+    if (result === undefined) return "html" in part ? <Fragment set:html={part.html} /> : null;
+    return (
+      <div class="result" role="group" aria-label="What a reader sees">
+        <p class="result-title">{result.title}</p>
+        <result.Content />
+      </div>
+    );
+  })
+}

@@ -35,6 +35,36 @@ pub enum Severity {
     Error,
     /// Worth fixing; doesn't fail a build.
     Warning,
+    /// Shown, and never fails `ascribe check`; not a SPEC §8.2 severity.
+    Advice,
+}
+
+/// The kind of next step a diagnostic has.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Next {
+    /// Every instance has a fix Ascribe can apply.
+    Fix,
+    /// The author picks among things Ascribe can list.
+    Choose,
+    /// It needs writing or judgment.
+    Write,
+    /// Nothing in the source can fix it.
+    Outside,
+    /// It may be fine as it is.
+    Review,
+}
+
+impl fmt::Display for Next {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Next::Fix => "fix",
+            Next::Choose => "choose",
+            Next::Write => "write",
+            Next::Outside => "outside",
+            Next::Review => "review",
+        })
+    }
 }
 
 /// When a diagnostic is checked (SPEC §8.1).
@@ -68,8 +98,28 @@ pub struct Entry {
     pub severity: Severity,
     /// File or page.
     pub level: Level,
+    /// The kind of next step; every entry has one.
+    #[serde(default)]
+    pub next: Option<Next>,
+    /// The named pieces of context an agent prompt about it carries, beyond
+    /// the message and the line. Every entry has the
+    /// list, which may be empty.
+    #[serde(default)]
+    pub evidence: Option<Vec<String>>,
+    /// Whether a project may set its level in `[checks]`.
+    #[serde(default)]
+    pub configurable: bool,
+    /// For a `review` entry, where it reports its problems and so where one
+    /// is acknowledged: `page`, `block`, or `entry`.
+    #[serde(default)]
+    pub place: Option<String>,
     /// The SPEC.md section the rule comes from.
     pub spec: String,
+    /// The section of the directive or `ascribe.toml` reference about the
+    /// problem, as `directives.md#links`; every entry has
+    /// one.
+    #[serde(default)]
+    pub reference: Option<String>,
     /// The main message template.
     pub message: String,
     /// Alternative message templates, by name.
@@ -78,15 +128,30 @@ pub struct Entry {
     /// The SPEC §8.2 row, as `<construct> | <condition>`.
     #[serde(default)]
     pub row: Option<String>,
+    /// When a content check is reported, as a sentence without its full stop.
+    #[serde(default)]
+    pub when: Option<String>,
     /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
     pub group: Option<String>,
-    /// Why the diagnostic was retired, if it was.
+    /// The area of the diagnostics reference a content check is listed in.
+    /// Content checks are about the content's quality, not whether it
+    /// conforms, so they have no SPEC §8.2 row; only a configurable entry
+    /// has an area.
     #[serde(default)]
-    pub retired: Option<String>,
+    pub area: Option<String>,
+    /// The one stage a content check runs at, when it doesn't run while
+    /// writing and in `ascribe check`: `report`, for a check only
+    /// `ascribe report` runs, since it needs the network or a built site.
+    #[serde(default)]
+    pub stage: Option<String>,
     /// How to fix the problem, for the diagnostics reference.
     #[serde(default)]
     pub fix: Option<String>,
+    /// A page with the problem and the same page without it, for
+    /// `ascribe explain`; `ascribe-query` reads and checks it.
+    #[serde(default)]
+    pub example: Option<toml::Table>,
 }
 
 #[derive(Deserialize)]

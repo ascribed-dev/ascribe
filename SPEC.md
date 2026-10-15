@@ -82,9 +82,42 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves seven keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, `listing`, and `replaces` (below).
 
-- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, one of `listing`'s values, or a link destination) is a frontmatter value of the wrong type (§8.2).
+- `type` says which content type a page is (§7.2). Its value is the name of a type the content model declares. In a project that declares types, every page MUST name one, and a page that names none, or names one that isn't declared, is an error (§8.2). In a project that declares none, its pages have the implicit type `page` and name no type. Tools that write frontmatter put `type` first.
+
+  ```yaml
+  ---
+  type: how-to
+  title: Rotate an API key
+  ---
+  ```
+- `permalink` gives a page a **permalink**: a name for the page that something outside the documentation can link to, which a build publishes at an address of its own that leads to the page wherever it is (§9.5). Its value is a name with the characters of an `@id` (§4.1), and it shares one set of names with the headings' permalinks: a build MUST publish each name once, whether on a page or a heading, and names that differ only in case are one name.
+
+  ```yaml
+  ---
+  title: Command reference
+  permalink: cli-reference
+  ---
+  ```
+- `listing` says whether a page is offered to readers that aren't people, such as search engines and AI agents. Its value is one of `listed`, `unquoted`, and `unlisted`, in that order from open to closed; a page that doesn't set it is `listed`. A `listed` page is offered: a compiler lists it in `llms.txt` (§9.4). An `unquoted` page is listed and asks not to be quoted. An `unlisted` page asks not to be listed, and isn't offered: a compiler leaves it out of `llms.txt`, and out of anything else it writes that offers pages. It is still built, at its address. The content model MAY set a listing for the whole site, for the pages under a folder, or for the pages of a content type (§7.2). A page's listing is then the strictest of its own and the content model's that apply to it: a page MAY set a stricter value than they do, or the same, and a page that sets a looser one is an error (§8.2).
+
+  ```yaml
+  ---
+  title: Migrating from 3.x
+  listing: unlisted
+  ---
+  ```
+- `replaces` says which page this page takes the place of, for a build versioned by a target (§9.3): a page rewritten for a newer release line, at a new path. Its value is a link destination (§5.2) naming another page, without an `#id`. The page it names MUST exist and be a page, a page MUST NOT replace itself, and no chain of `replaces` may come back to the page it starts from. In each line of a versioned build, a page and the page it replaces MUST NOT both be published, and two pages that replace the same page MUST NOT both be published (§8.2). A versioned build follows it when a link names a page a line doesn't publish (§5.2); in any other build the two are different pages.
+
+  ```yaml
+  ---
+  title: Install the agent
+  available: self-managed 3.5
+  replaces: install-legacy.md
+  ---
+  ```
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
 
 ### 2.2 Pages and fragments
@@ -96,7 +129,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available` and `variant`; availability inside a fragment is written with `@available`.
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `type`, `available`, `variant`, `permalink`, and `listing`; a fragment has no content type, and availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -199,7 +232,7 @@ Each directive's schema declares whether it takes a primary and of which kind:
 
   A text primary is always inline content, never a block. A line that would turn a paragraph into something else stays text: a setext underline `===` or a table delimiter row continues the primary, and a leading `[label]: /url` is text, not a link reference definition. A `---` line can't underline a primary, so it ends the primary and is a thematic break. Likewise, an ordered list that doesn't start at 1 can't interrupt a paragraph, so a line such as `2. Two.` continues a text primary; a blank line before it starts the list.
 
-- A **line primary** (an availability spec) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) takes one.
+- A **line primary** (an availability spec, or a reason) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) and `@intended` (§4.9) take one.
 
 ### 3.5 Forms
 
@@ -333,6 +366,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@steps` | line | none | following block | Mark an ordered list as a procedure |
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
 | `@snippet` | line | identifier (address) | self | Take a code example from a file |
+| `@intended` | line | line (reason) | following block | Acknowledge a check's problem as intended |
 
 ### 4.1 `@id`
 
@@ -347,6 +381,14 @@ Gives a heading an explicit, stable id.
 - The id replaces the heading's slug, as both its source id and its page id (§5.5). An id that isn't valid still replaces the slug, so a link that uses it works once the id is fixed, and a heading with several `@id` lines takes the first; each mistake is reported once.
 - The id MUST be unique within its page.
 - The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
+- **Attribute:** `permalink`, a boolean, `false` when absent. `{permalink=true}` makes the id a **permalink** too: a name for the section that something outside the documentation can link to, which a build publishes at an address of its own that leads to the heading wherever its page is (§9.5).
+
+  ```
+  ## `ascribe check`
+  @id {permalink=true}: cli-check
+  ```
+
+  A build MUST publish a permalink in one place only, and a page's own permalink (§2.1) shares one set of names with the headings'. Names that differ only in case are one name, since a site may serve every spelling of an address at one. A heading in a fragment is published on every page that includes it, so its permalink is published on each. Two pages that no build publishes together may share a permalink.
 
 ### 4.2 `@include`
 
@@ -368,6 +410,7 @@ Transcludes a file or a heading's section into the current document.
   | `heading` | boolean | `true` | When `false`, the included section's own heading is omitted. It applies only with `#id`; on an include of a whole file it has no effect, and processors SHOULD warn |
 
 - The target file and id MUST exist. Include cycles are an error: an include is a cycle when expanding it would, directly or through other includes, include the same section of the same file again, so its expansion would never end.
+- Includes without a cycle can still make a page very large: a few files that each include the next twice double it at every step. A processor MAY limit how many blocks a page's includes expand it to, set far above what a real page reaches. The include in the page's own file that takes the page past the limit is an error (page level), and it and every include after it on the page are left unexpanded.
 - Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
 - Included headings keep the levels they're written with. Include a section where its levels fit the page.
 - Bindings are decided in the file where a directive is written. With `{heading=false}`, a heading-bound directive under the omitted heading, such as `@available`, still describes the rest of the included section, as it does in the fragment.
@@ -569,7 +612,7 @@ Takes a code example from a file outside the content, by name, and puts it in th
   - `<path>` is the file's path relative to the source's folder, with `/` between segments on every platform. It has no empty, `.`, or `..` segments, and doesn't start with `/`. It's percent-decoded as a link destination is (§5.2). The file MUST exist, with exactly this name (as for assets, §9.4), and its source's file patterns MUST include it (§7.3). A symbolic link on the way to the file is followed, and the file it leads to MUST be in the source's folder (not above it), at a path the source's patterns include, so a link can't lead a snippet out of its source.
   - `#<region>` names a region of the file (below). Without one, the snippet is the whole file, with every tag line and removed line left out.
 - **The file** MUST be text: valid UTF-8, with no NUL character. Its line endings don't matter; the snippet's lines end in a line feed.
-- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `phrases=true` when it opts in to phrases. With no language, the info string is empty, or starts with `text` when a title or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
+- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `tested="…"` when its file is a tested example with a current observation (§7.3), then `phrases=true` when it opts in to phrases. With no language, the info string is empty, or starts with `text` when a title, a tested line, or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
 - **Attributes:**
 
   | Key | Type | Default | Meaning |
@@ -613,6 +656,46 @@ The comment syntax of each extension:
 Extensions are compared without regard to case. A file whose extension isn't in the table has no tags: it can be used whole, but not by region. The table grows with revisions of this specification.
 
 **No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network. A source in another repository is read through the copies in the project (§7.4).
+
+### 4.9 `@intended`
+
+Says that a problem a processor reports is intended: the author has looked at it and keeps it. An acknowledgement names one check and gives a reason, and it applies to one page, one block, or one content model entry.
+
+```
+@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
+Read the [vendor's deployment notes](https://help.example.com/deploy) first.
+```
+
+- **Form:** line. **Binding:** following block. **Primary:** REQUIRED reason (a line primary, §3.4): plain text, the rest of the line.
+- **Attributes:**
+
+  | Key | Type | Default | Meaning |
+  |---|---|---|---|
+  | `check` | string | none, REQUIRED | The check whose problem is intended, by its name |
+
+- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
+  - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
+  - **A page or a fragment:** the reserved frontmatter key `intended`, a list of mappings with a `check` and a `reason`:
+
+    ```yaml
+    intended:
+      - check: page-orphan
+        reason: Linked from the site's sidebar, which the content model can't see.
+    ```
+
+  - **A content model entry or an image:** `[[intended]]` in the content model (§7.2), with a `check`, a `reason`, and exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root):
+
+    ```toml
+    [[intended]]
+    check = "phrase-unused"
+    phrase = "old-product-name"
+    reason = "Kept for the 2.x pages restored in the next release."
+    ```
+
+- **The reason** is REQUIRED and not empty. A processor that writes an acknowledgement for the author with a placeholder reason MUST report one that still has it as an error, so that writing an acknowledgement never silences a problem without a reason.
+- **What it does.** A problem an acknowledgement covers isn't reported. Processors SHOULD count acknowledged problems, and list them with their reasons where they list problems.
+- **When nothing needs it.** An acknowledgement that covers no problem in any build is itself reported as advice (§8.2), so acknowledgements don't outlive what they excused. Processors report it only when they've checked every build.
+- **Never in an output.** An acknowledgement changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. `@intended` renders nothing, and the `intended` key isn't in a page's frontmatter in any output.
 
 ---
 
@@ -659,6 +742,7 @@ See [](keys.md#rotate-keys).
 
 - **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading of the target page by its source id: one of the target file's own headings, or one that a fragment it includes brings in (§4.2). The compiled link points at that heading's page id (§5.5).
 - The target file, and the id if present, MUST exist. A destination that is only `#id` names a heading in the file it's written in; in a fragment, that's a heading of the fragment itself, and the compiled link points at that heading's page id on each page that includes the fragment. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
+- **Links between lines.** In a line of a versioned build (§9.3), a link to a page the line doesn't publish resolves, in order, to: the page that replaces it, or that it replaces, in this line, following a chain of `replaces` (§2.1) to the page this line publishes; then the page in the nearest line that publishes it, the closest newer line first, then the closest older, as a **link out** of the line. It's an error in that line only when no live line publishes the page. A link's `#id` is kept when the page it lands on has a heading with that id there, and is otherwise dropped, with advice. A link out keeps its text; empty text is the title the page has in the line it leads to. Outputs say which line a link out leads to (§9.4).
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2). When the content model reads code spans in `title`, the link text keeps them.
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
 - **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion. A local destination looks like a route when it names no existing file and its last segment has no file extension or it ends in `/` (`/guides/install/`, `../guides/install`); it then gets that warning instead of a missing-file error.
@@ -680,6 +764,8 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 ### 5.4 Glossary terms
 
 The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source, except for a term whose settings turn automatic linking off: processors don't link that term, and authors link the occurrences that mean it with an ordinary link (§5.2), for words that also have ordinary senses.
+
+A term's definition is where its `link` leads: a page, and optionally `#` and a heading's id, written as a link from the content root is. The id MUST be a heading's source id (§5.5) on that page, written in it or in a fragment it includes.
 
 Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on the page it links to, and a term whose target page or heading a build doesn't publish isn't linked in that build.
 
@@ -734,20 +820,24 @@ A content model declares the following.
 
 | Declaration | Contents | Used by |
 |---|---|---|
-| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code. Each type names the pages it applies to by path pattern, and at most one type is the default for pages no pattern matches | §2, §5.2 |
+| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code, and a page type's fields may have roles. A page names its type in its frontmatter, with `type` | §2, §5.2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
-| Version scheme | How versions are compared | §4.4 |
+| Versions | How versions are compared | §4.4 |
+| Releases | For a versioned target, its release lines: those that are live, those planned, each newer than every live line, and those archived, each older; when a live line's support ends; and the label of a planned version. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line. A version in a planned line is planned | §4.4, §9.3, §9.4 |
 | Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
-| Phrases registry | Phrase keys and values | §5.1 |
+| Phrases registry | Phrase keys and values. A value is text, or a versioned target whose release line it is: the line a line's output is for, and the current line elsewhere | §5.1 |
 | Glossary | Terms, definitions, and matching settings | §5.4 |
 | Image attributes | Accepted image attribute keys and types | §5.3 |
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
 | Builds | Named builds and their modes | §9.3 |
 | Sources | Named sets of files outside the content that pages may take code from: each one's folder or repository, and which of its files are readable | §4.8, §7.3, §7.4 |
+| Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
+| Crawlers | What each kind of crawler may do, by purpose (gathering training data, building an AI search index, fetching at a person's request), and the project's own `robots.txt` lines, with paths from the project's base path. A crawler is named in one group; processors reject a content model that names one twice when loading it | §9.4 |
+| Listing | How pages are listed (§2.1): the site's default, and a value for the pages under a folder, by its path from the content root, or of a content type. A folder's value MUST NOT be looser than that of a folder it's under, and neither a folder's nor a type's looser than the default; processors reject a content model that does when loading it | §2.1 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -757,7 +847,9 @@ The site output writes image attributes onto `<img>` elements and project widget
 
 A string field is plain text unless the content model opts it in to code spans. Such a field's value is read as CommonMark inline content that recognizes only code spans and backslash escapes; everything else in it is literal text. The outputs carry both its plain text, the value without markup, and its formatted form, which keeps the code spans: the site output writes the plain text as the field's value and the formatted form beside it, and a page title's formatted form is used for its level-1 heading in plain markdown and for empty link text (§5.2). Phrases in such a field are substituted outside its code spans only (§5.1).
 
-A page's content type is the one whose path patterns match it. A page matched by more than one type's patterns is an error; there's no precedence between types. A page no type matches gets the default type, and it's an error if there isn't one.
+A page type's top-level field MAY have a role, which says what the field is for, whatever its name, so a tool can find it: `description`, on a string field, is the page's description; `review-date`, on a date field, is the date its content is due for review; and `owner`, on a string or enum field, names who looks after the page. A content type has at most one field with each role. Roles change no output.
+
+A page's content type is the one its frontmatter's `type` names (§2.1), wherever the page is: a type applies to pages by what they say, not by where their files are, so a folder can hold pages of every type. A content model that declares no types has one, the implicit `page`, whose only field is a required string `title`; its pages name no type. A content model that declares types has no implicit one: each of its pages names one of the declared types.
 
 ### 7.3 Sources
 
@@ -780,13 +872,14 @@ include = ["src/**", "examples/**"]
 - `path` is the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
 - `include` lists glob patterns (the content model's pattern syntax, as for `files`) matched against a file's path relative to the source's folder. A file is readable when a pattern matches it and no pattern in `ignore` does. Without `include`, every file in the folder matches.
 - Which files a source makes readable decides nothing else: a source's files aren't source files (§2.1), assets (§9.4), or pages.
+- **Tested examples.** A source MAY have, at its folder's root, an `ascribe.examples.toml` that says which of its files are examples, and beside it, in `examples.observations/`, the observations `ascribe observe` writes: what a test run passed, and where. A file is an example when the config's `include` matches it and its `ignore` doesn't. A snippet of an example that the observation lists with the hash its file has now carries what it was tested with in its code block's info string (§4.8). The config and the observations are read whatever the source's `include` says, and no snippet can address one: the source doesn't make `ascribe.examples.toml` or a file under `examples.observations/` readable. A processor reads both files and MUST NOT run any command in them. Their formats are in the tested examples contract (`docs/content/contracts/tested-examples.md`). For a source in another repository, they're copies (§7.4).
 
 ### 7.4 Sources in another repository
 
 A source with `git` is a repository other than the project's. Checking and building still read only the project's own files: the files its snippets use are **copied** into the project, and `ascribe.lock` records the commit they were copied from.
 
 - `git` is the repository's URL, as `git` accepts it: `https://`, `http://`, `ssh://`, `git://`, or `file://`, or the `user@host:path` form. `branch` is the branch an update follows; without it, the repository's default branch. `branch` without `git` is an error, as is a source with both `git` and `path`, or with neither.
-- **The copies** of a source named `<name>` are in the folder `sources/<name>/`, in the project's folder, each at the path it has in its repository. That folder is the source's folder: an address's path is relative to it, and `include` and `ignore` apply as for any source. It MUST NOT be inside the content root, where a copied `.md` file would be a page.
+- **The copies** of a source named `<name>` are in the folder `sources/<name>/`, in the project's folder, each at the path it has in its repository. That folder is the source's folder: an address's path is relative to it, and `include` and `ignore` apply as for any source. It MUST NOT be inside the content root, where a copied `.md` file would be a page. Beside the files snippets use, the copies are the repository's `ascribe.examples.toml` and every file in its `examples.observations/` at the commit, when it has them, whatever `include` says (§7.3).
 - **The lock**, `ascribe.lock`, beside `ascribe.toml`, is a TOML file:
 
   ```toml
@@ -803,8 +896,48 @@ A source with `git` is a repository other than the project's. Checking and build
   ```
 
   `version` is `1`. Each `[[source]]` pins one source: its name, its `git` as the content model gave it when it was pinned, its commit as 40 or 64 hexadecimal digits, and each copy's path with the SHA-256 of its bytes, as `sha256:` and 64 lowercase hexadecimal digits. `missing`, which may be left out, lists the paths snippets named that weren't in the repository at that commit, so weren't copied; no path is both copied and missing. No two entries name the same source.
-- Processors check the lock and the copies whenever they check the project, from the files alone: each entry names a source the content model declares with `git`, and the same `git`; each file the lock lists is in the source's folder with that hash; each file in the source's folder is listed; and each copy is used by a snippet. A snippet whose file has no copy is an error that says how to copy it, or, when the lock lists the file as `missing`, that it isn't in the repository at the pinned commit.
+- Processors check the lock and the copies whenever they check the project, from the files alone: each entry names a source the content model declares with `git`, and the same `git`; each file the lock lists is in the source's folder with that hash; each file in the source's folder is listed; and each copy, other than the tested examples' config and observations, is used by a snippet. A snippet whose file has no copy is an error that says how to copy it, or, when the lock lists the file as `missing`, that it isn't in the repository at the pinned commit.
 - **No history, no network.** Copying, and moving a pin to another commit, are a processor's commands of their own, and the only operations that reach another repository. Checking and building read the copies, so the same commit of the project checks and builds the same way on any machine.
+
+### 7.5 The permalinks list
+
+A project MAY commit a list of its permalinks (§2.1, §4.1), `ascribe.permalinks`, beside `ascribe.toml`, so that a permalink that goes away is noticed, and so that something outside the documentation can check the names it links to against the list alone. Without the file, nothing below applies.
+
+```toml
+version = 1
+
+[permalinks]
+ASC036 = "_generated/diagnostics-source-files.md#ASC036"
+cli-check = "reference/cli.md#cli-check"
+cli-reference = "reference/cli.md"
+```
+
+- `version` is `1`. `[permalinks]` has one entry for each name, keyed by the name, whose value is where the name is **declared**: the content path of the file it's written in, and, for a heading, `#` and its id. A heading in a fragment is declared in the fragment. A place is where the name is written in the source, not a published address, which differs by build.
+- `[aliases]` has one entry for each alias of `ascribe.toml` (§7.6), whose value is the name it leads to, and `[retired]` one for each retired permalink, whose value is its reason. Each table is written only when it has an entry, and a name is in one table. A name is a permalink of the documentation when `[permalinks]` or `[aliases]` has it; one in `[retired]` was, and has been retired on purpose.
+- The list is the project's, not one build's: a permalink is declared by a page's `permalink` frontmatter, or by an `@id {permalink=true}`, in any source file, whether or not a build publishes it. A name declared in several places (on pages no build publishes together) has one entry, at any of them.
+- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, each alias and retired permalink an entry as `ascribe.toml` has it, and each entry is still one of the three. A name without its entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't remove it. An entry the project has no name for any more is a **removed** permalink: something outside the documentation may still link to it, which no check can see. Retiring it (§7.6) is how its removal is recorded.
+- A processor writes the list on request, adding each declared name, moving each entry to where its name is declared now, and recording each alias and retired permalink. It MUST NOT drop an entry the project no longer has, so writing the list never hides a removal.
+
+### 7.6 Retired permalinks and aliases
+
+`ascribe.toml` MAY give names to lead somewhere that no heading or page declares, in `[permalinks]`:
+
+```toml
+[permalinks.retired]
+rotate-keys = { to = "guides/security.md", reason = "Merged into the security guide" }
+legacy-sync = { reason = "The sync agent was removed in 4.0" }
+
+[permalinks.aliases]
+agent-settings = "settings"
+cli-settings = "settings"
+```
+
+- A **retired** permalink is one ended on purpose. Its `reason` is required, and is the author's text, shown to a reader whose link leads there. Its `to`, when given, is where its address leads now: a page, and `#` and a heading's id, written as a link from the content root is; it MUST lead to a page, and to a heading on it.
+- An **alias** is a second name for a permalink. Its value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. It MUST NOT lead to a retired permalink, or back to itself.
+- A name is one thing: declared by the content, an alias, or retired. A name in two of them is an error.
+- Each build's list of permalinks (§9.5) has an alias where it has the permalink the alias leads to, and a retired permalink with a `to` where it has that page. A consumer publishes an alias's address, and a retired permalink's with a `to`, as it does a permalink's. A retired permalink with no `to`, or whose `to` the build doesn't publish, has an address that says what was there was removed, and why.
+
+Bringing a retired permalink back is deleting its entry and declaring the name again.
 
 ---
 
@@ -823,7 +956,7 @@ When several places together cause a diagnostic, it's reported once, at the late
 
 ### 8.2 Diagnostics
 
-Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors.
+Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors. Processors MAY report the advice, which never fails a build.
 
 | Construct | Condition | Severity |
 |---|---|---|
@@ -850,10 +983,12 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Title | Title given to a directive that doesn't accept one | Warning |
 | Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
-| `@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods | Error |
+| `@id` | Permalink published by one build in more than one place, names compared ignoring case: on two pages, or as a page's own and a heading's (page level) | Error |
+| `@id` | Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods | Error |
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |
 | `@include` | Include cycle | Error |
+| `@include` | A page's includes expand it past the processor's limit (page level) | Error |
 | `@include` | `{heading=false}` without an `#id`, which has no effect | Warning |
 | `@variant` | No arm of a group survives a build's selection (page level) | Warning |
 | `@variant` | Unknown dimension or value | Error |
@@ -865,6 +1000,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@available` | History out of chronological order | Error |
 | `@available` | Versions given for a versionless target | Error |
 | `@available` | Spec exceeds its enclosing scope | Error |
+| `@available` | Version newer than every release line its target declares | Error |
 | `@steps` | Bound block isn't an ordered list | Error |
 | `@details` | Missing title | Error |
 | `@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>` | Error |
@@ -878,6 +1014,13 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Source copies | A file `ascribe.lock` lists is missing from the source's folder, or its hash differs | Error |
 | Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list | Error |
 | Source copies | A copy that no snippet uses | Warning |
+| Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it | Error |
+| Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is | Warning |
+| Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired | Warning |
+| Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
+| Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
+| Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
+| Glossary | A term's `link` that names a heading its page doesn't have | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |
@@ -893,16 +1036,25 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Headings | No `@id`, and the heading contains a phrase | Warning |
 | Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji) | Warning |
 | Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level) | Warning |
-| Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
+| Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
-| Frontmatter | Reserved key (`available`, `variant`) on a fragment | Error |
-| Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
+| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment | Error |
+| Frontmatter | `listing` looser than a rule of the content model the page is under | Error |
+| Frontmatter | `replaces` that doesn't name a page | Error |
+| Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level) | Error |
+| Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build) | Error |
+| Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build) | Error |
+| Frontmatter | Page names no content type, in a project that declares types | Error |
+| Frontmatter | Page's `type` names no declared content type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |
 | Files | Source file that can't be read, or isn't valid UTF-8 | Error |
 | Lists | Unindented directive line ends a list | Warning |
 | Lists | Directive line over-indented into an indented code block | Warning |
 | Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list) | Warning |
+| `@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else | Error |
+| `@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder | Error |
+| `@intended` | An acknowledgement that matches no problem in any build | Advice |
 | Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension | Error |
 
 ### 8.3 Canonical form
@@ -998,6 +1150,8 @@ Content is **available** for target *T* at version *V* when its effective availa
 
 The state in effect at *V* is the last state in the target's history whose start version is at or before *V*. If *V* precedes the first state's start version, no state is in effect, and the content isn't available. A bare target with no version is in effect at every version. A versionless target has a single state, which is in effect at every version, so content marked `cloud removed` is never available for `cloud`. Content that has no spec, or reaches *T* through inheritance without a state, is treated as generally available.
 
+A build MAY instead be **versioned** by a versioned target *T* whose live release lines are declared (§7.2). Its availability mode is `badge`, and it gives one output for each live line *L*. Content is **in** *L* when its effective availability has no spec, or doesn't list *T*, directly or through *T*'s dimension name, or has a state that counts as available in effect for *T* at some version in *L*. Content that isn't in *L* is removed from *L*'s output as `filter` removes it, and what remains is annotated as in `badge`, except that a version at or before the oldest live line isn't shown, since every live line has that content. The current line's output also keeps content whose versions are all later than every live line; an older line's doesn't. A link to a page a line doesn't publish resolves as §5.2 says, to the page that replaces it or to the page in another line.
+
 ### 9.4 Outputs
 
 A compiler MUST provide the site output and the plain-markdown output. It MAY provide the JSON output.
@@ -1009,10 +1163,16 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A page begins with its title as a level-1 heading, then its page-level availability line, if it has one. Its other frontmatter isn't included.
 - Raw HTML in the source keeps its text and loses its tags, so `<kbd>Ctrl</kbd>` becomes `Ctrl`. Comments, and the contents of `<script>` and `<style>`, are dropped.
 - An inline `<br>` becomes a hard line break, or `; ` where the text stays on one line (a table cell or a heading), so code spans either side of it stay apart. A line break in the source right after a `<br>` is the same line break, and nothing is added for a `<br>` at the start or end of a paragraph, cell, or heading.
-- An availability line gives each target's label, then its state and the version it begins at, as in the element library (§9.7): `Self-managed (preview, 3.4+)`, `Self-managed (GA, 3.3+)`, or, for a history, `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)`. Targets are separated by `; `.
+- An availability line gives each target's label, then its state and the version it begins at, as in the element library (§9.7): `Self-managed (preview, 3.4+)`, `Self-managed (GA, 3.3+)`, or, for a history, `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)`. A target whose last version is in a planned release line (§7.2) gives the content model's planned label in place of that version's state, and no `+`: `Self-managed (planned, 3.6)`. Targets are separated by `; `.
 - A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
 - A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.
 - Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.
+- A `@variant` group with more than one arm left, which the site output makes a switcher, opens with a line saying a reader sees one of its arms at a time, and by which dimension's label when the arms are dimensional: `A reader sees one of the next 3 sections at a time, chosen by package manager.` Each arm is then a section under a heading one level below the section the group is in (at most level 6), naming each of its dimensions and values, as `### Package manager: pnpm`, or with a labeled arm's title.
+- A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
+
+**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid.
+
+**Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1) and where it comes from (the page, a rule of the content model, or neither), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root, with a group for each kind of crawler the content model disallows, naming every crawler of that kind the processor knows. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
 
 **JSON output.** The resolved tree, for custom consumers.
 
@@ -1020,16 +1180,17 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 |---|---|---|
 | `@note {type=tip}` with title | `<ascribe-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
 | `@steps` | `<ascribe-steps>` wrapping the list | The ordered list |
-| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
-| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<ascribe-tabs>` group | One arm becomes plain content; several stay labeled sections |
+| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | A line saying a reader sees one arm at a time, then each arm as a section under a heading naming its dimension and value, its headings ending with the label |
+| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<ascribe-tabs>` group | One arm becomes plain content; several stay a switcher's sections, as in `switch` |
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
 | `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
 | `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
-| Table row's `available`, `badge` | A `<ascribe-availability scope="row">` element at the end of the row's first cell, on one line | The text "(Available: …)" at the end of the row's first cell |
+| Table row's `available`, `badge` | A `<ascribe-availability scope="row">` element at the end of the row's first cell, on one line, whose text is the plain output's: its targets between a visually hidden "(Available: " and ")" | The text "(Available: …)" at the end of the row's first cell |
 | Table row's `available`, `filter` | Unavailable rows removed; the rest annotated as in `badge` | Unavailable rows removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | `@snippet` | A fenced code block | A fenced code block |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
+| A link out of a line (§5.2) | The link, followed directly by an attribute marker setting `data-ascribe-release-line` on its `<a>` to the line it leads to | The link, then a space and the line in parentheses, outside its text: `[Configure tracing](…) (3.5)` |
 
 Labels for dimension values come from the content model's display labels.
 
@@ -1048,6 +1209,8 @@ The consumer profile, declared in the content model, describes how the site outp
 - **Heading ids:** how to emit an explicit id so the consumer keeps its own heading and table-of-contents processing.
 - **HTML passthrough:** whether the consumer renders raw HTML in markdown.
 - **Images and assets:** how to emit image attributes, where copied assets go, and how references to them are written, so the consumer's image processing still applies.
+- **Outputs for agents:** whether builds publish `llms.txt` and each page's Markdown (§9.4), and the site's origin their links need.
+- **Permalinks:** where each permalink's address is published (§4.1). A compiler lists each build's permalinks with the page and anchor each leads to, and the consumer publishes at each address a page that sends the reader there.
 
 ### 9.6 Astro
 
@@ -1056,7 +1219,7 @@ Astro is the primary consumer, through its content collections.
 - Compiled pages from the site output are loaded into an Astro content collection.
 - The collection's schema MUST be generated from the content model, as a Zod schema.
 - Page layouts are the project's own.
-- Page-level frontmatter, including `available`, reaches the layout as collection data. A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
+- Page-level frontmatter, including `type` and `available`, reaches the layout as collection data, except `listing`, which reaches the site in the page's record (§9.4). A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. Every page's frontmatter also has the reserved `source`: the page's path from the content root, with `/` between its parts, so a layout can link to the page's source without reading the path the collection loaded it from. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
 
 An Astro integration SHOULD provide the collection configuration and generated schema, load the element library, and supply the markdown processing needed for explicit heading ids.
 
@@ -1068,6 +1231,7 @@ The element library implements the custom elements used by the site output.
 - Elements are styled with CSS and themed through CSS custom properties.
 - Only elements that require interaction use JavaScript. Of the built-ins, that's `<ascribe-tabs>`.
 - Without JavaScript, `<ascribe-tabs>` displays every arm with its label.
+- The pointer for agents (§9.4) is hidden from sight, not from the page's text.
 
 ---
 
@@ -1089,7 +1253,7 @@ An authoring environment is a processor that edits Ascribe source interactively.
   - for a directive or attribute key, its description from the schema; for a dimension key, its values with their labels.
 - **Go to definition:** links and includes go to the target heading when they name a source id, otherwise to the top of the file. A missing id falls back to the existing file; a missing file has no target. Images and asset links go to their file. An `@id` primary goes to its heading. Declared phrases and feature keys used as a whole availability spec go to their entries in `ascribe.toml`; dimension values and lifecycle states have no definition.
 - **Navigation:** a CodeLens or equivalent that names a link's or include's target file and opens it.
-- **Document links:** inline link and image destinations as written, and an include's whole primary, are clickable when their target exists. They open the file or heading; external links open their URL after declared destination phrases are replaced.
+- **Document links:** inline link and image destinations as written, and an include's whole primary, are clickable when their target exists. They open the file or heading; an external link opens its URL, after declared destination phrases are replaced, when its scheme is `http`, `https`, or `mailto`, compared without case. An external link with any other scheme has no document link.
 - **Inline hints:** just inside the `[` of an empty-text link, show the existing source target's title (the heading's text for a source id), with declared phrases replaced and a tooltip naming the destination. Images, missing targets, and targets without a title receive no hint. Hints use source titles without applying build modes.
 - **Refactoring:**
   - Renaming or moving a file updates links and includes that point to it.
@@ -1184,10 +1348,12 @@ UTF8-non-ascii  = %x80-10FFFF
 *Non-normative.* A complete page, assuming a content model that declares:
 
 - the dimensions `pm` (`npm`, `pnpm`, `yarn`) and `deployment` (`cloud`, `self-managed`), with `cloud` versionless;
-- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`).
+- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`);
+- the content type `page`, with a `title` and a `description`, which the page names with `type: page`.
 
 ````markdown
 ---
+type: page
 title: Install the Quill agent
 description: Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.
 available: cloud, self-managed preview 3.3

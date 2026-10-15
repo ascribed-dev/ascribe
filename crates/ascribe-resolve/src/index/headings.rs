@@ -11,6 +11,9 @@ pub struct ExplicitId {
     pub id: String,
     /// The `@id` directive line.
     pub span: Span,
+    /// Whether the directive marks the id as a permalink
+    /// (`{permalink=true}`, SPEC §4.1).
+    pub permalink: bool,
 }
 
 /// A heading in a file.
@@ -130,9 +133,21 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
             out[idx].explicit_id = Some(ExplicitId {
                 id: primary.text.clone(),
                 span: line.span,
+                permalink: is_permalink(line),
             });
         }
     }
+}
+
+/// Whether an `@id` line sets `permalink=true`. Any other value, or none, is
+/// false; a value that isn't a boolean is reported by the file-level checks.
+fn is_permalink(line: &ascribe_syntax::DirectiveLine) -> bool {
+    line.attributes
+        .as_ref()
+        .and_then(|a| a.get("permalink"))
+        .and_then(|a| a.value.as_ref())
+        .and_then(|v| v.as_text())
+        == Some("true")
 }
 
 /// The plain text of inline content, with declared phrases replaced by their

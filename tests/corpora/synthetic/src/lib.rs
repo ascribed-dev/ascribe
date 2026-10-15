@@ -170,7 +170,7 @@ impl Synthetic {
         let mut t = String::new();
         let _ = write!(
             t,
-            "---\ntitle: Page {i}\n---\n\n# Page {i}\n\n{TYPING_PREFIX}{tail}\n\n"
+            "---\ntitle: Page {i}\n---\n\n## Page {i}\n\n{TYPING_PREFIX}{tail}\n\n"
         );
         let _ = write!(
             t,

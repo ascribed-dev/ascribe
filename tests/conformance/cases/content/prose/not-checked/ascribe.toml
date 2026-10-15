@@ -1,0 +1,7 @@
+spec = "0.1"
+
+# A Vale that can't be run is one advice here, and the rest of the check
+# is the same.
+[checks.vale]
+preset = "quiet"
+command = "not-installed"

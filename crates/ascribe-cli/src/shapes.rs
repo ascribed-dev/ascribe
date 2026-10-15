@@ -75,6 +75,153 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::sources::UpdateJson<'static>>(),
     },
     Shape {
+        file: "permalinks-sync",
+        title: "PermalinksSyncReport",
+        written_by: "`ascribe permalinks sync --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::SyncAnswer>(),
+    },
+    Shape {
+        file: "permalinks-list",
+        title: "PermalinksListReport",
+        written_by: "`ascribe permalinks list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::PermalinksAnswer>(),
+    },
+    Shape {
+        file: "permalinks-verify",
+        title: "PermalinksVerifyReport",
+        written_by: "`ascribe permalinks verify --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::VerifyAnswer>(),
+    },
+    Shape {
+        file: "permalinks-retire",
+        title: "PermalinksRetireReport",
+        written_by: "`ascribe permalinks retire --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::RetireAnswer>(),
+    },
+    Shape {
+        file: "templates-eject",
+        title: "TemplatesEjectReport",
+        written_by: "`ascribe templates eject --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_templates::EjectAnswer>(),
+    },
+    Shape {
+        file: "templates-status",
+        title: "TemplatesStatusReport",
+        written_by: "`ascribe templates status --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_templates::StatusAnswer>(),
+    },
+    Shape {
+        file: "init",
+        title: "InitReport",
+        written_by: "`ascribe init --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_templates::InitAnswer>(),
+    },
+    Shape {
+        file: "fmt",
+        title: "FmtReport",
+        written_by: "`ascribe fmt --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::fmt::FmtReport>(),
+    },
+    Shape {
+        file: "explain",
+        title: "ExplainReport",
+        written_by: "`ascribe explain --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::Explanation>(),
+    },
+    Shape {
+        file: "explain-list",
+        title: "ExplainListReport",
+        written_by: "`ascribe explain --list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::DiagnosticList>(),
+    },
+    Shape {
+        file: "model",
+        title: "ModelReport",
+        written_by: "`ascribe model --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::ModelReport>(),
+    },
+    Shape {
+        file: "observe",
+        title: "ObserveReport",
+        written_by: "`ascribe observe --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::observe::ObserveReport>(),
+    },
+    Shape {
+        file: "outline",
+        title: "OutlineReport",
+        written_by: "`ascribe outline --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::Outline>(),
+    },
+    Shape {
+        file: "link",
+        title: "LinkReport",
+        written_by: "`ascribe link --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::LinkAnswer>(),
+    },
+    Shape {
+        file: "render",
+        title: "RenderReport",
+        written_by: "`ascribe render --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::Rendered>(),
+    },
+    Shape {
+        file: "refs",
+        title: "RefsReport",
+        written_by: "`ascribe refs --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::Refs>(),
+    },
+    Shape {
+        file: "agents-index",
+        title: "AgentsIndexReport",
+        written_by: "`ascribe agents index --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::AgentsIndex>(),
+    },
+    Shape {
+        file: "report",
+        title: "ReportReport",
+        written_by: "`ascribe report --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::report::json::ReportJson>(),
+    },
+    Shape {
+        file: "versions-list",
+        title: "VersionsListReport",
+        written_by: "`ascribe versions list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::VersionsList>(),
+    },
+    Shape {
+        file: "versions-changes",
+        title: "VersionsChangesReport",
+        written_by: "`ascribe versions changes --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<ascribe_query::VersionChanges>(),
+    },
+    Shape {
+        file: "versions-release",
+        title: "VersionsReleaseReport",
+        written_by: "`ascribe versions release --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::versions::ReleaseJson>(),
+    },
+    Shape {
         file: "diff-html-data",
         title: "ReportData",
         written_by: "`ascribe diff --format html`, for the report's script",
@@ -102,6 +249,48 @@ const SHAPES: &[Shape] = &[
         command: false,
         schema: |g| g.root_schema_for::<ascribe_lsp::ChangesResult>(),
     },
+    Shape {
+        file: "lsp-context",
+        title: "ContextResult",
+        written_by: "the language server, answering `ascribe/context`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::ContextResult>(),
+    },
+    Shape {
+        file: "lsp-targets",
+        title: "TargetsResult",
+        written_by: "the language server, answering `ascribe/targets`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::TargetsResult>(),
+    },
+    Shape {
+        file: "lsp-inventory",
+        title: "InventoryResult",
+        written_by: "the language server, answering `ascribe/inventory`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::InventoryResult>(),
+    },
+    Shape {
+        file: "lsp-edit",
+        title: "EditResult",
+        written_by: "the language server, answering `ascribe/edit`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::EditResult>(),
+    },
+    Shape {
+        file: "lsp-build-view",
+        title: "BuildViewResult",
+        written_by: "the language server, answering `ascribe/buildView`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::BuildViewResult>(),
+    },
+    Shape {
+        file: "lsp-agent-prompt",
+        title: "AgentPromptResult",
+        written_by: "the language server, answering `ascribe/agentPrompt`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::AgentPromptResult>(),
+    },
 ];
 
 /// The packages that read Ascribe's JSON, and the shapes each reads.
@@ -110,7 +299,18 @@ const PACKAGES: &[(&str, &[&str])] = &[
     ("packages/review", &["diff", "diff-html-data"]),
     (
         "packages/vscode",
-        &["lsp-preview", "lsp-set-base", "lsp-changes"],
+        &[
+            "check",
+            "lsp-preview",
+            "lsp-set-base",
+            "lsp-changes",
+            "lsp-context",
+            "lsp-targets",
+            "lsp-inventory",
+            "lsp-edit",
+            "lsp-build-view",
+            "lsp-agent-prompt",
+        ],
     ),
 ];
 
@@ -126,7 +326,29 @@ fn schema(shape: &Shape) -> Value {
     let mut schema = (shape.schema)(&mut generator).to_value();
     schema["title"] = shape.title.into();
     plain_descriptions(&mut schema);
+    no_integer_formats(&mut schema);
     schema
+}
+
+/// Drops the `format` that `schemars` gives an integer (`uint`, `uint32`,
+/// …): JSON Schema doesn't define those formats, so validators warn about
+/// each. `"type": "integer"` and `"minimum": 0` say what a reader needs.
+fn no_integer_formats(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            let integer = match map.get("type") {
+                Some(Value::String(kind)) => kind == "integer",
+                Some(Value::Array(kinds)) => kinds.iter().any(|kind| kind == "integer"),
+                _ => false,
+            };
+            if integer && map.get("format").is_some_and(Value::is_string) {
+                map.remove("format");
+            }
+            map.values_mut().for_each(no_integer_formats);
+        }
+        Value::Array(items) => items.iter_mut().for_each(no_integer_formats),
+        _ => {}
+    }
 }
 
 /// Rewrites rustdoc's links in descriptions as code: "[`Report`]" is

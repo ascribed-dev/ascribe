@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { stat } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
+import type { PathEnvironment } from "./agents/reach.js";
 import type { BinaryEnvironment } from "./binary.js";
 
 /** The real machine: the file system, child processes, and this platform. */
@@ -25,6 +26,22 @@ export const nodeEnvironment: BinaryEnvironment = {
   platform: process.platform,
   arch: process.arch,
 };
+
+/** The window's path, as the processes it starts get it. */
+export function nodePathEnvironment(): PathEnvironment {
+  return {
+    path: process.env.PATH ?? process.env.Path,
+    pathext: process.env.PATHEXT,
+    platform: process.platform,
+    async realpath(file) {
+      try {
+        return (await stat(file)).isFile() ? await realpath(file) : undefined;
+      } catch {
+        return undefined;
+      }
+    },
+  };
+}
 
 /** Whether a binary has to be started through a shell (a Windows `.cmd` shim). */
 export function usesShell(file: string, platform: NodeJS.Platform = process.platform): boolean {

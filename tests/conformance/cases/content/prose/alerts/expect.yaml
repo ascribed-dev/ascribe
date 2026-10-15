@@ -1,0 +1,10 @@
+description: >-
+  Vale is given the prose alone: an alert lands at its place in the source,
+  in a block a directive is on too, and never in frontmatter, a directive
+  line, or code.
+spec: ["2.1"]
+tags: [prose]
+
+diagnostics:
+  - {slug: prose, file: input.md, line: 5, column: 6, severity: advice}
+  - {slug: prose, file: input.md, line: 10, column: 6, severity: advice}

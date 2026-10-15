@@ -188,6 +188,130 @@ describe("the built site", () => {
     await page.close();
   });
 
+  it("forwards a permalink's address to its heading, from a page that isn't indexed", async () => {
+    const page = await context.newPage();
+    // `@id {permalink=true}: weave-config`, published under `go/` in the base path.
+    await page.goto(`${origin}${BASE}/go/weave-config`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    const heading = page.locator("h2#weave-config");
+    await expect(heading.evaluate((element) => element.matches(":target"))).resolves.toBe(true);
+    await page.close();
+
+    // A refresh that needs no script, a link to the same place, and no indexing.
+    const response = await fetch(`${origin}${BASE}/go/weave-config`);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    const to = `${BASE}/guides/my-setup#weave-config`;
+    expect(html).toContain(`<meta http-equiv="refresh" content="0;url=${to}">`);
+    expect(html).toContain(`<a href="${to}"`);
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).toContain(`<link rel="canonical" href="https://docs.example.com${to}">`);
+  });
+
+  it("forwards a page's permalink to the top of the page", async () => {
+    const page = await context.newPage();
+    // `permalink: options` in the page's frontmatter.
+    await page.goto(`${origin}${BASE}/go/options`);
+    await page.waitForURL(`${origin}${BASE}/reference/options`);
+    await expect(page.locator("main > h1").textContent()).resolves.toBe("loom.yaml options");
+    await page.close();
+  });
+
+  it("forwards an alias, and a retired permalink with somewhere to lead", async () => {
+    const page = await context.newPage();
+    // `config = "weave-config"` in `[permalinks.aliases]`.
+    await page.goto(`${origin}${BASE}/go/config`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    // `old-options`, retired with `to = "Reference/Options.md"`.
+    await page.goto(`${origin}${BASE}/go/old-options`);
+    await page.waitForURL(`${origin}${BASE}/reference/options`);
+    await page.close();
+  });
+
+  it("says why a retired permalink with nowhere to lead was removed", async () => {
+    const page = await context.newPage();
+    const response = await page.goto(`${origin}${BASE}/go/legacy-sync`);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("main > h1").textContent()).resolves.toBe("Removed from these docs");
+    // The reason as the authors wrote it, as text.
+    await expect(page.locator("main [data-reason]").textContent()).resolves.toBe(
+      "Sync was removed in Loom 3.0, & nothing replaced it.",
+    );
+    await expect(
+      page.getByRole("link", { name: "Go to the docs' home page" }).getAttribute("href"),
+    ).resolves.toBe(BASE);
+    expect(page.url()).toBe(`${origin}${BASE}/go/legacy-sync`);
+    const html = await (await fetch(`${origin}${BASE}/go/legacy-sync`)).text();
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).not.toContain("http-equiv");
+    await page.close();
+  });
+
+  it("forwards with scripts off", async () => {
+    const offline = await browser.newContext({ javaScriptEnabled: false });
+    const page = await offline.newPage();
+    await page.goto(`${origin}${BASE}/go/weave-config?pm=pnpm`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    await offline.close();
+  });
+
+  it("opens the tab a permalink's parameter names, and remembers it as a click does", async () => {
+    const reader = await browser.newContext();
+    const page = await reader.newPage();
+    // `pm` is a dimension of the content model, and `pnpm` one of its values.
+    await page.goto(`${origin}${BASE}/go/weave-config?pm=pnpm`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    const group = page.locator('ascribe-tabs[sync="pm"]');
+    await expect(group.getByRole("tab", { selected: true }).textContent()).resolves.toBe("pnpm");
+    await expect(group.getByText("pnpm add -g @loom/cli").isVisible()).resolves.toBe(true);
+    // The choice holds on the next page that has the group, with no parameter.
+    await page.goto(`${origin}${BASE}/reference/options`);
+    await page.goto(`${origin}${BASE}/guides/my-setup`);
+    await expect(group.getByRole("tab", { selected: true }).textContent()).resolves.toBe("pnpm");
+    await reader.close();
+  });
+
+  it("ignores parameters the docs don't know, as if the link had none", async () => {
+    const reader = await browser.newContext();
+    const page = await reader.newPage();
+    // A value `pm` doesn't have, a dimension the model doesn't have, and a version.
+    await page.goto(`${origin}${BASE}/go/weave-config?pm=bun&platform=macos&self-managed=3.4`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    const group = page.locator('ascribe-tabs[sync="pm"]');
+    await expect(group.getByRole("tab", { selected: true }).textContent()).resolves.toBe("npm");
+    await expect(page.evaluate(() => localStorage.length)).resolves.toBe(0);
+    await reader.close();
+  });
+
+  it("explains, on the not-found page, a permalink the docs don't have", async () => {
+    const page = await context.newPage();
+    const response = await page.goto(`${origin}${BASE}/go/rotate-keys`);
+    expect(response?.status()).toBe(404);
+    await expect(page.locator("main > h1").textContent()).resolves.toBe("Page not found");
+    const note = page.locator("main section");
+    await expect(note.isVisible()).resolves.toBe(true);
+    await expect(note.locator("code").textContent()).resolves.toBe("rotate-keys");
+    await expect(note.getByRole("link", { name: "home page" }).getAttribute("href")).resolves.toBe(
+      BASE,
+    );
+
+    // Anywhere else, the not-found page says nothing about permalinks.
+    for (const address of [`${BASE}/no/such/page`, `${BASE}/go/rotate-keys/more`]) {
+      const other = await page.goto(`${origin}${address}`);
+      expect(other?.status(), address).toBe(404);
+      await expect(note.isVisible(), address).resolves.toBe(false);
+    }
+    await page.close();
+  });
+
+  it("leaves permalinks' addresses out of what agents read", async () => {
+    const llms = await (await fetch(`${origin}${BASE}/llms.txt`)).text();
+    expect(llms).toContain("/guides/my-setup.md");
+    expect(llms).not.toContain("/go/");
+    const markdown = await fetch(`${origin}${BASE}/go/weave-config.md`);
+    expect(markdown.status).toBe(404);
+  });
+
   it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {
     // `ascribe build --emit json` records each page's route and heading ids.
     const binary = process.env["ASCRIBE_BIN"] ?? resolveBinary();

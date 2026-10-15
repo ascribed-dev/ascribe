@@ -27,7 +27,7 @@ jobs:
       - run: rustup toolchain install
       - run: cargo fmt --all --check
 
-  # Advisories, licenses, duplicates, and sources (deny.toml), and unused
+  # Advisories, licenses, duplicates, and sources (.cargo/deny.toml), and unused
   # dependencies. The tools are pinned here, as the actions are.
   dependencies:
     name: cargo deny and cargo machete
@@ -36,12 +36,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup toolchain install
-      - uses: taiki-e/install-action@183e4297cca2404691e9380e1307288dced5c82a # v2.87.25
+      - uses: taiki-e/install-action@ab6895351a88b908e96a4697860d4ffea5e57dbe # v2.87.27
         with:
           tool: cargo-deny@0.20.2,cargo-machete@0.9.2
       - run: cargo deny --locked check bans licenses sources
       # A new advisory comes from outside, not from the change being tested, so
-      # it shows as a failed step without failing the job (deny.toml).
+      # it shows as a failed step without failing the job (.cargo/deny.toml).
       - run: cargo deny --locked check advisories
         continue-on-error: true
       - run: cargo machete
@@ -60,17 +60,78 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo build --workspace --locked
+      # The repository's examples (ascribe.examples.toml): each file the docs
+      # show and a test proves is as its observation recorded it, so a change
+      # to one comes with `ascribe observe` run again. It runs nothing.
+      - name: Check the repository's examples are observed
+        shell: bash
+        run: |
+          ./target/debug/ascribe observe --check || {
+            echo "::error file=ascribe.examples.toml::An example the docs show changed since it was last observed. Run \`cargo run -p ascribe-cli -- observe\` in the repository's root, and commit examples.observations/default.toml."
+            exit 1
+          }
+      # Vale, for crates/ascribe-check/tests/all/vale.rs, which runs a real
+      # Vale on Linux and fails there without one. A pinned release, checked
+      # against its published checksum.
+      - if: runner.os == 'Linux'
+        name: Install Vale
+        run: |
+          version=3.24.0
+          sum=867534ddb678abca7f214bc4706ead0922bd5252ffe8035fc227013f66c8b214
+          archive="vale_${version}_Linux_64-bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" "https://github.com/vale-cli/vale/releases/download/v${version}/${archive}"
+          echo "$sum  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/vale"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/vale" vale
+          echo "ASCRIBE_TEST_VALE=$RUNNER_TEMP/vale/vale" >> "$GITHUB_ENV"
       # The determinism test runs in a job of its own, below, at the same time.
       - run: cargo test --workspace --locked -- --skip every_output_is_the_same_twice
+      # The tested example's seam: `ascribe observe` in examples/tested/code,
+      # with this build, writes the [files] that's committed, on every
+      # platform, since the docs side reads them on any other
+      # (https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/tested-examples/phase-2-thread.md). Each of its two
+      # observations is written under the Node it names: `node-22` first,
+      # then `default` under the Node the rest of the job uses. `--check`,
+      # which runs nothing, says first whether the committed one matches.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22 # Not Ascribe's Node: the one examples/tested's node-22 observation names.
+      - name: Observe examples/tested with Node 22
+        shell: bash
+        working-directory: examples/tested/code
+        run: |
+          ../../../target/debug/ascribe observe --check --name node-22
+          sed -n '/^\[files\]/,$p' examples.observations/node-22.toml > "$RUNNER_TEMP/committed.toml"
+          ../../../target/debug/ascribe observe --name node-22
+          sed -n '/^\[files\]/,$p' examples.observations/node-22.toml > "$RUNNER_TEMP/observed.toml"
+          diff "$RUNNER_TEMP/committed.toml" "$RUNNER_TEMP/observed.toml"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Observe examples/tested
+        shell: bash
+        working-directory: examples/tested/code
+        run: |
+          ../../../target/debug/ascribe observe --check
+          sed -n '/^\[files\]/,$p' examples.observations/default.toml > "$RUNNER_TEMP/committed.toml"
+          ../../../target/debug/ascribe observe
+          sed -n '/^\[files\]/,$p' examples.observations/default.toml > "$RUNNER_TEMP/observed.toml"
+          diff "$RUNNER_TEMP/committed.toml" "$RUNNER_TEMP/observed.toml"
       # The sources fixture's pass, on this machine: the update pull request's
       # workflow (examples/docs-repository), run with this build against two
       # local repositories (scripts/sources-fixture/setup.ts).
       - if: runner.os == 'Linux'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-      - if: runner.os == 'Linux'
         run: node scripts/sources-fixture/setup.ts --local
+      # The page templates in crates/ascribe-templates/set/ are what the release
+      # scripts/templates/upstream.toml pins gives, converted with this build's
+      # `ascribe fmt` (scripts/templates/convert.ts). It fetches their files.
+      # It reads its TOML with the workspace's smol-toml, so it needs the install.
+      - if: runner.os == 'Linux'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - if: runner.os == 'Linux'
+        run: pnpm install --frozen-lockfile
+      - if: runner.os == 'Linux'
+        run: node scripts/templates/convert.ts --check
 
   # crates/ascribe-cli/tests/determinism.rs, the longest test program, beside
   # the job above rather than after the rest of its tests. It starts from that

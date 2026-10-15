@@ -2,12 +2,15 @@
 
 use std::collections::HashMap;
 
-use ascribe_core::{LineIndex, Span};
+use ascribe_core::{FileId, LineIndex, RelPath, Span};
+use ascribe_model::{Current, PERMALINKS_FILE, PermalinkList, RETIRED_PLACEHOLDER};
+use ascribe_resolve::{DeclaredPermalink, FileSystem};
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, Diagnostic, TextEdit,
     WorkspaceEdit,
 };
 
+use crate::intended;
 use crate::nav::{Ctx, directive_at};
 
 // Longer than the lint allows from before it was on. Split it only while
@@ -15,7 +18,7 @@ use crate::nav::{Ctx, directive_at};
 #[allow(clippy::too_many_lines)]
 pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
     let Some(file) = ctx.file() else {
-        return Vec::new();
+        return model_actions(ctx, params);
     };
     let index = LineIndex::new(&file.source);
     let start = ctx
@@ -66,6 +69,49 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
                 .offset_lenient(&index, &file.source, diagnostic.range.end);
         if diagnostic_end < start || at > end {
             continue;
+        }
+        // A review check's problem may be fine as it is: the author says so
+        // with an acknowledgement, and writes why.
+        let place = ascribe_check::Registry::global()
+            .entries()
+            .find(|e| e.slug.as_str() == slug)
+            .and_then(|e| e.place);
+        if let Some(place) = place {
+            let subject = diagnostic
+                .data
+                .as_ref()
+                .and_then(|data| data.get("subject"))
+                .and_then(serde_json::Value::as_str);
+            match intended::mark(
+                place,
+                slug,
+                &file.source,
+                &file.document,
+                at,
+                subject,
+                &ctx.model_text,
+            ) {
+                Some(intended::Mark::Source(edit)) => actions.push(action(
+                    ctx,
+                    intended::TITLE,
+                    vec![diagnostic.clone()],
+                    vec![text_edit(ctx, &file.source, edit)],
+                )),
+                Some(intended::Mark::Model(edit)) => {
+                    let model_index = LineIndex::new(&ctx.model_text);
+                    actions.push(workspace_action(
+                        ctx,
+                        intended::TITLE,
+                        vec![diagnostic.clone()],
+                        Vec::new(),
+                        Some(TextEdit {
+                            range: ctx.encoding.range(&model_index, edit.span),
+                            new_text: edit.new_text,
+                        }),
+                    ));
+                }
+                None => {}
+            }
         }
         match slug {
             "attribute-unquoted-reserved" => {
@@ -145,6 +191,17 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
                     }
                 }
             }
+            "example-stale" | "example-unobserved" => {
+                if let Some(copy) = crate::examples::copy_command(ctx, file, at, diagnostic.clone())
+                {
+                    actions.push(copy);
+                }
+            }
+            "permalinks-list-behind" => {
+                if let Some(sync) = sync_permalinks(ctx, diagnostic.clone()) {
+                    actions.push(sync);
+                }
+            }
             _ => {}
         }
     }
@@ -188,6 +245,158 @@ fn action(
     edits: Vec<TextEdit>,
 ) -> CodeActionOrCommand {
     workspace_action(ctx, title, diagnostics, edits, None)
+}
+
+/// The quick fix on `permalinks-list-behind`: `ascribe.permalinks` as
+/// `ascribe permalinks sync` writes it for the project as the editor has
+/// it, as one edit of the whole file. None when the list can't be read, or
+/// is up to date already.
+fn sync_permalinks(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCommand> {
+    let path = RelPath::parse(PERMALINKS_FILE).ok()?;
+    let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
+    let list = PermalinkList::parse(&text, FileId::new(0)).ok()?;
+    let declared = ctx.snapshot.project().declared_permalinks();
+    let current = Current::new(DeclaredPermalink::places(&declared), &ctx.model.permalinks);
+    let synced = list.synced(&current).list.to_toml();
+    if synced == text {
+        return None;
+    }
+    let uri = crate::uri::path_to_uri(&ctx.config.with_file_name(PERMALINKS_FILE))?;
+    let edit = TextEdit {
+        range: ctx
+            .encoding
+            .range(&LineIndex::new(&text), Span::new(0, text.len())),
+        new_text: synced,
+    };
+    Some(CodeActionOrCommand::CodeAction(CodeAction {
+        title: format!("Bring {PERMALINKS_FILE} up to date"),
+        kind: Some(CodeActionKind::QUICKFIX),
+        diagnostics: Some(vec![diagnostic]),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from([(uri, vec![edit])])),
+            ..WorkspaceEdit::default()
+        }),
+        command: None,
+        is_preferred: Some(true),
+        disabled: None,
+        data: None,
+    }))
+}
+
+/// The title of the quick fix on `permalink-removed`.
+pub(crate) const RETIRE_TITLE: &str = "Retire this permalink, and write why";
+
+/// The quick fix on `permalink-removed`, in `ascribe.permalinks`: an entry
+/// in `ascribe.toml`'s `[permalinks.retired]` for the name, with a
+/// placeholder reason, which it then selects for the author to replace. The
+/// placeholder is reported until it is, so the fix alone quiets nothing,
+/// and it's never the preferred fix.
+fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCommand> {
+    let path = RelPath::parse(PERMALINKS_FILE).ok()?;
+    let text = String::from_utf8(ctx.fs.read_file(&path).ok()?).ok()?;
+    let list = PermalinkList::parse(&text, FileId::new(0)).ok()?;
+    let at = ctx
+        .encoding
+        .offset_lenient(&LineIndex::new(&text), &text, diagnostic.range.start);
+    let name = list
+        .permalinks
+        .keys()
+        .chain(list.aliases.keys())
+        .chain(list.retired.keys())
+        .find(|name| list.span_of(name).is_some_and(|span| span.start() == at))?;
+    let retired = crate::retire::retire(
+        &ctx.model_text,
+        &[crate::retire::Retirement {
+            name,
+            reason: RETIRED_PLACEHOLDER,
+            to: None,
+        }],
+    )
+    .ok()?;
+    let edit = retired.edits.first()?;
+    let start = edit.span.start() + edit.new_text.find(RETIRED_PLACEHOLDER)?;
+    let selection = ctx.encoding.range(
+        &LineIndex::new(&retired.text),
+        Span::new(start, start + RETIRED_PLACEHOLDER.len()),
+    );
+    let config = crate::uri::path_to_uri(&ctx.config)?;
+    let change = TextEdit {
+        range: ctx
+            .encoding
+            .range(&LineIndex::new(&ctx.model_text), edit.span),
+        new_text: edit.new_text.clone(),
+    };
+    Some(CodeActionOrCommand::CodeAction(CodeAction {
+        title: RETIRE_TITLE.to_owned(),
+        kind: Some(CodeActionKind::QUICKFIX),
+        diagnostics: Some(vec![diagnostic]),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from([(config.clone(), vec![change])])),
+            ..WorkspaceEdit::default()
+        }),
+        command: Some(lsp_types::Command {
+            title: RETIRE_TITLE.to_owned(),
+            command: crate::links::OPEN_FILE.to_owned(),
+            arguments: Some(vec![
+                serde_json::Value::String(config.as_str().to_owned()),
+                serde_json::to_value(selection).ok()?,
+            ]),
+        }),
+        is_preferred: Some(false),
+        disabled: None,
+        data: None,
+    }))
+}
+
+/// The actions on `ascribe.toml`'s and `ascribe.permalinks`'s diagnostics:
+/// marking a problem about a content model entry or an image as intended,
+/// in `[[intended]]`, retiring a removed permalink, and bringing the list
+/// up to date with an alias or a retired permalink.
+fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
+    let model_index = LineIndex::new(&ctx.model_text);
+    let mut actions = Vec::new();
+    for diagnostic in params.context.diagnostics {
+        let data = diagnostic.data.as_ref();
+        let field = |key: &str| {
+            data.and_then(|d| d.get(key))
+                .and_then(serde_json::Value::as_str)
+        };
+        match field("slug") {
+            Some("permalink-removed") => {
+                actions.extend(retire_permalink(ctx, diagnostic.clone()));
+                continue;
+            }
+            Some("permalinks-list-behind") => {
+                actions.extend(sync_permalinks(ctx, diagnostic.clone()));
+                continue;
+            }
+            _ => {}
+        }
+        let (Some(slug), Some(subject)) = (field("slug"), field("subject")) else {
+            continue;
+        };
+        let place = ascribe_check::Registry::global()
+            .entries()
+            .find(|e| e.slug.as_str() == slug)
+            .and_then(|e| e.place);
+        if place != Some(ascribe_core::Place::Entry) {
+            continue;
+        }
+        let Some(edit) = intended::entry(slug, subject, &ctx.model_text) else {
+            continue;
+        };
+        actions.push(workspace_action(
+            ctx,
+            intended::TITLE,
+            vec![diagnostic.clone()],
+            Vec::new(),
+            Some(TextEdit {
+                range: ctx.encoding.range(&model_index, edit.span),
+                new_text: edit.new_text,
+            }),
+        ));
+    }
+    actions
 }
 
 #[allow(clippy::mutable_key_type)]

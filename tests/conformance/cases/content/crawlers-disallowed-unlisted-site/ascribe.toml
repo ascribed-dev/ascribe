@@ -1,0 +1,11 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[listing]
+default = "unlisted"
+
+[crawlers]
+search = "disallow"
+on-request = "disallow"

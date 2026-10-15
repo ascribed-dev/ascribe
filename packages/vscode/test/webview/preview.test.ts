@@ -267,6 +267,35 @@ describe("the preview webview", () => {
     await preview.page.close();
   });
 
+  it("doesn't let a page's raw HTML submit a form", async () => {
+    const preview = await open();
+    const requests: string[] = [];
+    preview.page.on("request", (request) => requests.push(request.url()));
+    await preview.send(
+      render(
+        1,
+        `<form action="https://elsewhere.test/collect" method="post">
+<input name="secret" value="1"><button type="submit">Send</button>
+</form>`,
+      ),
+    );
+    await preview.next("rendered");
+    // As a click on its button would; a click waits for the navigation it starts.
+    await preview.page
+      .locator("main form")
+      .evaluate((form: HTMLFormElement) => form.requestSubmit());
+    await preview.page.waitForTimeout(200);
+    expect(requests.filter((url) => url.startsWith("https://elsewhere.test/"))).toEqual([]);
+    expect(preview.page.url()).toBe(`${ORIGIN}/`);
+    const seen = preview.posted.length;
+    await preview.send(render(2, ""));
+    const second = await preview.next("rendered", seen);
+    if (second.type !== "rendered") throw new Error();
+    const directives = second.report.violations.map((v) => v.split(" ")[0]);
+    expect(directives).toContain("form-action");
+    await preview.page.close();
+  });
+
   it("posts a click on a link to the extension, and follows a fragment itself", async () => {
     const preview = await open();
     await preview.send(
@@ -774,6 +803,59 @@ describe("review threads in the preview webview", () => {
     await preview.page.close();
   });
 
+  it("asks the extension for an agent prompt about a thread, the page, or a fragment's pages", async () => {
+    const preview = await open();
+    const requests = serveThreads(preview, (method) => {
+      if (method === "load") {
+        return {
+          pullRequest: { number: 128, url: THREADS_ON.pullRequest.url },
+          threads: {
+            blocks: [{ anchor: { source: "page.md:3-3", via: [] }, threads: [thread("T1")] }],
+            removed: [],
+            detached: [],
+          },
+          pending: pending(0),
+          viewer: "kyle",
+        };
+      }
+      if (method === "allThreads") return [];
+      return null;
+    });
+    const view = reviewed(1, { threads: THREADS_ON });
+    if (view.type !== "render" || !view.review?.page) throw new Error();
+    view.review.page.because = ["_f/frag.md", "ascribe.toml"];
+    await preview.send(view);
+    await preview.next("threadsDrawn");
+    const prompts = () =>
+      requests.filter((r) => r.method === "promptAgent").map((r) => r.params["request"]);
+
+    await preview.page.getByRole("button", { name: "Prompt agent", exact: true }).click();
+    await expect.poll(prompts).toEqual([{ kind: "thread", threadId: "T1" }]);
+
+    const more = preview.page.getByRole("button", { name: "More review actions" });
+    await more.click();
+    await expect(more.getAttribute("aria-expanded")).resolves.toBe("true");
+    // The model file isn't a fragment: it has no item.
+    await expect(preview.page.getByRole("menuitem").allTextContents()).resolves.toEqual([
+      "Prompt agent: review this page",
+      "Prompt agent: check the pages that show _f/frag.md",
+    ]);
+    await preview.page.keyboard.press("ArrowDown");
+    await preview.page.keyboard.press("Enter");
+    await expect.poll(prompts).toEqual([
+      { kind: "thread", threadId: "T1" },
+      { kind: "fragment-reach", fragment: "_f/frag.md" },
+    ]);
+    await expect(preview.page.getByRole("menu").count()).resolves.toBe(0);
+    await more.click();
+    await preview.page.keyboard.press("Escape");
+    await expect(preview.page.getByRole("menu").count()).resolves.toBe(0);
+    await more.click();
+    await preview.page.getByRole("menuitem", { name: "Prompt agent: review this page" }).click();
+    await expect.poll(() => prompts().at(-1)).toEqual({ kind: "page-changes" });
+    await preview.page.close();
+  });
+
   it("says comments need GitHub when signed out, and offers both ways in", async () => {
     const preview = await open();
     await preview.send(
@@ -824,6 +906,33 @@ describe("review threads in the preview webview", () => {
 describe("the Page | Site switch", () => {
   const frame = (preview: Preview) => preview.page.locator('iframe[title="Site preview"]');
 
+  it("marks the pressed side with the active border in a high-contrast dark theme, which gives buttons no background", async () => {
+    const preview = await open();
+    await preview.send(render(1, "<p>Hello</p>"));
+    await preview.next("rendered");
+    // What VS Code sets for its high-contrast dark theme: no button background.
+    await preview.page.evaluate(() => {
+      document.body.classList.add("vscode-high-contrast");
+      const root = document.documentElement.style;
+      root.setProperty("--vscode-foreground", "rgb(255, 255, 255)");
+      root.setProperty("--vscode-button-foreground", "rgb(255, 255, 255)");
+      root.setProperty("--vscode-contrastActiveBorder", "rgb(243, 133, 24)");
+    });
+    const pressed = preview.page
+      .getByRole("group", { name: "Preview" })
+      .getByRole("button", { name: "Page" });
+    const style = await pressed.evaluate((e) => {
+      const { color, backgroundColor, boxShadow } = getComputedStyle(e);
+      return { color, backgroundColor, boxShadow };
+    });
+    expect(style).toEqual({
+      color: "rgb(255, 255, 255)",
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      boxShadow: "rgb(243, 133, 24) 0px 0px 0px 1px inset",
+    });
+    await preview.page.close();
+  });
+
   it("asks for the site, then shows the dev server's page in a frame", async () => {
     const preview = await open({ frameOrigin: SITE });
     await preview.send(render(1, "<p>Hello</p>"));
@@ -866,6 +975,32 @@ describe("the Page | Site switch", () => {
     expect(count()).toBe(1);
     await preview.send({ type: "surface", surface: "site", url: `${SITE}/b` });
     await expect.poll(count).toBe(2);
+    await preview.page.close();
+  });
+
+  it("ignores what the site's page posts to it", async () => {
+    const preview = await open({ frameOrigin: SITE });
+    await preview.send(render(1, "<p>Hello</p>"));
+    await preview.next("rendered");
+    await preview.send({ type: "surface", surface: "site", url: `${SITE}/docs/install` });
+    await preview.next("siteShown");
+    const site = preview.page.frames().find((f) => f.url().startsWith(SITE));
+    if (!site) throw new Error("the site's frame isn't there");
+    // The site's page is another origin's, running its own scripts, and its
+    // parent is the preview.
+    await site.evaluate(
+      ([page, surface]) => {
+        parent.postMessage(page, "*");
+        parent.postMessage(surface, "*");
+      },
+      [render(7, "<p>Not from the extension</p>"), { type: "surface", surface: "page" }] as const,
+    );
+    const from = preview.posted.length;
+    await preview.send(render(2, "<p>Hello again</p>"));
+    await expect(preview.next("rendered", from)).resolves.toMatchObject({ seq: 2 });
+    expect(preview.posted.filter((m) => m.type === "rendered").map((m) => m.seq)).toEqual([1, 2]);
+    // The site still shows.
+    await expect(frame(preview).isVisible()).resolves.toBe(true);
     await preview.page.close();
   });
 

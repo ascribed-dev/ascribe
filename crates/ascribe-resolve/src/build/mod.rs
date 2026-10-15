@@ -58,26 +58,33 @@ mod availability;
 mod glossary;
 mod ids;
 mod inlines;
+mod lines;
 mod links;
 mod modes;
+mod permalinks;
 mod phrases;
 mod router;
 mod tree;
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Router, Slugger, Span};
-use ascribe_model::{Build, Segment};
+use ascribe_model::{Build, Listing, Segment};
+use ascribe_syntax::{Block, BlockKind};
 
+pub use availability::{InLine, in_release_line};
+pub(crate) use glossary::Terms;
 pub use glossary::glossary_targets;
+pub(crate) use inlines::prose_lists;
+pub use permalinks::{DeclaredPermalink, Destination, Permalink, permalinks};
 pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
-    LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,
-    ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
+    LinkTarget, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild,
+    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;
@@ -118,6 +125,28 @@ impl Project {
             .then(|| modes::drop_reason(self.model(), index, build))
             .flatten()
     }
+
+    /// What a build's modes take out of a page it publishes, and why: the
+    /// same decisions [`Project::resolve_page`] makes, in the order the passes
+    /// meet them.
+    /// Only the outermost removal is listed; nothing inside removed content
+    /// is. `None` if the file isn't a page, or the build doesn't publish it.
+    pub fn removed(&self, page: &RelPath, build: &Build) -> Option<Vec<Removed>> {
+        let index = self.file(page)?;
+        if index.kind != FileKind::Page || self.dropped(page, build).is_some() {
+            return None;
+        }
+        let model = self.model();
+        let expanded = self.expand(page)?;
+        let blocks = availability::annotate(
+            self,
+            &expanded.blocks,
+            availability::page_availability(model, index),
+            &mut Vec::new(),
+        );
+        let (_, removed) = modes::apply(blocks, build, model, &mut Vec::new());
+        Some(removed)
+    }
 }
 
 /// Page ids of a page's headings, by the file and span each is written at.
@@ -134,6 +163,11 @@ pub struct BuildResolver<'p> {
     /// The page id of each heading of a staged page, by where it's written,
     /// so a link finds its target's heading without walking the page.
     headings: RefCell<BTreeMap<RelPath, Rc<HeadingTable>>>,
+    /// Every page's `replaces` that names a page, read once.
+    replacements: OnceCell<BTreeMap<RelPath, RelPath>>,
+    /// Resolvers for the other lines of a versioned build, by name, made
+    /// when a link leads out of this line.
+    others: RefCell<HashMap<String, Rc<BuildResolver<'p>>>>,
 }
 
 impl<'p> BuildResolver<'p> {
@@ -148,6 +182,8 @@ impl<'p> BuildResolver<'p> {
             slugger,
             staged: RefCell::new(BTreeMap::new()),
             headings: RefCell::new(BTreeMap::new()),
+            replacements: OnceCell::new(),
+            others: RefCell::new(HashMap::new()),
         }
     }
 
@@ -157,6 +193,10 @@ impl<'p> BuildResolver<'p> {
 
     pub(crate) fn router(&self) -> &'p dyn Router {
         self.router
+    }
+
+    pub(crate) fn build_def(&self) -> &'p Build {
+        self.build
     }
 
     pub(crate) fn build_name(&self) -> &str {
@@ -238,7 +278,7 @@ impl<'p> BuildResolver<'p> {
         );
         // Step 3: build modes.
         let mut mode_problems = Vec::new();
-        let mut blocks = modes::apply(blocks, self.build, model, &mut mode_problems);
+        let (mut blocks, _) = modes::apply(blocks, self.build, model, &mut mode_problems);
         // A problem is about what the build publishes: one in content the
         // build removed isn't recorded.
         let live = modes::live(&blocks);
@@ -255,11 +295,16 @@ impl<'p> BuildResolver<'p> {
                 .map(|(_, problem)| problem),
         );
         problems.extend(mode_problems);
+        problems.extend(self.replaces_problems(index));
+        // A line shows no version from before the window.
+        let mut page_availability = page_availability;
+        modes::show_for_line(self.build, &mut blocks, &mut page_availability);
         // Step 4: phrases.
-        phrases::substitute_blocks(project, &mut blocks);
+        phrases::substitute_blocks(project, self.build, &mut blocks);
         let (frontmatter, formatted) = match &index.frontmatter {
             Some(f) => {
-                let (value, formatted) = phrases::frontmatter(model, path, f);
+                let (value, formatted) =
+                    phrases::frontmatter(model, self.build, index.content_type(model), f);
                 (Some(value), formatted)
             }
             None => (None, Vec::new()),
@@ -269,8 +314,20 @@ impl<'p> BuildResolver<'p> {
             .and_then(|f| f.get("title"))
             .and_then(|t| t.as_str())
             .map(str::to_owned);
+        let own = frontmatter
+            .as_ref()
+            .and_then(|f| f.get(Listing::KEY))
+            .and_then(|l| l.as_str())
+            .and_then(Listing::from_name);
+        let type_name = index.content_type(model).map(|t| t.name.as_str());
+        let (listing, listing_from) = model.listing_of(path.as_str(), type_name, own);
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
+        // Acknowledgements (SPEC §4.9) are for the checks: no output shows
+        // them, so a page reads as it would without them.
+        drop_acknowledgements(&mut blocks);
+        let frontmatter = frontmatter.and_then(without_acknowledgements);
+        let permalink = permalinks::of_page(index);
         Some(ResolvedPage {
             path: path.clone(),
             file: index.file,
@@ -280,6 +337,9 @@ impl<'p> BuildResolver<'p> {
             title,
             formatted,
             availability: page_availability,
+            permalink,
+            listing,
+            listing_from,
             blocks,
             assets: Vec::new(),
             problems,
@@ -318,4 +378,35 @@ impl<'p> BuildResolver<'p> {
             dropped,
         }
     }
+}
+
+/// The frontmatter key and the directive that acknowledge a problem as
+/// intended (SPEC §4.9).
+const INTENDED: &str = "intended";
+
+/// Removes the `@intended` lines from `blocks` and the blocks in them.
+fn drop_acknowledgements(blocks: &mut Vec<ResolvedBlock>) {
+    blocks.retain(|b| {
+        !matches!(
+            &b.kind,
+            ResolvedKind::Leaf(Block { kind: BlockKind::Directive(line), .. }) if line.name == INTENDED
+        )
+    });
+    for block in blocks {
+        for list in block.child_lists_mut() {
+            drop_acknowledgements(list);
+        }
+    }
+}
+
+/// The frontmatter without its `intended` key; none when that was its only
+/// key.
+fn without_acknowledgements(mut frontmatter: serde_yaml_ng::Value) -> Option<serde_yaml_ng::Value> {
+    if let serde_yaml_ng::Value::Mapping(map) = &mut frontmatter
+        && map.remove(INTENDED).is_some()
+        && map.is_empty()
+    {
+        return None;
+    }
+    Some(frontmatter)
 }

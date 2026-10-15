@@ -1,0 +1,50 @@
+---
+// The lines of a versioned build that publish a page, as a list of links,
+// newest first, from `<output-dir>/_ascribe/versions.json`: each line's
+// number, linking to the page in that line, with the page's own line marked
+// `aria-current="page"` and the current line `data-current`. A line that
+// doesn't have the page links to the page that takes its place there, when
+// one says so with `replaces`, and isn't listed otherwise. A layout includes
+// it given the page's collection entry:
+//
+//   import Versions from "@ascribed/astro/Versions.astro";
+//   <Versions entry={entry} />
+//
+// It renders nothing for a page of a build that isn't versioned, or a page
+// only its own line has. It writes no styles: the site's own select it by
+// `nav[aria-label]`, or the `class` given.
+import { pageVersions } from "@ascribed/astro/content";
+
+interface Props {
+  /** The page's collection entry. */
+  entry: { filePath?: string | undefined; data?: unknown };
+  /** The list's accessible name. Default: "Versions". */
+  label?: string;
+  /** A class for the `<nav>`. */
+  class?: string;
+}
+
+const { entry, label = "Versions", class: className } = Astro.props;
+const versions = pageVersions(entry);
+---
+
+{
+  versions.length > 1 && (
+    <nav aria-label={label} class={className}>
+      <ul>
+        {versions.map((version) => (
+          <li>
+            <a
+              href={version.route}
+              aria-current={version.own ? "page" : undefined}
+              data-line={version.line}
+              data-current={version.current ? "" : undefined}
+            >
+              {version.line}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

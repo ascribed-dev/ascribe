@@ -7,3 +7,8 @@
 
 # A source file that must stay invalid UTF-8, byte for byte.
 tests/conformance/cases/files/source-not-utf8/files/bad.md binary
+
+# An example checked out with CRLF line endings, which its observation hashes
+# as LF.
+tests/conformance/cases/directives/snippet/tested-line/code/examples/crlf.ts -text
+tests/conformance/cases/directives/snippet/tested-status/code/examples/crlf.ts -text

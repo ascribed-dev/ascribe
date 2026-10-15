@@ -1,14 +1,14 @@
 //! The JSON report: `ascribe check --format json`. The schema is documented,
-//! with an example, in `docs/content/reference/cli.md`. It's versioned:
+//! with an example, in `docs/content/checks/check.md`. It's versioned:
 //! [`SCHEMA_VERSION`] changes only when a field is removed or changes
 //! meaning, and fields may be added without a new version.
 
 use std::io::{self, Write};
 
-use ascribe_check::Diagnostic;
+use ascribe_check::{Acknowledged, Diagnostic, Registry, Reported};
 use serde::Serialize;
 
-use super::{Counts, FileTable, Position};
+use super::{Counts, FileTable, Position, position_in, tally};
 
 /// The version of the JSON schema.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -28,12 +28,73 @@ pub(crate) struct Report<'a> {
     /// isn't `null`, `diagnostics` holds what was found first: the content
     /// model's problems.
     error: Option<&'a str>,
-    /// How many source files were checked.
+    /// How many source files were checked: the project's.
     files_checked: usize,
-    /// Every diagnostic, in file order, and in source order within a file.
+    /// How many of them the report covers: the source files in the paths
+    /// named, or every one when no path was.
+    files_reported: usize,
+    /// The builds whose page-level checks ran, in `ascribe.toml`'s order:
+    /// every build, the ones named with `--build`, or the editor's with
+    /// `--editor-build`. Empty when the project couldn't be checked.
+    builds_checked: Vec<String>,
+    /// Every diagnostic, in file order, and in source order within a file;
+    /// advice after the errors and warnings, in the same order.
+    /// With paths, only those that count for them. With `--summary`, none:
+    /// see `truncated`.
     diagnostics: Vec<Entry>,
-    /// How many errors and warnings.
+    /// Whether `diagnostics` leaves some out. It does with `--summary`,
+    /// which lists none.
+    truncated: bool,
+    /// How many diagnostics `diagnostics` lists.
+    shown: usize,
+    /// How many diagnostics there are.
+    total: usize,
+    /// The command that lists the ones left out, when `truncated`; `null`
+    /// otherwise.
+    next_command: Option<String>,
+    /// The problems acknowledged as intended, which `diagnostics` leaves
+    /// out and which don't fail the command, in file order. Left out when
+    /// there are none, and with `--summary`.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    acknowledged: Vec<AcknowledgedEntry>,
+    /// With `--fix`, the safe fixes it applied, in file order and, within a
+    /// file, in the order of their diagnostics; the rest of the report is
+    /// the check after them. Left out when none was applied.
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    fixed: &'a [FixedEntry],
+    /// How many errors, warnings, and advice.
     summary: Summary,
+}
+
+/// A safe fix `--fix` applied.
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub struct FixedEntry {
+    /// The code of the diagnostic it fixed, such as `ASC036`.
+    pub code: &'static str,
+    /// The diagnostic's name.
+    pub slug: String,
+    /// What the fix did.
+    pub title: String,
+    /// The file it changed, as a diagnostic's `file` is.
+    pub file: String,
+}
+
+impl FixedEntry {
+    /// The fixes applied to each file, in the files' order.
+    pub fn of(files: &[ascribe_check::fix::FixedFile]) -> Vec<FixedEntry> {
+        files
+            .iter()
+            .flat_map(|f| {
+                f.applied.iter().map(|a| FixedEntry {
+                    code: a.code,
+                    slug: a.slug.clone(),
+                    title: a.title.clone(),
+                    file: f.display_path.clone(),
+                })
+            })
+            .collect()
+    }
 }
 
 /// How many diagnostics of each severity.
@@ -44,18 +105,125 @@ struct Summary {
     errors: usize,
     /// How many warnings.
     warnings: usize,
+    /// How many advice.
+    advice: usize,
+    /// How many problems are acknowledged as intended. Left out when there
+    /// are none.
+    #[serde(skip_serializing_if = "is_zero")]
+    acknowledged: usize,
+    /// With `--summary`: how many diagnostics have each code, most first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    by_code: Option<Vec<CodeCount>>,
+    /// With `--summary`: how many diagnostics are in each file, most first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    by_file: Option<Vec<FileCount>>,
+}
+
+/// A problem acknowledged as intended.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct AcknowledgedEntry {
+    /// The code of the check that found it, such as `ASC036`.
+    code: &'static str,
+    /// The check's name.
+    slug: String,
+    /// What the check found.
+    message: String,
+    /// The file, as a diagnostic's `file` is.
+    file: String,
+    /// Where in the file.
+    range: Range,
+    /// The builds it appears in, as a diagnostic's `builds` are.
+    builds: Vec<String>,
+    /// Why it's intended: the acknowledgement's reason.
+    reason: String,
+    /// Where the acknowledgement is written.
+    at: Place,
+}
+
+/// A place in a file.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct Place {
+    /// The file, as a diagnostic's `file` is.
+    file: String,
+    /// Where in the file.
+    range: Range,
+}
+
+#[allow(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes a reference"
+)]
+fn is_zero(n: &usize) -> bool {
+    *n == 0
+}
+
+pub(crate) fn acknowledged(files: &FileTable, a: &Acknowledged) -> AcknowledgedEntry {
+    AcknowledgedEntry {
+        code: a.problem.code,
+        slug: a.problem.slug.to_string(),
+        message: a.problem.message.clone(),
+        file: files.path(a.problem.location.file),
+        range: range(files, a.problem.location),
+        builds: a.problem.builds.clone(),
+        reason: a.reason.clone(),
+        at: Place {
+            file: files.path(a.at.file),
+            range: range(files, a.at),
+        },
+    }
+}
+
+/// How many diagnostics have one code.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct CodeCount {
+    /// The code, such as `ASC036`.
+    code: &'static str,
+    /// The diagnostic's name, such as `link-target-missing`.
+    slug: String,
+    /// `error`, `warning`, or `advice`.
+    severity: &'static str,
+    /// How many.
+    count: usize,
+}
+
+/// How many diagnostics are in one file.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct FileCount {
+    /// The file, as a diagnostic's `file` is.
+    file: String,
+    /// How many errors.
+    errors: usize,
+    /// How many warnings.
+    warnings: usize,
+    /// How many advice.
+    advice: usize,
 }
 
 /// A diagnostic.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Entry {
+pub(crate) struct Entry {
     /// The code, such as `ASC036`.
     code: &'static str,
     /// The diagnostic's name, such as `link-target-missing`.
     slug: String,
-    /// `error` or `warning`.
+    /// `error`, `warning`, or `advice`. Advice never fails the command.
+    /// More severities may be added; a reader treats one it doesn't know as
+    /// it treats advice.
     severity: &'static str,
+    /// The kind of next step: `fix` when Ascribe can make the edit,
+    /// `choose` when the author picks among things Ascribe can list,
+    /// `write` when it needs writing or judgment, `outside` when nothing in
+    /// the source can fix it, and `review` when it may be fine as it is.
+    next: &'static str,
+    /// The rule of the program that found it, such as `Ascribe.Repeated`
+    /// from Vale, for a `prose` diagnostic. Absent for Ascribe's own.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rule: Option<String>,
     /// What's wrong, and what to do about it.
     message: String,
     /// The file, relative to the project root (the directory of
@@ -74,13 +242,24 @@ struct Entry {
     builds: Vec<String>,
     /// Whether it's in content that no build publishes.
     unpublished: bool,
+    /// How to fix it, in general: the diagnostics reference's advice for its
+    /// code.
+    help: String,
+    /// The address of its entry in the diagnostics reference: the docs'
+    /// permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,
+    /// which forwards to the entry wherever it is.
+    docs: String,
+    /// For a problem in included content reported because one of its related
+    /// places is in a path named: at how many other includes it's reported
+    /// too, collapsed into this one. `0` otherwise.
+    repeats: usize,
 }
 
 /// A span of a file. `end` is just past its last character; an empty range
 /// (an insertion) has equal positions.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Range {
+pub(crate) struct Range {
     /// Its first character.
     start: Pos,
     /// Just past its last character.
@@ -90,7 +269,7 @@ struct Range {
 /// A position in a file.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Pos {
+pub(crate) struct Pos {
     /// The line, from 1.
     line: u32,
     /// The column, from 1, in Unicode characters (not bytes or UTF-16
@@ -122,16 +301,33 @@ struct Fix {
     file: String,
     /// The edits, each replacing the text of its range.
     edits: Vec<Edit>,
+    /// `safe` when applying the edits as they are can't change what the page
+    /// says and leaves nothing to decide; `unsafe` otherwise.
+    applicability: &'static str,
 }
 
 /// One edit of a fix.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Edit {
+pub(crate) struct Edit {
     /// The text it replaces.
     range: Range,
     /// The text that replaces it.
     new_text: String,
+}
+
+impl Edit {
+    /// An edit of the text `index` indexes, with its positions worked out as
+    /// a diagnostic's are.
+    pub(crate) fn in_text(index: &ascribe_core::LineIndex, edit: &ascribe_core::TextEdit) -> Edit {
+        Edit {
+            range: Range {
+                start: position_in(index, edit.span.start()).into(),
+                end: position_in(index, edit.span.end()).into(),
+            },
+            new_text: edit.new_text.clone(),
+        }
+    }
 }
 
 impl From<Position> for Pos {
@@ -144,7 +340,7 @@ impl From<Position> for Pos {
     }
 }
 
-fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
+pub(crate) fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
     let (start, end) = files.range(at);
     Range {
         start: start.into(),
@@ -152,11 +348,14 @@ fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
     }
 }
 
-fn entry(files: &FileTable, d: &Diagnostic) -> Entry {
+pub(crate) fn entry(files: &FileTable, d: &Diagnostic, repeats: usize) -> Entry {
+    let registered = Registry::global().get(d.slug);
     Entry {
         code: d.code,
         slug: d.slug.to_string(),
         severity: d.severity.as_str(),
+        next: d.next().map_or("write", ascribe_check::Next::as_str),
+        rule: d.rule.clone(),
         message: d.message.clone(),
         file: files.path(d.location.file),
         range: range(files, d.location),
@@ -183,35 +382,123 @@ fn entry(files: &FileTable, d: &Diagnostic) -> Entry {
                         new_text: e.new_text.clone(),
                     })
                     .collect(),
+                applicability: f.applicability.as_str(),
             })
             .collect(),
         builds: d.builds.clone(),
         unpublished: d.unpublished,
+        help: registered.and_then(|e| e.fix.clone()).unwrap_or_default(),
+        docs: registered
+            .map(ascribe_check::Entry::docs)
+            .unwrap_or_default(),
+        repeats,
+    }
+}
+
+/// What a report is about, besides its diagnostics.
+pub struct About<'a> {
+    /// Why the command couldn't run to the end, when it couldn't; the
+    /// diagnostics are whatever was found before that (a content model's
+    /// problems, for example).
+    pub error: Option<&'a str>,
+    /// How many source files were checked.
+    pub files_checked: usize,
+    /// How many of them the report covers.
+    pub files_reported: usize,
+    /// The builds whose page-level checks ran.
+    pub builds_checked: Vec<String>,
+    /// The problems acknowledged as intended.
+    pub acknowledged: &'a [Acknowledged],
+    /// With `--summary`, the command that lists the diagnostics: the list is
+    /// left out, and counted instead.
+    pub summary_only: Option<String>,
+    /// With `--fix`, the safe fixes applied before the check reported.
+    pub fixed: &'a [FixedEntry],
+}
+
+impl About<'_> {
+    /// A command that stopped before checking anything, because of `error`.
+    pub fn failed(error: &str) -> About<'_> {
+        About {
+            error: Some(error),
+            files_checked: 0,
+            files_reported: 0,
+            builds_checked: Vec::new(),
+            acknowledged: &[],
+            summary_only: None,
+            fixed: &[],
+        }
     }
 }
 
 /// Writes the report as one JSON document and a newline.
-///
-/// `error` is why the command couldn't run to the end, when it couldn't; the
-/// diagnostics are whatever was found before that (a content model's
-/// problems, for example).
 pub fn write(
     out: &mut dyn Write,
     files: &FileTable,
-    diagnostics: &[Diagnostic],
-    files_checked: usize,
-    error: Option<&str>,
+    reported: &[Reported],
+    about: &About<'_>,
 ) -> io::Result<()> {
-    let counts = Counts::of(diagnostics);
+    let counts = Counts::of_reported(reported);
+    let total = reported.len();
+    let (diagnostics, by_code, by_file) = if about.summary_only.is_some() {
+        let (codes, by_file) = tally(files, reported);
+        let codes = codes
+            .into_iter()
+            .map(|c| CodeCount {
+                code: c.code,
+                slug: c.slug,
+                severity: c.severity.as_str(),
+                count: c.count,
+            })
+            .collect();
+        let by_file = by_file
+            .into_iter()
+            .map(|f| FileCount {
+                file: f.file,
+                errors: f.counts.errors,
+                warnings: f.counts.warnings,
+                advice: f.counts.advice,
+            })
+            .collect();
+        (Vec::new(), Some(codes), Some(by_file))
+    } else {
+        let list = reported
+            .iter()
+            .map(|r| entry(files, &r.diagnostic, r.repeats))
+            .collect();
+        (list, None, None)
+    };
+    let shown = diagnostics.len();
+    let truncated = shown < total;
     let report = Report {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
-        error,
-        files_checked,
-        diagnostics: diagnostics.iter().map(|d| entry(files, d)).collect(),
+        error: about.error,
+        files_checked: about.files_checked,
+        files_reported: about.files_reported,
+        builds_checked: about.builds_checked.clone(),
+        diagnostics,
+        truncated,
+        shown,
+        total,
+        next_command: about.summary_only.clone().filter(|_| truncated),
+        acknowledged: if about.summary_only.is_some() {
+            Vec::new()
+        } else {
+            about
+                .acknowledged
+                .iter()
+                .map(|a| acknowledged(files, a))
+                .collect()
+        },
+        fixed: about.fixed,
         summary: Summary {
             errors: counts.errors,
             warnings: counts.warnings,
+            advice: counts.advice,
+            acknowledged: about.acknowledged.len(),
+            by_code,
+            by_file,
         },
     };
     serde_json::to_writer_pretty(&mut *out, &report).map_err(io::Error::other)?;

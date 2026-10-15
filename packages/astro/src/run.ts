@@ -4,21 +4,27 @@ import { execFile } from "node:child_process";
 
 /** What a successful build printed. */
 export interface BuildResult {
-  /** The checks' report, which is more than a summary line when there are warnings. */
+  /** The checks' report, which is more than a summary line when there is anything to report. */
   diagnostics: string;
   /** The `built <build>/site: …` lines. */
   summary: string;
 }
 
-/** A check summary with nothing to report: `checked 14 files: 0 errors, 0 warnings`. */
-const CLEAN = /^checked [^:\n]*: 0 errors, 0 warnings$/;
+/**
+ * A check's summary line, the report's last: `checked 14 files for build \`site\`, reported on 14:
+ * 0 errors, 0 warnings, 0 advice`.
+ */
+const SUMMARY = /^checked [^:\n]*: (\d+) errors?, (\d+) warnings?, \d+ advice$/;
 
 /**
- * Whether a build's report is worth a warning: anything but a clean check's
- * summary line, which is logged at info level.
+ * Whether a build's report is worth a warning: anything but a report whose
+ * summary line counts no errors and no warnings, which is logged at info
+ * level, advice and all.
  */
 export function hasWarnings(diagnostics: string): boolean {
-  return diagnostics !== "" && !CLEAN.test(diagnostics);
+  if (diagnostics === "") return false;
+  const summary = SUMMARY.exec(diagnostics.trimEnd().split("\n").at(-1) ?? "");
+  return summary === null || summary[1] !== "0" || summary[2] !== "0";
 }
 
 /**
@@ -35,31 +41,32 @@ export function anchorsFor(
   return anchors === true || (command === "dev" && (anchors === "dev" || review));
 }
 
-/** Whether an Astro command has review in the site preview, given the `review` option. */
-export function reviewFor(review: boolean | undefined, command: string): boolean {
+/** Whether an Astro command has review in the site preview, given the `review` option (an entry's name is on). */
+export function reviewFor(review: boolean | string | undefined, command: string): boolean {
   return command === "dev" && review !== false;
 }
 
 /**
- * Builds one build's outputs, the site output by default. Rejects, with the compiler's report as the
+ * Builds one build's outputs, or several builds', the site output by default. Rejects, with the compiler's report as the
  * message, if the build has errors: the Astro build fails with them.
  */
 export function runBuild(options: {
   binary: string;
   configPath: string;
-  build: string;
+  /** The build, or several, each a `--build`. */
+  build: string | readonly string[];
   cwd: string;
   /** Write source anchors (`--anchors`). */
   anchors?: boolean;
   /** The outputs to write. Default: `["site"]`. */
-  outputs?: readonly ("site" | "json")[];
+  outputs?: readonly ("site" | "plain" | "json")[];
 }): Promise<BuildResult> {
+  const builds = typeof options.build === "string" ? [options.build] : options.build;
   const args = [
     "build",
     "--emit",
     (options.outputs ?? ["site"]).join(","),
-    "--build",
-    options.build,
+    ...builds.flatMap((build) => ["--build", build]),
     "--config",
     options.configPath,
     "--color",
@@ -76,7 +83,7 @@ export function runBuild(options: {
           const report = `${stdout}${stderr}`.trim();
           reject(
             new Error(
-              `\`ascribe build --build ${options.build}\` failed${report === "" ? `: ${error.message}` : `:\n${report}`}`,
+              `\`ascribe build ${builds.map((build) => `--build ${build}`).join(" ")}\` failed${report === "" ? `: ${error.message}` : `:\n${report}`}`,
               { cause: error },
             ),
           );

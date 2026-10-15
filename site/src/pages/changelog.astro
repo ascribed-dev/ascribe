@@ -1,0 +1,156 @@
+---
+// The changelog: ../CHANGELOG.md in the frame of the site's own pages, with
+// its links to docs pages pointed at their routes, here, and its other links
+// into the repository at GitHub. A link that leads nowhere fails the build.
+// Each entry is collapsed to what it says first, each release's entries are
+// grouped by area, and the contents beside the page list the releases and the
+// newest ones' areas.
+import { getCollection, getEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+import {
+  anchorReleases,
+  changelogId,
+  collapseEntries,
+  firstParagraph,
+  kindUnder,
+  pointLinks,
+} from "../changelog.ts";
+import { contentDir, docsPath, repo } from "../site.ts";
+
+const entry = await getEntry("changelog", changelogId);
+if (entry?.rendered === undefined || entry.body === undefined) {
+  throw new Error("the changelog collection has no rendered entry");
+}
+
+// Each docs page the site publishes, by its source, at the route
+// src/pages/docs/[...slug].astro gives it.
+const base = import.meta.env.BASE_URL;
+const pages = new Map(
+  (await getCollection("docs")).map((page) => [
+    `${contentDir}/${page.data.source}`,
+    `${base}${docsPath}${page.id === "index" ? "" : `${page.id}/`}`,
+  ]),
+);
+const kind = kindUnder(entry.data.repository);
+const anchored = anchorReleases(
+  await pointLinks(entry.rendered.html, entry.body, { pages, repo, kind }),
+);
+const { html, contents } = collapseEntries(anchored);
+// The title and what the changelog is, before the first release.
+const split = html.indexOf('<section class="release"');
+const intro = split === -1 ? html : html.slice(0, split);
+const releases = split === -1 ? "" : html.slice(split);
+// The releases whose areas the contents list: what's unreleased, and the newest release.
+const detailed = 2;
+---
+
+<Base
+  title="Changelog"
+  description={firstParagraph(anchored)}
+  card={{ name: "changelog", alt: "Ascribe: Changelog" }}
+>
+  <main id="content" class="page changelog">
+    <header class="changelog-intro" set:html={intro} />
+    <details class="contents" open>
+      <summary>Contents</summary>
+      <nav aria-label="Releases">
+        <ul>
+          {
+            contents.map((release, index) => (
+              <li>
+                <a href={`#${release.id}`}>
+                  <span set:html={release.html} /> <span class="count">{release.count}</span>
+                </a>
+                {index < detailed && release.areas.length > 0 && (
+                  <ul>
+                    {release.areas.map((area) => (
+                      <li>
+                        <a href={`#${area.id}`}>
+                          <span set:html={area.html} /> <span class="count">{area.count}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </details>
+    <article>
+      <div class="changelog-controls" hidden>
+        <button type="button" data-open="true">Expand all</button>
+        <button type="button" data-open="false">Collapse all</button>
+        <button type="button" aria-pressed="false" data-behavior>Behavior changes only</button>
+      </div>
+      <Fragment set:html={releases} />
+    </article>
+  </main>
+</Base>
+
+<script>
+  // Opening and closing every entry, showing only behavior changes, and
+  // opening what a reader is sent to or looks for. Without a script, each
+  // entry still opens on a click, and the controls stay hidden.
+  const page = document.querySelector<HTMLElement>(".changelog");
+  const entries = (): HTMLDetailsElement[] =>
+    Array.from(document.querySelectorAll<HTMLDetailsElement>(".changelog .entry > details"));
+  const setAll = (open: boolean): void => {
+    for (const entry of entries()) entry.open = open;
+  };
+  const controls = document.querySelector<HTMLElement>(".changelog-controls");
+  if (controls) controls.hidden = false;
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-open]")) {
+    button.addEventListener("click", () => setAll(button.dataset.open === "true"));
+  }
+  const behavior = document.querySelector<HTMLButtonElement>("[data-behavior]");
+  behavior?.addEventListener("click", () => {
+    const on = behavior.getAttribute("aria-pressed") !== "true";
+    behavior.setAttribute("aria-pressed", String(on));
+    page?.classList.toggle("behavior-only", on);
+  });
+
+  // A link to something inside a closed entry opens it.
+  const reveal = (): void => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const target = id === "" ? null : document.getElementById(id);
+    let closed = target?.parentElement?.closest("details");
+    if (!target || !closed) return;
+    while (closed) {
+      closed.open = true;
+      closed = closed.parentElement?.closest("details");
+    }
+    target.scrollIntoView();
+  };
+  reveal();
+  window.addEventListener("hashchange", reveal);
+
+  // Chrome and Firefox open a closed entry that find-in-page matches in, and
+  // ship the `beforematch` event with it. Where it's missing, opening
+  // find-in-page from the keyboard opens every entry.
+  if (!("onbeforematch" in document.body)) {
+    document.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") setAll(true);
+    });
+  }
+
+  // A printed changelog has every entry open.
+  let wereOpen: HTMLDetailsElement[] = [];
+  window.addEventListener("beforeprint", () => {
+    wereOpen = entries().filter((entry) => entry.open);
+    setAll(true);
+  });
+  window.addEventListener("afterprint", () => {
+    for (const entry of entries()) entry.open = wereOpen.includes(entry);
+  });
+
+  // The contents are beside the page where they fit, always open; where they
+  // don't, they're above it, closed until asked for.
+  const contents = document.querySelector<HTMLDetailsElement>(".changelog .contents");
+  const above = window.matchMedia("(max-width: 60rem)");
+  if (contents && above.matches) contents.open = false;
+  above.addEventListener("change", () => {
+    if (contents && !above.matches) contents.open = true;
+  });
+</script>

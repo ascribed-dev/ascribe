@@ -1,0 +1,8 @@
+description: >-
+  `[checks.vale] off` turns off rules of the preset; a name that isn't one of
+  its rules is an error.
+spec: ["8.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-checks-vale, file: ascribe.toml, line: 6}

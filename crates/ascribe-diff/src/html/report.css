@@ -392,10 +392,53 @@ ascribe-availability-target[states$=" removed"] {
   --_background: var(--ascribe-state-removed-background);
 }
 
+/* A planned version (`[releases]`): the badge of no state, with a dashed
+   outline, whatever the state it's planned in. */
+ascribe-availability-target[planned] {
+  --_color: var(--ascribe-state-color);
+  --_background: var(--ascribe-state-background);
+  outline: 1px dashed currentColor;
+  outline-offset: -1px;
+}
+
 /* <ascribe-group> --------------------------------------------------------- */
 
 ascribe-group {
   display: block;
+}
+
+/* A tested code block (CONTRACT.md §9) ----------------------------------- */
+
+/* The caption line under a code block's title that says what its example was
+   tested with. The lead-in is generated content, so a site can restyle or
+   translate it. */
+.ascribe-code-tested {
+  font-family: var(--ascribe-font-family);
+  font-size: var(--ascribe-font-size-small);
+}
+
+.ascribe-code-tested::before {
+  content: "Tested with ";
+  color: var(--ascribe-muted-color);
+}
+
+/* <ascribe-for-agents> --------------------------------------------------- */
+
+/* The pointer to llms.txt: out of sight, but in the page for an agent (and a
+   screen reader) to read. Not `display: none`, which some readers skip. A
+   table row's "(Available: " and ")" around its badges are hidden the same
+   way, so a screen reader says what the badges are, as the Markdown does. */
+ascribe-for-agents,
+.ascribe-availability-lead-in {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Glossary terms ---------------------------------------------------------- */
@@ -404,6 +447,16 @@ ascribe-group {
 a[data-ascribe-term] {
   text-decoration-line: underline;
   text-decoration-style: dotted;
+}
+
+/* Links out of a line ---------------------------------------------------- */
+
+/* A link to the page in another line of a versioned build says which line,
+   after its text. It's generated content, so a site can restyle, reword,
+   or hide it. */
+a[data-ascribe-release-line]::after {
+  content: " (" attr(data-ascribe-release-line) ")";
+  color: var(--ascribe-muted-color);
 }
 
 /*
@@ -885,7 +938,24 @@ body {
   font-weight: 400;
 }
 
-.r-head .r-notice {
+.r-head .r-status {
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
+  color: var(--r-muted);
+  margin-top: 6px;
+}
+
+.r-status:empty {
+  margin: 0;
+}
+
+.r-offscreen {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+}
+
+.r-notice {
   margin-top: 8px;
 }
 

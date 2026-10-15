@@ -5,7 +5,7 @@ import type { CommentTarget, PendingReview, ReviewEvent } from "../github/sessio
 import type { Anchor } from "../place/anchor.js";
 import type { LocatedThread, PlacedThreads } from "../place/place.js";
 import type { FormattedPiece } from "../shapes.js";
-import type { Thread, ThreadComment } from "../shared/types.js";
+import type { PromptRequest, Thread, ThreadComment } from "../shared/types.js";
 
 export type {
   Anchor,
@@ -14,6 +14,7 @@ export type {
   LocatedThread,
   PendingReview,
   PlacedThreads,
+  PromptRequest,
   ReviewEvent,
 };
 
@@ -70,6 +71,13 @@ export interface OverlayHost {
   openLink?(url: string): void;
   /** Tells the reviewer something that happened, as the host shows notices. */
   notify?(message: string): void;
+  /**
+   * Builds a prompt for the reviewer's agent and puts it where they send it
+   * (the clipboard, or an agent's chat, filled in and not sent), saying so as
+   * the host shows notices. The overlay only says what was asked for. Without
+   * it, the overlay offers no **Prompt agent** actions.
+   */
+  promptAgent?(request: PromptRequest): Promise<void>;
   /** Calls `listener` when the page re-rendered or the threads changed. */
   onDidChange(listener: () => void): void;
 }

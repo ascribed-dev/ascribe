@@ -1,0 +1,9 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+# Upgrade the agent
+
+Available: self-managed (GA)
+
+Each release of self-managed Quill adds to the agent. 3.5 adds [webhooks](https://docs.quill.dev/webhooks/) (3.5), and reads its settings from a new place: see [Set the API key](https://docs.quill.dev/3.4/configure-legacy/#set-the-api-key).

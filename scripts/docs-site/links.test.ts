@@ -1,7 +1,9 @@
 // Readers are sent to the docs site, not to the docs' source files: the
-// READMEs and the extension's manifest link to the site's pages, at the
-// address in docs/ascribe.toml's `[consumer] site`, and each link lands on a
-// page and a heading the docs have. (The binary's help is checked by
+// READMEs link to the docs' permalinks, and the ones that aren't published
+// (the examples', the site's, the tests') may link to a page, under the
+// address and base path in docs/ascribe.toml's `[consumer]`; the extension's
+// manifest links to its permalinks. Each link lands on a page and a
+// heading the docs have, or on a permalink they declare. (The binary's help is checked by
 // crates/ascribe-cli/src/docs.rs, and the site's own links by site/test/.)
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -12,13 +14,25 @@ import { expect, test } from "vitest";
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const content = path.join(root, "docs", "content");
 
-/** `[consumer] site` in docs/ascribe.toml, without a trailing slash. */
-function siteAddress(): string {
+/** A string in docs/ascribe.toml's `[consumer]`. */
+function consumer(key: string): string {
   const config = readFileSync(path.join(root, "docs", "ascribe.toml"), "utf8");
   const table = /^\[consumer\]$([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(config)?.[1] ?? "";
-  const site = /^site\s*=\s*"([^"]+)"/m.exec(table)?.[1];
-  if (site === undefined) throw new Error("docs/ascribe.toml's [consumer] has no site");
-  return site.replace(/\/$/, "");
+  const found = new RegExp(`^${key}\\s*=\\s*"([^"]+)"`, "m").exec(table)?.[1];
+  if (found === undefined) throw new Error(`docs/ascribe.toml's [consumer] has no ${key}`);
+  return found;
+}
+
+/** `[consumer] site` in docs/ascribe.toml, without a trailing slash. */
+function siteAddress(): string {
+  return consumer("site").replace(/\/$/, "");
+}
+
+/** The permalinks the docs publish, by name, from docs/ascribe.permalinks's `[permalinks]`. */
+function permalinks(): Set<string> {
+  const list = readFileSync(path.join(root, "docs", "ascribe.permalinks"), "utf8");
+  const table = /^\[permalinks\]$([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(list)?.[1] ?? "";
+  return new Set(Array.from(table.matchAll(/^"?([\w-]+)"?\s*=/gm), ([, name = ""]) => name));
 }
 
 /** Every README in the repository, outside the docs themselves. */
@@ -29,6 +43,15 @@ function readmes(): string[] {
   })
     .split("\n")
     .filter((file) => file !== "" && !file.startsWith("docs/"));
+}
+
+/**
+ * A README that's published: the repository's, the packages', the crates',
+ * and the plugin's. A page can move, and a copy already on npm or the
+ * Marketplace can't follow it, so these link to permalinks only.
+ */
+function published(file: string): boolean {
+  return /^(README\.md$|packages\/|crates\/|plugins\/)/.test(file);
 }
 
 /** A Markdown link's destinations: `[text](destination)`. */
@@ -43,17 +66,20 @@ function pageFor(route: string): string | undefined {
   return candidates.map((file) => path.join(content, file)).find((file) => existsSync(file));
 }
 
-/** The anchors of a page's headings, as the site's slugger writes them. */
+/** The anchors of a page's headings: as the site's slugger writes them, or a heading's `@id`. */
 function anchors(file: string): Set<string> {
-  const headings = readFileSync(file, "utf8").matchAll(/^#{1,6}\s+(.+?)\s*$/gm);
-  return new Set(
-    Array.from(headings, ([, heading = ""]) =>
+  const text = readFileSync(file, "utf8");
+  const headings = text.matchAll(/^#{1,6}\s+(.+?)\s*$/gm);
+  const ids = text.matchAll(/^@id(?: *\{[^}]*\})?: *(\S+)$/gm);
+  return new Set([
+    ...Array.from(headings, ([, heading = ""]) =>
       heading
         .toLowerCase()
         .replace(/[^\p{L}\p{N}\s_-]/gu, "")
         .replace(/ /g, "-"),
     ),
-  );
+    ...Array.from(ids, ([, id = ""]) => id),
+  ]);
 }
 
 test("READMEs link to the docs site, not to the docs' source files", () => {
@@ -66,8 +92,11 @@ test("READMEs link to the docs site, not to the docs' source files", () => {
   expect(found, "link to the page on the docs site instead").toEqual([]);
 });
 
-test("each link to the docs site lands on a page and a heading", () => {
+test("each link to the docs site is a permalink, or lands on a page and a heading", () => {
   const site = siteAddress();
+  const basePath = consumer("base-path");
+  const permalinkPath = consumer("permalink-path");
+  const names = permalinks();
   const problems: string[] = [];
   let checked = 0;
   for (const file of readmes()) {
@@ -75,7 +104,21 @@ test("each link to the docs site lands on a page and a heading", () => {
       if (!link.startsWith(`${site}/`)) continue;
       checked++;
       const url = new URL(link);
-      const page = pageFor(url.pathname);
+      if (url.pathname.startsWith(permalinkPath)) {
+        // A permalink's page forwards to its heading, so the link has no fragment.
+        const name = url.pathname.slice(permalinkPath.length).replace(/\/$/, "");
+        if (!names.has(name) || url.hash !== "") problems.push(`${file}: ${link} (no permalink)`);
+        continue;
+      }
+      if (published(file)) {
+        problems.push(`${file}: ${link} (a published README links to a permalink)`);
+        continue;
+      }
+      if (!url.pathname.startsWith(basePath)) {
+        problems.push(`${file}: ${link} (not under the docs' base path, ${basePath})`);
+        continue;
+      }
+      const page = pageFor(url.pathname.slice(basePath.length - 1));
       if (page === undefined) problems.push(`${file}: ${link} (no page)`);
       else if (url.hash !== "" && !anchors(page).has(decodeURIComponent(url.hash.slice(1)))) {
         problems.push(`${file}: ${link} (no heading)`);
@@ -86,10 +129,11 @@ test("each link to the docs site lands on a page and a heading", () => {
   expect(checked).toBeGreaterThan(10);
 });
 
-test("the extension's homepage is a page of the docs site", () => {
+// The extension's manifest links to the docs' permalinks, which
+// packages/vscode/test/unit/walkthrough.test.ts checks against the docs.
+test("the extension's homepage is on the docs site", () => {
   const manifest = JSON.parse(
     readFileSync(path.join(root, "packages", "vscode", "package.json"), "utf8"),
   ) as { homepage: string };
-  expect(manifest.homepage.startsWith(`${siteAddress()}/`)).toBe(true);
-  expect(pageFor(new URL(manifest.homepage).pathname)).toBeDefined();
+  expect(manifest.homepage.startsWith(`${siteAddress()}/go/`)).toBe(true);
 });

@@ -1,4 +1,5 @@
 ---
+type: page
 title: Loom documentation
 description: The Loom documentation set.
 ---

@@ -1,0 +1,8 @@
+description: >-
+  A fragment may use the reserved `intended` frontmatter key; the check it
+  names is checked as a page's is.
+spec: ["2.2", "4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: intended-check, file: _f.md, line: 3}

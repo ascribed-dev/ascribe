@@ -1,0 +1,5 @@
+include = ["examples/**"]
+test = "node --test"
+
+[environment]
+node = { label = "Node", command = "node --version" }

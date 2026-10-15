@@ -26,7 +26,17 @@
     // The published packages: each path their `exports` names is a contract,
     // so its exports count as used.
     "packages/astro": {
-      "entry": ["src/index.ts", "src/rehype.ts", "src/satteri.ts", "src/content.ts", "src/*.astro"],
+      // `src/cli.ts` is the package's command (`bin`).
+      "entry": [
+        "src/index.ts",
+        "src/rehype.ts",
+        "src/satteri.ts",
+        "src/content.ts",
+        "src/cli.ts",
+        "src/*.astro",
+      ],
+      // The starter's files, which `init` reads by path and copies into a site.
+      "ignore": ["starter/**"],
     },
     "packages/cli": {
       "entry": ["scripts/*.mjs"],
@@ -42,9 +52,12 @@
         "src/marks/index.ts",
         "src/overlay/index.ts",
         "src/place/index.ts",
+        "src/prompt/index.ts",
       ],
     },
     "packages/vscode": {
+      // The site's editor picture, which scripts/docs-site/screenshots.ts runs.
+      "entry": ["scripts/screenshot.ts"],
       // Release packaging runs `vsce` by name (scripts/release/pack.ts and
       // publish.ts), and the language server packages are the test stub's
       // (test/stub-server/ascribe), a script with no extension.

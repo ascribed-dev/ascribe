@@ -1,0 +1,7 @@
+spec = "0.1"
+
+[checks]
+link-external-moved = "warning"
+
+[checks.links]
+ignore = ["old.gone.test"]

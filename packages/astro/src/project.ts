@@ -17,9 +17,21 @@ export interface ProjectInfo {
   /** Generated output, never treated as a source change. */
   outputRoot: string;
   /** `[consumer]`, with the profile's defaults. */
-  consumer: { site: string | undefined; basePath: string; trailingSlash: "always" | "never" };
+  consumer: {
+    site: string | undefined;
+    basePath: string;
+    trailingSlash: "always" | "never";
+    /** Whether builds publish what agents read: `llms.txt` and each page's Markdown, in the plain output. */
+    agents: boolean;
+    /** The host whose format the site's response headers are written in: `"netlify"`, or none. */
+    headers: "netlify" | undefined;
+  };
+  /** The names of `[builds]`'s tables, in order: empty when there are none, and the one build is `site`. */
+  builds: string[];
   /** The site output's root for a build: `<output-dir>/<build>/site`. */
   siteRoot(build: string): string;
+  /** The plain output's root for a build: `<output-dir>/<build>/plain`. */
+  plainRoot(build: string): string;
 }
 
 /** Reads `ascribe.toml` in `dir`. Throws a readable error if it can't be read. */
@@ -51,8 +63,12 @@ export function readProject(dir: string): ProjectInfo {
         typeof consumer["base-path"] === "string" ? consumer["base-path"] : "/",
       ),
       trailingSlash,
+      agents: consumer["agents"] === true,
+      headers: consumer["headers"] === "netlify" ? "netlify" : undefined,
     },
+    builds: Object.keys(section(table, "builds")),
     siteRoot: (build) => path.resolve(dir, outputDir, build, "site"),
+    plainRoot: (build) => path.resolve(dir, outputDir, build, "plain"),
   };
 }
 
@@ -72,6 +88,58 @@ export function normalizeBase(base: string): string {
 }
 
 /**
+ * The route of a base path, ending the way `trailingSlash` says the site's
+ * routes do: the site's root for Astro's `base`, a project's root for its
+ * `[consumer] base-path`. (`import.meta.env.BASE_URL` isn't replaced in a
+ * package's components.)
+ */
+export function homeRoute(base: string, trailingSlash: "always" | "never" | "ignore"): string {
+  const root = normalizeBase(base);
+  return trailingSlash === "never" && root !== "/" ? root.slice(0, -1) : root;
+}
+
+/** Astro's routing settings, as the integration reads and supplies them. */
+export interface AstroRouting {
+  base: string;
+  trailingSlash: "always" | "never" | "ignore";
+  site: string | undefined;
+}
+
+/**
+ * Astro's routing with what astro.config leaves unset taken from `[consumer]`,
+ * and the settings taken, for `updateConfig`. Astro gives an integration its
+ * configuration with its defaults filled in, so unset is the default: no
+ * `site`, `trailingSlash: "ignore"`, and `base: "/"`. `site` and
+ * `trailingSlash` come from the first project that has them, since every
+ * project must agree with them anyway. `base` comes from the first project's
+ * `base-path` only with `supplyBase`, as with one project; with several, it
+ * stays the site's, the root every base path is under. A base Astro has is
+ * rewritten to end the way a supplied `trailingSlash` says, as Astro writes
+ * it when the setting is its own.
+ */
+export function supplyRouting(
+  projects: readonly ProjectInfo[],
+  astro: AstroRouting,
+  supplyBase: boolean,
+): { routing: AstroRouting; supplied: Partial<AstroRouting> } {
+  const supplied: Partial<AstroRouting> = {};
+  if (astro.site === undefined) {
+    const site = projects.find((project) => project.consumer.site !== undefined)?.consumer.site;
+    if (site !== undefined) supplied.site = site;
+  }
+  const first = projects[0];
+  if (first === undefined) return { routing: astro, supplied };
+  if (astro.trailingSlash === "ignore") supplied.trailingSlash = first.consumer.trailingSlash;
+  const trailingSlash = supplied.trailingSlash ?? astro.trailingSlash;
+  const base = homeRoute(
+    supplyBase && normalizeBase(astro.base) === "/" ? first.consumer.basePath : astro.base,
+    trailingSlash,
+  );
+  if (base !== astro.base) supplied.base = base;
+  return { routing: { ...astro, ...supplied }, supplied };
+}
+
+/**
  * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
  * as sentences. Ascribe writes every link with its own settings, so a site
  * whose routes differ would have broken links.
@@ -82,9 +150,10 @@ export function consumerMismatches(
 ): string[] {
   const problems: string[] = [];
   const { basePath, trailingSlash, site } = project.consumer;
-  if (normalizeBase(astro.base) !== basePath) {
+  // A base path under Astro's `base` leaves the rest of the site to other pages, such as a home page.
+  if (!basePath.startsWith(normalizeBase(astro.base))) {
     problems.push(
-      `[consumer] base-path is "${basePath}", but Astro's \`base\` is "${astro.base}". Set them to the same path.`,
+      `[consumer] base-path is "${basePath}", but Astro's \`base\` is "${astro.base}". Set base-path to that path or a path under it.`,
     );
   }
   // Astro's "ignore" serves both forms, so Ascribe's links work either way.

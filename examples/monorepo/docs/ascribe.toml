@@ -7,19 +7,13 @@ content-root = "content"
 output-dir = ".ascribe/build"
 
 # Guides are the default. Reference pages say which version they describe.
-[types.guide]
-default = true
-
 [types.guide.frontmatter]
 title = { type = "string", phrases = true }
-description = "string?"
-
-[types.reference]
-files = ["reference/**"]
+description = { type = "string?", role = "description" }
 
 [types.reference.frontmatter]
 title = "string"
-description = "string?"
+description = { type = "string?", role = "description" }
 since = "string"
 
 # `@variant {platform=macos}:` for install steps.

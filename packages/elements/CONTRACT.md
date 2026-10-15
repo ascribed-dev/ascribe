@@ -11,6 +11,9 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | `@details` | [`<details>`](#5-details) with `<summary>` | Optional CSS |
 | Project widget | [An element named after the widget](#6-project-widgets), and `<ascribe-group>` for groups | The project's own; `<ascribe-group>` is the library's |
 | Glossary term | [An ordinary link](#7-glossary-terms), marked with `data-ascribe-term` | Optional CSS |
+| The pointer to `llms.txt`, with `[consumer] agents = true` | [`<ascribe-for-agents>`](#8-ascribe-for-agents) | CSS only |
+| A tested example's `@snippet` | [A caption line on its code block](#9-a-tested-code-block), with the class `ascribe-code-tested` | CSS only |
+| A link out of a line of a versioned build | [An ordinary link](#10-a-link-out-of-a-line), marked with `data-ascribe-release-line` | Optional CSS |
 
 A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
@@ -30,7 +33,7 @@ A change to this contract changes the site emitter (`crates/ascribe-emit`), the 
 
 **Plain text of inline content.** Where an attribute holds a title or label written as inline markdown, its value is the inline content's text: phrases substituted (they already are, in the resolved page), code spans as their text, emphasis and links as their text, images as their alt text, raw inline HTML dropped, and line breaks as single spaces. So ``.Try the *new* `quill` CLI`` becomes `Try the new quill CLI`.
 
-**Labels** come from the content model: note types' `label` (docs/content/contracts/content-model.md §11), dimensions' and dimension values' `labels` (§7), and lifecycle states' `label` (§9). A value without a declared label is shown as itself.
+**Labels** come from the content model: note types' `label` (docs/content/contracts/content-model.md §10), dimensions' and dimension values' `labels` (§6), and lifecycle states' `label` (§8). A value without a declared label is shown as itself.
 
 ## 1. `<ascribe-note>`
 
@@ -130,6 +133,7 @@ pnpm add -g @quill/agent
 - **Initial selection:** for a group with `sync`, the first tab whose `value` contains the remembered value for that dimension; otherwise, and for labeled groups, the first tab.
 - **Syncing:** selecting a tab in a group with `sync` records the first value in the tab's `value` as the choice for that dimension, then selects, in every `<ascribe-tabs>` on the page with the same `sync`, the first tab whose `value` contains it. A group with no matching tab keeps its selection.
 - **Remembering:** the choice is stored in `localStorage` under the key `ascribe-tabs:<sync>`, such as `ascribe-tabs:pm`, and read when a group starts. Storage can be unavailable (private windows, blocked storage): every read and write is guarded, and without storage the choice lasts for the page only.
+- **Choosing from a script:** the script exports `choose(dimension, value)`, which does what selecting a tab whose first value is `value`, in a group whose `sync` is `dimension`, does: it records the choice and selects it in every group on the page with that `sync`, and a group with no matching tab keeps its selection. It doesn't check the value. A page with no groups can call it before sending the reader on, and the next page's groups start on the choice, as a permalink's address does with its parameters.
 
 ## 4. `<ascribe-availability>` and `<ascribe-availability-target>`
 
@@ -141,14 +145,14 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 |---|---|---|
 | `scope` | yes | What the annotation applies to: `section` (an `@available` at the top of a section), `block` (one bound to a block), `row` (a table row's `available`), or `page`. |
 
-**Children:** one `<ascribe-availability-target>` per target of the effective spec (feature keys resolved), in the spec's order, separated by the text `; `. No markdown.
+**Children:** one `<ascribe-availability-target>` per target of the effective spec (feature keys resolved), in the spec's order, separated by the text `; `. No markdown. With `scope="row"`, the targets are between `<span class="ascribe-availability-lead-in">(Available: </span>` and `<span class="ascribe-availability-lead-in">)</span>`, so the cell's text is the plain-markdown output's, `(Available: …)` (decision [#430](../../project-docs/decisions/430-row-availability-lead-in.md)).
 
 **Where it goes:**
 
 - `section`: directly after the section's heading, as the next block.
 - `block`: directly before the block it annotates, where the `@available` line was.
 - `row`: at the end of the row's first cell, after a space (or alone in an empty cell), all on one line: inside a table cell the element has no line breaks.
-- `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6): `available` is a list with one entry per target, in the spec's order and with feature keys resolved, each holding this element's attributes and its text: `{ target, dimension, states: [...], versions: [...], text }`, with `versions` left out as the attribute is. A layout that shows it renders this element with `scope="page"`, one `<ascribe-availability-target>` per entry, joining `states` and `versions` with single spaces.
+- `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6): `available` is a list with one entry per target, in the spec's order and with feature keys resolved, each holding this element's attributes and its text: `{ target, dimension, states: [...], versions: [...], planned: true, text }`, with `versions` and `planned` left out as the attributes are. A layout that shows it renders this element with `scope="page"`, one `<ascribe-availability-target>` per entry, joining `states` and `versions` with single spaces, and with `planned` when the entry's is `true`.
 
 ### `<ascribe-availability-target>`
 
@@ -158,6 +162,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 | `dimension` | yes | The dimension the target belongs to, or the target itself when it's a dimension name. |
 | `states` | yes | The target's lifecycle states in order, separated by single spaces: `ga` for a bare target, `preview`, or `preview ga deprecated` for a history. |
 | `versions` | when the spec gives versions | The version each state starts at, in the same order, separated by single spaces: `3.4`, or `3.3 3.5 4.0`. A bare version (`self-managed 3.3`) is `states="ga" versions="3.3"`. Left out for a versionless target, and for a target given without versions. |
+| `planned` | when the last version is planned | Present, with no value, when the last version is in a line the content model's `[releases.<target>]` lists as planned: it hasn't shipped. Left out otherwise. |
 
 **Text content:** what a reader sees, built from labels (§0):
 
@@ -167,8 +172,10 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 | `self-managed preview 3.4` | `Self-managed (preview, 3.4+)` |
 | `self-managed 3.3` | `Self-managed (GA, 3.3+)` |
 | `self-managed (preview 3.3, ga 3.5, deprecated 4.0)` | `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)` |
+| `self-managed 3.6`, with 3.6 planned | `Self-managed (planned, 3.6)` |
+| `self-managed (preview 3.5, ga 3.6)`, with 3.6 planned | `Self-managed (preview 3.5, planned 3.6)` |
 
-That is: the target's label, then in parentheses either one state's label, followed by `, <version>+` if it has a version, or, for a history, each state's label and version separated by `, `. The plain-markdown output's availability line uses the same text per target.
+That is: the target's label, then in parentheses either one state's label, followed by `, <version>+` if it has a version, or, for a history, each state's label and version separated by `, `. When the target is `planned`, the last version's state label is the content model's planned label (`[releases] planned-label`, `planned` by default), and a single version has no `+`. The plain-markdown output's availability line uses the same text per target.
 
 ```html
 <ascribe-availability scope="section">
@@ -176,7 +183,7 @@ That is: the target's label, then in parentheses either one state's label, follo
 </ascribe-availability>
 ```
 
-**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`.
+**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), or as planned (`[planned]`) when it is, with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in in sight: the `ascribe-availability-lead-in` spans are visually hidden, and a screen reader reads them. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`, and a row's as `(Available: Quill Cloud (GA))`.
 
 ## 5. `<details>`
 
@@ -199,7 +206,7 @@ The element library may style `details` and `summary`, and implements no element
 
 ## 6. Project widgets
 
-A project widget (SPEC §6) becomes a custom element whose tag is the widget's name (SPEC §9.4). Widget names are valid custom-element names: they contain a hyphen, and docs/content/contracts/content-model.md §15 rejects names starting with `ascribe-` and HTML's reserved names. The project supplies the element's implementation; the element library doesn't.
+A project widget (SPEC §6) becomes a custom element whose tag is the widget's name (SPEC §9.4). Widget names are valid custom-element names: they contain a hyphen, and docs/content/contracts/content-model.md §14 rejects names starting with `ascribe-` and HTML's reserved names. The project supplies the element's implementation; the element library doesn't.
 
 **Attributes**, in this order:
 
@@ -207,7 +214,7 @@ A project widget (SPEC §6) becomes a custom element whose tag is the widget's n
 2. `primary`: an identifier primary, if the widget takes one and it's given. A text primary is content instead (below).
 3. Each attribute in the widget's declaration, in declared order, with the value given or, if absent, its declared default. A value set's members are joined by single spaces; booleans are `true` or `false`; other values are their text. An attribute with neither a value nor a default is left out. A declaration can't use `heading`, `primary`, or HTML's global or event-handler attribute names (SPEC §7.2; content-model.md, `model-attribute-reserved`), so these never clash.
 
-**Children and placement**, by the widget's form and binding (docs/content/contracts/content-model.md §15):
+**Children and placement**, by the widget's form and binding (docs/content/contracts/content-model.md §14):
 
 | Widget | Element |
 |---|---|
@@ -223,7 +230,7 @@ A wrapping widget follows §0's layout for elements that wrap markdown; an empty
 
 ## 7. Glossary terms
 
-There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/content/contracts/content-model.md §13) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-term` attribute holding the term's id:
+There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/content/contracts/content-model.md §12) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-term` attribute holding the term's id:
 
 ```markdown
 [API key](/docs/reference/glossary/#api-key "A secret token that authenticates the Quill agent.")<ascribe-attributes data-ascribe-term="api-key"></ascribe-attributes>
@@ -236,3 +243,50 @@ There's no element for glossary terms. In the site output, an occurrence the glo
 Terms without a `link` stay plain text (content-model.md Q7).
 
 **Rendering:** a link, which the library's CSS underlines with dots (`a[data-ascribe-term]`). A site restyles it, or shows the definition as a popover, by selecting on the attribute.
+
+## 8. `<ascribe-for-agents>`
+
+With `[consumer] agents = true` (docs/content/contracts/content-model.md §15), each page of the site output opens with a pointer for AI agents: where the index of every page, `llms.txt`, is, and where this page's Markdown version is (SPEC §9.4). It has no attributes, and wraps one paragraph of markdown with two links, both root-relative like every link in the site output:
+
+```markdown
+<ascribe-for-agents>
+
+For AI agents: the documentation index is at [llms.txt](/docs/llms.txt), and this page is available as [Markdown](/docs/guides/my-setup.md).
+
+</ascribe-for-agents>
+```
+
+It's the first block of the page's body, before any other content, so an agent that reads only the start of a page still finds it. Without `agents = true` the emitter writes no `<ascribe-for-agents>`.
+
+**Rendering:** visually hidden: in the page, and read by an agent or a screen reader, but out of sight, as a site's "skip to content" link is (a clipped 1-pixel box, not `display: none`, which some readers skip). A site that wants readers to see it too restyles it.
+
+## 9. A tested code block
+
+There's no element for a tested example either. A `@snippet` of a file that's a tested example with a current observation (docs/content/contracts/tested-examples.md) becomes a fenced code block whose info string carries the environment it was tested with, after any title: `` ```ts title="connect.ts" tested="Node 24.9.0 and TypeScript 5.9.2 on Linux" `` (docs/content/contracts/site-render.md §5.1). The value is the environment alone, without the words around it (decision [#458b](../../project-docs/decisions/458b-tested-attribute.md)).
+
+The renderer, `@ascribed/astro`'s code highlighting or `render_site_html`, puts the block in a figure with a caption: the title, when there is one, then a line of its own holding the environment, with the class `ascribe-code-tested`:
+
+```html
+<figure class="code-title">
+  <figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 and TypeScript 5.9.2 on Linux</div></figcaption>
+  <pre>…</pre>
+</figure>
+```
+
+A block with a tested line and no title has the line alone in its caption. A block with a title and no tested line is as it was: its caption is the title.
+
+**Rendering:** the line reads "Tested with Node 24.9.0 and TypeScript 5.9.2 on Linux". The lead-in, "Tested with ", is generated content from the library's stylesheet (`.ascribe-code-tested::before`), as "Available:" is, so a site restyles or translates it once. With no CSS, the caption still reads as a fact about the block. The HTML holds no hidden copy of the lead-in (decision [#459c](../../project-docs/decisions/459c-tested-lead-in.md)). The line is a block of its own, so its text is the plain output's sentence without the lead-in, and a check that each line of the page's HTML appears in its Markdown version finds it there, inside "Tested with … .".
+
+## 10. A link out of a line
+
+There's no element for a link out of a line either. In a line of a versioned build, a link to a page the line doesn't publish can lead to the page in another line (SPEC §5.2). In the site output it's an ordinary markdown link to the page's route in that line, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-release-line` attribute holding the line, as `[releases.<target>]` writes it ([Versions decision 39](../../project-docs/versions/README.md#decisions)). Its text is what the author wrote, or the target's title in that line:
+
+```markdown
+[Configure tracing](/docs/configure-tracing/)<ascribe-attributes data-ascribe-release-line="3.5"></ascribe-attributes>
+```
+
+```html
+<a href="/docs/configure-tracing/" data-ascribe-release-line="3.5">Configure tracing</a>
+```
+
+**Rendering:** the link, followed by its line in parentheses, " (3.5)", generated content from the library's stylesheet (`a[data-ascribe-release-line]::after`), as "Available:" is, so a site restyles, rewords, or hides it by selecting on the attribute. With no CSS, it's a plain link.

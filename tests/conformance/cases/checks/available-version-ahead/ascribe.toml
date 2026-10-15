@@ -1,0 +1,32 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[features.typo]
+name = "A mistyped release"
+available = "self-managed preview 3.45"
+
+[features.next]
+name = "The next release"
+available = "self-managed 3.6"
+
+[builds.site]
+availability = "badge"
+
+[builds.ahead]
+availability = { filter = "self-managed 3.9" }
+
+[checks]
+feature-unused = "off"

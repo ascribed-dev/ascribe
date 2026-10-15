@@ -1,0 +1,9 @@
+description: >-
+  A placeholder whose brace opens in one block and closes in a later one is
+  one placeholder. A page that still has every piece of it, in order, is
+  reported once, at its first piece.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 17, severity: advice}

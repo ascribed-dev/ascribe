@@ -1,0 +1,25 @@
+description: >-
+  A source with several observations: an example is current when at least
+  one lists it with the hash it has now, and its tested line merges the
+  environments of those that do, each entry said once with its distinct
+  values in version order, and the operating systems merged the same way.
+  An example every observation lists with another hash is stale, and gets
+  nothing. A file in `examples.observations/` that isn't named as an
+  observation is left alone.
+spec: ["4.8", "7.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "An example three observations list as it is, on two operating systems:"
+          - code: "console.log(\"hello\");\n"
+            info: ts tested="Node 22.4.0 and 24.9.0 on Linux and macOS"
+          - paragraph: "One only one observation lists as it is:"
+          - code: "console.log(\"partly\");\n"
+            info: ts tested="Node 22.4.0 on Linux"
+          - paragraph: "One that changed after every observation that lists it:"
+          - code: "console.log(\"edited\");\n"
+            info: ts

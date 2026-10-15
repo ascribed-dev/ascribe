@@ -1,0 +1,16 @@
+description: >-
+  A page under a rule may set a stricter value, or the rule's own.
+spec: ["2.1", "7.2"]
+tags: [resolve, check]
+
+diagnostics: []
+
+builds:
+  site:
+    pages:
+      faq/a.md:
+        listing: unlisted
+      faq/b.md:
+        listing: unquoted
+      faq/c.md:
+        listing: unquoted

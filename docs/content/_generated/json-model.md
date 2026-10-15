@@ -1,0 +1,580 @@
+<!-- Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/model.schema.json. Change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. -->
+[`schemas/model.schema.json`]({repo}/blob/main/schemas/model.schema.json):
+
+```json
+{
+  "$defs": {
+    "ModelAttribute": {
+      "description": "An attribute a widget accepts.",
+      "properties": {
+        "default": {
+          "description": "The value used when it's left out, as written (a set's members joined\nby `|`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "description": "What it's for.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key": {
+          "description": "The key.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether every use must give it.",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "The value's type: `string`, `number`, `boolean`, `enum`, `set`, or\n`note-type`.",
+          "type": "string"
+        },
+        "values": {
+          "description": "The values it allows, for `enum` and a `set` of named values; empty\notherwise.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "type",
+        "values",
+        "required",
+        "default",
+        "description"
+      ],
+      "type": "object"
+    },
+    "ModelBuild": {
+      "description": "A build.",
+      "properties": {
+        "availability": {
+          "description": "How it treats availability: `badge`, or the target it filters for,\nsuch as `filter self-managed 3.3`.",
+          "type": "string"
+        },
+        "editor": {
+          "description": "Whether it's the build the editor checks (`[editor] build`).",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "variants": {
+          "description": "Which variant arms it keeps: `switch` for all of them, or the\nselection, such as `deployment=cloud`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "variants",
+        "availability",
+        "editor"
+      ],
+      "type": "object"
+    },
+    "ModelDimension": {
+      "description": "A dimension.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "values": {
+          "description": "Its values, in display order.",
+          "items": {
+            "$ref": "#/$defs/ModelDimensionValue"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "values"
+      ],
+      "type": "object"
+    },
+    "ModelDimensionValue": {
+      "description": "A value of a dimension.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value.",
+          "type": "string"
+        },
+        "versionless": {
+          "description": "Whether it has no versions, so an availability spec gives it a state\nbut no version.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "label",
+        "versionless"
+      ],
+      "type": "object"
+    },
+    "ModelExamples": {
+      "description": "A source's tested examples.",
+      "properties": {
+        "files": {
+          "description": "How many of the files the source makes readable its config makes\nexamples.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "observations": {
+          "description": "Its observations, in name order: those that can't be read left out.",
+          "items": {
+            "$ref": "#/$defs/ModelObservation"
+          },
+          "type": "array"
+        },
+        "valid": {
+          "description": "Whether its `ascribe.examples.toml` can be read. One that can't makes\nno file an example.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "valid",
+        "files",
+        "observations"
+      ],
+      "type": "object"
+    },
+    "ModelFeature": {
+      "description": "A feature.",
+      "properties": {
+        "availability": {
+          "description": "Its availability spec, as written.",
+          "type": "string"
+        },
+        "key": {
+          "description": "Its key, which an availability spec can name.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "availability"
+      ],
+      "type": "object"
+    },
+    "ModelField": {
+      "description": "A frontmatter field.",
+      "properties": {
+        "description": {
+          "description": "What it's for, as the content model describes it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fields": {
+          "description": "An object's fields; empty for any other type.",
+          "items": {
+            "$ref": "#/$defs/ModelField"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether every page of the type must give it.",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "Its type in short form: `string`, `list(string)`, `enum(a, b)`.",
+          "type": "string"
+        },
+        "values": {
+          "description": "The values it allows, for an enumeration or a list of one; empty\notherwise.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "required",
+        "values",
+        "description",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "ModelObservation": {
+      "description": "An observation of a source's examples.",
+      "properties": {
+        "current": {
+          "description": "How many of those are as it found them: the rest changed since, or\nare gone.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "environment": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Its environment as it has it, by name: `os`, `arch`, and each\nentry's kept line.",
+          "type": "object"
+        },
+        "listed": {
+          "description": "How many files it lists. For a source in another repository, only\nthose it has copies of, since the others weren't copied.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "name": {
+          "description": "Its name: `default`, or the name `ascribe observe --name` gave it.",
+          "type": "string"
+        },
+        "tested": {
+          "description": "What a page says it was tested with, by this observation alone.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "environment",
+        "tested",
+        "listed",
+        "current"
+      ],
+      "type": "object"
+    },
+    "ModelPhrase": {
+      "description": "A phrase.",
+      "properties": {
+        "key": {
+          "description": "Its key, written `{key}` in a page.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Its value.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ModelRemote": {
+      "description": "The repository a source is in.",
+      "properties": {
+        "branch": {
+          "description": "The branch an update follows; `null` for the repository's default.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "description": "Its URL.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "branch"
+      ],
+      "type": "object"
+    },
+    "ModelSource": {
+      "description": "A source: a folder of files, such as code, that pages can show.",
+      "properties": {
+        "examples": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelExamples"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its tested examples, for a source with an `ascribe.examples.toml`:\nabsent for any other. For a source in another repository, they're\nread from its copies."
+        },
+        "git": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelRemote"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The repository it's in, for a source in another repository."
+        },
+        "ignore": {
+          "description": "The patterns of the files it doesn't make readable, though `include`\nmatches them.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "include": {
+          "description": "The patterns of the files it makes readable, relative to its folder;\nempty for every file.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name, as addresses write it: `code:` for a source named `code`.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its folder, relative to the project's folder: the `path` written,\nor, for a source in another repository, the folder of its copies.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "include",
+        "ignore",
+        "git"
+      ],
+      "type": "object"
+    },
+    "ModelTerm": {
+      "description": "A glossary term.",
+      "properties": {
+        "aliases": {
+          "description": "Other ways it's written.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "definition": {
+          "description": "Its definition.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Its id.",
+          "type": "string"
+        },
+        "match": {
+          "description": "Which occurrences are linked: `first` on each page, `every` one, or\nonly those an author links (`marked`).",
+          "type": "string"
+        },
+        "term": {
+          "description": "The term.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "term",
+        "aliases",
+        "definition",
+        "match"
+      ],
+      "type": "object"
+    },
+    "ModelType": {
+      "description": "A page type.",
+      "properties": {
+        "fields": {
+          "description": "Its frontmatter fields, in declaration order.",
+          "items": {
+            "$ref": "#/$defs/ModelField"
+          },
+          "type": "array"
+        },
+        "guide": {
+          "description": "What to read before writing a page of the type, in the order to read\nit, from the folder `ascribe.toml` is in; absent when the type names\nnone.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name, which each page of the type gives as its `type`; the\nimplicit `page` type's pages give none.",
+          "type": "string"
+        },
+        "purpose": {
+          "description": "What a page of the type is for, as the content model says; absent\nwhen it says nothing.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "template": {
+          "description": "The page a page of the type starts from, from the folder\n`ascribe.toml` is in; absent when the type names none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "ModelWidget": {
+      "description": "A project widget.",
+      "properties": {
+        "attributes": {
+          "description": "Its attributes, in canonical order.",
+          "items": {
+            "$ref": "#/$defs/ModelAttribute"
+          },
+          "type": "array"
+        },
+        "container": {
+          "description": "Whether it may be a container, closed by `@end`.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "What it's for, as the content model describes it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "description": "Whether it may be one line.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Its name, written `@name`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "line",
+        "container",
+        "attributes"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe model --format json` answers: the content model's sections,\nor the one asked for.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "builds": {
+      "description": "Builds, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelBuild"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "dimensions": {
+      "description": "Dimensions, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelDimension"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "features": {
+      "description": "Features, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelFeature"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "glossary": {
+      "description": "Glossary terms, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelTerm"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "phrases": {
+      "description": "Phrases, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelPhrase"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "sources": {
+      "description": "Sources, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelSource"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "types": {
+      "description": "Page types, in declaration order: the implicit `page` type when none\nis declared.",
+      "items": {
+        "$ref": "#/$defs/ModelType"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "widgets": {
+      "description": "Project widgets, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelWidget"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version"
+  ],
+  "title": "ModelReport",
+  "type": "object"
+}
+```

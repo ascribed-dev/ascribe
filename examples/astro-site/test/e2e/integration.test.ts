@@ -2,46 +2,24 @@
 // build on Ascribe errors and on routing that disagrees with ascribe.toml, it
 // serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   BASE,
   buildSite,
   copySite,
+  edit,
   launchChromium,
   serveDev,
   servePreview,
   siteDir,
+  untilRebuilt,
 } from "./harness.js";
 
 afterAll(async () => {
   await rm(path.join(siteDir, ".e2e-tmp"), { recursive: true, force: true });
 });
-
-/**
- * Polls `check` until it's true, rewriting `file` unchanged every three
- * seconds. The dev server's watcher can still be starting when a test edits a
- * freshly copied site on a busy machine, and a change it misses is never
- * rebuilt; the rewrite reports the same edit again.
- */
-async function untilRebuilt(file: string, check: () => Promise<boolean>): Promise<void> {
-  const deadline = Date.now() + 45_000;
-  let touched = Date.now();
-  for (;;) {
-    if (await check()) return;
-    if (Date.now() > deadline) throw new Error(`no rebuild after editing ${file}`);
-    if (Date.now() - touched > 3_000) {
-      await writeFile(file, await readFile(file));
-      touched = Date.now();
-    }
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-}
-
-async function edit(file: string, change: (text: string) => string): Promise<void> {
-  await writeFile(file, change(await readFile(file, "utf8")));
-}
 
 describe("the integration", () => {
   it("fails the Astro build when Ascribe reports errors", async () => {
@@ -60,9 +38,7 @@ describe("the integration", () => {
   it("fails the Astro build when ascribe.toml and astro.config disagree on routing", async () => {
     const root = await copySite("routing");
     await edit(path.join(root, "astro.config.mjs"), (text) =>
-      text
-        .replace('trailingSlash: "never"', 'trailingSlash: "always"')
-        .replace('base: "/docs"', 'base: "/manual"'),
+      text.replace("integrations:", 'base: "/manual",\n  trailingSlash: "always",\n  integrations:'),
     );
     const failure = await buildSite(root).then(
       () => undefined,
@@ -88,6 +64,18 @@ describe("the integration", () => {
     expect(String(failure)).toContain("nope");
   });
 
+  it("fails the Astro build when permalinks are published outside Astro's base", async () => {
+    const root = await copySite("permalinks-outside-base");
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.replace('trailing-slash = "never"', 'trailing-slash = "never"\npermalink-path = "/go/"'),
+    );
+    const failure = await buildSite(root).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(String(failure)).toContain("isn't under Astro's `base`");
+  });
+
   it("routes agree under a root base path with trailing slashes", async () => {
     const root = await copySite("always");
     await edit(path.join(root, "ascribe.toml"), (text) =>
@@ -95,11 +83,7 @@ describe("the integration", () => {
         .replace('base-path = "/docs/"', 'base-path = "/"')
         .replace('trailing-slash = "never"', 'trailing-slash = "always"'),
     );
-    await edit(path.join(root, "astro.config.mjs"), (text) =>
-      text
-        .replace('base: "/docs"', 'base: "/"')
-        .replace('trailingSlash: "never"', 'trailingSlash: "always"'),
-    );
+    // Astro's `base` and `trailingSlash` come from [consumer].
     await buildSite(root);
     const server = await servePreview(root);
     const browser = await launchChromium();
@@ -113,6 +97,9 @@ describe("the integration", () => {
       expect(await page.locator("main > h1").textContent()).toBe("Loom documentation");
       const file = await page.request.get(`${server.origin}/_ascribe/files/downloads/loom.yaml`);
       expect(file.status()).toBe(200);
+      // A permalink's address ends in `/`, as the site's routes do.
+      await page.goto(`${server.origin}/go/weave-config/`);
+      await page.waitForURL(`${server.origin}/guides/my-setup/#weave-config`);
     } finally {
       await browser.close();
       await server.stop();
@@ -132,6 +119,12 @@ describe("the integration", () => {
       expect(unprefixed.status).toBe(404);
       const html = await (await fetch(`${server.origin}${BASE}/guides/my-setup`)).text();
       expect(html).toContain('id="weave-config"');
+      // A permalink's address, as in the build.
+      const forwarding = await fetch(`${server.origin}${BASE}/go/weave-config`);
+      expect(forwarding.status).toBe(200);
+      expect(await forwarding.text()).toContain(
+        `<meta http-equiv="refresh" content="0;url=${BASE}/guides/my-setup#weave-config">`,
+      );
     } finally {
       await server.stop();
     }
@@ -187,6 +180,23 @@ describe("the integration", () => {
       }
     }, 90_000);
   }
+
+  it("serves a permalink added while astro dev runs, without a restart", async () => {
+    const root = await copySite("dev-permalink");
+    const server = await serveDev(root);
+    try {
+      const address = `${server.origin}${BASE}/go/streaming`;
+      expect((await fetch(address)).status).toBe(404);
+      const file = path.join(root, "content", "Guides", "My Setup.md");
+      await edit(file, (text) => text.replace("@id: streaming", "@id {permalink=true}: streaming"));
+      await untilRebuilt(file, async () => (await fetch(address)).status === 200);
+      expect(await (await fetch(address)).text()).toContain(
+        `<meta http-equiv="refresh" content="0;url=${BASE}/guides/my-setup#streaming">`,
+      );
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
 
   it("rebuilds in astro dev when a file outside the content root that a page uses changes", async () => {
     const root = await copySite("dev-outside");

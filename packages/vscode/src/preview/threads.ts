@@ -11,20 +11,28 @@ import * as vscode from "vscode";
 import {
   answerRequest,
   baseRevision,
+  buildThreadsList,
+  buildThreadsPrompt,
   contentPrefixOf,
   findPullRequest,
   ghTransport,
   openReview,
+  promptProject,
   readCheckout,
   ReviewError,
   tokenTransport,
   type GitHubTransport,
+  type HostToken,
+  type PromptRequest,
   type ReviewSession,
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
+import { ascribeElsewhere } from "../agents/reach.js";
 import type { ProjectServer } from "../client.js";
+import { nodePathEnvironment } from "../environment.js";
 import { comparable, throughFolder } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
+import { hasSignIn, noSignInReason, tokenFor, type SignIns } from "./signIn.js";
 
 /** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
 const GITHUB_SCOPES = ["repo"];
@@ -33,8 +41,11 @@ const GITHUB_SCOPES = ["repo"];
 export type Connection =
   /** No GitHub remote, a detached `HEAD`, or no open pull request for the branch: nothing to show. */
   | { state: "none" }
-  /** No GitHub sign-in: the changes show without threads. */
-  | { state: "signed-out"; host: string; gh: boolean }
+  /**
+   * No GitHub sign-in: the changes show without threads. `reason` says why,
+   * when the host gets no sign-in from VS Code at all.
+   */
+  | { state: "signed-out"; host: string; gh: boolean; reason?: string }
   | { state: "error"; message: string }
   | {
       state: "on";
@@ -211,7 +222,7 @@ export class ThreadsController implements vscode.Disposable {
         pullRequest: null,
         local: null,
         gh: connection.gh,
-        message: null,
+        message: connection.reason ?? null,
         goTo: null,
       };
     }
@@ -244,7 +255,7 @@ export class ThreadsController implements vscode.Disposable {
   async handle(
     server: ProjectServer,
     page: { build: string; path: string } | undefined,
-    method: ThreadsMethod,
+    method: Exclude<ThreadsMethod, "promptAgent">,
     params: Record<string, unknown>,
     origin: ChangeOrigin,
   ): Promise<unknown> {
@@ -271,6 +282,62 @@ export class ThreadsController implements vscode.Disposable {
     return answer.result;
   }
 
+  /**
+   * The prompt about one thread, or every open one, and whether its file has
+   * unsaved changes; `undefined` when no thread is open. Rejects with a
+   * `ReviewError` when review comments aren't on, or the thread is gone.
+   */
+  async prompt(
+    server: ProjectServer,
+    request: Extract<PromptRequest, { kind: "thread" | "open-threads" }>,
+  ): Promise<{ prompt: string; aboutUnsaved: boolean } | undefined> {
+    const connection = this.connection(server);
+    if (connection?.state !== "on") {
+      throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    }
+    let aboutUnsaved = false;
+    // An agent beside the editor may not have `ascribe`, or have another one.
+    const binary = server.binary;
+    const program = binary && (await ascribeElsewhere(binary.path, nodePathEnvironment()))?.program;
+    const prompt = await buildThreadsPrompt(
+      {
+        session: connection.session,
+        project: { ...promptProject(server.project.folder), program },
+        changedPages: () => this.host.changedPages(server),
+        // GitHub's lines are the file's on disk, which is what the agent reads.
+        readSource: async (file) => {
+          const full = path.join(connection.contentRoot, ...file.split("/"));
+          try {
+            const text = await readFile(full, "utf8");
+            const unsaved = (await unsavedText(full)) !== undefined;
+            aboutUnsaved = unsaved;
+            return { text, unsaved };
+          } catch {
+            return undefined;
+          }
+        },
+      },
+      request,
+    );
+    return prompt === undefined ? undefined : { prompt, aboutUnsaved };
+  }
+
+  /**
+   * The open threads, as an agent's tool lists them, each with the pages
+   * that show it. Rejects with a `ReviewError` when review comments aren't on.
+   */
+  async list(server: ProjectServer): Promise<string> {
+    const connection = this.connection(server);
+    if (connection?.state !== "on") {
+      throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    }
+    return buildThreadsList({
+      session: connection.session,
+      project: promptProject(server.project.folder),
+      changedPages: () => this.host.changedPages(server),
+    });
+  }
+
   private async open(server: ProjectServer, interactive: boolean): Promise<Connection> {
     const projectDir = server.project.folder;
     let checkout;
@@ -290,7 +357,15 @@ export class ThreadsController implements vscode.Disposable {
     }
     if (!transport) {
       const signedIn = await githubSession(host, interactive);
-      if (!signedIn) return { state: "signed-out", host, gh: await ghSignedIn(host) };
+      if (!signedIn) {
+        const reason = noSignInReason(host, signIns.enterpriseUri());
+        return {
+          state: "signed-out",
+          host,
+          gh: await ghSignedIn(host),
+          ...(reason === undefined ? {} : { reason }),
+        };
+      }
       transport = (h) => tokenTransport(() => githubToken(h), { host: h });
       via = "vscode";
     }
@@ -346,35 +421,27 @@ function key(server: ProjectServer): string {
   return comparable(server.project.folder);
 }
 
-/** VS Code's authentication provider for a host. */
-function provider(host: string): string {
-  return host === "github.com" ? "github" : "github-enterprise";
-}
+/** VS Code's GitHub sign-ins and the GitHub Enterprise server they're set up for. */
+const signIns: SignIns = {
+  getSession: (provider, scopes, interactive) =>
+    Promise.resolve(
+      vscode.authentication.getSession(
+        provider,
+        scopes,
+        interactive ? { createIfNone: true } : { silent: true },
+      ),
+    ),
+  enterpriseUri: () => vscode.workspace.getConfiguration("github-enterprise").get<string>("uri"),
+};
 
 /** Whether there's a GitHub sign-in for the host; with `interactive`, asks for one. */
-async function githubSession(host: string, interactive: boolean): Promise<boolean> {
-  try {
-    const session = await vscode.authentication.getSession(
-      provider(host),
-      GITHUB_SCOPES,
-      interactive ? { createIfNone: true } : { silent: true },
-    );
-    return session !== undefined;
-  } catch {
-    // Declined, or no provider for the host (GitHub Enterprise isn't set up).
-    return false;
-  }
+function githubSession(host: string, interactive: boolean): Promise<boolean> {
+  return hasSignIn(host, GITHUB_SCOPES, interactive, signIns);
 }
 
-/** The host's token, read for each request so VS Code can refresh it. */
-async function githubToken(host: string): Promise<string | undefined> {
-  const session = await vscode.authentication
-    .getSession(provider(host), GITHUB_SCOPES, { silent: true })
-    .then(
-      (s) => s,
-      () => undefined,
-    );
-  return session?.accessToken;
+/** The host's token and the host it's for, read for each request so VS Code can refresh it. */
+function githubToken(host: string): Promise<HostToken | undefined> {
+  return tokenFor(host, GITHUB_SCOPES, signIns);
 }
 
 /** Runs a command with a fixed argument list; resolves with its output, or `undefined` if it failed. */

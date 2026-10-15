@@ -1,0 +1,29 @@
+description: >-
+  A source in another repository whose copies hold its
+  `ascribe.examples.toml` and an observation: the copies are read as a
+  folder in the project would be, so an example the observation lists as it
+  is gets `tested="…"`, one that changed since reports `example-stale`, and
+  one no observation lists reports `example-unobserved`. The config and the
+  observation are locked like any copy and aren't unused, though no snippet
+  names them, and nothing the config names is run.
+spec: ["4.8", "7.4"]
+tags: [check, resolve]
+
+diagnostics:
+  - {slug: example-stale, file: index.md, line: 11}
+  - {slug: example-unobserved, file: index.md, line: 15}
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "An example its copied observation lists as it is:"
+          - code: "console.log(\"hello\");\n"
+            info: ts tested="Node 24.9.0 on Linux"
+          - paragraph: "One that changed in its repository after its last test run:"
+          - code: "console.log(\"edited\");\n"
+            info: ts
+          - paragraph: "One no observation lists:"
+          - code: "console.log(\"new\");\n"
+            info: ts

@@ -2,7 +2,7 @@
 title: Install the Quill agent
 ---
 
-# Install the Quill agent
+## Install the Quill agent
 
 @include: _fragments/intro.md
 

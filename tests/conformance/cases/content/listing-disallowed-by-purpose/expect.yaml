@@ -1,0 +1,11 @@
+description: >-
+  `search = "disallow"` writes a group naming every search crawler Ascribe
+  knows, with `Disallow: /`, so a page that's `unlisted` is never fetched by
+  them to read that it isn't to be listed: advice, at the value. A page
+  that's listed isn't reported, and neither is a disallowed `training`,
+  whose crawlers don't list pages.
+spec: ["2.1", "7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: listing-disallowed, file: hidden.md, line: 4}

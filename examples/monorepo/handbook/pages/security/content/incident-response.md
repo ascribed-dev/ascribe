@@ -1,4 +1,5 @@
 ---
+type: page
 title: Incident response
 description: What happens when something goes wrong, from the first report to the review.
 ---

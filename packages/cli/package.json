@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/cli",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "The Ascribe command-line tool.",
   "type": "module",
   "license": "MPL-2.0",
@@ -12,7 +12,8 @@
   "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/cli#readme",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "bin": {
     "ascribe": "dist/index.js"
@@ -43,7 +44,7 @@
     "@ascribed/cli-win32-x64": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0"
+    "@types/node": "^24.19.2"
   },
   "publishConfig": {
     "access": "public"

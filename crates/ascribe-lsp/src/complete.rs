@@ -11,10 +11,12 @@
 //! was typed, ranked, and cut at [`LIMIT`], with the list marked incomplete so
 //! the client asks again as the author types.
 
+use ascribe_core::intended::Place;
 use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, SetMember};
 use ascribe_core::{LineIndex, RelPath, percent_decode};
+use ascribe_model::Listing;
 use ascribe_resolve::references::{include_target, reference_target};
-use ascribe_resolve::{FileIndex, Heading, RefKind, Target};
+use ascribe_resolve::{FileIndex, RefKind, Target};
 use ascribe_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionList,
@@ -23,7 +25,9 @@ use lsp_types::{
 };
 
 use crate::hover::{attribute_line, describe_directive, type_name};
-use crate::nav::{Ctx, encode_destination, line_prefix, relative_path};
+use crate::nav::{
+    Ctx, encode_destination, line_prefix, link_headings, named_headings, relative_path,
+};
 
 /// The most items a search returns.
 pub(crate) const LIMIT: usize = 100;
@@ -47,6 +51,14 @@ pub(crate) fn complete(ctx: &Ctx, position: Position) -> Option<CompletionRespon
         && frontmatter.content.start() <= offset
         && offset <= frontmatter.content.end()
     {
+        if let Some(value) = prefix.strip_prefix("listing:") {
+            let typed = value.trim_start().trim_start_matches(['"', '\'']);
+            return Some(list(cx.listing(typed), false));
+        }
+        if let Some(value) = prefix.strip_prefix("type:") {
+            let typed = value.trim_start().trim_start_matches(['"', '\'']);
+            return Some(list(cx.page_types(typed), false));
+        }
         let value = prefix.strip_prefix("available:")?;
         let typed = value.trim_start().trim_start_matches(['"', '\'']);
         return Some(list(cx.availability(typed), false));
@@ -112,6 +124,63 @@ impl Cx<'_> {
         }
     }
 
+    /// The values of a page's `listing`, from open to closed, after
+    /// `listing:` with `typed` typed. A value looser than the rule of
+    /// `[listing]` the page is under isn't offered.
+    fn listing(&self, typed: &str) -> Vec<CompletionItem> {
+        let floor = self
+            .ctx
+            .model
+            .listing_rule(self.ctx.path.as_str(), self.ctx.page_type_name())
+            .map(|rule| rule.listing)
+            .unwrap_or_default();
+        Listing::ALL
+            .into_iter()
+            .filter(|l| *l >= floor && l.name().starts_with(typed))
+            .enumerate()
+            .map(|(n, l)| {
+                let mut item = self.item(l.name(), CompletionItemKind::ENUM_MEMBER, typed.len(), l.name());
+                item.sort_text = Some(n.to_string());
+                item.documentation = Some(markdown(
+                    match l {
+                        Listing::Listed => "Listed by search engines, and offered to agents in `llms.txt`.",
+                        Listing::Unquoted => "Listed, and asks not to be quoted (`nosnippet`).",
+                        Listing::Unlisted => "Asks not to be listed (`noindex`), and is out of the sitemap and `llms.txt`.",
+                    }
+                    .to_owned(),
+                ));
+                item
+            })
+            .collect()
+    }
+
+    /// The content types a page's `type` can name, after `type:` with
+    /// `typed` typed, in declaration order, each with its `purpose`. None in
+    /// a project that declares no types, or in a fragment.
+    fn page_types(&self, typed: &str) -> Vec<CompletionItem> {
+        let model = &self.ctx.model;
+        if !model.declares_types() || model.is_fragment(self.ctx.path.as_str()) {
+            return Vec::new();
+        }
+        model
+            .types
+            .iter()
+            .filter(|t| t.name.starts_with(typed))
+            .enumerate()
+            .map(|(n, t)| {
+                let mut item = self.item(
+                    &t.name,
+                    CompletionItemKind::ENUM_MEMBER,
+                    typed.len(),
+                    &t.name,
+                );
+                item.sort_text = Some(format!("{n:04}"));
+                item.documentation = t.purpose.clone().map(markdown);
+                item
+            })
+            .collect()
+    }
+
     // -- Directive lines ------------------------------------------------------
 
     /// The line is `@…`, and `after_at` is what follows the `@` up to the cursor.
@@ -129,6 +198,22 @@ impl Cx<'_> {
                 let schemas = self.ctx.model.directive_schemas();
                 let schema = schemas.iter().find(|s| s.name == name)?;
                 let items = match &schema.attributes {
+                    // `check` takes the name of a check whose problems may be
+                    // acknowledged above a block (SPEC §4.9), which isn't
+                    // an attribute type: offered as if it were an enum.
+                    Attributes::Declared(keys) if name == "intended" => {
+                        let keys: Vec<AttributeSchema> = keys
+                            .iter()
+                            .cloned()
+                            .map(|mut k| {
+                                if k.key == "check" {
+                                    k.ty = AttributeType::Enum(acknowledgeable(Place::Block));
+                                }
+                                k
+                            })
+                            .collect();
+                        self.attributes(Some(&keys), inner)
+                    }
                     Attributes::Declared(keys) => self.attributes(Some(keys), inner),
                     Attributes::Dimensions => self.attributes(None, inner),
                 };
@@ -481,18 +566,13 @@ impl Cx<'_> {
         }
         let wanted = percent_decode(typed).to_lowercase();
         let snapshot = &self.ctx.snapshot;
-        let headings: Vec<&Heading> = match snapshot.expansion(target) {
-            Some(page) if !include => page
-                .headings(snapshot)
-                .into_iter()
-                .map(|(_, h)| h)
-                .collect(),
-            _ => file.headings.iter().collect(),
+        let headings = if include {
+            named_headings(&file.headings)
+        } else {
+            link_headings(snapshot, file)
         };
-        let mut seen = std::collections::HashSet::new();
         let mut matches: Vec<_> = headings
             .into_iter()
-            .filter(|h| !h.source_id.is_empty() && seen.insert(h.source_id.as_str()))
             .filter(|h| {
                 wanted.is_empty()
                     || h.source_id.to_lowercase().contains(&wanted)
@@ -989,6 +1069,15 @@ fn code_span_open(text: &str) -> bool {
         }
     }
     open_length.is_some()
+}
+
+/// The checks whose problems can be acknowledged at `place`, by name.
+fn acknowledgeable(place: Place) -> Vec<String> {
+    ascribe_core::diagnostics::ACKNOWLEDGEABLE
+        .iter()
+        .filter(|(_, p)| *p == place)
+        .map(|(slug, _)| slug.as_str().to_owned())
+        .collect()
 }
 
 #[cfg(test)]

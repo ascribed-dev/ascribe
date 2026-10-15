@@ -1,0 +1,23 @@
+---
+source: crates/ascribe-check/tests/all/prompt.rs
+assertion_line: 193
+expression: "one_problem(&project, &context, \"docs/install.md\")"
+---
+Fix this problem in `site/docs/docs/install.md`.
+
+Where: site/docs/docs/install.md:5
+Paths and commands here are from the repository's root.
+Project: site/docs/
+Build: `self-hosted`
+
+Problem: ASC036 `link-target-missing`, an error
+Message: `overview.md` doesn't exist
+How to fix it: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
+Reference: https://ascribed-dev.com/go/ASC036/
+Line 5:
+```markdown
+Read [the overview](overview.md).
+```
+
+Follow the project's rules in `site/docs/AGENTS.md`.
+When you're done, run `ascribe check site/docs/docs/install.md` and fix what it reports.

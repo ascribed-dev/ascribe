@@ -1,0 +1,37 @@
+[package]
+name = "ascribe-templates"
+description = "The page templates Ascribe ships: The Good Docs Project's, converted into Ascribe pages and carried as they were committed."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ascribe-check.workspace = true
+ascribe-core.workspace = true
+ascribe-model.workspace = true
+ascribe-resolve.workspace = true
+ascribe-syntax.workspace = true
+schemars = { workspace = true, optional = true }
+serde.workspace = true
+serde_yaml_ng.workspace = true
+similar = "3.2"
+thiserror.workspace = true
+toml.workspace = true
+toml_edit.workspace = true
+
+[features]
+# Derives a JSON Schema for eject's answer. Only ascribe-cli's tests turn it
+# on, to generate the schemas (crates/ascribe-cli/src/shapes.rs).
+json-schema = ["dep:schemars"]
+
+[dev-dependencies]
+# The tests check what `ascribe check` and `ascribe fmt` say of the copies,
+# and eject into a project in a temporary folder.
+ascribe-fmt.workspace = true
+tempfile = "3"
+
+[lints]
+workspace = true

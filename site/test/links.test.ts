@@ -44,6 +44,8 @@ test("internal links and anchors resolve", async () => {
     return found;
   }
 
+  // The changelog's links are pointed by src/changelog.ts, and checked here like any page's.
+  expect(pages).toContain("changelog/index.html");
   const broken: string[] = [];
   let checked = 0;
   for (const page of pages) {

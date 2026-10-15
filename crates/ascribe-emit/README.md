@@ -13,13 +13,13 @@ Emitters for Ascribe's outputs. An emitter renders the **resolved tree** (`ascri
 - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_ascribe/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
 - `write_outputs` (`write.rs`): what `ascribe build` does once its checks pass: resolves each build and writes each output through `OutputDir`, reporting each as it's written.
-- `OutputDir` (`store.rs`): the [output-layout contract](https://ascribed-dev.com/contracts/output-layout/): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
+- `OutputDir` (`store.rs`): the [output-layout contract](https://ascribed-dev.com/go/output-layout-contract/): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
 - `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
 - `site/`, `render/`, `zod/`: the site output (below).
 
 ```rust,ignore
 let cx = EmitContext::new(&project, project_root, build);
-let emission = emit(&PlainEmitter, &cx, &resolved)?;
+let emission = emit(&PlainEmitter::new(project.model()), &cx, &resolved)?;
 let output = OutputDir::lock(&project_root.join(".ascribe/build"))?;
 output.replace(&build.name, "plain", &emission.files)?;
 ```
@@ -32,7 +32,8 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 |---|---|
 | `@note {type=tip}` with a title | `> **Tip: Title**`, a blank quoted line, then the content; without a title, `> **Tip**` |
 | `@steps` | The ordered list |
-| A group | One section per surviving arm: the arm's bold label, then its content |
+| A `@variant` group with more than one arm left | A line, `A reader sees one of the next 3 sections at a time, chosen by package manager.` (the dimension the site's tabs sync on; nothing after `at a time` for labeled arms), then one section per arm: a heading one level below the section it's in (at most 6) naming each dimension and value, `### Package manager: pnpm`, or the arm's title, then its content, each of its headings ending with the arm's label in parentheses (`## Install (pnpm)`) |
+| A group of a project widget | One section per arm: the arm's bold label, then its content, its headings ending with the label in parentheses |
 | `@details` | The title in bold, then the content |
 | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` |
 | A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` |
@@ -43,9 +44,11 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 
 Code blocks are always fenced (the fence is longer than any backtick run in the code, and a `phrases=true` info word is dropped), and text is escaped so that an unmodified CommonMark parser reads back the same text.
 
+`PlainEmitter::new(model)` reads `[consumer] agents`; `PlainEmitter::default()` is the output without it. With `agents = true` the output is what a site publishes for agents, laid out by URL (output-layout contract §1.1): each page at its Astro entry id with `.md`, opening with a blockquote linking to `llms.txt`; every asset under `_ascribe/files/`, written as an absolute URL and listed with its `url` in the manifest; and `generated` adds `llms.txt`, and a file per section when it's split, from `ascribe_resolve::llms`. `prepare` then refuses a build whose pages share a route, as the site emitter's does.
+
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route.
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; with `agents = true`, each page opens with `<ascribe-for-agents>` (element contract §8); `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`, `_ascribe/permalinks.json`, `_ascribe/pages.json`, the build's page records from `ascribe_resolve::pages` (output-layout contract §1.3), and `_ascribe/headers.json`, the response headers each page's Markdown version needs from the host, from the same records (§1.4). A page's `listing` is in its record and left out of its frontmatter. `prepare` refuses a build whose pages share a route.
 
 | Source | Output |
 |---|---|
@@ -61,15 +64,15 @@ Markdown plus web components, for a consumer that renders CommonMark with raw HT
 | Glossary term | A link to the term's route, with its definition as the title |
 | Raw HTML | Unchanged |
 
-Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its order, and a wrapping element has a blank line after its opening tag and before its closing tag (SPEC §9.4). `tests/site.rs`, `tests/site_quill.rs` (with the snapshots), and `tests/site_assets.rs` check them.
+Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its order, and a wrapping element has a blank line after its opening tag and before its closing tag (SPEC §9.4). `tests/all/site.rs`, `tests/all/site_quill.rs` (with the snapshots), and `tests/all/site_assets.rs` check them.
 
 ### `render_site_html`
 
-`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark (the fork in `crates/comrak-ascribe`, with Ascribe's option off) with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
+`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark (the fork in `crates/comrak-ascribe`, with Ascribe's option off) with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/all/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, and `schema`. A type the project declares has the reserved `type` too, as the literal of its name, and with several types `schema` is a `z.discriminatedUnion` on it. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all zod`.
 
 ## JSON
 
@@ -104,9 +107,11 @@ Every block has a `type`, and:
 | `links` | The block's own links and images, resolved: `span`, `kind`, `destination`, `target` |
 | `glossary` | Glossary terms linked in its prose: `term`, `text`, `url` |
 | `substitutions` | Phrases replaced in its text: `span` (over the source), `key`, `value` |
-| `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers). Its `source` is the `@snippet` line |
+| `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers), and `tested` when the file is a tested example. Its `source` is the `@snippet` line |
 
 `links`, `glossary`, and `substitutions` are absent when empty, and `snippet` is absent on every other block.
+
+A snippet's `tested` is present only when its source's `ascribe.examples.toml` makes the file an example ([decision #458c](../../project-docs/decisions/458c-tested-json.md)): `status`, one of `current`, `stale`, and `unobserved`, and `observations`, the observations current for the file in name order, each with its `name` and its `environment` as the observation has it, `os` and `arch` first, such as `{ "os": "linux", "arch": "x64", "node": "v24.9.0" }`. `observations` is empty unless the status is `current`.
 
 | `type` | Fields |
 |---|---|
@@ -137,7 +142,7 @@ A `target` has a `type`:
 | `type` | Fields |
 |---|---|
 | `external` | |
-| `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title) |
+| `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title), and, for a link out of a line of a versioned build, `line` (the line it leads to) |
 | `asset` | `source`, `path` (the copy), `reference` (as written on this page), `url`, `fragment` |
 | `unresolved` | The build couldn't resolve it; the checks report why |
 
@@ -158,12 +163,12 @@ A `target` has a `type`:
 }
 ```
 
-The full documents for Quill are the snapshots in `tests/snapshots/`.
+The full documents for Quill are the snapshots in `tests/all/snapshots/`.
 
 ## Output ownership
 
-See the [output-layout contract](https://ascribed-dev.com/contracts/output-layout/). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Ascribe wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
+See the [output-layout contract](https://ascribed-dev.com/go/output-layout-contract/). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Ascribe wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
 
 ## Tests
 
-`tests/plain.rs` (each construct), `tests/store.rs` (the output-layout contract), `tests/write.rs` (`write_outputs`), `tests/assets.rs` (the output works with the source removed), `tests/formatted.rs` (fields read with `inline = "code"`), and `tests/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/site.rs`, `tests/site_quill.rs`, `tests/site_assets.rs`, `tests/site_anchors.rs` (source anchors), `tests/render_fixtures.rs`, and `tests/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.
+`tests/all/plain.rs` (each construct), `tests/all/agents.rs` (the outputs for agents), `tests/all/store.rs` (the output-layout contract), `tests/all/write.rs` (`write_outputs`), `tests/all/assets.rs` (the output works with the source removed), `tests/all/formatted.rs` (fields read with `inline = "code"`), and `tests/all/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/all/site.rs`, `tests/all/site_quill.rs`, `tests/all/site_assets.rs`, `tests/all/site_anchors.rs` (source anchors), `tests/all/render_fixtures.rs`, and `tests/all/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.

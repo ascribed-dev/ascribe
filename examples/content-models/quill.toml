@@ -6,11 +6,9 @@ spec = "0.1"
 content-root = "docs"
 output-dir = ".ascribe/build"
 
-# Every page is a `page`. Appendix B's frontmatter has `title` and
-# `description`; `available` is reserved and always accepted.
-[types.page]
-default = true
-
+# Every page is a `page`, and says so with `type: page`. Appendix B's
+# frontmatter has `title` and `description`; `available` is reserved and
+# always accepted.
 [types.page.frontmatter]
 title = "string"
 description = "string?"

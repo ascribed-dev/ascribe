@@ -173,25 +173,21 @@
       "properties": {
         "added": {
           "description": "Blocks only in the new version.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "changed": {
           "description": "Blocks whose content changed.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "moved": {
           "description": "Blocks in both, somewhere else.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "removed": {
           "description": "Blocks only in the old version.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -227,7 +223,6 @@
       "properties": {
         "bytes": {
           "description": "Its size, when it's too large to include.",
-          "format": "uint",
           "minimum": 0,
           "type": [
             "integer",
@@ -256,13 +251,11 @@
       "properties": {
         "omitted": {
           "description": "How many it left out.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "pages": {
           "description": "The most it renders.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -284,7 +277,7 @@
           "type": "array"
         },
         "changes": {
-          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page.",
+          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page, and for every page when\nthe report's `blocks_omitted` is `true`.",
           "items": {
             "$ref": "#/$defs/Change"
           },
@@ -329,6 +322,13 @@
         "path": {
           "description": "The page's content path.",
           "type": "string"
+        },
+        "prompt": {
+          "description": "The agent prompt about the page, which its Copy prompt button copies:\nwhat `ascribe diff --format prompt` writes for it. Absent when the\nreport was written without prompts.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "route": {
           "description": "Its route: the new one, or for a removed page the old one.",
@@ -433,7 +433,6 @@
           "description": "Ranges in `now_text`: words added or replacing others.",
           "items": {
             "items": {
-              "format": "uint",
               "minimum": 0,
               "type": "integer"
             },
@@ -451,7 +450,6 @@
           "description": "Ranges in `was_text`: words removed or replaced.",
           "items": {
             "items": {
-              "format": "uint",
               "minimum": 0,
               "type": "integer"
             },
@@ -495,7 +493,6 @@
     },
     "image_limit": {
       "description": "The size, in bytes, above which an image isn't included.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     },
@@ -519,7 +516,6 @@
     },
     "working_tree_errors": {
       "description": "How many errors `ascribe check` finds in the working tree.",
-      "format": "uint",
       "minimum": 0,
       "type": "integer"
     }

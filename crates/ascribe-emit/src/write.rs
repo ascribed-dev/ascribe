@@ -1,14 +1,17 @@
 //! Writing a project's builds: what `ascribe build` does once the checks
 //! have passed.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 
-use ascribe_model::Build;
-use ascribe_resolve::{AstroRouter, Project};
+use ascribe_model::{Build, ContentModel};
+use ascribe_resolve::{AstroRouter, Project, ResolvedBuild};
+
+use ascribe_core::RelPath;
 
 use crate::{
-    EmitContext, EmitError, Emitter, FileKind, JsonEmitter, OutputDir, OutputOptions, PlainEmitter,
-    SiteEmitter, emit,
+    Contents, EmitContext, EmitError, EmittedFile, Emitter, FileKind, JsonEmitter, OutputDir,
+    OutputOptions, PlainEmitter, SiteEmitter, VERSIONS_PATH, emit, versions_json,
 };
 
 /// One of the outputs a build can write.
@@ -82,11 +85,66 @@ pub fn write_outputs(
     options: &WriteOptions,
     on_event: &mut dyn FnMut(&WriteEvent),
 ) -> Result<Vec<Written>, EmitError> {
-    let model = index.model();
-    let output = OutputDir::lock(&root.join(&model.project.output_dir))?;
-    let router = AstroRouter::from_consumer(&model.consumer);
+    let output = OutputDir::lock_in(root, Path::new(&index.model().project.output_dir))?;
+    let mut warned: Vec<String> = Vec::new();
+    let mut written = Vec::new();
+    for build in builds {
+        let emitted = emit_build(index, root, build, options, &mut |warning| {
+            if !warned.iter().any(|w| w == warning) {
+                on_event(&WriteEvent::Warning(warning.to_owned()));
+                warned.push(warning.to_owned());
+            }
+        })?;
+        for (name, emission) in emitted {
+            let count = |kind: FileKind| emission.files.iter().filter(|f| f.kind == kind).count();
+            let output_options = OutputOptions {
+                anchors: options.anchors && name == SITE,
+            };
+            let replaced =
+                output.replace_with(&build.name, name, &emission.files, output_options)?;
+            let done = Written {
+                build: build.name.clone(),
+                output: name,
+                pages: count(FileKind::Page),
+                assets: count(FileKind::Asset),
+                removed: replaced.removed,
+            };
+            on_event(&WriteEvent::Written(done.clone()));
+            written.push(done);
+        }
+    }
+    // What the lines share is above the builds, written whichever builds
+    // were asked for, and removed with the project's last `[releases]`.
+    match shared_files(index)? {
+        Some(files) => {
+            output.replace_shared(&files)?;
+        }
+        None => {
+            output.remove_shared()?;
+        }
+    }
+    Ok(written)
+}
 
-    let plain = PlainEmitter;
+/// The name of the site output, whose files can carry anchors.
+const SITE: &str = "site";
+
+/// Every file each output of `build` would hold, by the output's name, in
+/// the order `options` names them; `warn` is given each output's warnings
+/// about the build as a whole.
+fn emit_build(
+    index: &Project,
+    root: &Path,
+    build: &Build,
+    options: &WriteOptions,
+    warn: &mut dyn FnMut(&str),
+) -> Result<Vec<(&'static str, crate::Emission)>, EmitError> {
+    // An older line's addresses are under its folder.
+    let index = index.for_build(build);
+    let index = index.as_ref();
+    let model = index.model();
+    let router = AstroRouter::from_consumer(&model.consumer);
+    let plain = PlainEmitter::new(model);
     let json = JsonEmitter;
     let site = SiteEmitter::new(model).with_anchors(options.anchors);
     let mut emitters: Vec<&dyn Emitter> = Vec::new();
@@ -100,40 +158,102 @@ pub fn write_outputs(
             emitters.push(emitter);
         }
     }
+    let resolved = index.resolve_build(build, &router);
+    under_older_line(index.model(), build, &resolved)?;
+    let cx = EmitContext::new(index, root, build);
+    let mut out = Vec::new();
+    for emitter in &emitters {
+        for warning in emitter.warnings(&cx) {
+            warn(&warning);
+        }
+        out.push((emitter.name(), emit(*emitter, &cx, &resolved)?));
+    }
+    Ok(out)
+}
 
-    let mut warned: Vec<String> = Vec::new();
-    let mut written = Vec::new();
-    for build in builds {
-        let resolved = index.resolve_build(build, &router);
-        let cx = EmitContext::new(index, root, build);
-        for emitter in &emitters {
-            for warning in emitter.warnings(&cx) {
-                if !warned.contains(&warning) {
-                    on_event(&WriteEvent::Warning(warning.clone()));
-                    warned.push(warning);
-                }
+/// The files above the builds' folders, in `<output-dir>/_ascribe/`: none
+/// for a project with no `[releases]`.
+fn shared_files(index: &Project) -> Result<Option<Vec<EmittedFile>>, EmitError> {
+    let Some(text) = versions_json(index)? else {
+        return Ok(None);
+    };
+    let file = EmittedFile {
+        path: RelPath::parse(VERSIONS_PATH).map_err(|e| EmitError::Invalid {
+            message: format!("{VERSIONS_PATH}: {e}"),
+        })?,
+        kind: FileKind::Generated,
+        source: None,
+        url: None,
+        contents: Contents::Text(text),
+    };
+    Ok(Some(vec![file]))
+}
+
+/// What [`write_outputs`] would write for every build of the project, held
+/// in memory and written nowhere: each file by the path it would have
+/// under the output directory, `<build>/<output>/<path>`, or
+/// `_ascribe/<path>` for a file the builds share, with its contents. A
+/// copied asset is held as the path it's copied from.
+///
+/// # Errors
+///
+/// An output can't be produced.
+pub fn outputs_in_memory(
+    index: &Project,
+    root: &Path,
+    options: &WriteOptions,
+) -> Result<BTreeMap<String, Contents>, EmitError> {
+    let mut files = BTreeMap::new();
+    for build in &index.model().builds {
+        for (name, emission) in emit_build(index, root, build, options, &mut |_| {})? {
+            for file in emission.files {
+                files.insert(
+                    format!("{}/{name}/{}", build.name, file.path),
+                    file.contents,
+                );
             }
-            let emission = emit(*emitter, &cx, &resolved)?;
-            let count = |kind: FileKind| emission.files.iter().filter(|f| f.kind == kind).count();
-            let output_options = OutputOptions {
-                anchors: options.anchors && emitter.name() == site.name(),
-            };
-            let replaced = output.replace_with(
-                &build.name,
-                emitter.name(),
-                &emission.files,
-                output_options,
-            )?;
-            let done = Written {
-                build: build.name.clone(),
-                output: emitter.name(),
-                pages: count(FileKind::Page),
-                assets: count(FileKind::Asset),
-                removed: replaced.removed,
-            };
-            on_event(&WriteEvent::Written(done.clone()));
-            written.push(done);
         }
     }
-    Ok(written)
+    for file in shared_files(index)?.into_iter().flatten() {
+        files.insert(format!("_ascribe/{}", file.path), file.contents);
+    }
+    Ok(files)
+}
+
+/// Refuses a page of a versioned build's current line whose route would be
+/// under an older line's, `3.4/index.md` beside a line `3.4`, since the two
+/// can't be published at one address.
+fn under_older_line(
+    model: &ContentModel,
+    build: &Build,
+    resolved: &ResolvedBuild,
+) -> Result<(), EmitError> {
+    if !build.line.as_ref().is_some_and(|l| l.current) {
+        return Ok(());
+    }
+    let older: Vec<(&str, String)> = model
+        .builds
+        .iter()
+        .filter(|b| b.declared_name() == build.declared_name())
+        .filter_map(|b| Some((b.name.as_str(), b.line_folder()?)))
+        .collect();
+    let mut found = Vec::new();
+    for page in &resolved.pages {
+        let id = format!("{}/", AstroRouter::entry_id(&page.path));
+        for (name, folder) in &older {
+            if id.starts_with(folder.as_str()) {
+                found.push(format!("`{}` is under `{name}`'s pages", page.path));
+            }
+        }
+    }
+    if found.is_empty() {
+        return Ok(());
+    }
+    Err(EmitError::Invalid {
+        message: format!(
+            "build `{}` can't publish a page where an older line's pages are: {}. Rename the folder",
+            build.name,
+            found.join("; ")
+        ),
+    })
 }

@@ -1,9 +1,8 @@
 ---
+type: guide
 title: Quickstart
 description: A whole program that connects to Lantern and reads a flag.
 ---
-
-# Quickstart
 
 This program connects to your Lantern server and prints whether a flag is on:
 

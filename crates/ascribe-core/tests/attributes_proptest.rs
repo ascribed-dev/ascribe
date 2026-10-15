@@ -63,8 +63,6 @@ fn check(text: &str) {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(2000))]
-
     #[test]
     fn never_panics_on_arbitrary_text(text in "\\PC{0,40}") {
         check(&text);

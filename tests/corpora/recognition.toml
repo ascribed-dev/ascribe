@@ -33,3 +33,7 @@ why = "`{{key}}` inside a link destination (`[x]({{es-apis}})`). SPEC §5.1: des
 [class."diagnostic:frontmatter-syntax"]
 verdict = "intended"
 why = "The page repeats a YAML key (`navigation_title` twice), which is not valid YAML; the check is right. FINDINGS R4."
+
+[class."diagnostic:code-language-missing"]
+verdict = "intended"
+why = "A fenced code block whose info string doesn't start with a language: a bare fence (Astro 39, Docker 7, Elastic 245), another tool's directive written as a fence (Elastic's MyST ```{applies_to}, ```{note}, ```{include}, 587), and Hugo attributes glued to the language (Docker's ```yaml{hl_lines=[…]}, 2), whose first word is the whole token and names no language a highlighter knows. The advice is right for each. FINDINGS R6."

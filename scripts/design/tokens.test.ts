@@ -1,6 +1,6 @@
-// The stylesheets' generated blocks are current with design/tokens.toml, and
-// no stylesheet writes a color anywhere else. Run with ASCRIBE_BLESS=1 to
-// rewrite the blocks; then `pnpm --filter @ascribed/review embed` for the
+// The stylesheets' generated blocks, and design/candidates/chosen.toml's
+// shared colors, are current with design/tokens.toml, and no stylesheet writes
+// a color anywhere else. Run with ASCRIBE_BLESS=1 to rewrite the blocks; then `pnpm --filter @ascribed/review embed` for the
 // report's copy. design/README.md has the rest.
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -8,7 +8,17 @@ import { format, resolveConfig } from "prettier";
 import { describe, expect, test } from "vitest";
 import { blank, declarations, sheet } from "./css.ts";
 import { COLORS, contrast, EMIT, MINIMUM, readCandidate, readPairs } from "./specimen.ts";
-import { blocks, load, references, render, ROOT, source, type Tokens } from "./tokens.ts";
+import {
+  blocks,
+  CHOSEN,
+  load,
+  references,
+  render,
+  renderChosen,
+  ROOT,
+  source,
+  type Tokens,
+} from "./tokens.ts";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts";
 
@@ -191,8 +201,15 @@ describe("the shared colors", () => {
     expect([...named].filter((name) => !shared.has(name))).toEqual([]);
   });
 
-  test("are the chosen palette's", () => {
-    const chosen = readCandidate("chosen", read("design/candidates/chosen.toml"));
+  test(`are ${CHOSEN}'s, under the same names`, () => {
+    const text = read(CHOSEN);
+    const expected = renderChosen(tokens, COLORS, text);
+    if (process.env.ASCRIBE_BLESS === "1") {
+      if (expected !== text) writeFileSync(new URL(CHOSEN, ROOT), expected);
+      return;
+    }
+    expect(text, `${CHOSEN} is stale: run \`${BLESS}\``).toBe(expected);
+    const chosen = readCandidate("chosen", expected);
     for (const [name, value] of shared) {
       const color = chosen.colors.get(name);
       expect({ name, light: color?.light.hex, dark: color?.dark.hex }).toEqual({ name, ...value });
@@ -213,8 +230,8 @@ describe("the shared colors", () => {
 });
 
 // The public custom properties: a site themes the elements and review's marks
-// with these names, so none is renamed or removed (README decision 4 of
-// project-docs/visual-design). Their default values may change.
+// with these names, so none is renamed or removed (decision 44 in
+// project-docs/decisions.md). Their default values may change.
 test("the public custom properties keep their names", () => {
   const declared = (file: string): string[] =>
     [

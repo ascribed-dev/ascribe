@@ -10,7 +10,7 @@
 //! The two parsers must agree on where a text primary starts. They do by
 //! construction: both find the end of an attribute block with the rule in
 //! `ascribe_core::attributes`, and both skip spaces and tabs around the
-//! colon. A property test (`tests/agreement.rs`) checks it against the fork
+//! colon. A property test (`tests/all/agreement.rs`) checks it against the fork
 //! on arbitrary lines.
 
 use ascribe_core::{FileId, ParsedAttributes, parse_attribute_block};

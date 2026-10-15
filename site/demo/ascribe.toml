@@ -1,0 +1,29 @@
+# The page the landing page demonstrates: its source beside what a reader sees.
+# The site builds it as a project of its own and draws its one page inside the
+# landing page (../src/pages/[...slug].astro), at no address of its own.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+
+[phrases]
+product = "Quill"
+version = "3.4.1"
+
+# A base path of its own, under which nothing is routed. No `site`: the page
+# links nowhere, and a preview's address would have to be written here too.
+[consumer]
+profile = "astro"
+base-path = "/demo/"
+trailing-slash = "always"
+
+[builds.site]
+availability = "badge"

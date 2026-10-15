@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use ascribe_core::RelPath;
 use serde::{Deserialize, Serialize};
@@ -16,6 +16,26 @@ const MANIFEST_FORMAT: &str = "ascribe-manifest";
 const MANIFEST_VERSION: u32 = 1;
 const LOCK_FILE: &str = ".lock";
 const STAGING_DIR: &str = ".staging";
+/// The folder above the builds' folders that holds what they share.
+const SHARED_DIR: &str = "_ascribe";
+/// The shared folder's manifest, inside it.
+const SHARED_MANIFEST: &str = "manifest.json";
+
+/// Where one output's files and manifest are.
+struct Place {
+    /// The manifest's `build`.
+    build: String,
+    /// The manifest's `emitter`.
+    emitter: String,
+    /// The folder the output's folder is in, which must be a folder.
+    parent: PathBuf,
+    /// The folder the files are written in.
+    files: PathBuf,
+    /// The manifest.
+    manifest: PathBuf,
+    /// Where the manifest is written before it's renamed into place.
+    temp: PathBuf,
+}
 
 /// What a file in an emitter root is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -87,6 +107,15 @@ pub enum StoreError {
         /// The entry.
         entry: String,
     },
+    /// A symbolic link, or on Windows a junction, is on the way to where the
+    /// build writes or removes. It isn't followed, replaced, or removed.
+    #[error(
+        "{path} is a link, and the output is never written or removed through one; replace it with a folder, or remove it"
+    )]
+    Link {
+        /// The link.
+        path: String,
+    },
     /// Files that would be overwritten or can't be created, or paths that
     /// collide.
     #[error("the output can't be written:\n{}", .0.iter().map(|c| format!("  - {c}")).collect::<Vec<_>>().join("\n"))]
@@ -110,6 +139,7 @@ impl ascribe_core::Coded for StoreError {
             StoreError::NotManifest { .. } => "not_a_manifest",
             StoreError::UnknownVersion { .. } => "unknown_manifest_version",
             StoreError::BadEntry { .. } => "bad_manifest_entry",
+            StoreError::Link { .. } => "output_link",
             StoreError::Conflicts(_) => "output_conflicts",
             StoreError::Io { .. } => "output_io",
         }
@@ -179,10 +209,13 @@ impl OutputDir {
     ///
     /// # Errors
     ///
-    /// [`StoreError::Locked`] when another build holds it.
+    /// [`StoreError::Locked`] when another build holds it, and
+    /// [`StoreError::Link`] when `root` or its lock file is a link.
     pub fn lock(root: &Path) -> Result<OutputDir, StoreError> {
+        refuse_link(root)?;
         fs::create_dir_all(root).map_err(io_err("can't create", root))?;
         let lock_path = root.join(LOCK_FILE);
+        refuse_link(&lock_path)?;
         let file = OpenOptions::new()
             .create(true)
             .truncate(false)
@@ -199,6 +232,23 @@ impl OutputDir {
             }),
             Err(TryLockError::Error(e)) => Err(io_err("can't lock", &lock_path)(e)),
         }
+    }
+
+    /// [`OutputDir::lock`] on the output directory `output_dir` of the project
+    /// at `project`, after checking that no folder on the way from `project`
+    /// to it is a link. The folders above `project` aren't checked: they're
+    /// where the person running the build put the project.
+    ///
+    /// # Errors
+    ///
+    /// As [`OutputDir::lock`].
+    pub fn lock_in(project: &Path, output_dir: &Path) -> Result<OutputDir, StoreError> {
+        if output_dir.is_relative()
+            && let Some(link) = ascribe_resolve::link_on_the_way(project, output_dir)
+        {
+            return Err(link_error(&link));
+        }
+        OutputDir::lock(&project.join(output_dir))
     }
 
     /// The output directory.
@@ -259,8 +309,23 @@ impl OutputDir {
                 )]));
             }
         }
+        // Nothing on the way to the folders this writes to and removes from is
+        // a link, checked before anything is touched, the cleanup below
+        // included.
+        refuse_links_below(&self.root, &format!("{STAGING_DIR}/{build}/{emitter}"))?;
+        refuse_link(&self.manifest_temp(build, emitter))?;
+        refuse_links_below(&self.root, &format!("{build}/{emitter}"))?;
+        refuse_link(&self.manifest_path(build, emitter))?;
+        let place = Place {
+            build: build.to_owned(),
+            emitter: emitter.to_owned(),
+            parent: self.root.join(build),
+            files: self.emitter_root(build, emitter),
+            manifest: self.manifest_path(build, emitter),
+            temp: self.manifest_temp(build, emitter),
+        };
         let staging = self.root.join(STAGING_DIR).join(build).join(emitter);
-        let result = self.replace_staged(build, emitter, files, &staging, options);
+        let result = self.replace_staged(&place, files, &staging, options);
         // Step 9: clean up, whatever happened. A failure to clean up doesn't
         // change what the build did.
         let _ = fs::remove_dir_all(&staging);
@@ -269,23 +334,149 @@ impl OutputDir {
         result
     }
 
+    /// The folder above the builds' folders, `<output-dir>/_ascribe/`, where
+    /// the files the builds share are, owned through its own manifest.
+    pub fn shared_root(&self) -> PathBuf {
+        self.root.join(SHARED_DIR)
+    }
+
+    fn shared_place(&self) -> Place {
+        let files = self.shared_root();
+        Place {
+            build: SHARED_DIR.to_owned(),
+            emitter: SHARED_DIR.to_owned(),
+            parent: files.clone(),
+            manifest: files.join(SHARED_MANIFEST),
+            temp: self
+                .root
+                .join(STAGING_DIR)
+                .join(format!(".manifest-{SHARED_DIR}.tmp")),
+            files,
+        }
+    }
+
+    /// Replaces the files the builds share, in `<output-dir>/_ascribe/`,
+    /// with `files`, by the same rules as a build's output, through the
+    /// folder's own manifest, `_ascribe/manifest.json`. A folder there that
+    /// has files and no manifest isn't Ascribe's, and is refused.
+    ///
+    /// # Errors
+    ///
+    /// As [`OutputDir::replace`].
+    pub fn replace_shared(&self, files: &[EmittedFile]) -> Result<Replaced, StoreError> {
+        let place = self.shared_place();
+        refuse_links_below(&self.root, &format!("{STAGING_DIR}/{SHARED_DIR}"))?;
+        refuse_link(&place.temp)?;
+        refuse_links_below(&self.root, SHARED_DIR)?;
+        refuse_link(&place.manifest)?;
+        self.refuse_unowned_shared(&place)?;
+        if files.iter().any(|f| f.path.as_str() == SHARED_MANIFEST) {
+            return Err(StoreError::Conflicts(vec![format!(
+                "two files would be written at {SHARED_DIR}/{SHARED_MANIFEST}"
+            )]));
+        }
+        let staging = self.root.join(STAGING_DIR).join(SHARED_DIR);
+        let result = self.replace_staged(&place, files, &staging, OutputOptions::default());
+        let _ = fs::remove_dir_all(&staging);
+        let _ = fs::remove_dir(self.root.join(STAGING_DIR));
+        result
+    }
+
+    /// Removes the files the builds share, when a project no longer has any:
+    /// each file `_ascribe/manifest.json` lists, then the manifest, then the
+    /// folder when nothing else is in it. A folder with no manifest isn't
+    /// Ascribe's, and is left alone. Returns how many files were removed.
+    ///
+    /// # Errors
+    ///
+    /// The manifest can't be read, or a file can't be removed.
+    pub fn remove_shared(&self) -> Result<usize, StoreError> {
+        let place = self.shared_place();
+        refuse_links_below(&self.root, SHARED_DIR)?;
+        if fs::symlink_metadata(&place.manifest).is_err() {
+            return Ok(0);
+        }
+        let previous = read_manifest(&place.manifest)?;
+        let mut removed = 0;
+        for old in &previous {
+            let path = place.files.join(&old.path);
+            if let Ok(meta) = fs::symlink_metadata(&path)
+                && !meta.is_dir()
+            {
+                fs::remove_file(&path).map_err(io_err("can't remove", &path))?;
+                removed += 1;
+            }
+            let mut dir = path.parent().map(Path::to_owned);
+            while let Some(d) = dir {
+                if d == place.files || fs::remove_dir(&d).is_err() {
+                    break;
+                }
+                dir = d.parent().map(Path::to_owned);
+            }
+        }
+        fs::remove_file(&place.manifest).map_err(io_err("can't remove", &place.manifest))?;
+        let _ = fs::remove_dir(&place.files);
+        Ok(removed)
+    }
+
+    /// Refuses `_ascribe/` when something is in it and no manifest says
+    /// Ascribe wrote it.
+    fn refuse_unowned_shared(&self, place: &Place) -> Result<(), StoreError> {
+        if fs::symlink_metadata(&place.manifest).is_ok() {
+            return Ok(());
+        }
+        match fs::symlink_metadata(&place.files) {
+            Err(_) => Ok(()),
+            Ok(meta) if !meta.is_dir() => Err(StoreError::Conflicts(vec![format!(
+                "{} is a file, and a directory is needed there",
+                place.files.display()
+            )])),
+            Ok(_) => {
+                let empty = fs::read_dir(&place.files)
+                    .map_err(io_err("can't read", &place.files))?
+                    .next()
+                    .is_none();
+                if empty {
+                    Ok(())
+                } else {
+                    Err(StoreError::Conflicts(vec![format!(
+                        "{} has files and no manifest, so it isn't a folder Ascribe wrote; move or remove it",
+                        place.files.display()
+                    )]))
+                }
+            }
+        }
+    }
+
     // Longer than the lint allows from before it was on. Split it only while
     // changing it for another reason.
     #[allow(clippy::too_many_lines)]
     fn replace_staged(
         &self,
-        build: &str,
-        emitter: &str,
+        place: &Place,
         files: &[EmittedFile],
         staging: &Path,
         options: OutputOptions,
     ) -> Result<Replaced, StoreError> {
-        let manifest_path = self.manifest_path(build, emitter);
-        let emitter_root = self.emitter_root(build, emitter);
+        let manifest_path = &place.manifest;
+        let emitter_root = place.files.clone();
 
         // Step 2: the previous manifest.
-        let previous = read_manifest(&manifest_path)?;
+        let previous = read_manifest(manifest_path)?;
         let previous_paths: BTreeSet<&str> = previous.iter().map(|f| f.path.as_str()).collect();
+
+        // Nothing between the emitter root and a file this writes or removes
+        // is a link, nor is the file.
+        let mut links = ascribe_resolve::LinkCheck::new(&emitter_root);
+        for path in files
+            .iter()
+            .map(|f| f.path.as_str())
+            .chain(previous_paths.iter().copied())
+        {
+            if let Some(link) = links.link(Path::new(path)) {
+                return Err(link_error(&link));
+            }
+        }
 
         // Step 4, first part: two new files with one path, or paths that differ
         // only in case, would be one file on macOS and Windows.
@@ -305,7 +496,7 @@ impl OutputDir {
         }
         // Step 4, second part: nothing that isn't Ascribe's is in the way.
         let mut blockers: BTreeSet<PathBuf> = BTreeSet::new();
-        for dir in [self.root.join(build), emitter_root.clone()] {
+        for dir in [place.parent.clone(), emitter_root.clone()] {
             if fs::symlink_metadata(&dir).is_ok() && !dir.is_dir() {
                 problems.push(format!(
                     "{} is a file, and a directory is needed there",
@@ -409,7 +600,7 @@ impl OutputDir {
             .map(|f| (f.path.clone(), f.clone()))
             .collect();
         union.extend(new_entries.iter().map(|f| (f.path.clone(), f.clone())));
-        self.write_manifest(build, emitter, union.into_values().collect(), options)?;
+        self.write_manifest(place, union.into_values().collect(), options)?;
 
         // Step 6: move the new files into place.
         for blocker in &blockers {
@@ -455,16 +646,22 @@ impl OutputDir {
         }
 
         // Step 8: the final manifest lists only this build's files.
-        self.write_manifest(build, emitter, new_entries, options)?;
+        self.write_manifest(place, new_entries, options)?;
         Ok(replaced)
+    }
+
+    /// Where a manifest is written before it's renamed into place.
+    fn manifest_temp(&self, build: &str, emitter: &str) -> PathBuf {
+        self.root
+            .join(STAGING_DIR)
+            .join(format!(".manifest-{build}-{emitter}.tmp"))
     }
 
     /// Writes a manifest by writing a temporary file in `.staging/` and
     /// renaming it into place, so it's never half-written.
     fn write_manifest(
         &self,
-        build: &str,
-        emitter: &str,
+        place: &Place,
         mut files: Vec<ManifestFile>,
         options: OutputOptions,
     ) -> Result<(), StoreError> {
@@ -472,26 +669,26 @@ impl OutputDir {
         let manifest = Manifest {
             format: MANIFEST_FORMAT.to_owned(),
             version: MANIFEST_VERSION,
-            build: build.to_owned(),
-            emitter: emitter.to_owned(),
+            build: place.build.clone(),
+            emitter: place.emitter.clone(),
             anchors: options.anchors,
             files,
         };
         let mut text = serde_json::to_string_pretty(&manifest).map_err(|e| StoreError::Io {
             action: "can't serialize the manifest",
-            path: emitter.to_owned(),
+            path: place.emitter.clone(),
             source: io::Error::other(e),
         })?;
         text.push('\n');
         let staging = self.root.join(STAGING_DIR);
         fs::create_dir_all(&staging).map_err(io_err("can't create", &staging))?;
-        let temp = staging.join(format!(".manifest-{build}-{emitter}.tmp"));
-        fs::write(&temp, text).map_err(io_err("can't write", &temp))?;
-        let dest = self.manifest_path(build, emitter);
+        let temp = &place.temp;
+        fs::write(temp, text).map_err(io_err("can't write", temp))?;
+        let dest = &place.manifest;
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent).map_err(io_err("can't create", parent))?;
         }
-        fs::rename(&temp, &dest).map_err(io_err("can't move into place", &dest))
+        fs::rename(temp, dest).map_err(io_err("can't move into place", dest))
     }
 }
 
@@ -518,11 +715,16 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
             version: manifest.version,
         });
     }
-    // Ascribe deletes what a manifest lists, so an entry that could reach
-    // outside the emitter root is refused, not followed.
+    // Ascribe deletes what a manifest lists, and a manifest is a file in the
+    // project like any other, so an entry that could reach outside the
+    // emitter root is refused, not followed: one with `..`, and one this
+    // system reads as absolute or on a drive (`C:/x`, `C:x` on Windows).
     for entry in &manifest.files {
         let inside = RelPath::parse(&entry.path)
-            .is_ok_and(|p| !p.is_root() && p.up_count() == 0 && p.as_str() == entry.path);
+            .is_ok_and(|p| !p.is_root() && p.up_count() == 0 && p.as_str() == entry.path)
+            && Path::new(&entry.path)
+                .components()
+                .all(|c| matches!(c, Component::Normal(_)));
         if !inside || entry.path.contains('\\') {
             return Err(StoreError::BadEntry {
                 path: shown,
@@ -531,6 +733,29 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
         }
     }
     Ok(manifest.files)
+}
+
+/// Refuses a link at `path`.
+fn refuse_link(path: &Path) -> Result<(), StoreError> {
+    if ascribe_resolve::is_link(path) {
+        return Err(link_error(path));
+    }
+    Ok(())
+}
+
+/// Refuses a link on the way from `root` to the `/`-separated `rel`, `rel`
+/// included.
+fn refuse_links_below(root: &Path, rel: &str) -> Result<(), StoreError> {
+    match ascribe_resolve::link_on_the_way(root, Path::new(rel)) {
+        Some(link) => Err(link_error(&link)),
+        None => Ok(()),
+    }
+}
+
+fn link_error(path: &Path) -> StoreError {
+    StoreError::Link {
+        path: path.display().to_string(),
+    }
 }
 
 /// Whether the file at `dest` exists and holds exactly `bytes`.

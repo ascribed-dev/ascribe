@@ -1,0 +1,154 @@
+# The crawlers Ascribe knows, by purpose: what `[crawlers] training`,
+# `search`, and `on-request` write a group for (content-model contract §21).
+# The binary carries this file (`ascribe_model::known_crawlers`), and the
+# table in the `ascribe.toml` reference is generated from it.
+#
+# Each entry is one `robots.txt` token, from its operator's own page:
+#
+#   token     The name a `User-agent` line gives, as the operator writes it.
+#   operator  Who runs it.
+#   purpose   "training" (gathering text to train a model), "search"
+#             (building the index an AI search product answers from), or
+#             "on-request" (fetching a page because a person asked an
+#             assistant about it). A token whose operator states no single
+#             purpose isn't listed: a project names it in `lines`.
+#   robots    What the operator says of `robots.txt`: "follows", or
+#             "may-ignore" when it says the bot may not follow it.
+#   source    The address of the operator's page about the token.
+#   read      The day that page was last read, and said what this entry says.
+#   note      Optional: anything else the reference should say about it.
+#
+# Reread every source before a release (RELEASING.md). A test fails on an
+# entry without a source or a date; the daily Report workflow opens an issue
+# for a source read over a year ago, or that no longer answers.
+
+[[crawler]]
+token = "GPTBot"
+operator = "OpenAI"
+purpose = "training"
+robots = "follows"
+source = "https://developers.openai.com/api/docs/bots"
+read = "2026-10-12"
+
+[[crawler]]
+token = "ClaudeBot"
+operator = "Anthropic"
+purpose = "training"
+robots = "follows"
+source = "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Google-Extended"
+operator = "Google"
+purpose = "training"
+robots = "follows"
+source = "https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers"
+read = "2026-10-12"
+note = "A token, not a crawler: Googlebot fetches, and this says what Google may do with it. It covers training Gemini models and grounding answers in Gemini Apps, and doesn't affect Google Search."
+
+[[crawler]]
+token = "Applebot-Extended"
+operator = "Apple"
+purpose = "training"
+robots = "follows"
+source = "https://support.apple.com/en-us/119829"
+read = "2026-10-12"
+note = "A token, not a crawler: Applebot fetches, and this says whether Apple may train its models on it. Pages it disallows can still appear in Apple's search."
+
+[[crawler]]
+token = "MistralAI-Training"
+operator = "Mistral AI"
+purpose = "training"
+robots = "follows"
+source = "https://docs.mistral.ai/robots"
+read = "2026-10-12"
+
+[[crawler]]
+token = "OAI-SearchBot"
+operator = "OpenAI"
+purpose = "search"
+robots = "follows"
+source = "https://developers.openai.com/api/docs/bots"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Claude-SearchBot"
+operator = "Anthropic"
+purpose = "search"
+robots = "follows"
+source = "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
+read = "2026-10-12"
+
+[[crawler]]
+token = "PerplexityBot"
+operator = "Perplexity"
+purpose = "search"
+robots = "follows"
+source = "https://docs.perplexity.ai/docs/resources/perplexity-crawlers"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Amzn-SearchBot"
+operator = "Amazon"
+purpose = "search"
+robots = "follows"
+source = "https://developer.amazon.com/amazonbot"
+read = "2026-10-12"
+note = "When `robots.txt` doesn't name it, it follows the rules given to other search bots."
+
+[[crawler]]
+token = "MistralAI-Index"
+operator = "Mistral AI"
+purpose = "search"
+robots = "follows"
+source = "https://docs.mistral.ai/robots"
+read = "2026-10-12"
+
+[[crawler]]
+token = "ChatGPT-User"
+operator = "OpenAI"
+purpose = "on-request"
+robots = "may-ignore"
+source = "https://developers.openai.com/api/docs/bots"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Claude-User"
+operator = "Anthropic"
+purpose = "on-request"
+robots = "follows"
+source = "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Perplexity-User"
+operator = "Perplexity"
+purpose = "on-request"
+robots = "may-ignore"
+source = "https://docs.perplexity.ai/docs/resources/perplexity-crawlers"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Amzn-User"
+operator = "Amazon"
+purpose = "on-request"
+robots = "may-ignore"
+source = "https://developer.amazon.com/amazonbot"
+read = "2026-10-12"
+
+[[crawler]]
+token = "MistralAI-User"
+operator = "Mistral AI"
+purpose = "on-request"
+robots = "follows"
+source = "https://docs.mistral.ai/robots"
+read = "2026-10-12"
+
+[[crawler]]
+token = "Meta-ExternalFetcher"
+operator = "Meta"
+purpose = "on-request"
+robots = "may-ignore"
+source = "https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers"
+read = "2026-10-12"

@@ -1,6 +1,6 @@
 description: >-
-  A page under `reference/` gets the `reference` type, which requires `api-
-  version`.
+  A page of the `reference` type, which requires `api-version`, is checked
+  against it.
 spec: ["7.2", "8.2"]
 tags: [check]
 

@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**A tested line shows each label and value cut at 60 characters, with `…`, and the operating system by the name a reader knows; the observation keeps a line cut at 200, and records `arch` by Node's names.** Control characters in a label or value are shown as spaces, and each output escapes what it shows: HTML in the site output, Markdown in the plain output, and the quote in the info string. The operating system is `Linux`, `macOS`, or `Windows`, and another is shown as recorded. `arch` is `x64`, `arm64`, or `ia32` where Rust's name differs, and isn't shown. _Why:_ a label comes from a config anyone can write, and a fetched one is data ([README decision 19](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/tested-examples/README.md)), so a caption must stay one line however long or strange it is; 60 characters fits any real tool name and version. Node's names for architectures are the ones Ascribe's own packages are published under. _From:_ the implementation of [issue #459](https://github.com/ascribed-dev/ascribe/issues/459), for Kyle's review in its pull request, 13 October 2026.

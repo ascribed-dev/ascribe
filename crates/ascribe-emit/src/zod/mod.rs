@@ -2,7 +2,9 @@
 //! module Astro's content collections take as their `schema`.
 //!
 //! [`generate`] writes one schema per content type, with the reserved
-//! `available` and `variant` keys added. The schemas
+//! `type`, `available`, `variant`, and `permalink` keys added, and `source`, the
+//! page's path from the content root, which the site output writes on every
+//! page. The schemas
 //! describe the frontmatter the site output writes, not the source's: in
 //! particular `available` is the list of targets the site emitter writes,
 //! not the spec string an author wrote.
@@ -18,11 +20,9 @@
 //!
 //! - `referenceGuideSchema`: its Zod object, and the type `ReferenceGuide`;
 //! - `schemas`: every type's schema by its name;
-//! - `contentTypes`: for each type, its `files` patterns and whether it's
-//!   the default, for a collection configuration that loads each type's
-//!   pages;
 //! - `schema`: a schema that accepts the frontmatter of any type, for a
-//!   collection that holds them all.
+//!   collection that holds them all: a union discriminated by `type`, which
+//!   every page of a project that declares types names (SPEC §7.2).
 //!
 //! It also exports `availableSchema` and `variantSchema`, for layouts.
 //!
@@ -33,7 +33,7 @@
 use std::fmt::Write as _;
 
 use ascribe_core::names;
-use ascribe_model::{ContentModel, ContentType, Field, FieldType, inline};
+use ascribe_model::{ContentModel, Field, FieldType, inline};
 use serde_yaml_ng::Value;
 
 /// The Zod module for a content model.
@@ -43,7 +43,16 @@ pub fn generate(model: &ContentModel) -> String {
     out.push_str(
         &RESERVED
             .replace("{availability-target}", names::ELEMENT_AVAILABILITY_TARGET)
-            .replace("{availability}", names::ELEMENT_AVAILABILITY),
+            .replace("{availability}", names::ELEMENT_AVAILABILITY)
+            // A target is planned only by a project's `[releases]`.
+            .replace(
+                "{planned}",
+                if model.releases.is_empty() {
+                    ""
+                } else {
+                    "\n  planned: z.literal(true).optional(),"
+                },
+            ),
     );
     let mut names = Vec::new();
     for ty in &model.types {
@@ -57,7 +66,12 @@ pub fn generate(model: &ContentModel) -> String {
         let _ = writeln!(
             out,
             "export const {ident}Schema = {};",
-            object(&ty.frontmatter.fields, true, 0)
+            object(
+                &ty.frontmatter.fields,
+                (!ty.implicit).then_some(ty.name.as_str()),
+                true,
+                0
+            )
         );
         let _ = writeln!(
             out,
@@ -71,12 +85,6 @@ pub fn generate(model: &ContentModel) -> String {
         let _ = writeln!(out, "  {}: {ident}Schema,", key(name));
     }
     out.push_str("} as const;\n");
-    out.push_str("\n/** Which pages each content type applies to. */\n");
-    out.push_str("export const contentTypes = {\n");
-    for ty in &model.types {
-        let _ = writeln!(out, "  {}: {},", key(&ty.name), type_info(ty));
-    }
-    out.push_str("} as const;\n");
     out.push_str("\n/** A schema that accepts the frontmatter of any content type. */\n");
     match names.as_slice() {
         [] => out.push_str("export const schema = z.never();\n"),
@@ -84,7 +92,7 @@ pub fn generate(model: &ContentModel) -> String {
             let _ = writeln!(out, "export const schema = {only}Schema;");
         }
         many => {
-            out.push_str("export const schema = z.union([\n");
+            out.push_str("export const schema = z.discriminatedUnion(\"type\", [\n");
             for (_, ident) in many {
                 let _ = writeln!(out, "  {ident}Schema,");
             }
@@ -106,7 +114,8 @@ import { z } from \"astro/zod\";
 
 /// The reserved keys: `available` as the site output writes it (element
 /// contract §4), and `variant` as written (SPEC §4.3). `{availability}` and
-/// `{availability-target}` stand for the elements' names.
+/// `{availability-target}` stand for the elements' names, and `{planned}`
+/// for a target's `planned` key, when a project can have one.
 const RESERVED: &str = "
 /** One target of a page's availability: the attributes of a
  * `<{availability-target}>`, and the text it shows. */
@@ -114,7 +123,7 @@ export const availableTargetSchema = z.strictObject({
   target: z.string(),
   dimension: z.string(),
   states: z.array(z.string()),
-  versions: z.array(z.string()).optional(),
+  versions: z.array(z.string()).optional(),{planned}
   text: z.string(),
 });
 
@@ -131,22 +140,17 @@ export const variantSchema = z.record(
 export type Variant = z.infer<typeof variantSchema>;
 ";
 
-/// `{ default: true, files: [...] }` for a content type.
-fn type_info(ty: &ContentType) -> String {
-    let files: Vec<String> = ty.files.iter().map(|p| json(p.as_str())).collect();
-    format!(
-        "{{ default: {}, files: [{}] }}",
-        ty.default,
-        files.join(", ")
-    )
-}
-
 /// A `z.strictObject`, with its lines indented by `base` spaces after the
-/// first: unknown keys are errors, as they are in Ascribe. With `reserved`,
-/// the reserved keys are added.
-fn object(fields: &[Field], reserved: bool, base: usize) -> String {
+/// first: unknown keys are errors, as they are in Ascribe. With `type_name`,
+/// a declared content type's, `type` comes first, which every page of the
+/// type gives (SPEC §7.2); the implicit `page` type's pages give none. With
+/// `reserved`, the other reserved keys are added.
+fn object(fields: &[Field], type_name: Option<&str>, reserved: bool, base: usize) -> String {
     let inner = " ".repeat(base + 2);
     let mut out = String::from("z.strictObject({\n");
+    if let Some(name) = type_name {
+        let _ = writeln!(out, "{inner}type: z.literal({}),", json(name));
+    }
     for field in fields {
         let _ = writeln!(
             out,
@@ -158,6 +162,8 @@ fn object(fields: &[Field], reserved: bool, base: usize) -> String {
     if reserved {
         let _ = writeln!(out, "{inner}available: availableSchema.optional(),");
         let _ = writeln!(out, "{inner}variant: variantSchema.optional(),");
+        let _ = writeln!(out, "{inner}permalink: z.string().optional(),");
+        let _ = writeln!(out, "{inner}source: z.string(),");
         let formatted: Vec<&Field> = fields.iter().filter(|f| f.inline.is_some()).collect();
         if !formatted.is_empty() {
             let _ = writeln!(
@@ -237,7 +243,7 @@ fn type_schema(ty: &FieldType, base: usize) -> String {
             format!("z.enum([{}])", list.join(", "))
         }
         FieldType::List(inner) => format!("z.array({})", type_schema(inner, base)),
-        FieldType::Object(fields) => object(fields, false, base),
+        FieldType::Object(fields) => object(fields, None, false, base),
     }
 }
 

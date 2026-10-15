@@ -1,0 +1,7 @@
+description: >-
+  An `@intended` must name its check with `check`.
+spec: ["4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: intended-check, line: 5}

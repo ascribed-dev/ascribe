@@ -1,0 +1,10 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.how-to]
+guide = "templates/how-to.guide.md"
+
+[types.how-to.frontmatter]
+title = "string"

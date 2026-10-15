@@ -8,16 +8,20 @@ name: Release
 # them on every platform and checks them against examples/quill, and runs the
 # publish steps with --dry-run. Nothing leaves the workflow.
 #
-# With `publish` on, three more jobs follow, each waiting for approval in the
-# `release` environment: npm (with provenance), the VS Code Marketplace, and a
-# draft GitHub release with the binaries. A person publishes the draft.
+# With `publish` on, four more jobs follow, in the `release` environment:
+# npm (with provenance), the VS Code Marketplace, the GitHub release with the
+# binaries, and `tap`, which opens a pull request on the Homebrew tap for a
+# person to merge (a dry run writes its formula as an artifact instead). None
+# waits for approval: pushing the tag is the sign-off. The environment allows
+# only `v*` tags, and a tag ruleset lets only a repository admin create, move,
+# or delete one (decision #489).
 # The build, pack, and smoke jobs are in release-build.yml, which the nightly
 # canary (canary.yml) shares. RELEASING.md is the whole procedure, with its secrets and how to roll back.
 on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish to npm, the VS Code Marketplace, and a draft GitHub release (each after approval)
+        description: Publish to npm, the VS Code Marketplace, and a GitHub release, and open the Homebrew tap's pull request
         type: boolean
         default: false
 
@@ -37,7 +41,7 @@ jobs:
       version: ${{ steps.check.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
       - id: check
@@ -80,13 +84,13 @@ jobs:
       # No registry-url: setup-node would write an `_authToken=${NODE_AUTH_TOKEN}`
       # line, and with the variable unset npm would take it for configured auth and
       # never start the OIDC exchange.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
       # Trusted publishing needs npm 11.5.1 or later. There's no token: npm trades
       # the job's OIDC token for a short-lived publish token, and signs provenance.
       - run: npm install --global npm@^11.5.1
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release
           path: dist/release
@@ -106,12 +110,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release
           path: dist/release
@@ -125,7 +129,7 @@ jobs:
       - run: node scripts/release/publish.ts marketplace
 
   github:
-    name: draft the GitHub release
+    name: publish the GitHub release
     if: inputs.publish
     needs: [version, marketplace]
     runs-on: ubuntu-latest
@@ -135,14 +139,14 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release
           path: dist/release
-      - name: Create the draft, or update its files on a rerun
+      - name: Publish the release, or update its files on a rerun
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
@@ -151,9 +155,109 @@ jobs:
           files=(dist/release/github/* dist/release/vsix/* dist/release/SHA256SUMS)
           if gh release view "v$VERSION" > /dev/null 2>&1; then
             gh release upload "v$VERSION" "${files[@]}" --clobber
+            # A draft left by an earlier run is published too.
+            gh release edit "v$VERSION" --draft=false
           else
             prerelease=()
             if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
-            gh release create "v$VERSION" "${files[@]}" --draft --verify-tag \
+            gh release create "v$VERSION" "${files[@]}" --verify-tag \
               --title "Ascribe $VERSION" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"
           fi
+
+  # A dry run writes the Homebrew formula from the packed release's SHA256SUMS,
+  # as the `formula` artifact, and opens nothing.
+  formula:
+    name: write the Homebrew formula (dry run)
+    if: "!inputs.publish"
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: dist/release
+      - env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          mkdir -p dist/formula
+          node scripts/release/formula.ts "$VERSION" --sums dist/release/SHA256SUMS --out dist/formula/ascribe.rb
+          cat dist/formula/ascribe.rb
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: formula
+          path: dist/formula
+          if-no-files-found: error
+
+  # The last step, once the GitHub release is published: it writes the
+  # Homebrew formula from the published release's SHA256SUMS and opens a pull request on ascribed-dev/homebrew-tap, which the maintainer
+  # merges. It needs HOMEBREW_TAP_TOKEN on the `release` environment
+  # (RELEASING.md); until that exists, it writes the formula and opens nothing.
+  # A pre-release (a version with `-`, such as 0.4.0-rc.1) skips it: the tap has
+  # one formula, the stable channel, as npm's `latest` and the install script are.
+  tap:
+    name: open the Homebrew tap's pull request
+    if: inputs.publish && !contains(needs.version.outputs.version, '-')
+    needs: [version, github]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Write the formula from the published release's SHA256SUMS
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          mkdir -p dist/formula
+          node scripts/release/formula.ts "$VERSION" --out dist/formula/ascribe.rb
+          cat dist/formula/ascribe.rb
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: formula
+          path: dist/formula
+          if-no-files-found: error
+      - name: Open the pull request on the tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAP: ascribed-dev/homebrew-tap
+        run: |
+          BODY="The formula for [Ascribe $VERSION](https://github.com/$GITHUB_REPOSITORY/releases/tag/v$VERSION), written from its SHA256SUMS by the release workflow ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)). Merging it makes \`brew install ascribed-dev/tap/ascribe\` install $VERSION."
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::No HOMEBREW_TAP_TOKEN on the release environment, so this was a dry run: the formula is the \`formula\` artifact, and no pull request was opened."
+            exit 0
+          fi
+          branch="ascribe-$VERSION"
+          git clone --quiet "https://x-access-token:$GH_TOKEN@github.com/$TAP.git" "$RUNNER_TEMP/tap"
+          cd "$RUNNER_TEMP/tap"
+          pr=$(gh pr list --repo "$TAP" --head "$branch" --state all --json url --jq '.[0].url // empty')
+          if [ -n "$pr" ]; then
+            echo "The tap already has $VERSION's pull request: $pr"
+            exit 0
+          fi
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            # An earlier run pushed the branch but didn't open the pull request.
+            gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" --body "$BODY"
+            exit 0
+          fi
+          git switch --quiet --create "$branch"
+          mkdir -p Formula
+          cp "$GITHUB_WORKSPACE/dist/formula/ascribe.rb" Formula/ascribe.rb
+          if git diff --quiet --exit-code -- Formula && [ -z "$(git status --porcelain Formula)" ]; then
+            echo "The tap's formula is already $VERSION's."
+            exit 0
+          fi
+          git add Formula/ascribe.rb
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet --message "ascribe $VERSION"
+          git push --quiet origin "$branch"
+          gh pr create --repo "$TAP" --head "$branch" --title "ascribe $VERSION" --body "$BODY"

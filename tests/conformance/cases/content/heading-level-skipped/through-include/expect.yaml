@@ -1,0 +1,11 @@
+description: >-
+  A heading an include brings in counts at its own level on the page, and is
+  reported at the include.
+spec: ["4.2", "8.2"]
+tags: [check, page-check, include]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-level-skipped, file: index.md, line: 7}

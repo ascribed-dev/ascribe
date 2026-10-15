@@ -51,6 +51,11 @@ covers = ["link-inline"]
 description = "Links followed by markers, one with code as its text, give the <a> its attributes; a marker after a space doesn't."
 
 [[fixture]]
+name = "link-line"
+covers = ["link-line"]
+description = "Links out of a line, one with a title and code as its text, get data-ascribe-release-line from the marker after them."
+
+[[fixture]]
 name = "attribute-values"
 covers = ["attribute-values", "heading"]
 description = "Escaped quotes, ampersands, and angle brackets in marker values decode; spaces and commas stay."
@@ -64,6 +69,11 @@ description = "Markers after a space, mid-heading, or in a paragraph, and malfor
 name = "elements-passthrough"
 covers = ["raw-html"]
 description = "Custom elements and <details> wrapping markdown pass through, and markers inside them apply."
+
+[[fixture]]
+name = "for-agents"
+covers = ["for-agents"]
+description = "The pointer for agents at the top of a page, with `[consumer] agents = true`, is an element wrapping a paragraph whose links stay as written."
 
 [[fixture]]
 name = "image-ends-heading"
@@ -89,3 +99,18 @@ description = "A paragraph in a list item in steps in a variant arm, and a list 
 name = "anchors-fragment"
 covers = ["anchor-via"]
 description = "Blocks from a fragment, and from a fragment it includes, carry the includes they came through."
+
+[[fixture]]
+name = "availability-row"
+covers = ["availability-row"]
+description = "A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` that make its text the plain output's."
+
+[[fixture]]
+name = "availability-planned"
+covers = ["availability-planned"]
+description = "A planned target keeps its empty `planned` attribute, in a block's availability and a row's, beside its states and versions."
+
+[[fixture]]
+name = "code-tested"
+covers = ["code-tested"]
+description = "A code block whose info string has `tested=\"…\"` is put in a figure whose caption holds its title, when it has one, then the tested line, escaped as text, in a line of its own."

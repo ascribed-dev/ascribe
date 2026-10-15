@@ -6,19 +6,37 @@
 //! both sides and compared.
 
 use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::rc::Rc;
 
+use ascribe_check::prompt::Builds;
 use ascribe_check::{Diagnostic, LoadError};
-use ascribe_diff::{BuildDiff, DiffError, DiffOptions, PageDiff, PageStatus, Report, diff_project};
+use ascribe_core::{RelPath, percent_decode};
+use ascribe_diff::{
+    Anchor, BuildDiff, Change, ChangeKind, DiffError, DiffOptions, ProjectDiff, Report,
+    diff_project,
+};
 use clap::{Args as ClapArgs, ValueEnum};
 
+use crate::answer::{self, FromDisk, Loaded, Projects};
 use crate::cli::Global;
-use crate::context::{Failure, load_project};
+use crate::context::Failure;
 use crate::exit;
 
 /// Arguments of `ascribe diff`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
+    /// Show only this page's changes, block by block, or, for a fragment,
+    /// the pages that changed through it: a path from the current directory,
+    /// or from the content root.
+    ///
+    /// With `--format prompt`, the prompt is about this page alone, in the
+    /// first build it changed in, or about the pages that changed through a
+    /// fragment.
+    #[arg(value_name = "PAGE")]
+    pub page: Option<PathBuf>,
+
     /// The revision to compare with, anything git accepts (a branch, a tag, a
     /// commit).
     ///
@@ -51,18 +69,32 @@ pub struct Args {
     /// Exit with 1 when anything changed, as `git diff --exit-code` does.
     #[arg(long)]
     pub exit_code: bool,
+
+    /// List the changed pages without their block-level changes.
+    ///
+    /// With `--format json`, each page's `changes` is empty and its `counts`
+    /// still count them, so the report stays short on a large change. With a
+    /// PAGE, text leaves out the page's blocks; without one, it lists only
+    /// pages anyway. HTML needs the blocks.
+    #[arg(long)]
+    pub pages_only: bool,
 }
 
 /// The output format.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
-    /// The changed pages of each build, with counts, for people.
+    /// The changed pages of each build, with counts, for people; with a
+    /// PAGE, its changes too, each block as it was and as it is.
     Text,
     /// One JSON document, for tools.
     Json,
     /// One self-contained HTML file that shows every changed page rendered,
     /// with its changes marked, for reviewers.
     Html,
+    /// A prompt for an agent that reviews the changes as readers will see
+    /// them: about every changed page, or about the PAGE named. Nothing when
+    /// nothing changed.
+    Prompt,
 }
 
 /// Runs the command. Exit codes: 0 whether or not anything changed (1 when
@@ -80,20 +112,51 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match load_project(global) {
-        Ok(project) => project,
-        Err(failure) => return fail(err, &failure_message(failure)),
-    };
+/// Compares the project with the base: what the command reports, before
+/// it's written, and the project. With `--pages-only`, the JSON report's
+/// blocks are left out.
+///
+/// # Errors
+///
+/// The comparison couldn't be made; the message says why.
+pub fn answer(
+    projects: &dyn Projects,
+    global: &Global,
+    args: &Args,
+) -> Result<(Rc<Loaded>, ProjectDiff), String> {
+    let loaded = answer::load(projects, global, args.page.as_deref()).map_err(failure_message)?;
     let options = DiffOptions {
         base: args.base.as_deref(),
         base_exact: args.base_exact,
         builds: &args.build,
     };
-    let diff = match diff_project(&project, &options) {
-        Ok(diff) => diff,
-        Err(e) => return fail_diff(err, e),
+    let mut diff = diff_project(&loaded.project, &options).map_err(diff_message)?;
+    if args.pages_only && args.format == Format::Json {
+        diff.report.omit_blocks();
+    }
+    Ok((loaded, diff))
+}
+
+fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let (loaded, mut diff) = match answer(&FromDisk, global, args) {
+        Ok(answer) => answer,
+        Err(message) => return fail(err, &message),
     };
+    // The prompt finds its PAGE itself, in the whole report.
+    let page = match &args.page {
+        Some(given) if args.format != Format::Prompt => {
+            match narrow(&loaded.project, &mut diff.report, given) {
+                Ok(path) => Some(path),
+                Err(message) => return fail(err, &message),
+            }
+        }
+        _ => None,
+    };
+    // Its prompts, in the HTML report too, are for an agent here.
+    if let Ok(here) = std::env::current_dir() {
+        diff.seen_from(here);
+    }
+    let project = &loaded.project;
     let report = &diff.report;
     if report.working_tree_errors > 0 {
         let _ = writeln!(
@@ -104,11 +167,19 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     }
 
     let written = match args.format {
-        Format::Text => write_text(out, report),
+        Format::Text => match &page {
+            Some(path) => write_page_text(out, &diff, path, !args.pages_only),
+            None => write_text(out, report),
+        },
         Format::Json => serde_json::to_writer_pretty(&mut *out, report)
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out)),
         Format::Html => out.write_all(diff.html().as_bytes()),
+        Format::Prompt => match prompt(project, &diff, args) {
+            Ok(Some(text)) => out.write_all(text.as_bytes()),
+            Ok(None) => Ok(()),
+            Err(message) => return fail(err, &message),
+        },
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe
@@ -120,6 +191,64 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     } else {
         exit::OK
     }
+}
+
+/// The prompt `--format prompt` writes: about the PAGE named, or every
+/// changed page. `None` when nothing it's about changed; an error when the
+/// PAGE isn't one of the project's files, then or now.
+pub(crate) fn prompt(
+    project: &ascribe_check::Project,
+    diff: &ProjectDiff,
+    args: &Args,
+) -> Result<Option<String>, String> {
+    let Some(given) = &args.page else {
+        let builds = if args.build.is_empty() {
+            Builds::All
+        } else {
+            Builds::Named(args.build.clone())
+        };
+        return Ok(diff.pages_prompt(builds));
+    };
+    let candidates = answer::content_paths(project, given);
+    if let Some(text) = candidates.iter().find_map(|path| diff.prompt_about(path)) {
+        return Ok(Some(text));
+    }
+    if candidates
+        .iter()
+        .any(|path| project.source_at(path).is_some())
+    {
+        return Ok(None);
+    }
+    Err(not_a_file(given))
+}
+
+/// Narrows `report` to the PAGE named, as [`Report::narrow_to`] does, and
+/// returns its content path. An error when it isn't one of the project's
+/// files, then or now.
+fn narrow(
+    project: &ascribe_check::Project,
+    report: &mut Report,
+    given: &Path,
+) -> Result<RelPath, String> {
+    let candidates = answer::content_paths(project, given);
+    let path = candidates
+        .iter()
+        .find(|path| report.reaches(path))
+        .or_else(|| {
+            candidates
+                .iter()
+                .find(|path| project.source_at(path).is_some())
+        })
+        .ok_or_else(|| not_a_file(given))?;
+    report.narrow_to(path);
+    Ok(path.clone())
+}
+
+fn not_a_file(given: &Path) -> String {
+    format!(
+        "{} isn't a file of the project, now or at the base",
+        given.display()
+    )
 }
 
 /// The warning about the working tree's errors, naming the `ascribe check`
@@ -138,26 +267,172 @@ fn errors_line(errors: usize, names: &[String]) -> String {
 }
 
 fn write_text(out: &mut dyn Write, report: &Report) -> io::Result<()> {
-    let short = |commit: &str| commit.chars().take(7).collect::<String>();
-    match &report.base.merge_base {
-        Some(merge_base) if *merge_base != report.base.commit => writeln!(
-            out,
-            "compared with {} ({}), from its merge base with HEAD ({})",
-            report.base.requested,
-            short(&report.base.commit),
-            short(merge_base)
-        )?,
-        _ => writeln!(
-            out,
-            "compared with {} ({})",
-            report.base.requested,
-            short(&report.base.commit)
-        )?,
-    }
+    write_base(out, report)?;
     for build in &report.builds {
         write_build(out, build)?;
     }
     Ok(())
+}
+
+/// The text about the PAGE at `path`: in each build, what changed on it, and
+/// with `blocks`, each change, the block as it was and as it is. For a
+/// fragment, the same about each page that changed through it.
+fn write_page_text(
+    out: &mut dyn Write,
+    diff: &ProjectDiff,
+    path: &RelPath,
+    blocks: bool,
+) -> io::Result<()> {
+    let report = &diff.report;
+    write_base(out, report)?;
+    for build in &report.builds {
+        if build.pages.is_empty() {
+            writeln!(out, "{}: {path}: no changes", build.build)?;
+        }
+        for page in &build.pages {
+            writeln!(
+                out,
+                "{}: {}: {}",
+                build.build,
+                page.path,
+                page.describe(str::to_owned)
+            )?;
+            if blocks {
+                for change in &page.changes {
+                    write_change(out, diff, change)?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// One change: what happened to the block, where, and its lines, `-` as
+/// they were and `+` as they are (a moved block's, unchanged, after a
+/// space). Changed prose is its text as a reader
+/// reads it, with the words that differ marked as `git diff --word-diff`
+/// marks them.
+fn write_change(out: &mut dyn Write, diff: &ProjectDiff, change: &Change) -> io::Result<()> {
+    let place = |anchor: &Option<Anchor>| anchor.as_ref().map(place).unwrap_or_default();
+    let lines = |anchor: &Option<Anchor>, base: bool| {
+        anchor
+            .as_ref()
+            .and_then(|a| diff.written(a, base))
+            .unwrap_or_default()
+    };
+    match change.kind {
+        ChangeKind::Changed => {
+            writeln!(out, "  changed {}", place(&change.now))?;
+            match &change.words {
+                Some(words) => {
+                    let was = marked(&words.was_text, &words.was, "[-", "-]");
+                    let now = marked(&words.now_text, &words.now, "{+", "+}");
+                    write_lines(out, '-', &[was.as_str()])?;
+                    write_lines(out, '+', &[now.as_str()])
+                }
+                None => {
+                    write_lines(out, '-', &lines(&change.was, true))?;
+                    write_lines(out, '+', &lines(&change.now, false))
+                }
+            }
+        }
+        ChangeKind::Added => {
+            writeln!(out, "  added {}", place(&change.now))?;
+            write_lines(out, '+', &lines(&change.now, false))
+        }
+        ChangeKind::Removed => {
+            writeln!(out, "  removed {} in the base", place(&change.was))?;
+            match (lines(&change.was, true), &change.text) {
+                (written, Some(text)) if written.is_empty() => {
+                    write_lines(out, '-', &[text.as_str()])
+                }
+                (written, _) => write_lines(out, '-', &written),
+            }
+        }
+        ChangeKind::Moved => {
+            writeln!(
+                out,
+                "  moved {}, from {} in the base",
+                place(&change.now),
+                place(&change.was)
+            )?;
+            write_lines(out, ' ', &lines(&change.now, false))
+        }
+    }
+}
+
+/// Lines under a change, each after `sign`.
+fn write_lines(out: &mut dyn Write, sign: char, lines: &[&str]) -> io::Result<()> {
+    for line in lines {
+        writeln!(out, "    {}", format!("{sign} {line}").trim_end())?;
+    }
+    Ok(())
+}
+
+/// `text` with each of `ranges` (character offsets, end exclusive) between
+/// `open` and `close`.
+fn marked(text: &str, ranges: &[[usize; 2]], open: &str, close: &str) -> String {
+    let mut out = String::new();
+    for (i, c) in text.chars().enumerate() {
+        if ranges.iter().any(|[start, _]| *start == i) {
+            out.push_str(open);
+        }
+        out.push(c);
+        if ranges.iter().any(|[_, end]| *end == i + 1) {
+            out.push_str(close);
+        }
+    }
+    out
+}
+
+/// A block's place, as `<path>:<lines>` with its path decoded and one line
+/// as one number, and the include it's shown through when it's written in
+/// another file.
+fn place(anchor: &Anchor) -> String {
+    let source = |source: &str| match source.rsplit_once(':') {
+        Some((path, lines)) => {
+            let lines = match lines.split_once('-') {
+                Some((first, last)) if first == last => first,
+                _ => lines,
+            };
+            format!("{}:{lines}", percent_decode(path))
+        }
+        None => percent_decode(source),
+    };
+    let mut text = source(&anchor.source);
+    if let Some(outer) = anchor.via.first() {
+        text.push_str(&format!(", shown through {}", source(outer)));
+    }
+    text
+}
+
+/// The line that says what was compared with.
+fn write_base(out: &mut dyn Write, report: &Report) -> io::Result<()> {
+    let short = |commit: &str| commit.chars().take(7).collect::<String>();
+    let base = named_base(&report.base.requested, &report.base.commit);
+    match &report.base.merge_base {
+        Some(merge_base) if *merge_base != report.base.commit => writeln!(
+            out,
+            "compared with {base}, from its merge base with HEAD ({})",
+            short(merge_base)
+        )?,
+        _ => writeln!(out, "compared with {base}")?,
+    }
+    Ok(())
+}
+
+/// The base as given, with its commit after it unless what was given is
+/// the commit: `main (1a2b3c4)`, and `1a2b3c4` alone.
+fn named_base(requested: &str, commit: &str) -> String {
+    let short: String = commit.chars().take(7).collect();
+    let is_commit = requested.len() >= 4
+        && requested.chars().all(|c| c.is_ascii_hexdigit())
+        && commit.starts_with(&requested.to_ascii_lowercase());
+    if is_commit {
+        requested.to_owned()
+    } else {
+        format!("{requested} ({short})")
+    }
 }
 
 fn write_build(out: &mut dyn Write, build: &BuildDiff) -> io::Result<()> {
@@ -167,54 +442,9 @@ fn write_build(out: &mut dyn Write, build: &BuildDiff) -> io::Result<()> {
         n => writeln!(out, "{}: {n} pages changed", build.build)?,
     }
     for page in &build.pages {
-        writeln!(out, "  {}: {}", page.path, describe(page))?;
+        writeln!(out, "  {}: {}", page.path, page.describe(str::to_owned))?;
     }
     Ok(())
-}
-
-/// A page's line: what changed, and where the change comes from when it
-/// isn't only the page's own file.
-fn describe(page: &PageDiff) -> String {
-    let mut text = match page.status {
-        PageStatus::Added => "added".to_owned(),
-        PageStatus::Removed => "removed".to_owned(),
-        PageStatus::Changed => {
-            let c = page.counts;
-            let mut parts: Vec<String> = [
-                (c.changed, "changed"),
-                (c.added, "added"),
-                (c.removed, "removed"),
-                (c.moved, "moved"),
-            ]
-            .iter()
-            .filter(|(n, _)| *n > 0)
-            .map(|(n, kind)| format!("{n} {kind}"))
-            .collect();
-            if !page.page_changed.is_empty() {
-                parts.push(format!("{} changed", and_list(&page.page_changed)));
-            }
-            parts.join(", ")
-        }
-    };
-    if !page.because.is_empty() {
-        let lead = if page.own_file_changed {
-            "also through"
-        } else {
-            "through"
-        };
-        text.push_str(&format!(" ({lead} {})", page.because.join(", ")));
-    }
-    text
-}
-
-/// `a`, `a and b`, `a, b, and c`.
-fn and_list(items: &[&str]) -> String {
-    match items {
-        [] => String::new(),
-        [one] => (*one).to_owned(),
-        [a, b] => format!("{a} and {b}"),
-        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
-    }
 }
 
 pub(crate) fn failure_message(failure: Failure) -> String {
@@ -229,14 +459,18 @@ pub(crate) fn failure_message(failure: Failure) -> String {
 }
 
 pub(crate) fn fail_diff(err: &mut dyn Write, e: DiffError) -> u8 {
-    let message = match &e {
+    fail(err, &diff_message(e))
+}
+
+/// What a comparison that couldn't be made says.
+fn diff_message(e: DiffError) -> String {
+    match &e {
         DiffError::BaseModel { issues, .. } => model_errors(
             &e.to_string(),
             issues.iter().map(|i| Diagnostic::from_issue(i).message),
         ),
         _ => e.to_string(),
-    };
-    fail(err, &message)
+    }
 }
 
 /// A content model's problems under one line saying whose they are.

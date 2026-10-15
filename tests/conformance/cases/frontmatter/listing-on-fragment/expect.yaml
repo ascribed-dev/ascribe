@@ -1,0 +1,8 @@
+description: >-
+  A fragment can't use the reserved key `listing` (SPEC §2.2): a fragment
+  isn't published on its own, so there's nothing to list.
+spec: ["2.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _f.md, line: 2}

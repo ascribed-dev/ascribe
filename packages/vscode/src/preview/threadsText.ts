@@ -18,12 +18,14 @@ export interface ThreadsNotice {
 /** The header's notice about the threads, or `undefined` when there's nothing to say. */
 export function threadsNotice(view: ThreadsView): ThreadsNotice | undefined {
   if (view.state === "signed-out") {
+    const gh = view.gh ? [{ label: "Use GitHub CLI", message: "useGh" as const }] : [];
+    // A host VS Code has no sign-in for: signing in wouldn't help.
+    if (view.message !== null) {
+      return { text: `Showing changes only. ${view.message}`, actions: gh };
+    }
     return {
       text: "Showing changes only. Comments need GitHub.",
-      actions: [
-        { label: "Sign in to see comments", message: "signIn" },
-        ...(view.gh ? [{ label: "Use GitHub CLI", message: "useGh" as const }] : []),
-      ],
+      actions: [{ label: "Sign in to see comments", message: "signIn" }, ...gh],
     };
   }
   if (view.state === "error") {

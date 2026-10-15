@@ -1,0 +1,10 @@
+description: >-
+  In a versioned build, a version newer than every declared line is reported
+  once, as `available-version-ahead`. It isn't also reported as content in
+  no line, which a version the list can't place says nothing about.
+spec: ["4.4", "9.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-version-ahead, file: index.md, line: 6, column: 26}
+  - {slug: available-version-ahead, file: index.md, line: 9, column: 43}

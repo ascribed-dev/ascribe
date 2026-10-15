@@ -1,13 +1,12 @@
 # A project nested inside handbook/'s content root, from examples/quill's
-# content model. Only this project declares the `edition` phrase.
+# content model. Only this project declares the `edition` phrase, the
+# `edition` note type, and the `tier` dimension; only the handbook declares
+# the `policy` note type and the `deployment` dimension.
 spec = "0.1"
 
 [project]
 content-root = "content"
 output-dir = ".ascribe/build"
-
-[types.page]
-default = true
 
 [types.page.frontmatter]
 title = "string"
@@ -17,9 +16,20 @@ description = "string?"
 product = "Quill"
 edition = "Nested"
 
+[notes.edition]
+label = "Edition"
+
+[dimensions.tier]
+label = "Tier"
+values = ["free", "paid"]
+
 [builds.site]
 variants = "switch"
 availability = "badge"
 
 [editor]
 build = "site"
+
+# The tests write pages that nothing links to.
+[checks]
+page-orphan = "off"

@@ -1,0 +1,27 @@
+---
+// A page of the site outside the docs, from home/: the header and a wide
+// measure, with no sidebar, table of contents, or search. The page's heading
+// is its own, in its hero, so the frame prints no title; the frontmatter's
+// title is for the <title>.
+import type { CollectionEntry } from "astro:content";
+import Base from "./Base.astro";
+
+interface Props {
+  entry: CollectionEntry<"home">;
+  /** The page's level-1 heading, its hero's, which its social card shows. */
+  heading: string;
+}
+
+const { entry, heading } = Astro.props;
+---
+
+<Base
+  entry={entry}
+  card={{ name: entry.id, alt: `Ascribe: ${heading}` }}
+>
+  <main id="content" class="page landing">
+    <article>
+      <slot />
+    </article>
+  </main>
+</Base>

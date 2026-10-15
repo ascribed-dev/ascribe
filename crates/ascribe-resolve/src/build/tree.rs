@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::AvailabilitySpec;
 use ascribe_core::{FileId, Location, RelPath, Span};
-use ascribe_model::Segment;
+use ascribe_model::{Listing, ListingFrom, Segment};
 use ascribe_syntax::{Block, Bound, DirectiveLine, EndLine};
 
 use crate::expand::{IncludeSite, PageProblem};
@@ -57,6 +57,15 @@ pub struct ResolvedPage {
     /// The page-level availability (the frontmatter `available`, after
     /// feature keys), which every node inherits unless it has its own.
     pub availability: Option<Arc<Availability>>,
+    /// The page's own permalink, its frontmatter `permalink` (SPEC §2.1),
+    /// when that's a string.
+    pub permalink: Option<PagePermalink>,
+    /// The page's `listing` (SPEC §2.1): the strictest of its frontmatter's
+    /// and the rules of `[listing]` it's under, or `listed` when nothing sets
+    /// one.
+    pub listing: Listing,
+    /// Where [`ResolvedPage::listing`] comes from.
+    pub listing_from: ListingFrom,
     /// The blocks that survived the build, includes expanded.
     pub blocks: Vec<ResolvedBlock>,
     /// The assets the surviving content references, in document order, each
@@ -69,6 +78,15 @@ pub struct ResolvedPage {
     /// `link-id-removed`, and `link-page-dropped`. Each is located where its
     /// cause is written, with the includes it came through.
     pub problems: Vec<PageProblem>,
+}
+
+/// A page's own permalink, from its frontmatter.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PagePermalink {
+    /// The name.
+    pub name: String,
+    /// The `permalink` line of the frontmatter.
+    pub at: Location,
 }
 
 /// A frontmatter field read with inline markup.
@@ -277,6 +295,8 @@ pub struct HeadingIds {
     pub explicit: bool,
     /// Where the `@id` directive is, when the heading has one.
     pub explicit_at: Option<Location>,
+    /// Whether the `@id` marks the id as a permalink (SPEC §4.1).
+    pub permalink: bool,
 }
 
 /// A phrase replaced in the source text.
@@ -309,9 +329,12 @@ pub struct ResolvedLink {
 pub enum LinkTarget {
     /// A URL with a scheme, passed through unchanged.
     External,
-    /// A page the build publishes.
+    /// A page the build publishes, or, for a link out of a line of a
+    /// versioned build, a page another line publishes (SPEC §5.2).
     Page {
-        /// The page's content path.
+        /// The page's content path: the page the link names, or, in a line
+        /// that doesn't publish it, the page that takes its place or the page
+        /// in the line it leads to.
         page: RelPath,
         /// The page id of the heading the link names, when it names one.
         id: Option<String>,
@@ -319,6 +342,10 @@ pub enum LinkTarget {
         url: String,
         /// Whether the link had no text and took the target's title.
         text_filled: bool,
+        /// For a link out of a line, the line it leads to, as
+        /// `[releases.<target>]` writes it. `None` for a link that stays in
+        /// its build.
+        line: Option<String>,
     },
     /// A local file the build copies. The reference is rewritten by the
     /// emitter.
@@ -412,6 +439,54 @@ pub enum DropReason {
     /// The page's `available` frontmatter makes it unavailable for the
     /// build's target and version.
     Unavailable,
+}
+
+impl DropReason {
+    /// Why a build doesn't publish a page, as the end of a sentence.
+    pub fn explanation(&self) -> &'static str {
+        match self {
+            DropReason::Variant => {
+                "its variant frontmatter names a dimension the build selects, and none of the selected values"
+            }
+            DropReason::Unavailable => {
+                "its available frontmatter makes it unavailable for the build's target and version"
+            }
+        }
+    }
+}
+
+/// Content a build's modes take out of a page (SPEC §9.3): a block, a variant
+/// arm, a whole group, or a table row, where it's written.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Removed {
+    /// The file it's written in.
+    pub file: FileId,
+    /// Its span in that file: a block's, from its first line through its
+    /// `@end` for a container; an arm's, from its opener to the next arm; a
+    /// table row's line.
+    pub span: Span,
+    /// The includes it came through, outermost first. Empty for the page's
+    /// own content.
+    pub via: Arc<[IncludeSite]>,
+    /// Why.
+    pub cause: Removal,
+}
+
+/// Why a build's modes take content out of a page.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Removal {
+    /// A variant arm that names, for a dimension the build selects, none of
+    /// the selected values; or a group none of whose arms does.
+    Variant {
+        /// The dimensions it conflicts on, in the build's order.
+        dimensions: Vec<String>,
+    },
+    /// It isn't available for the build's target and version.
+    Availability(
+        /// The spec that rules it out: the innermost in its chain that
+        /// doesn't allow the build's target and version.
+        Arc<Availability>,
+    ),
 }
 
 /// A page a build doesn't publish.

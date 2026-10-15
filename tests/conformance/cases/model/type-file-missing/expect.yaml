@@ -1,0 +1,8 @@
+description: >-
+  Each file a type names is there: a guide that isn't is an error at its
+  path in ascribe.toml.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-type-file, file: ascribe.toml, line: 8}

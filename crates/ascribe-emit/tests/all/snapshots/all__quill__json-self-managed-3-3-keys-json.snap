@@ -1,0 +1,224 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "ascribe-page",
+  "build": "self-managed-3.3",
+  "path": "keys.md",
+  "route": "/keys/",
+  "site": "https://docs.quill.dev",
+  "title": "API keys",
+  "frontmatter": {
+    "description": "Create and rotate the API keys the Quill agent uses.",
+    "title": "API keys",
+    "type": "page"
+  },
+  "availability": null,
+  "headings": [
+    {
+      "level": 2,
+      "text": "Create a key",
+      "id": "create-key",
+      "sourceId": "create-key",
+      "explicit": true,
+      "source": {
+        "file": "keys.md",
+        "span": [102, 117],
+        "lines": [7, 7]
+      }
+    },
+    {
+      "level": 2,
+      "text": "Rotate keys",
+      "id": "rotate-keys",
+      "sourceId": "rotate-keys",
+      "explicit": true,
+      "source": {
+        "file": "keys.md",
+        "span": [187, 201],
+        "lines": [12, 12]
+      }
+    }
+  ],
+  "assets": [],
+  "blocks": [
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "create-key",
+      "sourceId": "create-key",
+      "explicit": true,
+      "text": "Create a key",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Create a key",
+          "span": [105, 117]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [102, 117],
+        "lines": [7, 7]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "create-key"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "keys.md",
+        "span": [118, 133],
+        "lines": [8, 8]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Sign in to Quill Cloud and open ",
+          "span": [135, 163]
+        },
+        {
+          "type": "strong",
+          "children": [
+            {
+              "type": "text",
+              "value": "Settings → Keys",
+              "span": [165, 182]
+            }
+          ],
+          "span": [163, 184]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [184, 185]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [135, 185],
+        "lines": [10, 10]
+      },
+      "substitutions": [
+        {
+          "span": [146, 153],
+          "key": "cloud",
+          "value": "Quill Cloud"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "rotate-keys",
+      "sourceId": "rotate-keys",
+      "explicit": true,
+      "text": "Rotate keys",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Rotate keys",
+          "span": [190, 201]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [187, 201],
+        "lines": [12, 12]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "rotate-keys"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "keys.md",
+        "span": [202, 218],
+        "lines": [13, 13]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Generate a new key, put it in ",
+          "span": [220, 250]
+        },
+        {
+          "type": "code",
+          "value": "quill.yaml",
+          "span": [250, 262]
+        },
+        {
+          "type": "text",
+          "value": ", and restart the agent. To install the agent first, see ",
+          "span": [262, 319]
+        },
+        {
+          "type": "link",
+          "destination": "/install-agent/#install-agent",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "install-agent.md",
+            "id": "install-agent",
+            "url": "/install-agent/#install-agent",
+            "textFilled": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Install the agent",
+              "span": [319, 353]
+            }
+          ],
+          "span": [319, 353]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [353, 354]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [220, 354],
+        "lines": [15, 15]
+      },
+      "links": [
+        {
+          "span": [319, 353],
+          "kind": "link",
+          "destination": "install-agent.md#install-agent",
+          "target": {
+            "type": "page",
+            "page": "install-agent.md",
+            "id": "install-agent",
+            "url": "/install-agent/#install-agent",
+            "textFilled": true
+          }
+        }
+      ]
+    }
+  ]
+}

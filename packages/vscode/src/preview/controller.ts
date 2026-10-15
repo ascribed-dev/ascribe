@@ -1,9 +1,14 @@
 import * as path from "node:path";
 import { statSync } from "node:fs";
 import * as vscode from "vscode";
+import type { PromptRequest } from "@ascribed/review/github";
+import type { Prompts } from "../actions/promptAgent.js";
 import type { ProjectServer } from "../client.js";
+import { samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
+import type { ChosenBuilds } from "../ui/chosenBuild.js";
 import { shellHtml } from "./html.js";
+import { checkMessage, GIT_COMMANDS, mayOpen } from "./messages.js";
 import type {
   FromWebview,
   ImageReport,
@@ -20,7 +25,7 @@ import { canonicalReference, isExternal, splitFragment } from "./refs.js";
 import { ReviewController, type ReviewApi } from "./review.js";
 import { SourceComments, type SourceThreadRecord } from "./sourceComments.js";
 import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
-import { BuildChoices, previewProblems } from "./routing.js";
+import { previewProblems } from "./routing.js";
 import { findDevServer, noDevServerMessage, pageUrl, sectionAt } from "./site.js";
 
 /** The custom request the language server answers (`crates/ascribe-lsp/README.md`). */
@@ -73,8 +78,10 @@ export interface PreviewApi {
     predicate: (render: RenderRecord) => boolean,
     timeout?: number,
   ): Promise<RenderRecord>;
-  /** Handles a message as if the webview had posted it. */
-  receive(message: FromWebview): Promise<void>;
+  /** Handles a message as if the webview had posted it: it's checked as the webview's are. */
+  receive(message: unknown): Promise<void>;
+  /** How many of the webview's messages were dropped. */
+  dropped(): number;
   /** Selects a build as the picker does. */
   selectBuild(name: string): void;
   /** Review. */
@@ -117,7 +124,6 @@ export class PreviewController implements vscode.Disposable {
   private panelDisposables: vscode.Disposable[] = [];
   private ready = false;
   private document: vscode.TextDocument | undefined;
-  private readonly builds = new BuildChoices();
   private timer: NodeJS.Timeout | undefined;
   private refreshing = false;
   private again = false;
@@ -158,12 +164,20 @@ export class PreviewController implements vscode.Disposable {
   private siteShownFor: string | undefined;
   private siteLog: ({ url: string } | { problem: string })[] = [];
   private framedLog: string[] = [];
-  private readonly review: ReviewController;
+  /** The webview's messages dropped, and whether that has been logged. */
+  private droppedCount = 0;
+  private droppedLogged = false;
+  /** Review: its base, its changed pages, and the pull request's threads. */
+  readonly review: ReviewController;
   private readonly sourceComments: SourceComments;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly projects: ProjectRegistry,
+    /** The build each project is looking at, which the status bar shows and sets too. */
+    private readonly builds: ChosenBuilds,
+    /** Prompt agent: where review's prompts are built and delivered. */
+    private readonly prompts: Prompts,
   ) {
     this.review = new ReviewController(
       projects,
@@ -178,7 +192,7 @@ export class PreviewController implements vscode.Disposable {
       },
       context.workspaceState,
     );
-    this.sourceComments = new SourceComments(projects, this.review.threads);
+    this.sourceComments = new SourceComments(projects, this.review.threads, prompts);
   }
 
   /** Registers the commands, the listeners, and the panel serializer. */
@@ -236,6 +250,11 @@ export class PreviewController implements vscode.Disposable {
         if (this.panel && review && server && server.errorCount() !== review.errors)
           this.schedule(DEBOUNCE_MS);
       }),
+      // The previewed project's build was chosen here or elsewhere.
+      this.builds.onDidChange((folder) => {
+        const server = this.server();
+        if (this.panel && server && samePath(server.project.folder, folder)) this.schedule(0);
+      }),
       // A project appeared or went away: the file may have another owner.
       this.projects.onDidChangeProjects(() => {
         if (this.panel) this.schedule(0);
@@ -286,6 +305,7 @@ export class PreviewController implements vscode.Disposable {
       whenDrawn: (description, predicate, timeout = 30_000) =>
         this.waitForDrawn(description, predicate, timeout),
       receive: (message) => this.receive(message),
+      dropped: () => this.droppedCount,
       selectBuild: (name) => this.chooseBuild(name),
       review: this.review.api,
       threadsDrawn: () => this.threadsLog,
@@ -348,7 +368,7 @@ export class PreviewController implements vscode.Disposable {
     this.assetRoots = assetRoots;
     this.setShell();
     this.panelDisposables.push(
-      panel.webview.onDidReceiveMessage((message: FromWebview) => void this.receive(message)),
+      panel.webview.onDidReceiveMessage((message: unknown) => void this.receive(message)),
       panel.onDidDispose(() => this.detach()),
       panel.onDidChangeViewState(() => {
         this.review.update();
@@ -646,7 +666,17 @@ export class PreviewController implements vscode.Disposable {
     return assets;
   }
 
-  private async receive(message: FromWebview): Promise<void> {
+  /**
+   * Handles a message from the webview. The page draws untrusted HTML, so
+   * what it posts is checked first (`messages.ts`), and a file it names is
+   * opened only when the extension gave it or it lies inside the project.
+   */
+  private async receive(value: unknown): Promise<void> {
+    const message = checkMessage(value);
+    if (!message) {
+      this.drop();
+      return;
+    }
     switch (message.type) {
       case "ready": {
         this.ready = true;
@@ -657,7 +687,9 @@ export class PreviewController implements vscode.Disposable {
         return;
       }
       case "build":
-        this.chooseBuild(message.name);
+        if (this.latest?.result.builds.some((b) => b.name === message.name))
+          this.chooseBuild(message.name);
+        else this.drop();
         return;
       case "open":
         await this.openLink(message.href);
@@ -700,9 +732,14 @@ export class PreviewController implements vscode.Disposable {
       case "openSource":
         await this.openSource(message.source);
         return;
-      case "openFile":
-        await this.showFile(vscode.Uri.file(message.path));
+      case "openFile": {
+        // A cause of the page's change, which the render gave the page.
+        const given = this.latest?.message.review?.causes.map((cause) => cause.path);
+        if (mayOpen(message.path, { given, folder: this.server()?.project.folder }))
+          await this.showFile(vscode.Uri.file(message.path));
+        else this.drop();
         return;
+      }
       case "atEnd": {
         const server = this.server();
         const page = this.latest?.result.page;
@@ -713,18 +750,17 @@ export class PreviewController implements vscode.Disposable {
         return;
       }
       case "openPage": {
-        const contentRoot = this.latest?.result.contentRoot;
-        if (contentRoot)
-          await this.showPage(vscode.Uri.file(fromContentPath(contentRoot, message.path)));
+        const file = this.inContentRoot(message.path);
+        if (file) await this.showPage(vscode.Uri.file(file));
         return;
       }
       case "threads":
         await this.threadsRequest(message);
         return;
       case "openThread": {
-        const contentRoot = this.latest?.result.contentRoot;
-        if (!contentRoot) return;
-        const uri = vscode.Uri.file(fromContentPath(contentRoot, message.path));
+        const file = this.inContentRoot(message.path);
+        if (!file) return;
+        const uri = vscode.Uri.file(file);
         if (this.document && uri.fsPath === this.document.uri.fsPath) {
           this.post({ type: "goToThread", threadId: message.threadId });
           return;
@@ -749,7 +785,7 @@ export class PreviewController implements vscode.Disposable {
       }
       case "git": {
         const server = this.server();
-        await vscode.commands.executeCommand(`git.${message.command}`).then(
+        await vscode.commands.executeCommand(GIT_COMMANDS[message.command]).then(
           () => undefined,
           (error: unknown) =>
             void vscode.window.showErrorMessage(
@@ -774,6 +810,34 @@ export class PreviewController implements vscode.Disposable {
     }
   }
 
+  /**
+   * The file a content path from the webview names, from the content root of
+   * the last render; `undefined` when there's no render, or when it lies
+   * outside both the content root and the project, and the message is dropped.
+   */
+  private inContentRoot(contentPath: string): string | undefined {
+    const contentRoot = this.latest?.result.contentRoot;
+    if (!contentRoot) return undefined;
+    const file = fromContentPath(contentRoot, contentPath);
+    if (
+      mayOpen(file, { folder: contentRoot }) ||
+      mayOpen(file, { folder: this.server()?.project.folder })
+    )
+      return file;
+    this.drop();
+    return undefined;
+  }
+
+  /** A message from the webview that the extension doesn't take: counted, and logged once, without its content. */
+  private drop(): void {
+    this.droppedCount += 1;
+    if (this.droppedLogged) return;
+    this.droppedLogged = true;
+    this.server()?.log(
+      "The preview dropped a message from its page that it doesn't take. Later ones aren't logged.",
+    );
+  }
+
   /** Answers one of the overlay's requests, for the page the preview shows. */
   private async threadsRequest(message: Extract<FromWebview, { type: "threads" }>): Promise<void> {
     const server = this.server();
@@ -785,13 +849,16 @@ export class PreviewController implements vscode.Disposable {
     let reply: ToWebview;
     try {
       if (!server) throw new Error("There's no project for this page.");
-      const result = await this.review.threads.handle(
-        server,
-        page,
-        message.method,
-        message.params,
-        "preview",
-      );
+      const result =
+        message.method === "promptAgent"
+          ? await this.promptAgent(server, page, message.params["request"] as PromptRequest)
+          : await this.review.threads.handle(
+              server,
+              page,
+              message.method,
+              message.params,
+              "preview",
+            );
       reply = { type: "threadsResult", id: message.id, result };
     } catch (error) {
       const code =
@@ -810,6 +877,58 @@ export class PreviewController implements vscode.Disposable {
     this.post(reply);
   }
 
+  /**
+   * Builds the prompt the overlay or the review header asked for and delivers
+   * it: a thread's from the pull request, a page's changes or a fragment's
+   * reach from the server.
+   */
+  private async promptAgent(
+    server: ProjectServer,
+    page: { build: string; path: string } | undefined,
+    request: PromptRequest,
+  ): Promise<null> {
+    let answer: { prompt: string; aboutUnsaved: boolean } | undefined;
+    if (request.kind === "thread" || request.kind === "open-threads") {
+      answer = await this.review.threads.prompt(server, request);
+    } else {
+      const document = this.document;
+      if (!document || !page) throw new Error("There's no page in the preview.");
+      try {
+        answer = await this.prompts.ask(
+          server,
+          request.kind === "page-changes"
+            ? {
+                kind: "pageChanges",
+                textDocument: { uri: document.uri.toString() },
+                build: page.build,
+                unsaved: [],
+              }
+            : {
+                kind: "fragmentReach",
+                textDocument: { uri: document.uri.toString() },
+                build: page.build,
+                fragment: request.fragment,
+                unsaved: [],
+              },
+        );
+      } catch (error) {
+        server.log(`Building the agent prompt failed: ${String(error)}`);
+        throw new Error("The project's server couldn't build it. Its output has the details.");
+      }
+    }
+    if (!answer) {
+      throw new Error(
+        request.kind === "page-changes"
+          ? "Nothing on this page changed."
+          : request.kind === "fragment-reach"
+            ? "No page changed through that file."
+            : "No review comment is open.",
+      );
+    }
+    await this.prompts.deliver(answer.prompt, answer.aboutUnsaved);
+    return null;
+  }
+
   private post(message: ToWebview): void {
     if (this.panel && this.ready) void this.panel.webview.postMessage(message);
   }
@@ -818,9 +937,7 @@ export class PreviewController implements vscode.Disposable {
   private chooseBuild(name: string): void {
     const folder = this.latest?.folder;
     if (folder === undefined) return;
-    // Choosing the editor's build is choosing the default, so a later change
-    // of `[editor] build` is followed.
-    this.builds.set(folder, name === this.editorBuild() ? undefined : name);
+    this.builds.choose(folder, name, this.editorBuild());
     this.schedule(0);
   }
 
@@ -890,9 +1007,10 @@ export class PreviewController implements vscode.Disposable {
   /** A click on a mark's label: shows the block's source in the editor, its lines selected. */
   private async openSource(source: string): Promise<void> {
     const parsed = parseSource(source);
-    const contentRoot = this.latest?.result.contentRoot;
-    if (!parsed || !contentRoot) return;
-    const uri = vscode.Uri.file(fromContentPath(contentRoot, parsed.path));
+    if (!parsed) return;
+    const file = this.inContentRoot(parsed.path);
+    if (!file) return;
+    const uri = vscode.Uri.file(file);
     const editor = await this.showFile(uri);
     const last = Math.min(parsed.last, editor.document.lineCount - 1);
     const range = new vscode.Range(parsed.first, 0, last, editor.document.lineAt(last).text.length);

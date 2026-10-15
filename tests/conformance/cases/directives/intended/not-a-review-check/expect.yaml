@@ -1,0 +1,8 @@
+description: >-
+  Only a review check's problem can be acknowledged: naming a check whose
+  problems are always wrong is an error.
+spec: ["4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: intended-check, line: 5}

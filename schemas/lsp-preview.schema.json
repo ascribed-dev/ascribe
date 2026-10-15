@@ -167,25 +167,21 @@
       "properties": {
         "added": {
           "description": "Blocks only in the new version.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "changed": {
           "description": "Blocks whose content changed.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "moved": {
           "description": "Blocks in both, somewhere else.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         },
         "removed": {
           "description": "Blocks only in the old version.",
-          "format": "uint",
           "minimum": 0,
           "type": "integer"
         }
@@ -227,7 +223,7 @@
           "type": "array"
         },
         "changes": {
-          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page.",
+          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page, and for every page when\nthe report's `blocks_omitted` is `true`.",
           "items": {
             "$ref": "#/$defs/Change"
           },
@@ -517,7 +513,6 @@
         },
         "line": {
           "description": "The line it starts on, from 0.",
-          "format": "uint32",
           "minimum": 0,
           "type": "integer"
         }
@@ -555,7 +550,6 @@
           "description": "Ranges in `now_text`: words added or replacing others.",
           "items": {
             "items": {
-              "format": "uint",
               "minimum": 0,
               "type": "integer"
             },
@@ -573,7 +567,6 @@
           "description": "Ranges in `was_text`: words removed or replaced.",
           "items": {
             "items": {
-              "format": "uint",
               "minimum": 0,
               "type": "integer"
             },
@@ -627,7 +620,6 @@
     },
     "documentVersion": {
       "description": "The version of the open document the answer was computed from, or\n`null` when the file isn't open (its text is the disk's). A client\nthat sent version *n* and gets an older one has raced its own edit\nand asks again.",
-      "format": "int32",
       "type": [
         "integer",
         "null"

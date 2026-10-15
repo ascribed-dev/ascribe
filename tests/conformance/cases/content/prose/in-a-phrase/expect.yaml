@@ -1,0 +1,8 @@
+description: >-
+  A phrase's text is checked where the page uses it, and an alert in it
+  lands at the `{key}`.
+spec: ["2.1", "4.6"]
+tags: [prose]
+
+diagnostics:
+  - {slug: prose, file: input.md, line: 5, column: 9, severity: advice}

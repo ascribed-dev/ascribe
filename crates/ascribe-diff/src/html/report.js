@@ -35,6 +35,7 @@
   function valuesOf(tab) {
     return (tab.getAttribute("value") ?? "").split(/\s+/).filter(Boolean);
   }
+  var followChoice;
   var AscribeTab = class extends HTMLElement {
   };
   var AscribeTabs = class extends HTMLElement {
@@ -43,6 +44,13 @@
     #buttons = [];
     #selected = 0;
     #ready = false;
+    static {
+      followChoice = (dimension, value, except) => {
+        for (const group of syncedGroups) {
+          if (group !== except && group.getAttribute("sync") === dimension) group.#follow(value);
+        }
+      };
+    }
     connectedCallback() {
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => this.#setup(), { once: true });
@@ -125,9 +133,7 @@
       const choice = tab ? valuesOf(tab)[0] : void 0;
       if (sync === null || choice === void 0) return;
       writeChoice(sync, choice);
-      for (const group of syncedGroups) {
-        if (group !== this && group.getAttribute("sync") === sync) group.#follow(choice);
-      }
+      followChoice(sync, choice, this);
     }
     /** Another group with the same `sync` made a choice; keep our selection if we have no match. */
     #follow(value) {
@@ -812,6 +818,24 @@
     el.addEventListener("click", onClick);
     return el;
   }
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const area = h("textarea", { readonly: "", class: "r-offscreen" }, [text]);
+      document.body.append(area);
+      area.select();
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+      area.remove();
+      return copied;
+    }
+  }
   function describeCounts(counts) {
     const parts = [];
     for (const kind of ["changed", "added", "removed", "moved"]) {
@@ -1048,6 +1072,7 @@
         );
       }
     };
+    const status = h("div", { class: "r-status", role: "status" });
     const renderControls = () => {
       controls.replaceChildren();
       const build = builds[state.build];
@@ -1109,7 +1134,17 @@
           button("↓", "r-ghost r-sq", () => step(1), { "aria-label": "Next change" })
         );
       }
-      controls.append(row);
+      if (page.prompt) {
+        const prompt = page.prompt;
+        const copy = button("Copy prompt", "r-ghost r-copy", () => {
+          void copyText(prompt).then((copied) => {
+            status.textContent = copied ? "Prompt copied. Paste it into your agent." : "The prompt couldn't be copied: the browser didn't allow it.";
+          });
+        });
+        copy.title = "Copy a prompt that asks an agent to review this page's changes";
+        row.append(copy);
+      }
+      controls.append(row, status);
       if (state.breakdown)
         controls.append(h("div", { class: "r-legend" }, [describeCounts(page.counts)]));
       if (page.page_changed.length > 0) {
@@ -1148,6 +1183,7 @@
       const build = builds[state.build];
       const page = build?.pages[state.page];
       main.replaceChildren(controls);
+      status.textContent = "";
       article.replaceChildren();
       article.removeAttribute(DATA_SHOW);
       article.className = "r-page";

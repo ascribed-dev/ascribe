@@ -103,9 +103,12 @@ function publishNpm(): void {
 
 /** Points a dist-tag at this version of every package, each of which must be on npm. */
 function tagNpm(tag: string): void {
+  // A version published a moment ago can take a while to show: one canary's
+  // linux-arm64 package was still missing from `npm view` after 3 minutes,
+  // though its publish had succeeded. All of them were published together,
+  // so they share one deadline, well inside the job's timeout.
+  const deadline = Date.now() + (dryRun ? 0 : 15 * 60_000);
   for (const { name } of expected) {
-    // A version published a moment ago can take a while to show.
-    const deadline = Date.now() + (dryRun ? 0 : 180_000);
     while (!isPublished(name)) {
       if (Date.now() >= deadline) fail(`${name}@${version} isn't on npm`);
       log(`waiting for ${name}@${version} to show on npm`);

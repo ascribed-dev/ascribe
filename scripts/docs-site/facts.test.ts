@@ -2,14 +2,20 @@
 // Node version (`engines.node` in package.json), the Rust version
 // (rust-toolchain.toml), the glibc floor (`GLIBC` in release-build.yml), and
 // the folders the docs take code examples from (`[sources.code] include` in
-// docs/ascribe.toml). A copy that can't be generated is compared here, so
+// docs/ascribe.toml) and the changelog the site renders (`changelogFile` in
+// site/src/changelog.ts), the tables site/home/ascribe.toml copies from
+// docs/ascribe.toml, the docs' address the Report workflow checks, and the
+// install commands the landing page and the README repeat from getting
+// started. A copy that can't be generated is compared here, so
 // changing one place and not the others fails. The npm platform packages are
 // checked the same way in scripts/release/manifests.test.ts.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "smol-toml";
 import { expect, test } from "vitest";
+import { changesDir } from "../release/changes.ts";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -69,7 +75,9 @@ test("every file that names the Node version names the one in package.json", () 
   for (const file of tracked(".nvmrc", "**/.nvmrc")) found.push([file, read(file).trim()]);
   for (const file of tracked("*.yml", "*.yaml").filter((file) => !file.startsWith("tests/"))) {
     const text = read(file);
-    for (const setting of all(text, /^\s*node-version:\s*(\S+)/gm)) {
+    // A step that sets up another Node on purpose says so on its line, with
+    // `# Not Ascribe's Node:` and why, and isn't counted.
+    for (const setting of all(text, /^\s*node-version:\s*(\S+)(?!.*# Not Ascribe's Node:)/gm)) {
       found.push([file, `node-version ${setting}`]);
     }
     for (const setting of all(text, /^\s*node-version-file:\s*(\S+)/gm)) {
@@ -129,7 +137,7 @@ test("the glibc floor is release-build.yml's everywhere it's written", () => {
     ".github/workflows/release-build.yml",
     "RELEASING.md",
     "packages/cli/README.md",
-    "docs/content/reference/directives.md",
+    "docs/content/writing/directives.md",
     "SPEC.md",
   ]) {
     const named = all(read(file), /\bglibc (\d+\.\d+)/g);
@@ -137,6 +145,7 @@ test("the glibc floor is release-build.yml's everywhere it's written", () => {
     expect(new Set(named), file).toEqual(new Set([floor]));
   }
   expect(read("RELEASING.md")).toContain(`--target <triple>.${floor}`);
+  expect(read("site/public/install.sh")).toContain(`glibc_floor="${floor}"`);
 });
 
 /** The files the docs take with `@snippet` or `@include` from `code:`, outside code blocks. */
@@ -159,7 +168,7 @@ function codeExamples(): string[] {
   return [...files].sort();
 }
 
-test("the docs' source folders are docs/ascribe.toml's everywhere a build is started for them", () => {
+test("the docs' source folders and the changelog are named everywhere a build is started for them", () => {
   const include = all(
     /^include\s*=\s*\[([\s\S]*?)\]/m.exec(table(read("docs/ascribe.toml"), "sources.code"))?.[1] ??
       "",
@@ -170,16 +179,47 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
     expect(glob, "an include is a whole folder").toMatch(/^[^*]+\/\*\*$/);
     return glob.replace(/\/\*\*$/, "");
   });
+  // The changelog the site renders, at the repository's root.
+  const changelog =
+    /^export const changelogFile = "([^"]+)";$/m.exec(read("site/src/changelog.ts"))?.[1] ?? "";
+  expect(changelog).toBe("CHANGELOG.md");
+  // The entries not yet gathered into it, which the site renders in its
+  // unreleased section, and the script it gathers them with.
+  const gather = "scripts/release/changes.ts";
+  expect(read("site/src/changelog.ts")).toContain(`"../../${gather}"`);
+
+  // A folder inside site/, such as the landing page's demonstration, is
+  // covered by the site's own pattern in both of the next two.
+  const outside = include.filter((glob) => !glob.startsWith("site/"));
+  // What the examples were tested with: the source's ascribe.examples.toml,
+  // at its root, and the observations beside it, which a page's tested line
+  // comes from.
+  expect(read("docs/ascribe.toml")).toMatch(/^\[sources\.code\]\npath = "\.\." /m);
+  const examplesConfig = "ascribe.examples.toml";
+  const tested = [examplesConfig, "examples.observations/**"];
+  expect(
+    existsSync(path.join(root, examplesConfig)),
+    `${examplesConfig} is at the repository's root`,
+  ).toBe(true);
 
   // site-npm.yml builds production's site when one of them changes on `main`.
   const npm = read(".github/workflows/site-npm.yml");
   const paths = /^ {4}paths:\n((?: {6}.*\n)+)/m.exec(npm)?.[1] ?? "";
-  expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(["docs/**", "site/**", ...include].sort());
+  expect(all(paths, /^\s*- "([^"]+)"/gm).sort()).toEqual(
+    ["docs/**", "site/**", ...outside, ...tested, changelog, `${changesDir}/**`, gather].sort(),
+  );
 
   // Netlify skips a push to `main` when none of them changed.
   const netlify = /^\s*ignore = "git diff .* -- (.*)"$/m.exec(read("site/netlify.toml"))?.[1];
   expect(netlify?.split(" ").sort()).toEqual(
-    [".", "../docs", ...folders.map((folder) => `../${folder}`)].sort(),
+    [
+      ".",
+      "../docs",
+      ...[...outside, ...tested].map((glob) => `../${glob.replace(/\/\*\*$/, "")}`),
+      `../${changelog}`,
+      `../${changesDir}`,
+      `../${gather}`,
+    ].sort(),
   );
 
   // CI's site job runs when a file the docs take an example from changed.
@@ -196,4 +236,90 @@ test("the docs' source folders are docs/ascribe.toml's everywhere a build is sta
     expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
   }
   expect(site.test("docs/content/index.md")).toBe(true);
+  for (const file of [
+    changelog,
+    `${changesDir}/an-entry.md`,
+    gather,
+    examplesConfig,
+    "examples.observations/default.toml",
+  ]) {
+    expect(site.test(file), `ci.yml's site pattern matches ${file}`).toBe(true);
+  }
+});
+
+test("the site's own pages share the docs' release tables, sources, and address, and the report checks the docs", () => {
+  type Toml = Record<string, unknown>;
+  const docs = parse(read("docs/ascribe.toml")) as Toml;
+  const home = parse(read("site/home/ascribe.toml")) as Toml;
+  const at = (toml: Toml, ...keys: string[]): unknown =>
+    keys.reduce<unknown>((value, key) => (value as Toml | undefined)?.[key], toml);
+
+  // What the pages' availability marks need, to mark a claim as the docs do.
+  for (const keys of [
+    ["dimensions", "release"],
+    ["releases"],
+    ["features", "next"],
+    ["phrases", "version"],
+    ["consumer", "site"],
+    ["consumer", "trailing-slash"],
+    ["consumer", "permalink-path"],
+  ]) {
+    expect(at(home, ...keys), keys.join(".")).toEqual(at(docs, ...keys));
+    expect(at(docs, ...keys), keys.join(".")).toBeDefined();
+  }
+  // The `site` phrase, which links into the docs start with.
+  expect(at(home, "phrases", "site")).toBe(at(docs, "consumer", "site"));
+
+  // The same files for code examples, from each project's own folder.
+  const sources = (toml: Toml, folder: string) => {
+    const code = at(toml, "sources", "code") as Toml;
+    return { ...code, path: path.resolve(root, folder, String(code["path"])) };
+  };
+  expect(sources(home, "site/home")).toEqual(sources(docs, "docs"));
+
+  // The nightly report checks the published docs, at their address and base path.
+  const report = /--site (\S+)/.exec(read(".github/workflows/report.yml"))?.[1];
+  expect(report).toBe(
+    `${String(at(docs, "consumer", "site"))}${String(at(docs, "consumer", "base-path"))}`,
+  );
+
+  // A preview is built with its own address in each file that names the site's.
+  const preview = /^\s*sed -i ".*" (.+)$/m.exec(read(".github/workflows/site.yml"))?.[1];
+  expect(preview?.split(" ").sort()).toEqual(
+    ["docs/ascribe.toml", "site/home/ascribe.toml"].sort(),
+  );
+});
+
+/** The text of a Markdown file's `## heading` section, to the next level-2 heading. */
+function section(markdown: string, heading: string): string {
+  const start = markdown.indexOf(`\n## ${heading}\n`);
+  if (start === -1) throw new Error(`no "## ${heading}"`);
+  const end = markdown.indexOf("\n## ", start + 1);
+  return markdown.slice(start, end === -1 ? undefined : end);
+}
+
+/** The lines of each ```sh block in a text. */
+function shell(text: string): string[][] {
+  return Array.from(text.matchAll(/^```sh\n([\s\S]*?)^```$/gm), ([, block = ""]) =>
+    block.trim().split("\n"),
+  );
+}
+
+test("the landing page and the README install what getting started's first two sections do", () => {
+  // Getting started's home for each: its section's first command, the npm arm's.
+  const gettingStarted = read("docs/content/getting-started.md");
+  const installs = ["Install the command", "Install the editor"].map((heading) => {
+    const command = shell(section(gettingStarted, heading))[0]?.[0];
+    if (command === undefined) throw new Error(`"${heading}" has no command`);
+    return command;
+  });
+  expect(installs[0]).toMatch(/^npm install /);
+
+  // The landing page shows the two, each in a block of its own.
+  const landing = shell(section(read("site/home/content/index.md"), "Start"));
+  expect(landing).toEqual(installs.map((command) => [command]));
+
+  // The README's "Get started" block starts with them, then checks.
+  const readme = shell(section(read("README.md"), "Get started"))[0];
+  expect(readme).toEqual([...installs, "npx ascribe check"]);
 });

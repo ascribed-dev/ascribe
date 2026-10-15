@@ -1,12 +1,12 @@
 ---
 import { getCollection, render } from "astro:content";
-import Docs from "../layouts/Docs.astro";
+import Demonstrations from "../components/Demonstrations.astro";
+import Page from "../layouts/Page.astro";
 
-// A page's route is the base path plus its entry id, and the root page (id
-// `index`) is at the base path itself: what Ascribe's router computes for
-// every link it writes.
+// The site's own pages, from home/: at the site's root, the base path of that
+// project, plus each entry id, with the landing page (id `index`) at `/`.
 export async function getStaticPaths() {
-  const entries = await getCollection("docs");
+  const entries = await getCollection("home");
   return entries.map((entry) => ({
     params: { slug: entry.id === "index" ? undefined : entry.id },
     props: { entry },
@@ -14,7 +14,12 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
+// Through `render()`, which gives the page's images Astro's processing.
 const { Content, headings } = await render(entry);
+const heading = headings.find((h) => h.depth === 1)?.text;
+if (heading === undefined) throw new Error(`${entry.id}: the page has no level-1 heading`);
 ---
 
-<Docs entry={entry} headings={headings}><Content /></Docs>
+<Page entry={entry} heading={heading}>
+  <Demonstrations id={entry.id}><Content /></Demonstrations>
+</Page>

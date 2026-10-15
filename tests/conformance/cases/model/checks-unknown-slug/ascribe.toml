@@ -1,0 +1,5 @@
+spec = "0.1"
+
+# A key of [checks] is a check's slug, and this one is misspelled.
+[checks]
+binding-blank-lines = "off"

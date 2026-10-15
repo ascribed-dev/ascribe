@@ -1,6 +1,6 @@
 //! Helpers for building a project in memory.
 
-#![allow(dead_code)]
+#![allow(dead_code, clippy::expect_used, clippy::panic)]
 
 use std::sync::Arc;
 

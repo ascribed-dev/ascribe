@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+
+[consumer]
+base-path = "/docs/"
+
+[crawlers]
+lines = ["Disallow: /drafts/", "Disallow: /docs/"]

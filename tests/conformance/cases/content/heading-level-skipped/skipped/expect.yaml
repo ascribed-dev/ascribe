@@ -1,0 +1,13 @@
+description: >-
+  A heading more than one level below the heading before it is reported, and
+  so is a level-1 heading, since the page's title is its level-1 heading.
+  After a skip, the next heading is compared with the one that skipped.
+spec: ["8.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-level-skipped, line: 5, severity: advice}
+      - {slug: heading-level-skipped, line: 9}

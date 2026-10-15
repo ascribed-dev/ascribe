@@ -1,10 +1,14 @@
 // The update pull request's recipe is one file,
 // examples/docs-repository/.github/workflows/update-sources.yml: the drift
-// guide shows it, and the sources fixture runs it. These tests check that
-// both use that file, and, when there's an `ascribe` to run it with, run the
-// fixture's pass on this machine (rust.yml runs it too, after its build).
+// guide shows it, and the sources fixture runs it. The check's recipe is
+// check.yml beside it, which getting started shows. These tests check that
+// each uses its file, and, when asked, run the fixture's pass on this machine:
+// with ASCRIBE_BIN naming the binary, or ASCRIBE_SOURCES_FIXTURE=1 for this
+// repository's debug build. A plain `pnpm test` skips the pass, whether or not
+// that build exists: it takes ten seconds, and rust.yml runs it after its
+// build (`node scripts/sources-fixture/setup.ts --local`).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,21 +22,34 @@ const workflow = path.join(
   "workflows",
   "update-sources.yml",
 );
+const check = path.join("examples", "docs-repository", ".github", "workflows", "check.yml");
 const built = path.join(
   root,
   "target",
   "debug",
   process.platform === "win32" ? "ascribe.exe" : "ascribe",
 );
-const ascribe = process.env["ASCRIBE_BIN"] ?? (existsSync(built) ? built : undefined);
+const ascribe =
+  process.env["ASCRIBE_BIN"] ??
+  (process.env["ASCRIBE_SOURCES_FIXTURE"] === "1" ? built : undefined);
 
 test("the drift guide shows the workflow the fixture runs", () => {
-  const guide = readFileSync(path.join(root, "docs", "content", "guides", "drift.md"), "utf8");
+  const guide = readFileSync(path.join(root, "docs", "content", "examples", "index.md"), "utf8");
   // docs/ascribe.toml's `code` source is the repository's root.
   expect(guide).toContain(
     "@snippet {lang=yaml}: code:examples/docs-repository/.github/workflows/update-sources.yml#workflow\n",
   );
   const text = readFileSync(path.join(root, workflow), "utf8");
+  expect(text).toContain("# :snippet-start: workflow\n");
+  expect(text).toContain("# :snippet-end:\n");
+});
+
+test("getting started shows the docs repository's check workflow", () => {
+  const page = readFileSync(path.join(root, "docs", "content", "getting-started.md"), "utf8");
+  expect(page).toContain(
+    "@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow\n",
+  );
+  const text = readFileSync(path.join(root, check), "utf8");
   expect(text).toContain("# :snippet-start: workflow\n");
   expect(text).toContain("# :snippet-end:\n");
 });

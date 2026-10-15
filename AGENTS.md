@@ -26,11 +26,13 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **Diagnostics live in one file,** `tests/conformance/diagnostics.toml`. A new one is added there and in `crates/ascribe-core/src/diagnostics.rs`, in the same order; a test compares them.
 - **Behavior changes come with a conformance case** in `tests/conformance/cases/`.
 - **Generated files aren't edited by hand.** A file that says what generates it is rewritten by running its test with `ASCRIBE_BLESS=1`; read the diff before committing it. See ARCHITECTURE.md's list.
+- **The docs' tested examples are observed again when they change.** `ascribe.examples.toml` lists the files the docs show and a test proves: the command output in `crates/ascribe-cli/tests/output/` and the example projects those tests check. After re-blessing or editing one, run `cargo run -p ascribe-cli -- observe` in the repository's root and commit `examples.observations/default.toml`; CI's `ascribe observe --check` fails without it.
+- **Colors are written in `design/tokens.toml` only,** and a stylesheet change is an output change: the HTML report embeds the stylesheets. [design/README.md](design/README.md) has the steps; a test fails on a color written in a stylesheet.
 - **Never accept snapshots blindly.** Review `insta` changes with `cargo insta review`.
-- **Read project files through `ascribe_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/ascribe-resolve/tests/file_reads.rs` fails.
+- **Read project files through `ascribe_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/ascribe-resolve/tests/all/file_reads.rs` fails.
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
 - **`crates/comrak-ascribe` is a fork.** Mark each change `// ASCRIBE:` and list it in `crates/comrak-ascribe/FORK.md`.
-- **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and the unreleased section of `CHANGELOG.md`. Don't run a formatter over Markdown.
+- **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and adds its changelog entry as a file of its own in `changes/` ([changes/README.md](changes/README.md)); it doesn't edit `CHANGELOG.md`, which a release gathers the entries into. Don't run a formatter over Markdown.
 - **Paths, case, and links differ by platform.** Pull requests run on Linux and Windows; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
 
 ## Where to look
@@ -38,6 +40,9 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, the checks, documenting a change, and the docs site.
 - [RELEASING.md](RELEASING.md): how a release and the nightly canary are made.
 - [project-docs/checklists.md](project-docs/checklists.md): what a change to the language, a command, or the site output's markup must touch. Go through the one that fits before opening a pull request.
-- [project-docs/decisions.md](project-docs/decisions.md): the decisions in force. A decision made in an issue or a review is added there in the pull request that acts on it.
+- [.claude/skills/writing-tests/SKILL.md](.claude/skills/writing-tests/SKILL.md): the test layers and what each proves, where a test of each kind goes, the fixture helpers to build on, and what keeps a test fast. Read it before adding or changing a test.
+- [.claude/skills/board/SKILL.md](.claude/skills/board/SKILL.md): working from [the project board](https://github.com/orgs/ascribed-dev/projects/1), and the skills for each role on it: `triage`, `implement`, `review`, and `steward` for driving a pull request.
+- [project-docs/surface.md](project-docs/surface.md): everything a person or an agent touches, generated from where each is declared: the commands, the directives, `ascribe.toml`'s sections, the diagnostics, the editor's commands and settings, the tools, and the packages' entries. Read it before adding to any of them; `node scripts/surface/inventory.ts` rewrites it.
+- [project-docs/decisions.md](project-docs/decisions.md) and [project-docs/decisions/](project-docs/decisions/README.md): the decisions in force: the numbered ones in the first, and each since as a file of its own in the folder, numbered by its issue. A decision made in an issue or a review is added to the folder in the pull request that acts on it.
 - [project-docs/outside.md](project-docs/outside.md): every account, secret, and package Ascribe relies on outside the repository, and who can change each. [project-docs/lints.md](project-docs/lints.md): the lints tried, and why each was kept or not.
 - `project-docs/`: plans, each with its decisions. A plan says what was intended; the code and ARCHITECTURE.md say what is.

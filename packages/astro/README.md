@@ -2,7 +2,7 @@
 
 The [Astro](https://astro.build) integration for [Ascribe](https://github.com/ascribed-dev/ascribe), for Astro 7.3.5 and later 7.x releases.
 
-It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro keeps its heading, table-of-contents, and image handling), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
+It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro keeps its heading, table-of-contents, and image handling), loads the element library, serves the files pages link to, and gives each permalink an address that forwards to its heading. In `astro dev`, it rebuilds as you edit.
 
 ```sh
 npm install @ascribed/astro
@@ -16,12 +16,12 @@ import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
 
 export default defineConfig({
-  site: "https://docs.example.com", // as in ascribe.toml's [consumer]
-  base: "/docs",
-  trailingSlash: "never",
+  // `site`, `base`, and `trailingSlash` come from ascribe.toml's [consumer].
   integrations: [ascribe({ build: "site" })],
 });
 ```
+
+Astro's `site`, `base`, and `trailingSlash` come from `ascribe.toml`'s `[consumer]` when the Astro config leaves them out. With `projects`, `site` and `trailingSlash` come from the first entry whose project sets them, and `base` stays the site's. Set in the Astro config, each must agree with `[consumer]`, or the build fails.
 
 ```ts
 // src/content.config.ts
@@ -35,45 +35,78 @@ export const collections = { docs: defineCollection(ascribeCollection({ schema }
 
 If the Ascribe project is outside the Astro root (`project: "../docs"`), import `../.astro/integrations/_ascribed_astro/schema.ts` instead: the integration copies the schema there after each build, so TypeScript finds `astro/zod` from it.
 
+`[consumer] base-path` can be Astro's `base` or a path under it, so a home page can sit at `/` in front of docs at `/docs/`: list the docs in `projects`, even alone, so Astro's `base` stays `/`. Several projects can share one site, each under its own base path:
+
+```js
+ascribe({
+  projects: [
+    { name: "docs", project: "../docs", build: "site" },
+    { name: "home", project: "home", build: "site" },
+  ],
+  review: "docs",
+});
+```
+
 ```astro
 ---
 // A layout
 import Elements from "@ascribed/astro/Elements.astro";
 import Availability from "@ascribed/astro/Availability.astro";
+import Head from "@ascribed/astro/Head.astro";
 const { entry } = Astro.props;
 ---
-<head><Elements /></head>
+<head>
+  <!-- Everything the head says about the page, from its record. -->
+  <Head entry={entry} title={(title, record) => `${title} · Loom`} name="Loom" />
+  <Elements />
+</head>
 <Availability available={entry.data.available} />
 <!-- With `inline = "code"` on `title`: its code spans as <code>. -->
 <h1 set:html={entry.data.formatted.title} />
 ```
 
-The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/guides/review/) walks through reviewing a pull request on your site.
+Each build writes a record of every page, `_ascribe/pages.json`, and the integration writes from every project's records what search engines read: `Head.astro` gives a page its `<title>`, description, canonical link, `noindex` when it's `unlisted`, and `nosnippet` when it's `unquoted`, a link to its Markdown version, the Open Graph tags a link preview reads, with the site's name and a social card given as properties, and its breadcrumbs as structured data, and `astro dev` warns about a tag a layout writes again; and the site gets one `sitemap.xml`, at Astro's `base`, and one `robots.txt`, at the host's root, with each project's `[crawlers] lines` and a group for each kind of crawler it disallows, such as `training = "disallow"`, in `astro build` and `astro dev`; projects that disagree on a kind fail the build. A page with no record, such as an Astro page of the site's own, gets nothing from `Head.astro` and is in the sitemap as a page Astro built. A site with its own `public/robots.txt` or `public/sitemap.xml` keeps it, and a site whose `base` isn't `/` gets no `robots.txt`: the build prints the lines its host's needs. With no `site`, there's no sitemap.
+
+A versioned build (`versions` in `ascribe.toml`) is one collection with every live line's pages: the current line's at the base path, and an older line's under its number, `/docs/3.4/`, with the line in front of their entry ids. Each entry's data has `line` and `current`. `Versions.astro`, given a page's entry, lists the lines that publish the page, each a link, with the page's own marked; `sidebar(nav, entries, { entry })` shows the pages of the entry's line. `astro dev` rebuilds every line. A permalink forwards to the current line, and only the current line's `llms.txt` and Markdown are published.
+
+A page's Markdown version has no head, so its rules are response headers, which each build lists in `_ascribe/headers.json`: `X-Robots-Tag` when the page isn't listed, and a canonical `Link` to the page. `astro dev` sends them. With `[consumer] headers = "netlify"`, `astro build` writes them into the site's `_headers`; a site with its own `public/_headers` keeps it, and the build fails with the lines it lacks.
+
+`npx @ascribed/astro init` writes those files into an Astro project once, as yours from then on: the collection (`src/content.config.ts`), the route (`src/pages/[...slug].astro`), a layout that loads the elements (`src/layouts/Docs.astro`), and the sidebar's list (`src/nav.ts`). It never writes over a file. `--project <dir>` names the folder holding `ascribe.toml`, and `--build <name>` the build, when there are several. The layout's sidebar comes from `sidebar(nav, entries)` in `@ascribed/astro/content`, which gives each listed page its entry and address, and fails the build when the list leaves out a page or names one that isn't there.
+
+The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site: `ascribe.toml`, the collection, the route, the layout, [a home page in front of the docs](https://ascribed-dev.com/go/a-home-page-in-front-of-the-docs/), and [several projects in one site](https://ascribed-dev.com/go/several-projects-in-one-site/). The [`@ascribed/astro` reference](https://ascribed-dev.com/go/astro-reference/) has the options, what the integration does in `astro build` and `astro dev`, search engines and crawlers, and [review in the site preview](https://ascribed-dev.com/go/review-in-the-site-preview/). [Review](https://ascribed-dev.com/go/review-guide/) walks through reviewing a pull request on your site.
 
 ## Options
 
 | Option | Meaning |
 |---|---|
-| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
+| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required, unless `projects` is given. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
+| `projects` | Several projects in one site, in place of `build` and `project`: a list of entries, each `{ name, build, project }`. Each collection names its entry, `ascribeCollection({ schema, name })`, and each entry's schema is copied to `.astro/integrations/_ascribed_astro/<name>/schema.ts`. |
 | `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
 | `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`, though `review` turns them on in `astro dev`. |
-| `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. |
-| `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it) above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`. `false` leaves it out. By default, `true`. |
+| `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. With `projects`, an entry's name reviews that entry, and `true` the first. |
+| `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it), and what a tested example was tested with (`tested="…"`), above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`, the tested line in a `<div class="ascribe-code-tested">` of its own. `false` leaves both out. By default, `true`. |
+| `sitemap` | `{ exclude: [...] }`: routes of the site's own pages, from the host's root, to leave out of the sitemap, such as one that carries `noindex`. |
 
 ## Development
 
 | File | Role |
 |---|---|
 | `src/index.ts` | The integration |
-| `src/content.ts` | `ascribeCollection`, for `content.config.ts` |
+| `src/content.ts` | `ascribeCollection`, for `content.config.ts`, and `sidebar`, for a layout |
+| `src/nav.ts` | The sidebar: entry ids, routes, and the check of the site's list against the collection |
+| `src/init.ts`, `src/cli.ts`, `starter/` | `npx @ascribed/astro init`, the package's command (`ascribe-astro`), and the files it writes. `examples/astro-site`'s are what it writes for that project; `test/init.test.ts` holds that, and rewrites them with `ASCRIBE_BLESS=1` |
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
 | `src/Availability.astro` | A page's availability as the element library's badge |
-| `src/code-titles.ts` | The Shiki transformer that shows code block titles |
+| `src/Versions.astro`, `src/versions.ts` | A versioned build's lines, from `<output-dir>/_ascribe/versions.json`, and the list of the lines that have a page |
+| `src/code-titles.ts` | The Shiki transformer that shows code block titles and tested lines |
+| `src/Permalink.astro`, `src/permalinks.ts` | The route at each permalink's address, and its pages, from the site output's `_ascribe/permalinks.json` |
+| `src/MissingPermalink.astro` | The explanation on a site's 404 page for an address under the permalinks' path that matches nothing |
 | `src/schema.ts` | Copies the generated schema inside the Astro root |
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |
 | `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
+| `src/projects.ts` | Several projects in one site: the entries' names, and what the projects can't share |
 | `src/review/` | Review in the site preview, on the dev server's side: `ascribe diff`, the pull request (through `@ascribed/review/github` and `gh`), the routes, `.ascribe/dev.json`, and the toolbar channel's requests (`server.ts`, `protocol.ts`) |
 | `src/toolbar/` | The **Ascribe review** toolbar app, in the page: the panel, and the `@ascribed/review` overlay on the page's blocks |
 

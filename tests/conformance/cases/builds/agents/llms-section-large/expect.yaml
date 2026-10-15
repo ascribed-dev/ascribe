@@ -1,0 +1,11 @@
+description: >-
+  An index too long for one fetch is split by folder, and a folder's own
+  llms.txt that is still too long is advice, at its first page's first line.
+  The root llms.txt, with the pages outside every folder, is short enough.
+spec: ["8.2", "9.4"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: llms-section-large, file: big/huge.md, line: 1}

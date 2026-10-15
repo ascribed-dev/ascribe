@@ -1,0 +1,14 @@
+description: >-
+  A page that's `unlisted` at an address the project's own `[crawlers]
+  lines` disallow for every crawler is advice, at the value: a crawler never
+  fetches it to read that it isn't to be listed. The lines are read as RFC
+  9309 says, with the lines before any `User-agent` line for every crawler
+  and the longest match winning. A page that's disallowed and listed, one
+  that's unlisted and may be fetched, and one disallowed for a named crawler
+  only, aren't reported.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics:
+  - {slug: listing-disallowed, file: drafts/unlisted.md, line: 4}
+  - {slug: listing-disallowed, file: archive/old.md, line: 4}

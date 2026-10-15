@@ -136,6 +136,12 @@ fn link_inline(
 ) {
     let resolved = resolved(block, node, RefKind::Link);
     let mut term = None;
+    // A link out of a line says which line it leads to (element contract
+    // §10).
+    let line = match resolved.map(|l| &l.target) {
+        Some(LinkTarget::Page { line, .. }) => line.clone(),
+        _ => None,
+    };
     let destination = match resolved.map(|l| &l.target) {
         Some(LinkTarget::External) => markdown_destination(&link.destination),
         Some(LinkTarget::Page { url, .. }) => markdown_destination(url),
@@ -174,9 +180,15 @@ fn link_inline(
         .push_str(&format!("[{text}]({destination}{})", title(shown)));
     // Directly after the link, with nothing between: the marker that gives
     // the `<a>` its attributes.
+    let mut attributes = Vec::new();
     if let Some((id, _)) = term {
-        st.out
-            .push_str(&marker(&[(names::DATA_TERM.to_owned(), id)]));
+        attributes.push((names::DATA_TERM.to_owned(), id));
+    }
+    if let Some(line) = line {
+        attributes.push((names::DATA_RELEASE_LINE.to_owned(), line));
+    }
+    if !attributes.is_empty() {
+        st.out.push_str(&marker(&attributes));
     }
     st.line_start = false;
 }

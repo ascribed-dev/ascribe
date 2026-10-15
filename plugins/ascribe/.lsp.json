@@ -1,0 +1,12 @@
+{
+  "ascribe": {
+    "args": [
+      "lsp"
+    ],
+    "command": "ascribe",
+    "diagnostics": true,
+    "extensionToLanguage": {
+      ".md": "markdown"
+    }
+  }
+}

@@ -17,6 +17,7 @@ use serde::Serialize;
 use crate::emitter::{Emitter, PageContext};
 use crate::error::EmitError;
 use crate::labels::{attribute_values, availability_display, dimensional_label, plain_text};
+use crate::site::blocks::availability_target;
 
 // SPEC §9.4 fixes only "the resolved tree, for custom consumers"; the shape
 // below is Ascribe's own, versioned by `JSON_SCHEMA_VERSION`.
@@ -140,6 +141,10 @@ struct AvailabilityJson {
     text: String,
     /// The spec with the content model's display labels.
     display: String,
+    /// Each target as the availability element gives it, when the project
+    /// lists release lines in `[releases]`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    targets: Option<Vec<AvailabilityTargetJson>>,
     scope: &'static str,
     feature: Option<String>,
     source: Option<SourceRef>,
@@ -148,6 +153,21 @@ struct AvailabilityJson {
     /// `availability` and applies to every block.
     #[serde(skip_serializing_if = "Option::is_none")]
     enclosing: Option<Box<AvailabilityJson>>,
+}
+
+/// One target of an availability spec: the element's attributes and its
+/// text (element contract §4).
+#[derive(Serialize)]
+struct AvailabilityTargetJson {
+    target: String,
+    dimension: String,
+    states: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    versions: Vec<String>,
+    /// `true` when the target's last version is in a planned line.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    planned: bool,
+    text: String,
 }
 
 #[derive(Serialize)]
@@ -191,6 +211,44 @@ struct SnippetJson {
     path: String,
     /// The lines of the code file it covers, first and last.
     lines: Option<[u32; 2]>,
+    /// Whether the file was tested, when it's a tested example
+    /// (decision #458c); absent on any other file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tested: Option<TestedJson>,
+}
+
+/// A tested example's status, and the observations current for it.
+#[derive(Serialize)]
+struct TestedJson {
+    /// `current`, `stale`, or `unobserved`.
+    status: &'static str,
+    /// The observations current for it, in name order: empty unless it's
+    /// `current`.
+    observations: Vec<ObservationJson>,
+}
+
+/// An observation current for an example.
+#[derive(Serialize)]
+struct ObservationJson {
+    /// Its name: `default`, or the name `ascribe observe --name` gave it.
+    name: String,
+    /// Its environment as it has it, in its order: `os`, `arch`, then each
+    /// entry's kept line, such as `"node": "v24.9.0"`.
+    environment: Environment,
+}
+
+/// Name and value pairs, written as an object in their order.
+struct Environment(Vec<(String, String)>);
+
+impl Serialize for Environment {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(self.0.len()))?;
+        for (key, value) in &self.0 {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
+    }
 }
 
 #[derive(Serialize)]
@@ -322,6 +380,10 @@ enum TargetJson {
         id: Option<String>,
         url: String,
         text_filled: bool,
+        /// The line a link out of a line leads to; absent for any other
+        /// link.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        line: Option<String>,
     },
     #[serde(rename_all = "camelCase")]
     Asset {
@@ -545,6 +607,23 @@ impl Writer<'_, '_> {
         AvailabilityJson {
             text: a.text.clone(),
             display: availability_display(self.cx.emit.model, &a.spec),
+            targets: (!self.cx.emit.model.releases.is_empty()).then(|| {
+                a.spec
+                    .entries
+                    .iter()
+                    .map(|entry| {
+                        let view = availability_target(self.cx.emit.model, entry);
+                        AvailabilityTargetJson {
+                            target: view.target,
+                            dimension: view.dimension,
+                            states: view.states,
+                            versions: view.versions,
+                            planned: view.planned,
+                            text: view.text,
+                        }
+                    })
+                    .collect()
+            }),
             scope: match a.scope {
                 Scope::Page => "page",
                 Scope::Section => "section",
@@ -577,6 +656,17 @@ impl Writer<'_, '_> {
                 address: s.address.clone(),
                 path: s.path.to_string(),
                 lines: s.lines.map(|(first, last)| [first, last]),
+                tested: s.example.as_ref().map(|e| TestedJson {
+                    status: e.status.as_str(),
+                    observations: e
+                        .current
+                        .iter()
+                        .map(|o| ObservationJson {
+                            name: o.name.clone(),
+                            environment: Environment(o.environment.clone()),
+                        })
+                        .collect(),
+                }),
             }),
         }
     }
@@ -811,11 +901,13 @@ impl Writer<'_, '_> {
                 id,
                 url,
                 text_filled,
+                line,
             } => TargetJson::Page {
                 page: page.to_string(),
                 id: id.clone(),
                 url: url.clone(),
                 text_filled: *text_filled,
+                line: line.clone(),
             },
             LinkTarget::Asset { path, fragment } => {
                 let placement = self.cx.asset(path, usage);

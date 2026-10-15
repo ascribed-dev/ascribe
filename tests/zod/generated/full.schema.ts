@@ -13,6 +13,7 @@ export const availableTargetSchema = z.strictObject({
   dimension: z.string(),
   states: z.array(z.string()),
   versions: z.array(z.string()).optional(),
+  planned: z.literal(true).optional(),
   text: z.string(),
 });
 
@@ -30,8 +31,10 @@ export type Variant = z.infer<typeof variantSchema>;
 
 /** The frontmatter of pages of type `guide`. */
 export const guideSchema = z.strictObject({
+  type: z.literal("guide"),
   title: z.string().describe("The page title, shown in navigation and the browser tab."),
   description: z.string().optional(),
+  "review-by": z.coerce.date().optional(),
   order: z.number().optional(),
   featured: z.boolean().optional(),
   updated: z.coerce.date().optional(),
@@ -51,15 +54,20 @@ export const guideSchema = z.strictObject({
   })).optional(),
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
+  permalink: z.string().optional(),
+  source: z.string(),
 });
 export type Guide = z.infer<typeof guideSchema>;
 
 /** The frontmatter of pages of type `reference`. */
 export const referenceSchema = z.strictObject({
+  type: z.literal("reference"),
   title: z.string(),
   "api-version": z.string().optional(),
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
+  permalink: z.string().optional(),
+  source: z.string(),
   formatted: z.strictObject({
     title: z.string(),
   }),
@@ -72,14 +80,8 @@ export const schemas = {
   reference: referenceSchema,
 } as const;
 
-/** Which pages each content type applies to. */
-export const contentTypes = {
-  guide: { default: true, files: [] },
-  reference: { default: false, files: ["reference/**", "api/**/*.md"] },
-} as const;
-
 /** A schema that accepts the frontmatter of any content type. */
-export const schema = z.union([
+export const schema = z.discriminatedUnion("type", [
   guideSchema,
   referenceSchema,
 ]);

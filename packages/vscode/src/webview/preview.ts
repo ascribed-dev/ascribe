@@ -194,6 +194,7 @@ function showAvailability(targets: AvailabilityTarget[]): void {
     if (item.versions && item.versions.length > 0) {
       element.setAttribute("versions", item.versions.join(" "));
     }
+    if (item.planned) element.setAttribute("planned", "");
     element.textContent = item.text;
     wrapper.append(element);
   });
@@ -367,7 +368,23 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   imagesSettled(message.seq);
 }
 
+/**
+ * Whether a message came from the extension. VS Code's webview host is this
+ * page's parent frame: it forwards the extension's `postMessage` here with
+ * `contentWindow.postMessage(message, window.origin)`, so the message's
+ * origin is this page's own (the host and this page share it). VS Code
+ * replaces `window.parent` here with `window`, so the sender can't be
+ * compared with the parent itself. The site preview's frame is another
+ * origin's page, running its own scripts, and its `parent` is this page:
+ * whatever it, or a window it opens, posts has the dev server's origin, and
+ * its source is the frame's window.
+ */
+function fromExtension(event: MessageEvent): boolean {
+  return event.origin === window.origin && event.source !== siteFrame.contentWindow;
+}
+
 window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
+  if (!fromExtension(event)) return;
   const message = event.data;
   if (message.type === "render") render(message);
   else if (message.type === "reveal") reveal(message.id);

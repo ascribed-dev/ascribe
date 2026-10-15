@@ -5,27 +5,27 @@
 //! computes without the lock, and comes back to publish under it, so a change
 //! and the check that a result is still current are never interleaved.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use ascribe_check::Diagnostic;
 use ascribe_core::path::{normalize, relative_path};
-use ascribe_core::{FileId, LineIndex, RelPath};
+use ascribe_core::{LineIndex, RelPath, Visited};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{
     Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
-    is_source_path,
+    in_nested_project, is_source_path,
 };
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
 use lsp_types::{
     DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent, FileSystemWatcher,
-    GlobPattern, PublishDiagnosticsParams, Registration, RegistrationParams,
-    TextDocumentContentChangeEvent, Uri,
+    GlobPattern, LogMessageParams, MessageType, PublishDiagnosticsParams, Registration,
+    RegistrationParams, TextDocumentContentChangeEvent, Uri,
 };
 
-use crate::compute::to_lsp;
+use crate::compute::{Across, to_lsp};
 use crate::docs::Doc;
 use crate::fsx::{BufferFs, LayerFs};
 use crate::nav::Ctx;
@@ -74,6 +74,10 @@ pub(crate) struct Loaded {
     pub pending: Vec<Affected>,
     /// What each file included at the last round (see `compute::with_included`).
     pub direct_includes: BTreeMap<RelPath, BTreeSet<RelPath>>,
+    /// Whether the content checks across the project are to run again.
+    pub across_dirty: bool,
+    /// What they found when they last ran.
+    pub across: Arc<Across>,
 }
 
 impl Loaded {
@@ -88,7 +92,7 @@ impl Loaded {
     }
 
     /// What a path on disk is to this project.
-    fn classify(&self, abs: &Path) -> Option<Kind> {
+    pub(crate) fn classify(&self, abs: &Path) -> Option<Kind> {
         let project_rel = relative_path(&self.root, abs)?;
         if project_rel.as_str() == MODEL_FILE {
             return Some(Kind::Model);
@@ -112,7 +116,7 @@ impl Loaded {
     }
 }
 
-enum Kind {
+pub(crate) enum Kind {
     /// `ascribe.toml`.
     Model,
     /// A source file: its content path and its project path.
@@ -127,6 +131,10 @@ pub(crate) struct Core {
     pub out: Sender<Message>,
     pub encoding: Encoding,
     pub folders: Vec<PathBuf>,
+    /// Whether, with no repository around the project, a source is read
+    /// only inside `folders`: what an editor opened. Off for the hook's
+    /// headless server, which a command runs (decision 77).
+    pub bound_sources: bool,
     pub docs: HashMap<PathBuf, Doc>,
     /// The project's `ascribe.toml`, once found.
     pub config: Option<PathBuf>,
@@ -135,13 +143,26 @@ pub(crate) struct Core {
     pub model_problem: Option<ModelProblem>,
     pub shutdown: bool,
     pub can_watch: bool,
+    /// Whether the worker is computing a round.
+    pub computing: bool,
     /// What `ascribe/preview` keeps between requests (`preview.rs`).
     pub(crate) preview_routes: crate::preview::RouteCache,
     /// The review base, while review is on (`review.rs`).
     pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
+    /// What Vale found, and what's queued for it (`prose.rs`).
+    pub(crate) prose: crate::prose::State,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
+    /// The diagnostics last published for a file, without Vale's: what a
+    /// change to Vale's publishes again.
+    checked: HashMap<PathBuf, Vec<lsp_types::Diagnostic>>,
+    /// Closed files changed on disk, published at their next diagnostics
+    /// even when those didn't change, so a client waiting on the change
+    /// learns the server has caught up.
+    forced: HashSet<PathBuf>,
     next_id: i32,
+    /// What gives the day the checks run on.
+    pub(crate) clock: Option<crate::Clock>,
 }
 
 impl Core {
@@ -150,18 +171,29 @@ impl Core {
             out,
             encoding: Encoding::Utf16,
             folders: Vec::new(),
+            bound_sources: true,
             docs: HashMap::new(),
             config: None,
             loaded: None,
             model_problem: None,
             shutdown: false,
             can_watch: false,
+            computing: false,
             preview_routes: Default::default(),
             review: None,
+            prose: crate::prose::State::default(),
             epoch: 0,
             published: HashMap::new(),
+            checked: HashMap::new(),
+            forced: HashSet::new(),
             next_id: 0,
+            clock: None,
         }
+    }
+
+    /// The day the checks run on, if the server was given a clock.
+    pub(crate) fn today(&self) -> Option<ascribe_core::Date> {
+        self.clock.as_ref().and_then(|clock| clock())
     }
 
     pub(crate) fn send(&self, message: impl Into<Message>) {
@@ -173,6 +205,23 @@ impl Core {
         crate::log::line(format_args!("{text}"));
     }
 
+    /// Tells the client which project the server uses, with the server's
+    /// version. It isn't a problem, so it's `window/logMessage` at Info, not
+    /// the log on standard error, which a client shows as errors.
+    fn log_start(&self, config: Option<&Path>) {
+        self.send(Notification::new(
+            "window/logMessage".to_owned(),
+            LogMessageParams {
+                typ: MessageType::INFO,
+                message: format!(
+                    "ascribe-lsp {}: {}",
+                    env!("CARGO_PKG_VERSION"),
+                    start_message(config, &self.folders)
+                ),
+            },
+        ));
+    }
+
     // -- Startup ------------------------------------------------------------
 
     /// Finds the project's `ascribe.toml` at or above the workspace folders
@@ -181,7 +230,7 @@ impl Core {
         if self.config.is_none() {
             self.config = find_config(&self.folders).map(|p| normalize(&p));
         }
-        self.log(&start_message(self.config.as_deref(), &self.folders));
+        self.log_start(self.config.as_deref());
         if self.config.is_some() {
             self.sync_model();
         }
@@ -238,7 +287,14 @@ impl Core {
         let root = config
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-        match ascribe_model::load_str_in(&text, FileId::new(0), &root) {
+        // With no repository around the project, a source is read only
+        // inside a folder the editor opened (decision 77).
+        let bound = if self.bound_sources {
+            ascribe_model::SourceBound::Within(&self.folders)
+        } else {
+            ascribe_model::SourceBound::Anywhere
+        };
+        match ascribe_check::type_files::load_model(&text, &root, bound) {
             Err(issues) => {
                 // The project keeps the last model that
                 // loaded, and the problems go on `ascribe.toml`.
@@ -249,7 +305,12 @@ impl Core {
             }
             Ok(model) => {
                 self.model_problem = None;
+                let vale = self
+                    .loaded
+                    .as_ref()
+                    .and_then(|l| l.model.checks.vale.clone());
                 self.adopt_model(Arc::new(model), text);
+                self.prose_settings_changed(vale.as_ref());
             }
         }
         self.publish_model_diagnostics();
@@ -264,7 +325,9 @@ impl Core {
             Ok(affected) => {
                 loaded.model = model;
                 loaded.model_text = text;
+                loaded.across_dirty = true;
                 self.absorb(&affected);
+                self.publish_open_configs();
             }
             Err(ApplyError::LayoutChanged | ApplyError::NestedProjectChanged) => {
                 self.load_project(model, text);
@@ -325,6 +388,8 @@ impl Core {
             cache: Arc::new(Mutex::new(ResolvedCache::new())),
             pending: Vec::new(),
             direct_includes: BTreeMap::new(),
+            across_dirty: true,
+            across: Arc::default(),
         };
         // What was published for files the new project doesn't have goes.
         let keep: BTreeSet<PathBuf> = snapshot
@@ -348,6 +413,68 @@ impl Core {
         for path in gone {
             self.clear(&path);
         }
+        self.publish_open_configs();
+    }
+
+    // -- A source's `ascribe.examples.toml` -------------------------------------
+
+    /// The source whose `ascribe.examples.toml` is at `path`, and the file's
+    /// path from the project root.
+    fn examples_config(&self, path: &Path) -> Option<(ascribe_model::Source, RelPath)> {
+        let loaded = self.loaded.as_ref()?;
+        let Some(Kind::Asset(project)) = loaded.classify(path) else {
+            return None;
+        };
+        let source = crate::examples::config_source(&loaded.model, &project)?;
+        Some((source.clone(), project))
+    }
+
+    /// Publishes the problems of an open `ascribe.examples.toml` whose text
+    /// is `text`; `false` when `path` isn't a source's config.
+    fn publish_config(&mut self, path: &Path, text: &str) -> bool {
+        let Some((source, project)) = self.examples_config(path) else {
+            return false;
+        };
+        let Some(loaded) = self.loaded.as_ref() else {
+            return false;
+        };
+        let found = crate::examples::config_diagnostics(
+            &loaded.model,
+            &source,
+            project.as_str(),
+            text,
+            self.encoding,
+        );
+        self.publish(path, found);
+        true
+    }
+
+    /// Publishes the problems of every open `ascribe.examples.toml`, after
+    /// the project or its sources change.
+    fn publish_open_configs(&mut self) {
+        let open: Vec<(PathBuf, String)> = self
+            .docs
+            .iter()
+            .map(|(path, doc)| (path.clone(), doc.text.clone()))
+            .collect();
+        for (path, text) in open {
+            self.publish_config(&path, &text);
+        }
+    }
+
+    /// The keys that can be written at `position` of an open
+    /// `ascribe.examples.toml`; `None` for any other document.
+    pub(crate) fn config_completion(
+        &self,
+        uri: &Uri,
+        position: lsp_types::Position,
+    ) -> Option<Vec<lsp_types::CompletionItem>> {
+        let path = Core::doc_path(uri)?;
+        self.examples_config(&path)?;
+        let text = &self.docs.get(&path)?.text;
+        let index = ascribe_core::LineIndex::new(text);
+        let offset = self.encoding.offset_lenient(&index, text, position);
+        Some(crate::examples::complete_config(text, offset))
     }
 
     // -- Documents ----------------------------------------------------------
@@ -369,6 +496,7 @@ impl Core {
             },
         );
         self.document_changed(&path, text);
+        self.queue_prose(&path);
     }
 
     pub(crate) fn did_change(
@@ -381,11 +509,15 @@ impl Core {
             return;
         };
         let encoding = self.encoding;
-        let Some(doc) = self.docs.get_mut(&path) else {
+        if !self.docs.contains_key(&path) {
             self.log(&format!(
                 "change for a document that isn't open: {}",
                 uri.as_str()
             ));
+            return;
+        }
+        self.prose_edited(&path, &changes);
+        let Some(doc) = self.docs.get_mut(&path) else {
             return;
         };
         doc.apply(version, changes, encoding);
@@ -400,6 +532,12 @@ impl Core {
         if self.docs.remove(&path).is_none() {
             return;
         }
+        self.prose_closed(&path);
+        // A config's problems are shown while it's open; `ascribe check`
+        // reports them at the source.
+        if self.examples_config(&path).is_some() {
+            self.clear(&path);
+        }
         // Closing reverts to the disk.
         if self.config.as_ref() == Some(&path) {
             self.sync_model();
@@ -408,10 +546,27 @@ impl Core {
         self.refresh_from_disk(&path);
     }
 
+    /// A document was saved: the content checks across the project run
+    /// again, and Vale checks its prose.
+    pub(crate) fn did_save(&mut self, uri: &Uri) {
+        let Some(path) = Core::doc_path(uri) else {
+            return;
+        };
+        if let Some(loaded) = self.loaded.as_mut()
+            && matches!(loaded.classify(&path), Some(Kind::Source(..)))
+        {
+            loaded.across_dirty = true;
+        }
+        self.queue_prose(&path);
+    }
+
     /// An open document's text changed.
     fn document_changed(&mut self, path: &Path, text: String) {
         if self.config.as_deref() == Some(path) {
             self.sync_model();
+            return;
+        }
+        if self.publish_config(path, &text) {
             return;
         }
         let Some(loaded) = self.loaded.as_ref() else {
@@ -436,6 +591,7 @@ impl Core {
         let mut sync_model = false;
         let mut changes: Vec<Change> = Vec::new();
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
+        let mut visited = Visited::default();
         for event in events {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
@@ -449,7 +605,7 @@ impl Core {
                     .any(|f| path.parent() == Some(f.as_path()))
             {
                 self.config = Some(path.clone());
-                self.log(&start_message(Some(&path), &self.folders));
+                self.log_start(Some(&path));
                 sync_model = true;
                 continue;
             }
@@ -460,14 +616,48 @@ impl Core {
                 }
                 continue;
             }
+            if let Some(loaded) = self.loaded.as_mut()
+                && path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+            {
+                // The permalinks list isn't a source: the checks across the
+                // project compare it with the content.
+                loaded.across_dirty = true;
+                continue;
+            }
             if event.typ == FileChangeType::DELETED {
                 self.collect_deleted(&path, &mut changes, &mut mirror);
             } else {
-                self.collect_present(&path, &mut changes, &mut mirror);
+                self.collect_present(&path, &mut visited, &mut changes, &mut mirror);
             }
         }
         if !changes.is_empty() {
+            let reported: Vec<RelPath> = mirror.iter().map(|(path, _)| path.clone()).collect();
+            let written: Vec<RelPath> = changes
+                .iter()
+                .filter_map(|change| match change {
+                    Change::Edited { path, .. } | Change::Unreadable { path, .. } => {
+                        Some(path.clone())
+                    }
+                    _ => None,
+                })
+                .collect();
             self.apply(changes, &mirror);
+            if let Some(loaded) = self.loaded.as_mut() {
+                loaded.across_dirty = true;
+                for path in written {
+                    self.forced.insert(loaded.source_path(&path));
+                    // Checked again even when its text is what it was.
+                    loaded.dirty.insert(path);
+                }
+                // A source's observations or `ascribe.examples.toml` changing
+                // changes what the pages showing its examples are told.
+                let showing = crate::examples::showing_changed(
+                    &loaded.inc.snapshot(),
+                    &loaded.model,
+                    &reported,
+                );
+                loaded.dirty.extend(showing);
+            }
         }
         if sync_model {
             self.sync_model();
@@ -475,9 +665,13 @@ impl Core {
     }
 
     /// A file or directory exists on disk: its files are created or changed.
+    /// A directory is walked as the source index walks the content root,
+    /// going into each folder once, by its real path, so a link back to one
+    /// already walked isn't followed.
     fn collect_present(
         &self,
         path: &Path,
+        visited: &mut Visited,
         changes: &mut Vec<Change>,
         mirror: &mut Vec<(RelPath, bool)>,
     ) {
@@ -491,11 +685,14 @@ impl Core {
             return self.collect_deleted(path, changes, mirror);
         };
         if meta.is_dir() {
+            if !matches!(visited.enter(path), Ok(Some(_))) {
+                return;
+            }
             let Ok(entries) = std::fs::read_dir(path) else {
                 return;
             };
             for entry in entries.flatten() {
-                self.collect_present(&entry.path(), changes, mirror);
+                self.collect_present(&entry.path(), visited, changes, mirror);
             }
             return;
         }
@@ -623,7 +820,7 @@ impl Core {
         // Outside FileSystem: whether the file whose buffer closed is still
         // there; `collect_present` reads it through DiskFs.
         if path.is_file() {
-            self.collect_present(path, &mut changes, &mut mirror);
+            self.collect_present(path, &mut Visited::default(), &mut changes, &mut mirror);
         } else {
             self.collect_deleted(path, &mut changes, &mut mirror);
         }
@@ -692,23 +889,28 @@ impl Core {
     // -- Publishing -------------------------------------------------------------
 
     /// Publishes the diagnostics of `ascribe.toml`: the model's own problems
-    /// when it doesn't load, otherwise its warnings.
-    fn publish_model_diagnostics(&mut self) {
+    /// when it doesn't load, otherwise its warnings and what the content
+    /// checks across the project found in it, at the levels `[checks]` sets.
+    pub(crate) fn publish_model_diagnostics(&mut self) {
         let Some(config) = self.config.clone() else {
             return;
         };
         let (text, diagnostics): (&str, Vec<Diagnostic>) = match (&self.model_problem, &self.loaded)
         {
             (Some(problem), _) => (&problem.text, problem.diagnostics.clone()),
-            (None, Some(loaded)) => (
-                &loaded.model_text,
-                loaded
+            (None, Some(loaded)) => {
+                let mut found: Vec<Diagnostic> = loaded
                     .model
                     .warnings
                     .iter()
                     .map(Diagnostic::from_issue)
-                    .collect(),
-            ),
+                    .collect();
+                found.extend_from_slice(loaded.across.of_model(&loaded.model_text));
+                (
+                    &loaded.model_text,
+                    ascribe_check::apply_levels(&loaded.model.checks, found),
+                )
+            }
             (None, None) => return,
         };
         let index = LineIndex::new(text);
@@ -721,8 +923,15 @@ impl Core {
 
     // A closed file keeps its diagnostics.
     /// Publishes a file's diagnostics when they, or the version of the document
-    /// they're for, changed since the last time.
+    /// they're for, changed since the last time, or when the file was changed
+    /// on disk since.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
+        let prose = self.prose.found(path);
+        let mut all = Vec::with_capacity(diagnostics.len() + prose.len());
+        all.extend(diagnostics.iter().cloned());
+        all.extend(prose.iter().cloned());
+        self.checked.insert(path.to_path_buf(), diagnostics);
+        let diagnostics = all;
         let doc = self.docs.get(path);
         let version = doc.map(|d| d.version);
         let is_open = doc.is_some();
@@ -730,7 +939,8 @@ impl Core {
             None => !diagnostics.is_empty() || is_open,
             Some(last) => last.diagnostics != diagnostics || last.version != version,
         };
-        if !changed {
+        let forced = self.forced.remove(path);
+        if !changed && !forced {
             return;
         }
         let uri = match doc {
@@ -759,6 +969,8 @@ impl Core {
 
     /// Clears a file's diagnostics, when it had any.
     fn clear(&mut self, path: &Path) {
+        self.checked.remove(path);
+        self.prose_closed_quietly(path);
         let Some(last) = self.published.remove(path) else {
             return;
         };
@@ -803,9 +1015,39 @@ fn start_message(config: Option<&Path>, folders: &[PathBuf]) -> String {
 }
 
 impl Core {
+    /// The diagnostics last published for a file without Vale's.
+    pub(crate) fn checked(&self, path: &Path) -> &[lsp_types::Diagnostic] {
+        self.checked.get(path).map_or(&[], Vec::as_slice)
+    }
+
+    /// The diagnostics last published for a file: none when nothing was.
+    pub(crate) fn published(&self, path: &Path) -> &[lsp_types::Diagnostic] {
+        self.published
+            .get(path)
+            .map_or(&[], |p| p.diagnostics.as_slice())
+    }
+
+    /// The diagnostics last published, for each file that has any.
+    pub(crate) fn all_published(
+        &self,
+    ) -> impl Iterator<Item = (&PathBuf, &[lsp_types::Diagnostic])> {
+        self.published
+            .iter()
+            .map(|(path, p)| (path, p.diagnostics.as_slice()))
+            .filter(|(_, d)| !d.is_empty())
+    }
+
+    /// Whether anything is queued or running: a round of diagnostics, or a
+    /// check of the prose.
+    pub(crate) fn busy(&self) -> bool {
+        self.has_work() || self.computing || self.prose.has_work()
+    }
+
     /// Whether files are waiting to have their diagnostics computed.
     pub(crate) fn has_work(&self) -> bool {
-        self.loaded.as_ref().is_some_and(|l| !l.dirty.is_empty())
+        self.loaded
+            .as_ref()
+            .is_some_and(|l| !l.dirty.is_empty() || l.across_dirty)
     }
 
     /// What a semantic tokens request needs for a document: the snapshot, the
@@ -837,14 +1079,73 @@ impl Core {
         };
         let snapshot = loaded.inc.snapshot();
         snapshot.file(&content)?;
+        self.ctx(loaded, snapshot, content, &path)
+    }
+
+    /// What a code action request works from: a source file's context, as
+    /// [`Core::nav_target`] gives it, or the project's for `ascribe.toml`.
+    pub(crate) fn code_action_target(&self, uri: &Uri) -> Option<Ctx> {
+        self.nav_target(uri).or_else(|| {
+            let path = Core::doc_path(uri)?;
+            let is_model = self.config.as_ref() == Some(&path);
+            if is_model {
+                return self.project_target(uri);
+            }
+            // `ascribe.permalinks`, beside it: its fixes edit `ascribe.toml`.
+            let loaded = self.loaded.as_ref()?;
+            if path == loaded.root.join(ascribe_model::PERMALINKS_FILE) {
+                let content = RelPath::parse(Ctx::PROJECT).ok()?;
+                return self.ctx(loaded, loaded.inc.snapshot(), content, &path);
+            }
+            None
+        })
+    }
+
+    /// What a request about the whole project works from, asked through any
+    /// of the project's files: a source file, `ascribe.toml`, or any other
+    /// file in its folder. For a file that isn't a source, the context's path
+    /// is [`Ctx::PROJECT`], so paths are written from the content root.
+    pub(crate) fn project_target(&self, uri: &Uri) -> Option<Ctx> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let content = match loaded.classify(&path)? {
+            Kind::Source(content, _) => content,
+            Kind::Model => RelPath::parse(Ctx::PROJECT).ok()?,
+            Kind::Asset(project_rel) => {
+                let content_dir = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
+                // A file in a nested project's folder is that project's.
+                let nested = relative_path(&content_dir, &path).is_some_and(|content| {
+                    content.is_inside()
+                        && in_nested_project(&content, loaded.inc.snapshot().nested_projects())
+                });
+                if !project_rel.is_inside() || nested {
+                    return None;
+                }
+                RelPath::parse(Ctx::PROJECT).ok()?
+            }
+        };
+        self.ctx(loaded, loaded.inc.snapshot(), content, &path)
+    }
+
+    fn ctx(
+        &self,
+        loaded: &Loaded,
+        snapshot: ascribe_resolve::Snapshot,
+        content: RelPath,
+        path: &Path,
+    ) -> Option<Ctx> {
         Some(Ctx {
             snapshot,
             path: content,
+            version: self.docs.get(path).map(|d| d.version),
             model: loaded.model.clone(),
             model_text: loaded.model_text.clone(),
+            model_problem: self.model_problem.is_some(),
             config: self.config.clone()?,
             content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             encoding: self.encoding,
+            fs: loaded.fs.clone(),
+            today: self.today(),
         })
     }
 

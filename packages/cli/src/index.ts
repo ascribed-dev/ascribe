@@ -4,7 +4,7 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolveBinary } from "./binary.js";
 
-export { nativeBinaryPath, nativePackageName, resolveBinary } from "./binary.js";
+export { nativePackageName, resolveBinary } from "./binary.js";
 export type { BinaryPlatform } from "./binary.js";
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {

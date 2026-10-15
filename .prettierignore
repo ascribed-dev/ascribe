@@ -14,6 +14,8 @@ examples/
 # Generated and third-party files. The JSON Schemas are written by
 # crates/ascribe-cli/src/shapes.rs, as serde_json prints them.
 schemas/
+# The plugin is written by crates/ascribe-cli/src/agents/plugin.rs.
+plugins/
 design/specimen.html
 pnpm-lock.yaml
 package-lock.json

@@ -1,0 +1,22 @@
+---
+source: crates/ascribe-check/tests/all/prompt.rs
+assertion_line: 208
+expression: text
+---
+Fix this problem in `docs/install.md`.
+
+Where: docs/install.md:5
+The file has unsaved changes; save it before you start.
+Paths and commands here are from the repository's root.
+Build: `site`, the editor's. `ascribe check` checks every build.
+
+Problem: ASC036 `link-target-missing`, an error
+Message: `overview.md` doesn't exist
+How to fix it: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
+Reference: https://ascribed-dev.com/go/ASC036/
+Line 5:
+```markdown
+Read [the overview](overview.md).
+```
+
+When you're done, run `ascribe check docs/install.md` and fix what it reports.

@@ -12,8 +12,9 @@
 use ascribe_core::{Issue, Location, Span, diagnostics};
 use ascribe_model::short_commit;
 use ascribe_resolve::{
-    RefKind, SnippetUse, destination_phrases, destination_span, include_issue, include_target,
-    reference_issue, reference_target, resolve_reference, snippet_issues,
+    ExampleStatus, RefKind, SnippetUse, closest_fixes, destination_phrases, destination_span,
+    example, include_issue, include_target, reference_issue, reference_target, resolve_reference,
+    resolve_snippet, snippet_issues,
 };
 use ascribe_syntax::{DirectiveLine, Image, Inline, Link, LinkForm, Phrase};
 
@@ -39,15 +40,65 @@ impl Ctx<'_> {
     pub(super) fn check_snippet(&mut self, line: &DirectiveLine) {
         let snippet = SnippetUse::of(line);
         let project = self.project;
-        for issue in snippet_issues(
+        let issues = snippet_issues(
             &snippet,
             self.model,
             project.file_system(),
             project.code_files(),
             self.id,
-        ) {
+        );
+        if issues.is_empty() {
+            self.check_example(&snippet);
+        }
+        for issue in issues {
             self.report(not_at_pin(issue, &snippet, project));
         }
+    }
+
+    /// A snippet of a file that's a tested example: its observation is
+    /// current, or the snippet says why the page has no tested line.
+    fn check_example(&mut self, snippet: &SnippetUse) {
+        let (Some(primary), Some(Ok(address))) = (snippet.primary, &snippet.address) else {
+            return;
+        };
+        let checks = &self.model.checks;
+        if checks.is_off(diagnostics::EXAMPLE_STALE)
+            && checks.is_off(diagnostics::EXAMPLE_UNOBSERVED)
+        {
+            return;
+        }
+        let project = self.project;
+        let (fs, code) = (project.file_system(), project.code_files());
+        let Some(source) = self.model.source(&address.source) else {
+            return;
+        };
+        let Ok(resolved) = resolve_snippet(snippet, address, self.model, fs, code) else {
+            return;
+        };
+        let Some(file) = code.by_id(resolved.file) else {
+            return;
+        };
+        let Some(found) = example(source, &address.path, &file.text, fs, code) else {
+            return;
+        };
+        let slug = match found.status {
+            ExampleStatus::Current => return,
+            ExampleStatus::Stale => diagnostics::EXAMPLE_STALE,
+            ExampleStatus::Unobserved => diagnostics::EXAMPLE_UNOBSERVED,
+        };
+        let issue = Issue::new(slug, self.location(primary))
+            .with_arg("path", address.file())
+            .with_arg("folder", found.folder.to_string());
+        // The test runs in the other repository, and its observation arrives
+        // with the next update.
+        let issue = if found.remote {
+            issue
+                .with_variant("other-repository")
+                .with_arg("source", address.source.clone())
+        } else {
+            issue
+        };
+        self.report(issue);
     }
 
     /// A link's destination (SPEC §5.2): a file that exists, a page and not
@@ -127,7 +178,7 @@ impl Ctx<'_> {
             r.alt,
             r.destination,
         );
-        if let Some(issue) = reference_issue(
+        if let Some(mut issue) = reference_issue(
             r.kind,
             &target,
             r.destination,
@@ -135,6 +186,23 @@ impl Ctx<'_> {
             at,
             destination_at,
         ) {
+            // A broken link is offered the targets `ascribe link` lists as
+            // closest. Looking for them takes the source index, so it's only
+            // made for a link that's broken.
+            let broken = [
+                diagnostics::LINK_TARGET_MISSING,
+                diagnostics::LINK_TO_FRAGMENT,
+            ];
+            if broken.contains(&issue.slug) && destination_at.is_some() {
+                issue.fixes = closest_fixes(
+                    self.project.link_index(),
+                    &self.file.path,
+                    &target,
+                    &resolution,
+                    self.id,
+                    destination_at,
+                );
+            }
             self.report(issue);
         }
     }

@@ -1,0 +1,24 @@
+description: >-
+  The checks on `replaces` (SPEC §2.1). Two pages that replace each other,
+  and a page that replaces itself, are an error in every build, naming the
+  files. In a line of a versioned build, a page published with the page it
+  replaces is an error: here 3.4 has both `new.md` and `old.md`, which is
+  removed only at 3.5. So are two pages published in one line that replace
+  the same page, each naming the other.
+spec: ["2.1", "9.3", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: replaces-cycle, file: a.md, line: 3}
+      - {slug: replaces-cycle, file: b.md, line: 3}
+      - {slug: replaces-cycle, file: self.md, line: 3}
+      - {slug: replaces-same-page, file: split-one.md, line: 4}
+      - {slug: replaces-same-page, file: split-two.md, line: 4}
+  site@3.4:
+    diagnostics:
+      - {slug: replaces-cycle, file: a.md, line: 3}
+      - {slug: replaces-cycle, file: b.md, line: 3}
+      - {slug: replaces-overlap, file: new.md, line: 4}
+      - {slug: replaces-cycle, file: self.md, line: 3}

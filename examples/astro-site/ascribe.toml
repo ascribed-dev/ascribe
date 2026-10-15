@@ -7,21 +7,27 @@ spec = "0.1"
 content-root = "content"
 output-dir = ".ascribe/build"
 
-# Must agree with `astro.config.mjs`: `@ascribed/astro` checks that it does.
+# The site's routing: `@ascribed/astro` gives Astro its `site` and
+# `trailingSlash` from here, and checks that Astro's `base` is base-path or a
+# path above it.
 [consumer]
 profile = "astro"
 site = "https://docs.example.com"
 base-path = "/docs/"
 trailing-slash = "never"
 # :snippet-end:
+# :snippet-start: agents
+# llms.txt, a Markdown version of each page, and a pointer to the index on
+# each: what agents read. `@ascribed/astro` publishes them with the site.
+agents = true
+# :snippet-end:
 
 [types.page]
-default = true
 
 # `inline = "code"`: a title can show code, as "`loom.yaml` options".
 [types.page.frontmatter]
 title = { type = "string", inline = "code" }
-description = "string?"
+description = { type = "string?", role = "description" }
 
 # `@variant {pm=npm}:` and friends: a group the site keeps as tabs.
 [dimensions.pm]
@@ -50,3 +56,13 @@ availability = "badge"
 
 [editor]
 build = "site"
+
+# Names with no heading or page of their own: a second name for a permalink,
+# and permalinks retired on purpose, one leading somewhere new and one that
+# says why it's gone.
+[permalinks.aliases]
+config = "weave-config"
+
+[permalinks.retired]
+old-options = { to = "Reference/Options.md", reason = "Every option is on one page now." }
+legacy-sync = { reason = "Sync was removed in Loom 3.0, & nothing replaced it." }

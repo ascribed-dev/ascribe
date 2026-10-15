@@ -1,0 +1,53 @@
+name: Approve
+
+# Approves a pull request as github-actions[bot], for a reviewing agent. Agents
+# post as the maintainer, who authors their pull requests too, and GitHub
+# doesn't let a pull request's author approve it; this job's token is someone
+# else. A reviewing agent runs it once it has nothing blocking left, with
+# `gh workflow run approve.yml --ref main -f pr=123 -f sha=<the commit it reviewed>`.
+#
+# The approval is for the commit given: if the pull request has moved on since,
+# nothing is approved, so an approval never covers a commit nobody reviewed.
+# It needs the repository setting Actions → General → "Allow GitHub Actions to
+# create and approve pull requests".
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: The pull request to approve
+        type: string
+        required: true
+      sha:
+        description: The commit that was reviewed, which must be the pull request's head
+        type: string
+        required: true
+
+permissions:
+  pull-requests: write
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr }}
+          SHA: ${{ inputs.sha }}
+        run: |
+          [[ $PR =~ ^[0-9]+$ ]] || { echo "::error::'$PR' isn't a pull request number."; exit 1; }
+          read -r state head < <(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '"\(.state) \(.head.sha)"')
+          [ "$state" = open ] || { echo "::error::#$PR is $state."; exit 1; }
+          if [ "$head" != "$SHA" ]; then
+            echo "::error::#$PR's head is $head, not the reviewed $SHA. Review the new commits, then approve again."
+            exit 1
+          fi
+          # GitHub's reason for a refusal is in the response, not the status.
+          if ! gh api -X POST "repos/$GITHUB_REPOSITORY/pulls/$PR/reviews" \
+            -f event=APPROVE -f commit_id="$SHA" \
+            -f body="Approved for a reviewing agent, at $SHA. [The run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)." \
+            > review.json; then
+            echo "::error::GitHub refused the approval: $(jq -c '{message, errors}' review.json)"
+            exit 1
+          fi
+          echo "Approved #$PR at $SHA." >> "$GITHUB_STEP_SUMMARY"

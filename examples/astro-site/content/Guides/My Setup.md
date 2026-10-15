@@ -1,4 +1,5 @@
 ---
+type: page
 title: Set up Loom
 description: Install and configure Loom.
 available: cloud, self-managed preview 3.4
@@ -38,7 +39,7 @@ Point the CLI at your own server.
 @end
 
 ## Weave configuration
-@id: weave-config
+@id {permalink=true}: weave-config
 
 Set the `weave` options in `loom.yaml` (here is a [sample config](<../downloads/loom.yaml>)). Every option is listed in the [options reference](../Reference/Options.md).
 

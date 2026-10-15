@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[phrases]
+product = "Quill"
+
+[[intended]]
+check = "link-target-missing"
+phrase = "product"
+reason = "Only a review check's problem can be intended."

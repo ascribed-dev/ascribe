@@ -6,7 +6,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use ascribe_core::RelPath;
-use ascribe_resolve::{DiskFs, FileSystem};
+use ascribe_resolve::{DiskFs, FileSystem, FolderExamples};
 
 /// The largest file Ascribe copies: a megabyte is generous for an example.
 pub const SIZE_LIMIT: usize = 1024 * 1024;
@@ -54,6 +54,12 @@ impl Folder {
             .filter_map(|path| path.relative_to(&self.rel))
             .map(|path| path.as_str().to_owned())
             .collect()
+    }
+
+    /// The tested examples' config and observations among the copies, as
+    /// read.
+    pub(crate) fn examples(&self) -> FolderExamples {
+        FolderExamples::read(&self.files, &self.rel)
     }
 
     /// The bytes of a copy, if it's a file (not a link).

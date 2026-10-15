@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**An observation hashes each example file as its bytes with CRLF read as LF, and names the hash `sha256-lf:`.** `ascribe observe` writes it where the code is checked out, and the docs side computes it the same way where the docs are built, from the file or from its copy in `sources/<name>/`. A file that changed only in its line endings reads as unchanged. The prefix keeps it apart from `ascribe.lock`'s `sha256:`, which hashes bytes as they are, and leaves room for a later format to add another. _Why:_ the two sides may be different machines, and a Windows checkout may have rewritten a text file's line endings; hashing bytes as they are would make every observation made there stale everywhere else. Asking git for what it stores would need a repository and `git`, and couldn't observe an example not yet committed. _From:_ Kyle, on [issue #458](https://github.com/ascribed-dev/ascribe/issues/458), taking [phase 1](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/tested-examples/phase-1-decisions.md)'s recommendation, 13 October 2026.

@@ -1,0 +1,12 @@
+description: >-
+  A page whose own level-1 heading and title say different things is reported
+  at its title. A heading that contains the title, or that the title
+  contains, ignoring case, agrees with it; so does a page with no level-1
+  heading, and only the first one is compared.
+spec: ["2.1"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: title-heading-differs, file: index.md, line: 3}

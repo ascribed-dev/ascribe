@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/review",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Reviewing Ascribe pages as readers see them: changed blocks marked on the rendered page, and a pull request's review threads beside them.",
   "type": "module",
   "license": "MPL-2.0",
@@ -34,6 +34,10 @@
     "./place": {
       "types": "./dist/place/index.d.ts",
       "default": "./dist/place/index.js"
+    },
+    "./prompt": {
+      "types": "./dist/prompt/index.d.ts",
+      "default": "./dist/prompt/index.js"
     }
   },
   "engines": {
@@ -47,14 +51,14 @@
   },
   "devDependencies": {
     "@ascribed/elements": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.19.2",
     "esbuild": "^0.28.2",
-    "jsdom": "^30.1.1"
+    "jsdom": "^30.1.2"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "smol-toml": "^1.9.0"
+    "smol-toml": "^1.9.1"
   }
 }

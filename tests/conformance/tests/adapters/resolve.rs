@@ -80,7 +80,7 @@ fn page_diagnostics(case: &Case, name: &str) -> Result<Vec<Diagnostic>, AdapterE
         .model()
         .build(name)
         .ok_or_else(|| err(format!("the case's model has no build `{name}`")))?;
-    super::check::to_conformance(&project, ascribe_check::check_pages(&project, build))
+    super::check::page_level_diagnostics(&project, build)
 }
 
 fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, AdapterError> {
@@ -90,6 +90,7 @@ fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, Ad
             page.path.to_string(),
             PageResult {
                 outline: Some(outline(project, &page.blocks)?),
+                listing: Some(page.listing.name().to_owned()),
                 outputs: Default::default(),
             },
         );

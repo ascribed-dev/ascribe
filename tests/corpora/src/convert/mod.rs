@@ -273,8 +273,6 @@ pub(crate) fn model_header(out: &mut String) {
          spec = \"0.1\"\n\n\
          [project]\n\
          content-root = \"docs\"\n\n\
-         [types.page]\n\
-         default = true\n\n\
          [types.page.frontmatter]\n\
          title = { type = \"string\", phrases = true }\n\
          description = \"string?\"\n\n",
@@ -294,7 +292,8 @@ pub(crate) fn frontmatter(
     description: Option<&str>,
     available: Option<&str>,
 ) -> String {
-    let mut out = String::from("---\n");
+    // The model's one type, which a page names (SPEC §7.2).
+    let mut out = String::from("---\ntype: page\n");
     out.push_str(&format!("title: {}\n", yaml_quote(title)));
     if let Some(d) = description {
         out.push_str(&format!("description: {}\n", yaml_quote(d)));

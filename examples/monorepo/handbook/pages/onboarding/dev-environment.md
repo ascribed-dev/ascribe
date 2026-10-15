@@ -1,4 +1,5 @@
 ---
+type: page
 title: Set up your development environment
 description: Run the Lantern service and its tests on your laptop.
 owner: platform

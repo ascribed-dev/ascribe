@@ -5,9 +5,6 @@ spec = "0.1"
 content-root = "docs"
 output-dir = ".ascribe/build"
 
-[types.page]
-default = true
-
 [types.page.frontmatter]
 title = "string"
 description = "string?"
@@ -31,3 +28,7 @@ availability = { filter = "cloud" }
 
 [editor]
 build = "site"
+
+# The tests write pages that nothing links to.
+[checks]
+page-orphan = "off"

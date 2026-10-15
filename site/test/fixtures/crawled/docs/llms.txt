@@ -1,0 +1,4 @@
+# Docs
+
+- [Docs](https://example.com/docs/index.md)
+- [A guide](https://example.com/docs/guide.md)

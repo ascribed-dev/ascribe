@@ -1,0 +1,9 @@
+description: >-
+  An `[[intended]]` table names exactly one declared entry: a phrase, a
+  feature, a glossary term, or an image.
+spec: ["4.9", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-intended-check, file: ascribe.toml, line: 7}
+  - {slug: model-intended-entry, file: ascribe.toml, line: 8}

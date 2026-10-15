@@ -21,6 +21,8 @@
 //!   boundary and exact-case rules for local files.
 //! - **Sources in other repositories**: `ascribe.lock`
 //!   against the content model, and each source's copies against the lock.
+//! - **The permalinks list**: `ascribe.permalinks` against the permalinks
+//!   the content declares, when the project has one.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
 //! (`tests/conformance/diagnostics.toml`), through [`Registry`].
@@ -31,24 +33,50 @@
 //! each distinct problem once, naming the builds it appears in
 //! ([`Diagnostic::builds`]).
 
+mod across;
 mod builds;
 mod checks;
 mod diagnostic;
+mod evidence;
+pub mod fix;
+mod glossary;
+pub mod intended;
+mod levels;
+pub mod links;
 pub mod page;
+mod permalinks;
 mod project;
+pub mod prompt;
+pub mod prose;
 pub mod registry;
+mod releases;
+mod scope;
+pub mod site;
+pub mod tool;
+pub mod type_files;
 mod yaml;
 
-pub use builds::{Diagnosed, UnknownBuild, diagnose, select_builds};
-pub use checks::check_file;
-use checks::check_sources;
-pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
-pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
-pub use project::{
-    FileEntry, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile, Project, ReadFailure,
-    SourceFile,
+pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};
+use ascribe_core::FileId;
+pub use builds::{
+    Diagnosed, UnknownBuild, count_errors, diagnose, diagnose_editor_build,
+    diagnose_editor_build_in, select_builds,
 };
-pub use registry::{Entry, Level, Registry};
+pub use checks::check_file;
+use checks::{check_examples, check_sources};
+pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
+pub use evidence::GATHERED as GATHERED_EVIDENCE;
+pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
+pub use levels::apply_levels;
+pub use page::{
+    PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
+};
+pub use project::{
+    FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile,
+    PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
+};
+pub use registry::{Entry, Example, Level, Next, Registry};
+pub use scope::{Reported, Scope, ScopeError, locate_for};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
 /// model's warnings, then each source file's diagnostics, in file order and,
@@ -57,15 +85,43 @@ pub use registry::{Entry, Level, Registry};
 /// Never panics on user input. Sorting is stable, so two tools that call it
 /// on the same project get the same list.
 pub fn check_files(project: &Project) -> Vec<Diagnostic> {
+    check_files_with(project, None)
+}
+
+/// [`check_files`], with the content checks that hold for every build run
+/// over `checker`'s index when there's one, so it isn't made twice.
+pub(crate) fn check_files_with(
+    project: &Project,
+    checker: Option<&PageChecker<'_>>,
+) -> Vec<Diagnostic> {
+    // The content checks across the project need its source index; with none
+    // to share, one is made only when one of them is on.
+    let mut across = match checker {
+        Some(checker) => checker.for_every_build(true),
+        None if across::any_file_level(&project.model().checks)
+            || project.permalinks().is_some()
+            || !project.model().permalinks.is_empty() =>
+        {
+            PageChecker::new(project).for_every_build(true)
+        }
+        None => Default::default(),
+    };
     // The content model's warnings are part of the list.
     let mut out: Vec<Diagnostic> = project.model_warnings().to_vec();
     let model = out.len();
     for file in project.sources() {
         out.extend(check_file(project, file));
+        out.extend(across.remove(&file.id).unwrap_or_default());
     }
-    // The lock and the copies come next to the content model; whether a copy
-    // is used is known once every file's snippets have been read.
-    let sources = check_sources(project);
+    // The lock and the copies come next to the content model, then the
+    // permalinks list, then the unused entries of the content model; whether
+    // a copy is used is known once every file's snippets have been read.
+    let mut sources = check_sources(project);
+    sources.extend(check_examples(project));
+    sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
+    sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
+    // The image files' come last, in path order.
+    out.extend(across.into_values().flatten());
     out
 }

@@ -16,9 +16,22 @@ coverage/
 
 # OS and editor files
 .DS_Store
+.playwright-mcp/
+
 # The shared launch and task configurations for running the extension; the
 # rest of .vscode/ is each person's own.
 .vscode/*
 !.vscode/launch.json
 !.vscode/tasks.json
 THIRD-PARTY-NOTICES
+
+# Local mockups
+
+project-docs/mockups/
+
+# The Good Docs Project's files at the pinned commit, fetched by
+# scripts/templates/convert.ts and never committed.
+scripts/templates/.upstream/
+
+# Agents' worktrees: another checkout, never part of this one.
+.claude/worktrees/

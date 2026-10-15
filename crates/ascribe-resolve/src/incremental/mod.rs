@@ -12,7 +12,7 @@
 //! **Correctness is the whole contract.** After any sequence of changes, the
 //! snapshot equals a [`Project::load_with_ids`] of the same files with the
 //! same ids, and everything not in [`Affected`] is what it was before. The
-//! differential property test (`tests/incremental_differential.rs`) checks
+//! differential property test (`tests/all/incremental_differential.rs`) checks
 //! both after every step of thousands of random sequences.
 //!
 //! # What each change invalidates
@@ -303,6 +303,12 @@ impl Snapshot {
     /// The project as of this snapshot.
     pub fn project(&self) -> &Project {
         &self.project
+    }
+
+    /// The project as of this snapshot, shared: for a caller that keeps it
+    /// past the snapshot's borrow.
+    pub fn shared_project(&self) -> Arc<Project> {
+        Arc::clone(&self.project)
     }
 
     /// This snapshot's version.

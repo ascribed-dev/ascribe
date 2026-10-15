@@ -10,15 +10,15 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnosed, LoadError, Project, diagnose};
+use ascribe_check::{Diagnosed, LoadError, Project, Reported, Severity, diagnose};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions};
 use ascribe_model::Build;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::commands::check::Format;
 use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
+use crate::report::json::About;
 use crate::report::{Counts, FileTable, json, text};
 
 /// Arguments of `ascribe build`.
@@ -67,6 +67,15 @@ pub enum Emit {
     Json,
 }
 
+/// How to show the checks' results.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum Format {
+    /// Diagnostics with source snippets, for people.
+    Text,
+    /// One JSON document, for tools.
+    Json,
+}
+
 /// Runs the command. Exit codes: 0 on success, 1 when the checks found errors
 /// (nothing is written), 2 when it couldn't do its work: a usage error, no
 /// `ascribe.toml`, a content model with errors, or an output that couldn't be
@@ -91,17 +100,47 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     };
     // The checks, for every build asked for, before anything is written.
     let Diagnosed {
-        diagnostics,
+        mut diagnostics,
         builds,
+        acknowledged,
     } = match diagnose(&project, &args.build) {
         Ok(found) => found,
         Err(e) => return exit::fail(err, &e),
     };
+    // Advice after errors and warnings, as `ascribe check` lists it.
+    diagnostics.sort_by_key(|d| d.severity == Severity::Advice);
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
+    let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
+    let covered = if args.build.is_empty() {
+        text::Covered::Every
+    } else {
+        text::Covered::Named(&names)
+    };
     let written = match args.format {
-        Format::Text => text::write(out, &files, &diagnostics, checked, color),
-        Format::Json => json::write(out, &files, &diagnostics, checked, None),
+        Format::Text => text::write(
+            out,
+            &files,
+            &diagnostics,
+            checked,
+            &covered,
+            acknowledged.len(),
+            color,
+        ),
+        Format::Json => json::write(
+            out,
+            &files,
+            &Reported::all(diagnostics.clone()),
+            &About {
+                error: None,
+                files_checked: checked,
+                files_reported: checked,
+                builds_checked: names.clone(),
+                acknowledged: &acknowledged,
+                summary_only: None,
+                fixed: &[],
+            },
+        ),
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe
@@ -207,7 +246,12 @@ fn report_failure(
             let _ = text::write_diagnostics(out, &files, &diagnostics, color);
             writeln!(err, "error: {message}")
         }
-        Format::Json => json::write(out, &files, &diagnostics, 0, Some(&message)),
+        Format::Json => json::write(
+            out,
+            &files,
+            &Reported::all(diagnostics),
+            &About::failed(&message),
+        ),
     };
     exit::FAILURE
 }

@@ -1,4 +1,5 @@
 ---
+type: guide
 title: Run {product} on your own servers
 description: Install and upgrade the self-hosted {product} server.
 available: self-hosted 2.4

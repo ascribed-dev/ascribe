@@ -38,6 +38,7 @@ import type {
   HostError,
   OverlayData,
   OverlayHost,
+  PromptRequest,
   ReviewEvent,
   ThreadSummary,
 } from "./types.js";
@@ -855,6 +856,16 @@ class ReviewOverlay implements Overlay {
         this.button("link", "Open source", () => this.host.openSource(threadSource(thread, entry))),
       );
     }
+    if (this.host.promptAgent) {
+      const prompt = this.button(
+        "link",
+        "Prompt agent",
+        () => void this.promptAgent({ kind: "thread", threadId: thread.id }),
+        `prompt:${thread.id}`,
+      );
+      prompt.title = "Prompt agent: address this comment";
+      acts.append(prompt);
+    }
     // A detached thread has no block to go to: GitHub shows it in full.
     const url = thread.comments.at(-1)?.url ?? thread.comments[0]?.url;
     if (thread.detached !== undefined && url !== undefined && /^https?:\/\//i.test(url)) {
@@ -1105,8 +1116,21 @@ class ReviewOverlay implements Overlay {
     head.append(
       this.el("h2", "", `All comments on #${data.pullRequest.number}`),
       this.el("span", "spacer"),
-      this.button("ghost", "Close", () => this.closeDialog(), "dialog-close"),
     );
+    const open = this.all?.some(
+      (s) => !s.thread.resolved && !s.thread.comments.every((c) => c.pending),
+    );
+    if (this.host.promptAgent && open) {
+      const prompt = this.button(
+        "ghost",
+        "Prompt agent: all open",
+        () => void this.promptAgent({ kind: "open-threads" }),
+        "prompt-all",
+      );
+      prompt.title = "A prompt for your agent to address every open comment";
+      head.append(prompt);
+    }
+    head.append(this.button("ghost", "Close", () => this.closeDialog(), "dialog-close"));
     dialog.append(head);
     const all = this.all;
     if (all === undefined) {
@@ -1580,6 +1604,17 @@ class ReviewOverlay implements Overlay {
       if (codeOf(error) === "reply-held") await this.refresh();
       else this.render();
       this.focusOn(key);
+    }
+  }
+
+  /** Asks the host for a prompt; says so when it couldn't build one. */
+  private async promptAgent(request: PromptRequest): Promise<void> {
+    try {
+      await this.host.promptAgent?.(request);
+    } catch (error) {
+      const message = `The prompt couldn't be built: ${messageOf(error)}`;
+      if (this.host.notify) this.host.notify(message);
+      else this.announce(message);
     }
   }
 

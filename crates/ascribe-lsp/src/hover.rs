@@ -1,5 +1,6 @@
 //! Hover (SPEC §10): what a link or include points at, a phrase's value, the
-//! availability a spec resolves to, and what a directive is.
+//! availability a spec resolves to, the rule of `[listing]` a page is
+//! under, and what a directive is.
 
 use ascribe_core::schema::{
     AttributeSchema, AttributeType, Attributes, DefaultValue, DirectiveSchema, Origin, Primary,
@@ -50,8 +51,16 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
             };
             (include.primary?, text)
         }
+        Hit::Snippet(snippet) => (
+            snippet.primary?,
+            crate::examples::snippet_hover(ctx, snippet)?,
+        ),
         Hit::Availability(text, span) => (span, availability_markdown(&ctx.model, text)?),
         Hit::Frontmatter(text, span) => (span, availability_markdown(&ctx.model, &text)?),
+        Hit::Listing(span) => (
+            span,
+            listing_markdown(&ctx.model, ctx.path.as_str(), ctx.page_type_name()),
+        ),
         Hit::Directive(d) => {
             let schema = ctx
                 .model
@@ -210,6 +219,7 @@ pub(crate) fn describe_directive(schema: &DirectiveSchema) -> String {
         Primary::Identifier { .. } => Some("an identifier (a path, id, or key)"),
         Primary::Text { .. } => Some("text"),
         Primary::Availability { .. } => Some("an availability spec or feature key"),
+        Primary::Reason { .. } => Some("the reason, as plain text"),
     };
     if let Some(primary) = primary {
         let required = if schema.primary.is_required() {
@@ -290,5 +300,25 @@ pub(crate) fn type_name(ty: &AttributeType) -> String {
         AttributeType::Set(SetMember::String) => "set of strings".to_owned(),
         AttributeType::Set(SetMember::Enum(values)) => format!("set of {}", values.join(" | ")),
         AttributeType::NoteType => "note type".to_owned(),
+    }
+}
+
+/// The rule of `[listing]` a page at `path` of the type named `type_name` is
+/// under, for its `listing:` line.
+fn listing_markdown(model: &ContentModel, path: &str, type_name: Option<&str>) -> String {
+    let values = "`listed`, then `unquoted`, then `unlisted`";
+    match model.listing_rule(path, type_name) {
+        Some(rule) => format!(
+            "**Under `{}`**, line {} of `ascribe.toml`.\n\n\
+             This page is at least `{}`. It can set that or a stricter value, \
+             from {values}, and not a looser one.",
+            rule.text,
+            rule.line,
+            rule.listing.name()
+        ),
+        None => format!(
+            "**No rule of `[listing]` applies to this page.**\n\n\
+             Its own value says how it's listed, from {values}."
+        ),
     }
 }

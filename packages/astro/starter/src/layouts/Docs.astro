@@ -1,0 +1,91 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import type { ComponentProps } from "astro/types";
+import Availability from "@ascribed/astro/Availability.astro";
+import Elements from "@ascribed/astro/Elements.astro";
+// Everything the head says about the page, from its record.
+import Head from "@ascribed/astro/Head.astro";
+// With a versioned build, the lines that have the page.
+import Versions from "@ascribed/astro/Versions.astro";
+import { sidebar } from "@ascribed/astro/content";
+import { nav } from "../nav.ts";
+
+interface Props {
+  entry: CollectionEntry<"docs">;
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+/**
+ * What the layout reads of a page's frontmatter: `title`, which every content
+ * type has, and what a type may have. `title` is plain text; `formatted.title`
+ * is the title as HTML, with its code spans as <code>, when the content model
+ * sets `inline = "code"` on `title`.
+ */
+interface Page {
+  title: string;
+  available?: ComponentProps<typeof Availability>["available"];
+  formatted?: { title?: string };
+}
+
+const { entry, headings } = Astro.props;
+const page = (of: CollectionEntry<"docs">) => of.data as Page;
+/** A page's title as HTML: its formatted form, or its plain text escaped. */
+const titleHtml = (of: CollectionEntry<"docs">) =>
+  page(of).formatted?.title ??
+  page(of).title.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+const { available } = page(entry);
+// The sidebar: src/nav.ts's groups, each page with its address. The build
+// fails when the list leaves out a page, or names one that doesn't exist.
+// With a versioned build, it shows the pages of the line this page is in.
+const groups = sidebar(nav, await getCollection("docs"), { entry });
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <Head entry={entry} />
+    <Elements />
+  </head>
+  <body>
+    <nav aria-label="Docs">
+      {
+        groups.map((group) => (
+          <section>
+            <h2>{group.label}</h2>
+            <ul>
+              {group.pages.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    aria-current={item.entry.id === entry.id ? "page" : undefined}
+                  >
+                    <Fragment set:html={titleHtml(item.entry)} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </nav>
+    <main>
+      <h1 set:html={titleHtml(entry)} />
+      <Availability available={available} />
+      <Versions entry={entry} />
+      <nav aria-label="On this page">
+        <ul>
+          {
+            headings.map((heading) => (
+              <li data-depth={heading.depth}>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <article><slot /></article>
+    </main>
+  </body>
+</html>

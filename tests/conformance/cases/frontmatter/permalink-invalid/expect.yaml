@@ -1,0 +1,8 @@
+description: >-
+  A page's `permalink` has the characters of an `@id` (SPEC §2.1, §4.1), so
+  a `/` in it is `id-invalid`.
+spec: ["2.1", "4.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: id-invalid, file: input.md, line: 3}

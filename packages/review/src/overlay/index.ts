@@ -14,6 +14,7 @@ export type {
   OverlayHost,
   PendingReview,
   PlacedThreads,
+  PromptRequest,
   ReviewEvent,
   ThreadSummary,
 } from "./types.js";

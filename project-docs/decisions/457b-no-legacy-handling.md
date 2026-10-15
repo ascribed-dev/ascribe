@@ -1,0 +1,5 @@
+---
+section: Process
+---
+
+**Nothing is kept working for an earlier version of Ascribe, or for an earlier layout of its docs.** No alias for a renamed option, no reader for an older file format, no message for a key that was removed, no pattern for what an older binary printed, no sentence in the docs for "a release without" a feature, and no redirect from a docs page's old address: the site has no `_redirects` file and no test for one. What stays is what checks two things a user installs apart: the extension's `ascribe.minServerVersion`, and a file's `version`, which lets an older Ascribe say it can't read a newer one. Permalinks are how anything outside the docs reaches a page, and they don't move when a page does. _Why:_ before 1.0, with no users, each of these is code and text to maintain for nobody, and it hides what the tool does now. _From:_ the maintainer, 12 October 2026. It holds until a release says otherwise.

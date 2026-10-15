@@ -10,7 +10,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use ascribe_core::RelPath;
+use ascribe_core::{RelPath, Visited};
 
 use crate::layout::Layout;
 use crate::project::Unreadable;
@@ -94,8 +94,9 @@ pub trait FileSystem {
     fn probe(&self, project_path: &RelPath) -> Probe;
 
     /// The bytes of a file at a path relative to the project root: a code
-    /// file a snippet reads through a source (SPEC §4.8). The path may start
-    /// with `..`; the source has already decided it may be read.
+    /// file a snippet reads through a source (SPEC §4.8), `ascribe.lock`, or
+    /// a content type's template. The path may start with `..`; the caller
+    /// has already decided it may be read.
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>>;
 
     /// Where a file or folder is once every symbolic link on the way to it is
@@ -106,6 +107,15 @@ pub trait FileSystem {
     /// leads where no path from the project root reaches (another drive). A
     /// snippet reads a file only when this is inside its source (SPEC §4.8).
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
+
+    /// The size in bytes of a file at a path relative to the project root;
+    /// `None` when it isn't there. A file system that can't tell reads the
+    /// file.
+    fn size(&self, project_path: &RelPath) -> Option<u64> {
+        self.read_file(project_path)
+            .ok()
+            .map(|bytes| bytes.len() as u64)
+    }
 
     /// Every file in a folder and the folders in it, as paths relative to
     /// the project root, in path order: the copies of a source in another
@@ -219,7 +229,7 @@ impl DiskFs {
 impl FileSystem for DiskFs {
     fn sources(&self) -> Sources {
         let mut out = Sources::default();
-        let mut seen = BTreeSet::new();
+        let mut seen = Visited::default();
         let walk_from = Walk {
             own: fs::canonicalize(&self.project_root).ok(),
         };
@@ -330,6 +340,16 @@ impl FileSystem for DiskFs {
         RelPath::parse(&segments.join("/")).ok()
     }
 
+    fn size(&self, project_path: &RelPath) -> Option<u64> {
+        let path = project_path
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        fs::metadata(path)
+            .ok()
+            .filter(|m| m.is_file())
+            .map(|m| m.len())
+    }
+
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
         let dir = project_dir
             .segments()
@@ -435,21 +455,19 @@ impl Walk {
     /// Collects source files under `dir`, as paths relative to the content root,
     /// and the nested projects' folders it skips. `seen` holds the canonical
     /// directories already walked, so a symbolic link back up the tree can't loop.
-    fn walk(&self, dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Sources) {
+    fn walk(&self, dir: &Path, rel: &RelPath, seen: &mut Visited, out: &mut Sources) {
         let unreadable = |out: &mut Sources, path: &Path, err: io::Error| {
             out.unreadable.push(Unreadable {
                 path: rel.clone(),
                 reason: format!("{}: {err}", path.display()),
             });
         };
-        let canonical = match fs::canonicalize(dir) {
-            Ok(canonical) => canonical,
+        let canonical = match seen.enter(dir) {
+            Ok(Some(canonical)) => canonical,
+            Ok(None) => return,
             Err(err) => return unreadable(out, dir, err),
         };
         let own = self.own.as_ref() == Some(&canonical);
-        if !seen.insert(canonical) {
-            return;
-        }
         let entries = match fs::read_dir(dir) {
             Ok(entries) => entries,
             Err(err) => return unreadable(out, dir, err),
@@ -646,6 +664,62 @@ impl FileSystem for MemoryFs {
             .cloned()
             .collect()
     }
+}
+
+/// Whether there's a link at `path`: a symbolic link, or on Windows a
+/// junction too, since [`std::fs::FileType::is_symlink`] is true there of
+/// every reparse point that's a name surrogate, junctions included.
+pub fn is_link(path: &Path) -> bool {
+    fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_symlink())
+}
+
+/// Looks for links on the way to files Ascribe writes or removes under a
+/// folder, so that what it writes lands where the path says and nowhere a
+/// committed link leads. The folder itself and those above it aren't looked
+/// at: they're where the person put the project.
+#[derive(Debug)]
+pub struct LinkCheck {
+    root: PathBuf,
+    /// Folders already found to be folders.
+    real: BTreeSet<PathBuf>,
+}
+
+impl LinkCheck {
+    /// Looks under `root`.
+    pub fn new(root: &Path) -> LinkCheck {
+        LinkCheck {
+            root: root.to_owned(),
+            real: BTreeSet::new(),
+        }
+    }
+
+    /// The first link on the way from the root to `rel`, `rel` included: a
+    /// folder on the way, or what's at `rel`. The way ends at the first part
+    /// that's missing or is a file, since nothing under it is there yet.
+    /// `rel` is relative; a `..` in it is followed and isn't itself looked
+    /// at.
+    pub fn link(&mut self, rel: &Path) -> Option<PathBuf> {
+        let mut at = self.root.clone();
+        for part in rel.components() {
+            at.push(part);
+            if !matches!(part, std::path::Component::Normal(_)) || self.real.contains(&at) {
+                continue;
+            }
+            match fs::symlink_metadata(&at) {
+                Ok(meta) if meta.file_type().is_symlink() => return Some(at),
+                Ok(meta) if meta.is_dir() => {
+                    self.real.insert(at.clone());
+                }
+                Ok(_) | Err(_) => return None,
+            }
+        }
+        None
+    }
+}
+
+/// [`LinkCheck::link`], once.
+pub fn link_on_the_way(root: &Path, rel: &Path) -> Option<PathBuf> {
+    LinkCheck::new(root).link(rel)
 }
 
 #[cfg(test)]

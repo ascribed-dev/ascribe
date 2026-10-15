@@ -1,4 +1,5 @@
 ---
+type: page
 title: Your first week
 description: What to set up, who to meet, and what to ship in your first week.
 owner: people-ops

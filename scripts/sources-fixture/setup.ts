@@ -12,7 +12,7 @@
 // their `main`, and closes the docs repository's update pull request. It
 // refuses a repository whose README it didn't write, unless --force. The docs
 // repository's workflow needs a GitHub App that can read the code repository
-// and write to the docs repository: docs/content/guides/drift.md says how.
+// and write to the docs repository: docs/content/examples/index.md says how.
 //
 // --pass then runs the pass: it makes each scripted change in the code
 // repository (scripts/sources-fixture/changes.ts), runs the docs repository's
@@ -191,9 +191,19 @@ interface Step {
   broken?: string[];
   /** Whether `ascribe check` fails on the pull request, when that isn't because of `broken`. */
   fails?: boolean;
+  /** The examples it says went stale: changed since their last test run. */
+  stale?: string[];
 }
 
 const PASS: Step[] = [
+  {
+    change: "untested",
+    outcome: "opened",
+    changed: ["quickstart.md"],
+    broken: [],
+    stale: ["examples/quickstart.ts"],
+  },
+  { change: "restore", outcome: "closed" },
   { change: "example", outcome: "opened", changed: ["login.md"], broken: [] },
   { change: "rename", outcome: "updated", changed: ["login.md"], broken: ["connect.md"] },
   { change: "restore", outcome: "closed" },
@@ -311,6 +321,13 @@ function check(step: Step, after: Snapshot): string[] {
       );
     }
   }
+  const stale = /Examples that went stale, changed since their last test run: (.*)\.\n/.exec(body);
+  const staleFound = Array.from((stale?.[1] ?? "").matchAll(/`([^`]+)`/g), (m) => m[1] ?? "");
+  if (staleFound.join() !== (step.stale ?? []).join()) {
+    problems.push(
+      `it says ${staleFound.join(", ") || "nothing"} went stale, not ${(step.stale ?? []).join(", ") || "nothing"}`,
+    );
+  }
   const says = body.includes("### `ascribe check` fails");
   if (says !== fails(step)) {
     problems.push(`the description ${says ? "says" : "doesn't say"} \`ascribe check\` fails`);
@@ -389,8 +406,10 @@ function localHost(): Host {
         fileUrl(remote(DOCS_NAME)),
         checkout,
       ]);
-      const result = spawnSync(ascribe, ["check", "--deny-warnings"], { cwd: checkout });
-      return result.status === 0;
+      return [
+        ["check", "--deny-warnings"],
+        ["fmt", "--check"],
+      ].every((args) => spawnSync(ascribe, args, { cwd: checkout }).status === 0);
     },
     edit: () => pushEdit(),
     merge() {

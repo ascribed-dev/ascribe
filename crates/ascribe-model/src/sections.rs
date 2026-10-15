@@ -1,16 +1,17 @@
 //! Content types, fragments, glossary, images, widgets, consumer, builds,
 //! and editor.
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use ascribe_core::availability::Version;
 use ascribe_core::{
-    AttributeSchema, Attributes, Binding, DirectiveSchema, Forms, Origin, Primary, Span, TitleRule,
-    diagnostics, reserved,
+    AttributeSchema, Attributes, Binding, Date, DirectiveSchema, Forms, Origin, Primary, Span,
+    TitleRule, diagnostics, reserved,
 };
 use toml::de::DeValue;
 
-use crate::loader::{Loader, NameRule};
+use crate::loader::{Loader, NameRule, is_absolute};
 use crate::model::*;
 use crate::names::{is_version, list};
 use crate::pattern::{Pattern, PatternError};
@@ -79,12 +80,29 @@ impl Loader<'_> {
         if let Some(f) = t.get("frontmatter")
             && let Some(ft) = self.as_table("fragments.frontmatter", f)
         {
-            let reserved: &dyn Fn(&str) -> bool = &|n| matches!(n, "available" | "variant");
+            let reserved: &dyn Fn(&str) -> bool = &|n| {
+                matches!(
+                    n,
+                    "available"
+                        | "variant"
+                        | "permalink"
+                        | "listing"
+                        | "replaces"
+                        | "intended"
+                        | "type"
+                )
+            };
             for (name, span, _) in entries(ft) {
                 if reserved(name) {
+                    // Fragments accept `intended`, and can't use the others.
+                    let variant = if name == "intended" {
+                        "fragment-accepted"
+                    } else {
+                        "fragment"
+                    };
                     self.push(
                         self.issue(diagnostics::MODEL_FIELD_RESERVED, span)
-                            .with_variant("fragment")
+                            .with_variant(variant)
                             .with_arg("field", name),
                     );
                 }
@@ -96,7 +114,6 @@ impl Loader<'_> {
 
     pub fn types(&mut self, v: Option<&V<'_>>, _fragments: &Fragments) -> Vec<ContentType> {
         let mut out: Vec<ContentType> = Vec::new();
-        let mut default_at: Option<String> = None;
         if let Some(v) = v
             && let Some(t) = self.as_table("types", v)
         {
@@ -106,34 +123,42 @@ impl Loader<'_> {
                 let Some(tt) = self.as_table(&path, item) else {
                     continue;
                 };
-                self.check_keys(&path, tt, &["files", "default", "frontmatter"]);
-                let files = tt
-                    .get("files")
-                    .map(|f| self.patterns(&format!("{path}.files"), f))
-                    .unwrap_or_default();
-                let default_v = tt.get("default");
-                let default = default_v
-                    .and_then(|d| self.boolean(&format!("{path}.default"), d))
-                    .unwrap_or(false);
-                if default {
-                    match &default_at {
-                        Some(first) => self.push(
-                            self.issue(
-                                diagnostics::MODEL_TYPE_MULTIPLE_DEFAULTS,
-                                default_v.map_or(name_span, sp),
-                            )
-                            .with_arg("a", first.as_str())
-                            .with_arg("b", name),
-                        ),
-                        None => default_at = Some(name.to_owned()),
+                // A page names its type in its frontmatter (SPEC §7.2), so
+                // `files` and `default`, which applied a type by path, are
+                // gone: say where the type is given now.
+                for (key, span, _) in entries(tt) {
+                    if matches!(key, "files" | "default") {
+                        self.push(
+                            self.issue(diagnostics::MODEL_UNKNOWN_KEY, span)
+                                .with_variant("type-key")
+                                .with_arg("key", key)
+                                .with_arg("table", path.as_str())
+                                .with_arg("type", name),
+                        );
                     }
                 }
-                if files.is_empty() && !default {
-                    self.push(
-                        self.issue(diagnostics::MODEL_TYPE_UNREACHABLE, name_span)
-                            .with_arg("type", name),
-                    );
-                }
+                self.check_keys(
+                    &path,
+                    tt,
+                    &[
+                        "files",
+                        "default",
+                        "frontmatter",
+                        "purpose",
+                        "template",
+                        "guide",
+                    ],
+                );
+                let purpose = tt
+                    .get("purpose")
+                    .and_then(|p| self.string(&format!("{path}.purpose"), p, true));
+                let template = tt
+                    .get("template")
+                    .and_then(|t| self.type_file(&format!("{path}.template"), t));
+                let guide = tt
+                    .get("guide")
+                    .map(|g| self.type_files(&format!("{path}.guide"), g))
+                    .unwrap_or_default();
                 let fm_path = format!("{path}.frontmatter");
                 let mut fields = Vec::new();
                 if let Some(fm) = self.require(&path, tt, sp(item), "frontmatter")
@@ -142,9 +167,22 @@ impl Loader<'_> {
                     // Under the `astro` profile, `slug` is
                     // the entry id Astro's loader uses instead of the path.
                     // The site output writes `inline` fields' formatted form
-                    // under `formatted`.
-                    let reserved: &dyn Fn(&str) -> bool =
-                        &|n| matches!(n, "available" | "variant" | "slug" | "formatted");
+                    // under `formatted`, and each page's path under `source`.
+                    let reserved: &dyn Fn(&str) -> bool = &|n| {
+                        matches!(
+                            n,
+                            "available"
+                                | "variant"
+                                | "permalink"
+                                | "listing"
+                                | "replaces"
+                                | "intended"
+                                | "type"
+                                | "slug"
+                                | "formatted"
+                                | "source"
+                        )
+                    };
                     for (fname, span, _) in entries(ft) {
                         if reserved(fname) {
                             let issue = self
@@ -154,6 +192,7 @@ impl Loader<'_> {
                             self.push(match fname {
                                 "slug" => issue.with_variant("slug"),
                                 "formatted" => issue.with_variant("formatted"),
+                                "source" => issue.with_variant("source"),
                                 _ => issue,
                             });
                         }
@@ -163,20 +202,21 @@ impl Loader<'_> {
                 }
                 out.push(ContentType {
                     name: name.to_owned(),
-                    files,
-                    default,
+                    implicit: false,
                     frontmatter: FrontmatterSchema {
                         owner: SchemaOwner::Type(name.to_owned()),
                         fields,
                     },
+                    purpose,
+                    template,
+                    guide,
                 });
             }
         }
         if out.is_empty() {
             out.push(ContentType {
                 name: "page".into(),
-                files: Vec::new(),
-                default: true,
+                implicit: true,
                 frontmatter: FrontmatterSchema {
                     owner: SchemaOwner::Type("page".into()),
                     fields: vec![Field {
@@ -186,12 +226,52 @@ impl Loader<'_> {
                         default: None,
                         phrases: false,
                         inline: None,
+                        role: None,
                         description: None,
                     }],
                 },
+                purpose: None,
+                template: None,
+                guide: Vec::new(),
             });
         }
         out
+    }
+
+    /// A type's `template`, or one entry of its `guide`: a path from the
+    /// folder `ascribe.toml` is in. Where it leads is checked with the
+    /// project's files (`TypeFile`).
+    fn type_file(&mut self, path: &str, v: &V<'_>) -> Option<TypeFile> {
+        let text = self.string(path, v, true)?;
+        self.relative(path, text, sp(v))
+    }
+
+    /// A type's `guide`: an array of paths, as `files` is.
+    fn type_files(&mut self, path: &str, v: &V<'_>) -> Vec<TypeFile> {
+        let Some(items) = self.strings(path, v) else {
+            return Vec::new();
+        };
+        let key = format!("{path}[]");
+        items
+            .into_iter()
+            .filter_map(|(text, span)| {
+                if text.trim().is_empty() {
+                    let issue = self.issue(diagnostics::MODEL_EMPTY_TEXT, span);
+                    self.push(issue.with_arg("key", key.as_str()));
+                    return None;
+                }
+                self.relative(&key, text, span)
+            })
+            .collect()
+    }
+
+    fn relative(&mut self, key: &str, text: String, span: Span) -> Option<TypeFile> {
+        if is_absolute(&text) {
+            let issue = self.issue(diagnostics::MODEL_PATH_ABSOLUTE, span);
+            self.push(issue.with_arg("key", key));
+            return None;
+        }
+        Some(TypeFile { path: text, span })
     }
 
     /// Every page type declares `title` as a required string.
@@ -306,6 +386,7 @@ impl Loader<'_> {
                     "marked" => GlossaryMatch::Marked,
                     _ => GlossaryMatch::First,
                 });
+            let link_span = term_t.get("link").map(sp);
             let link = term_t.get("link").and_then(|l| {
                 let text = self.string(&format!("{path}.link"), l, true)?;
                 self.glossary_link(id, &text, sp(l), project, fragments)
@@ -322,6 +403,8 @@ impl Loader<'_> {
                 link,
                 case_sensitive,
                 match_mode,
+                span: id_span,
+                link_span,
             });
         }
         self.glossary_duplicates(&out, tt);
@@ -654,6 +737,9 @@ impl Loader<'_> {
             trailing_slash: TrailingSlash::Always,
             slugger: "github".into(),
             html: true,
+            agents: false,
+            permalink_path: None,
+            headers: None,
         };
         let Some(v) = v else { return c };
         let Some(t) = self.as_table("consumer", v) else {
@@ -669,6 +755,9 @@ impl Loader<'_> {
                 "trailing-slash",
                 "slugger",
                 "html",
+                "agents",
+                "permalink-path",
+                "headers",
             ],
         );
         if let Some(p) = t.get("profile")
@@ -692,6 +781,15 @@ impl Loader<'_> {
                 c.base_path = text;
             } else {
                 self.push(self.issue(diagnostics::MODEL_CONSUMER_BASE_PATH, sp(b)));
+            }
+        }
+        if let Some(p) = t.get("permalink-path")
+            && let Some(text) = self.string("consumer.permalink-path", p, true)
+        {
+            if text.starts_with('/') {
+                c.permalink_path = Some(text);
+            } else {
+                self.push(self.issue(diagnostics::MODEL_CONSUMER_PERMALINK_PATH, sp(p)));
             }
         }
         if let Some(s) = t.get("trailing-slash")
@@ -723,12 +821,34 @@ impl Loader<'_> {
                 );
             }
         }
+        if let Some(a) = t.get("agents")
+            && let Some(value) = self.boolean("consumer.agents", a)
+        {
+            // Every link agents read is absolute, so it needs the origin; a
+            // `site` that isn't one is reported on its own.
+            if value && t.get("site").is_none() {
+                self.push(self.issue(diagnostics::MODEL_CONSUMER_AGENTS_SITE, sp(a)));
+            } else {
+                c.agents = value;
+            }
+        }
+        if let Some(h) = t.get("headers")
+            && let Some(text) = self.choice("consumer.headers", h, &["netlify"])
+            && text == "netlify"
+        {
+            c.headers = Some(HeadersFormat::Netlify);
+        }
         c
     }
 
     // ---- builds and editor ----------------------------------------------------------------
 
-    pub fn builds(&mut self, v: Option<&V<'_>>, dimensions: &[Dimension]) -> Vec<Build> {
+    pub fn builds(
+        &mut self,
+        v: Option<&V<'_>>,
+        dimensions: &[Dimension],
+        releases: &[Releases],
+    ) -> Vec<Build> {
         let mut out: Vec<Build> = Vec::new();
         if let Some(v) = v
             && let Some(t) = self.as_table("builds", v)
@@ -748,19 +868,28 @@ impl Loader<'_> {
                 let Some(bt) = self.as_table(&path, item) else {
                     continue;
                 };
-                self.check_keys(&path, bt, &["variants", "availability"]);
+                self.check_keys(&path, bt, &["variants", "availability", "versions"]);
                 let variants = self.variant_mode(name, &path, bt.get("variants"), dimensions);
                 let availability =
                     self.availability_mode(name, &path, bt.get("availability"), dimensions);
-                if let (Some(variants), Some(availability), true) =
-                    (variants, availability, name_ok)
+                let versions = match bt.get("versions") {
+                    Some(vv) => self
+                        .build_versions(name, &path, vv, availability.as_ref(), releases)
+                        .map(Some),
+                    None => Some(None),
+                };
+                if let (Some(variants), Some(availability), Some(versions), true) =
+                    (variants, availability, versions, name_ok)
                 {
                     self.excluded_warning(name, &variants, &availability, dimensions, bt);
-                    out.push(Build {
+                    let build = Build {
                         name: name.to_owned(),
                         variants,
                         availability,
-                    });
+                        versions,
+                        line: None,
+                    };
+                    out.extend(lines_of(build, releases));
                 }
             }
         }
@@ -771,9 +900,396 @@ impl Loader<'_> {
                 name: "site".into(),
                 variants: VariantMode::Switch,
                 availability: AvailabilityMode::Badge,
+                versions: None,
+                line: None,
             });
         }
         out
+    }
+
+    /// A build's `versions`: the target it's versioned by, or `None` when
+    /// it was reported.
+    fn build_versions(
+        &mut self,
+        build: &str,
+        path: &str,
+        v: &V<'_>,
+        availability: Option<&AvailabilityMode>,
+        releases: &[Releases],
+    ) -> Option<String> {
+        let target = self.string(&format!("{path}.versions"), v, false)?;
+        if let Some(AvailabilityMode::Filter { .. }) = availability {
+            self.push(
+                self.issue(diagnostics::MODEL_BUILD_VERSIONS, sp(v))
+                    .with_variant("filter")
+                    .with_arg("build", build)
+                    .with_arg("target", target.as_str()),
+            );
+            return None;
+        }
+        if !releases
+            .iter()
+            .any(|r| r.target == target && !r.live.is_empty())
+        {
+            self.push(
+                self.issue(diagnostics::MODEL_BUILD_VERSIONS, sp(v))
+                    .with_arg("build", build)
+                    .with_arg("target", target.as_str()),
+            );
+            return None;
+        }
+        Some(target)
+    }
+
+    // ---- releases ---------------------------------------------------------------------------
+
+    /// `[releases]`: each target's lines, newest first, and
+    /// `planned-label`.
+    pub fn releases(
+        &mut self,
+        v: Option<&V<'_>>,
+        dimensions: &[Dimension],
+    ) -> (Vec<Releases>, String) {
+        let mut out = Vec::new();
+        let mut planned_label = "planned".to_owned();
+        let Some(v) = v else {
+            return (out, planned_label);
+        };
+        let Some(t) = self.as_table("releases", v) else {
+            return (out, planned_label);
+        };
+        for (target, target_span, item) in entries(t) {
+            if target == "planned-label" {
+                if let Some(label) = self.string("releases.planned-label", item, true) {
+                    planned_label = label;
+                }
+                continue;
+            }
+            let path = join("releases", target);
+            let Some(rt) = self.as_table(&path, item) else {
+                continue;
+            };
+            self.check_keys(&path, rt, &["live", "planned", "ends", "archived"]);
+            let target_ok = self.releases_target(target, target_span, dimensions);
+            let mut list = |key: &str| match rt.get(key) {
+                Some(lv) => self.release_lines(target, &format!("{path}.{key}"), lv),
+                None => Some(Vec::new()),
+            };
+            let live = list("live");
+            let planned = list("planned");
+            let archived = match rt.get("archived") {
+                Some(av) => self.archived_lines(target, &format!("{path}.archived"), av),
+                None => Some(Vec::new()),
+            };
+            let (Some(live), Some(planned), Some(archived)) = (live, planned, archived) else {
+                continue;
+            };
+            let mut releases = Releases {
+                target: target.to_owned(),
+                live,
+                planned,
+                ends: Vec::new(),
+                archived,
+            };
+            let lists_ok = self.release_lists(&releases);
+            if let Some(ev) = rt.get("ends") {
+                match self.line_ends(&releases, &format!("{path}.ends"), ev) {
+                    Some(ends) => releases.ends = ends,
+                    None => continue,
+                }
+            }
+            if target_ok && lists_ok {
+                out.push(releases);
+            }
+        }
+        (out, planned_label)
+    }
+
+    /// The rules between a target's lists: every line with the same number
+    /// of parts, each line in one list, planned lines newer than every live
+    /// line, and archived ones older.
+    fn release_lists(&mut self, r: &Releases) -> bool {
+        let target = r.target.as_str();
+        let lists: [(&str, Vec<&Version>); 3] = [
+            ("live", r.live.iter().collect()),
+            ("planned", r.planned.iter().collect()),
+            ("archived", r.archived.iter().map(|a| &a.line).collect()),
+        ];
+        let mut ok = true;
+        let first = lists.iter().find_map(|(_, l)| l.first().copied());
+        if let Some(first) = first {
+            for line in lists.iter().flat_map(|(_, l)| l) {
+                if line.components.len() != first.components.len() {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_LINE, line.span)
+                            .with_arg("target", target)
+                            .with_arg("a", first.text.as_str())
+                            .with_arg("b", line.text.as_str()),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        if !ok {
+            return false;
+        }
+        for (i, (list, lines)) in lists.iter().enumerate() {
+            for line in lines {
+                let earlier = lists[..i]
+                    .iter()
+                    .find(|(_, l)| l.iter().any(|o| o.components == line.components));
+                if let Some((other, _)) = earlier {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_ORDER, line.span)
+                            .with_variant("twice")
+                            .with_arg("target", target)
+                            .with_arg("line", line.text.as_str())
+                            .with_arg("a", *other)
+                            .with_arg("b", *list),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        if !ok {
+            return false;
+        }
+        if let Some(newest) = r.live.first() {
+            for line in &r.planned {
+                if line.compare(newest) != Ordering::Greater {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_ORDER, line.span)
+                            .with_arg("target", target)
+                            .with_arg("line", line.text.as_str())
+                            .with_arg("live", newest.text.as_str()),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        if let Some(oldest) = r.live.last() {
+            for line in r.archived.iter().map(|a| &a.line) {
+                if line.compare(oldest) != Ordering::Less {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_ORDER, line.span)
+                            .with_variant("archived")
+                            .with_arg("target", target)
+                            .with_arg("line", line.text.as_str())
+                            .with_arg("live", oldest.text.as_str()),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        ok
+    }
+
+    /// A line written as a key, `"3.4"`: its version, spanning the key.
+    fn line_key(&mut self, target: &str, key: &str, span: Span) -> Option<Version> {
+        // After the opening quote of a quoted key.
+        let offset = span.start() + usize::from(self.text_of(span).starts_with(['"', '\'']));
+        let parsed = is_version(key)
+            .then(|| ascribe_core::availability::parse_version(key, offset).ok())
+            .flatten();
+        match parsed {
+            Some(line) => Some(Version { span, ..line }),
+            None => {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("invalid")
+                        .with_arg("target", target)
+                        .with_arg("line", key),
+                );
+                None
+            }
+        }
+    }
+
+    /// `[releases.<target>.archived]`: each line's table, newest first.
+    fn archived_lines(&mut self, target: &str, path: &str, v: &V<'_>) -> Option<Vec<ArchivedLine>> {
+        let t = self.as_table(path, v)?;
+        let mut out: Vec<ArchivedLine> = Vec::new();
+        let mut ok = true;
+        for (key, span, item) in entries(t) {
+            let item_path = join(path, key);
+            let Some(line) = self.line_key(target, key, span) else {
+                ok = false;
+                continue;
+            };
+            let Some(at) = self.as_table(&item_path, item) else {
+                ok = false;
+                continue;
+            };
+            self.check_keys(&item_path, at, &["url", "ended"]);
+            let url = match at.get("url") {
+                Some(uv) => match self.string(&format!("{item_path}.url"), uv, true) {
+                    Some(url) => Some(url),
+                    None => {
+                        ok = false;
+                        continue;
+                    }
+                },
+                None => None,
+            };
+            let ended = match at.get("ended") {
+                Some(dv) => match self.date(&format!("{item_path}.ended"), dv) {
+                    Some(date) => Some(date),
+                    None => {
+                        ok = false;
+                        continue;
+                    }
+                },
+                None => None,
+            };
+            if out.iter().any(|a| a.line.components == line.components) {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("duplicate")
+                        .with_arg("target", target)
+                        .with_arg("line", line.text.as_str()),
+                );
+                ok = false;
+                continue;
+            }
+            out.push(ArchivedLine { line, url, ended });
+        }
+        out.sort_by(|a, b| b.line.compare(&a.line));
+        ok.then_some(out)
+    }
+
+    /// `[releases.<target>.ends]`: a date for each live line it names.
+    fn line_ends(&mut self, r: &Releases, path: &str, v: &V<'_>) -> Option<Vec<LineEnd>> {
+        let t = self.as_table(path, v)?;
+        let mut out = Vec::new();
+        let mut ok = true;
+        for (key, span, item) in entries(t) {
+            let Some(line) = self.line_key(&r.target, key, span) else {
+                ok = false;
+                continue;
+            };
+            if !r.live.iter().any(|l| l.components == line.components) {
+                let live: Vec<String> = r.live.iter().map(|l| l.text.clone()).collect();
+                let mut issue = self
+                    .issue(diagnostics::MODEL_RELEASES_ENDS, span)
+                    .with_arg("target", r.target.as_str())
+                    .with_arg("line", key);
+                issue = if live.is_empty() {
+                    issue.with_variant("none")
+                } else {
+                    issue.with_arg("live", list(&live))
+                };
+                self.push(issue);
+                ok = false;
+                continue;
+            }
+            match self.date(&join(path, key), item) {
+                Some(date) => out.push(LineEnd { line, date }),
+                None => ok = false,
+            }
+        }
+        ok.then_some(out)
+    }
+
+    /// A date, written as TOML writes one: `2027-01-31`, unquoted.
+    fn date(&mut self, path: &str, v: &V<'_>) -> Option<Date> {
+        if let DeValue::Datetime(d) = v.get_ref()
+            && let (Some(date), None, None) = (d.date, d.time, d.offset)
+            && let Some(date) = Date::new(
+                u32::from(date.year),
+                u32::from(date.month),
+                u32::from(date.day),
+            )
+        {
+            return Some(date);
+        }
+        self.wrong_type(path, v, "a date, such as 2027-01-31");
+        None
+    }
+
+    /// Whether a `[releases]` table's name is a versioned dimension value.
+    fn releases_target(&mut self, target: &str, span: Span, dimensions: &[Dimension]) -> bool {
+        let value = dimensions
+            .iter()
+            .flat_map(|d| &d.values)
+            .find(|v| v.value == target);
+        match value {
+            Some(value) if !value.versionless => true,
+            Some(_) => {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_TARGET, span)
+                        .with_variant("versionless")
+                        .with_arg("target", target),
+                );
+                false
+            }
+            None => {
+                let mut issue = self
+                    .issue(diagnostics::MODEL_RELEASES_TARGET, span)
+                    .with_arg("target", target);
+                if let Some(d) = dimensions.iter().find(|d| d.name == target) {
+                    let values: Vec<String> = d
+                        .values
+                        .iter()
+                        .filter(|v| !v.versionless)
+                        .map(|v| v.value.clone())
+                        .collect();
+                    issue = issue
+                        .with_variant("dimension")
+                        .with_arg("values", list(&values));
+                }
+                self.push(issue);
+                false
+            }
+        }
+    }
+
+    /// A list of release lines, newest first: each a version, none twice,
+    /// and all with the same number of parts.
+    fn release_lines(&mut self, target: &str, path: &str, v: &V<'_>) -> Option<Vec<Version>> {
+        let items = self.strings(path, v)?;
+        let mut lines: Vec<Version> = Vec::new();
+        let mut ok = true;
+        for (text, span) in items {
+            // After the opening quote; a version has nothing to escape.
+            let parsed = is_version(&text)
+                .then(|| ascribe_core::availability::parse_version(&text, span.start() + 1).ok())
+                .flatten();
+            let Some(line) = parsed else {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("invalid")
+                        .with_arg("target", target)
+                        .with_arg("line", text),
+                );
+                ok = false;
+                continue;
+            };
+            if let Some(first) = lines.first()
+                && first.components.len() != line.components.len()
+            {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_arg("target", target)
+                        .with_arg("a", first.text.as_str())
+                        .with_arg("b", line.text.as_str()),
+                );
+                ok = false;
+                continue;
+            }
+            if lines.iter().any(|l| l.components == line.components) {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("duplicate")
+                        .with_arg("target", target)
+                        .with_arg("line", line.text.as_str()),
+                );
+                ok = false;
+                continue;
+            }
+            lines.push(line);
+        }
+        lines.sort_by(|a, b| b.compare(a));
+        ok.then_some(lines)
     }
 
     fn variant_mode(
@@ -1025,6 +1541,13 @@ impl Loader<'_> {
         builds: &[Build],
     ) -> String {
         let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
+        // A versioned build's older lines can be chosen, and aren't counted
+        // when choosing a default: the build is one, named by its current line.
+        let declared: Vec<String> = builds
+            .iter()
+            .filter(|b| b.line.as_ref().is_none_or(|l| l.current))
+            .map(|b| b.name.clone())
+            .collect();
         let mut chosen: Option<String> = None;
         let mut at = builds_table.map_or(Span::empty(0), sp);
         if let Some(v) = v
@@ -1049,9 +1572,9 @@ impl Loader<'_> {
         if let Some(name) = chosen {
             return name;
         }
-        let default = match names.as_slice() {
+        let default = match declared.as_slice() {
             [only] => Some(only.clone()),
-            _ => names.iter().find(|n| *n == "site").cloned(),
+            _ => declared.iter().find(|n| *n == "site").cloned(),
         };
         match default {
             Some(d) => d,
@@ -1083,4 +1606,41 @@ fn is_origin(s: &str) -> bool {
         && !rest
             .chars()
             .any(|c| matches!(c, '/' | '?' | '#') || c.is_whitespace())
+}
+
+/// A declared build as the builds it gives: itself when it isn't versioned,
+/// and one for each live line, newest first, when it is.
+fn lines_of(build: Build, releases: &[Releases]) -> Vec<Build> {
+    let Some(live) = build
+        .versions
+        .as_deref()
+        .and_then(|t| releases.iter().find(|r| r.target == t))
+        .map(|r| &r.live)
+    else {
+        return vec![build];
+    };
+    let Some(oldest) = live.last() else {
+        return vec![build];
+    };
+    live.iter()
+        .enumerate()
+        .map(|(i, line)| {
+            let current = i == 0;
+            let name = if current {
+                build.name.clone()
+            } else {
+                format!("{}@{}", build.name, line.text)
+            };
+            Build {
+                name,
+                line: Some(BuildLine {
+                    build: build.name.clone(),
+                    line: line.clone(),
+                    current,
+                    oldest: oldest.clone(),
+                }),
+                ..build.clone()
+            }
+        })
+        .collect()
 }

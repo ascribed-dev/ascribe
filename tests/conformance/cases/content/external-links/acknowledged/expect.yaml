@@ -1,0 +1,13 @@
+description: >-
+  A broken external link acknowledged with `@intended` above its block isn't
+  reported, and an acknowledgement of one that isn't broken is reported as
+  unused, by `ascribe report links`. `ascribe check` doesn't check external
+  links, so it reports neither.
+spec: ["4.9", "5.2"]
+tags: [links]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: intended-unused, line: 8, severity: advice}

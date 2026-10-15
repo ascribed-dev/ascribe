@@ -1,0 +1,10 @@
+description: >-
+  `listing` is one of `listed`, `unquoted`, and `unlisted` (SPEC §2.1), so
+  any other value, or one that isn't a string, is a frontmatter value of the
+  wrong type, at the value.
+spec: ["2.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-type-mismatch, file: hidden.md, line: 3}
+  - {slug: frontmatter-type-mismatch, file: boolean.md, line: 3}

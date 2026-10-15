@@ -189,6 +189,33 @@ describe("the token transport", () => {
     expect(requests).toEqual([]);
   });
 
+  test("sends a token only to the host it's for, whatever its case", async () => {
+    const { fn, requests } = fakeFetch({ body: { data: {} } });
+    const forHost = (host: string) => () => ({ token: TOKEN, host });
+    await expect(
+      tokenTransport(forHost("ghe.example.com"), { host: "gitlab.example", fetch: fn }).graphql(
+        QUERY,
+        {},
+      ),
+    ).rejects.toMatchObject({ code: "not-signed-in" });
+    await expect(
+      tokenTransport(forHost("ghe.example.com"), { fetch: fn }).graphql(QUERY, {}),
+    ).rejects.toMatchObject({ code: "not-signed-in" });
+    expect(requests).toEqual([]);
+
+    await tokenTransport(forHost("GHE.example.com"), {
+      host: "ghe.example.com",
+      fetch: fn,
+    }).graphql(QUERY, {});
+    expect(requests.map((r) => r.url)).toEqual(["https://ghe.example.com/api/graphql"]);
+  });
+
+  test("doesn't follow a redirect with the token", async () => {
+    const { fn, requests } = fakeFetch({ body: { data: {} } });
+    await tokenTransport(() => TOKEN, { fetch: fn }).graphql(QUERY, {});
+    expect(requests[0]?.init.redirect).toBe("error");
+  });
+
   test("reports a refused token", async () => {
     const { fn } = fakeFetch({ status: 401, body: { message: "Bad credentials" } });
     await expect(

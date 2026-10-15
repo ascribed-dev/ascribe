@@ -1,0 +1,11 @@
+description: >-
+  A page's `type` must name a content type `ascribe.toml` declares; one that
+  doesn't, or that isn't a string, is an error at the value. A page naming a
+  declared type is fine.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: content-type-unknown, file: misspelled.md, line: 2}
+  - {slug: content-type-unknown, file: number.md, line: 2}
+  - {slug: content-type-unknown, file: undeclared.md, line: 2}

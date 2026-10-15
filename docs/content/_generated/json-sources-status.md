@@ -9,7 +9,7 @@
       "oneOf": [
         {
           "const": "current",
-          "description": "It's the file the lock pins, and a snippet uses it.",
+          "description": "It's the file the lock pins, and a snippet uses it, or it's the\nsource's tested examples' config or one of their observations.",
           "type": "string"
         },
         {
@@ -114,7 +114,6 @@
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "format": "uint32",
       "minimum": 0,
       "type": "integer"
     },

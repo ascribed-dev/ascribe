@@ -33,6 +33,9 @@ const COPIED: &[&str] = &[
     "docs",
     ".github/workflows",
     "crates/ascribe-cli/tests/output",
+    // What the source's examples were tested with.
+    "ascribe.examples.toml",
+    "examples.observations",
 ];
 
 /// Projects whose build stops with errors, by design: their `check` and
@@ -250,7 +253,7 @@ fn run_all(dir: &Path, projects: &[String]) -> BTreeMap<String, Vec<u8>> {
         &["diff", "--base", "HEAD", "--format", "html"],
         &["drift", "--base", "HEAD"],
         &["drift", "--base", "HEAD", "--format", "json"],
-        &["drift", "--base", "HEAD", "--format", "summary"],
+        &["drift", "--base", "HEAD", "--format", "markdown"],
         &["build"],
         &["build", "--emit", "site", "--anchors"],
     ];

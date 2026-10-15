@@ -3,9 +3,13 @@
 //! report the same diagnostics, and `diff`, `drift`, and any other tool that
 //! takes `--build` names choose builds the same way.
 
+use ascribe_core::RelPath;
 use ascribe_model::Build;
 
-use crate::{Diagnostic, Project, check_all_builds, check_builds};
+use crate::{
+    Acknowledged, Acknowledgements, Diagnostic, PageChecker, PageIndex, Project, apply_levels,
+    check_all_builds, check_builds, check_file, check_files_with,
+};
 
 /// A build name that isn't a build of the content model.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -61,6 +65,9 @@ pub fn select_builds<'p>(
 pub struct Diagnosed<'p> {
     /// The diagnostics, in the order they're reported.
     pub diagnostics: Vec<Diagnostic>,
+    /// The problems an acknowledgement covers (SPEC §4.9), which aren't in
+    /// `diagnostics`.
+    pub acknowledged: Vec<Acknowledged>,
     /// The builds checked, as [`select_builds`] chose them.
     pub builds: Vec<&'p Build>,
 }
@@ -70,24 +77,123 @@ pub struct Diagnosed<'p> {
 /// anything. With none named, that's every build and also the content no
 /// build publishes; each problem is listed once, and the builds it appears
 /// in are added to its message when they aren't all of the selected ones.
+/// A problem an acknowledgement covers is set aside in
+/// [`Diagnosed::acknowledged`]; with every build checked, an acknowledgement
+/// that covers nothing is reported.
 ///
 /// # Errors
 ///
 /// The first name that isn't a build of the content model.
 pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<'p>, UnknownBuild> {
     let builds = select_builds(project, names)?;
-    let mut diagnostics = if names.is_empty() {
+    let diagnostics = if names.is_empty() {
         check_all_builds(project)
     } else {
         check_builds(project, &builds)
     };
+    let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let applied =
+        Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
+    let mut diagnostics = applied.diagnostics;
     for d in &mut diagnostics {
-        if let Some(note) = d.builds_note(builds.len()) {
+        if let Some(note) = d.builds_note_in(&builds) {
             d.message = format!("{} ({note})", d.message);
         }
     }
     Ok(Diagnosed {
         diagnostics,
+        acknowledged: applied.acknowledged,
         builds,
     })
+}
+
+/// How many errors [`diagnose`] would report for the builds named in
+/// `names`, without the checks that can't report one and cost the most to
+/// run ([`PageChecker::errors_only`]): for a command that only says whether
+/// the project has errors, such as `ascribe diff`.
+///
+/// # Errors
+///
+/// The first name that isn't a build of the content model.
+pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, UnknownBuild> {
+    let builds = select_builds(project, names)?;
+    let checker = PageChecker::new(project).errors_only();
+    let mut diagnostics = check_files_with(project, Some(&checker));
+    diagnostics.extend(if names.is_empty() {
+        checker.check_all()
+    } else {
+        checker.check_builds(&builds)
+    });
+    let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let applied =
+        Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
+    Ok(applied
+        .diagnostics
+        .iter()
+        .filter(|d| d.severity == crate::Severity::Error)
+        .count())
+}
+
+/// What the language server reports, for `ascribe check --editor-build`:
+/// the file-level diagnostics, and the page-level ones of the editor's build
+/// alone (`[editor] build`; `ContentModel::editor_default_build`), without
+/// the pass over content no build publishes, and without the image checks
+/// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)).
+///
+/// With `files` (content paths of source files), only what can count for
+/// them is checked, for speed: the file-level checks of those files, and the
+/// page-level checks of the pages that are them or include them. That's every
+/// diagnostic located in them or with a related place in them, apart from a
+/// file-level one of another file whose related place is in them, which no
+/// file-level check makes. The content model's warnings and the checks of
+/// `ascribe.lock` aren't run then, since they're located in neither, and
+/// neither are the content checks across the project, which need every page
+/// (the server runs them on save).
+pub fn diagnose_editor_build<'p>(project: &'p Project, files: Option<&[RelPath]>) -> Diagnosed<'p> {
+    diagnose_editor_build_in(project, None, files)
+}
+
+/// [`diagnose_editor_build`], over `index` when it's given: the project's,
+/// kept from an earlier check ([`PageIndex::new`]).
+pub fn diagnose_editor_build_in<'p>(
+    project: &'p Project,
+    index: Option<&'p PageIndex>,
+    files: Option<&[RelPath]>,
+) -> Diagnosed<'p> {
+    let build = project.model().editor_default_build();
+    let checker = || match index {
+        Some(index) => PageChecker::with_page_index(project, index),
+        None => PageChecker::new(project),
+    };
+    let diagnostics = match files {
+        None => {
+            let checker = checker();
+            let mut out = check_files_with(project, Some(&checker));
+            out.extend(checker.check(build));
+            // What the editor doesn't report.
+            out.retain(|d| !crate::NOT_IN_EDITOR.contains(&d.slug));
+            out
+        }
+        Some(files) => {
+            let mut out: Vec<Diagnostic> = files
+                .iter()
+                .filter_map(|path| project.source_at(path))
+                .flat_map(|file| check_file(project, file))
+                .collect();
+            out.extend(checker().check_reaching(build, files));
+            out
+        }
+    };
+    // One build: whether an acknowledgement covers nothing in the others
+    // can't be told.
+    let applied = Acknowledgements::of(project).apply(
+        project.model(),
+        apply_levels(&project.model().checks, diagnostics),
+        false,
+    );
+    Diagnosed {
+        diagnostics: applied.diagnostics,
+        acknowledged: applied.acknowledged,
+        builds: vec![build],
+    }
 }

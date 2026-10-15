@@ -1,0 +1,8 @@
+description: >-
+  A heading that moved to another page takes its permalink with it: the
+  list is behind, at the heading's new place, and nothing is removed.
+spec: ["7.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: permalinks-list-behind, file: b.md, line: 6}

@@ -1,4 +1,5 @@
 ---
+type: page
 title: Docs
 description: The docs project's home page.
 ---

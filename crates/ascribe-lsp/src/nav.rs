@@ -13,11 +13,12 @@ use std::sync::Arc;
 use ascribe_core::path::normalize;
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_emit::labels::plain_text;
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, Listing};
 use ascribe_resolve::{FileIndex, Heading, Include, PhraseUse, Reference, Snapshot};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, PrimaryValue};
 use lsp_types::{Location, Position, Range, Uri};
 
+use crate::fsx::LayerFs;
 use crate::position::Encoding;
 use crate::uri::path_to_uri;
 
@@ -25,21 +26,48 @@ use crate::uri::path_to_uri;
 pub(crate) struct Ctx {
     /// The project as of the request.
     pub snapshot: Snapshot,
-    /// The requested file's content path.
+    /// The requested file's content path, or [`Ctx::PROJECT`].
     pub path: RelPath,
+    /// The requested document's version, when it's open in the editor.
+    pub version: Option<i32>,
     /// The content model.
     pub model: Arc<ContentModel>,
     /// The text of `ascribe.toml`, for going to a phrase's or feature's entry.
     pub model_text: String,
+    /// Whether `ascribe.toml` as it is now doesn't load, so `model` and
+    /// `model_text` are the last that did.
+    pub model_problem: bool,
     /// The project's `ascribe.toml`.
     pub config: PathBuf,
     /// The content root, absolute.
     pub content_dir: PathBuf,
     /// How the client counts columns.
     pub encoding: Encoding,
+    /// The project's files that aren't sources, as the file-level checks
+    /// read them: images, and the files of the content model's sources.
+    pub fs: Arc<LayerFs>,
+    /// The day the checks run on.
+    pub today: Option<ascribe_core::Date>,
 }
 
 impl Ctx {
+    /// The path of a request about the whole project asked through a file
+    /// that isn't a source ([`crate::core::Core::project_target`]): a name at
+    /// the content root that no source file can have.
+    pub(crate) const PROJECT: &'static str = "ascribe.toml";
+
+    /// The requested page's content type, as the source index has it: the
+    /// one its `type` names. `None` for a fragment, and for a page with no
+    /// type or one that isn't declared.
+    pub(crate) fn page_type(&self) -> Option<&ascribe_model::ContentType> {
+        self.snapshot.file(&self.path)?.content_type(&self.model)
+    }
+
+    /// The name of the requested page's content type ([`Ctx::page_type`]).
+    pub(crate) fn page_type_name(&self) -> Option<&str> {
+        self.page_type().map(|t| t.name.as_str())
+    }
+
     /// The requested file's index.
     pub(crate) fn file(&self) -> Option<&FileIndex> {
         self.snapshot.file(&self.path)
@@ -109,10 +137,14 @@ pub(crate) enum Hit<'a> {
     Reference(usize, &'a Reference),
     /// The path of an `@include`.
     Include(&'a Include),
+    /// The address of a `@snippet`.
+    Snippet(&'a ascribe_resolve::SnippetUse),
     /// The primary of an `@available`, as text.
     Availability(&'a str, Span),
     /// The value of a frontmatter `available:` key.
     Frontmatter(String, Span),
+    /// A frontmatter `listing:` line, key and value.
+    Listing(Span),
     /// A directive's name, or one of its attribute keys.
     Directive(&'a DirectiveLine),
 }
@@ -145,6 +177,11 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
             offer(&mut best, offset, primary, Hit::Include(include));
         }
     }
+    for snippet in &file.snippets {
+        if let Some(primary) = snippet.primary {
+            offer(&mut best, offset, primary, Hit::Snippet(snippet));
+        }
+    }
     for marker in &file.availability {
         if let Some((text, span)) = &marker.primary {
             offer(&mut best, offset, *span, Hit::Availability(text, *span));
@@ -152,6 +189,9 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
     }
     if let Some((text, span)) = frontmatter_available(file, offset) {
         offer(&mut best, offset, span, Hit::Frontmatter(text, span));
+    }
+    if let Some(span) = frontmatter_listing(file, offset) {
+        offer(&mut best, offset, span, Hit::Listing(span));
     }
     if let Some((_, hit)) = best {
         return Some(hit);
@@ -164,23 +204,39 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
     (touches(d.name_span, offset) || on_key).then_some(Hit::Directive(d))
 }
 
-/// The value of the frontmatter's `available:` key when `offset` is on its
-/// line, with the span of the value.
-pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(String, Span)> {
+/// The top-level frontmatter line with the key `key` when `offset` is on
+/// it, and where the frontmatter's content starts.
+fn frontmatter_line<'a>(
+    file: &'a FileIndex,
+    offset: usize,
+    key: &str,
+) -> Option<(ascribe_syntax::FrontmatterLine<'a>, usize)> {
     let content = file.document.frontmatter.as_ref()?.content;
     if !(content.start() <= offset && offset <= content.end()) {
         return None;
     }
     let source: &str = &file.source;
-    let start = line_start(source, offset).max(content.start());
-    let end = source[offset..]
-        .find('\n')
-        .map_or(source.len(), |i| offset + i)
-        .min(content.end());
-    let line = source.get(start..end)?;
-    let value = line.strip_prefix("available:")?;
-    let lead = value.len() - value.trim_start().len();
-    let text = value.trim();
+    let start = line_start(source, offset).max(content.start()) - content.start();
+    let line = ascribe_syntax::frontmatter_lines(source.get(content.range())?)
+        .into_iter()
+        .find(|l| l.start == start && l.indent == 0 && l.item.is_none())
+        .filter(|l| l.key == Some(key) && !l.block)?;
+    Some((line, content.start()))
+}
+
+/// The span of the frontmatter's `listing:` line, its key to the end of its
+/// value, when `offset` is on it.
+pub(crate) fn frontmatter_listing(file: &FileIndex, offset: usize) -> Option<Span> {
+    let (line, base) = frontmatter_line(file, offset, Listing::KEY)?;
+    let end = base + line.value_start + line.value.len();
+    Some(Span::new(base + line.start, end.max(base + line.start)))
+}
+
+/// The value of the frontmatter's `available:` key when `offset` is on its
+/// line, with the span of the value.
+pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(String, Span)> {
+    let (line, base) = frontmatter_line(file, offset, "available")?;
+    let text = line.value;
     let unquoted = text
         .strip_prefix('"')
         .and_then(|t| t.strip_suffix('"'))
@@ -189,7 +245,7 @@ pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(
         Some(inner) => (inner, 1),
         None => (text, 0),
     };
-    let from = start + "available:".len() + lead + quote;
+    let from = base + line.value_start + quote;
     Some((text.to_owned(), Span::new(from, from + text.len())))
 }
 
@@ -331,57 +387,21 @@ pub(crate) fn identifier_primary(d: &DirectiveLine) -> Option<(&str, Span)> {
     }
 }
 
-/// Percent-encodes what would end a link destination or an include path early
-/// (whitespace, parentheses, angle brackets) or would be read as an escape.
-pub(crate) fn encode_destination(path: &str) -> String {
-    let mut out = String::with_capacity(path.len());
-    for c in path.chars() {
-        match c {
-            ' ' => out.push_str("%20"),
-            '(' => out.push_str("%28"),
-            ')' => out.push_str("%29"),
-            '<' => out.push_str("%3C"),
-            '>' => out.push_str("%3E"),
-            '%' => out.push_str("%25"),
-            '#' => out.push_str("%23"),
-            c => out.push(c),
-        }
-    }
-    out
+/// The headings a link to `file` can name, in document order
+/// ([`Snapshot::link_headings`], without the files they're written in).
+pub(crate) fn link_headings<'a>(snapshot: &'a Snapshot, file: &'a FileIndex) -> Vec<&'a Heading> {
+    snapshot
+        .link_headings(file)
+        .into_iter()
+        .map(|(_, h)| h)
+        .collect()
 }
 
-/// The path from the directory of `from` to `target`, as it is written in a
-/// link or an include: `keys.md`, `../keys.md`, `sub/page.md`.
-pub(crate) fn relative_path(target: &RelPath, from: &RelPath) -> String {
-    let dir = from.parent().unwrap_or_default();
-    match target.relative_from(&dir) {
-        Some(text) => text.strip_prefix("./").map_or(text.clone(), str::to_owned),
-        None => format!("/{target}"),
-    }
-}
+pub(crate) use ascribe_resolve::{encode_destination, link_path as relative_path, named_headings};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn destinations_are_encoded() {
-        assert_eq!(
-            encode_destination("My Setup (1).md"),
-            "My%20Setup%20%281%29.md"
-        );
-        assert_eq!(encode_destination("a/b.md"), "a/b.md");
-        assert_eq!(encode_destination("hash#name.md"), "hash%23name.md");
-    }
-
-    #[test]
-    fn relative_paths_have_no_dot_prefix() {
-        let p = |s: &str| RelPath::parse(s).expect("a path");
-        assert_eq!(relative_path(&p("a/b.md"), &p("a/c.md")), "b.md");
-        assert_eq!(relative_path(&p("keys.md"), &p("a/c.md")), "../keys.md");
-        assert_eq!(relative_path(&p("a/b/x.md"), &p("a/c.md")), "b/x.md");
-        assert_eq!(relative_path(&p("keys.md"), &p("index.md")), "keys.md");
-    }
 
     #[test]
     fn truncation_is_on_a_character_boundary() {

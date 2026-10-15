@@ -13,6 +13,7 @@ export const availableTargetSchema = z.strictObject({
   dimension: z.string(),
   states: z.array(z.string()),
   versions: z.array(z.string()).optional(),
+  planned: z.literal(true).optional(),
   text: z.string(),
 });
 
@@ -30,21 +31,19 @@ export type Variant = z.infer<typeof variantSchema>;
 
 /** The frontmatter of pages of type `page`. */
 export const pageSchema = z.strictObject({
+  type: z.literal("page"),
   title: z.string(),
   description: z.string().optional(),
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
+  permalink: z.string().optional(),
+  source: z.string(),
 });
 export type Page = z.infer<typeof pageSchema>;
 
 /** Every content type's schema, by the type's name. */
 export const schemas = {
   page: pageSchema,
-} as const;
-
-/** Which pages each content type applies to. */
-export const contentTypes = {
-  page: { default: true, files: [] },
 } as const;
 
 /** A schema that accepts the frontmatter of any content type. */

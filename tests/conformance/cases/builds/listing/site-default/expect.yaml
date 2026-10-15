@@ -1,0 +1,23 @@
+description: >-
+  A site's `default` applies to every page. With `unlisted`, no page can be
+  listed: a page that sets nothing is unlisted, one that sets `unlisted` is
+  fine, and one that sets `listed` or `unquoted` is an error naming the
+  default, and stays unlisted.
+spec: ["2.1", "7.2"]
+tags: [resolve, check]
+
+diagnostics:
+  - {slug: listing-loosened, file: open.md, line: 4}
+  - {slug: listing-loosened, file: quiet.md, line: 4}
+
+builds:
+  site:
+    pages:
+      guide.md:
+        listing: unlisted
+      index.md:
+        listing: unlisted
+      open.md:
+        listing: unlisted
+      quiet.md:
+        listing: unlisted

@@ -1,0 +1,13 @@
+description: >-
+  An acknowledgement that matches no problem in any build is reported as
+  advice, with a fix that removes it. `review-overdue` is acknowledged in a
+  page's frontmatter, and this page has no review date. The project has one
+  build, so checking it checks every build.
+spec: ["4.9", "8.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: intended-unused, line: 4, severity: advice}

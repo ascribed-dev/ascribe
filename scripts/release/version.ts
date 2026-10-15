@@ -35,7 +35,11 @@ import {
   npmPackages,
   readJson,
   relockWorkspace,
+  pluginManifests,
+  pluginSkill,
   root,
+  SKILL_VERSION,
+  skill,
   writeJson,
 } from "./manifests.ts";
 
@@ -90,7 +94,8 @@ if (first === "--check") {
 }
 
 /**
- * Sets the version in Cargo.toml and every package.json, and, given the commit
+ * Sets the version in Cargo.toml, every package.json, the skill
+ * `@ascribed/cli` ships, and the plugin, and, given the commit
  * a canary is built from, each npm package's `gitHead`.
  */
 function setVersion(version: string, commit?: string): void {
@@ -107,6 +112,18 @@ function setVersion(version: string, commit?: string): void {
     manifest.version = version;
     if (dir === extension.dir) (manifest.ascribe ??= {}).minServerVersion = version;
     else if (commit !== undefined) manifest.gitHead = commit;
+    writeJson(file, manifest);
+  }
+  for (const file of [skill, pluginSkill]) {
+    const skillFile = join(root, file);
+    writeFileSync(
+      skillFile,
+      readFileSync(skillFile, "utf8").replace(SKILL_VERSION, `  ascribe-version: "${version}"`),
+    );
+  }
+  for (const file of pluginManifests) {
+    const manifest = readJson(file);
+    manifest.version = version;
     writeJson(file, manifest);
   }
 }

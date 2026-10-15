@@ -1,0 +1,8 @@
+description: >-
+  A type's `purpose` says what a page of the type is for, as one string: a
+  list is the wrong type.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-wrong-type, file: ascribe.toml, line: 7}

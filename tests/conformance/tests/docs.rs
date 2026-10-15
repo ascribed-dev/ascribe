@@ -1,11 +1,13 @@
-//! The diagnostics reference, `docs/content/reference/diagnostics.md`, includes
-//! fragments generated from the diagnostics registry, in
+//! The diagnostics reference, `docs/content/checks/diagnostics.md` and its
+//! pages in `docs/content/checks/diagnostics/`, includes fragments
+//! generated from the diagnostics registry, in
 //! `docs/content/_generated/diagnostics-*.md`. This test renders them and
 //! fails when one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite
 //! them.
 //!
 //! It also checks the docs' phrases whose values come from another file, such
-//! as the version, against that file.
+//! as the version, against that file, and that the `ascribe.toml` reference
+//! and its contract share their text only through fragments.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -13,6 +15,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+use ascribe_conformance::registry::{Next, placeholders};
 use ascribe_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 
 fn repo() -> PathBuf {
@@ -21,40 +24,163 @@ fn repo() -> PathBuf {
 
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs";
 
-#[test]
-fn every_diagnostic_says_how_to_fix_it() {
-    let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
-    let missing: Vec<&str> = registry
-        .entries
+/// The evidence an agent prompt can carry: what an entry's `evidence` may
+/// name, from the checks' own lists: what an issue carries, and what a
+/// prompt gathers.
+fn evidence_names() -> Vec<&'static str> {
+    ascribe_check::EVIDENCE
         .iter()
-        .filter(|e| e.retired.is_none() && e.fix.as_deref().is_none_or(str::is_empty))
-        .map(|e| e.code.as_str())
-        .collect();
-    assert!(missing.is_empty(), "entries without a `fix`: {missing:?}");
+        .map(|(name, _, _)| *name)
+        .chain(ascribe_check::GATHERED_EVIDENCE.iter().copied())
+        .collect()
+}
+
+/// The tables of `[checks]` that aren't a check's: the tools' settings. No
+/// diagnostic can have their names.
+const CHECK_TOOLS: &[&str] = &["vale", "links"];
+
+/// No check ships without its next step: every diagnostic has a
+/// kind of next step, a `fix` paragraph, an entry in the reference, a
+/// section of the directive or `ascribe.toml` reference to send its reader on
+/// to, and the list of what its prompt carries. A `review` diagnostic can be
+/// acknowledged and set in `[checks]`, so it's configurable. That every `fix`
+/// diagnostic has a fix in the code is tested with the quick fixes, in
+/// `crates/ascribe-lsp/tests/all/quick_fixes.rs`.
+#[test]
+fn every_diagnostic_has_its_next_step() {
+    let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
+    let pages = Pages::load();
+    let reference = render(&registry, &pages)
+        .into_iter()
+        .map(|(_, text)| text)
+        .collect::<String>();
+    let mut wrong = Vec::new();
+    for e in &registry.entries {
+        if CHECK_TOOLS.contains(&e.slug.as_str()) {
+            wrong.push(format!("{}: `[checks.{}]` is for a tool", e.code, e.slug));
+        }
+        match &e.reference {
+            None => wrong.push(format!("{}: no `reference`", e.code)),
+            Some(section) if !pages.sections.contains_key(section) => wrong.push(format!(
+                "{}: `reference` is `{section}`, which isn't a heading of {}",
+                e.code,
+                REFERENCES
+                    .map(|(name, _)| format!("{name}.md"))
+                    .join(" or ")
+            )),
+            Some(_) => {}
+        }
+        if e.fix.as_deref().is_none_or(str::is_empty) {
+            wrong.push(format!("{}: no `fix`", e.code));
+        }
+        if !reference.contains(&format!("### {} `{}`", e.code, e.slug)) {
+            wrong.push(format!("{}: no entry in the reference", e.code));
+        }
+        let review = e.next == Some(Next::Review);
+        match (&e.place, review) {
+            (None, true) => wrong.push(format!(
+                "{}: a `review` diagnostic says where it's acknowledged, with `place`",
+                e.code
+            )),
+            (Some(_), false) => wrong.push(format!(
+                "{}: only a `review` diagnostic has a `place`",
+                e.code
+            )),
+            (Some(place), true) if place_words(place).is_none() => wrong.push(format!(
+                "{}: `place` is `page`, `block`, or `entry`, not `{place}`",
+                e.code
+            )),
+            _ => {}
+        }
+        match e.next {
+            None => wrong.push(format!("{}: no `next`", e.code)),
+            Some(Next::Review) if !e.configurable => {
+                wrong.push(format!(
+                    "{}: a `review` diagnostic must be configurable",
+                    e.code
+                ));
+            }
+            Some(_) => {}
+        }
+        match &e.evidence {
+            None => wrong.push(format!("{}: no `evidence` (it may be empty)", e.code)),
+            Some(list) => {
+                for name in list {
+                    if !evidence_names().contains(&name.as_str()) {
+                        wrong.push(format!("{}: unknown evidence `{name}`", e.code));
+                    }
+                }
+                let values = std::iter::once(&e.message)
+                    .chain(e.messages.values())
+                    .any(|m| placeholders(m).is_ok_and(|p| p.contains(&"values")));
+                if list.iter().any(|n| n == "allowed-values") && !values {
+                    wrong.push(format!(
+                        "{}: `allowed-values` needs a `{{values}}` placeholder",
+                        e.code
+                    ));
+                }
+            }
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
 }
 
 #[test]
 fn the_diagnostics_reference_is_current() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
-    let spec = std::fs::read_to_string(repo().join("SPEC.md")).unwrap();
-    let fragments = render(&registry, &spec_anchors(&spec));
+    let fragments = render(&registry, &Pages::load());
     check_fragments("diagnostics-", &fragments);
-    let page =
-        std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
     for (name, _) in &fragments {
+        let page = match DIAGNOSTICS_PAGES
+            .iter()
+            .find(|(_, fragment)| fragment == name)
+        {
+            Some((page, _)) => format!("checks/diagnostics/{page}.md"),
+            None => "checks/diagnostics.md".to_owned(),
+        };
+        let depth = "../".repeat(page.matches('/').count());
         assert!(
-            page.contains(&format!("@include: ../_generated/{name}\n")),
-            "docs/content/reference/diagnostics.md doesn't include _generated/{name}"
+            read(&format!("docs/content/{page}"))
+                .contains(&format!("@include: {depth}_generated/{name}\n")),
+            "docs/content/{page} doesn't include _generated/{name}"
         );
     }
 }
 
+/// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
+/// each with the fragment it lists the diagnostics of. The reference's own page has
+/// the index.
+const DIAGNOSTICS_PAGES: [(&str, &str); 4] = [
+    ("directives", "diagnostics-directives.md"),
+    ("pages", "diagnostics-pages.md"),
+    ("content-model", "diagnostics-content-model.md"),
+    ("content-checks", "diagnostics-content-checks.md"),
+];
+
+/// The first construct of the source-file diagnostics listed on the `pages`
+/// page; those before it are on the `directives` page.
+const FIRST_ON_PAGES: &str = "Links";
+
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
-/// has the value that file has.
+/// has the value that file has. The `version` phrase is `[releases.ascribe]`'s
+/// current line, so the line is what's compared.
 #[test]
 fn the_docs_phrases_match_their_sources() {
-    let docs: toml::Table = read("docs/ascribe.toml").parse().unwrap();
-    let phrase = |key: &str| docs["phrases"][key].as_str().unwrap().to_owned();
+    let text = read("docs/ascribe.toml");
+    let docs: toml::Table = text.parse().unwrap();
+    assert!(
+        docs["phrases"]["version"].get("line").is_some(),
+        "the phrase `version` in docs/ascribe.toml is a line, `{{ line = \"ascribe\" }}`"
+    );
+    let model = ascribe_model::load_str(&text, ascribe_core::FileId::new(0)).unwrap();
+    let phrase = |key: &str| {
+        model
+            .phrases
+            .iter()
+            .find(|p| p.key == key)
+            .map(|p| p.value.clone())
+            .unwrap()
+    };
     let mut wrong = Vec::new();
     let mut compare = |key: &str, file: &str, value: &str| {
         if phrase(key) != value {
@@ -100,6 +226,70 @@ fn the_docs_phrases_match_their_sources() {
     );
 
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+/// A page, from the repository's root, and its parts: the pages in the folder
+/// of its name, as `contracts/content-model.md` has `contracts/content-model/`,
+/// or, for a folder's `index.md`, the folder's other pages.
+fn with_parts(page: &str) -> Vec<String> {
+    let folder = page
+        .strip_suffix("/index.md")
+        .unwrap_or_else(|| page.trim_end_matches(".md"));
+    let mut more: Vec<String> = std::fs::read_dir(repo().join(folder))
+        .map(|dir| {
+            dir.map(|e| format!("{folder}/{}", e.unwrap().file_name().to_string_lossy()))
+                .filter(|f| f.ends_with(".md") && f != page)
+                .collect()
+        })
+        .unwrap_or_default();
+    more.sort();
+    std::iter::once(page.to_owned()).chain(more).collect()
+}
+
+/// The `ascribe.toml` reference and its contract, each a page and its parts,
+/// take what they say alike
+/// from the fragments in `docs/content/_fragments/content-model/`, so no
+/// paragraph, list, table, or example is written in both. Headings, rules,
+/// and the includes themselves are the pages' shape, and alike on purpose.
+#[test]
+fn the_content_model_pages_share_text_only_through_fragments() {
+    // The blocks between blank lines, keeping a code block whole.
+    let blocks = |path: &str| -> Vec<String> {
+        let mut blocks = vec![String::new()];
+        let mut fenced = false;
+        for line in read(path).lines() {
+            fenced ^= line.trim_start().starts_with("```");
+            if line.trim().is_empty() && !fenced {
+                blocks.push(String::new());
+            } else if let Some(block) = blocks.last_mut() {
+                block.push_str(line);
+                block.push('\n');
+            }
+        }
+        blocks.retain(|block| {
+            !(block.is_empty()
+                || block == "---\n"
+                || block.starts_with('#')
+                || block.starts_with("@include: "))
+        });
+        blocks
+    };
+    let pages = with_parts;
+    let contract: Vec<String> = pages("docs/content/contracts/content-model.md")
+        .iter()
+        .flat_map(|page| blocks(page))
+        .collect();
+    let twice: Vec<String> = pages("docs/content/content-model/index.md")
+        .iter()
+        .flat_map(|page| blocks(page))
+        .filter(|block| contract.contains(block))
+        .collect();
+    assert!(
+        twice.is_empty(),
+        "move what both pages say into a fragment in docs/content/_fragments/content-model/, \
+         and include it from each:\n\n{}",
+        twice.join("\n\n")
+    );
 }
 
 fn read(path: &str) -> String {
@@ -156,6 +346,43 @@ fn check_fragments(prefix: &str, fragments: &[(String, String)]) {
     );
 }
 
+/// The `ascribe.toml` reference's table of the crawlers Ascribe knows, by
+/// purpose, `docs/content/_generated/crawlers.md`, from the data file the
+/// binary carries.
+#[test]
+fn the_crawlers_table_is_current() {
+    let mut text = String::from(
+        "<!-- Generated from crates/ascribe-model/data/crawlers.toml by \
+         tests/conformance/tests/docs.rs. Edit the data, then run \
+         `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n\n\
+         | Purpose | Token | Operator | What the operator says of `robots.txt` | Read |\n\
+         |---|---|---|---|---|\n",
+    );
+    for purpose in ascribe_model::Purpose::ALL {
+        for c in ascribe_model::known_crawlers()
+            .iter()
+            .filter(|c| c.purpose == Some(purpose))
+        {
+            let robots = match c.robots.as_str() {
+                "follows" => "Follows it",
+                _ => "May not follow it",
+            };
+            let note = c.note.as_deref().map_or(String::new(), |n| format!(" {n}"));
+            writeln!(
+                text,
+                "| `{}` | `{}` | {} | {robots}.{note} | [{}]({}) |",
+                purpose.name(),
+                c.token,
+                c.operator,
+                c.read,
+                c.source
+            )
+            .unwrap();
+        }
+    }
+    check_fragments("crawlers", &[("crawlers.md".to_owned(), text)]);
+}
+
 /// The groups loader rules are listed in, as they're titled in the
 /// diagnostics reference.
 const RULE_GROUPS: &[(&str, &str)] = &[
@@ -167,9 +394,26 @@ const RULE_GROUPS: &[(&str, &str)] = &[
         "names",
         "Dimensions, names, lifecycle states, notes, and features",
     ),
+    ("releases", "`[releases]`"),
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),
+    ("permalinks", "`[permalinks]`"),
+    ("crawlers", "`[crawlers]`"),
+    ("listing", "`[listing]`"),
+    ("checks", "`[checks]`"),
+];
+
+/// The areas content checks are listed in, as they're titled in the
+/// diagnostics reference.
+const AREAS: &[(&str, &str)] = &[
+    ("pages", "Pages"),
+    ("project", "Across the project"),
+    ("outputs", "Outputs"),
+    ("prose", "Prose, through Vale"),
+    ("links", "External links"),
+    ("site", "The published site"),
+    ("examples", "Tested examples"),
 ];
 
 /// What each fragment starts with: what generates it, and how.
@@ -178,23 +422,16 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics, the content model's, and the retired ones (empty
-/// when there are none). The index links to entries in the other fragments
-/// through the page that includes them all (SPEC §4.2).
-fn render(
-    registry: &DiagnosticsRegistry,
-    anchors: &BTreeMap<String, String>,
-) -> Vec<(String, String)> {
-    let active: Vec<&Entry> = registry
-        .entries
-        .iter()
-        .filter(|e| e.retired.is_none())
-        .collect();
+/// source-file diagnostics in two (directives, and links, pages, and
+/// sources), the content model's, and the content checks. The index links to each entry on the page
+/// that includes its fragment (SPEC §4.2).
+fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
+    let active: Vec<&Entry> = registry.entries.iter().collect();
 
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
     let mut constructs: Vec<(&str, Vec<(&Entry, &str)>)> = Vec::new();
-    for entry in active.iter().filter(|e| !is_model(e)) {
+    for entry in active.iter().filter(|e| !is_model(e) && e.area.is_none()) {
         let row = entry.row.as_deref().unwrap_or_default();
         let (construct, condition) = row.split_once(" | ").unwrap_or((row, ""));
         match constructs.iter_mut().find(|(c, _)| *c == construct) {
@@ -202,68 +439,80 @@ fn render(
             None => constructs.push((construct, vec![(entry, condition)])),
         }
     }
-    let all = index(active.iter().copied());
-    let mut source_files = HEADER.to_owned();
-    for (construct, entries) in constructs {
-        let _ = write!(source_files, "\n### {construct}\n");
+    let split = constructs
+        .iter()
+        .position(|(construct, _)| *construct == FIRST_ON_PAGES)
+        .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
+    let mut directives = HEADER.to_owned();
+    let mut source_pages = HEADER.to_owned();
+    let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
+    for (i, (construct, entries)) in constructs.into_iter().enumerate() {
+        let (out, page) = if i < split {
+            (&mut directives, "directives")
+        } else {
+            (&mut source_pages, "pages")
+        };
+        let _ = write!(out, "\n## {construct}\n");
         for (entry, condition) in entries {
-            write_entry(&mut source_files, entry, Some(condition), anchors);
+            page_of.insert(&entry.code, page);
+            write_entry(out, entry, Some(condition), pages);
         }
     }
 
     let mut content_model = HEADER.to_owned();
     for (group, title) in RULE_GROUPS {
-        let _ = write!(content_model, "\n### {title}\n");
+        let _ = write!(content_model, "\n## {title}\n");
         for entry in active
             .iter()
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
-            write_entry(&mut content_model, entry, None, anchors);
+            page_of.insert(&entry.code, "content-model");
+            write_entry(&mut content_model, entry, None, pages);
         }
     }
 
-    let mut retired = HEADER.to_owned();
-    let gone: Vec<&Entry> = registry
-        .entries
+    let mut content_checks = HEADER.to_owned();
+    for (area, title) in AREAS {
+        let _ = write!(content_checks, "\n## {title}\n");
+        for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
+            page_of.insert(&entry.code, "content-checks");
+            write_entry(&mut content_checks, entry, entry.when.as_deref(), pages);
+        }
+    }
+    let unlisted: Vec<&str> = active
         .iter()
-        .filter(|e| e.retired.is_some())
+        .filter_map(|e| e.area.as_deref())
+        .filter(|a| !AREAS.iter().any(|(area, _)| area == a))
         .collect();
-    if !gone.is_empty() {
-        retired.push_str(
-            "\n## Retired\n\nNo longer reported. Their codes and names aren't reused.\n\n",
-        );
-        for entry in gone {
-            let _ = writeln!(
-                retired,
-                "- {} `{}`: {}",
-                entry.code,
-                entry.slug,
-                entry.retired.as_deref().unwrap_or_default()
-            );
-        }
-    }
+    assert!(unlisted.is_empty(), "areas not in AREAS: {unlisted:?}");
 
+    let all = index(active.iter().copied(), &page_of);
     vec![
         ("diagnostics-index.md".to_owned(), all),
-        ("diagnostics-source-files.md".to_owned(), source_files),
+        ("diagnostics-directives.md".to_owned(), directives),
+        ("diagnostics-pages.md".to_owned(), source_pages),
         ("diagnostics-content-model.md".to_owned(), content_model),
-        ("diagnostics-retired.md".to_owned(), retired),
+        ("diagnostics-content-checks.md".to_owned(), content_checks),
     ]
 }
 
 /// The index: a table of the diagnostics, in code order, each linked to its
-/// entry on the reference page.
-fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
-    let mut out = format!("{HEADER}\n| Code | Name | Severity | Level |\n|---|---|---|---|\n");
+/// entry on its page of the reference, whose anchor is its code.
+fn index<'a>(entries: impl Iterator<Item = &'a Entry>, page_of: &BTreeMap<&str, &str>) -> String {
+    let mut out = format!(
+        "{HEADER}\n| Code | Name | Severity | Level | Next step |\n|---|---|---|---|---|\n"
+    );
     for entry in entries {
         let _ = writeln!(
             out,
-            "| [{code}](../reference/diagnostics.md#{anchor}) | `{slug}` | {severity} | {level} |",
+            "| [{code}](../checks/diagnostics/{page}.md#{anchor}) | `{slug}` | {severity} | {level} | {next} |",
             code = entry.code,
-            anchor = heading_anchor(entry),
+            page = page_of[entry.code.as_str()],
+            anchor = entry.code,
             slug = entry.slug,
             severity = severity(entry.severity),
             level = level(entry.level),
+            next = next(entry),
         );
     }
     out
@@ -280,26 +529,34 @@ fn model_group(entry: &Entry) -> &str {
     entry.group.as_deref().unwrap_or("names")
 }
 
-fn write_entry(
-    out: &mut String,
-    entry: &Entry,
-    condition: Option<&str>,
-    anchors: &BTreeMap<String, String>,
-) {
-    let section = match anchors.get(&entry.spec) {
+fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
+    let section = match pages.spec.get(&entry.spec) {
         Some(anchor) => format!(
             "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
             entry.spec
         ),
         None => format!("SPEC §{}", entry.spec),
     };
+    let configurable = if entry.configurable {
+        " · configurable in `[checks]`"
+    } else {
+        ""
+    };
+    let acknowledged = entry
+        .place
+        .as_deref()
+        .and_then(place_words)
+        .map(|words| format!(" · acknowledged {words}"))
+        .unwrap_or_default();
     let _ = write!(
         out,
-        "\n#### {} `{}`\n\n{} · {} level · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
+        entry.code,
         severity(entry.severity),
         level(entry.level).to_lowercase(),
+        next(entry),
     );
     if let Some(condition) = condition {
         let _ = write!(
@@ -318,13 +575,158 @@ fn write_entry(
         "**Fix:** {}",
         escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
     );
+    let section = entry
+        .reference
+        .as_ref()
+        .and_then(|r| Some((r, pages.sections.get(r)?)));
+    if let Some((target, (heading, page))) = section {
+        let _ = write!(
+            out,
+            "\n**Read more:** [{}](../{target}) in the {page}.\n",
+            escape_braces(heading)
+        );
+    }
+}
+
+/// The reference pages a diagnostic's entry can send its reader on to, and
+/// what the entry calls each: a page, from the content root, and its parts,
+/// as `content-model/checks.md`.
+const REFERENCES: [(&str, &str); 2] = [
+    ("writing/directives.md", "directive reference"),
+    ("content-model/index.md", "`ascribe.toml` reference"),
+];
+
+/// The files of the reference pages, relative to `docs/content/`, each with
+/// what an entry calls it.
+fn reference_files() -> Vec<(String, &'static str)> {
+    let mut files = Vec::new();
+    for (first, page) in REFERENCES {
+        for file in with_parts(&format!("docs/content/{first}")) {
+            let file = file.trim_start_matches("docs/content/").to_owned();
+            files.push((file, page));
+        }
+    }
+    files
+}
+
+/// What an entry links to: SPEC.md's numbered sections, and the reference
+/// pages' headings.
+struct Pages {
+    /// SPEC.md's section anchors, by number.
+    spec: BTreeMap<String, String>,
+    /// Each heading of the reference pages, by `<file>#<id>`: its text,
+    /// without a section number, and the page's name.
+    sections: BTreeMap<String, (String, &'static str)>,
+}
+
+impl Pages {
+    fn load() -> Pages {
+        let mut sections = BTreeMap::new();
+        for (file, page) in reference_files() {
+            let text = expanded(&format!("docs/content/{file}"));
+            for (id, heading) in headings(&text) {
+                sections.insert(format!("{file}#{id}"), (heading, page));
+            }
+        }
+        Pages {
+            spec: spec_anchors(&read("SPEC.md")),
+            sections,
+        }
+    }
+}
+
+/// A page's text with each `@include` of a whole file, outside fenced code,
+/// replaced by that file, so the headings a fragment brings in are the
+/// page's.
+fn expanded(path: &str) -> String {
+    let dir = std::path::Path::new(path).parent().unwrap();
+    let mut out = String::new();
+    let mut fenced = false;
+    for line in read(path).lines() {
+        let trimmed = line.trim_start();
+        fenced ^= trimmed.starts_with("```") || trimmed.starts_with("~~~");
+        match line.strip_prefix("@include: ") {
+            Some(target) if !fenced && !target.contains('#') => {
+                let target = dir.join(target.trim());
+                out.push_str(&expanded(&target.to_string_lossy().replace('\\', "/")));
+            }
+            _ => {
+                out.push_str(line);
+                out.push('\n');
+            }
+        }
+    }
+    out
+}
+
+/// A page's headings below its title, outside fenced code, as their ids and
+/// their text without a section number. A heading's id is the `@id` on the
+/// line below it, or else its slug.
+fn headings(page: &str) -> Vec<(String, String)> {
+    let lines: Vec<&str> = page.lines().collect();
+    let mut out = Vec::new();
+    let mut fence: Option<String> = None;
+    for (i, line) in lines.iter().enumerate() {
+        let marker: String = line
+            .chars()
+            .take_while(|c| matches!(c, '`' | '~'))
+            .collect();
+        if marker.len() >= 3 {
+            match &fence {
+                None => fence = Some(marker),
+                Some(open) if line.trim_end() == marker && marker.starts_with(open.as_str()) => {
+                    fence = None;
+                }
+                Some(_) => {}
+            }
+            continue;
+        }
+        if fence.is_some() {
+            continue;
+        }
+        let hashes = line.chars().take_while(|c| *c == '#').count();
+        let Some(text) = line.get(hashes..).and_then(|t| t.strip_prefix(' ')) else {
+            continue;
+        };
+        if hashes < 2 {
+            continue;
+        }
+        let id = lines
+            .get(i + 1)
+            .and_then(|next| next.strip_prefix("@id"))
+            .and_then(|rest| rest.rsplit_once(": "))
+            .map_or_else(|| slug(text), |(_, id)| id.trim().to_owned());
+        let unnumbered = match text.split_once(' ') {
+            Some((number, rest)) if number.chars().all(|c| c.is_ascii_digit() || c == '.') => rest,
+            _ => text,
+        };
+        out.push((id, unnumbered.to_owned()));
+    }
+    out
+}
+
+/// Where a `review` diagnostic's problem is acknowledged, for its entry in
+/// the reference.
+fn place_words(place: &str) -> Option<&'static str> {
+    match place {
+        "page" => Some("in the page's `intended` frontmatter"),
+        "block" => Some("with `@intended` above the block"),
+        "entry" => Some("in `[[intended]]`"),
+        _ => None,
+    }
 }
 
 fn severity(severity: Severity) -> &'static str {
     match severity {
         Severity::Error => "Error",
         Severity::Warning => "Warning",
+        Severity::Advice => "Advice",
     }
+}
+
+/// An entry's kind of next step, as the reference names it.
+fn next(entry: &Entry) -> String {
+    entry.next.map(|n| n.to_string()).unwrap_or_default()
 }
 
 fn level(level: Level) -> &'static str {
@@ -358,22 +760,62 @@ fn message(template: &str) -> String {
     template.replace("{{", "{").replace("}}", "}")
 }
 
-/// Text whose relative links, written from `reference/` as the registry's
-/// are, resolve from `_generated/` instead, where the fragment is.
+/// Text whose relative links, written from the content root as the
+/// registry's are, resolve from `_generated/` instead, where the fragment is.
+/// A destination inside a code span is an example, not a link, and stays as
+/// written.
 fn rebase_links(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
+    let mut fence = 0;
     let mut rest = text;
-    while let Some(at) = rest.find("](") {
-        let (before, target) = rest.split_at(at + 2);
-        out.push_str(before);
-        let dest = target.split(')').next().unwrap_or_default();
-        if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains("://")) {
-            out.push_str("../reference/");
+    while let Some(c) = rest.chars().next() {
+        if c == '`' {
+            let run = rest.len() - rest.trim_start_matches('`').len();
+            fence = code_span(fence, run);
+            out.push_str(&rest[..run]);
+            rest = &rest[run..];
+            continue;
         }
-        rest = target;
+        if fence == 0
+            && let Some(target) = rest.strip_prefix("](")
+        {
+            out.push_str("](");
+            let dest = target.split(')').next().unwrap_or_default();
+            if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains("://")) {
+                out.push_str("../");
+            }
+            rest = target;
+            continue;
+        }
+        out.push(c);
+        rest = &rest[c.len_utf8()..];
     }
-    out.push_str(rest);
     out
+}
+
+#[test]
+fn rebase_links_leaves_a_link_in_a_code_span_as_written() {
+    assert_eq!(
+        rebase_links(
+            "Write `![Alt](image.png){width=600}`, as [the guide](writing/images.md) says."
+        ),
+        "Write `![Alt](image.png){width=600}`, as [the guide](../writing/images.md) says."
+    );
+    assert_eq!(
+        rebase_links("``a `](x.md)` b`` then [c](y.md)"),
+        "``a `](x.md)` b`` then [c](../y.md)"
+    );
+}
+
+/// Whether text is inside a code span after a run of `run` backticks: the
+/// length of the run that opened the span, or 0 outside one. A span closes
+/// only on a run as long as the one that opened it.
+fn code_span(fence: usize, run: usize) -> usize {
+    match fence {
+        0 => run,
+        open if open == run => 0,
+        open => open,
+    }
 }
 
 /// Text with a backslash before each `{` and `<` outside code spans, so a
@@ -390,11 +832,7 @@ fn escape_braces(text: &str) -> String {
                 chars.next();
                 run += 1;
             }
-            fence = match fence {
-                0 => run,
-                open if open == run => 0,
-                open => open,
-            };
+            fence = code_span(fence, run);
             out.extend(std::iter::repeat_n('`', run));
             continue;
         }
@@ -404,11 +842,6 @@ fn escape_braces(text: &str) -> String {
         out.push(c);
     }
     out
-}
-
-/// The anchor of an entry's heading, as GitHub computes it.
-fn heading_anchor(entry: &Entry) -> String {
-    slug(&format!("{} {}", entry.code, entry.slug))
 }
 
 /// SPEC.md's numbered section headings, by number: `3.3` to its anchor.

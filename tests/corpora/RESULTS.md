@@ -58,6 +58,7 @@ Synthetic project (3,000 pages, 100 fragments, 60 images), median of the runs:
 | in process: index 194 ms; resolve `site` 144 ms; emit plain 56 ms | |
 | language server: load and first diagnostics | 755 ms |
 | language server: page keystroke, fragment keystroke | 3.0 ms, 9.0 ms |
+| language server: a page written on disk, to its diagnostics (2026-10-09) | 3.3 ms |
 | incremental: edit one page (`apply`) | 85 µs median; with a snapshot held 3.0 ms |
 | incremental: edit a fragment 30 pages include, rename its heading | 108 µs, 195 µs |
 | incremental: a model change re-indexes all 3,100 files | 163 ms |
@@ -220,7 +221,7 @@ What changed, in pull request order:
    only those pages; any other page resolves the same on both sides. A
    change to the content model, or to a page the glossary links to, still
    compares every page. Nothing is taken from `git`'s listing.
-   `crates/ascribe-diff/tests/reach.rs` checks, on random pairs of
+   `crates/ascribe-diff/tests/all/reach.rs` checks, on random pairs of
    versions, that the result is exactly what comparing every page gives.
    The comparison went from 475 ms to 13 ms.
 2. **Each code file once, through one `git` process,** kept open for the
@@ -336,3 +337,31 @@ Not taken:
 pages, as `lsp/completion-3000` with `ascribe_synthetic::report::record`. The
 workflow runs it, and `baselines/perf.json` has its 50 ms target and its
 runner baseline.
+
+## One file
+
+`ascribe check <one file> --format json`, as an agent's hook runs it after an
+edit, measured by the `perf` bench (`check-one/*`) on 2026-10-09 on the cloud
+container described above (Intel Xeon @ 2.10 GHz, 4 logical cores), where the
+whole Elastic check takes 3.8 s against 3.2 s on the runner. Median of five
+runs. The fragment is one the bench adds, which the first 100 pages include.
+
+| | synthetic, every build | synthetic, `--editor-build` | Elastic, every build | Elastic, `--editor-build` |
+|---|---|---|---|---|
+| a clean page | 677 ms | 258 ms | 3.71 s | 1.29 s |
+| a page with an error | 667 ms | 258 ms | 3.94 s | 1.31 s |
+| a fragment 100 pages include | 670 ms | 279 ms | 3.74 s | 1.40 s |
+
+Without `--editor-build`, naming a file only filters the report: the whole
+project is checked, every build, so the time is the whole check's. With
+`--editor-build` and files named, only those files' file-level checks run, and
+the page-level checks of the editor's build for the pages that are the files or
+include them (`ascribe_check::diagnose_editor_build`).
+
+What's left is loading the project and indexing all of it, which the page-level
+checks need for links and ids: on Elastic, 70 ms to load and 914 ms to index in
+process. So a single-file check with `--editor-build` is **under half a second
+on the synthetic project, and not on the Elastic sample** (1.3 s here, likely
+about 1.1 s on the runner). Getting it there takes not indexing every file
+each run: a cache of the index, or a check server that stays running, which the
+agents plan lists for later.

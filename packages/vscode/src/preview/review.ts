@@ -510,16 +510,24 @@ export class ReviewController implements vscode.Disposable {
   }
 
   private async changes(server: ProjectServer): Promise<ChangesResult | undefined> {
-    const build = this.host.previewBuild(server.project.folder);
     try {
-      return (await server.request(
-        CHANGES_REQUEST,
-        build === undefined ? {} : { build },
-      )) as ChangesResult;
+      return await this.changesOf(server);
     } catch (error) {
       server.reportFeatureError("review", error);
       return undefined;
     }
+  }
+
+  /**
+   * The project's changed pages in the preview's build, against the base.
+   * Rejects when the server can't say; shows nothing.
+   */
+  async changesOf(server: ProjectServer): Promise<ChangesResult> {
+    const build = this.host.previewBuild(server.project.folder);
+    return (await server.request(
+      CHANGES_REQUEST,
+      build === undefined ? {} : { build },
+    )) as ChangesResult;
   }
 
   dispose(): void {

@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@ascribed/review/github": `${review}github/index.ts`,
       "@ascribed/review/place": `${review}place/index.ts`,
+      "@ascribed/review/prompt": `${review}prompt/index.ts`,
     },
   },
   test: {

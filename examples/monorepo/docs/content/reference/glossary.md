@@ -1,4 +1,5 @@
 ---
+type: reference
 title: Glossary
 description: The terms these docs use.
 since: "2.0"

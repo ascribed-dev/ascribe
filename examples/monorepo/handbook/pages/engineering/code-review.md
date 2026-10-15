@@ -1,4 +1,5 @@
 ---
+type: page
 title: Code review
 description: How we review changes, and what reviewers look for.
 owner: platform
