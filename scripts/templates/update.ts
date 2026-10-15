@@ -2,7 +2,7 @@
 // release tag newer than the pin in upstream.toml, it moves the pin, writes
 // the copies again with convert.ts, makes examples/templates again with
 // `ascribe templates eject`, and writes the description of a pull request
-// saying what changed (project-docs/page-templates/phase-6-upstream.md).
+// saying what changed (https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/phase-6-upstream.md).
 // .github/workflows/templates.yml runs it every week and opens the pull
 // request; run here, it changes the working tree and nothing else.
 //

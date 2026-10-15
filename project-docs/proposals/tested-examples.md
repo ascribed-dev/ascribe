@@ -2,7 +2,7 @@
 
 A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Code examples tied to tested code](../reports/Code%20examples%20tied%20to%20tested%20code.md).
 
-The plan for building it is in [tested-examples/](../tested-examples/README.md).
+It's built: see [Show what an example was tested with](../../docs/content/examples/tested.md). The plan that built it was [tested-examples/](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/tested-examples/README.md), removed once it was done.
 
 ## The goal
 

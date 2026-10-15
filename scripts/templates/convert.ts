@@ -1,7 +1,7 @@
 // Ascribe's page templates, converted from The Good Docs Project's, at the
 // release pinned in upstream.toml. Nobody edits a converted file: a change to
 // one is a change to this script, to a rule in rules.toml, or to their
-// repository (project-docs/page-templates/README.md, decision 1).
+// repository (https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md, decision 1).
 //
 //   node scripts/templates/convert.ts           rewrite the copies
 //   node scripts/templates/convert.ts --check   list the copies that are stale
