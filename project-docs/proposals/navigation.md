@@ -18,7 +18,13 @@ Ascribe's content model has no order and no grouping. Five things work around th
 - **The [versions plan](../versions/README.md)'s archive** has to write a sidebar and a contents page for itself, "from the folders, the pages' titles, and their headings, in path order", and says it will use navigation when the model has it.
 - **The editor's Pages view** lists pages by content type, and says of its orphans: "Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error."
 
-Four of the five treat a folder as a section, and `[listing.folders]` sets rules by folder too. The fifth, Ascribe's own site, grouped by folder until the docs took the page types, and now groups by type across folders: the one sidebar in the repository that the rule below can't write as it stands. Either the docs' files move into a folder for each type, as the [page templates plan](https://github.com/ascribed-dev/ascribe/blob/180eee83/project-docs/page-templates/README.md)'s `files = ["<name>/**"]` has it, or a section has to be something other than a folder. That's decided before a plan, not here.
+Four of the five treat a folder as a section, and `[listing.folders]` sets rules by folder too. The fifth, Ascribe's own site, grouped by folder until the docs took the page types, and now groups by type across folders: the one sidebar in the repository that the rule below can't write as it stands.
+
+That's settled, on the side of the rule (below, 6): a section is a folder, a folder is a feature, and every type of page about the feature is in it. Grouping by type was an oversight. So three things outside this proposal are out of line with it, and each is changed apart from it:
+
+- **A page can't say its own type.** A type applies to a page by where its file is (`files`, or the default type), so a how-to and a reference page in one folder can only be told apart by listing files one by one, as `docs/ascribe.toml` does. Each page will declare its type in its frontmatter.
+- **The starter set gives each type a folder.** `ascribe templates eject` writes `files = ["how-to/**"]`, which makes a new project's folders its types, and its sidebar the grouping this proposal rejects.
+- **Ascribe's own folders are types under another name.** `guides/`, `reference/`, and `contracts/` split one feature four ways: review's how-to is in `guides/`, its troubleshooting in `guides/review/`, its command in `reference/cli/diff.md`, and its JSON in `contracts/json-reports/diff.md`. The docs are to be regrouped by feature.
 
 The surface audit found the docs' own structure wanting (its finding 28) and left this proposal owed.
 
@@ -27,6 +33,8 @@ The surface audit found the docs' own structure wanting (its finding 28) and lef
 ### A section is a folder
 
 A project's sections are its content root's folders, and a page belongs to the folder it's in. A page can't appear in another section: to move it, move the file.
+
+A folder is for a feature or a subject, not for a kind of page. A reader looking into review wants its tutorial, its how-to, its reference, and its troubleshooting in one place, and doesn't care which of those each page is. Grouping by content type ships the docs' own filing system to people who never asked about it. So a section mixes types, and a type is something a page in it has, not somewhere it lives.
 
 That one rule is what keeps the rest small. Navigation never says where a page goes. It says only what order things come in, and what a section is called.
 
@@ -37,9 +45,18 @@ That one rule is what keeps the rest small. Navigation never says where a page g
 
 ### With nothing written, there's still an order
 
-A project that has never thought about navigation gets one: sections in path order, the root's pages first, each section's `index.md` first within it, and the rest by title.
+A project that has never thought about navigation gets one: sections in path order, the root's pages first, and within a section its own page first, then the rest by type, in the order `ascribe.toml` declares its types, and by title within a type.
 
-A section's label is the title of its `index.md`, or the folder's name, with its first letter capitalized, when it has none. A page's label is its title.
+Ordering by type inside a section is what's left of grouping by type, and it's the useful part: a section reads tutorial, how-tos, concepts, reference, troubleshooting, when that's the order the types are declared in, without any of them being sent to another part of the site. A project with no types gets title order.
+
+A section's label is the title of its own page, or the folder's name, with its first letter capitalized, when it has none. A page's label is its title.
+
+**A section's own page** is one of two files, and a section has at most one:
+
+- `index.md` in the folder; or
+- a page beside the folder with the folder's name, as `reference/cli.md` is beside `reference/cli/`. That's how a long page is split into a folder of its parts, and Ascribe's docs do it six times.
+
+A folder with both is an error at the second, since two pages would claim one section.
 
 That's enough for a reference section forever, and enough for any project on its first day.
 
@@ -91,16 +108,18 @@ One order, and every reader takes it from the same place:
 
 | Reader | Gets |
 |---|---|
-| A site | The sections, in order, each with its label and its pages, each with its label and route. In the JSON output, and in a file in the site output beside the page records, which `@ascribed/astro` reads |
+| A site | The sections, in order, each with its label, its own page when it has one, and its pages, each with its label, its route, and its type. In the JSON output, and in a file in the site output beside the page records, which `@ascribed/astro` reads |
 | `@ascribed/astro` | `sidebar()` from the project's navigation, with no list of the site's own, and previous and next for a page |
 | `llms.txt` | Its sections and their order |
 | An archive | Its sidebar, its contents page, and its previous and next |
 | The editor | The Pages view, in navigation order |
 | `ascribe agents index` | The same sections as `llms.txt`, as it has today |
 
+A page's type is there for a sidebar to show, not to group by: a site can put "How-to" or "Reference" beside an entry, or leave it out.
+
 For each build, a page the build doesn't publish isn't in its navigation, and a section with no published pages isn't either. There's one navigation for a project, and a build shows what it has of it.
 
-The starter stops writing `src/nav.ts`. A site that has one keeps working: it's the site's own list, and `sidebar()` still takes one. Ascribe's own site drops its list and its test, and gets `ascribe.nav` with the order it has today.
+The starter stops writing `src/nav.ts`. A site that has one keeps working: it's the site's own list, and `sidebar()` still takes one. Ascribe's own site drops its list and its test once its docs are regrouped by feature, and gets `ascribe.nav` for the order of its sections.
 
 ## Checking
 
@@ -108,6 +127,7 @@ The starter stops writing `src/nav.ts`. A site that has one keeps working: it's 
 |---|---|
 | `pages` names a file that isn't a page of that folder, or has a `/` in it | An error, in `ascribe.nav`, with the closest page's name as a fix |
 | `folder` isn't a folder with pages | An error |
+| A folder with an `index.md` and a page of its name beside it | An error at the second |
 | A folder named twice, or a page named twice | An error at the second |
 | A page that isn't listed, in a section that lists pages | Advice, with a fix that adds it at the end of the list |
 | A section that isn't listed, in a file that lists sections | Advice, with the same kind of fix |
@@ -154,6 +174,7 @@ Renaming or moving a page, from the editor or with `ascribe rename`, updates `as
 ## What this leaves out
 
 - **A page in two sections,** or in one that isn't its folder.
+- **A section for a content type.** A project that wants one makes a folder for it, and nothing stops that. Ascribe doesn't offer it, and its own starter set won't.
 - **An entry that isn't a page:** a link to another site, a heading with no folder behind it, a divider.
 - **A different order for each build.** A build shows fewer pages, in the same order.
 - **Weights in frontmatter.** Order is a relation between pages, and no one file shows it. A drag would rewrite several.
@@ -164,10 +185,13 @@ Renaming or moving a page, from the editor or with `ascribe rename`, updates `as
 
 ## Settled
 
-The five questions this proposal left open, answered by the maintainer on 12 October 2026.
+The five questions this proposal left open, answered by the maintainer on 12 October 2026, and three more from the same day, after the docs' sidebar was found grouped by type.
 
 1. **The file is `ascribe.nav`.** It follows `ascribe.permalinks` and `ascribe.lock`: TOML, beside `ascribe.toml`, named for what it holds. Highlighting is the extension's to give, not the name's: it contributes none of the three to the TOML language today, and one `filenames` entry fixes all three at once. An editor without the extension shows them plain, as it does the other two, and that's accepted.
 2. **A page that isn't listed is advice, in a section that lists pages, and the fix is safe.** Appending the page at the end of the list, in title order among the unlisted, gives exactly the order the default already shows, so applying the fix changes nothing a reader sees: `ascribe check --fix` and the agents' hook settle it, and nobody has to drag. A section with no `pages` reports nothing, so a project that never orders a section never hears about it. Without the advice, a hand-ordered section grows a tail nobody placed and nothing says so.
 3. **Sections nest as folders do, with no cap and nothing reported.** The outputs carry the tree, `sidebar()` hands it to a site whole, and how deep a sidebar draws it is the site's design, which Ascribe doesn't hold an opinion on. `llms.txt` keeps its one level, a section for each top folder as today, with nested sections folded into their parent in navigation order, since an index is a list.
-4. **A section's `index.md` is the section's own page.** It's carried as the section's `page`, never in `pages`, always first, and its title is the section's default label. Whether a sidebar links the section's heading to it or lists it first is the site's drawing, and `sidebar()` gives a site what it needs for either. The root section's `index.md` is the home page, by the same rule. Naming it in `pages` is the error any name that isn't a page of the folder gets.
+4. **A section's own page is its `index.md`, or the page beside the folder with the folder's name** (amended by 7). It's carried as the section's `page`, never in `pages`, always first, and its title is the section's default label. Whether a sidebar links the section's heading to it or lists it first is the site's drawing, and `sidebar()` gives a site what it needs for either. The root section's `index.md` is the home page, by the same rule. Naming it in `pages` is the error any name that isn't a page of the folder gets.
 5. **The root section's label is "Start" unless `label` says otherwise.** Every other section takes its `index.md`'s title, and the root can't: a home page's title names the whole site, not a group. "Start" is what the starter and Ascribe's site use. `llms.txt` takes the same word, so its "Pages" heading becomes "Start" for every project with a plain output: an output change accepted with the change and named file by file, since one label from one place is the point.
+6. **A section is a folder, and a folder is a feature.** Every type of page about a feature is in its folder. Grouping the docs' sidebar by content type was an oversight: it's like shipping an org chart, the docs' internal filing shown to readers who don't care about it, and it sends someone to another part of the site for related content. What follows from it is outside this proposal: each page declares its type in its frontmatter, the starter set stops giving each type a folder, and Ascribe's own docs are regrouped by feature.
+7. **A page beside a folder of its name is that section's own page,** as `index.md` in the folder is. The docs split their long pages that way (decision #394), and a nested section made by a split would otherwise have no page and no label. A folder with both is an error.
+8. **A section's default order is by type, then title, and a site is given each page's type.** Types come in the order `ascribe.toml` declares them. It keeps what was useful about the grouping, a reader finding the tutorial before the reference, inside a section and not across the site.
