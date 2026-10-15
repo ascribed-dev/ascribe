@@ -23,7 +23,8 @@
 //! Each entry has the attributes of a `<ascribe-availability-target>` and its
 //! text. `variant` passes through as written. `listing` is left out: the
 //! page's record in `_ascribe/pages.json` holds it, as every output reads
-//! it.
+//! it. So is `replaces`, a source path a layout can't use:
+//! `_ascribe/versions.json` says which page replaces which.
 //!
 //! A field that sets `inline = "code"` is written as its plain text, for a
 //! layout's `<title>`, search, and sorting, and its formatted form goes under
@@ -45,7 +46,7 @@
 //! ```
 
 use ascribe_model::{Listing, Segment};
-use ascribe_resolve::ResolvedPage;
+use ascribe_resolve::{REPLACES, ResolvedPage};
 use serde_yaml_ng::{Mapping, Value};
 
 use super::blocks::availability_target;
@@ -76,6 +77,7 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
         }
     }
     map.remove(Listing::KEY);
+    map.remove(REPLACES);
     let key = Value::String("formatted".to_owned());
     map.remove(&key);
     if !page.formatted.is_empty() {

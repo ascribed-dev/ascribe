@@ -1,5 +1,6 @@
 //! The Quill project (`examples/quill`) resolves under all four of its
-//! builds (three declared, one of them versioned with two lines) with no problems (so it indexes and expands with none too), and
+//! builds (three declared, one of them versioned with two lines) with no problems (so it indexes and expands with none too), its
+//! upgrade page's links lead out of 3.4 and to the page that replaces, and
 //! its index says two things about the install page: it includes the
 //! prerequisites fragment, and its source ids are its headings'.
 
@@ -27,16 +28,22 @@ fn resolve_all(project: &Project, build: &str) -> Vec<ResolvedPage> {
     let b = project.model().build(build).expect("a build");
     let resolved =
         project.resolve_build(b, &DefaultRouter::from_consumer(&project.model().consumer));
-    // Only the page self-managed 3.5 added is left out, of every build but 3.5's.
+    // The pages only some lines of self-managed have are left out of the
+    // builds that don't.
     let dropped: Vec<String> = resolved
         .dropped
         .iter()
         .map(|d| d.path.to_string())
         .collect();
-    let expected: &[&str] = if build == "site" {
-        &[]
-    } else {
-        &["webhooks.md"]
+    let expected: &[&str] = match build {
+        "site" => &["configure-legacy.md"],
+        "site@3.4" => &["configure.md", "webhooks.md"],
+        _ => &[
+            "configure-legacy.md",
+            "configure.md",
+            "upgrade.md",
+            "webhooks.md",
+        ],
     };
     assert_eq!(dropped, expected, "{build}");
     resolved.pages
@@ -55,10 +62,24 @@ fn quill_resolves_under_every_build_with_no_problems() {
     for name in &builds {
         let pages = resolve_all(&project, name);
         let paths: Vec<String> = pages.iter().map(|p| p.path.to_string()).collect();
-        let mut expected = vec!["install-agent.md", "keys.md", "quickstart.md"];
-        if name == "site" {
-            expected.push("webhooks.md");
-        }
+        let expected: &[&str] = match name.as_str() {
+            "site" => &[
+                "configure.md",
+                "install-agent.md",
+                "keys.md",
+                "quickstart.md",
+                "upgrade.md",
+                "webhooks.md",
+            ],
+            "site@3.4" => &[
+                "configure-legacy.md",
+                "install-agent.md",
+                "keys.md",
+                "quickstart.md",
+                "upgrade.md",
+            ],
+            _ => &["install-agent.md", "keys.md", "quickstart.md"],
+        };
         assert_eq!(paths, expected, "{name}");
         for page in &pages {
             assert!(
@@ -219,4 +240,47 @@ fn quills_source_ids_match_the_headings() {
         .collect();
     assert!(ids.contains(&"install-agent"), "{ids:?}");
     assert!(ids.contains(&"prerequisites"), "{ids:?}");
+}
+
+/// The page targets of the links on a page, in order: each page, its id,
+/// and the line a link out leads to.
+fn page_links(page: &ResolvedPage) -> Vec<(String, Option<String>, Option<String>)> {
+    let mut out = Vec::new();
+    page.visit(&mut |b| {
+        for link in &b.links {
+            if let LinkTarget::Page { page, id, line, .. } = &link.target {
+                out.push((page.to_string(), id.clone(), line.clone()));
+            }
+        }
+    });
+    out
+}
+
+#[test]
+fn the_upgrade_page_links_out_of_3_4_and_to_the_page_that_replaces() {
+    let project = quill();
+    let upgrade = |build: &str| {
+        resolve_all(&project, build)
+            .into_iter()
+            .find(|p| p.path.as_str() == "upgrade.md")
+            .expect("the upgrade page")
+    };
+    let id = Some("set-the-api-key".to_owned());
+    // 3.5 has both pages.
+    assert_eq!(
+        page_links(&upgrade("site")),
+        [
+            ("webhooks.md".to_owned(), None, None),
+            ("configure.md".to_owned(), id.clone(), None),
+        ]
+    );
+    // 3.4 links out to webhooks in 3.5, and to the page configure.md
+    // replaces, whose heading has the same id.
+    assert_eq!(
+        page_links(&upgrade("site@3.4")),
+        [
+            ("webhooks.md".to_owned(), None, Some("3.5".to_owned())),
+            ("configure-legacy.md".to_owned(), id, None),
+        ]
+    );
 }

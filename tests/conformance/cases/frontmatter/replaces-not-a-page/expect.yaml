@@ -1,0 +1,12 @@
+description: >-
+  `replaces` is read as a link destination is, and names a page (SPEC §2.1):
+  one that doesn't exist, a fragment, a heading, and an external URL are each
+  an error at the value. A path from the content root names a page too.
+spec: ["2.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: replaces-not-a-page, file: missing.md, line: 3}
+  - {slug: replaces-not-a-page, file: to-fragment.md, line: 3}
+  - {slug: replaces-not-a-page, file: to-heading.md, line: 3}
+  - {slug: replaces-not-a-page, file: to-url.md, line: 3}

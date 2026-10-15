@@ -58,6 +58,7 @@ mod availability;
 mod glossary;
 mod ids;
 mod inlines;
+mod lines;
 mod links;
 mod modes;
 mod permalinks;
@@ -65,7 +66,7 @@ mod phrases;
 mod router;
 mod tree;
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -162,6 +163,11 @@ pub struct BuildResolver<'p> {
     /// The page id of each heading of a staged page, by where it's written,
     /// so a link finds its target's heading without walking the page.
     headings: RefCell<BTreeMap<RelPath, Rc<HeadingTable>>>,
+    /// Every page's `replaces` that names a page, read once.
+    replacements: OnceCell<BTreeMap<RelPath, RelPath>>,
+    /// Resolvers for the other lines of a versioned build, by name, made
+    /// when a link leads out of this line.
+    others: RefCell<HashMap<String, Rc<BuildResolver<'p>>>>,
 }
 
 impl<'p> BuildResolver<'p> {
@@ -176,6 +182,8 @@ impl<'p> BuildResolver<'p> {
             slugger,
             staged: RefCell::new(BTreeMap::new()),
             headings: RefCell::new(BTreeMap::new()),
+            replacements: OnceCell::new(),
+            others: RefCell::new(HashMap::new()),
         }
     }
 
@@ -185,6 +193,10 @@ impl<'p> BuildResolver<'p> {
 
     pub(crate) fn router(&self) -> &'p dyn Router {
         self.router
+    }
+
+    pub(crate) fn build_def(&self) -> &'p Build {
+        self.build
     }
 
     pub(crate) fn build_name(&self) -> &str {
@@ -283,6 +295,7 @@ impl<'p> BuildResolver<'p> {
                 .map(|(_, problem)| problem),
         );
         problems.extend(mode_problems);
+        problems.extend(self.replaces_problems(index));
         // A line shows no version from before the window.
         let mut page_availability = page_availability;
         modes::show_for_line(self.build, &mut blocks, &mut page_availability);

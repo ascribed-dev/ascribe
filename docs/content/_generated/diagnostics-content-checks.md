@@ -96,6 +96,32 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
 
+### ASC220 `link-into-older-line`
+@id {permalink=true}: ASC220
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+
+**When:** A link in the current line of a versioned build names a page the current line doesn't publish, and nothing takes its place there, so it leads to the page in an older line.
+
+**Message:** `{path}` isn't in the current line, so this link leads to it in \{line}; the current line usually needs a page in its place
+
+**Fix:** Give the current line a page in its place: mark the page so the current line has it, or write the page that takes its place and give it `replaces`. When the link is meant to lead to an older line, as on a page about migrating from it, leave it.
+
+**Read more:** [Links between lines](../writing/directives.md#links-between-lines) in the directive reference.
+
+### ASC221 `link-fragment-dropped`
+@id {permalink=true}: ASC221
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+
+**When:** A link to a heading leads, in a line of a versioned build, to a page that takes its target's place or to its target in another line, and the page it lands on has no heading with that id.
+
+**Message:** in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page
+
+**Fix:** Give the heading on the page it lands on the same id, with `@id`, or link to the page without `#` and the id.
+
+**Read more:** [Links between lines](../writing/directives.md#links-between-lines) in the directive reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`

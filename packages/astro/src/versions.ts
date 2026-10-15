@@ -28,6 +28,13 @@ export interface LineOutput extends Line {
   siteRoot: string;
 }
 
+/** A page's entry: its route in each line that has it, and the pages it replaces or is replaced by. */
+interface VersionsPage {
+  lines: Record<string, string>;
+  replaces?: string;
+  "replaced-by"?: string;
+}
+
 /** The file, as much as the integration reads. */
 interface VersionsFile {
   version: number;
@@ -36,7 +43,7 @@ interface VersionsFile {
     {
       target: string;
       lines: Line[];
-      pages: Record<string, { lines: Record<string, string> }>;
+      pages: Record<string, VersionsPage>;
     }
   >;
 }
@@ -109,18 +116,45 @@ export interface PageLine {
 /**
  * The lines that publish the page whose source path is `source`, newest
  * first, each with the page's route in it, in the versioned build whose
- * current line's site output is at `siteRoot`. Empty when the build isn't
- * versioned or no line has the page.
+ * current line's site output is at `siteRoot`. A line that doesn't have the
+ * page has the page that takes its place there, when one does: the page
+ * that replaces it, or that it replaces, nearest along the chain first.
+ * Empty when the build isn't versioned or no line has the page.
  */
 export function pageLines(siteRoot: string, source: string): PageLine[] {
   const { outputRoot, build } = outputOf(siteRoot);
   const versioned = readVersions(outputRoot)?.builds[build];
-  const routes = versioned?.pages[source]?.lines;
-  if (versioned === undefined || routes === undefined) return [];
+  if (versioned?.pages[source] === undefined) return [];
+  const pages = versioned.pages;
   return versioned.lines.flatMap((line) => {
-    const route = routes[line.line];
+    const route = inLine(pages, source, line.line);
     return route === undefined
       ? []
       : [{ line: line.line, current: line.status === "current", route }];
   });
+}
+
+/**
+ * The route, in `line`, of the page `source` or of the page nearest it along
+ * its `replaces` and `replaced-by`, the one that replaces it first.
+ */
+function inLine(
+  pages: Record<string, VersionsPage>,
+  source: string,
+  line: string,
+): string | undefined {
+  const seen = new Set([source]);
+  const queue = [source];
+  for (let at = queue.shift(); at !== undefined; at = queue.shift()) {
+    const page = pages[at];
+    const route = page?.lines[line];
+    if (route !== undefined) return route;
+    for (const next of [page?.["replaced-by"], page?.replaces]) {
+      if (next !== undefined && !seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return undefined;
 }

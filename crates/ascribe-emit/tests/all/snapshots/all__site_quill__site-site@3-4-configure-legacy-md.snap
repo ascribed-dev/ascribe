@@ -1,0 +1,26 @@
+---
+source: crates/ascribe-emit/tests/all/site_quill.rs
+expression: text
+---
+---
+type: page
+title: Configure the agent (3.4)
+description: Set the Quill agent's API key in quill.yaml, as 3.4 reads it.
+available:
+- target: self-managed
+  dimension: deployment
+  states:
+  - ga
+  - removed
+  versions:
+  - '3.4'
+  - '3.5'
+  text: self-managed (GA 3.4, removed 3.5)
+source: configure-legacy.md
+---
+
+The agent reads `quill.yaml`, beside it. 3.5 reads a folder instead: see [Upgrade the agent](/3.4/upgrade/).
+
+## Set the API key <ascribe-attributes id="set-the-api-key"></ascribe-attributes>
+
+Put the key under `key:` in `quill.yaml`. To make one, see [API keys](/3.4/keys/).

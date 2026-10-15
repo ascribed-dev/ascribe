@@ -13,7 +13,9 @@ use ascribe_model::{
     FieldRole, FrontmatterSchema, Listing, ListingLevel, Purpose, TYPE_KEY, TypeMatch,
     crawler_tokens, types, validate_frontmatter,
 };
-use ascribe_resolve::{AstroRouter, llms, pages};
+use ascribe_resolve::{
+    AstroRouter, Local, REPLACES, RefKind, Target, llms, pages, reference_target,
+};
 use ascribe_syntax::{BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
 use serde_yaml_ng::Value;
 
@@ -334,8 +336,8 @@ impl Ctx<'_> {
 
     /// The reserved keys on a page (SPEC §2.1): `available` holds an
     /// availability spec, `variant` a mapping of dimensions to values,
-    /// `permalink` a name with the characters an `@id` has, and `listing`
-    /// one of its values.
+    /// `permalink` a name with the characters an `@id` has, `replaces` the
+    /// path of a page, and `listing` one of its values.
     fn check_reserved_keys(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
         // SPEC §2.1: a value of the wrong shape is a type mismatch.
         let Value::Mapping(map) = value else { return };
@@ -368,6 +370,19 @@ impl Ctx<'_> {
                 other => self.mismatch("permalink", "a name, such as `cli-reference`", other, at),
             }
         }
+        if let Some(v) = map.get(REPLACES) {
+            let node = index.get(REPLACES);
+            let at = node.map_or(first_line, |n| n.value);
+            match v {
+                Value::String(written) => self.check_replaces(written, at),
+                other => self.mismatch(
+                    REPLACES,
+                    "the path of the page it replaces, such as `install-legacy.md`",
+                    other,
+                    at,
+                ),
+            }
+        }
         if let Some(v) = map.get(Listing::KEY) {
             let node = index.get(Listing::KEY);
             let at = node.map_or(first_line, |n| n.value);
@@ -391,6 +406,31 @@ impl Ctx<'_> {
                 }
             }
         }
+    }
+
+    /// A `replaces` that doesn't name a page (`replaces-not-a-page`): it's
+    /// read as a link destination is, and names a page without a heading.
+    fn check_replaces(&mut self, written: &str, at: Span) {
+        let target = reference_target(RefKind::Link, written, &[], &self.file.path, self.model);
+        let variant = match &target {
+            Target::Local(local) if local.source && local.fragment.is_some() => Some("heading"),
+            Target::Local(Local {
+                source: true,
+                path: Some(path),
+                ..
+            }) => match self.project.source_at(path) {
+                None => None,
+                Some(_) if self.model.is_fragment(path.as_str()) => Some("fragment"),
+                Some(_) => return,
+            },
+            _ => Some("other"),
+        };
+        let mut issue = Issue::new(diagnostics::REPLACES_NOT_A_PAGE, Location::new(self.id, at))
+            .with_arg("path", written.to_owned());
+        if let Some(variant) = variant {
+            issue = issue.with_variant(variant);
+        }
+        self.report(issue);
     }
 
     /// A page whose `listing` is looser than the rule of `[listing]` it's

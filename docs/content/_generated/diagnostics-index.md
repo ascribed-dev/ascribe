@@ -213,3 +213,9 @@
 | [ASC213](../checks/diagnostics/content-checks.md#ASC213) | `available-in-no-line` | Warning | File | write |
 | [ASC214](../checks/diagnostics/content-checks.md#ASC214) | `release-line-ended` | Advice | File | write |
 | [ASC215](../checks/diagnostics/content-model.md#ASC215) | `model-phrase-line` | Error | File | choose |
+| [ASC216](../checks/diagnostics/pages.md#ASC216) | `replaces-not-a-page` | Error | File | choose |
+| [ASC217](../checks/diagnostics/pages.md#ASC217) | `replaces-cycle` | Error | Page | write |
+| [ASC218](../checks/diagnostics/pages.md#ASC218) | `replaces-overlap` | Error | Page | write |
+| [ASC219](../checks/diagnostics/pages.md#ASC219) | `replaces-same-page` | Error | Page | write |
+| [ASC220](../checks/diagnostics/content-checks.md#ASC220) | `link-into-older-line` | Advice | Page | write |
+| [ASC221](../checks/diagnostics/content-checks.md#ASC221) | `link-fragment-dropped` | Advice | Page | write |

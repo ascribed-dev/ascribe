@@ -1,0 +1,230 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "ascribe-page",
+  "build": "site@3.4",
+  "path": "configure-legacy.md",
+  "route": "/3.4/configure-legacy/",
+  "site": "https://docs.quill.dev",
+  "title": "Configure the agent (3.4)",
+  "frontmatter": {
+    "available": "self-managed (ga 3.4, removed 3.5)",
+    "description": "Set the Quill agent's API key in quill.yaml, as 3.4 reads it.",
+    "title": "Configure the agent (3.4)",
+    "type": "page"
+  },
+  "availability": {
+    "text": "self-managed (ga 3.4, removed 3.5)",
+    "display": "self-managed (GA 3.4, removed 3.5)",
+    "targets": [
+      {
+        "target": "self-managed",
+        "dimension": "deployment",
+        "states": ["ga", "removed"],
+        "versions": ["3.4", "3.5"],
+        "text": "self-managed (GA 3.4, removed 3.5)"
+      }
+    ],
+    "scope": "page",
+    "feature": null,
+    "source": {
+      "file": "configure-legacy.md",
+      "span": [0, 172]
+    }
+  },
+  "headings": [
+    {
+      "level": 2,
+      "text": "Set the API key",
+      "id": "set-the-api-key",
+      "sourceId": "set-the-api-key",
+      "explicit": true,
+      "source": {
+        "file": "configure-legacy.md",
+        "span": [264, 282],
+        "lines": [10, 10]
+      }
+    }
+  ],
+  "assets": [],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "The agent reads ",
+          "span": [174, 190]
+        },
+        {
+          "type": "code",
+          "value": "quill.yaml",
+          "span": [190, 202]
+        },
+        {
+          "type": "text",
+          "value": ", beside it. 3.5 reads a folder instead: see ",
+          "span": [202, 247]
+        },
+        {
+          "type": "link",
+          "destination": "/3.4/upgrade/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "upgrade.md",
+            "id": null,
+            "url": "/3.4/upgrade/",
+            "textFilled": true
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Upgrade the agent",
+              "span": [247, 261]
+            }
+          ],
+          "span": [247, 261]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [261, 262]
+        }
+      ],
+      "source": {
+        "file": "configure-legacy.md",
+        "span": [174, 262],
+        "lines": [8, 8]
+      },
+      "links": [
+        {
+          "span": [247, 261],
+          "kind": "link",
+          "destination": "upgrade.md",
+          "target": {
+            "type": "page",
+            "page": "upgrade.md",
+            "id": null,
+            "url": "/3.4/upgrade/",
+            "textFilled": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "set-the-api-key",
+      "sourceId": "set-the-api-key",
+      "explicit": true,
+      "text": "Set the API key",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Set the API key",
+          "span": [267, 282]
+        }
+      ],
+      "source": {
+        "file": "configure-legacy.md",
+        "span": [264, 282],
+        "lines": [10, 10]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "set-the-api-key"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "configure-legacy.md",
+        "span": [283, 303],
+        "lines": [11, 11]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Put the key under ",
+          "span": [305, 323]
+        },
+        {
+          "type": "code",
+          "value": "key:",
+          "span": [323, 329]
+        },
+        {
+          "type": "text",
+          "value": " in ",
+          "span": [329, 333]
+        },
+        {
+          "type": "code",
+          "value": "quill.yaml",
+          "span": [333, 345]
+        },
+        {
+          "type": "text",
+          "value": ". To make one, see ",
+          "span": [345, 364]
+        },
+        {
+          "type": "link",
+          "destination": "/3.4/keys/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "keys.md",
+            "id": null,
+            "url": "/3.4/keys/",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "API keys",
+              "span": [365, 373]
+            }
+          ],
+          "span": [364, 383]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [383, 384]
+        }
+      ],
+      "source": {
+        "file": "configure-legacy.md",
+        "span": [305, 384],
+        "lines": [13, 13]
+      },
+      "links": [
+        {
+          "span": [364, 383],
+          "kind": "link",
+          "destination": "keys.md",
+          "target": {
+            "type": "page",
+            "page": "keys.md",
+            "id": null,
+            "url": "/3.4/keys/",
+            "textFilled": false
+          }
+        }
+      ]
+    }
+  ]
+}

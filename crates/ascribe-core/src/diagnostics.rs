@@ -672,6 +672,24 @@ pub const RELEASE_LINE_ENDED: DiagnosticSlug = DiagnosticSlug("release-line-ende
 /// `ASC215`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PHRASE_LINE: DiagnosticSlug = DiagnosticSlug("model-phrase-line");
 
+/// `ASC216`, error, file level: SPEC §8.2, "Frontmatter | `replaces` that doesn't name a page".
+pub const REPLACES_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("replaces-not-a-page");
+
+/// `ASC217`, error, page level: SPEC §8.2, "Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level)".
+pub const REPLACES_CYCLE: DiagnosticSlug = DiagnosticSlug("replaces-cycle");
+
+/// `ASC218`, error, page level: SPEC §8.2, "Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build)".
+pub const REPLACES_OVERLAP: DiagnosticSlug = DiagnosticSlug("replaces-overlap");
+
+/// `ASC219`, error, page level: SPEC §8.2, "Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build)".
+pub const REPLACES_SAME_PAGE: DiagnosticSlug = DiagnosticSlug("replaces-same-page");
+
+/// `ASC220`, advice, page level: a content check (area `pages`).
+pub const LINK_INTO_OLDER_LINE: DiagnosticSlug = DiagnosticSlug("link-into-older-line");
+
+/// `ASC221`, advice, page level: a content check (area `pages`).
+pub const LINK_FRAGMENT_DROPPED: DiagnosticSlug = DiagnosticSlug("link-fragment-dropped");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -885,6 +903,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     AVAILABLE_IN_NO_LINE,
     RELEASE_LINE_ENDED,
     MODEL_PHRASE_LINE,
+    REPLACES_NOT_A_PAGE,
+    REPLACES_CYCLE,
+    REPLACES_OVERLAP,
+    REPLACES_SAME_PAGE,
+    LINK_INTO_OLDER_LINE,
+    LINK_FRAGMENT_DROPPED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -927,6 +951,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     AVAILABLE_SAME_IN_EVERY_LINE,
     AVAILABLE_IN_NO_LINE,
     RELEASE_LINE_ENDED,
+    LINK_INTO_OLDER_LINE,
+    LINK_FRAGMENT_DROPPED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

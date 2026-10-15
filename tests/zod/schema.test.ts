@@ -17,9 +17,11 @@ describe("the Quill schema", () => {
   it("accepts the frontmatter of every page of the site build", () => {
     const pages = Object.entries(frontmatter);
     expect(pages.map(([path]) => path)).toEqual([
+      "configure.md",
       "install-agent.md",
       "keys.md",
       "quickstart.md",
+      "upgrade.md",
       "webhooks.md",
     ]);
     for (const [path, data] of pages) {

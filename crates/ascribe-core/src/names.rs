@@ -83,6 +83,8 @@ names! {
     DATA_VIA = "data-ascribe-via";
     /// A glossary term's id, on its link (packages/elements/CONTRACT.md §7).
     DATA_TERM = "data-ascribe-term";
+    /// The line a link out of a line leads to, on its link (packages/elements/CONTRACT.md §10).
+    DATA_RELEASE_LINE = "data-ascribe-release-line";
 
     // The HTML report, `ascribe diff --format html` (crates/ascribe-diff/src/html/),
     // which @ascribed/review's report script draws.

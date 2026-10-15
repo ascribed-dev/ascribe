@@ -329,9 +329,12 @@ pub struct ResolvedLink {
 pub enum LinkTarget {
     /// A URL with a scheme, passed through unchanged.
     External,
-    /// A page the build publishes.
+    /// A page the build publishes, or, for a link out of a line of a
+    /// versioned build, a page another line publishes (SPEC §5.2).
     Page {
-        /// The page's content path.
+        /// The page's content path: the page the link names, or, in a line
+        /// that doesn't publish it, the page that takes its place or the page
+        /// in the line it leads to.
         page: RelPath,
         /// The page id of the heading the link names, when it names one.
         id: Option<String>,
@@ -339,6 +342,10 @@ pub enum LinkTarget {
         url: String,
         /// Whether the link had no text and took the target's title.
         text_filled: bool,
+        /// For a link out of a line, the line it leads to, as
+        /// `[releases.<target>]` writes it. `None` for a link that stays in
+        /// its build.
+        line: Option<String>,
     },
     /// A local file the build copies. The reference is rewritten by the
     /// emitter.

@@ -2,8 +2,8 @@
   "schema_version": 1,
   "ascribe_version": "{version}",
   "error": null,
-  "files_checked": 5,
-  "files_reported": 5,
+  "files_checked": 8,
+  "files_reported": 8,
   "builds_checked": [
     "site",
     "site@3.4",

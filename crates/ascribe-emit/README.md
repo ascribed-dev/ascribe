@@ -142,7 +142,7 @@ A `target` has a `type`:
 | `type` | Fields |
 |---|---|
 | `external` | |
-| `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title) |
+| `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title), and, for a link out of a line of a versioned build, `line` (the line it leads to) |
 | `asset` | `source`, `path` (the copy), `reference` (as written on this page), `url`, `fragment` |
 | `unresolved` | The build couldn't resolve it; the checks report why |
 

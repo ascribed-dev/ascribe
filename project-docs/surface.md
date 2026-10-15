@@ -102,7 +102,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-211 in all. By severity: 35 advice, 152 error, 24 warning. By level: 192 file, 19 page. By kind of next step: 49 choose, 13 fix, 7 outside, 11 review, 131 write.
+217 in all. By severity: 37 advice, 156 error, 24 warning. By level: 193 file, 24 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 136 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -317,6 +317,12 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC213` | `available-in-no-line` | warning | write | `{entry}` leaves the content out of every live and planned line of `{target}`, the oldest being `{oldest}`, so no output has it |
 | `ASC214` | `release-line-ended` | advice | write | support for `{target}` {line} ended on {date}, and the line is still live |
 | `ASC215` | `model-phrase-line` | error | choose | phrase `{key}` is the line of `{target}`, which has no live line in `[releases]` |
+| `ASC216` | `replaces-not-a-page` | error | choose | `replaces` names `{path}`, which doesn't exist |
+| `ASC217` | `replaces-cycle` | error | write | `replaces` comes back to this page: {chain}; a page replaces an older page, and the chain ends |
+| `ASC218` | `replaces-overlap` | error | write | `{build}` publishes both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares |
+| `ASC219` | `replaces-same-page` | error | write | `{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line |
+| `ASC220` | `link-into-older-line` | advice | write | `{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place |
+| `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
 
 ## The VS Code extension
 

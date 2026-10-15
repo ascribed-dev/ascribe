@@ -1379,7 +1379,7 @@ next = "write"
 evidence = []
 spec = "2.2"
 reference = "content-model/index.md#43-fragments"
-row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `type`) on a fragment"
+row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment"
 message = "`{key}` is reserved for pages, and fragments can't use it"
 messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
 fix = "Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it."
@@ -3971,3 +3971,92 @@ reference = "content-model/content.md#phrases"
 group = "phrases"
 message = "phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`"
 fix = "Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one."
+
+[[diagnostic]]
+code = "ASC216"
+slug = "replaces-not-a-page"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "2.1"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | `replaces` that doesn't name a page"
+message = "`replaces` names `{path}`, which doesn't exist"
+messages.fragment = "`replaces` names `{path}`, which is a fragment; a page replaces a page"
+messages.heading = "`replaces` names a heading, `{path}`; write the page's path without `#` and the id"
+messages.other = "`replaces` names `{path}`, which isn't a page; write the path of the page this one replaces, as a link to it is written"
+fix = "Write the path of the page this one takes the place of, relative to this page or from the content root with a leading `/`, as a link to it is written: `replaces: install-legacy.md`."
+
+[[diagnostic]]
+code = "ASC217"
+slug = "replaces-cycle"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "2.1"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level)"
+message = "`replaces` comes back to this page: {chain}; a page replaces an older page, and the chain ends"
+messages.itself = "`{path}` replaces itself; name the page it takes the place of"
+fix = "Keep `replaces` on the newer page alone, naming the page it takes the place of. A page replaced in turn names nothing that comes after it."
+
+[[diagnostic]]
+code = "ASC218"
+slug = "replaces-overlap"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "9.3"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build)"
+message = "`{build}` publishes both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares"
+messages.builds = "builds {builds} publish both `{path}` and `{replaced}`, which it replaces; give the two pages availability that no line shares"
+fix = "Mark the newer page with the line it starts in, `available: self-managed 3.5`, and the page it replaces with where it ends, `available: self-managed (ga 3.0, removed 3.5)`, so each line publishes one of them."
+
+[[diagnostic]]
+code = "ASC219"
+slug = "replaces-same-page"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "9.3"
+reference = "writing/directives.md#a-page-that-replaces-another"
+row = "Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build)"
+message = "`{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line"
+messages.builds = "builds {builds} publish both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line"
+fix = "Keep `replaces` on one of the two pages, or give them availability that no line shares, so a line has one page in the old page's place. When one page is split in two, the other takes no `replaces`; link to it from the first."
+
+[[diagnostic]]
+code = "ASC220"
+slug = "link-into-older-line"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "pages"
+spec = "9.3"
+reference = "writing/directives.md#links-between-lines"
+when = "A link in the current line of a versioned build names a page the current line doesn't publish, and nothing takes its place there, so it leads to the page in an older line"
+message = "`{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place"
+fix = "Give the current line a page in its place: mark the page so the current line has it, or write the page that takes its place and give it `replaces`. When the link is meant to lead to an older line, as on a page about migrating from it, leave it."
+
+[[diagnostic]]
+code = "ASC221"
+slug = "link-fragment-dropped"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+configurable = true
+area = "pages"
+spec = "9.3"
+reference = "writing/directives.md#links-between-lines"
+when = "A link to a heading leads, in a line of a versioned build, to a page that takes its target's place or to its target in another line, and the page it lands on has no heading with that id"
+message = "in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page"
+messages.builds = "in builds {builds}, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page"
+fix = "Give the heading on the page it lands on the same id, with `@id`, or link to the page without `#` and the id."

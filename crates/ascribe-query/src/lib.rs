@@ -41,7 +41,7 @@ pub use error::QueryError;
 pub use explain::{
     DiagnosticList, ExampleText, Explanation, ListedDiagnostic, code_of, explain, list,
 };
-pub use link::{LinkAnswer, LinkKind, LinkSuggestion, link};
+pub use link::{LinkAnswer, LinkKind, LinkLine, LinkSuggestion, link};
 pub use model::{ModelReport, Section, model, summary};
 pub use outline::{Outline, OutlineHeading, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
