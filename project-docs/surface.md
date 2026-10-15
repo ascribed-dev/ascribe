@@ -778,8 +778,6 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
 | `versions/index.md` | Versions | how-to |
-| `versions/index.md` | Versions | how-to |
-| `versions/index.md` | Versions | how-to |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/variants.md` | Content that varies | tutorial |
 
