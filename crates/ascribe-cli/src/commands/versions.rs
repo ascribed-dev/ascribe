@@ -307,9 +307,18 @@ fn write_changes(out: &mut dyn Write, c: &VersionChanges, root: &Path) -> io::Re
                 (Some(a), Some(b)) => format!(" ({a} in {from}, {b} in {to})"),
                 _ => String::new(),
             };
+            let place = match &e.in_place_of {
+                Some(old) => format!(
+                    ", in place of \"{}\" at {}:{}",
+                    old.page,
+                    answer::path_from_here(&root.join(&old.file)),
+                    old.line
+                ),
+                None => String::new(),
+            };
             writeln!(
                 out,
-                "  {}:{}: {}{state}",
+                "  {}:{}: {}{state}{place}",
                 answer::path_from_here(&root.join(&e.file)),
                 e.line,
                 described(e)
@@ -342,7 +351,15 @@ fn write_notes<'a>(out: &mut dyn Write, c: &'a VersionChanges, root: &Path) -> i
         pages.entry((&e.file, &e.page)).or_default().push(line);
     };
     for e in &c.added {
-        note(e, format!("- New: {}", noted(e)));
+        let place = match &e.in_place_of {
+            Some(old) => format!(
+                ", in place of \"{}\" in `{}`",
+                old.page,
+                answer::path_from_here(&root.join(&old.file))
+            ),
+            None => String::new(),
+        };
+        note(e, format!("- New: {}{place}", noted(e)));
     }
     for e in &c.removed {
         note(e, format!("- Removed: {}", noted(e)));

@@ -358,3 +358,110 @@ fn a_line_the_list_doesnt_declare_is_exit_code_2() {
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("doesn't declare"), "{}", stderr(&out));
 }
+
+/// Three lines, and a page rewritten for each: `b.md` replaces `a.md` in
+/// 1.1, and `c.md` replaces `b.md` in 1.2.
+const REWRITTEN: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[dimensions.release]
+label = "Product"
+values = ["prod"]
+
+[releases.prod]
+live = ["1.0", "1.1", "1.2"]
+"#;
+
+fn rewritten() -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "ascribe.toml", REWRITTEN);
+    write(
+        dir.path(),
+        "docs/a.md",
+        "---\ntitle: A\navailable: prod (ga 1.0, removed 1.1)\n---\n\nText.\n",
+    );
+    write(
+        dir.path(),
+        "docs/b.md",
+        "---\ntitle: B\navailable: prod (ga 1.1, removed 1.2)\nreplaces: a.md\n---\n\nText.\n",
+    );
+    write(
+        dir.path(),
+        "docs/c.md",
+        "---\ntitle: C\navailable: prod 1.2\nreplaces: b.md\n---\n\nText.\n",
+    );
+    dir
+}
+
+/// Each entry of `changes`' JSON list `key`, as its file and the file it's
+/// in place of.
+fn entries(dir: &Path, from: &str, to: &str, key: &str) -> Vec<(String, Option<String>)> {
+    let out = ascribe(dir, &["versions", "changes", from, to, "--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: Value = serde_json::from_slice(&out.stdout).unwrap();
+    json[key]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| {
+            (
+                c["file"].as_str().unwrap().to_owned(),
+                c["in_place_of"]["file"].as_str().map(str::to_owned),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_page_added_in_place_of_one_removed_is_one_change() {
+    let dir = rewritten();
+    assert_eq!(
+        entries(dir.path(), "prod 1.0", "1.1", "added"),
+        [("docs/b.md".to_owned(), Some("docs/a.md".to_owned()))]
+    );
+    assert!(entries(dir.path(), "prod 1.0", "1.1", "removed").is_empty());
+}
+
+#[test]
+fn going_back_a_line_the_replaced_page_is_in_place_of_its_replacement() {
+    let dir = rewritten();
+    assert_eq!(
+        entries(dir.path(), "prod 1.1", "1.0", "added"),
+        [("docs/a.md".to_owned(), Some("docs/b.md".to_owned()))]
+    );
+    assert!(entries(dir.path(), "prod 1.1", "1.0", "removed").is_empty());
+}
+
+#[test]
+fn a_chain_of_replaces_pairs_pages_two_lines_apart() {
+    let dir = rewritten();
+    assert_eq!(
+        entries(dir.path(), "prod 1.0", "1.2", "added"),
+        [("docs/c.md".to_owned(), Some("docs/a.md".to_owned()))]
+    );
+    assert!(entries(dir.path(), "prod 1.0", "1.2", "removed").is_empty());
+}
+
+#[test]
+fn the_text_and_the_notes_name_the_page_replaced() {
+    let dir = rewritten();
+    let text = ascribe(dir.path(), &["versions", "changes", "prod 1.0", "1.1"]);
+    assert_eq!(
+        stdout(&text),
+        "In 1.1 and not 1.0:\n  docs/b.md:3: the page \"B\", in place of \"A\" at docs/a.md:3\n"
+    );
+    let notes = ascribe(
+        dir.path(),
+        &[
+            "versions", "changes", "prod 1.0", "1.1", "--format", "markdown",
+        ],
+    );
+    let notes = stdout(&notes);
+    assert!(
+        notes.contains("- New: the page, in place of \"A\" in `docs/a.md`"),
+        "{notes}"
+    );
+    assert!(!notes.contains("Removed"), "{notes}");
+}

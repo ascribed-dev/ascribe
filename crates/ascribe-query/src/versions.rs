@@ -2,6 +2,9 @@
 //! between two of them (`ascribe versions changes`), read from
 //! `[releases]` and the marks, with nothing built.
 
+use std::collections::{BTreeMap, HashSet, VecDeque};
+
+use ascribe_core::RelPath;
 use ascribe_core::availability::{AvailabilitySpec, Version, parse_availability};
 use ascribe_model::{ContentModel, Releases, named_line};
 use ascribe_resolve::{FileIndex, InLine, Project, in_release_line};
@@ -200,6 +203,23 @@ pub struct LineChange {
     /// The state in `to`, for a change of state.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to_state: Option<String>,
+    /// For a page added, the page `from` has in its place and `to`
+    /// doesn't, when `replaces` links the two, either way: the pair is one
+    /// change, so that page isn't listed as removed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub in_place_of: Option<PlaceOf>,
+}
+
+/// The page another takes the place of.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct PlaceOf {
+    /// Its file, from the project root.
+    pub file: String,
+    /// Its mark's line, from 1.
+    pub line: u32,
+    /// Its title, or the file's path when it has none.
+    pub page: String,
 }
 
 /// The target and line `text` names, `self-managed 3.4`, when the target
@@ -245,7 +265,8 @@ fn check_declared(
 /// puts it in one line and not the other, or in both in a different
 /// state. It reads the marks alone and builds nothing. A mark on a page
 /// whose own mark puts it in one line only isn't listed apart from the
-/// page.
+/// page, and a page added in place of one removed, by `replaces`, is one
+/// change.
 ///
 /// # Errors
 ///
@@ -270,6 +291,9 @@ pub fn changes(project: &Project, from: &str, to: &str) -> Result<VersionChanges
         changed: Vec::new(),
     };
     let mut lines = Lines::new(project);
+    // The pages added and removed whole, by their entry.
+    let mut added_pages: Vec<(usize, RelPath)> = Vec::new();
+    let mut removed_pages: Vec<(usize, RelPath)> = Vec::new();
     let mut files: Vec<&FileIndex> = project.files().collect();
     files.sort_by(|a, b| a.path.cmp(&b.path));
     for file in files {
@@ -329,7 +353,17 @@ pub fn changes(project: &Project, from: &str, to: &str) -> Result<VersionChanges
                 text: first_line(file, at, kind),
                 from_state,
                 to_state,
+                in_place_of: None,
             };
+            if kind == "page" {
+                match compared {
+                    Compared::Added => added_pages.push((out.added.len(), file.path.clone())),
+                    Compared::Removed => {
+                        removed_pages.push((out.removed.len(), file.path.clone()));
+                    }
+                    Compared::Changed(..) => {}
+                }
+            }
             match compared {
                 Compared::Added => out.added.push(change(None, None)),
                 Compared::Removed => out.removed.push(change(None, None)),
@@ -337,7 +371,74 @@ pub fn changes(project: &Project, from: &str, to: &str) -> Result<VersionChanges
             }
         }
     }
+    pair_replaced(project, &mut out, &added_pages, &removed_pages);
     Ok(out)
+}
+
+/// Makes each page added in place of one removed one change: the added
+/// page's entry names the removed one, whose own entry goes. The two are
+/// linked by `replaces`, either way, through pages neither line has; an
+/// added page takes the removed page nearest along the chain, the newer
+/// side first, that no page before it took.
+fn pair_replaced(
+    project: &Project,
+    out: &mut VersionChanges,
+    added: &[(usize, RelPath)],
+    removed: &[(usize, RelPath)],
+) {
+    if added.is_empty() || removed.is_empty() {
+        return;
+    }
+    let links = project.replacements();
+    let mut taken: Vec<usize> = Vec::new();
+    for (entry, page) in added {
+        let Some(gone) = nearest_removed(&links, page, removed, &taken) else {
+            continue;
+        };
+        taken.push(gone);
+        let old = &out.removed[gone];
+        let place = PlaceOf {
+            file: old.file.clone(),
+            line: old.line,
+            page: old.page.clone(),
+        };
+        if let Some(change) = out.added.get_mut(*entry) {
+            change.in_place_of = Some(place);
+        }
+    }
+    taken.sort_unstable();
+    for gone in taken.into_iter().rev() {
+        out.removed.remove(gone);
+    }
+}
+
+/// The entry of the removed page `replaces` links `page` with, nearest
+/// first, that isn't `taken`.
+fn nearest_removed(
+    links: &BTreeMap<RelPath, RelPath>,
+    page: &RelPath,
+    removed: &[(usize, RelPath)],
+    taken: &[usize],
+) -> Option<usize> {
+    let mut seen: HashSet<&RelPath> = HashSet::from([page]);
+    let mut queue: VecDeque<&RelPath> = VecDeque::from([page]);
+    while let Some(at) = queue.pop_front() {
+        let newer = links.iter().filter(|(_, r)| *r == at).map(|(by, _)| by);
+        let older = links.get(at);
+        for next in newer.chain(older) {
+            if !seen.insert(next) {
+                continue;
+            }
+            if let Some((entry, _)) = removed
+                .iter()
+                .find(|(entry, p)| p == next && !taken.contains(entry))
+            {
+                return Some(*entry);
+            }
+            queue.push_back(next);
+        }
+    }
+    None
 }
 
 /// How one mark differs between two lines.
