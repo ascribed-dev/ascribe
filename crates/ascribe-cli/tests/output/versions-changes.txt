@@ -1,3 +1,7 @@
 In 3.5 and not 3.4:
+  docs/configure.md:5: the page "Configure the agent"
   docs/keys.md:19: the section "Sign webhook events"
   docs/webhooks.md:5: the page "Webhooks"
+
+In 3.4 and not 3.5:
+  docs/configure-legacy.md:5: the page "Configure the agent (3.4)"
