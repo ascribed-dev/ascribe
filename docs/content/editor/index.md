@@ -84,7 +84,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.
 - In an attribute block: the directive's attribute keys, then their allowed values, such as note types or a dimension's values with their labels. After an image: the declared image attributes.
 - In `@available:` and frontmatter `available:`: targets, dimension names, feature keys, and lifecycle states.
-- In frontmatter `type:` {available=next}: the content types `ascribe.toml` declares, each with what it's for.
+- In frontmatter `type:` {available="ascribe 0.3.1"}: the content types `ascribe.toml` declares, each with what it's for.
 - After `{` in text: the declared phrases, each with its value.
 - In a source's [`ascribe.examples.toml`](../examples/tested.md) {available=next}: its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 - In `@include:`: source files, then, after `#`, the ids of the file.
@@ -177,7 +177,7 @@ The actions in the bar's **Content model** group change `ascribe.toml` from a pa
 These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename that changes other files lists every change in the refactor preview first, where you check the changes to make and **Apply** them, or **Discard** them all.
 
 ### Start a page
-@available: next
+@available: ascribe 0.3.1
 
 **Ascribe: New Page** makes a page from its type's [template](../templates/index.md). Run it from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the page's type, each with what it's for (the type's `purpose`, or for a type from the starter set, their summary of it), then its title. The page is the template with its `type` and `title` set, named for the title, in the content root; run on a folder, it makes the page in that folder. A page names its type in its frontmatter, so any folder of pages takes every type; a fragment's folder takes none. It's saved and opened with the first thing the template left to fill in selected, usually the description, so typing replaces it. A page is never made over a file: with a file of that name there, it says so, and you give another title.
 

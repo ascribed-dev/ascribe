@@ -84,7 +84,7 @@ After you install it, its walkthrough, **Get Started with Ascribe**, shows the p
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and says what each kind of page must have in its frontmatter.
 
 ### Start with `ascribe init`
-@available: next
+@available: ascribe 0.3.1
 
 Start the project with the command:
 
@@ -216,7 +216,7 @@ You installed the command and the editor, declared a content model in `ascribe.t
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](editor/index.md): the VS Code extension.
 - [Astro](astro/index.md): publishing a site.
-- @available: next
+- @available: ascribe 0.3.1
   [Tested examples](examples/tested.md): code blocks that say what their example was tested with. Start from a repository to copy, for Node with TypeScript or for Python.
 - @available: ascribe 0.3.0
   [Agents](agents/index.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.

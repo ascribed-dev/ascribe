@@ -2,7 +2,7 @@
 type: reference
 title: Tested examples contract
 description: The formats of ascribe.examples.toml, which says which of a source's files are examples and how to test them, and of the observation ascribe observe writes beside it.
-available: next
+available: ascribe 0.3.1
 ---
 
 This contract says what the two files of a source's tested examples hold: `ascribe.examples.toml`, which the code's owners write, and the observation `ascribe observe` writes beside it. Both are TOML. [Show what an example was tested with](../examples/tested.md) walks through them, and [`ascribe observe`](../examples/sources.md#cli-observe) is the command that reads the first and writes the second.
