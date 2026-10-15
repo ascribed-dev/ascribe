@@ -186,7 +186,7 @@ export interface SitemapSources {
  * page's route. An older line's page whose canonical address is the same
  * page in the current line isn't.
  */
-export function canonicalIsOwn(page: PageRecord): boolean {
+function canonicalIsOwn(page: PageRecord): boolean {
   if (page.canonical === undefined) return true;
   return routeKey(new URL(page.canonical).pathname) === routeKey(page.route);
 }
