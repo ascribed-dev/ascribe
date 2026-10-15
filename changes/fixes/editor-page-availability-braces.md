@@ -1,0 +1,1 @@
+- **Fixed:** The editor's page no longer shows `{available=…}` as text in its lists. The items new since 0.3.1 are marked with `@available: next` instead, so the page badges them ([docs/content/editor/index.md](docs/content/editor/index.md)).
