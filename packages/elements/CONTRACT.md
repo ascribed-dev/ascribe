@@ -13,6 +13,7 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | Glossary term | [An ordinary link](#7-glossary-terms), marked with `data-ascribe-term` | Optional CSS |
 | The pointer to `llms.txt`, with `[consumer] agents = true` | [`<ascribe-for-agents>`](#8-ascribe-for-agents) | CSS only |
 | A tested example's `@snippet` | [A caption line on its code block](#9-a-tested-code-block), with the class `ascribe-code-tested` | CSS only |
+| A link out of a line of a versioned build | [An ordinary link](#10-a-link-out-of-a-line), marked with `data-ascribe-release-line` | Optional CSS |
 
 A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
@@ -272,3 +273,17 @@ The renderer, `@ascribed/astro`'s code highlighting or `render_site_html`, puts 
 A block with a tested line and no title has the line alone in its caption. A block with a title and no tested line is as it was: its caption is the title.
 
 **Rendering:** the line reads "Tested with Node 24.9.0 and TypeScript 5.9.2 on Linux". The lead-in, "Tested with ", is generated content from the library's stylesheet (`.ascribe-code-tested::before`), as "Available:" is, so a site restyles or translates it once. With no CSS, the caption still reads as a fact about the block. The HTML holds no hidden copy of the lead-in (decision [#459c](../../project-docs/decisions/459c-tested-lead-in.md)). The line is a block of its own, so its text is the plain output's sentence without the lead-in, and a check that each line of the page's HTML appears in its Markdown version finds it there, inside "Tested with … .".
+
+## 10. A link out of a line
+
+There's no element for a link out of a line either. In a line of a versioned build, a link to a page the line doesn't publish can lead to the page in another line (SPEC §5.2). In the site output it's an ordinary markdown link to the page's route in that line, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-release-line` attribute holding the line, as `[releases.<target>]` writes it ([Versions decision 39](../../project-docs/versions/README.md#decisions)). Its text is what the author wrote, or the target's title in that line:
+
+```markdown
+[Configure tracing](/docs/configure-tracing/)<ascribe-attributes data-ascribe-release-line="3.5"></ascribe-attributes>
+```
+
+```html
+<a href="/docs/configure-tracing/" data-ascribe-release-line="3.5">Configure tracing</a>
+```
+
+**Rendering:** the link, followed by its line in parentheses, " (3.5)", generated content from the library's stylesheet (`a[data-ascribe-release-line]::after`), as "Available:" is, so a site restyles, rewords, or hides it by selecting on the attribute. With no CSS, it's a plain link.

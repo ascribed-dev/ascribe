@@ -60,6 +60,9 @@ export const DATA_VIA = "data-ascribe-via";
 /** A glossary term's id, on its link (packages/elements/CONTRACT.md §7). */
 export const DATA_TERM = "data-ascribe-term";
 
+/** The line a link out of a line leads to, on its link (packages/elements/CONTRACT.md §10). */
+export const DATA_RELEASE_LINE = "data-ascribe-release-line";
+
 /** The element the report draws into. */
 export const ID_REPORT = "ascribe-review";
 

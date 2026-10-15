@@ -4,13 +4,14 @@ title: Site-render contract
 description: The markers the site output writes and how a consumer renders them.
 ---
 
-The site output (SPEC §9.4) is CommonMark with raw HTML: custom elements for Ascribe's constructs, and ordinary markdown for everything else. A consumer renders most of it with its own markdown pipeline and needs nothing from Ascribe. Three things need more than CommonMark (SPEC §9.5):
+The site output (SPEC §9.4) is CommonMark with raw HTML: custom elements for Ascribe's constructs, and ordinary markdown for everything else. A consumer renders most of it with its own markdown pipeline and needs nothing from Ascribe. Four things need more than CommonMark (SPEC §9.5):
 
 - **Explicit heading ids.** A heading's id is its page id (SPEC §5.5), which Ascribe computes and validates. The consumer must use that id, not one of its own, and still treat the heading as a heading, so its table of contents and heading processing keep working.
 - **Image attributes.** Attributes such as `width` (SPEC §5.3, content-model.md §13) must reach the `<img>`, while the image stays a markdown image, so the consumer's image processing (Astro's optimization) still applies.
 - **Glossary terms.** A glossary link (SPEC §5.4) must say which term it links, as `data-ascribe-term` on its `<a>`, so a site can style terms or show their definitions, while it stays a markdown link.
+- **Links out of a line.** In a line of a versioned build, a link that leads to a page in another line (SPEC §5.2) must say which line, as `data-ascribe-release-line` on its `<a>`, so a site can show it, while it stays a markdown link.
 
-This contract defines the one syntax the site output uses for all three, the **attribute marker**, and exactly what HTML it must produce. It also defines **source anchors** (§7): in review mode, each block of the output says which source lines it came from. It has two implementations, which must agree:
+This contract defines the one syntax the site output uses for all four, the **attribute marker**, and exactly what HTML it must produce. It also defines **source anchors** (§7): in review mode, each block of the output says which source lines it came from. It has two implementations, which must agree:
 
 | Implementation | Used by |
 |---|---|
@@ -95,7 +96,7 @@ A marker after a space doesn't apply. A link that is the last inline content of 
 
 ## 3. What applying a marker does
 
-Each of the marker's attributes is set on the element it applies to (`<h1>`–`<h6>`, `<img>`, or `<a>`), with the same name and its decoded value. The emitter never writes a name the element already has: a heading's marker holds only `id`, a link's only `data-ascribe-term`, and a content model can't declare an image attribute named `src`, `alt`, `title`, or any other name HTML gives a meaning (SPEC §7.2; content-model.md, `model-attribute-reserved`). If a marker written by hand does repeat one, the marker's value replaces the element's.
+Each of the marker's attributes is set on the element it applies to (`<h1>`–`<h6>`, `<img>`, or `<a>`), with the same name and its decoded value. The emitter never writes a name the element already has: a heading's marker holds only `id`, a link's only `data-ascribe-term` and `data-ascribe-release-line`, and a content model can't declare an image attribute named `src`, `alt`, `title`, or any other name HTML gives a meaning (SPEC §7.2; content-model.md, `model-attribute-reserved`). If a marker written by hand does repeat one, the marker's value replaces the element's.
 
 The resulting HTML is the CommonMark rendering of the input with the marker removed, plus those attributes. Nothing else changes: implementations don't renumber, deduplicate, or validate ids, since Ascribe has already assigned and checked them.
 
@@ -108,7 +109,8 @@ The site emitter writes the site output so that the rules above are all a consum
 - **Every heading ends in a marker with its page id**, one space after the heading's text. So the consumer's own slugger never runs on Ascribe content, and every heading id on the published page is one `ascribe check` validated, including ids numbered for duplicates and ids from `@id`. A heading whose page id is empty (a heading with no text) gets no marker.
 - **Headings are ATX headings**, whatever the source used.
 - **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3): every attribute the content model declares that the image writes or that has a default, then any it writes that the model doesn't declare. An image with neither attributes nor defaults has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
-- **A glossary link has a marker directly after it**, holding `data-ascribe-term` with the term's id (content-model.md §12). The link is the term's route, with the term's definition as its title (element contract §7). No other link has a marker.
+- **A glossary link has a marker directly after it**, holding `data-ascribe-term` with the term's id (content-model.md §12). The link is the term's route, with the term's definition as its title (element contract §7).
+- **A link out of a line has a marker directly after it**, holding `data-ascribe-release-line` with the line it leads to (SPEC §5.2, element contract §10). No other link has a marker.
 - **Every page's frontmatter ends with `source`**, the page's path from the content root with `/` between its parts, as `_ascribe/permalinks.json` writes a permalink's `source` ([output layout](output-layout.md) §1.2). The generated schema types it as a string every page has (SPEC §9.6). A layout's edit link uses it, so it never depends on where the site output is.
 - **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes an `ascribe-attributes` element gets its effect. Element names starting with `ascribe-` belong to Ascribe (content-model.md §14), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
 
@@ -150,6 +152,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `image-in-link` | §2.2 | An image inside link text |
 | `image-ends-heading` | §2.1, §2.2 | A marker directly after an image that ends a heading applies to the image, not the heading |
 | `link-inline` | §2.3 | `[text](href "title")` followed by a marker, with code as link text, and a marker after a space that doesn't apply |
+| `link-line` | §2.3, §4 | Links out of a line, one with a title and code as its text, each followed by its marker |
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |

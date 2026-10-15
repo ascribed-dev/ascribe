@@ -360,6 +360,10 @@ enum TargetJson {
         id: Option<String>,
         url: String,
         text_filled: bool,
+        /// The line a link out of a line leads to; absent for any other
+        /// link.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        line: Option<String>,
     },
     #[serde(rename_all = "camelCase")]
     Asset {
@@ -860,11 +864,13 @@ impl Writer<'_, '_> {
                 id,
                 url,
                 text_filled,
+                line,
             } => TargetJson::Page {
                 page: page.to_string(),
                 id: id.clone(),
                 url: url.clone(),
                 text_filled: *text_filled,
+                line: line.clone(),
             },
             LinkTarget::Asset { path, fragment } => {
                 let placement = self.cx.asset(path, usage);

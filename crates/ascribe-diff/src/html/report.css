@@ -440,6 +440,16 @@ a[data-ascribe-term] {
   text-decoration-style: dotted;
 }
 
+/* Links out of a line ---------------------------------------------------- */
+
+/* A link to the page in another line of a versioned build says which line,
+   after its text. It's generated content, so a site can restyle, reword,
+   or hide it. */
+a[data-ascribe-release-line]::after {
+  content: " (" attr(data-ascribe-release-line) ")";
+  color: var(--ascribe-muted-color);
+}
+
 /*
  * @ascribed/review/marks.css: how changed blocks look on a rendered page.
  *
