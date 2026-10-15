@@ -1,6 +1,6 @@
 # Written by `ascribe observe`. Don't edit it by hand.
 version = 1
-ascribe = "0.3.0"
+ascribe = "0.3.1"
 command = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
 
 [environment]
@@ -58,7 +58,7 @@ rust = "rustc 1.98.1 (48a229cea 2026-09-01)"
 "crates/ascribe-cli/tests/output/rename.txt" = "sha256-lf:a8acd91eeb21e10bc4b137d2eb5a9f25667fbde272c3d9d5406883fd23b4719d"
 "crates/ascribe-cli/tests/output/render.txt" = "sha256-lf:3de3f74d5f5e171e16fc66e8cc57e175422f88eabf0da7749b2a09b5324b4885"
 "crates/ascribe-cli/tests/output/sources-update.txt" = "sha256-lf:4639fc505057ba8e5eb541080e54139b84b54c50fd3b74dd5c909f698323fb80"
-"examples/content-models/full.toml" = "sha256-lf:7f4e0b4b1e3fe6bc12722d07f0a42afe6634b2a74e0fe38ad80121aa38c1053a"
+"examples/content-models/full.toml" = "sha256-lf:3a2cdeb6dc6fcdbb8e143c7ac9c6f4500e504d5c8a7b43386d324a11f2cd49b2"
 "examples/content-models/minimal.toml" = "sha256-lf:5f35edf793dad789707c25c602f37d36ea5e70d9599a038d889756130067fcbd"
 "examples/content-models/quill.toml" = "sha256-lf:73273d11ff61a96dfcd25f86cbe4fc3dd465a27a068be33e301005e4a639aca5"
 "examples/getting-started/ascribe.toml" = "sha256-lf:43185d1effcf402a292af9915735a6ce593baa6fba8ca83303fdc66d0b6e8531"

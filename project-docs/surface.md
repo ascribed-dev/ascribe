@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-199 in all. By severity: 32 advice, 144 error, 23 warning. By level: 180 file, 19 page. By kind of next step: 44 choose, 13 fix, 7 outside, 11 review, 124 write.
+202 in all. By severity: 32 advice, 147 error, 23 warning. By level: 183 file, 19 page. By kind of next step: 45 choose, 13 fix, 7 outside, 11 review, 126 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -302,6 +302,9 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 | `ASC202` | `observation-file-missing` | advice | outside | `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again |
 | `ASC203` | `glossary-link-target-missing` | error | choose | glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}` |
+| `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` isn't a declared dimension value |
+| `ASC205` | `model-releases-line` | error | write | `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts |
+| `ASC206` | `model-build-versions` | error | write | build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = ["3.4"]` |
 
 ## The VS Code extension
 

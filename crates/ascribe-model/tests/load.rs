@@ -107,6 +107,40 @@ fn headers_name_the_hosts_format_and_nothing_else() {
 }
 
 #[test]
+fn releases_list_each_targets_lines_newest_first() {
+    let m = example("full.toml");
+    let r = m.releases_of("self-managed").unwrap();
+    let lines: Vec<&str> = r.live.iter().map(|l| l.text.as_str()).collect();
+    assert_eq!(lines, ["3.5", "3.4"]);
+    assert_eq!(r.current().unwrap().text, "3.5");
+    assert!(m.releases_of("cloud").is_none());
+    assert!(m.builds.iter().all(|b| b.versions.is_none()));
+
+    let m = load_str(
+        "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\", \"b\"]\nversionless = [\"b\"]\n\
+         [releases.a]\nlive = [\"3.10\", \"3.9\", \"4.0\"]\n[builds.site]\nversions = \"a\"\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    let lines: Vec<&str> = m.releases[0].live.iter().map(|l| l.text.as_str()).collect();
+    assert_eq!(lines, ["4.0", "3.10", "3.9"]);
+    assert_eq!(m.builds[0].versions.as_deref(), Some("a"));
+    assert_eq!(m.builds[0].availability, AvailabilityMode::Badge);
+}
+
+#[test]
+fn a_version_is_in_the_line_it_starts_with() {
+    let v = |t: &str| ascribe_core::availability::parse_version(t, 0).unwrap();
+    assert!(ascribe_model::in_line(&v("3.4"), &v("3.4")));
+    assert!(ascribe_model::in_line(&v("3.4"), &v("3.4.2")));
+    assert!(ascribe_model::in_line(&v("3.4"), &v("3.4.2.1")));
+    assert!(!ascribe_model::in_line(&v("3.4"), &v("3.40")));
+    assert!(!ascribe_model::in_line(&v("3.4"), &v("3")));
+    assert!(ascribe_model::in_line(&v("0.2.0"), &v("0.2.0")));
+    assert!(!ascribe_model::in_line(&v("0.2.0"), &v("0.2.1")));
+}
+
+#[test]
 fn quill_matches_the_spec_appendix_b_model() {
     let m = example("quill.toml");
     // Declaration order of dimensions is kept.

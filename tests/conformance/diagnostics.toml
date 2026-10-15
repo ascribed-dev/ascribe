@@ -3799,3 +3799,47 @@ reference = "content-model/content.md#122-terms"
 row = "Glossary | A term's `link` that names a heading its page doesn't have"
 message = "glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}`"
 fix = "Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included."
+
+[[diagnostic]]
+code = "ASC204"
+slug = "model-releases-target"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}]`: `{target}` isn't a declared dimension value"
+messages.versionless = "`[releases.{target}]`: `{target}` is versionless, so it has no releases"
+messages.dimension = "`[releases.{target}]`: `{target}` is a dimension; name one of its versioned values: {values}"
+fix = "Name the table after a versioned dimension value, the target a mark gives a version to, such as `[releases.self-managed]`. A versionless value has no versions to list."
+
+[[diagnostic]]
+code = "ASC205"
+slug = "model-releases-line"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts"
+messages.duplicate = "`[releases.{target}]` lists the line `{line}` twice"
+messages.invalid = "`[releases.{target}]`: \"{line}\" isn't a valid version, such as \"3.4\""
+fix = "Write each line as a version, once, with as many parts as the target's other lines: `[\"3.4\", \"3.5\"]` for a line for each minor release, or `[\"0.2.0\"]` for one for each patch release. A line holds every version that starts with it."
+
+[[diagnostic]]
+code = "ASC206"
+slug = "model-build-versions"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.3"
+reference = "content-model/output.md#16-buildsname"
+group = "consumer"
+message = "build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = [\"3.4\"]`"
+messages.filter = "build `{build}` is versioned by `{target}` and filtered too; a filtered build is already one version of one target, so a versioned build's availability is `badge`"
+fix = "Give the target its lines in `[releases.<target>]`, with `live`, or remove `versions` from the build. A build is either versioned, with one output for each live line, or filtered for one version; not both."

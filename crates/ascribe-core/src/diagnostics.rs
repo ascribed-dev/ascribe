@@ -635,6 +635,15 @@ pub const OBSERVATION_FILE_MISSING: DiagnosticSlug = DiagnosticSlug("observation
 pub const GLOSSARY_LINK_TARGET_MISSING: DiagnosticSlug =
     DiagnosticSlug("glossary-link-target-missing");
 
+/// `ASC204`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_TARGET: DiagnosticSlug = DiagnosticSlug("model-releases-target");
+
+/// `ASC205`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_LINE: DiagnosticSlug = DiagnosticSlug("model-releases-line");
+
+/// `ASC206`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_BUILD_VERSIONS: DiagnosticSlug = DiagnosticSlug("model-build-versions");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -836,6 +845,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLES_CONFIG_INVALID,
     OBSERVATION_FILE_MISSING,
     GLOSSARY_LINK_TARGET_MISSING,
+    MODEL_RELEASES_TARGET,
+    MODEL_RELEASES_LINE,
+    MODEL_BUILD_VERSIONS,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

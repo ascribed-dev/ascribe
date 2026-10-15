@@ -37,6 +37,9 @@ pub struct ContentModel {
     /// `availability-left-behind` compares features' versions with. Its span
     /// is in `ascribe.toml`.
     pub current_version: Option<Version>,
+    /// `[releases.<target>]`, in declaration order: the lines of each
+    /// versioned target a project lists.
+    pub releases: Vec<Releases>,
     /// Lifecycle states: the built-ins (possibly adjusted), then declared ones.
     pub lifecycle: Vec<LifecycleState>,
     /// `[features.<key>]`.
@@ -757,6 +760,37 @@ pub enum VersionScheme {
     Numeric,
 }
 
+/// `[releases.<target>]`: the release lines of one versioned target.
+///
+/// A line is a version as the list writes it, and stands for every version
+/// that starts with it: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line
+/// of one target has the same number of parts.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Releases {
+    /// The target: a versioned dimension value.
+    pub target: String,
+    /// `live`: the lines a reader can be on, newest first. The first is the
+    /// current line.
+    pub live: Vec<Version>,
+}
+
+impl Releases {
+    /// The current line: the newest live one.
+    pub fn current(&self) -> Option<&Version> {
+        self.live.first()
+    }
+
+    /// The live line spelled `text`, as the list writes it.
+    pub fn live_line(&self, text: &str) -> Option<&Version> {
+        self.live.iter().find(|l| l.text == text)
+    }
+}
+
+/// Whether `version` is in `line`: whether it starts with the line's parts.
+pub fn in_line(line: &Version, version: &Version) -> bool {
+    version.components.starts_with(&line.components)
+}
+
 /// A lifecycle state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LifecycleState {
@@ -979,6 +1013,10 @@ pub struct Build {
     pub variants: VariantMode,
     /// The availability mode.
     pub availability: AvailabilityMode,
+    /// `versions`: the target the build is versioned by, which gives it one
+    /// output for each of the target's live lines. Its availability mode is
+    /// `Badge`, and the target has at least one live line.
+    pub versions: Option<String>,
 }
 
 /// The reserved frontmatter key a page names its content type with (SPEC
@@ -1088,6 +1126,11 @@ impl ContentModel {
                 .find(|v| v.value == value)
                 .map(|v| v.label.as_str())
         })
+    }
+
+    /// `[releases.<target>]` for a target, when the project lists its lines.
+    pub fn releases_of(&self, target: &str) -> Option<&Releases> {
+        self.releases.iter().find(|r| r.target == target)
     }
 
     /// Whether `value` is a declared, versionless dimension value.

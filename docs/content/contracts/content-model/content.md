@@ -27,6 +27,16 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape. The scheme is named `numeric`, not "semantic versioning", because it accepts any number of components and has no pre-release syntax.
 
+### 7.1 `[releases.<target>]`
+
+@include: ../../_fragments/content-model/releases.md
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `live` | array of strings (versions) | `[]` | The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each. |
+
+**Rules.** `<target>` MUST be a declared dimension value that isn't versionless (`model-releases-target`). Each line MUST be a version (SPEC Appendix A rule `version`), listed once, and every line of one target MUST have the same number of parts (`model-releases-line`). A list in any other order means the same.
+
 ---
 
 ## 8. `[lifecycle.<state>]`

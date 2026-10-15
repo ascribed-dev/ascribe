@@ -329,6 +329,7 @@ impl<'s> Loader<'s> {
                 "fragments",
                 "dimensions",
                 "versions",
+                "releases",
                 "lifecycle",
                 "features",
                 "notes",
@@ -370,7 +371,8 @@ impl<'s> Loader<'s> {
         let image_attributes = self.images(root.get("images"));
         let widgets = self.widgets(root.get("widgets"));
         let consumer = self.consumer(root.get("consumer"));
-        let builds = self.builds(root.get("builds"), &dimensions);
+        let releases = self.releases(root.get("releases"), &dimensions);
+        let builds = self.builds(root.get("builds"), &dimensions, &releases);
         let editor_build = self.editor(root.get("editor"), root.get("builds"), &builds);
         let current_version = self.versions(root.get("versions"));
         self.project_paths(&project, root.get("project"));
@@ -389,6 +391,7 @@ impl<'s> Loader<'s> {
             dimensions,
             version_scheme: VersionScheme::Numeric,
             current_version,
+            releases,
             lifecycle,
             features,
             notes,

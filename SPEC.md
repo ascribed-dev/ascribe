@@ -815,6 +815,7 @@ A content model declares the following.
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
 | Versions | How versions are compared, and optionally which release is current | §4.4 |
+| Releases | For a versioned target, its release lines that are live. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line | §9.3 |
 | Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
@@ -1133,6 +1134,8 @@ Content is **available** for target *T* at version *V* when its effective availa
 2. has a state in effect for *T* at *V* that counts as available (§7.2).
 
 The state in effect at *V* is the last state in the target's history whose start version is at or before *V*. If *V* precedes the first state's start version, no state is in effect, and the content isn't available. A bare target with no version is in effect at every version. A versionless target has a single state, which is in effect at every version, so content marked `cloud removed` is never available for `cloud`. Content that has no spec, or reaches *T* through inheritance without a state, is treated as generally available.
+
+A build MAY instead be **versioned** by a versioned target *T* whose live release lines are declared (§7.2). Its availability mode is `badge`, and it gives one output for each live line *L*. Content is **in** *L* when its effective availability has no spec, or doesn't list *T*, directly or through *T*'s dimension name, or has a state that counts as available in effect for *T* at some version in *L*. Content that isn't in *L* is removed from *L*'s output as `filter` removes it, and what remains is annotated as in `badge`, except that a version at or before the oldest live line isn't shown, since every live line has that content. The current line's output also keeps content whose versions are all later than every live line; an older line's doesn't.
 
 ### 9.4 Outputs
 

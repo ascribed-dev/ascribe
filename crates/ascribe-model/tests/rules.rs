@@ -593,6 +593,46 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\", \"b\"]\nversionless = [\"a\", \"b\"]\n[builds.site]\nvariants = { d = \"a\" }\navailability = { filter = \"b\" } #!\n",
         ),
         case(
+            "model-build-versions",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[builds.site]\nversions = \"a\" #!\n",
+        ),
+        case(
+            "model-build-versions",
+            Some("filter"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"1.0\"]\n[builds.site]\navailability = { filter = \"a 1.0\" }\nversions = \"a\" #!\n",
+        ),
+        case(
+            "model-releases-target",
+            None,
+            "spec = \"0.1\"\n[releases.mars] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-target",
+            Some("versionless"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\nversionless = [\"a\"]\n[releases.a] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-target",
+            Some("dimension"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.d] #!\nlive = [\"1.0\"]\n",
+        ),
+        case(
+            "model-releases-line",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\",\n  \"3.5.0\"] #!\n",
+        ),
+        case(
+            "model-releases-line",
+            Some("duplicate"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\",\n  \"3.4\"] #!\n",
+        ),
+        case(
+            "model-releases-line",
+            Some("invalid"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"v3\"] #!\n",
+        ),
+        case(
             "model-editor-build-unknown",
             None,
             "spec = \"0.1\"\n[builds.site]\n[editor]\nbuild = \"nope\" #!\n",

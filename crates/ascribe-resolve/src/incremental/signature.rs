@@ -161,6 +161,7 @@ impl Fingerprints {
             dimensions,
             version_scheme,
             current_version,
+            releases,
             lifecycle,
             features,
             notes,
@@ -223,6 +224,14 @@ impl Fingerprints {
             .chain(features.iter().map(|f| f.span))
             .chain(glossary.terms.iter().map(|t| t.span))
             .chain(current_version.iter().map(|v| v.span))
+            .chain(releases.iter().flat_map(|r| r.live.iter().map(|l| l.span)))
+            .collect();
+        let lines: Vec<_> = releases
+            .iter()
+            .map(|r| {
+                let live: Vec<_> = r.live.iter().map(|l| (&l.text, &l.components)).collect();
+                (&r.target, live)
+            })
             .collect();
         let current = current_version.as_ref().map(|v| &v.components);
         let index = hash_of(&format!(
@@ -240,7 +249,7 @@ impl Fingerprints {
             (
                 (spec, project, types, fragments, dimensions),
                 (
-                    (version_scheme, current),
+                    (version_scheme, current, lines),
                     lifecycle,
                     feature_specs,
                     notes,
