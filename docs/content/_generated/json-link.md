@@ -39,6 +39,40 @@
         }
       ]
     },
+    "LinkLine": {
+      "description": "Where a link goes in one line of a versioned build (SPEC §5.2).",
+      "properties": {
+        "build": {
+          "description": "The line's build: the declared build for the current line, and\n`<build>@<line>` for each other.",
+          "type": "string"
+        },
+        "leads_to": {
+          "description": "For a link out of the line, the line it leads to.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "description": "The line, as `[releases.<target>]` writes it.",
+          "type": "string"
+        },
+        "page": {
+          "description": "The page it lands on, as a path from the content root: the target,\nor the page that takes its place in the line. `null` when no live\nline publishes the target, which is `link-page-dropped`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "build",
+        "line",
+        "page",
+        "leads_to"
+      ],
+      "type": "object"
+    },
     "LinkSuggestion": {
       "description": "A target a link could name instead.",
       "properties": {
@@ -113,6 +147,13 @@
     "kind": {
       "$ref": "#/$defs/LinkKind",
       "description": "What the target is."
+    },
+    "lines": {
+      "description": "Where a link to a page goes in each line of each versioned build,\nnewest first; absent when the target isn't a page or no build is\nversioned.",
+      "items": {
+        "$ref": "#/$defs/LinkLine"
+      },
+      "type": "array"
     },
     "path": {
       "description": "The file it names, as a path from the content root; `null` for an\nexternal URL, or a file that doesn't exist.",

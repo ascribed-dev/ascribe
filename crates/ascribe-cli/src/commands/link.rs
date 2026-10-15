@@ -114,6 +114,7 @@ fn write_text(out: &mut dyn Write, l: &LinkAnswer) -> io::Result<()> {
             (Some(href), text) => writeln!(out, "Write: [{}]({href})", text.unwrap_or(""))?,
             (None, _) => {}
         }
+        write_lines(out, l)?;
         return Ok(());
     }
     writeln!(
@@ -128,6 +129,30 @@ fn write_text(out: &mut dyn Write, l: &LinkAnswer) -> io::Result<()> {
         for s in &l.closest {
             writeln!(out, "  [{}]({})", s.title.as_deref().unwrap_or(""), s.href)?;
         }
+    }
+    Ok(())
+}
+
+/// Where the link goes in each line of a versioned build (SPEC §5.2), when
+/// it goes anywhere but the target in one of them.
+fn write_lines(out: &mut dyn Write, l: &LinkAnswer) -> io::Result<()> {
+    let path = l.path.as_deref().unwrap_or_default();
+    let elsewhere = l
+        .lines
+        .iter()
+        .any(|line| line.page.as_deref() != Some(path) || line.leads_to.is_some());
+    if !elsewhere {
+        return Ok(());
+    }
+    writeln!(out, "In each line:")?;
+    for line in &l.lines {
+        let goes = match (&line.page, &line.leads_to) {
+            (None, _) => "nowhere: no live line has it (link-page-dropped)".to_owned(),
+            (Some(page), Some(to)) => format!("{page} in {to}, a link out of the line"),
+            (Some(page), None) if page == path => page.clone(),
+            (Some(page), None) => format!("{page}, which takes its place"),
+        };
+        writeln!(out, "  {} ({}): {goes}", line.line, line.build)?;
     }
     Ok(())
 }

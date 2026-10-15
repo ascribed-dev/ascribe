@@ -283,6 +283,7 @@ fn a_link_to_a_page_points_at_its_route_and_an_empty_one_takes_the_pages_title()
             id: None,
             url: "/docs/keys/".into(),
             text_filled: true,
+            line: None,
         }
     );
     assert_eq!(all[1].destination, "guides/setup.md");

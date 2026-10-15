@@ -1,0 +1,25 @@
+description: >-
+  In a line of a versioned build, a link to a page the line doesn't publish
+  resolves instead of failing (SPEC §5.2). A page new in 3.5 is a link out of
+  3.3 and 3.4. A page rewritten twice, each version replacing the one before,
+  is followed along the chain to the page each line publishes, either way;
+  its `#id` is kept where the page it lands on has the heading, and dropped,
+  with advice, where it doesn't. The current line links into an older line,
+  with advice, for a page it has nothing in place of. A page in no live line
+  is `link-page-dropped` in every line.
+spec: ["5.2", "9.3", "8.2"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-fragment-dropped, file: index.md, line: 9, severity: advice}
+      - {slug: link-into-older-line, file: index.md, line: 13, severity: advice}
+      - {slug: link-page-dropped, file: index.md, line: 15}
+  site@3.4:
+    diagnostics:
+      - {slug: link-fragment-dropped, file: index.md, line: 9, severity: advice}
+      - {slug: link-page-dropped, file: index.md, line: 15}
+  site@3.3:
+    diagnostics:
+      - {slug: link-page-dropped, file: index.md, line: 15}
