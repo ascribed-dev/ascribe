@@ -11,7 +11,7 @@ Nothing here needs a versioned build, and its seam isn't the thread's. It's numb
 ## Context
 
 - README decisions 2 to 6 and 22, and phase 1's decisions 1 to 4, 10, and 11.
-- `project-docs/decisions.md`, decision 67: `[versions] current` and `availability-left-behind`, which this phase amends.
+- `project-docs/decisions.md`, decision 67: `[versions] current` and `availability-left-behind`, as [decision #494](../decisions/494-versions-current-removed.md) amends it.
 - `crates/ascribe-check/src/across.rs`: the checks across a project, `availability-left-behind` among them.
 - `packages/elements/CONTRACT.md`: the availability element. `crates/ascribe-emit/src/labels.rs`: the text the element and the plain output share.
 - `docs/content/command/index.md`: `ASCRIBE_TODAY`, the one rule for a check that depends on the day.
@@ -69,7 +69,7 @@ Three kinds, each exact because marks are positive and ordered:
 
 ### `[versions] current` goes
 
-As phase 1's decision 1 has it. A project that sets it gets an error naming `[releases]`. The reference's row, decision 67's amendment, and the two projects in this repository change together.
+As phase 1's decision 1 has it. A project that sets it gets an error naming `[releases]`. The reference's row and the two projects in this repository change together, as decision #494, which records the amendment to decision 67, says.
 
 ### Planned
 

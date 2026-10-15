@@ -20,7 +20,7 @@ This phase can't be folded into phase 2. A thread may narrow what it handles. It
 
 ## The decisions
 
-Each has a recommendation. The maintainer may take it, change it, or ask for more.
+Each has a recommendation. The maintainer may take it, change it, or ask for more. The maintainer took every recommendation, on [#494](https://github.com/ascribed-dev/ascribe/issues/494#issuecomment-6195368949), 15 October 2026, and each is recorded under its heading and in the [README's decisions](README.md#decisions), numbered 24 to 34.
 
 ### 1. What becomes of `[versions] current`
 
@@ -34,6 +34,8 @@ Each has a recommendation. The maintainer may take it, change it, or ask for mor
 
 `current` is in `main` and in no release, so removing it breaks nobody. It amends decision 67, whose own reason ends "a table per target can come later".
 
+**Decided:** remove it; the list replaces it. `[versions]` keeps `scheme` alone, `availability-left-behind` compares each target's versions with that target's current line, and a project that sets `current` gets an error naming `[releases]`. It amends decision 67, as [decision #494](../decisions/494-versions-current-removed.md) records. _Why:_ one home for the current version, which the list already gives for each target; `current` is in no release, so removing it breaks nobody.
+
 ### 2. What a line is
 
 The proposal says `3.4` stands for every `3.4.x`. Ascribe's own marks are `ascribe 0.1.1` and its phrase is `0.2.0`, so "how long is a line's number" decides whether Ascribe's docs can use the list at all.
@@ -45,6 +47,8 @@ The proposal says `3.4` stands for every `3.4.x`. Ascribe's own marks are `ascri
 | A line is a range the list spells out | `"3.4" = { from = "3.4.0", before = "3.5.0" }`. Says everything, and is a version range, which the language deliberately doesn't have |
 
 A version shorter than its target's lines (`3` against `3.4` and `3.5`) starts no line and is in whichever lines follow it by order, as it is today.
+
+**Decided:** a line is the number as the list writes it, and a version is in the line it starts with. Every line of one target has the same number of parts, and a list that mixes them is an error. _Why:_ a project chooses how fine its lines are by writing them, so Ascribe's docs can declare `0.2.0` while a product with minor lines declares `3.4`, with no range syntax the language doesn't have.
 
 ### 3. The phrase for a target's line
 
@@ -58,6 +62,8 @@ The proposal wants one home for "the current version", resolving to the line of 
 
 With decision 2 as recommended, Ascribe's docs write `live = ["0.2.0"]` and `version = { line = "ascribe" }`, and the hand-kept phrase and its test go, as the proposal's settled answer on releases expects. A project whose lines are `3.4` gets `3.4`, which is what an install command for a line names.
 
+**Decided:** a phrase a project declares, whose value is a target's line: `version = { line = "ascribe" }`. In a line's output it's that line; in a build that isn't versioned it's the target's current line. _Why:_ the project picks the key, so nothing is reserved and nothing collides with a phrase a project already has, such as `docs/ascribe.toml`'s `version`.
+
 ### 4. How "planned" is written in three outputs
 
 | Output | Recommended | Instead of |
@@ -69,6 +75,8 @@ With decision 2 as recommended, Ascribe's docs write `live = ["0.2.0"]` and `ver
 The label, "planned", is set in `[releases]` as `planned-label`, for the project and not for each target. A state's label is changed the same way.
 
 **Recommended as a whole.** The one thing to weigh is the element's text: "(planned, 3.6)" puts the word before the version, where a state's label goes, so a reader sees it as one.
+
+**Decided:** as recommended, in all three. The element's target entry gets a `planned` attribute beside `states` and `versions`, and its text reads "Self-managed (planned, 3.6)"; the plain output's availability line says the same; the JSON output has `planned: true` on the target, absent otherwise. The label is `[releases] planned-label`, for the project. _Why:_ planned is something the list says about a version, not a lifecycle state, so it gets no place in `states`; the word goes before the version, where a state's label goes, so a reader sees it as one.
 
 ### 5. The file the lines share
 
@@ -87,6 +95,8 @@ Each key is contract from the phase that writes it. Later phases add keys and ch
 
 **The other shape considered:** a file in each line's output that lists the others. Every output would then change whenever any line did, and "nothing is shared" would be broken in every folder and not in one.
 
+**Decided:** as recommended, every row. The file is `<output-dir>/_ascribe/versions.json`, owned through `<output-dir>/_ascribe/manifest.json`, written by every build of a project with `[releases]` and removed by the first build without it, in the shape the table gives. _Why:_ one file above the builds is the one exception to "nothing is shared", and a manifest of the folder's own lets the store's existing ownership rules hold one level up with no new ones.
+
 ### 6. How a problem in more than one line is said
 
 A page that's the same in every line would otherwise report each of its problems once for each line.
@@ -95,6 +105,8 @@ A page that's the same in every line would otherwise report each of its problems
 |---|---|
 | **Once, with the builds it's in, as a problem in two builds is said today** (recommended) | Nothing new in `check`'s JSON: a line is a build, named `site@3.4`. The text output says "in every line of `site`" when that's so, and names the lines otherwise. `builds_checked` lists each line |
 | A new `lines` field beside the builds | Says "line" in the JSON. A second way to say where a problem is, for every reader of the report to learn |
+
+**Decided:** once, with the builds it's in, as a problem in two builds is said today. A line is a build named `site@3.4`; the text says "in every line of `site`" when that's so; `builds_checked` lists each line; `check`'s JSON gains no `lines` field. _Why:_ no second way to say where a problem is for every reader of the report to learn.
 
 ### 7. What `@ascribed/astro` gives a site for the lines
 
@@ -108,6 +120,8 @@ Decision 82 expected a collection for each line. A site would then define collec
 
 The integration's check that Astro's `base` holds the project's base path allows for the number.
 
+**Decided:** one collection, with the line in each entry. Ids are routes under the base path (`install`, `3.4/install`), an entry's data carries `line` and `current`, a loader of the integration's own reads each line's output, and `@ascribed/astro/Versions.astro` lists a page's lines. _Why:_ a site's configuration doesn't change with `ascribe.toml`, and the one `[...slug].astro` it already has serves every line. If phase 2 finds a loader can't match `glob`, this decision is reopened before anything ships.
+
 ### 8. The two commands not yet named
 
 `release`, `archive`, and `retire` are settled. Two more are needed.
@@ -118,6 +132,8 @@ The integration's check that Astro's `base` holds the project's base path allows
 | Says what differs between two lines, from the marks alone | `ascribe versions changes "<target> <from>" <to>` | Not `diff`, which compares two revisions of the source, and not under `report`, whose subcommands are about one state of the project |
 
 Each takes `--format text|json`, names a line as a mark does (`"self-managed 3.4"`), and exits 0, or 2 for a line that isn't declared.
+
+**Decided:** `ascribe versions list` and `ascribe versions changes "<target> <from>" <to>`, each with `--format text|json`, naming a line as a mark does, and exiting 0, or 2 for a line that isn't declared. _Why:_ `list` is the word `permalinks` uses for the same job, and `changes` isn't `diff`, which compares revisions of the source, nor under `report`, whose subcommands are about one state of the project.
 
 ### 9. Where the rule for an older line's indexing lives
 
@@ -131,6 +147,8 @@ By default an older live line can be indexed, with its canonical links pointing 
 
 It governs search engines and agents together, by that plan's decision 15. `older-lines` is a key at the table's top, beside `default`, `folders`, and `types`, and not a level under `folders`.
 
+**Decided:** a level in `[listing]`: `older-lines = "unlisted"`, a key at the table's top beside `default`, `folders`, and `types`, between the site's `default` and a folder or a type. _Why:_ it's the place the search and answers plan left, so one rule still says which place wins, and it governs search engines and agents together by that plan's decision 15.
+
 ### 10. What a release does to the line before it, where nothing is versioned
 
 A project with one site has no build that's versioned, so no line of it was ever published alone and there's nothing to archive. But `retire` refuses a line with no address (README decision 16), so without a rule here its `live` list grows by a line at every release and never shrinks. Ascribe's own docs, with `live = ["0.2.0"]`, meet this at their next release.
@@ -143,6 +161,8 @@ A project with one site has no build that's versioned, so no line of it was ever
 
 `release` also takes a line nobody planned: one newer than the current line and older than every planned one, such as a patch release. It's added and made live, no feature names it, and `--next` isn't asked for.
 
+**Decided:** `release` moves the line before it to `archived`, with no address, when no build is versioned by the target, and leaves it live otherwise. `release` also takes a line nobody planned between the current line and the oldest planned one. _Why:_ a one-site project keeps one live line with nothing to remember, the old line stays declared so its marks check clean, and no mark is rewritten.
+
 ### 11. What a line's output shows of a version from before the window
 
 Retiring rewrites `self-managed 3.3` to `self-managed` and calls it a safe fix: "no line's output changes" (README decision 17). That's only true if no line's output was showing "3.3+" to begin with. And phase 3's check for a mark that does nothing is only right where the mark really shows nothing.
@@ -154,6 +174,8 @@ Retiring rewrites `self-managed 3.3` to `self-managed` and calls it a safe fix: 
 | No build shows a version before the window | One rule. A one-site project loses "since 0.1.1" from every page the day it adopts the list |
 
 It follows that a mark "does nothing" only when every build that publishes its content is versioned by its target or filtered for it. Phase 3's two checks report in that case alone, so a project with one badge build is never asked to rewrite its history or declare every line it ever shipped.
+
+**Decided:** a line's output leaves out a version at or before the oldest live line, keeping the mark's state; every other build shows it. A mark does nothing only when every build that publishes its content is versioned by its target or filtered for it. _Why:_ every reader of a live line has that content, so the version tells them nothing, and `retire`'s rewrite then changes no line's output exactly as README decision 17 says; a one-site project keeps "since 0.1.1" and is never asked to rewrite its history.
 
 ## Tasks
 
