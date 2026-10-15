@@ -86,11 +86,11 @@ labels = { ascribe = "Ascribe" }
 label = "Package manager"
 values = ["npm", "pnpm"]
 
-# The latest release. `availability-left-behind` reports a feature whose
-# versions are all at or before it, such as `next` once its release ships.
-# After a release, set it to the release.
-[versions]
-current = "0.3.1"
+# The releases the docs know of: the latest is the current line.
+# `availability-left-behind` reports a feature whose versions are all at or
+# before it, such as `next` once its release ships.
+[releases.ascribe]
+live = ["0.3.1"]
 
 [lifecycle.unreleased]
 available = true

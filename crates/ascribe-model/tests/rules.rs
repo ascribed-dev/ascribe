@@ -77,12 +77,12 @@ fn cases() -> Vec<Case> {
         case(
             "model-wrong-type",
             None,
-            "spec = \"0.1\"\n[versions]\ncurrent = \"v3.4\" #!\n",
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\n[releases.a.ends]\n\"3.4\" = \"2027-01-31\" #!\n",
         ),
         case(
             "model-wrong-type",
             Some("quote"),
-            "spec = \"0.1\"\n[versions]\ncurrent = 3.4 #!\n",
+            "spec = \"0.1\"\n[releases]\nplanned-label = 3.4 #!\n",
         ),
         case("model-spec-unsupported", None, "spec = \"9.9\" #!\n"),
         case(
@@ -631,6 +631,41 @@ fn cases() -> Vec<Case> {
             "model-releases-line",
             Some("invalid"),
             "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"v3\"] #!\n",
+        ),
+        case(
+            "model-releases-line",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.5.0\"] #!\n",
+        ),
+        case(
+            "model-releases-order",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.3\"] #!\n",
+        ),
+        case(
+            "model-releases-order",
+            Some("archived"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\n[releases.a.archived]\n\"3.5\" = {} #!\n",
+        ),
+        case(
+            "model-releases-order",
+            Some("twice"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.4\"] #!\n",
+        ),
+        case(
+            "model-releases-ends",
+            None,
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nlive = [\"3.4\"]\nplanned = [\"3.5\"]\n[releases.a.ends]\n\"3.5\" = 2027-01-31 #!\n",
+        ),
+        case(
+            "model-releases-ends",
+            Some("none"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[releases.a]\nplanned = [\"3.5\"]\n[releases.a.ends]\n\"3.5\" = 2027-01-31 #!\n",
+        ),
+        case(
+            "model-versions-current",
+            None,
+            "spec = \"0.1\"\n[versions]\ncurrent = \"3.4\" #!\n",
         ),
         case(
             "model-editor-build-unknown",

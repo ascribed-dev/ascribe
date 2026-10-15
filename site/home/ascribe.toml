@@ -47,7 +47,7 @@ values = ["npm", "pnpm"]
 
 # What follows are copies of ../../docs/ascribe.toml's, so a claim here is
 # marked as the docs mark it. scripts/docs-site/facts.test.ts fails until
-# each agrees with the docs': the release dimension, the versions, the
+# each agrees with the docs': the release dimension, the releases, the
 # unreleased lifecycle and the `next` feature, the `version` and `site`
 # phrases, the sources, and `[consumer]`'s `site`, `trailing-slash`, and `permalink-path`.
 [dimensions.release]
@@ -55,8 +55,8 @@ label = "Ascribe"
 values = ["ascribe"]
 labels = { ascribe = "Ascribe" }
 
-[versions]
-current = "0.3.1"
+[releases.ascribe]
+live = ["0.3.1"]
 
 [lifecycle.unreleased]
 available = true

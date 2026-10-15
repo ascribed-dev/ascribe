@@ -64,12 +64,22 @@ labels = { yarn = "Yarn" }
 # :snippet-start: versions
 [versions]
 scheme = "numeric"
-current = "3.5"
 # :snippet-end:
 
 # :snippet-start: releases
+[releases]
+planned-label = "planned"
+
 [releases.self-managed]
 live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[releases.self-managed.ends]
+"3.4" = 2027-01-31
+
+[releases.self-managed.archived]
+"3.3" = { url = "https://docs.example.com/archive/3.3/", ended = 2026-06-30 }
+"3.2" = {}
 # :snippet-end:
 
 # A new state, and a built-in state relabeled.

@@ -204,3 +204,6 @@
 | [ASC204](../checks/diagnostics/content-model.md#ASC204) | `model-releases-target` | Error | File | choose |
 | [ASC205](../checks/diagnostics/content-model.md#ASC205) | `model-releases-line` | Error | File | write |
 | [ASC206](../checks/diagnostics/content-model.md#ASC206) | `model-build-versions` | Error | File | write |
+| [ASC207](../checks/diagnostics/content-model.md#ASC207) | `model-releases-order` | Error | File | write |
+| [ASC208](../checks/diagnostics/content-model.md#ASC208) | `model-releases-ends` | Error | File | choose |
+| [ASC209](../checks/diagnostics/content-model.md#ASC209) | `model-versions-current` | Error | File | write |

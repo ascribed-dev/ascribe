@@ -507,6 +507,39 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
+### ASC207 `model-releases-order`
+@id {permalink=true}: ASC207
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}`
+
+**Fix:** Keep each line in one list, in the order the lists mean: `planned` lines are newer than every `live` line, and `archived` lines older. A line that has shipped moves from `planned` to `live`, and one that has left the window from `live` to `archived`.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
+### ASC208 `model-releases-ends`
+@id {permalink=true}: ASC208
+
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are \{live}
+
+**Fix:** Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
+### ASC209 `model-versions-current`
+@id {permalink=true}: ASC209
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`
+
+**Fix:** Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = ["3.4"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line.
+
+**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+
 ## Phrases and the glossary
 
 ### ASC097 `model-phrase-value-type`

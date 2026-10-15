@@ -3214,10 +3214,10 @@ configurable = true
 place = "entry"
 area = "project"
 spec = "4.4"
-reference = "content-model/content.md#7-versions"
-when = "`[versions] current` is set, and a feature's availability names a version for every target, none of them later than the current release"
-message = "feature `{key}` names releases up to {version}, and the current release is {current}, so what it marks has shipped"
-fix = "When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the release after it, or at a state such as `unreleased`. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements). After each release, move [`[versions] current`](content-model/content.md#7-versions) to it."
+reference = "content-model/content.md#71-releasestarget"
+when = "a feature's availability names a version for every target, each target lists its lines in `[releases]`, and no version is later than its target's current line"
+message = "feature `{key}` names releases up to {version}, and the current line of `{target}` is {current}, so what it marks has shipped"
+fix = "When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the next planned line. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](content-model/content.md#71-releasestarget)."
 
 [[diagnostic]]
 code = "ASC173"
@@ -3843,3 +3843,45 @@ group = "consumer"
 message = "build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = [\"3.4\"]`"
 messages.filter = "build `{build}` is versioned by `{target}` and filtered too; a filtered build is already one version of one target, so a versioned build's availability is `badge`"
 fix = "Give the target its lines in `[releases.<target>]`, with `live`, or remove `versions` from the build. A build is either versioned, with one output for each live line, or filtered for one version; not both."
+
+[[diagnostic]]
+code = "ASC207"
+slug = "model-releases-order"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}`"
+messages.archived = "`[releases.{target}]`: the archived line `{line}` isn't older than every live line, and the oldest is `{live}`"
+messages.twice = "`[releases.{target}]` lists `{line}` in both `{a}` and `{b}`; a line is in one list"
+fix = "Keep each line in one list, in the order the lists mean: `planned` lines are newer than every `live` line, and `archived` lines older. A line that has shipped moves from `planned` to `live`, and one that has left the window from `live` to `archived`."
+
+[[diagnostic]]
+code = "ASC208"
+slug = "model-releases-ends"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live}"
+messages.none = "`[releases.{target}.ends]`: `{line}` isn't a live line, and `{target}` has none"
+fix = "Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`."
+
+[[diagnostic]]
+code = "ASC209"
+slug = "model-versions-current"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#71-releasestarget"
+group = "releases"
+message = "`[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`"
+fix = "Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = [\"3.4\"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line."

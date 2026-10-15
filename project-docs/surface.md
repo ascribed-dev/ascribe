@@ -78,7 +78,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
 | `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
-| `[versions]` | How versions in availability specs are compared (SPEC §4.4), and which release is current. | §7 |
+| `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §7 |
 | `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §8 |
 | `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §9 |
 | `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §10 |
@@ -99,7 +99,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-202 in all. By severity: 32 advice, 147 error, 23 warning. By level: 183 file, 19 page. By kind of next step: 45 choose, 13 fix, 7 outside, 11 review, 126 write.
+205 in all. By severity: 32 advice, 150 error, 23 warning. By level: 186 file, 19 page. By kind of next step: 46 choose, 13 fix, 7 outside, 11 review, 128 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -270,7 +270,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC169` | `link-external-moved` | advice | choose | `{url}` moved permanently to `{to}`; link to the new address |
 | `ASC170` | `delivery-hosting` | advice | outside | the site fails the delivery spec's `{check}` check: {result}. {setting} |
 | `ASC171` | `delivery-output` | advice | outside | the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues} |
-| `ASC172` | `availability-left-behind` | advice | review | feature `{key}` names releases up to {version}, and the current release is {current}, so what it marks has shipped |
+| `ASC172` | `availability-left-behind` | advice | review | feature `{key}` names releases up to {version}, and the current line of `{target}` is {current}, so what it marks has shipped |
 | `ASC173` | `permalink-duplicate` | error | write | the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only |
 | `ASC174` | `model-consumer-permalink-path` | error | write | permalink-path must start with "/", such as "/go/" |
 | `ASC175` | `permalinks-list-invalid` | error | write | ascribe.permalinks can't be read: {detail} |
@@ -305,6 +305,9 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` isn't a declared dimension value |
 | `ASC205` | `model-releases-line` | error | write | `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts |
 | `ASC206` | `model-build-versions` | error | write | build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = ["3.4"]` |
+| `ASC207` | `model-releases-order` | error | write | `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}` |
+| `ASC208` | `model-releases-ends` | error | choose | `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are {live} |
+| `ASC209` | `model-versions-current` | error | write | `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live` |
 
 ## The VS Code extension
 

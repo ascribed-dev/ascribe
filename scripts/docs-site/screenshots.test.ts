@@ -1,6 +1,6 @@
 // The site's screenshots are there, in light and dark, and none is more than
-// one minor release behind `[versions] current` in docs/ascribe.toml, the
-// release the docs describe. A picture's release is in the record beside it,
+// one minor release behind the current line of `[releases.ascribe]` in
+// docs/ascribe.toml, the release the docs describe. A picture's release is in the record beside it,
 // which `node scripts/docs-site/screenshots.ts <name>` writes when it retakes
 // the picture; the failure names that command. One minor release is where
 // the plan started: a picture of the previous release still shows what the
@@ -49,6 +49,8 @@ test("a picture two minor releases back is stale, and names the command that ret
 });
 
 test("the current release is read from docs/ascribe.toml", () => {
-  expect(currentRelease('spec = "0.1"\n[versions]\ncurrent = "1.4.2"\n')).toBe("1.4.2");
-  expect(() => currentRelease('spec = "0.1"\n')).toThrow("[versions] current");
+  expect(
+    currentRelease('spec = "0.1"\n[releases.ascribe]\nlive = ["1.4.2", "1.10.0", "1.9.3"]\n'),
+  ).toBe("1.10.0");
+  expect(() => currentRelease('spec = "0.1"\n')).toThrow("[releases.ascribe]");
 });

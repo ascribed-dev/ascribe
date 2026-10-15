@@ -644,6 +644,15 @@ pub const MODEL_RELEASES_LINE: DiagnosticSlug = DiagnosticSlug("model-releases-l
 /// `ASC206`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_VERSIONS: DiagnosticSlug = DiagnosticSlug("model-build-versions");
 
+/// `ASC207`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_ORDER: DiagnosticSlug = DiagnosticSlug("model-releases-order");
+
+/// `ASC208`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_ENDS: DiagnosticSlug = DiagnosticSlug("model-releases-ends");
+
+/// `ASC209`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_VERSIONS_CURRENT: DiagnosticSlug = DiagnosticSlug("model-versions-current");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -848,6 +857,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_RELEASES_TARGET,
     MODEL_RELEASES_LINE,
     MODEL_BUILD_VERSIONS,
+    MODEL_RELEASES_ORDER,
+    MODEL_RELEASES_ENDS,
+    MODEL_VERSIONS_CURRENT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

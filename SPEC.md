@@ -814,8 +814,8 @@ A content model declares the following.
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
-| Versions | How versions are compared, and optionally which release is current | §4.4 |
-| Releases | For a versioned target, its release lines that are live. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line | §9.3 |
+| Versions | How versions are compared | §4.4 |
+| Releases | For a versioned target, its release lines: those that are live, those planned, each newer than every live line, and those archived, each older; when a live line's support ends; and the label of a planned version. A line is a version as written, and holds every version that starts with its parts: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line of one target has the same number of parts, and the newest live line is the target's current line. A version in a planned line is planned | §4.4, §9.3, §9.4 |
 | Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |

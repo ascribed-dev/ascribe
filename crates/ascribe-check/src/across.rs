@@ -10,8 +10,9 @@
 //!   so a count is the same everywhere; `image-unused` and `image-large` read
 //!   the image files under the content root, through the project's
 //!   [`FileSystem`](ascribe_resolve::FileSystem); and
-//!   `availability-left-behind` compares each feature's versions with
-//!   `[versions] current`; and `crawlers-disallowed` reads `[crawlers]`.
+//!   `availability-left-behind` compares each feature's versions with each
+//!   target's current line in `[releases]`; and `crawlers-disallowed` reads
+//!   `[crawlers]`.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, and `title-duplicate` and `description-duplicate`, two pages
@@ -29,7 +30,7 @@ use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{
-    CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission, Purpose,
+    CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission, Purpose, in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
@@ -151,11 +152,10 @@ pub(crate) fn for_every_build(
         }
     }
 
-    if on(diagnostics::AVAILABILITY_LEFT_BEHIND)
-        && let Some(current) = &project.model().current_version
-    {
-        for f in &project.model().features {
-            if let Some(latest) = left_behind(&f.available, current) {
+    if on(diagnostics::AVAILABILITY_LEFT_BEHIND) {
+        let model = project.model();
+        for f in &model.features {
+            if let Some((target, latest, current)) = left_behind(model, &f.available) {
                 issues.push(
                     Issue::new(
                         diagnostics::AVAILABILITY_LEFT_BEHIND,
@@ -163,6 +163,7 @@ pub(crate) fn for_every_build(
                     )
                     .with_arg("key", f.key.clone())
                     .with_arg("version", latest.text.clone())
+                    .with_arg("target", target.to_owned())
                     .with_arg("current", current.text.clone())
                     .with_arg(ENTRY_ARG, entry_arg(EntryKind::Feature, &f.key)),
                 );
@@ -288,12 +289,16 @@ fn images(
     }
 }
 
-/// The latest version a feature's spec names, when every target in it names
-/// one and none is later than `current`: the feature is about releases that
-/// have shipped. A target with no version, such as a versionless one, keeps
-/// it current.
-fn left_behind<'s>(spec: &'s AvailabilitySpec, current: &Version) -> Option<&'s Version> {
-    let mut latest: Option<&Version> = None;
+/// The latest version a feature's spec names, with its target and that
+/// target's current line, when every target in it names one and none is
+/// later than its target's current line: the feature is about releases that
+/// have shipped. A target with no version, such as a versionless one, or
+/// with no lines in `[releases]`, keeps it current.
+fn left_behind<'s>(
+    model: &'s ContentModel,
+    spec: &'s AvailabilitySpec,
+) -> Option<(&'s str, &'s Version, &'s Version)> {
+    let mut latest: Option<(&str, &Version, &Version)> = None;
     for entry in &spec.entries {
         let version = match &entry.detail {
             Detail::Version(v)
@@ -303,11 +308,13 @@ fn left_behind<'s>(spec: &'s AvailabilitySpec, current: &Version) -> Option<&'s 
             Detail::History(steps) => &steps.last()?.version,
             Detail::None | Detail::State { version: None, .. } => return None,
         };
-        if version.compare(current) == Ordering::Greater {
+        let target = entry.target.text.as_str();
+        let current = model.releases_of(target)?.current()?;
+        if version.compare(current) == Ordering::Greater && !in_line(current, version) {
             return None;
         }
-        if latest.is_none_or(|l| version.compare(l) == Ordering::Greater) {
-            latest = Some(version);
+        if latest.is_none_or(|(_, l, _)| version.compare(l) == Ordering::Greater) {
+            latest = Some((target, version, current));
         }
     }
     latest
