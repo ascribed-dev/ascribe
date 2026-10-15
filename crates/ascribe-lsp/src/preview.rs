@@ -126,6 +126,11 @@ pub struct PreviewBuild {
     /// What it does, in the content model's terms: `variants: switch,
     /// availability: badge`.
     pub description: String,
+    /// For a versioned build, its live lines, the current one first, each
+    /// a build the preview can render. Absent for a build that isn't
+    /// versioned.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub lines: Vec<crate::targets::BuildLineEntry>,
 }
 
 /// A rendered page.
@@ -390,6 +395,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
                 name: b.name.clone(),
                 editor: b.name == editor.name,
                 description: describe(b),
+                lines: crate::targets::build_lines(model, b),
             })
             .collect(),
         project_root: Some(path_text(&target.root)),
@@ -457,16 +463,19 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
         return result;
     }
 
-    let router = AstroRouter::from_consumer(&model.consumer);
-    let Some(page) = snapshot.resolve_page(path, build, &router) else {
+    // An older line's addresses are under its folder, as its output's are.
+    let project = snapshot.project().for_build(build);
+    let project = project.as_ref();
+    let router = AstroRouter::from_consumer(&project.model().consumer);
+    let Some(page) = project.resolve_page(path, build, &router) else {
         result.problems.push(PreviewProblem::info(format!(
             "The build {} doesn't publish {path}.",
             build.name
         )));
         return result;
     };
-    let emitter = SiteEmitter::new(model).with_anchors(true);
-    let cx = EmitContext::new(snapshot.project(), &target.root, build);
+    let emitter = SiteEmitter::new(project.model()).with_anchors(true);
+    let cx = EmitContext::new(project, &target.root, build);
     let emitted = match emit_page(&emitter, &cx, &page) {
         Ok(emitted) => emitted,
         Err(e) => {

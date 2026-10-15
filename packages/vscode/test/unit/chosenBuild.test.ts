@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ChosenBuilds } from "../../src/ui/chosenBuild.js";
+import {
+  ChosenBuilds,
+  choices as buildChoices,
+  lineDescription,
+} from "../../src/ui/chosenBuild.js";
 
 describe("the build chosen in each project", () => {
   it("keeps a choice to the project it was made in", () => {
@@ -62,5 +66,28 @@ describe("the build chosen in each project", () => {
     expect(choices.shown("/repo/docs", builds)).toBe("site");
     expect(choices.shown("/repo/docs", [])).toBe("gone");
     expect(choices.shown("/repo/other", [])).toBeUndefined();
+  });
+
+  it("offers a versioned build's lines under it, the current one first, and keeps a line chosen", () => {
+    const builds = [
+      {
+        name: "site",
+        editor: true,
+        lines: [
+          { name: "site", line: "3.5", current: true },
+          { name: "site@3.4", line: "3.4", current: false },
+        ],
+      },
+      { name: "cloud", editor: false },
+    ];
+    const offered = buildChoices(builds);
+    expect(offered.map((c) => [c.name, c.editor, lineDescription(c)])).toEqual([
+      ["site", true, "line 3.5, the current line"],
+      ["site@3.4", false, "line 3.4 of site"],
+      ["cloud", false, ""],
+    ]);
+    const chosen = new ChosenBuilds();
+    chosen.choose("/repo/quill", "site@3.4", "site");
+    expect(chosen.shown("/repo/quill", builds)).toBe("site@3.4");
   });
 });

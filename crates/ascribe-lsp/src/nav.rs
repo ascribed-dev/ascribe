@@ -145,6 +145,8 @@ pub(crate) enum Hit<'a> {
     Frontmatter(String, Span),
     /// A frontmatter `listing:` line, key and value.
     Listing(Span),
+    /// The value of a frontmatter `replaces:` key.
+    Replaces(Span),
     /// A directive's name, or one of its attribute keys.
     Directive(&'a DirectiveLine),
 }
@@ -192,6 +194,9 @@ pub(crate) fn hit_at(file: &FileIndex, offset: usize) -> Option<Hit<'_>> {
     }
     if let Some(span) = frontmatter_listing(file, offset) {
         offer(&mut best, offset, span, Hit::Listing(span));
+    }
+    if let Some(span) = ascribe_resolve::replaces_span(file) {
+        offer(&mut best, offset, span, Hit::Replaces(span));
     }
     if let Some((_, hit)) = best {
         return Some(hit);

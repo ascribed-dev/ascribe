@@ -3,7 +3,7 @@ import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
 import { TOGGLE_LENS_COMMAND } from "./buildLens.js";
 import { CHECK_EVERY_BUILD_COMMAND } from "./checkEveryBuild.js";
-import type { ChosenBuilds } from "./chosenBuild.js";
+import { choices, lineDescription, type ChosenBuilds } from "./chosenBuild.js";
 import { RESTRICTED_NOTICE, statusFor, waitingNotice, type Notice } from "./describe.js";
 import type { BuildLenses } from "./lens.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
@@ -163,9 +163,13 @@ export class StatusBar implements vscode.Disposable {
     }
     const info = this.builds.info(server);
     const picked = await this.pick(
-      info.builds.map((build) => ({
+      choices(info.builds).map((build) => ({
         label: build.name,
-        description: [build.editor ? "editor build" : "", build.name === info.build ? "shown" : ""]
+        description: [
+          lineDescription(build),
+          build.editor ? "editor build" : "",
+          build.name === info.build ? "shown" : "",
+        ]
           .filter(Boolean)
           .join(", "),
       })),

@@ -27,6 +27,10 @@ pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
         Some(Hit::Availability(text, _)) => feature_entry(ctx, text),
         Some(Hit::Frontmatter(text, _)) => feature_entry(ctx, &text),
         Some(Hit::Listing(_)) => listing_rule(ctx),
+        Some(Hit::Replaces(_)) => {
+            let replaced = ctx.snapshot.replaces(&ctx.path)?;
+            source_location(ctx, &mut lines, &replaced, None)
+        }
         Some(Hit::Directive(_) | Hit::Snippet(_)) | None => id_definition(ctx, &mut lines, offset),
     }
 }

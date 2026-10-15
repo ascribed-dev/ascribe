@@ -434,6 +434,56 @@ pub struct TargetBuild {
     pub name: String,
     /// Whether it's the editor's build (`[editor] build`).
     pub editor: bool,
+    /// For a versioned build, its live lines, the current one first: each
+    /// is a build of its own a client can choose (`site@3.4`). Absent for
+    /// a build that isn't versioned.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub lines: Vec<BuildLineEntry>,
+}
+
+/// A live line of a versioned build.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct BuildLineEntry {
+    /// The build that is the line: the versioned build's own name for the
+    /// current line, `<build>@<line>` for another.
+    pub name: String,
+    /// The line, as `[releases.<target>] live` writes it.
+    pub line: String,
+    /// Whether it's the current line.
+    pub current: bool,
+}
+
+/// The live lines of the versioned build `build` is the current line of,
+/// the current one first; none for a build that isn't versioned.
+pub(crate) fn build_lines(
+    model: &ascribe_model::ContentModel,
+    build: &ascribe_model::Build,
+) -> Vec<BuildLineEntry> {
+    if build.line.is_none() {
+        return Vec::new();
+    }
+    let mut lines: Vec<&ascribe_model::Build> = model
+        .builds
+        .iter()
+        .filter(|b| b.line.is_some() && b.declared_name() == build.declared_name())
+        .collect();
+    lines.sort_by(|a, b| match (&a.line, &b.line) {
+        (Some(a), Some(b)) => b.current.cmp(&a.current).then(b.line.compare(&a.line)),
+        _ => std::cmp::Ordering::Equal,
+    });
+    lines
+        .into_iter()
+        .filter_map(|b| {
+            let line = b.line.as_ref()?;
+            Some(BuildLineEntry {
+                name: b.name.clone(),
+                line: line.line.text.clone(),
+                current: line.current,
+            })
+        })
+        .collect()
 }
 
 /// Where some text occurs.
@@ -525,7 +575,8 @@ pub(crate) fn targets(
                 .collect()
         }),
         builds: wants(TargetKind::Builds).map(|()| {
-            // A versioned build is listed once, by its current line.
+            // A versioned build is listed once, by its current line, with its
+            // lines.
             ctx.model
                 .builds
                 .iter()
@@ -533,6 +584,7 @@ pub(crate) fn targets(
                 .map(|b| TargetBuild {
                     name: b.name.clone(),
                     editor: b.name == ctx.model.editor_build,
+                    lines: build_lines(&ctx.model, b),
                 })
                 .collect()
         }),

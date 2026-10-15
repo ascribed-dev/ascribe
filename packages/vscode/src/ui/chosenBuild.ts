@@ -45,14 +45,65 @@ export class ChosenBuilds {
    * the editor's when there's no choice or the content model no longer has it.
    * With no builds known, the chosen one.
    */
-  shown(folder: string, builds: readonly { name: string; editor: boolean }[]): string | undefined {
+  shown(folder: string, builds: readonly ListedBuild[]): string | undefined {
     const chosen = this.get(folder);
     if (builds.length === 0) return chosen;
-    if (chosen !== undefined && builds.some((build) => build.name === chosen)) return chosen;
+    if (chosen !== undefined && choices(builds).some((choice) => choice.name === chosen)) {
+      return chosen;
+    }
     return builds.find((build) => build.editor)?.name;
   }
 
   dispose(): void {
     this.changed.dispose();
   }
+}
+
+/** A build as the server lists it: a versioned build with its lines. */
+export interface ListedBuild {
+  name: string;
+  editor: boolean;
+  lines?: readonly { name: string; line: string; current: boolean }[];
+}
+
+/** A build a picker offers: a build, or a line of a versioned build. */
+export interface BuildChoice {
+  /** The build's name: `site`, or a line's, `site@3.4`. */
+  name: string;
+  /** Whether it's the editor's build. */
+  editor: boolean;
+  /** For a line, the line, and whether it's the current one. */
+  line?: { line: string; current: boolean; build: string };
+}
+
+/**
+ * The builds a picker offers, in the server's order, a versioned build's
+ * lines under it, the current one first: the current line is the build
+ * itself.
+ */
+export function choices(builds: readonly ListedBuild[]): BuildChoice[] {
+  const out: BuildChoice[] = [];
+  for (const build of builds) {
+    const lines = build.lines ?? [];
+    if (lines.length === 0) {
+      out.push({ name: build.name, editor: build.editor });
+      continue;
+    }
+    for (const line of lines) {
+      out.push({
+        name: line.name,
+        editor: line.name === build.name && build.editor,
+        line: { line: line.line, current: line.current, build: build.name },
+      });
+    }
+  }
+  return out;
+}
+
+/** What a picker says about a line: `line 3.5, the current line`. */
+export function lineDescription(choice: BuildChoice): string {
+  if (!choice.line) return "";
+  return choice.line.current
+    ? `line ${choice.line.line}, the current line`
+    : `line ${choice.line.line} of ${choice.line.build}`;
 }
