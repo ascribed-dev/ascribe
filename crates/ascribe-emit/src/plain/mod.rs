@@ -159,7 +159,7 @@ impl Emitter for PlainEmitter {
         if self.agents.is_none() {
             return Ok(Vec::new());
         }
-        llms::llms_files(cx.model, &pages::records(cx.model, &build.pages))
+        llms::llms_files(cx.model, cx.build, &pages::records(cx.model, &build.pages))
             .into_iter()
             .map(|file| {
                 let path = RelPath::parse(&file.path).map_err(|e| EmitError::Invalid {

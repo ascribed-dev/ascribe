@@ -22,6 +22,7 @@ import { versioned } from "./sites.js";
 let browser: Browser;
 let root: string;
 let server: Awaited<ReturnType<typeof servePreview>>;
+let unlistedServer: Awaited<ReturnType<typeof servePreview>> | undefined;
 
 beforeAll(async () => {
   root = await versioned("versions");
@@ -33,6 +34,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
   await server?.stop();
+  await unlistedServer?.stop();
   await rm(path.join(siteDir, ".e2e-tmp"), { recursive: true, force: true });
 });
 
@@ -171,9 +173,19 @@ describe("a versioned build", () => {
     expect(sitemap).not.toContain(`${BASE}/3.4`);
   });
 
-  it("publishes the current line's Markdown for agents, and not an older line's", async () => {
-    expect((await fetch(`${server.origin}${BASE}/guides/my-setup.md`)).status).toBe(200);
-    expect((await fetch(`${server.origin}${BASE}/3.4/guides/my-setup.md`)).status).toBe(404);
+  it("publishes each line's Markdown and llms.txt for agents, an older line's pointing at the current", async () => {
+    const current = await (await fetch(`${server.origin}${BASE}/guides/my-setup.md`)).text();
+    expect(current).toContain("> Documentation for Self-managed 3.5.");
+    const older = await fetch(`${server.origin}${BASE}/3.4/guides/my-setup.md`);
+    expect(older.status).toBe(200);
+    expect(await older.text()).toContain(
+      `The current version is 3.5: <https://docs.example.com${BASE}/guides/my-setup>.`,
+    );
+    const index = await (await fetch(`${server.origin}${BASE}/3.4/llms.txt`)).text();
+    expect(index).toMatch(/^# .* \(Self-managed 3\.4\)\n/);
+    expect(index).toContain(`[llms.txt](https://docs.example.com${BASE}/llms.txt)`);
+    expect(index).toContain(`(https://docs.example.com${BASE}/3.4/guides/my-setup.md)`);
+    expect(index).not.toContain("upgrade");
   });
 
   it("rebuilds every line in astro dev", async () => {
@@ -192,4 +204,26 @@ describe("a versioned build", () => {
       await dev.stop();
     }
   }, 90_000);
+});
+
+describe("a versioned build that keeps its older lines out of an index", () => {
+  it("marks every older page noindex, and leaves it out of the sitemap and llms.txt", async () => {
+    const root = await versioned("versions-unlisted");
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.includes("[listing]")
+        ? text.replace("[listing]", '[listing]\nolder-lines = "unlisted"')
+        : `${text}\n[listing]\nolder-lines = "unlisted"\n`,
+    );
+    await buildSite(root);
+    const unlisted = await servePreview(root);
+    unlistedServer = unlisted;
+    const page = await browser.newPage();
+    await page.goto(`${unlisted.origin}${BASE}/3.4/guides/my-setup`);
+    expect(await page.locator('meta[name="robots"]').getAttribute("content")).toContain("noindex");
+    await page.close();
+    const sitemap = await (await fetch(`${unlisted.origin}${BASE}/sitemap.xml`)).text();
+    expect(sitemap).not.toContain(`${BASE}/3.4`);
+    const index = await (await fetch(`${unlisted.origin}${BASE}/3.4/llms.txt`)).text();
+    expect(index).not.toContain("my-setup.md");
+  });
 });

@@ -40,6 +40,8 @@ type Line = LiveLine | ArchivedLine;
 export interface LineOutput extends LiveLine {
   /** The line's site output root: `<output-dir>/<build>/site`. */
   siteRoot: string;
+  /** The line's plain output root, its outputs for agents: `<output-dir>/<build>/plain`. */
+  plainRoot: string;
 }
 
 /** A page's entry: its route in each line that has it, and the pages it replaces or is replaced by. */
@@ -124,6 +126,7 @@ export function linesOf(siteRoot: string): LineOutput[] | undefined {
   return versioned.lines.filter(isLive).map((line) => ({
     ...line,
     siteRoot: path.join(outputRoot, line.build, "site"),
+    plainRoot: path.join(outputRoot, line.build, "plain"),
   }));
 }
 

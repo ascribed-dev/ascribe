@@ -229,10 +229,7 @@ The files are static, so any host serves them. A few things the spec asks are th
 ## Versions
 @available: next
 
-With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [Publish with Astro](../versions/index.md#publish-with-astro) says what the collection, the layout, and `astro dev` do with them. For now, two things are the current line's alone:
-
-- **A permalink always forwards to the current line.**
-- **An older line has no Markdown version and no `llms.txt` at its addresses.** Its pages don't point to them, and the sitemap leaves its pages out.
+With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [Publish with Astro](../versions/index.md#publish-with-astro) says what the collection, the layout, and `astro dev` do with them. Each line's `llms.txt` and Markdown are published at its base path, an older line's pages name the current line's as canonical, and the sitemap lists each page once. A permalink always forwards to the current line.
 
 ## Permalinks
 @available: ascribe 0.3.0

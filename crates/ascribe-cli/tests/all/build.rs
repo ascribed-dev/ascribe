@@ -703,7 +703,7 @@ fn a_versioned_build_writes_an_output_for_each_live_line() {
 }
 
 #[test]
-fn only_the_current_line_points_agents_to_its_markdown() {
+fn each_line_points_agents_to_its_own_markdown_and_index() {
     let dir = versioned();
     let config = dir.path().join("ascribe.toml");
     let text = read(&config).replace(
@@ -716,12 +716,74 @@ fn only_the_current_line_points_agents_to_its_markdown() {
     let build = dir.path().join(".ascribe/build");
     let current = read(&build.join("site/site/install.md"));
     assert!(current.contains("(/docs/llms.txt)"), "{current}");
-    assert!(build.join("site/plain/llms.txt").exists());
-    // No line but the current one publishes them yet, so an older line's pages point to neither.
+    let index = read(&build.join("site/plain/llms.txt"));
+    assert!(index.starts_with("# Home (self-managed 3.5)\n"), "{index}");
+    assert!(!index.contains("older version"), "{index}");
+    // An older line's pages point to its own, under its folder.
     let older = read(&build.join("site@3.4/site/install.md"));
-    assert!(!older.contains("llms.txt"), "{older}");
-    assert!(!read(&build.join("site@3.4/site/_ascribe/pages.json")).contains("\"markdown\""));
-    assert!(!build.join("site@3.4/plain/llms.txt").exists());
+    assert!(older.contains("(/docs/3.4/llms.txt)"), "{older}");
+    assert!(
+        read(&build.join("site@3.4/site/_ascribe/pages.json"))
+            .contains("\"markdown\": \"/docs/3.4/install.md\"")
+    );
+    let index = read(&build.join("site@3.4/plain/llms.txt"));
+    assert!(
+        index.starts_with(
+            "# Home (self-managed 3.4)\n\n> Every page of this documentation, each linked to its \
+             Markdown version.\n\nThis is an older version. The current version is 3.5: \
+             [llms.txt](https://docs.example.com/docs/llms.txt).\n"
+        ),
+        "{index}"
+    );
+    assert!(
+        index.contains("(https://docs.example.com/docs/3.4/install.md)"),
+        "{index}"
+    );
+    let markdown = read(&build.join("site@3.4/plain/install.md"));
+    assert!(
+        markdown.contains("> Documentation for self-managed 3.4. The current version is 3.5: <https://docs.example.com/docs/install/>."),
+        "{markdown}"
+    );
+}
+
+#[test]
+fn an_older_line_kept_out_of_an_index_is_out_of_its_llms_txt() {
+    let dir = versioned();
+    let config = dir.path().join("ascribe.toml");
+    let text = read(&config).replace(
+        "base-path = \"/docs\"",
+        "base-path = \"/docs\"\nagents = true\n\n[listing]\nolder-lines = \"unlisted\"",
+    );
+    std::fs::write(&config, text).expect("write ascribe.toml");
+    let out = ascribe(dir.path(), &["build", "--emit", "site,plain"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let build = dir.path().join(".ascribe/build");
+    assert!(read(&build.join("site/plain/llms.txt")).contains("install.md)"));
+    let index = read(&build.join("site@3.4/plain/llms.txt"));
+    assert!(!index.contains("install.md)"), "{index}");
+    let headers = read(&build.join("site@3.4/site/_ascribe/headers.json"));
+    assert!(headers.contains("noindex"), "{headers}");
+}
+
+#[test]
+fn agents_index_names_a_line_and_is_the_current_one_without() {
+    let dir = versioned();
+    let config = dir.path().join("ascribe.toml");
+    let text = read(&config).replace(
+        "base-path = \"/docs\"",
+        "base-path = \"/docs\"\nagents = true",
+    );
+    std::fs::write(&config, text).expect("write ascribe.toml");
+    let out = ascribe(dir.path(), &["agents", "index"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let current = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(current.contains("/docs/install.md"), "{current}");
+    assert!(!current.contains("/docs/3.4/"), "{current}");
+    let out = ascribe(dir.path(), &["agents", "index", "--build", "site@3.4"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let older = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(older.contains("/docs/3.4/install.md"), "{older}");
+    assert!(!older.contains("webhooks"), "{older}");
 }
 
 #[test]

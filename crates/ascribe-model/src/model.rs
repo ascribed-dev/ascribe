@@ -1433,10 +1433,8 @@ impl ContentModel {
     /// The model a build's pages are routed and written with. For an older
     /// line of a versioned build, the base path is under the line's folder,
     /// `/docs/3.4/`, so every address in its output starts there; a
-    /// permalink's address doesn't move. Its output says nothing to agents
-    /// (`[consumer] agents` is off): no line but the current one publishes
-    /// `llms.txt` and the pages' Markdown yet, so its pages point to
-    /// neither. Otherwise, the model itself.
+    /// permalink's address doesn't move, and its outputs for agents are its
+    /// own, under its folder. Otherwise, the model itself.
     pub fn for_build(&self, build: &Build) -> std::borrow::Cow<'_, ContentModel> {
         let Some(folder) = build.line_folder() else {
             return std::borrow::Cow::Borrowed(self);
@@ -1450,7 +1448,6 @@ impl ContentModel {
             format!("{base}/")
         };
         model.consumer.base_path = format!("{base}{folder}");
-        model.consumer.agents = false;
         std::borrow::Cow::Owned(model)
     }
 

@@ -36,7 +36,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 - @available: ascribe 0.3.0
   **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](reference.md#response-headers)).
 - @available: next
-  **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([Versions](index.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and only the current line's outputs for agents are published.
+  **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([Versions](index.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
 - @available: ascribe 0.2.0

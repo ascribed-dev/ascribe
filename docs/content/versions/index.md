@@ -123,7 +123,7 @@ A reader who lands on an older line from a search should know it's older, and fi
 
   > Documentation for Self-managed 3.4. Support ends on 31 January 2027. The current version is 3.5: <https://docs.example.com/docs/install/>.
 
-  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#6-dimensionsname).
+  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#dimensions).
 - **A site's banner** says the same to a person: [`VersionBanner.astro`](#publish-with-astro) with Astro, or the site's own from the files below.
 
 Nothing is added to `robots.txt`. An older line is kept out of an index by its pages, not by a rule over its folder, which would also stop a crawler reading the canonical link.
@@ -161,13 +161,20 @@ A site that isn't built with Astro has all a banner and a list of versions need 
 
 `<VersionBanner entry={entry} />`, from `@ascribed/astro/VersionBanner.astro`, writes the banner on an older line's pages, and nothing on the current line's:
 
-> Documentation for Self-managed 3.4. Support ends on 31 January 2027. [See this page for 3.5.](/docs/install/)
+> Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.
 
-The link goes to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them; `Versions.astro`'s are `label`, `missing`, and `archived`.
+The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them; `Versions.astro`'s are `label`, `missing`, and `archived`.
 
 The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes all three into the layout.
 
-`astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. Two things stay with the current line for now:
+`astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. With `[consumer] agents = true`, each line's `llms.txt` and Markdown are published at its base path, `/docs/3.4/llms.txt`, with the response headers each line's pages need. A permalink forwards to the current line, whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
 
-- **A permalink forwards to the current line,** whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
-- **Only the current line has a Markdown version and `llms.txt`.** An older line's pages point to neither, and the site's sitemap lists the current line's pages alone.
+## For agents
+
+With [`[consumer] agents = true`](../agents/index.md), each line has its own outputs for agents, in its plain output:
+
+- **`llms.txt`** lists the line's pages, and its heading names the line: `# Loom (Self-managed 3.4)`. An older line's opens with a line pointing at the current line's: "This is an older version. The current version is 3.5: [llms.txt](https://docs.example.com/docs/llms.txt)."
+- **Each page's Markdown** opens with the line that says which version it is, above.
+- **`ascribe agents index --build site@3.4`** writes the compact index of a line for a product's `AGENTS.md`. Without `--build`, it's the current line's.
+
+A line kept out of an index with `[listing] older-lines = "unlisted"` lists nothing in its `llms.txt`.
