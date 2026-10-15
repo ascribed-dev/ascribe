@@ -1,0 +1,29 @@
+description: >-
+  A phrase that's a target's line is, in each line of a build the target
+  versions, the line that output is for: 3.4 in `site@3.4`. In the current
+  line, and in a build the target doesn't version, it's the current line.
+spec: ["5.1", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Release 3.5
+          - paragraph: This is Self-managed 3.5.
+  site@3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Release 3.4
+          - paragraph: This is Self-managed 3.4.
+  plain:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Release 3.5
+          - paragraph: This is Self-managed 3.5.

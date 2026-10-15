@@ -1308,6 +1308,20 @@ impl ContentModel {
             .map(|p| p.value.as_str())
     }
 
+    /// A phrase's replacement text in `build`'s output. A phrase that's a
+    /// target's line is the line the build is for, in a line of a build the
+    /// target versions, and the target's current line elsewhere.
+    pub fn phrase_in<'a>(&'a self, key: &str, build: &'a Build) -> Option<&'a str> {
+        let phrase = self.phrases.iter().find(|p| p.key == key)?;
+        if let (Some(target), Some(versions), Some(line)) =
+            (&phrase.line, &build.versions, &build.line)
+            && target == versions
+        {
+            return Some(&line.line.text);
+        }
+        Some(&phrase.value)
+    }
+
     /// A dimension by name.
     pub fn dimension(&self, name: &str) -> Option<&Dimension> {
         self.dimensions.iter().find(|d| d.name == name)

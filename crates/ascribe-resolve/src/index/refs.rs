@@ -192,10 +192,19 @@ fn local_of(kind: RefKind, text: &str, local: &LocalDestination, written_in: &Re
 /// real candidate of the same key could be replaced instead; that pairing of
 /// decoded text with source is the parser's to expose, and no author writes it.
 pub(crate) fn substitute(destination: &str, phrases: &[Phrase], model: &ContentModel) -> String {
+    substitute_with(destination, phrases, &|key| model.phrase(key))
+}
+
+/// [`substitute`], with each phrase's value from `value`.
+pub(crate) fn substitute_with<'v>(
+    destination: &str,
+    phrases: &[Phrase],
+    value: &dyn Fn(&str) -> Option<&'v str>,
+) -> String {
     let mut out = String::new();
     let mut rest = destination;
     for phrase in phrases {
-        let Some(value) = model.phrase(&phrase.key) else {
+        let Some(value) = value(&phrase.key) else {
             continue;
         };
         let needle = format!("{{{}}}", phrase.key);

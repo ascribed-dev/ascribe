@@ -8,32 +8,39 @@
 //! listed as a [`Substitution`] over the block's source text.
 
 use ascribe_core::Span;
-use ascribe_model::{ContentModel, ContentType, FieldType, inline};
+use ascribe_model::{Build, ContentModel, ContentType, FieldType, inline};
 use ascribe_syntax::{BlockKind, Inline, InlineKind, LinkForm, Phrase};
 use serde_yaml_ng::Value;
 
 use super::inlines::own_lists_mut;
 use super::tree::{FormattedField, ResolvedBlock, ResolvedKind, Substitution};
-use crate::index::substitute;
+use crate::index::substitute_with;
 use crate::project::Project;
 use crate::references::destination_phrases;
 
+/// A build's phrase values, from [`ContentModel::phrase_in`].
+type Values<'a> = &'a dyn Fn(&str) -> Option<&'a str>;
+
 /// Substitutes phrases in every block, and lists the substitutions made in
 /// each block's own source text.
-pub(crate) fn substitute_blocks(project: &Project, blocks: &mut [ResolvedBlock]) {
+pub(crate) fn substitute_blocks(project: &Project, build: &Build, blocks: &mut [ResolvedBlock]) {
+    let model = project.model();
+    each_block(project, &|key| model.phrase_in(key, build), blocks);
+}
+
+fn each_block(project: &Project, model: Values<'_>, blocks: &mut [ResolvedBlock]) {
     for block in blocks {
-        substitute_block(project, block);
+        substitute_block(project, model, block);
         for children in block.child_lists_mut() {
-            substitute_blocks(project, children);
+            each_block(project, model, children);
         }
     }
 }
 
-fn substitute_block(project: &Project, block: &mut ResolvedBlock) {
+fn substitute_block(project: &Project, model: Values<'_>, block: &mut ResolvedBlock) {
     let Some(index) = project.file_by_id(block.file) else {
         return;
     };
-    let model = project.model();
     let mut subs = Vec::new();
     if let ResolvedKind::Leaf(b) = &mut block.kind
         && let BlockKind::CodeBlock(code) = &mut b.kind
@@ -46,7 +53,7 @@ fn substitute_block(project: &Project, block: &mut ResolvedBlock) {
         if block.snippet.is_none() {
             subs.extend(listed(&phrases, model));
         }
-        code.literal = substitute(&code.literal, &phrases, model);
+        code.literal = substitute_with(&code.literal, &phrases, model);
         code.phrases = Some(Vec::new());
     }
     for list in own_lists_mut(block) {
@@ -63,11 +70,11 @@ fn substitute_block(project: &Project, block: &mut ResolvedBlock) {
 }
 
 /// The declared candidates among `phrases`, as substitutions.
-fn listed(phrases: &[Phrase], model: &ContentModel) -> Vec<Substitution> {
+fn listed(phrases: &[Phrase], model: Values<'_>) -> Vec<Substitution> {
     phrases
         .iter()
         .filter_map(|p| {
-            model.phrase(&p.key).map(|value| Substitution {
+            model(&p.key).map(|value| Substitution {
                 span: p.span,
                 key: p.key.clone(),
                 value: value.to_owned(),
@@ -80,13 +87,13 @@ fn inlines(
     list: &mut Vec<Inline>,
     source: &str,
     definitions: &[ascribe_syntax::LinkDefinition],
-    model: &ContentModel,
+    model: Values<'_>,
     subs: &mut Vec<Substitution>,
 ) {
     for inline in list.iter_mut() {
         match &mut inline.kind {
             InlineKind::Phrase(p) => {
-                let text = match model.phrase(&p.key) {
+                let text = match model(&p.key) {
                     Some(value) => {
                         subs.push(Substitution {
                             span: p.span,
@@ -115,7 +122,7 @@ fn inlines(
                     &link.destination,
                     definitions,
                 );
-                let destination = substitute(&link.destination, phrases, model);
+                let destination = substitute_with(&link.destination, phrases, model);
                 if own_form(link.form) {
                     subs.extend(listed(&link.destination_phrases, model));
                 }
@@ -134,7 +141,7 @@ fn inlines(
                     &image.destination,
                     definitions,
                 );
-                let destination = substitute(&image.destination, phrases, model);
+                let destination = substitute_with(&image.destination, phrases, model);
                 if own_form(image.form) {
                     subs.extend(listed(&image.destination_phrases, model));
                 }
@@ -180,9 +187,11 @@ pub(crate) fn merge_text(list: &mut Vec<Inline>) {
 /// page leaves out.
 pub(crate) fn frontmatter(
     model: &ContentModel,
+    build: &Build,
     page_type: Option<&ContentType>,
     value: &Value,
 ) -> (Value, Vec<FormattedField>) {
+    let model: Values<'_> = &|key| model.phrase_in(key, build);
     let mut out = value.clone();
     let Some(page_type) = page_type else {
         return (out, Vec::new());
@@ -207,7 +216,7 @@ pub(crate) fn frontmatter(
             match item {
                 Value::String(text) if field.inline.is_some() => {
                     let segments = if field.phrases {
-                        inline::parse(text, &|key| model.phrase(key).map(str::to_owned))
+                        inline::parse(text, &|key| model(key).map(str::to_owned))
                     } else {
                         inline::parse(text, &|_| None)
                     };
@@ -224,7 +233,7 @@ pub(crate) fn frontmatter(
     (out, formatted)
 }
 
-fn typed(value: &mut Value, ty: &FieldType, phrases: bool, model: &ContentModel) {
+fn typed(value: &mut Value, ty: &FieldType, phrases: bool, model: Values<'_>) {
     match (ty, value) {
         (FieldType::String, Value::String(text)) if phrases => {
             *text = substitute_text(text, model);
@@ -250,7 +259,7 @@ fn typed(value: &mut Value, ty: &FieldType, phrases: bool, model: &ContentModel)
 
 /// Replaces each `{key}` whose key is declared; the values aren't scanned
 /// again.
-fn substitute_text(text: &str, model: &ContentModel) -> String {
+fn substitute_text(text: &str, model: Values<'_>) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while let Some(open) = rest.find('{') {
@@ -258,7 +267,7 @@ fn substitute_text(text: &str, model: &ContentModel) -> String {
         let after = &rest[open + 1..];
         match after
             .find('}')
-            .and_then(|close| model.phrase(&after[..close]).map(|v| (close, v)))
+            .and_then(|close| model(&after[..close]).map(|v| (close, v)))
         {
             Some((close, value)) => {
                 out.push_str(value);
