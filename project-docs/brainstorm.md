@@ -6,7 +6,7 @@ Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what'
 
 - **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
 - **Planned.** [Versions](versions/README.md), [memos](memos/README.md), and [the glossary as pages](glossary-pages/README.md).
-- **Proposed.** [Search](proposals/search.md) and [navigation](proposals/navigation.md).
+- **Proposed.** [Search](proposals/search.md), [navigation](proposals/navigation.md), and [the rest of the cache](proposals/cache.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
@@ -196,14 +196,7 @@ This section held three ideas that share no layer. Two have proposals of their o
 
 The third was a cache, and its first use is built: `ascribe report links` keeps the answers it reuses under `.ascribe/cache/links/`, with an expiry, and holds a link that answered before until it keeps failing. The rule it's built on stays the rule for anything added: deleting the cache changes nothing but time, so nothing may need it to be correct. CI starts with none.
 
-What isn't built:
-
-- **Vale results by the hash of a page's prose,** so a hook or `ascribe check` lints only what changed.
-- **The delivery spec's results** for pages that didn't change.
-- **Differences between runs:** "3 dead links since the last report", which needs the last report's findings and nothing more.
-- **A baseline:** a committed list of a project's existing problems, so a team adopting the advice checks sees only new ones. It's a different thing from a cache: shared and reviewed, like `ascribe.lock`. It was raised with these ideas and belongs with the content checks.
-
-Two cautions from the first write-up still apply. Several processes write at once (a language server for each project, the CLI, and a hook), on Windows too, where file locking is stricter. And a cache is a new way for two runs to differ, in a repository that tests that they don't.
+The rest has a proposal of its own, [the rest of the cache](proposals/cache.md): Vale's results by the hash of a page's prose, the delivery spec's results, differences between runs for the whole report (links already have them), and a baseline of a project's existing findings, which is a committed record rather than a cache.
 
 ---
 
