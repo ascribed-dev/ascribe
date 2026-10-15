@@ -11,7 +11,7 @@ import path from "node:path";
 const VERSION = 1;
 
 /** A line of a versioned build, as the file has it. */
-export interface Line {
+interface Line {
   /** The line, as `[releases]` writes it: `3.4`. */
   line: string;
   /** `current` for the newest line, `live` for the others. */
