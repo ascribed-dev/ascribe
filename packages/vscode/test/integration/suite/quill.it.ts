@@ -45,17 +45,23 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
     const api = await activated();
     await openAt(keys);
     const expected = [
-      "page (5)",
+      "page (8)",
       "  Broken (broken.md)",
+      "  Configure the agent (3.4) (configure-legacy.md)",
+      "  Configure the agent (configure.md)",
       "  Install the Quill agent (install-agent.md)",
       "  API keys (keys.md)",
       "  Try Quill in the browser (quickstart.md)",
+      "  Upgrade the agent (upgrade.md)",
       "  Webhooks (webhooks.md)",
       "Fragments (1)",
       "  _fragments/prerequisites.md (1 file)",
       "    install-agent.md (includes it)",
-      "Orphans (1)",
+      // No page links to configure-legacy.md by name: a versioned build
+      // reaches it through configure.md's `replaces`.
+      "Orphans (2)",
       "  Broken (broken.md)",
+      "  Configure the agent (3.4) (configure-legacy.md)",
     ];
     // These run before the tests that add and rename pages: a page that's
     // still open in the editor stays in the project after it's deleted.
@@ -65,7 +71,7 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
       return items.join("\n") === expected.join("\n") ? items : undefined;
     }).catch(() => flat(api.ui.sidebar.items("pages")));
     assert.deepEqual(pages, expected);
-    const page = api.ui.sidebar.items("pages")[0]?.children[2];
+    const page = api.ui.sidebar.items("pages")[0]?.children[4];
     assert.ok(page?.opens?.endsWith("/docs/keys.md"), page?.opens);
   });
 
@@ -96,7 +102,11 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
         return items.length > 0 ? items : undefined;
       }),
       [
-        "Linked from (2)",
+        "Linked from (4)",
+        "  configure-legacy.md (docs/configure-legacy.md)",
+        "    Put the key under `key:` in `quill.yaml`. To make one, see [API keys](keys.md). (line 13)",
+        "  configure.md (docs/configure.md)",
+        "    Put the key in `quill.d/key`. To make one, see [API keys](keys.md). (line 14)",
         "  install-agent.md (docs/install-agent.md)",
         "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)",
         "  webhooks.md (docs/webhooks.md)",
@@ -133,7 +143,7 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
         const page = api.ui.sidebar
           .items("pages")[0]
           ?.children.find((p) => p.description === "keys.md");
-        return page?.tooltip.includes("3 links and includes") ? page : undefined;
+        return page?.tooltip.includes("5 links and includes") ? page : undefined;
       });
       assert.ok(incoming());
     } finally {
