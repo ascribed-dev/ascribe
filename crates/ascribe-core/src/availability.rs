@@ -200,7 +200,7 @@ pub fn parse_availability(
 }
 
 /// Parses a version alone (SPEC Appendix A rule `version`), such as
-/// `[versions] current`'s. `offset` is the byte offset of `text` in its file.
+/// a line in `[releases]`. `offset` is the byte offset of `text` in its file.
 /// The whole text must be the version, with no surrounding whitespace.
 pub fn parse_version(text: &str, offset: usize) -> Result<Version, AvailabilityError> {
     let mut p = Parser {

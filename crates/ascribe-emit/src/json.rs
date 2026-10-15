@@ -17,6 +17,7 @@ use serde::Serialize;
 use crate::emitter::{Emitter, PageContext};
 use crate::error::EmitError;
 use crate::labels::{attribute_values, availability_display, dimensional_label, plain_text};
+use crate::site::blocks::availability_target;
 
 // SPEC §9.4 fixes only "the resolved tree, for custom consumers"; the shape
 // below is Ascribe's own, versioned by `JSON_SCHEMA_VERSION`.
@@ -140,6 +141,10 @@ struct AvailabilityJson {
     text: String,
     /// The spec with the content model's display labels.
     display: String,
+    /// Each target as the availability element gives it, when the project
+    /// lists release lines in `[releases]`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    targets: Option<Vec<AvailabilityTargetJson>>,
     scope: &'static str,
     feature: Option<String>,
     source: Option<SourceRef>,
@@ -148,6 +153,21 @@ struct AvailabilityJson {
     /// `availability` and applies to every block.
     #[serde(skip_serializing_if = "Option::is_none")]
     enclosing: Option<Box<AvailabilityJson>>,
+}
+
+/// One target of an availability spec: the element's attributes and its
+/// text (element contract §4).
+#[derive(Serialize)]
+struct AvailabilityTargetJson {
+    target: String,
+    dimension: String,
+    states: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    versions: Vec<String>,
+    /// `true` when the target's last version is in a planned line.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    planned: bool,
+    text: String,
 }
 
 #[derive(Serialize)]
@@ -587,6 +607,23 @@ impl Writer<'_, '_> {
         AvailabilityJson {
             text: a.text.clone(),
             display: availability_display(self.cx.emit.model, &a.spec),
+            targets: (!self.cx.emit.model.releases.is_empty()).then(|| {
+                a.spec
+                    .entries
+                    .iter()
+                    .map(|entry| {
+                        let view = availability_target(self.cx.emit.model, entry);
+                        AvailabilityTargetJson {
+                            target: view.target,
+                            dimension: view.dimension,
+                            states: view.states,
+                            versions: view.versions,
+                            planned: view.planned,
+                            text: view.text,
+                        }
+                    })
+                    .collect()
+            }),
             scope: match a.scope {
                 Scope::Page => "page",
                 Scope::Section => "section",

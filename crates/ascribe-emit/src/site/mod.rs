@@ -30,7 +30,7 @@
 //! `_ascribe/headers.json`, the response headers its files need (§1.4).
 
 mod anchor;
-mod blocks;
+pub(crate) mod blocks;
 mod element;
 mod frontmatter;
 mod headers;

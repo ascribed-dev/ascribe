@@ -11,8 +11,8 @@ use ascribe_core::availability::parse_availability;
 use ascribe_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use ascribe_model::{
     AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, HeadersFormat, Listing,
-    ListingFrom, ListingLevel, SourceBound, TrailingSlash, TypeMatch, VariantMode, load, load_str,
-    load_str_bounded, load_str_in,
+    ListingFrom, ListingLevel, Placement, SourceBound, TrailingSlash, TypeMatch, VariantMode, load,
+    load_str, load_str_bounded, load_str_in,
 };
 
 fn examples() -> PathBuf {
@@ -50,7 +50,8 @@ fn minimal_gets_every_default() {
     assert_eq!(m.consumer.trailing_slash, TrailingSlash::Always);
     assert_eq!(m.consumer.permalink_path(), "/go/");
     assert!(m.consumer.html);
-    assert!(m.current_version.is_none());
+    assert!(m.releases.is_empty());
+    assert_eq!(m.planned_label, "planned");
     // Only the built-in directives.
     assert_eq!(
         m.directive_keywords(),
@@ -715,12 +716,105 @@ fn full_marks_its_description_and_review_date() {
 }
 
 #[test]
-fn versions_current_is_a_version_in_the_file() {
-    let toml = "spec = \"0.1\"\n[versions]\ncurrent = \"3.10\"\n";
-    let m = load_str(toml, FileId::new(0)).unwrap();
-    let current = m.current_version.unwrap();
-    assert_eq!(current.components, [3, 10]);
-    assert_eq!(&toml[current.span.range()], "3.10");
+fn releases_say_which_lines_are_planned_ending_and_archived() {
+    let m = example("full.toml");
+    let r = m.releases_of("self-managed").unwrap();
+    let texts = |lines: &[&ascribe_core::availability::Version]| -> Vec<String> {
+        lines.iter().map(|l| l.text.clone()).collect()
+    };
+    assert_eq!(texts(&r.planned.iter().collect::<Vec<_>>()), ["3.6"]);
+    let archived: Vec<_> = r.archived.iter().map(|a| &a.line).collect();
+    assert_eq!(texts(&archived), ["3.3", "3.2"]);
+    assert_eq!(
+        r.archived[0].url.as_deref(),
+        Some("https://docs.example.com/archive/3.3/")
+    );
+    assert_eq!(r.archived[0].ended, ascribe_core::Date::parse("2026-06-30"));
+    assert_eq!(r.archived[1].url, None);
+    assert_eq!(r.ends[0].line.text, "3.4");
+    assert_eq!(
+        r.ends[0].date,
+        ascribe_core::Date::parse("2027-01-31").unwrap()
+    );
+    let statuses: Vec<(&str, &str)> = r
+        .lines()
+        .into_iter()
+        .map(|(l, s)| (l.text.as_str(), s.as_str()))
+        .collect();
+    assert_eq!(
+        statuses,
+        [
+            ("3.6", "planned"),
+            ("3.5", "current"),
+            ("3.4", "live"),
+            ("3.3", "archived"),
+            ("3.2", "archived")
+        ]
+    );
+    assert_eq!(m.planned_label, "planned");
+}
+
+#[test]
+fn a_version_is_placed_among_the_declared_lines() {
+    let m = example("full.toml");
+    let r = m.releases_of("self-managed").unwrap();
+    let v = |t: &str| ascribe_core::availability::parse_version(t, 0).unwrap();
+    let place = |t: &str| match r.place(&v(t)).unwrap() {
+        Placement::In(line, status) => format!("in {} ({})", line.text, status.as_str()),
+        Placement::Ahead { newest } => format!("ahead of {}", newest.text),
+        Placement::Between { line, older, newer } => {
+            format!("{line} between {} and {}", older.text, newer.text)
+        }
+        Placement::Before => "before".to_owned(),
+    };
+    assert_eq!(place("3.4.2"), "in 3.4 (live)");
+    assert_eq!(place("3.6"), "in 3.6 (planned)");
+    assert_eq!(place("3.2"), "in 3.2 (archived)");
+    assert_eq!(place("3.45"), "ahead of 3.6");
+    assert_eq!(place("3.7.1"), "ahead of 3.6");
+    assert_eq!(place("4"), "ahead of 3.6");
+    assert_eq!(place("3"), "before");
+    assert_eq!(place("3.1"), "before");
+    assert!(r.is_planned(&v("3.6.1")) && !r.is_planned(&v("3.5")));
+
+    let m = load_str(
+        "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n\
+         [releases.a]\nlive = [\"3.4\"]\n[releases.a.archived]\n\"3.1\" = {}\n",
+        FileId::new(0),
+    )
+    .unwrap();
+    let r = m.releases_of("a").unwrap();
+    assert_eq!(
+        r.place(&v("3.2.5")),
+        Some(Placement::Between {
+            line: "3.2".to_owned(),
+            older: &r.archived[0].line,
+            newer: &r.live[0],
+        })
+    );
+}
+
+#[test]
+fn a_phrase_can_be_a_targets_current_line() {
+    let m = example("full.toml");
+    assert_eq!(m.phrase("release"), Some("3.5"));
+    let p = m.phrases.iter().find(|p| p.key == "release").unwrap();
+    assert_eq!(p.line.as_deref(), Some("self-managed"));
+    assert_eq!(
+        m.phrases.iter().find(|p| p.key == "version").unwrap().line,
+        None
+    );
+}
+
+#[test]
+fn versions_current_is_removed_for_the_list() {
+    let issues = load_str(
+        "spec = \"0.1\"\n[versions]\ncurrent = \"3.10\"\n",
+        FileId::new(0),
+    )
+    .unwrap_err();
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].slug.as_str(), "model-versions-current");
 }
 
 /// With no repository around the project, a source is bounded by what was

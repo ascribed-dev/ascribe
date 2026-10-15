@@ -38,7 +38,7 @@ use crate::snippet::SnippetUse;
 pub(crate) use frontmatter::key_line as frontmatter_key;
 pub use headings::{ExplicitId, Heading, plain_text as heading_text};
 pub use refs::{Local, RefKind, Reference, Target};
-pub(crate) use refs::{substitute, target_of};
+pub(crate) use refs::{substitute_with, target_of};
 
 /// Whether a file is published (SPEC §2.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

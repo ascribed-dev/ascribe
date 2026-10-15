@@ -41,6 +41,8 @@ export interface AvailabilityTarget {
   dimension: string;
   states: string[];
   versions?: string[];
+  /** Present, and `true`, when the target's last version is in a planned line. */
+  planned?: boolean;
   text: string;
 }
 

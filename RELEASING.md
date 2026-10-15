@@ -155,7 +155,15 @@ node scripts/release/version.ts 0.2.0
 
 This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
 
-Set the `version` phrase in `docs/ascribe.toml` and in `site/home/ascribe.toml` to the new version too; a test fails until each matches.
+Move the release's line in `[releases.ascribe]` too, in `docs/ascribe.toml` and in `site/home/ascribe.toml`: the planned line becomes the one `live` line, and the line that was live moves to `archived`, with the day it ended. The `version` phrase is the live line, and a test fails until it matches `Cargo.toml`. If the release isn't the planned line's version, change the planned line and `[features.next]` to it first. Phase 7 of [the versions plan](project-docs/versions/README.md) makes this a command.
+
+```toml
+[releases.ascribe]
+live = ["0.2.0"]
+
+[releases.ascribe.archived]
+"0.1.1" = { ended = 2026-01-31 }
+```
 
 In `CHANGELOG.md`, write the release's section as `## 0.2.0 (YYYY-MM-DD)`, with today's date. For 0.1.0, replace `(unreleased)` with the date.
 
@@ -239,7 +247,7 @@ Every release needs one. The [docs site](#the-docs-site) follows `main`, not the
    ```
 
 2. **Change each to `ascribe <version>`,** except a mark that a pull request merged after the tag added: `git diff v<version> main -- docs/content` shows those, and they stay `next`. A mark on the site's own pages (`site/home/content/`) is removed instead, as `site/home/ascribe.toml` says.
-3. **Set `[versions] current` to the release** in `docs/ascribe.toml` and `site/home/ascribe.toml`. The `version` phrase was set in step 2. `[features.next]` stays unreleased, for what `main` adds after the release.
+3. **Plan the next release** in `docs/ascribe.toml` and `site/home/ascribe.toml`: add its version to `[releases.ascribe]`'s `planned`, and point `[features.next]` at it, for what `main` adds after the release. Until this, `availability-left-behind` reports `next`, whose line step 2 made live.
 4. **Rewrite the generated tables:** `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` and `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`.
 5. **Check:** `ascribe check --deny-warnings` passes on `docs` and on `site/home`. A `next` mark inside a page or section that's now marked with the release is `available-exceeds-scope`: move the mark onto what's new, or, for a page marked as a whole, leave the new part unmarked until the next release.
 

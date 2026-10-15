@@ -204,6 +204,15 @@
 | [ASC204](../checks/diagnostics/content-model.md#ASC204) | `model-releases-target` | Error | File | choose |
 | [ASC205](../checks/diagnostics/content-model.md#ASC205) | `model-releases-line` | Error | File | write |
 | [ASC206](../checks/diagnostics/content-model.md#ASC206) | `model-build-versions` | Error | File | write |
+| [ASC207](../checks/diagnostics/content-model.md#ASC207) | `model-releases-order` | Error | File | write |
+| [ASC208](../checks/diagnostics/content-model.md#ASC208) | `model-releases-ends` | Error | File | choose |
+| [ASC209](../checks/diagnostics/content-model.md#ASC209) | `model-versions-current` | Error | File | write |
+| [ASC210](../checks/diagnostics/directives.md#ASC210) | `available-version-ahead` | Error | File | choose |
+| [ASC211](../checks/diagnostics/content-checks.md#ASC211) | `available-line-undeclared` | Advice | File | choose |
+| [ASC212](../checks/diagnostics/content-checks.md#ASC212) | `available-same-in-every-line` | Advice | File | write |
+| [ASC213](../checks/diagnostics/content-checks.md#ASC213) | `available-in-no-line` | Warning | File | write |
+| [ASC214](../checks/diagnostics/content-checks.md#ASC214) | `release-line-ended` | Advice | File | write |
+| [ASC215](../checks/diagnostics/content-model.md#ASC215) | `model-phrase-line` | Error | File | choose |
 | [ASC216](../checks/diagnostics/pages.md#ASC216) | `replaces-not-a-page` | Error | File | choose |
 | [ASC217](../checks/diagnostics/pages.md#ASC217) | `replaces-cycle` | Error | Page | write |
 | [ASC218](../checks/diagnostics/pages.md#ASC218) | `replaces-overlap` | Error | Page | write |

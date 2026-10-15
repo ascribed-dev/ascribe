@@ -20,12 +20,13 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `scheme` | string | `"numeric"` | The version scheme. Spec 0.1 defines one: `"numeric"`. |
-| `current` | string | none | The latest release: a version (SPEC Appendix A rule `version`), compared under `scheme`. Nothing in an output depends on it. The content check `availability-left-behind` reports a feature whose spec names a version for every target, none of them later than `current`; without `current` it reports nothing. |
+| `scheme` | string | `"numeric"` | The version scheme. It MUST be one Spec 0.1 defines, and it defines one: `"numeric"`. |
 
 @include: ../../_fragments/content-model/versions-numeric.md
 
 No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape. The scheme is named `numeric`, not "semantic versioning", because it accepts any number of components and has no pre-release syntax.
+
+`current` MUST NOT be set: a target's current release is its newest live line in `[releases.<target>]` (`model-versions-current`).
 
 ### 7.1 `[releases.<target>]`
 
@@ -34,8 +35,17 @@ No other scheme is defined. The table exists so a later spec version can add one
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `live` | array of strings (versions) | `[]` | The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each. |
+| `planned` | array of strings (versions) | `[]` | Lines that haven't shipped, in any order. A version in a planned line is planned (SPEC §9.4). |
+| `ends` | table of dates | none | For a live line, keyed by the line as written, the last day it's supported: a TOML local date. |
+| `archived` | table of tables | none | Lines that have left the window, keyed by the line as written. Each table takes `url`, a non-empty string, and `ended`, a TOML local date, both optional. |
 
-**Rules.** `<target>` MUST be a declared dimension value that isn't versionless (`model-releases-target`). Each line MUST be a version (SPEC Appendix A rule `version`), listed once, and every line of one target MUST have the same number of parts (`model-releases-line`). A list in any other order means the same.
+`[releases]` takes one key of its own, beside the targets' tables:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `planned-label` | string | `"planned"` | The label of a planned version, shown in place of its state. Not empty. |
+
+**Rules.** `<target>` MUST be a declared dimension value that isn't versionless (`model-releases-target`). Each line MUST be a version (SPEC Appendix A rule `version`), listed once, and every line of one target, in every list, MUST have the same number of parts (`model-releases-line`). A line MUST be in one list, every planned line MUST be newer than every live line, and every archived line older (`model-releases-order`). A line in `ends` MUST be a live line (`model-releases-ends`), and a date MUST be a TOML local date (`model-wrong-type`). A list in any other order means the same.
 
 ---
 

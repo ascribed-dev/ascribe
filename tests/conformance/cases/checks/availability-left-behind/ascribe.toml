@@ -10,8 +10,9 @@ title = "string"
 values = ["cloud", "self-managed"]
 versionless = ["cloud"]
 
-[versions]
-current = "3.4"
+[releases.self-managed]
+live = ["3.4"]
+planned = ["3.5"]
 
 [features.shipped]
 name = "Shipped in 3.4"

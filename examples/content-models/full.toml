@@ -64,12 +64,22 @@ labels = { yarn = "Yarn" }
 # :snippet-start: versions
 [versions]
 scheme = "numeric"
-current = "3.5"
 # :snippet-end:
 
 # :snippet-start: releases
+[releases]
+planned-label = "planned"
+
 [releases.self-managed]
 live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[releases.self-managed.ends]
+"3.4" = 2027-01-31
+
+[releases.self-managed.archived]
+"3.3" = { url = "https://docs.example.com/archive/3.3/", ended = 2026-06-30 }
+"3.2" = {}
 # :snippet-end:
 
 # A new state, and a built-in state relabeled.
@@ -108,6 +118,8 @@ cloud = "Quill Cloud"
 version = "3.4.1"
 api = "https://api.quill.dev/v3/"
 support-email = "support@quill.dev"
+# The current line of [releases.self-managed]: "3.5".
+release = { line = "self-managed" }
 # :snippet-end:
 
 # :snippet-start: glossary

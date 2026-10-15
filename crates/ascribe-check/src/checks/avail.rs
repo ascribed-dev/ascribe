@@ -39,7 +39,9 @@ impl Ctx<'_> {
     }
 
     /// Parses a spec and checks it against the content model: syntax,
-    /// targets, states, versionless targets, and history order.
+    /// targets, states, versionless targets, history order, whether
+    /// `[releases]` can place each version, and whether the mark still does
+    /// anything.
     ///
     /// `offset` is where `text` starts in the file. When `precise` is false
     /// the offset can't be trusted (a multi-line or escaped YAML scalar), so
@@ -103,6 +105,15 @@ impl Ctx<'_> {
                     .with_arg("later", later)
                     .with_arg("earlier", earlier),
             });
+        }
+        // The list places the versions of a spec that's otherwise right, and
+        // only a spec it places is asked whether any output shows it: a
+        // mistyped version is one problem, not also content in no line.
+        if issues.is_empty() {
+            issues = crate::releases::placement_issues(self.model, &spec.entries, &at, precise);
+        }
+        if issues.is_empty() {
+            issues = crate::releases::inert_issues(self.model, &spec, &at, precise);
         }
         for issue in issues {
             self.report(issue);

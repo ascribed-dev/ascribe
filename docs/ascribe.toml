@@ -70,9 +70,9 @@ title = { type = "string", inline = "code" }
 description = { type = "string", role = "description" }
 
 # What isn't in the latest release is marked with availability. A feature in
-# `main` that no release has yet is `@available: next`. When a release ships
-# it, each `next` mark becomes `ascribe <version>`, so the page reads "since
-# <version>"; `next` itself stays unreleased, for what `main` adds after.
+# `main` that no release has yet is `@available: next`, the planned line in
+# `[releases.ascribe]`, so the page reads "planned". When a release ships it,
+# the line moves to `live` and the same marks read "since <version>".
 # Something that shipped in an earlier release says so directly:
 # `@available: ascribe 0.1.1`.
 [dimensions.release]
@@ -86,24 +86,28 @@ labels = { ascribe = "Ascribe" }
 label = "Package manager"
 values = ["npm", "pnpm"]
 
-# The latest release. `availability-left-behind` reports a feature whose
-# versions are all at or before it, such as `next` once its release ships.
-# After a release, set it to the release.
-[versions]
-current = "0.3.1"
+# The releases the docs know of: the latest release is the live line, and
+# the one `main` is building is planned. Earlier releases aren't declared: a
+# mark for one is before the window and reads as written. RELEASING.md's
+# step moves the lines when a release ships. `availability-left-behind`
+# reports a feature whose versions are all at or before the live line, such
+# as `next` once its release ships.
+[releases]
+planned-label = "in main, not yet released"
 
-[lifecycle.unreleased]
-available = true
-label = "in main, not yet released"
+[releases.ascribe]
+live = ["0.3.1"]
+planned = ["0.4.0"]
 
 [features.next]
 name = "In main, not yet released"
-available = "ascribe unreleased"
+available = "ascribe 0.4.0"
 
 [phrases]
-# The latest release: the workspace version in Cargo.toml, and every
-# package.json under packages/.
-version = "0.3.1"
+# The latest release: `[releases.ascribe]`'s live line, which
+# tests/conformance/tests/docs.rs compares with the workspace version in
+# Cargo.toml and every package.json under packages/.
+version = { line = "ascribe" }
 # `engines.node` in package.json. scripts/docs-site/facts.test.ts checks it,
 # and every other file that names the Node version.
 node = "24"

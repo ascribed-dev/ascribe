@@ -123,6 +123,9 @@ fn target_value(view: &super::blocks::TargetView) -> Value {
     if !view.versions.is_empty() {
         map.insert("versions".into(), strings(&view.versions));
     }
+    if view.planned {
+        map.insert("planned".into(), Value::Bool(true));
+    }
     map.insert("text".into(), Value::String(view.text.clone()));
     Value::Mapping(map)
 }

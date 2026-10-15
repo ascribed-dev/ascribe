@@ -1,8 +1,10 @@
 //! The typed content model and the queries other crates ask of it.
 
+use std::cmp::Ordering;
+
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
 use ascribe_core::{
-    AttributeSchema, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span, builtin_schemas,
+    AttributeSchema, Date, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span, builtin_schemas,
 };
 
 use crate::pattern::Pattern;
@@ -33,13 +35,12 @@ pub struct ContentModel {
     pub dimensions: Vec<Dimension>,
     /// `[versions] scheme`.
     pub version_scheme: VersionScheme,
-    /// `[versions] current`: the latest release, which
-    /// `availability-left-behind` compares features' versions with. Its span
-    /// is in `ascribe.toml`.
-    pub current_version: Option<Version>,
     /// `[releases.<target>]`, in declaration order: the lines of each
     /// versioned target a project lists.
     pub releases: Vec<Releases>,
+    /// `[releases] planned-label`: the word a reader sees for a version in a
+    /// planned line. `planned` by default.
+    pub planned_label: String,
     /// Lifecycle states: the built-ins (possibly adjusted), then declared ones.
     pub lifecycle: Vec<LifecycleState>,
     /// `[features.<key>]`.
@@ -764,7 +765,9 @@ pub enum VersionScheme {
 ///
 /// A line is a version as the list writes it, and stands for every version
 /// that starts with it: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line
-/// of one target has the same number of parts.
+/// of one target has the same number of parts, in every list, and a line is
+/// in one list. Planned lines are newer than every live line, and archived
+/// lines older.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Releases {
     /// The target: a versioned dimension value.
@@ -772,6 +775,83 @@ pub struct Releases {
     /// `live`: the lines a reader can be on, newest first. The first is the
     /// current line.
     pub live: Vec<Version>,
+    /// `planned`: lines that haven't shipped, newest first. A version in one
+    /// is planned.
+    pub planned: Vec<Version>,
+    /// `ends`: the day support for a live line ends, in declaration order.
+    pub ends: Vec<LineEnd>,
+    /// `archived`: lines that have left the window, newest first.
+    pub archived: Vec<ArchivedLine>,
+}
+
+/// An entry of `[releases.<target>.ends]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LineEnd {
+    /// The live line, spanning its key.
+    pub line: Version,
+    /// The last day it's supported.
+    pub date: Date,
+}
+
+/// An entry of `[releases.<target>.archived]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ArchivedLine {
+    /// The line, spanning its key.
+    pub line: Version,
+    /// `url`: where the line can still be read, when anywhere.
+    pub url: Option<String>,
+    /// `ended`: the day its support ended.
+    pub ended: Option<Date>,
+}
+
+/// Which list a declared line is in, with the current line apart from the
+/// other live ones.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum LineStatus {
+    /// The newest live line.
+    Current,
+    /// A live line older than the current one.
+    Live,
+    /// A line in `planned`.
+    Planned,
+    /// A line in `archived`.
+    Archived,
+}
+
+impl LineStatus {
+    /// The word for it: `current`, `live`, `planned`, or `archived`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            LineStatus::Current => "current",
+            LineStatus::Live => "live",
+            LineStatus::Planned => "planned",
+            LineStatus::Archived => "archived",
+        }
+    }
+}
+
+/// Where a version falls among a target's declared lines.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Placement<'a> {
+    /// In a declared line.
+    In(&'a Version, LineStatus),
+    /// Newer than every declared line: `newest` is the newest one.
+    Ahead {
+        /// The newest declared line.
+        newest: &'a Version,
+    },
+    /// In a line between two declared ones that isn't declared itself.
+    Between {
+        /// The line the version starts, as text: `3.3`.
+        line: String,
+        /// The declared line just older than it.
+        older: &'a Version,
+        /// The declared line just newer than it.
+        newer: &'a Version,
+    },
+    /// Older than every declared line, or shorter than the lines and so in
+    /// whichever lines follow it: nothing to say.
+    Before,
 }
 
 impl Releases {
@@ -780,10 +860,99 @@ impl Releases {
         self.live.first()
     }
 
+    /// The oldest live line.
+    pub fn oldest_live(&self) -> Option<&Version> {
+        self.live.last()
+    }
+
     /// The live line spelled `text`, as the list writes it.
     pub fn live_line(&self, text: &str) -> Option<&Version> {
         self.live.iter().find(|l| l.text == text)
     }
+
+    /// Every declared line with its status, newest first.
+    pub fn lines(&self) -> Vec<(&Version, LineStatus)> {
+        let mut out: Vec<(&Version, LineStatus)> = self
+            .planned
+            .iter()
+            .map(|l| (l, LineStatus::Planned))
+            .collect();
+        out.extend(self.live.iter().enumerate().map(|(i, l)| {
+            let status = if i == 0 {
+                LineStatus::Current
+            } else {
+                LineStatus::Live
+            };
+            (l, status)
+        }));
+        out.extend(
+            self.archived
+                .iter()
+                .map(|a| (&a.line, LineStatus::Archived)),
+        );
+        out
+    }
+
+    /// Whether `version` is in a planned line.
+    pub fn is_planned(&self, version: &Version) -> bool {
+        self.planned.iter().any(|l| in_line(l, version))
+    }
+
+    /// Where `version` falls among the declared lines, or `None` when the
+    /// target declares none.
+    pub fn place(&self, version: &Version) -> Option<Placement<'_>> {
+        let lines = self.lines();
+        let (newest, _) = *lines.first()?;
+        let (oldest, _) = *lines.last()?;
+        let parts = newest.components.len();
+        if version.components.len() < parts {
+            return Some(if version.compare(newest) == Ordering::Greater {
+                Placement::Ahead { newest }
+            } else {
+                Placement::Before
+            });
+        }
+        let start = &version.components[..parts];
+        if let Some((line, status)) = lines.iter().find(|(l, _)| l.components == start) {
+            return Some(Placement::In(line, *status));
+        }
+        let compare = |line: &Version| compare_components(start, &line.components);
+        if compare(newest) == Ordering::Greater {
+            return Some(Placement::Ahead { newest });
+        }
+        if compare(oldest) == Ordering::Less {
+            return Some(Placement::Before);
+        }
+        // Newest first: the first line older than it, and the one before.
+        let at = lines
+            .iter()
+            .position(|(l, _)| compare(l) == Ordering::Greater)?;
+        Some(Placement::Between {
+            line: start
+                .iter()
+                .map(u64::to_string)
+                .collect::<Vec<_>>()
+                .join("."),
+            older: lines[at].0,
+            newer: lines[at.checked_sub(1)?].0,
+        })
+    }
+}
+
+/// Compares two component lists numerically, missing parts as `0`.
+fn compare_components(a: &[u64], b: &[u64]) -> Ordering {
+    for i in 0..a.len().max(b.len()) {
+        match a
+            .get(i)
+            .copied()
+            .unwrap_or(0)
+            .cmp(&b.get(i).copied().unwrap_or(0))
+        {
+            Ordering::Equal => {}
+            other => return other,
+        }
+    }
+    Ordering::Equal
 }
 
 /// Whether `version` is in `line`: whether it starts with the line's parts.
@@ -835,8 +1004,12 @@ pub struct NoteType {
 pub struct Phrase {
     /// The phrase key.
     pub key: String,
-    /// The literal replacement text.
+    /// The literal replacement text. For a phrase whose value is a target's
+    /// line, the target's current line.
     pub value: String,
+    /// `{ line = "<target>" }`: the target whose line the phrase is, as
+    /// `[releases]` lists it.
+    pub line: Option<String>,
     /// The key in `ascribe.toml`.
     pub span: Span,
 }
@@ -1133,6 +1306,20 @@ impl ContentModel {
             .iter()
             .find(|p| p.key == key)
             .map(|p| p.value.as_str())
+    }
+
+    /// A phrase's replacement text in `build`'s output. A phrase that's a
+    /// target's line is the line the build is for, in a line of a build the
+    /// target versions, and the target's current line elsewhere.
+    pub fn phrase_in<'a>(&'a self, key: &str, build: &'a Build) -> Option<&'a str> {
+        let phrase = self.phrases.iter().find(|p| p.key == key)?;
+        if let (Some(target), Some(versions), Some(line)) =
+            (&phrase.line, &build.versions, &build.line)
+            && target == versions
+        {
+            return Some(&line.line.text);
+        }
+        Some(&phrase.value)
     }
 
     /// A dimension by name.

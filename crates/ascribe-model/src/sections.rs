@@ -1,12 +1,13 @@
 //! Content types, fragments, glossary, images, widgets, consumer, builds,
 //! and editor.
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use ascribe_core::availability::Version;
 use ascribe_core::{
-    AttributeSchema, Attributes, Binding, DirectiveSchema, Forms, Origin, Primary, Span, TitleRule,
-    diagnostics, reserved,
+    AttributeSchema, Attributes, Binding, Date, DirectiveSchema, Forms, Origin, Primary, Span,
+    TitleRule, diagnostics, reserved,
 };
 use toml::de::DeValue;
 
@@ -942,32 +943,267 @@ impl Loader<'_> {
 
     // ---- releases ---------------------------------------------------------------------------
 
-    /// `[releases.<target>]`: each target's lines, newest first.
-    pub fn releases(&mut self, v: Option<&V<'_>>, dimensions: &[Dimension]) -> Vec<Releases> {
+    /// `[releases]`: each target's lines, newest first, and
+    /// `planned-label`.
+    pub fn releases(
+        &mut self,
+        v: Option<&V<'_>>,
+        dimensions: &[Dimension],
+    ) -> (Vec<Releases>, String) {
         let mut out = Vec::new();
-        let Some(v) = v else { return out };
+        let mut planned_label = "planned".to_owned();
+        let Some(v) = v else {
+            return (out, planned_label);
+        };
         let Some(t) = self.as_table("releases", v) else {
-            return out;
+            return (out, planned_label);
         };
         for (target, target_span, item) in entries(t) {
+            if target == "planned-label" {
+                if let Some(label) = self.string("releases.planned-label", item, true) {
+                    planned_label = label;
+                }
+                continue;
+            }
             let path = join("releases", target);
             let Some(rt) = self.as_table(&path, item) else {
                 continue;
             };
-            self.check_keys(&path, rt, &["live"]);
+            self.check_keys(&path, rt, &["live", "planned", "ends", "archived"]);
             let target_ok = self.releases_target(target, target_span, dimensions);
-            let live = match rt.get("live") {
-                Some(lv) => self.release_lines(target, &format!("{path}.live"), lv),
+            let mut list = |key: &str| match rt.get(key) {
+                Some(lv) => self.release_lines(target, &format!("{path}.{key}"), lv),
                 None => Some(Vec::new()),
             };
-            if let (true, Some(live)) = (target_ok, live) {
-                out.push(Releases {
-                    target: target.to_owned(),
-                    live,
-                });
+            let live = list("live");
+            let planned = list("planned");
+            let archived = match rt.get("archived") {
+                Some(av) => self.archived_lines(target, &format!("{path}.archived"), av),
+                None => Some(Vec::new()),
+            };
+            let (Some(live), Some(planned), Some(archived)) = (live, planned, archived) else {
+                continue;
+            };
+            let mut releases = Releases {
+                target: target.to_owned(),
+                live,
+                planned,
+                ends: Vec::new(),
+                archived,
+            };
+            let lists_ok = self.release_lists(&releases);
+            if let Some(ev) = rt.get("ends") {
+                match self.line_ends(&releases, &format!("{path}.ends"), ev) {
+                    Some(ends) => releases.ends = ends,
+                    None => continue,
+                }
+            }
+            if target_ok && lists_ok {
+                out.push(releases);
             }
         }
-        out
+        (out, planned_label)
+    }
+
+    /// The rules between a target's lists: every line with the same number
+    /// of parts, each line in one list, planned lines newer than every live
+    /// line, and archived ones older.
+    fn release_lists(&mut self, r: &Releases) -> bool {
+        let target = r.target.as_str();
+        let lists: [(&str, Vec<&Version>); 3] = [
+            ("live", r.live.iter().collect()),
+            ("planned", r.planned.iter().collect()),
+            ("archived", r.archived.iter().map(|a| &a.line).collect()),
+        ];
+        let mut ok = true;
+        let first = lists.iter().find_map(|(_, l)| l.first().copied());
+        if let Some(first) = first {
+            for line in lists.iter().flat_map(|(_, l)| l) {
+                if line.components.len() != first.components.len() {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_LINE, line.span)
+                            .with_arg("target", target)
+                            .with_arg("a", first.text.as_str())
+                            .with_arg("b", line.text.as_str()),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        if !ok {
+            return false;
+        }
+        for (i, (list, lines)) in lists.iter().enumerate() {
+            for line in lines {
+                let earlier = lists[..i]
+                    .iter()
+                    .find(|(_, l)| l.iter().any(|o| o.components == line.components));
+                if let Some((other, _)) = earlier {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_ORDER, line.span)
+                            .with_variant("twice")
+                            .with_arg("target", target)
+                            .with_arg("line", line.text.as_str())
+                            .with_arg("a", *other)
+                            .with_arg("b", *list),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        if !ok {
+            return false;
+        }
+        if let Some(newest) = r.live.first() {
+            for line in &r.planned {
+                if line.compare(newest) != Ordering::Greater {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_ORDER, line.span)
+                            .with_arg("target", target)
+                            .with_arg("line", line.text.as_str())
+                            .with_arg("live", newest.text.as_str()),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        if let Some(oldest) = r.live.last() {
+            for line in r.archived.iter().map(|a| &a.line) {
+                if line.compare(oldest) != Ordering::Less {
+                    self.push(
+                        self.issue(diagnostics::MODEL_RELEASES_ORDER, line.span)
+                            .with_variant("archived")
+                            .with_arg("target", target)
+                            .with_arg("line", line.text.as_str())
+                            .with_arg("live", oldest.text.as_str()),
+                    );
+                    ok = false;
+                }
+            }
+        }
+        ok
+    }
+
+    /// A line written as a key, `"3.4"`: its version, spanning the key.
+    fn line_key(&mut self, target: &str, key: &str, span: Span) -> Option<Version> {
+        // After the opening quote of a quoted key.
+        let offset = span.start() + usize::from(self.text_of(span).starts_with(['"', '\'']));
+        let parsed = is_version(key)
+            .then(|| ascribe_core::availability::parse_version(key, offset).ok())
+            .flatten();
+        match parsed {
+            Some(line) => Some(Version { span, ..line }),
+            None => {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("invalid")
+                        .with_arg("target", target)
+                        .with_arg("line", key),
+                );
+                None
+            }
+        }
+    }
+
+    /// `[releases.<target>.archived]`: each line's table, newest first.
+    fn archived_lines(&mut self, target: &str, path: &str, v: &V<'_>) -> Option<Vec<ArchivedLine>> {
+        let t = self.as_table(path, v)?;
+        let mut out: Vec<ArchivedLine> = Vec::new();
+        let mut ok = true;
+        for (key, span, item) in entries(t) {
+            let item_path = join(path, key);
+            let Some(line) = self.line_key(target, key, span) else {
+                ok = false;
+                continue;
+            };
+            let Some(at) = self.as_table(&item_path, item) else {
+                ok = false;
+                continue;
+            };
+            self.check_keys(&item_path, at, &["url", "ended"]);
+            let url = match at.get("url") {
+                Some(uv) => match self.string(&format!("{item_path}.url"), uv, true) {
+                    Some(url) => Some(url),
+                    None => {
+                        ok = false;
+                        continue;
+                    }
+                },
+                None => None,
+            };
+            let ended = match at.get("ended") {
+                Some(dv) => match self.date(&format!("{item_path}.ended"), dv) {
+                    Some(date) => Some(date),
+                    None => {
+                        ok = false;
+                        continue;
+                    }
+                },
+                None => None,
+            };
+            if out.iter().any(|a| a.line.components == line.components) {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("duplicate")
+                        .with_arg("target", target)
+                        .with_arg("line", line.text.as_str()),
+                );
+                ok = false;
+                continue;
+            }
+            out.push(ArchivedLine { line, url, ended });
+        }
+        out.sort_by(|a, b| b.line.compare(&a.line));
+        ok.then_some(out)
+    }
+
+    /// `[releases.<target>.ends]`: a date for each live line it names.
+    fn line_ends(&mut self, r: &Releases, path: &str, v: &V<'_>) -> Option<Vec<LineEnd>> {
+        let t = self.as_table(path, v)?;
+        let mut out = Vec::new();
+        let mut ok = true;
+        for (key, span, item) in entries(t) {
+            let Some(line) = self.line_key(&r.target, key, span) else {
+                ok = false;
+                continue;
+            };
+            if !r.live.iter().any(|l| l.components == line.components) {
+                let live: Vec<String> = r.live.iter().map(|l| l.text.clone()).collect();
+                let mut issue = self
+                    .issue(diagnostics::MODEL_RELEASES_ENDS, span)
+                    .with_arg("target", r.target.as_str())
+                    .with_arg("line", key);
+                issue = if live.is_empty() {
+                    issue.with_variant("none")
+                } else {
+                    issue.with_arg("live", list(&live))
+                };
+                self.push(issue);
+                ok = false;
+                continue;
+            }
+            match self.date(&join(path, key), item) {
+                Some(date) => out.push(LineEnd { line, date }),
+                None => ok = false,
+            }
+        }
+        ok.then_some(out)
+    }
+
+    /// A date, written as TOML writes one: `2027-01-31`, unquoted.
+    fn date(&mut self, path: &str, v: &V<'_>) -> Option<Date> {
+        if let DeValue::Datetime(d) = v.get_ref()
+            && let (Some(date), None, None) = (d.date, d.time, d.offset)
+            && let Some(date) = Date::new(
+                u32::from(date.year),
+                u32::from(date.month),
+                u32::from(date.day),
+            )
+        {
+            return Some(date);
+        }
+        self.wrong_type(path, v, "a date, such as 2027-01-31");
+        None
     }
 
     /// Whether a `[releases]` table's name is a versioned dimension value.

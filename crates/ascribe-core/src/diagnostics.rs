@@ -644,6 +644,34 @@ pub const MODEL_RELEASES_LINE: DiagnosticSlug = DiagnosticSlug("model-releases-l
 /// `ASC206`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_VERSIONS: DiagnosticSlug = DiagnosticSlug("model-build-versions");
 
+/// `ASC207`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_ORDER: DiagnosticSlug = DiagnosticSlug("model-releases-order");
+
+/// `ASC208`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_RELEASES_ENDS: DiagnosticSlug = DiagnosticSlug("model-releases-ends");
+
+/// `ASC209`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_VERSIONS_CURRENT: DiagnosticSlug = DiagnosticSlug("model-versions-current");
+
+/// `ASC210`, error, file level: SPEC §8.2, "`@available` | Version newer than every release line its target declares".
+pub const AVAILABLE_VERSION_AHEAD: DiagnosticSlug = DiagnosticSlug("available-version-ahead");
+
+/// `ASC211`, advice, file level: a content check (area `project`).
+pub const AVAILABLE_LINE_UNDECLARED: DiagnosticSlug = DiagnosticSlug("available-line-undeclared");
+
+/// `ASC212`, advice, file level: a content check (area `project`).
+pub const AVAILABLE_SAME_IN_EVERY_LINE: DiagnosticSlug =
+    DiagnosticSlug("available-same-in-every-line");
+
+/// `ASC213`, warning, file level: a content check (area `project`).
+pub const AVAILABLE_IN_NO_LINE: DiagnosticSlug = DiagnosticSlug("available-in-no-line");
+
+/// `ASC214`, advice, file level: a content check (area `project`).
+pub const RELEASE_LINE_ENDED: DiagnosticSlug = DiagnosticSlug("release-line-ended");
+
+/// `ASC215`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_PHRASE_LINE: DiagnosticSlug = DiagnosticSlug("model-phrase-line");
+
 /// `ASC216`, error, file level: SPEC §8.2, "Frontmatter | `replaces` that doesn't name a page".
 pub const REPLACES_NOT_A_PAGE: DiagnosticSlug = DiagnosticSlug("replaces-not-a-page");
 
@@ -866,6 +894,15 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_RELEASES_TARGET,
     MODEL_RELEASES_LINE,
     MODEL_BUILD_VERSIONS,
+    MODEL_RELEASES_ORDER,
+    MODEL_RELEASES_ENDS,
+    MODEL_VERSIONS_CURRENT,
+    AVAILABLE_VERSION_AHEAD,
+    AVAILABLE_LINE_UNDECLARED,
+    AVAILABLE_SAME_IN_EVERY_LINE,
+    AVAILABLE_IN_NO_LINE,
+    RELEASE_LINE_ENDED,
+    MODEL_PHRASE_LINE,
     REPLACES_NOT_A_PAGE,
     REPLACES_CYCLE,
     REPLACES_OVERLAP,
@@ -910,6 +947,10 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     EXAMPLE_UNOBSERVED,
     EXAMPLES_CONFIG_INVALID,
     OBSERVATION_FILE_MISSING,
+    AVAILABLE_LINE_UNDECLARED,
+    AVAILABLE_SAME_IN_EVERY_LINE,
+    AVAILABLE_IN_NO_LINE,
+    RELEASE_LINE_ENDED,
     LINK_INTO_OLDER_LINE,
     LINK_FRAGMENT_DROPPED,
 ];

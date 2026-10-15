@@ -23,6 +23,13 @@ values = ["npm", "pnpm"]
 values = ["cloud", "self-managed"]
 versionless = ["cloud"]
 
+[releases.self-managed]
+live = ["3.4", "3.5"]
+planned = ["3.6"]
+
+[releases.self-managed.archived]
+"3.2" = {}
+
 [phrases]
 product = "Quill"
 api = "https://api.quill.dev/"
@@ -375,6 +382,62 @@ fn a_broken_link_is_offered_the_page_with_its_heading() {
     assert_eq!(
         apply_edits(&file.text, &fixes[0].edits).expect("edits apply"),
         page("[keys](api-keys.md#rotate-keys)")
+    );
+}
+
+/// A version the list can't place is offered the declared lines: the
+/// newest, for one newer than every line, and those either side, for one
+/// between two.
+#[test]
+fn a_version_the_list_cant_place_is_offered_the_declared_lines() {
+    let p = project(&[
+        (
+            "ahead.md",
+            &page(
+                "@available: self-managed preview 3.45
+Text.",
+            ),
+        ),
+        (
+            "between.md",
+            &page(
+                "@available: self-managed 3.3.1
+Text.",
+            ),
+        ),
+    ]);
+    let all = check_files(&p);
+    let offered = |path: &str| -> Vec<String> {
+        let file = p
+            .source_at(&RelPath::parse(path).expect("path"))
+            .expect("a source");
+        let found = all
+            .iter()
+            .find(|d| d.location.file == file.id)
+            .expect("a diagnostic");
+        found
+            .fixes
+            .iter()
+            .map(|f| {
+                assert_eq!(f.applicability, Applicability::Unsafe);
+                apply_edits(&file.text, &f.edits).expect("edits apply")
+            })
+            .collect()
+    };
+    assert_eq!(
+        slugs(&p),
+        ["available-version-ahead", "available-line-undeclared"]
+    );
+    assert_eq!(
+        offered("ahead.md"),
+        [page("@available: self-managed preview 3.6\nText.")]
+    );
+    assert_eq!(
+        offered("between.md"),
+        [
+            page("@available: self-managed 3.2\nText."),
+            page("@available: self-managed 3.4\nText.")
+        ]
     );
 }
 

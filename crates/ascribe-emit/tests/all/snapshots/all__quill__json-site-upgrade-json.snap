@@ -19,6 +19,14 @@ expression: text
   "availability": {
     "text": "self-managed",
     "display": "self-managed (GA)",
+    "targets": [
+      {
+        "target": "self-managed",
+        "dimension": "deployment",
+        "states": ["ga"],
+        "text": "self-managed (GA)"
+      }
+    ],
     "scope": "page",
     "feature": null,
     "source": {

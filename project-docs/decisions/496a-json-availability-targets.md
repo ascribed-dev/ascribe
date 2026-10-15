@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**A page's JSON availability gains `targets`, one object per entry with what the element's attributes carry (`target`, `dimension`, `states`, `versions`, and `planned: true` when its version is in a planned line) and its text, and only in a project with `[releases]`.** The JSON had the spec's text and nothing per target, so a planned version had nowhere to say so. A project with no `[releases]` writes no `targets` and its JSON is byte for byte what it was, and so is its Zod schema, which gains `planned` only with `[releases]`. _Why:_ the [Versions plan](../versions/phase-3-list.md) says a planned version reads "planned" in the JSON as in the site and plain outputs, and [the plan's README](../versions/README.md) that a project with no `[releases]` changes in nothing. _From:_ the implementor of [#496](https://github.com/ascribed-dev/ascribe/issues/496), in its pull request, 15 October 2026, for the maintainer's review.

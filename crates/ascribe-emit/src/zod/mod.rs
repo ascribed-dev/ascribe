@@ -43,7 +43,16 @@ pub fn generate(model: &ContentModel) -> String {
     out.push_str(
         &RESERVED
             .replace("{availability-target}", names::ELEMENT_AVAILABILITY_TARGET)
-            .replace("{availability}", names::ELEMENT_AVAILABILITY),
+            .replace("{availability}", names::ELEMENT_AVAILABILITY)
+            // A target is planned only by a project's `[releases]`.
+            .replace(
+                "{planned}",
+                if model.releases.is_empty() {
+                    ""
+                } else {
+                    "\n  planned: z.literal(true).optional(),"
+                },
+            ),
     );
     let mut names = Vec::new();
     for ty in &model.types {
@@ -105,7 +114,8 @@ import { z } from \"astro/zod\";
 
 /// The reserved keys: `available` as the site output writes it (element
 /// contract §4), and `variant` as written (SPEC §4.3). `{availability}` and
-/// `{availability-target}` stand for the elements' names.
+/// `{availability-target}` stand for the elements' names, and `{planned}`
+/// for a target's `planned` key, when a project can have one.
 const RESERVED: &str = "
 /** One target of a page's availability: the attributes of a
  * `<{availability-target}>`, and the text it shows. */
@@ -113,7 +123,7 @@ export const availableTargetSchema = z.strictObject({
   target: z.string(),
   dimension: z.string(),
   states: z.array(z.string()),
-  versions: z.array(z.string()).optional(),
+  versions: z.array(z.string()).optional(),{planned}
   text: z.string(),
 });
 

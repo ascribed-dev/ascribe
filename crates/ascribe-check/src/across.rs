@@ -10,8 +10,10 @@
 //!   so a count is the same everywhere; `image-unused` and `image-large` read
 //!   the image files under the content root, through the project's
 //!   [`FileSystem`](ascribe_resolve::FileSystem); and
-//!   `availability-left-behind` compares each feature's versions with
-//!   `[versions] current`; and `crawlers-disallowed` reads `[crawlers]`.
+//!   `availability-left-behind` compares each feature's versions with each
+//!   target's current line in `[releases]`; `release-line-ended` compares
+//!   each live line's `ends` with the day the check runs as; and
+//!   `crawlers-disallowed` reads `[crawlers]`.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, and `title-duplicate` and `description-duplicate`, two pages
@@ -27,14 +29,16 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
-use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
+use ascribe_core::{Date, DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{
-    CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission, Purpose,
+    AvailabilityMode, CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission,
+    Purpose, in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
 use crate::page::Found;
 use crate::project::image_id;
+use crate::releases;
 use crate::yaml::YamlIndex;
 use crate::{Diagnostic, Project};
 
@@ -56,6 +60,11 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::IMAGE_UNUSED,
     diagnostics::IMAGE_LARGE,
     diagnostics::AVAILABILITY_LEFT_BEHIND,
+    diagnostics::AVAILABLE_VERSION_AHEAD,
+    diagnostics::AVAILABLE_LINE_UNDECLARED,
+    diagnostics::AVAILABLE_SAME_IN_EVERY_LINE,
+    diagnostics::AVAILABLE_IN_NO_LINE,
+    diagnostics::RELEASE_LINE_ENDED,
     diagnostics::CRAWLERS_DISALLOWED,
 ];
 
@@ -151,11 +160,10 @@ pub(crate) fn for_every_build(
         }
     }
 
-    if on(diagnostics::AVAILABILITY_LEFT_BEHIND)
-        && let Some(current) = &project.model().current_version
-    {
-        for f in &project.model().features {
-            if let Some(latest) = left_behind(&f.available, current) {
+    if on(diagnostics::AVAILABILITY_LEFT_BEHIND) {
+        let model = project.model();
+        for f in &model.features {
+            if let Some((target, latest, current)) = left_behind(model, &f.available) {
                 issues.push(
                     Issue::new(
                         diagnostics::AVAILABILITY_LEFT_BEHIND,
@@ -163,11 +171,30 @@ pub(crate) fn for_every_build(
                     )
                     .with_arg("key", f.key.clone())
                     .with_arg("version", latest.text.clone())
+                    .with_arg("target", target.to_owned())
                     .with_arg("current", current.text.clone())
                     .with_arg(ENTRY_ARG, entry_arg(EntryKind::Feature, &f.key)),
                 );
             }
         }
+    }
+
+    if [
+        diagnostics::AVAILABLE_VERSION_AHEAD,
+        diagnostics::AVAILABLE_LINE_UNDECLARED,
+        diagnostics::AVAILABLE_SAME_IN_EVERY_LINE,
+        diagnostics::AVAILABLE_IN_NO_LINE,
+    ]
+    .into_iter()
+    .any(on)
+    {
+        placement(project.model(), &mut issues);
+    }
+
+    if on(diagnostics::RELEASE_LINE_ENDED)
+        && let Some(today) = project.today()
+    {
+        line_ended(project.model(), today, &mut issues);
     }
 
     if on(diagnostics::CRAWLERS_DISALLOWED) {
@@ -188,6 +215,53 @@ pub(crate) fn for_every_build(
         list.sort_by_key(|d| d.location.span);
     }
     out
+}
+
+/// What `[releases]` says about the specs in `ascribe.toml`: each version
+/// a feature's spec or a build's filter names that its target's list can't
+/// place, and each feature's entry that no output shows the version of or
+/// that no output has. A filter's version is reported at the whole filter,
+/// with no fix.
+fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
+    let at = |span: Span| Location::new(FileId::new(0), span);
+    for f in &model.features {
+        let placed = releases::placement_issues(model, &f.available.entries, &at, true);
+        if placed.is_empty() {
+            issues.extend(releases::inert_issues(model, &f.available, &at, true));
+        }
+        issues.extend(placed);
+    }
+    for build in &model.builds {
+        if let AvailabilityMode::Filter {
+            target,
+            version: Some(version),
+        } = &build.availability
+            && let Some(list) = model.releases_of(target)
+        {
+            let placed = list.place(version);
+            issues.extend(releases::placement_issue(
+                model, target, placed, version, &at, false,
+            ));
+        }
+    }
+}
+
+/// `release-line-ended`: a live line whose `ends` date is before `today`,
+/// at its key in `[releases.<target>.ends]`.
+fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
+    for releases in &model.releases {
+        for end in releases.ends.iter().filter(|e| e.date < today) {
+            issues.push(
+                Issue::new(
+                    diagnostics::RELEASE_LINE_ENDED,
+                    Location::new(FileId::new(0), end.line.span),
+                )
+                .with_arg("target", releases.target.clone())
+                .with_arg("line", end.line.text.clone())
+                .with_arg("date", end.date.to_string()),
+            );
+        }
+    }
 }
 
 /// `crawlers-disallowed`: `search` or `on-request` disallowed in
@@ -288,12 +362,16 @@ fn images(
     }
 }
 
-/// The latest version a feature's spec names, when every target in it names
-/// one and none is later than `current`: the feature is about releases that
-/// have shipped. A target with no version, such as a versionless one, keeps
-/// it current.
-fn left_behind<'s>(spec: &'s AvailabilitySpec, current: &Version) -> Option<&'s Version> {
-    let mut latest: Option<&Version> = None;
+/// The latest version a feature's spec names, with its target and that
+/// target's current line, when every target in it names one and none is
+/// later than its target's current line: the feature is about releases that
+/// have shipped. A target with no version, such as a versionless one, or
+/// with no lines in `[releases]`, keeps it current.
+fn left_behind<'s>(
+    model: &'s ContentModel,
+    spec: &'s AvailabilitySpec,
+) -> Option<(&'s str, &'s Version, &'s Version)> {
+    let mut latest: Option<(&str, &Version, &Version)> = None;
     for entry in &spec.entries {
         let version = match &entry.detail {
             Detail::Version(v)
@@ -303,11 +381,13 @@ fn left_behind<'s>(spec: &'s AvailabilitySpec, current: &Version) -> Option<&'s 
             Detail::History(steps) => &steps.last()?.version,
             Detail::None | Detail::State { version: None, .. } => return None,
         };
-        if version.compare(current) == Ordering::Greater {
+        let target = entry.target.text.as_str();
+        let current = model.releases_of(target)?.current()?;
+        if version.compare(current) == Ordering::Greater && !in_line(current, version) {
             return None;
         }
-        if latest.is_none_or(|l| version.compare(l) == Ordering::Greater) {
-            latest = Some(version);
+        if latest.is_none_or(|(_, l, _)| version.compare(l) == Ordering::Greater) {
+            latest = Some((target, version, current));
         }
     }
     latest

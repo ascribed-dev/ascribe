@@ -257,8 +257,7 @@ test("the site's own pages share the docs' release tables, sources, and address,
   // What the pages' availability marks need, to mark a claim as the docs do.
   for (const keys of [
     ["dimensions", "release"],
-    ["versions"],
-    ["lifecycle", "unreleased"],
+    ["releases"],
     ["features", "next"],
     ["phrases", "version"],
     ["consumer", "site"],

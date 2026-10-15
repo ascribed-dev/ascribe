@@ -392,6 +392,15 @@ ascribe-availability-target[states$=" removed"] {
   --_background: var(--ascribe-state-removed-background);
 }
 
+/* A planned version (`[releases]`): the badge of no state, with a dashed
+   outline, whatever the state it's planned in. */
+ascribe-availability-target[planned] {
+  --_color: var(--ascribe-state-color);
+  --_background: var(--ascribe-state-background);
+  outline: 1px dashed currentColor;
+  outline-offset: -1px;
+}
+
 /* <ascribe-group> --------------------------------------------------------- */
 
 ascribe-group {

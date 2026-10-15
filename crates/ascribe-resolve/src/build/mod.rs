@@ -299,10 +299,11 @@ impl<'p> BuildResolver<'p> {
         let mut page_availability = page_availability;
         modes::show_for_line(self.build, &mut blocks, &mut page_availability);
         // Step 4: phrases.
-        phrases::substitute_blocks(project, &mut blocks);
+        phrases::substitute_blocks(project, self.build, &mut blocks);
         let (frontmatter, formatted) = match &index.frontmatter {
             Some(f) => {
-                let (value, formatted) = phrases::frontmatter(model, index.content_type(model), f);
+                let (value, formatted) =
+                    phrases::frontmatter(model, self.build, index.content_type(model), f);
                 (Some(value), formatted)
             }
             None => (None, Vec::new()),
