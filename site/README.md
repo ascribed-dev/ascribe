@@ -130,7 +130,7 @@ The integration writes one `sitemap.xml` and one `robots.txt` at the site's root
 
 What the built pages can't show, the editor and review, is shown in pictures, in `home/content/screenshots/`: `review` and `editor`, each a PNG for light and for dark, and a record, `<name>.json`, of the release it was taken at. A page shows them as two images marked `{scheme=light}` and `{scheme=dark}`, and `src/styles/site.css` shows the reader's.
 
-Each is taken by a script, and retaken with one command at the repository's root, which also writes its record from `[versions] current` in `docs/ascribe.toml`:
+Each is taken by a script, and retaken with one command at the repository's root, which also writes its record from the current line of `[releases.ascribe]` in `docs/ascribe.toml`:
 
 ```sh
 node scripts/docs-site/screenshots.ts review   # or editor, or neither for both
