@@ -158,7 +158,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 |---|---|---|
 | `model-listing-folder` | A key of `[listing.folders]` is a folder's path from the content root, ending in `/`, of a folder that exists by its exact name. | `` `{folder}` in `[listing.folders]` doesn't exist under the content root ``<br>`` `{folder}` in `[listing.folders]` isn't a folder ``<br>`` `{folder}` in `[listing.folders]` isn't a folder's path; write it from the content root, with `/` between its parts and at its end, such as `internal/` `` |
 | `model-listing-type` | A key of `[listing.types]` is a content type. | `` `{type}` in `[listing.types]` isn't a content type; use one of: {values} `` |
-| `model-listing-looser` | No rule is looser than a folder's it's under, or than `default`. | `` `{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict ``<br>`` `{rule}` is looser than the site's `{wider}` on line {line}; with that default, no folder or type can be listed more openly `` |
+| `model-listing-looser` | No rule is looser than a folder's it's under, or than `default`; `older-lines` included. | `` `{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict ``<br>`` `{rule}` is looser than the site's `{wider}` on line {line}; with that default, no folder or type can be listed more openly `` |
 
 ---
 

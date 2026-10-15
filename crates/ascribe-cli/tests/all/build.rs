@@ -693,11 +693,13 @@ fn a_versioned_build_writes_an_output_for_each_live_line() {
     assert!(older.join("shot.png").exists());
     assert!(read(&older.join("install.md")).contains("](/docs/3.4/)"));
     let pages = read(&older.join("_ascribe/pages.json"));
+    // Its route is under its folder, and its canonical address is the
+    // current line's page.
+    assert!(pages.contains("\"/docs/3.4/install/\""), "{pages}");
     assert!(
-        pages.contains("\"canonical\": \"https://docs.example.com/docs/3.4/install/\""),
+        pages.contains("\"canonical\": \"https://docs.example.com/docs/install/\""),
         "{pages}"
     );
-    assert!(!pages.contains("\"/docs/install/\""), "{pages}");
 }
 
 #[test]

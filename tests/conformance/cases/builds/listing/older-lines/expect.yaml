@@ -1,0 +1,27 @@
+description: >-
+  `[listing] older-lines` applies to every page of an older line of a
+  versioned build, and to no page of its current line. With `unlisted`, each
+  page of 3.4 is unlisted, from the rule, while 3.5's keep their own. A page
+  in 3.4 that sets a looser `listing` is an error in that line, and keeps the
+  rule's; the same page in 3.5 is fine.
+spec: ["2.1", "7.2", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    diagnostics: []
+    pages:
+      index.md:
+        listing: listed
+      install.md:
+        listing: listed
+      quiet.md:
+        listing: unquoted
+  site@3.4:
+    diagnostics:
+      - {slug: listing-loosened-in-line, file: install.md, line: 3}
+    pages:
+      index.md:
+        listing: unlisted
+      install.md:
+        listing: unlisted

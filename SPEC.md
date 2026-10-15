@@ -1045,6 +1045,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level) | Error |
 | Frontmatter | A page and the page it `replaces`, both published by one line of a versioned build (page level, per build) | Error |
 | Frontmatter | Two pages that `replaces` the same page, both published by one line of a versioned build (page level, per build) | Error |
+| Frontmatter | `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes (page level, per build) | Error |
 | Frontmatter | Page names no content type, in a project that declares types | Error |
 | Frontmatter | Page's `type` names no declared content type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |

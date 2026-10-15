@@ -16,11 +16,11 @@ export type Listing = "listed" | "unquoted" | "unlisted";
 /**
  * Where a page's listing comes from: `default` when nothing sets it, `page`
  * for the page's own, and for a rule of `[listing]` its level (`site`,
- * `folder`, or `type`), its folder or type, the rule as written, and its line
+ * `older-lines`, `folder`, or `type`), its folder or type, the rule as written, and its line
  * in `ascribe.toml`.
  */
 export interface ListingFrom {
-  level: "default" | "page" | "site" | "folder" | "type";
+  level: "default" | "page" | "site" | "older-lines" | "folder" | "type";
   folder?: string;
   type?: string;
   rule?: string;

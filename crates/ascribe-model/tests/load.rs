@@ -491,6 +491,36 @@ fn a_page_may_tighten_its_rule_and_never_loosen_it() {
 }
 
 #[test]
+fn older_lines_applies_only_to_an_older_line() {
+    let m = listing_model(
+        "[listing]\nolder-lines = \"unlisted\"\n[listing.folders]\n\"internal/\" = \"unlisted\"\n",
+    );
+    let rule = m.listing.older_lines.clone().unwrap();
+    assert_eq!(rule.level, ListingLevel::OlderLines);
+    assert_eq!(rule.text, "older-lines = \"unlisted\"");
+    assert_eq!(m.listing_rule("a.md", None), None);
+    assert_eq!(
+        m.listing_in("a.md", None, Some(Listing::Unquoted), false),
+        (Listing::Unquoted, ListingFrom::Page)
+    );
+    assert_eq!(
+        m.listing_in("a.md", None, Some(Listing::Unquoted), true),
+        (Listing::Unlisted, ListingFrom::Rule(rule.clone()))
+    );
+    assert_eq!(
+        ListingFrom::Rule(rule).level_name(),
+        "older-lines",
+        "the records name its level"
+    );
+    // A folder as strict is narrower, and named first.
+    assert_eq!(
+        m.listing_rule_in("internal/a.md", None, true)
+            .map(|r| r.level.clone()),
+        Some(ListingLevel::Folder("internal/".into()))
+    );
+}
+
+#[test]
 fn a_rule_as_strict_as_the_one_it_is_under_is_fine() {
     let m = listing_model(
         "[listing]\ndefault = \"unquoted\"\n[listing.folders]\n\"a/\" = \"unquoted\"\n\

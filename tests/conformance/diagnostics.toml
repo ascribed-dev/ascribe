@@ -4060,3 +4060,16 @@ when = "A link to a heading leads, in a line of a versioned build, to a page tha
 message = "in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page"
 messages.builds = "in builds {builds}, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page"
 fix = "Give the heading on the page it lands on the same id, with `@id`, or link to the page without `#` and the id."
+
+[[diagnostic]]
+code = "ASC222"
+slug = "listing-loosened-in-line"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "2.1"
+reference = "content-model/checks.md#22-listing"
+row = "Frontmatter | `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes (page level, per build)"
+message = "this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there"
+fix = "Remove the page's `listing`, which the rule already sets in an older line, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list an older line's pages more openly, change `older-lines` in `[listing]`."

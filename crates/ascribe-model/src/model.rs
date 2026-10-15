@@ -377,12 +377,15 @@ impl Listing {
 }
 
 /// `[listing]`: how pages are listed, set for many at once: the whole site,
-/// a folder, or a content type. A page's listing is the strictest of the
+/// an older line of a versioned build, a folder, or a content type. A page's listing is the strictest of the
 /// rules it's under and its own, and a page can't be looser than its rules.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ListingRules {
     /// `default`: the site's, for every page.
     pub default: Option<ListingRule>,
+    /// `older-lines`: for every page of a live line of a versioned build
+    /// other than its current line.
+    pub older_lines: Option<ListingRule>,
     /// `[listing.folders]`, in declaration order.
     pub folders: Vec<ListingRule>,
     /// `[listing.types]`, in declaration order.
@@ -409,6 +412,8 @@ pub struct ListingRule {
 pub enum ListingLevel {
     /// Every page: `default`.
     Site,
+    /// Every page of an older line of a versioned build: `older-lines`.
+    OlderLines,
     /// The pages under a folder, written from the content root and ending in
     /// `/`: a key of `[listing.folders]`.
     Folder(String),
@@ -437,6 +442,7 @@ impl ListingFrom {
             ListingFrom::Page => "page",
             ListingFrom::Rule(rule) => match rule.level {
                 ListingLevel::Site => "site",
+                ListingLevel::OlderLines => "older-lines",
                 ListingLevel::Folder(_) => "folder",
                 ListingLevel::Type(_) => "type",
             },
@@ -447,18 +453,35 @@ impl ListingFrom {
 impl ListingRules {
     /// Whether the project has no rules.
     pub fn is_empty(&self) -> bool {
-        self.default.is_none() && self.folders.is_empty() && self.types.is_empty()
+        self.default.is_none()
+            && self.older_lines.is_none()
+            && self.folders.is_empty()
+            && self.types.is_empty()
     }
 }
 
 impl ContentModel {
     /// The strictest rule of `[listing]` a page at `path` (from the content
     /// root, with `/`) of the type named `type_name` is under, or `None` when
-    /// it's under none. Of rules
-    /// equally strict, the narrowest is given: the deepest folder, then the
-    /// type, then the site's default. A folder and a type have no order
-    /// between them; the folder is named first.
+    /// it's under none, in every build: [`ContentModel::listing_rule_in`]
+    /// outside an older line.
     pub fn listing_rule(&self, path: &str, type_name: Option<&str>) -> Option<&ListingRule> {
+        self.listing_rule_in(path, type_name, false)
+    }
+
+    /// The strictest rule of `[listing]` a page at `path` (from the content
+    /// root, with `/`) of the type named `type_name` is under, or `None` when
+    /// it's under none; `older_line` says whether the page is in an older
+    /// line of a versioned build, which `older-lines` is for. Of rules
+    /// equally strict, the narrowest is given: the deepest folder, then the
+    /// type, then `older-lines`, then the site's default. A folder and a type
+    /// have no order between them; the folder is named first.
+    pub fn listing_rule_in(
+        &self,
+        path: &str,
+        type_name: Option<&str>,
+        older_line: bool,
+    ) -> Option<&ListingRule> {
         let mut folders: Vec<&ListingRule> = self
             .listing
             .folders
@@ -477,6 +500,7 @@ impl ContentModel {
         for rule in folders
             .into_iter()
             .chain(types)
+            .chain(self.listing.older_lines.iter().filter(|_| older_line))
             .chain(self.listing.default.iter())
         {
             if best.is_none_or(|b| rule.listing > b.listing) {
@@ -497,7 +521,19 @@ impl ContentModel {
         type_name: Option<&str>,
         own: Option<Listing>,
     ) -> (Listing, ListingFrom) {
-        let rule = self.listing_rule(path, type_name);
+        self.listing_in(path, type_name, own, false)
+    }
+
+    /// [`ContentModel::listing_of`] for a page that may be in an older line
+    /// of a versioned build, where `older-lines` applies too.
+    pub fn listing_in(
+        &self,
+        path: &str,
+        type_name: Option<&str>,
+        own: Option<Listing>,
+        older_line: bool,
+    ) -> (Listing, ListingFrom) {
+        let rule = self.listing_rule_in(path, type_name, older_line);
         match (own, rule) {
             (Some(own), Some(rule)) if own < rule.listing => {
                 (rule.listing, ListingFrom::Rule(rule.clone()))

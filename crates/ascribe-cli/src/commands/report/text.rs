@@ -640,6 +640,7 @@ fn listing_from(from: &ListingFrom) -> String {
         ListingFrom::Rule(rule) => {
             let level = match &rule.level {
                 ListingLevel::Site => "site".to_owned(),
+                ListingLevel::OlderLines => "older lines".to_owned(),
                 ListingLevel::Folder(folder) => format!("folder {folder}"),
                 ListingLevel::Type(name) => format!("type {name}"),
             };
