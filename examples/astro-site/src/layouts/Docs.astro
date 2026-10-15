@@ -5,8 +5,10 @@ import Availability from "@ascribed/astro/Availability.astro";
 import Elements from "@ascribed/astro/Elements.astro";
 // Everything the head says about the page, from its record.
 import Head from "@ascribed/astro/Head.astro";
-// With a versioned build, the lines that have the page.
+// With a versioned build, the lines that have the page, and on an older line
+// what it is and where the current one is.
 import Versions from "@ascribed/astro/Versions.astro";
+import VersionBanner from "@ascribed/astro/VersionBanner.astro";
 import { sidebar } from "@ascribed/astro/content";
 import { nav } from "../nav.ts";
 
@@ -71,6 +73,7 @@ const groups = sidebar(nav, await getCollection("docs"), { entry });
       }
     </nav>
     <main>
+      <VersionBanner entry={entry} />
       <h1 set:html={titleHtml(entry)} />
       <Availability available={available} />
       <Versions entry={entry} />

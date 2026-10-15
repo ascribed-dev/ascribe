@@ -23,7 +23,15 @@ import path from "node:path";
 import { glob, type LoaderContext } from "astro/loaders";
 import { astroRoot, collections, routes, siteRoot } from "virtual:ascribe/site";
 import { recordFor, type PageRecord } from "./records.js";
-import { linesOf, pageLines, type PageLine } from "./versions.js";
+import {
+  lineNotice,
+  linesOf,
+  listedLines,
+  pageLines,
+  type LineNotice,
+  type ListedLine,
+  type PageLine,
+} from "./versions.js";
 import {
   pageRoute,
   sidebarGroups,
@@ -34,6 +42,7 @@ import {
 
 export type { NavGroup, SidebarGroup, SidebarPage } from "./nav.js";
 export type { Listing, ListingFrom, PageRecord, Step } from "./records.js";
+export type { LineNotice } from "./versions.js";
 export { headTags, scriptJson, type Card, type HeadOptions, type HeadTag } from "./head.js";
 
 /**
@@ -222,6 +231,51 @@ export function pageVersions(entry: {
     ...line,
     own: own === undefined ? line.current : line.line === own,
   }));
+}
+
+/** A line of a versioned build, as a page's list of versions shows it. */
+export interface LineVersion extends ListedLine {
+  /** Whether this is the line of the entry asked about. */
+  own: boolean;
+}
+
+/**
+ * Every line of a versioned build, for the list of versions on a collection
+ * entry's page, newest first: each live line, with the page's route in it,
+ * or the page in its place, and no route when it has neither; then each
+ * archived line that has an address, with that address. Empty for an entry
+ * of a build that isn't versioned. `Versions.astro` writes them.
+ */
+export function lineVersions(entry: {
+  filePath?: string | undefined;
+  data?: unknown;
+}): LineVersion[] {
+  const found = entryRoot(entry);
+  if (found === undefined) return [];
+  const own = lineOf(entry);
+  return listedLines(found.root, found.source).map((line) => ({
+    ...line,
+    own: own === undefined ? line.status === "current" : line.line === own,
+  }));
+}
+
+/**
+ * What a collection entry's page of an older line says about the line: its
+ * label and number, the last day it's supported, and the page's route in the
+ * current line, or the page that takes its place there, or else the current
+ * line's home. `undefined` on the current line, and for an entry of a build
+ * that isn't versioned. `VersionBanner.astro` writes it.
+ */
+export function versionNotice(entry: {
+  filePath?: string | undefined;
+  data?: unknown;
+}): LineNotice | undefined {
+  const found = entryRoot(entry);
+  const line = lineOf(entry);
+  if (found === undefined || line === undefined) return undefined;
+  const at = routes.find((route) => route.siteRoot === found.root);
+  const home = pageRoute("index", at?.basePath ?? "/", at?.trailingSlash ?? "always");
+  return lineNotice(found.root, found.source, line, home);
 }
 
 /**

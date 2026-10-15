@@ -6,8 +6,8 @@
 
 use std::path::Path;
 
-use ascribe_emit::SiteEmitter;
 use ascribe_emit::site::PAGES_PATH;
+use ascribe_emit::{PlainEmitter, SiteEmitter};
 use ascribe_resolve::Project;
 use serde_json::Value;
 
@@ -107,4 +107,50 @@ fn without_a_site_no_line_has_a_canonical_address() {
     let project = memory_project(&model, FILES);
     let older = records(&project, "site@3.4");
     assert_eq!(older["pages"]["/docs/3.4/install/"].get("canonical"), None);
+}
+
+fn plain(project: &Project, build: &str, page: &str) -> String {
+    let mut files = emit_build(
+        Path::new("/nowhere"),
+        project,
+        build,
+        &PlainEmitter::new(project.model()),
+    );
+    files
+        .remove(page)
+        .unwrap_or_else(|| panic!("{build} writes {page}: {:?}", files.keys()))
+}
+
+#[test]
+fn a_page_s_markdown_says_which_version_it_documents() {
+    let project = memory_project(MODEL, FILES);
+    // The current line names itself.
+    let current = plain(&project, "site", "install.md");
+    let mut lines = current.lines();
+    assert!(
+        lines.next().is_some_and(|l| l.contains("llms.txt")),
+        "{current}"
+    );
+    assert_eq!(lines.nth(1), Some("> Documentation for Self-managed 3.5."));
+    // An older line names itself, says when its support ends, and where the
+    // same page is in the current line, or the page that replaced it.
+    let older = plain(&project, "site@3.4", "install.md");
+    assert!(
+        older.contains(
+            "\n> Documentation for Self-managed 3.4. Support ends on 31 January 2027. \
+             The current version is 3.5: <https://docs.example.com/docs/install/>.\n\n# Install\n"
+        ),
+        "{older}"
+    );
+    let replaced = plain(&project, "site@3.4", "configure-legacy.md");
+    assert!(
+        replaced.contains("3.5: <https://docs.example.com/docs/configure/>."),
+        "{replaced}"
+    );
+    // A page the current line has nothing in the place of points at its home.
+    let alone = plain(&project, "site@3.4", "old-only.md");
+    assert!(
+        alone.contains("3.5: <https://docs.example.com/docs/>."),
+        "{alone}"
+    );
 }

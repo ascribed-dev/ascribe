@@ -9,7 +9,7 @@ A product a team supports in more than one version needs docs for each: a reader
 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
 2. **One site that knows its versions.** `[releases]` in `ascribe.toml` lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
-3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers, with links from one line to another. A banner on an older line's pages, and canonical links to the current line are to come.
+3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers, with links from one line to another, and an older line that says what it is and where the current one is, to a reader, a search engine, and an agent.
 4. **An archive.** A line that's left the window, kept as a frozen copy. Not yet.
 
 ## List the live lines
@@ -113,15 +113,59 @@ A link to a page that isn't in a line still goes somewhere, in three steps:
 
 A link from the current line to a page only an older line has is [advice](../checks/diagnostics/pages.md): it's a reader on the newest docs sent back to an older line, which is usually a link the page no longer needs. Two pages that replace each other, or a page that replaces a page its own line still has, are errors. [`replaces`](../writing/directives.md#a-page-that-replaces-another) has the rules, and `ascribe link` says where a link goes in each line.
 
+## What an older line says about itself
+
+A reader who lands on an older line from a search should know it's older, and find the current one. Each output says so in its own way:
+
+- **The canonical address** of a page in an older line is the same page in the current line, or the page that replaced it there, following `replaces` as a link does. A page the current line has neither of keeps its own. So a search engine indexes the current line's page, and an older line's page only when it's the one place the page is.
+- **The sitemap** lists a page when it's listed and its canonical address is its own: each current page once, and an older line's page only when the current line has no such page.
+- **The page's Markdown** opens with a line that says which version it is:
+
+  > Documentation for Self-managed 3.4. Support ends on 31 January 2027. The current version is 3.5: <https://docs.example.com/docs/install/>.
+
+  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#6-dimensionsname).
+- **A site's banner** says the same to a person: [`VersionBanner.astro`](#publish-with-astro) with Astro, or the site's own from the files below.
+
+Nothing is added to `robots.txt`. An older line is kept out of an index by its pages, not by a rule over its folder, which would also stop a crawler reading the canonical link.
+
+### Keep the older lines out of an index
+
+A project that doesn't want its older lines found at all says so under `[listing]`:
+
+```toml
+[listing]
+older-lines = "unlisted"
+```
+
+Every page of every line but the current one is then `unlisted`: it asks not to be indexed, and it's left out of the sitemap and `llms.txt`. `unquoted` asks that they not be quoted. The rule only restricts, as every listing rule does: a page in an older line that sets a looser `listing`, such as `listing: listed`, is [`listing-loosened-in-line`](../checks/diagnostics/pages.md). A folder's or a type's rule still applies on top of it.
+
 ## What the lines know about each other
 
-Each `ascribe build` of a project with `[releases]` writes `.ascribe/build/_ascribe/versions.json`: for each versioned build, its lines, and for each page the lines that publish it, with its route in each, and the page it replaces or that replaces it. A site reads it to link a page to the same page in another line. The [output layout contract](../contracts/output-layout.md#15-the-versions-file) has its format.
+Each `ascribe build` of a project with `[releases]` writes `.ascribe/build/_ascribe/versions.json`: for each versioned build, the target's label, its lines, and for each page the lines that publish it, with its route in each, and the page it replaces or that replaces it. A site reads it to link a page to the same page in another line. The [output layout contract](../contracts/output-layout.md#15-the-versions-file) has its format.
+
+A site that isn't built with Astro has all a banner and a list of versions need in it and in each line's page records (`_ascribe/pages.json`):
+
+| To write | Read |
+|---|---|
+| "Documentation for Self-managed 3.4" | `builds.<name>.label`, and the line from `lines[]`, the one whose `base` the page is under |
+| "Support ends on 31 January 2027" | that line's `ends` |
+| The link to the current line | the page's `canonical` in its record when it isn't the page's own address; else the `base` of the line whose `status` is `current` |
+| A page's other lines | `pages.<path>.lines`, following `replaces` and `replaced-by` |
+| The lines that have left | the `lines[]` whose `status` is `archived`, and their `url` |
 
 ## Publish with Astro
 
 [`@ascribed/astro`](../astro/index.md) serves every line from one site, with no change to `astro.config.mjs` or `src/content.config.ts`. The collection has every line's pages: the current line's with their usual ids, and an older line's with the line in front, `3.4/install`, so the route `[...slug].astro` gives each is where Ascribe's links point. Each entry's data has `line` and `current`.
 
-`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines that publish the page, each a link to it there, with the page's own line marked `aria-current="page"`. A page that replaces another lists the lines of the page it replaces too, and the other way around, so `configure/` in 3.5 and `3.4/configure-legacy/` link to each other. It renders nothing for a page only its own line has, or a build that isn't versioned. The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes both into the layout.
+`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines, each a link to the page there, with the page's own line marked `aria-current="page"`. A page that replaces another lists the lines of the page it replaces too, and the other way around, so `configure/` in 3.5 and `3.4/configure-legacy/` link to each other. A line that has neither is shown unlinked, "(not in this version)", and the archived lines that have a `url` follow, each linking to it, "(archived)". It renders nothing for a build that isn't versioned, or one with a single line to list.
+
+`<VersionBanner entry={entry} />`, from `@ascribed/astro/VersionBanner.astro`, writes the banner on an older line's pages, and nothing on the current line's:
+
+> Documentation for Self-managed 3.4. Support ends on 31 January 2027. [See this page for 3.5.](/docs/install/)
+
+The link goes to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them; `Versions.astro`'s are `label`, `missing`, and `archived`.
+
+The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes all three into the layout.
 
 `astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. Two things stay with the current line for now:
 

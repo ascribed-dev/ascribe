@@ -826,6 +826,44 @@ fn a_problem_in_every_line_is_said_once() {
 }
 
 #[test]
+fn versions_json_says_what_a_banner_needs_and_the_lines_that_have_left() {
+    let dir = versioned();
+    let model = VERSIONED.replace(
+        "live = [\"3.4\", \"3.5\"]\n",
+        "live = [\"3.4\", \"3.5\"]\n\
+         ends = { \"3.4\" = 2027-01-31 }\n\
+         archived = { \"3.3\" = { url = \"https://archive.example.com/3.3/\", ended = 2026-06-30 }, \"3.2\" = {} }\n",
+    );
+    write(&dir.path().join("ascribe.toml"), &model);
+    let out = ascribe(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let json: serde_json::Value = serde_json::from_str(&read(
+        &dir.path().join(".ascribe/build/_ascribe/versions.json"),
+    ))
+    .expect("JSON");
+    let site = &json["builds"]["site"];
+    // The target's label, its name when it has none of its own.
+    assert_eq!(site["label"], "self-managed");
+    let lines: Vec<serde_json::Value> = site["lines"].as_array().expect("lines").clone();
+    assert_eq!(lines[0].get("ends"), None);
+    assert_eq!(lines[1]["ends"], "2027-01-31");
+    // The archived lines come after the live ones, with no output.
+    assert_eq!(
+        lines[2],
+        serde_json::json!({
+            "line": "3.3",
+            "status": "archived",
+            "url": "https://archive.example.com/3.3/",
+            "ended": "2026-06-30",
+        })
+    );
+    assert_eq!(
+        lines[3],
+        serde_json::json!({ "line": "3.2", "status": "archived" })
+    );
+}
+
+#[test]
 fn versions_json_says_which_lines_have_each_page_and_goes_with_releases() {
     let dir = versioned();
     // Building one line writes what every line knows.

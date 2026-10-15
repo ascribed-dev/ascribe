@@ -191,9 +191,11 @@ A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/
   "builds": {
     "site": {
       "target": "self-managed",
+      "label": "Self-managed",
       "lines": [
         { "line": "3.5", "status": "current", "build": "site", "base": "/docs/" },
-        { "line": "3.4", "status": "live", "build": "site@3.4", "base": "/docs/3.4/" }
+        { "line": "3.4", "status": "live", "build": "site@3.4", "base": "/docs/3.4/", "ends": "2027-01-31" },
+        { "line": "3.3", "status": "archived", "url": "https://archive.example.com/3.3/", "ended": "2026-06-30" }
       ],
       "pages": {
         "configure-legacy.md": { "lines": { "3.4": "/docs/3.4/configure-legacy/" }, "replaced-by": "configure.md" },
@@ -211,11 +213,15 @@ A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/
 | `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
 | `builds` | Each versioned build, by the name it's declared with, sorted by name. Empty when no build is versioned. |
 | `builds.<name>.target` | The target the build is versioned by. |
-| `builds.<name>.lines` | Its lines, newest first. |
-| `lines[].line` | The line, as `[releases.<target>] live` writes it. |
-| `lines[].status` | `current` for the newest live line, `live` for each other. |
-| `lines[].build` | The name of the line's output, `<build>/` under `<output-dir>`. |
-| `lines[].base` | The path the line's pages are under, starting and ending with `/`: the base path, then the line's number for every line but the current one. |
+| `builds.<name>.label` | The target's label (content-model.md, `labels`), or its name when it has none: what a banner calls the line, as in "Self-managed 3.4". |
+| `builds.<name>.lines` | Its live lines, newest first, then its archived lines, newest first. |
+| `lines[].line` | The line, as `[releases.<target>]` writes it. |
+| `lines[].status` | `current` for the newest live line, `live` for each other, `archived` for a line in `archived`. |
+| `lines[].build` | A live line's: the name of the line's output, `<build>/` under `<output-dir>`. An archived line has no output, and no `build` or `base`. |
+| `lines[].base` | A live line's: the path the line's pages are under, starting and ending with `/`: the base path, then the line's number for every line but the current one. |
+| `lines[].ends` | A live line's last day of support, `YYYY-MM-DD`, from `[releases.<target>] ends`. Absent when the project doesn't say. |
+| `lines[].url` | An archived line's address, from its `url`. Absent when it has none. |
+| `lines[].ended` | The day an archived line's support ended, from its `ended`. Absent when the project doesn't say. |
 | `builds.<name>.pages` | Each page a line publishes, by its source path from the content root, sorted by path. |
 | `pages.<path>.lines` | Its route in each line that publishes it, by line, newest first. A line that doesn't publish the page isn't in it. |
 | `pages.<path>.replaces` | The page it says it replaces (SPEC §2.1), when that page is in `pages` too. Absent otherwise. |

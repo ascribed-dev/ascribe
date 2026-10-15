@@ -19,6 +19,9 @@
 //!
 //! Pages start with their title as a level-1 heading. Raw HTML in the
 //! source keeps its text and loses its tags, since the output has no HTML.
+//! In a line of a versioned build, a blockquote before the title says which
+//! version the page documents, and in an older line, where the current one
+//! is ([`version_line`]).
 //!
 //! # For agents
 //!
@@ -34,7 +37,7 @@ pub(crate) mod inline;
 
 use std::cell::{Cell, RefCell};
 
-use ascribe_core::{AssetUse, RelPath};
+use ascribe_core::{AssetUse, RelPath, Router};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
     AstroRouter, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedLink,
@@ -116,6 +119,10 @@ impl Emitter for PlainEmitter {
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
         let text = render_page(cx, page);
+        let text = match version_line(cx.emit, page) {
+            Some(line) => format!("{line}\n\n{text}"),
+            None => text,
+        };
         Ok(match &self.agents {
             Some(agents) => {
                 let index = agents.absolute(&agents.router.url_of("llms.txt"));
@@ -182,6 +189,57 @@ impl Emitter for PlainEmitter {
             Vec::new()
         }
     }
+}
+
+/// In a line of a versioned build, the blockquote that says which version a
+/// page documents: the target's label and the line, the day its support
+/// ends when the list says, and in an older line, the current line and the
+/// address there of the page the current line has in this one's place, or
+/// else of the current line's home. `None` in a build that isn't versioned,
+/// or has one live line.
+fn version_line(cx: &EmitContext<'_>, page: &ResolvedPage) -> Option<String> {
+    let build = cx.build;
+    let (target, line) = (build.versions.as_ref()?, build.line.as_ref()?);
+    // With one live line, the build writes what it would unversioned.
+    if line.current && line.oldest.text == line.line.text {
+        return None;
+    }
+    let model = cx.model;
+    let label = model.value_label(target).unwrap_or(target);
+    let releases = model.releases_of(target)?;
+    let mut text = format!("> Documentation for {label} {}.", line.line.text);
+    if let Some(end) = releases.ends.iter().find(|e| e.line.text == line.line.text) {
+        let day = end.date;
+        text.push_str(&format!(
+            " Support ends on {} {} {}.",
+            day.day(),
+            day.month_name(),
+            day.year()
+        ));
+    }
+    if line.current {
+        return Some(text);
+    }
+    let current = releases.live.first()?;
+    let route = match pages::canonical_route(model, page) {
+        Some(route) => route,
+        // The current line's home: the route of a page at its base path.
+        None => {
+            let home = RelPath::parse("index.md").ok()?;
+            pages::current_line_router(model, build).route(&home)
+        }
+    };
+    let address = cx.absolute_url(&route);
+    let address = if address.contains("://") {
+        format!("<{address}>")
+    } else {
+        format!("[{address}]({address})")
+    };
+    text.push_str(&format!(
+        " The current version is {}: {address}.",
+        current.text
+    ));
+    Some(text)
 }
 
 /// Renders a page as plain markdown.

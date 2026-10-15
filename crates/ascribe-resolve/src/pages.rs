@@ -125,7 +125,7 @@ pub fn records<'a>(
         .zip(steps)
         .map(|(page, breadcrumbs)| {
             let route = router.route(&page.path);
-            let canonical_route = canonical_route(model, &router, page);
+            let canonical_route = canonical_route(model, page);
             PageRecord {
                 canonical: site
                     .as_ref()
@@ -160,16 +160,24 @@ pub fn records<'a>(
 
 /// The route of the page whose address is `page`'s canonical one, when
 /// that isn't its own: in an older line, the route in the current line of
-/// the page it has in `page`'s place.
-fn canonical_route(
-    model: &ContentModel,
-    router: &AstroRouter,
-    page: &ResolvedPage,
-) -> Option<String> {
+/// the page it has in `page`'s place ([`ResolvedPage::current_page`]).
+/// `model` is the one the line's pages are routed with
+/// ([`ContentModel::for_build`]).
+pub fn canonical_route(model: &ContentModel, page: &ResolvedPage) -> Option<String> {
     let current = page.current_page.as_ref()?;
     let build = model.build(&page.build)?;
+    Some(current_line_router(model, build).route(current))
+}
+
+/// The router of the current line of `build`'s versioned build, given
+/// `model`, the one `build`'s pages are routed with
+/// ([`ContentModel::for_build`]): the same as theirs, under the current
+/// line's base path. `build`'s own for the current line and a build that
+/// isn't versioned.
+pub fn current_line_router(model: &ContentModel, build: &ascribe_model::Build) -> AstroRouter {
+    let router = AstroRouter::from_consumer(&model.consumer);
     let base = build.current_base(router.base());
-    Some(AstroRouter::with_base(&base, router.trailing_slash()).route(current))
+    AstroRouter::with_base(&base, router.trailing_slash())
 }
 
 /// The headers a host sends with one path.
