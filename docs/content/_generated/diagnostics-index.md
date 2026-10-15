@@ -201,3 +201,6 @@
 | [ASC201](../checks/diagnostics/content-checks.md#ASC201) | `examples-config-invalid` | Warning | File | outside |
 | [ASC202](../checks/diagnostics/content-checks.md#ASC202) | `observation-file-missing` | Advice | File | outside |
 | [ASC203](../checks/diagnostics/pages.md#ASC203) | `glossary-link-target-missing` | Error | File | choose |
+| [ASC204](../checks/diagnostics/content-model.md#ASC204) | `model-releases-target` | Error | File | choose |
+| [ASC205](../checks/diagnostics/content-model.md#ASC205) | `model-releases-line` | Error | File | write |
+| [ASC206](../checks/diagnostics/content-model.md#ASC206) | `model-build-versions` | Error | File | write |

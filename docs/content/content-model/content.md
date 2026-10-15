@@ -30,6 +30,16 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 **Rules.** `scheme` is one of the schemes (`model-invalid-value`), and `current` is a version, quoted (`model-wrong-type`).
 
+### 7.1 `[releases.<target>]`
+
+@include: ../_fragments/content-model/releases.md
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `live` {available=next} | array of strings (versions) | `[]` | The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each. `live` is the table's only key. |
+
+**Rules.** `<target>` is a declared dimension value that isn't versionless (`model-releases-target`). Each line is a version, quoted, listed once, and every line of one target has the same number of parts (`model-releases-line`). Any other key is an error (`model-unknown-key`).
+
 ---
 
 ## 8. `[lifecycle.<state>]`

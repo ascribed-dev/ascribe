@@ -381,9 +381,11 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
     let editor = model.editor_default_build();
     let mut result = PreviewResult {
         build: editor.name.clone(),
+        // A versioned build is listed once, by its current line.
         builds: model
             .builds
             .iter()
+            .filter(|b| b.line_folder().is_none())
             .map(|b| PreviewBuild {
                 name: b.name.clone(),
                 editor: b.name == editor.name,

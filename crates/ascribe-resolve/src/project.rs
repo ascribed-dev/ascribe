@@ -394,6 +394,20 @@ impl Project {
         &self.model
     }
 
+    /// The project as a build's pages are routed and written: the same
+    /// index, with [`ContentModel::for_build`]'s model, so an older line's
+    /// addresses are under its folder. A clone that shares what's indexed.
+    pub fn for_build(&self, build: &ascribe_model::Build) -> std::borrow::Cow<'_, Project> {
+        match self.model.for_build(build) {
+            std::borrow::Cow::Borrowed(_) => std::borrow::Cow::Borrowed(self),
+            std::borrow::Cow::Owned(model) => {
+                let mut project = self.clone();
+                project.model = Arc::new(model);
+                std::borrow::Cow::Owned(project)
+            }
+        }
+    }
+
     /// Where the content root and the output directory are.
     pub fn layout(&self) -> &Layout {
         &self.layout

@@ -363,6 +363,8 @@ impl<'p> PageChecker<'p> {
             name: KEEP_EVERYTHING.to_owned(),
             variants: VariantMode::Switch,
             availability: AvailabilityMode::Badge,
+            versions: None,
+            line: None,
         };
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
         let resolved = self.indexed.index.resolve_build(&everything, &router);

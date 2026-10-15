@@ -1,0 +1,100 @@
+description: >-
+  A line's output shows no version of its target at or before the oldest
+  live line, since every live line has that content, and keeps the state:
+  `self-managed deprecated 3.2` shows `self-managed deprecated`. A version
+  inside the window stays. A build that isn't versioned shows every
+  version.
+spec: ["9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Old
+          - directive: available
+            primary: self-managed
+            binding: heading
+          - paragraph: Since before the window.
+          - heading: 2
+            text: Deprecated
+          - directive: available
+            primary: cloud, self-managed deprecated
+            binding: heading
+          - paragraph: Deprecated before the window.
+          - heading: 2
+            text: At the oldest
+          - directive: available
+            primary: self-managed preview
+            binding: heading
+          - paragraph: Since the oldest line.
+          - heading: 2
+            text: Inside
+          - directive: available
+            primary: self-managed 3.4.2
+            binding: heading
+          - paragraph: Since a patch of the oldest line.
+  site@3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Old
+          - directive: available
+            primary: self-managed
+            binding: heading
+          - paragraph: Since before the window.
+          - heading: 2
+            text: Deprecated
+          - directive: available
+            primary: cloud, self-managed deprecated
+            binding: heading
+          - paragraph: Deprecated before the window.
+          - heading: 2
+            text: At the oldest
+          - directive: available
+            primary: self-managed preview
+            binding: heading
+          - paragraph: Since the oldest line.
+          - heading: 2
+            text: Inside
+          - directive: available
+            primary: self-managed 3.4.2
+            binding: heading
+          - paragraph: Since a patch of the oldest line.
+  badges:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Old
+          - directive: available
+            primary: self-managed 3.3
+            binding: heading
+          - paragraph: Since before the window.
+          - heading: 2
+            text: Deprecated
+          - directive: available
+            primary: cloud, self-managed deprecated 3.2
+            binding: heading
+          - paragraph: Deprecated before the window.
+          - heading: 2
+            text: At the oldest
+          - directive: available
+            primary: self-managed preview 3.4
+            binding: heading
+          - paragraph: Since the oldest line.
+          - heading: 2
+            text: Inside
+          - directive: available
+            primary: self-managed 3.4.2
+            binding: heading
+          - paragraph: Since a patch of the oldest line.

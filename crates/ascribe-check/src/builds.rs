@@ -96,7 +96,7 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
         Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
     let mut diagnostics = applied.diagnostics;
     for d in &mut diagnostics {
-        if let Some(note) = d.builds_note(builds.len()) {
+        if let Some(note) = d.builds_note_in(&builds) {
             d.message = format!("{} ({note})", d.message);
         }
     }

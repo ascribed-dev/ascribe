@@ -101,6 +101,9 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 @available: ascribe 0.2.0
 `<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
 
+@available: next
+`<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the other lines of a [versioned build](#versions) that have the page. It renders nothing for a build that isn't versioned.
+
 #### The sidebar
 @available: ascribe 0.3.0
 
@@ -108,7 +111,7 @@ Ascribe's content model doesn't order or group pages yet, so the site lists them
 
 @snippet {title=src/nav.ts}: code:examples/astro-site/src/nav.ts
 
-`init` writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(nav, await getCollection("docs"))`, from `@ascribed/astro/content`, gives each page its entry and its address, the one Ascribe's links use, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(nav, entries, { name: "docs" })` names it, as `ascribeCollection` does.
+`init` writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(nav, await getCollection("docs"), { entry })`, from `@ascribed/astro/content`, gives each page its entry and its address, the one Ascribe's links use, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(nav, entries, { name: "docs" })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions) the sidebar shows that page's line, and the list is checked against every line's pages.
 
 ### 5. Build
 
@@ -220,6 +223,14 @@ The files are static, so any host serves them. A few things the spec asks are th
 - **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer. On Netlify, an edge function does it: this site's is [`markdown.ts`]({repo}/blob/main/site/netlify/edge-functions/markdown.ts). Whatever answers that way passes on the `.md` file's [response headers](reference.md#response-headers), `X-Robots-Tag` and `Link`: the answer is at the page's own address, where no rule for the `.md` path applies, and on Netlify a function's response gets none of `_headers` at all.
 - **Status codes and caching.** A missing page should answer 404, not 200 with a page saying so, and the `.md` files and `llms.txt` should be cached no longer than the pages.
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
+
+## Versions
+@available: next
+
+With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [Publish with Astro](../versions/index.md#publish-with-astro) says what the collection, the layout, and `astro dev` do with them. For now, two things are the current line's alone:
+
+- **A permalink always forwards to the current line.**
+- **An older line has no Markdown version and no `llms.txt` at its addresses.** Its pages don't point to them, and the sitemap leaves its pages out.
 
 ## Permalinks
 @available: ascribe 0.3.0

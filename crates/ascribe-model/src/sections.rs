@@ -835,7 +835,12 @@ impl Loader<'_> {
 
     // ---- builds and editor ----------------------------------------------------------------
 
-    pub fn builds(&mut self, v: Option<&V<'_>>, dimensions: &[Dimension]) -> Vec<Build> {
+    pub fn builds(
+        &mut self,
+        v: Option<&V<'_>>,
+        dimensions: &[Dimension],
+        releases: &[Releases],
+    ) -> Vec<Build> {
         let mut out: Vec<Build> = Vec::new();
         if let Some(v) = v
             && let Some(t) = self.as_table("builds", v)
@@ -855,19 +860,28 @@ impl Loader<'_> {
                 let Some(bt) = self.as_table(&path, item) else {
                     continue;
                 };
-                self.check_keys(&path, bt, &["variants", "availability"]);
+                self.check_keys(&path, bt, &["variants", "availability", "versions"]);
                 let variants = self.variant_mode(name, &path, bt.get("variants"), dimensions);
                 let availability =
                     self.availability_mode(name, &path, bt.get("availability"), dimensions);
-                if let (Some(variants), Some(availability), true) =
-                    (variants, availability, name_ok)
+                let versions = match bt.get("versions") {
+                    Some(vv) => self
+                        .build_versions(name, &path, vv, availability.as_ref(), releases)
+                        .map(Some),
+                    None => Some(None),
+                };
+                if let (Some(variants), Some(availability), Some(versions), true) =
+                    (variants, availability, versions, name_ok)
                 {
                     self.excluded_warning(name, &variants, &availability, dimensions, bt);
-                    out.push(Build {
+                    let build = Build {
                         name: name.to_owned(),
                         variants,
                         availability,
-                    });
+                        versions,
+                        line: None,
+                    };
+                    out.extend(lines_of(build, releases));
                 }
             }
         }
@@ -878,9 +892,161 @@ impl Loader<'_> {
                 name: "site".into(),
                 variants: VariantMode::Switch,
                 availability: AvailabilityMode::Badge,
+                versions: None,
+                line: None,
             });
         }
         out
+    }
+
+    /// A build's `versions`: the target it's versioned by, or `None` when
+    /// it was reported.
+    fn build_versions(
+        &mut self,
+        build: &str,
+        path: &str,
+        v: &V<'_>,
+        availability: Option<&AvailabilityMode>,
+        releases: &[Releases],
+    ) -> Option<String> {
+        let target = self.string(&format!("{path}.versions"), v, false)?;
+        if let Some(AvailabilityMode::Filter { .. }) = availability {
+            self.push(
+                self.issue(diagnostics::MODEL_BUILD_VERSIONS, sp(v))
+                    .with_variant("filter")
+                    .with_arg("build", build)
+                    .with_arg("target", target.as_str()),
+            );
+            return None;
+        }
+        if !releases
+            .iter()
+            .any(|r| r.target == target && !r.live.is_empty())
+        {
+            self.push(
+                self.issue(diagnostics::MODEL_BUILD_VERSIONS, sp(v))
+                    .with_arg("build", build)
+                    .with_arg("target", target.as_str()),
+            );
+            return None;
+        }
+        Some(target)
+    }
+
+    // ---- releases ---------------------------------------------------------------------------
+
+    /// `[releases.<target>]`: each target's lines, newest first.
+    pub fn releases(&mut self, v: Option<&V<'_>>, dimensions: &[Dimension]) -> Vec<Releases> {
+        let mut out = Vec::new();
+        let Some(v) = v else { return out };
+        let Some(t) = self.as_table("releases", v) else {
+            return out;
+        };
+        for (target, target_span, item) in entries(t) {
+            let path = join("releases", target);
+            let Some(rt) = self.as_table(&path, item) else {
+                continue;
+            };
+            self.check_keys(&path, rt, &["live"]);
+            let target_ok = self.releases_target(target, target_span, dimensions);
+            let live = match rt.get("live") {
+                Some(lv) => self.release_lines(target, &format!("{path}.live"), lv),
+                None => Some(Vec::new()),
+            };
+            if let (true, Some(live)) = (target_ok, live) {
+                out.push(Releases {
+                    target: target.to_owned(),
+                    live,
+                });
+            }
+        }
+        out
+    }
+
+    /// Whether a `[releases]` table's name is a versioned dimension value.
+    fn releases_target(&mut self, target: &str, span: Span, dimensions: &[Dimension]) -> bool {
+        let value = dimensions
+            .iter()
+            .flat_map(|d| &d.values)
+            .find(|v| v.value == target);
+        match value {
+            Some(value) if !value.versionless => true,
+            Some(_) => {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_TARGET, span)
+                        .with_variant("versionless")
+                        .with_arg("target", target),
+                );
+                false
+            }
+            None => {
+                let mut issue = self
+                    .issue(diagnostics::MODEL_RELEASES_TARGET, span)
+                    .with_arg("target", target);
+                if let Some(d) = dimensions.iter().find(|d| d.name == target) {
+                    let values: Vec<String> = d
+                        .values
+                        .iter()
+                        .filter(|v| !v.versionless)
+                        .map(|v| v.value.clone())
+                        .collect();
+                    issue = issue
+                        .with_variant("dimension")
+                        .with_arg("values", list(&values));
+                }
+                self.push(issue);
+                false
+            }
+        }
+    }
+
+    /// A list of release lines, newest first: each a version, none twice,
+    /// and all with the same number of parts.
+    fn release_lines(&mut self, target: &str, path: &str, v: &V<'_>) -> Option<Vec<Version>> {
+        let items = self.strings(path, v)?;
+        let mut lines: Vec<Version> = Vec::new();
+        let mut ok = true;
+        for (text, span) in items {
+            // After the opening quote; a version has nothing to escape.
+            let parsed = is_version(&text)
+                .then(|| ascribe_core::availability::parse_version(&text, span.start() + 1).ok())
+                .flatten();
+            let Some(line) = parsed else {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("invalid")
+                        .with_arg("target", target)
+                        .with_arg("line", text),
+                );
+                ok = false;
+                continue;
+            };
+            if let Some(first) = lines.first()
+                && first.components.len() != line.components.len()
+            {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_arg("target", target)
+                        .with_arg("a", first.text.as_str())
+                        .with_arg("b", line.text.as_str()),
+                );
+                ok = false;
+                continue;
+            }
+            if lines.iter().any(|l| l.components == line.components) {
+                self.push(
+                    self.issue(diagnostics::MODEL_RELEASES_LINE, span)
+                        .with_variant("duplicate")
+                        .with_arg("target", target)
+                        .with_arg("line", line.text.as_str()),
+                );
+                ok = false;
+                continue;
+            }
+            lines.push(line);
+        }
+        lines.sort_by(|a, b| b.compare(a));
+        ok.then_some(lines)
     }
 
     fn variant_mode(
@@ -1132,6 +1298,13 @@ impl Loader<'_> {
         builds: &[Build],
     ) -> String {
         let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
+        // A versioned build's older lines can be chosen, and aren't counted
+        // when choosing a default: the build is one, named by its current line.
+        let declared: Vec<String> = builds
+            .iter()
+            .filter(|b| b.line.as_ref().is_none_or(|l| l.current))
+            .map(|b| b.name.clone())
+            .collect();
         let mut chosen: Option<String> = None;
         let mut at = builds_table.map_or(Span::empty(0), sp);
         if let Some(v) = v
@@ -1156,9 +1329,9 @@ impl Loader<'_> {
         if let Some(name) = chosen {
             return name;
         }
-        let default = match names.as_slice() {
+        let default = match declared.as_slice() {
             [only] => Some(only.clone()),
-            _ => names.iter().find(|n| *n == "site").cloned(),
+            _ => declared.iter().find(|n| *n == "site").cloned(),
         };
         match default {
             Some(d) => d,
@@ -1190,4 +1363,41 @@ fn is_origin(s: &str) -> bool {
         && !rest
             .chars()
             .any(|c| matches!(c, '/' | '?' | '#') || c.is_whitespace())
+}
+
+/// A declared build as the builds it gives: itself when it isn't versioned,
+/// and one for each live line, newest first, when it is.
+fn lines_of(build: Build, releases: &[Releases]) -> Vec<Build> {
+    let Some(live) = build
+        .versions
+        .as_deref()
+        .and_then(|t| releases.iter().find(|r| r.target == t))
+        .map(|r| &r.live)
+    else {
+        return vec![build];
+    };
+    let Some(oldest) = live.last() else {
+        return vec![build];
+    };
+    live.iter()
+        .enumerate()
+        .map(|(i, line)| {
+            let current = i == 0;
+            let name = if current {
+                build.name.clone()
+            } else {
+                format!("{}@{}", build.name, line.text)
+            };
+            Build {
+                name,
+                line: Some(BuildLine {
+                    build: build.name.clone(),
+                    line: line.clone(),
+                    current,
+                    oldest: oldest.clone(),
+                }),
+                ..build.clone()
+            }
+        })
+        .collect()
 }

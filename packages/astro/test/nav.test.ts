@@ -66,6 +66,38 @@ describe("sidebarGroups", () => {
   });
 });
 
+describe("sidebarGroups with lines", () => {
+  // A versioned build's collection: 3.5's pages, one only it has, and 3.4's, with the line in front.
+  const lined = [
+    { id: "index", line: "3.5" },
+    { id: "guides/my-setup", line: "3.5" },
+    { id: "guides/upgrade", line: "3.5" },
+    { id: "3.4", line: "3.4" },
+    { id: "3.4/guides/my-setup", line: "3.4" },
+  ];
+  const id = (entry: { id: string; line: string }) =>
+    entry.line === "3.5" ? entry.id : entry.id === "3.4" ? "index" : entry.id.slice(4);
+  const nav = [{ label: "All", pages: ["index.md", "Guides/My Setup.md", "Guides/Upgrade.md"] }];
+
+  it("shows one line's pages, each listed page that line has", () => {
+    const groups = sidebarGroups(nav, lined, (to) => `/docs/${to}`, undefined, {
+      id,
+      shown: (entry) => entry.line === "3.4",
+    });
+    expect(groups[0]?.pages.map((page) => page.href)).toEqual([
+      "/docs/3.4",
+      "/docs/3.4/guides/my-setup",
+    ]);
+  });
+
+  it("checks the list against every line's pages, a problem in several said once", () => {
+    const short = [{ label: "All", pages: ["index.md", "Guides/Upgrade.md"] }];
+    expect(() =>
+      sidebarGroups(short, lined, (to) => to, undefined, { id, shown: () => true }),
+    ).toThrow(/\n- guides\/my-setup isn't in the sidebar's list\. Add it to a group\.$/);
+  });
+});
+
 describe("navFor", () => {
   it("puts the root's pages under Start, the root page first, then a group per folder", () => {
     expect(

@@ -85,20 +85,39 @@ export function navProblems(
  * The sidebar's groups, each page with its entry and address. Throws, naming
  * each, when the list leaves out a page of the collection, names a file that
  * isn't one, or names a page twice, so the list stays complete.
+ *
+ * A versioned build's collection has every line's pages, and the list is
+ * checked against them all: `id` gives an entry's id within its line, and
+ * the groups have the pages `shown` keeps, one line's, each listed page that
+ * line has.
  */
 export function sidebarGroups<E extends NavEntry>(
   nav: readonly NavGroup[],
   entries: readonly E[],
   route: (id: string) => string,
   source?: (entry: NavEntry) => string,
+  lines: { id: (entry: E) => string; shown: (entry: E) => boolean } = {
+    id: (entry) => entry.id,
+    shown: () => true,
+  },
 ): SidebarGroup<E>[] {
-  const problems = navProblems(nav, entries, source);
+  // A page in several lines is one page of the list, and one problem.
+  const checked = new Map<NavEntry, E>(
+    entries.map((entry) => [{ id: lines.id(entry), filePath: entry.filePath }, entry]),
+  );
+  const problems = navProblems(
+    nav,
+    [...checked.keys()],
+    source === undefined ? undefined : (entry) => source(checked.get(entry) ?? entry),
+  ).filter((problem, i, all) => all.indexOf(problem) === i);
   if (problems.length > 0) {
     throw new Error(
       `@ascribed/astro: the sidebar's list (src/nav.ts) doesn't match the site's pages:\n${problems.map((problem) => `- ${problem}`).join("\n")}`,
     );
   }
-  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const byId = new Map(
+    entries.filter((entry) => lines.shown(entry)).map((entry) => [lines.id(entry), entry]),
+  );
   return nav.map((group) => ({
     label: group.label,
     pages: group.pages.flatMap((file) => {

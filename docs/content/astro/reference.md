@@ -35,6 +35,8 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
   **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([search engines and crawlers](reference.md#search-engines-and-crawlers)), in `astro dev` and in the built site.
 - @available: ascribe 0.3.0
   **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](reference.md#response-headers)).
+- @available: next
+  **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([Versions](index.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and only the current line's outputs for agents are published.
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
 - @available: ascribe 0.2.0
@@ -43,7 +45,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 ### In `astro dev`
 
 - Saving a page, a fragment, an image or other file under the content root, an asset elsewhere in the project that a page uses, or `ascribe.toml` rebuilds. Changes are batched, and builds run one at a time.
-- After a successful rebuild, Astro reloads the collection and the page.
+- After a successful rebuild, Astro reloads the collection and the page. A versioned build rebuilds every line.
 - After a failed one, the diagnostics are in Astro's terminal, and pages answer with HTTP 503 until a save builds cleanly again, so you never see a stale page.
 - A change to `[project] output-dir` needs a restart of `astro dev`, and says so.
 - @available: ascribe 0.2.0

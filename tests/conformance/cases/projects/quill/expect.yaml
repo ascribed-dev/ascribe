@@ -1,16 +1,28 @@
 description: >-
   The complete Quill project of examples/quill, built around the SPEC
   Appendix B page: no diagnostics at file or page level, and the same three
-  pages and two assets under every build. The streaming-sync section drops
-  out of the self-managed 3.3 build, and the deployment group reduces to its
-  cloud arm in the cloud build. A test keeps this case identical to
-  examples/quill.
+  pages and two assets under every build, with a fourth, webhooks, only
+  self-managed 3.5 has. The site build is versioned, a build for each live
+  line of self-managed: webhooks is in 3.5's and not in 3.4's. The
+  streaming-sync section drops out of the self-managed 3.3 build, and the
+  deployment group reduces to its cloud arm in the cloud build. A test
+  keeps this case identical to examples/quill.
 spec: ["B", "4.2", "9.3"]
 tags: [check, page-check, resolve, include]
 
 diagnostics: []
 builds:
   site:
+    pages:
+      install-agent.md:
+      keys.md:
+      quickstart.md:
+      webhooks.md:
+    assets:
+      - _fragments/prerequisites.png
+      - playground.png
+    diagnostics: []
+  site@3.4:
     pages:
       install-agent.md:
       keys.md:

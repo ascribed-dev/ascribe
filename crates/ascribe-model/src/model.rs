@@ -37,6 +37,9 @@ pub struct ContentModel {
     /// `availability-left-behind` compares features' versions with. Its span
     /// is in `ascribe.toml`.
     pub current_version: Option<Version>,
+    /// `[releases.<target>]`, in declaration order: the lines of each
+    /// versioned target a project lists.
+    pub releases: Vec<Releases>,
     /// Lifecycle states: the built-ins (possibly adjusted), then declared ones.
     pub lifecycle: Vec<LifecycleState>,
     /// `[features.<key>]`.
@@ -757,6 +760,37 @@ pub enum VersionScheme {
     Numeric,
 }
 
+/// `[releases.<target>]`: the release lines of one versioned target.
+///
+/// A line is a version as the list writes it, and stands for every version
+/// that starts with it: `3.4` holds `3.4`, `3.4.2`, and `3.4.2.1`. Every line
+/// of one target has the same number of parts.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Releases {
+    /// The target: a versioned dimension value.
+    pub target: String,
+    /// `live`: the lines a reader can be on, newest first. The first is the
+    /// current line.
+    pub live: Vec<Version>,
+}
+
+impl Releases {
+    /// The current line: the newest live one.
+    pub fn current(&self) -> Option<&Version> {
+        self.live.first()
+    }
+
+    /// The live line spelled `text`, as the list writes it.
+    pub fn live_line(&self, text: &str) -> Option<&Version> {
+        self.live.iter().find(|l| l.text == text)
+    }
+}
+
+/// Whether `version` is in `line`: whether it starts with the line's parts.
+pub fn in_line(line: &Version, version: &Version) -> bool {
+    version.components.starts_with(&line.components)
+}
+
 /// A lifecycle state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LifecycleState {
@@ -979,6 +1013,44 @@ pub struct Build {
     pub variants: VariantMode,
     /// The availability mode.
     pub availability: AvailabilityMode,
+    /// `versions`: the target the build is versioned by, which gives it one
+    /// output for each of the target's live lines. Its availability mode is
+    /// `Badge`, and the target has at least one live line.
+    pub versions: Option<String>,
+    /// The line this build is, for a versioned build: the model holds one
+    /// `Build` for each live line, the current line named as the build is
+    /// declared and each other `<build>@<line>`. `None` for a build that
+    /// isn't versioned.
+    pub line: Option<BuildLine>,
+}
+
+/// One live line of a versioned build.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuildLine {
+    /// The name the build is declared with, which the current line keeps.
+    pub build: String,
+    /// The line, as `[releases.<target>] live` writes it.
+    pub line: Version,
+    /// Whether it's the current line, the newest live one.
+    pub current: bool,
+    /// The oldest live line of the target. A version at or before it isn't
+    /// shown in any line's output, since every live line has the content.
+    pub oldest: Version,
+}
+
+impl Build {
+    /// The folder a line's pages are under, after the base path: `3.4/` for
+    /// an older line, and nothing for the current line or a build that
+    /// isn't versioned.
+    pub fn line_folder(&self) -> Option<String> {
+        let line = self.line.as_ref()?;
+        (!line.current).then(|| format!("{}/", line.line.text))
+    }
+
+    /// The name the build is declared with: a line's build's, or its own.
+    pub fn declared_name(&self) -> &str {
+        self.line.as_ref().map_or(&self.name, |l| &l.build)
+    }
 }
 
 /// The reserved frontmatter key a page names its content type with (SPEC
@@ -1088,6 +1160,35 @@ impl ContentModel {
                 .find(|v| v.value == value)
                 .map(|v| v.label.as_str())
         })
+    }
+
+    /// The model a build's pages are routed and written with. For an older
+    /// line of a versioned build, the base path is under the line's folder,
+    /// `/docs/3.4/`, so every address in its output starts there; a
+    /// permalink's address doesn't move. Its output says nothing to agents
+    /// (`[consumer] agents` is off): no line but the current one publishes
+    /// `llms.txt` and the pages' Markdown yet, so its pages point to
+    /// neither. Otherwise, the model itself.
+    pub fn for_build(&self, build: &Build) -> std::borrow::Cow<'_, ContentModel> {
+        let Some(folder) = build.line_folder() else {
+            return std::borrow::Cow::Borrowed(self);
+        };
+        let mut model = self.clone();
+        model.consumer.permalink_path = Some(self.consumer.permalink_path());
+        let base = &self.consumer.base_path;
+        let base = if base.ends_with('/') {
+            base.clone()
+        } else {
+            format!("{base}/")
+        };
+        model.consumer.base_path = format!("{base}{folder}");
+        model.consumer.agents = false;
+        std::borrow::Cow::Owned(model)
+    }
+
+    /// `[releases.<target>]` for a target, when the project lists its lines.
+    pub fn releases_of(&self, target: &str) -> Option<&Releases> {
+        self.releases.iter().find(|r| r.target == target)
     }
 
     /// Whether `value` is a declared, versionless dimension value.

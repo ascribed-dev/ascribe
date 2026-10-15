@@ -20,9 +20,10 @@
 //   const groups = sidebar(nav, await getCollection("docs"));
 import { pathToFileURL } from "node:url";
 import path from "node:path";
-import { glob } from "astro/loaders";
+import { glob, type LoaderContext } from "astro/loaders";
 import { astroRoot, collections, routes, siteRoot } from "virtual:ascribe/site";
 import { recordFor, type PageRecord } from "./records.js";
+import { linesOf, pageLines, type PageLine } from "./versions.js";
 import {
   pageRoute,
   sidebarGroups,
@@ -45,14 +46,92 @@ export { headTags, scriptJson, type Card, type HeadOptions, type HeadTag } from 
  * for the root page), which is what `AstroRouter` in `ascribe-resolve`
  * computes, so a page's route is the base path plus its id, and the root page is
  * at the base path itself.
+ *
+ * A versioned build's collection has every live line's pages: the current
+ * line's with the ids above, and an older line's with the line in front
+ * (`3.4/guides/my-setup`, and `3.4` for its root page), so a page's route is
+ * still the base path plus its id. Each line's pages are `glob`'s over that
+ * line's site output, and each entry's data has `line`, the line it's from,
+ * and `current`, whether that's the current line. The schema doesn't type
+ * them: `Versions.astro` and `sidebar` read them.
  */
 export function ascribeCollection<S>(options: { schema: S; name?: string }): {
   loader: ReturnType<typeof glob>;
   schema: S;
 } {
-  // `_ascribe/` holds the schema and published files, never pages.
-  const base = pathToFileURL(rootFor(options.name) + path.sep);
-  return { loader: glob({ pattern: ["**/*.md", "!_ascribe/**"], base }), schema: options.schema };
+  const root = rootFor(options.name);
+  // Whether the build is versioned is known once it's built, so it's read when the collection loads.
+  const loader: ReturnType<typeof glob> = {
+    name: "@ascribed/astro",
+    load: async (context) => {
+      const lines = linesOf(root);
+      if (lines === undefined) return pagesOf(root).load(context);
+      const older = lines.filter((line) => line.status !== "current").map((line) => line.line);
+      for (const line of lines) {
+        const current = line.status === "current";
+        await pagesOf(line.siteRoot).load({
+          ...context,
+          store: lineStore(context.store, current ? undefined : line.line, older),
+          parseData: async (props) => {
+            const data: Record<string, unknown> = await context.parseData(props);
+            for (const key of ["line", "current"]) {
+              if (key in data)
+                throw new Error(
+                  `@ascribed/astro: ${props.filePath ?? props.id} has a frontmatter field \`${key}\`, and a versioned build's entries have \`${key}\` of their own. Rename the field.`,
+                );
+            }
+            return { ...data, line: line.line, current } as unknown as typeof props.data;
+          },
+        });
+      }
+    },
+  };
+  return { loader, schema: options.schema };
+}
+
+/** `glob` over one site output's pages. `_ascribe/` holds the schema and published files, never pages. */
+function pagesOf(siteRoot: string): ReturnType<typeof glob> {
+  return glob({ pattern: ["**/*.md", "!_ascribe/**"], base: pathToFileURL(siteRoot + path.sep) });
+}
+
+/**
+ * The collection's store as one line's `glob` sees it: its own entries, by
+ * the ids `glob` gives them, which the store keeps with the line in front.
+ * `line` is `undefined` for the current line, whose ids are `glob`'s, and
+ * whose entries are every one not under an older line, so an entry of a
+ * line that's no longer live is removed with the current line's stale ones.
+ */
+function lineStore(
+  store: LoaderContext["store"],
+  line: string | undefined,
+  older: readonly string[],
+): LoaderContext["store"] {
+  const under = (id: string, prefix: string) => id === prefix || id.startsWith(`${prefix}/`);
+  const outer = (id: string) => (line === undefined ? id : id === "index" ? line : `${line}/${id}`);
+  const inner = (id: string) =>
+    line === undefined ? id : id === line ? "index" : id.slice(line.length + 1);
+  const mine = (id: string) =>
+    line === undefined ? !older.some((prefix) => under(id, prefix)) : under(id, line);
+  const scoped: Partial<LoaderContext["store"]> = {
+    get: (id) => store.get(outer(id)),
+    set: (entry) => store.set({ ...entry, id: outer(entry.id) }),
+    delete: (id) => store.delete(outer(id)),
+    has: (id) => store.has(outer(id)),
+    keys: () => store.keys().filter(mine).map(inner),
+    values: () => store.entries().flatMap(([id, entry]) => (mine(id) ? [entry] : [])),
+    entries: () =>
+      store.entries().flatMap(([id, entry]) => (mine(id) ? [[inner(id), entry] as const] : [])),
+    clear: () => {
+      for (const id of store.keys().filter(mine)) store.delete(id);
+    },
+  };
+  // What `glob` uses beyond these (`addModuleImport`, `addAssetImports`) is by file, not by id.
+  return new Proxy(store, {
+    get: (target, key, receiver) =>
+      key in scoped
+        ? scoped[key as keyof typeof scoped]
+        : (Reflect.get(target, key, receiver) as unknown),
+  });
 }
 
 /**
@@ -63,45 +142,118 @@ export function ascribeCollection<S>(options: { schema: S; name?: string }): {
  * the entries were loaded from. Throws, naming each, when `nav` leaves out a page
  * of the collection, names a file that isn't one, or names a page twice, so the
  * build fails until the list is complete.
+ *
+ * With a versioned build, `entry`, the page the sidebar is on, says which
+ * line's pages it shows: each page of the list that line has, so an older
+ * line's sidebar stays in that line. The list is checked against every
+ * line's pages. Without `entry`, it shows the current line's.
  */
 export function sidebar<E extends NavEntry>(
   nav: readonly NavGroup[],
   entries: readonly E[],
-  options: { name?: string } = {},
+  options: { name?: string; entry?: { data?: unknown } } = {},
 ): SidebarGroup<E>[] {
   const root = sidebarRoot(entries, options.name);
   const at = routes.find((route) => route.siteRoot === root);
   const basePath = at?.basePath ?? "/";
   const trailingSlash = at?.trailingSlash ?? "always";
-  return sidebarGroups(
-    nav,
-    entries,
-    (id) => pageRoute(id, basePath, trailingSlash),
-    (entry) => sourceFile(root, entry),
-  );
+  const route = (id: string) => pageRoute(id, basePath, trailingSlash);
+  const lines = linesOf(root);
+  if (lines === undefined) return sidebarGroups(nav, entries, route, (e) => sourceFile(root, e));
+  const current = lines.find((line) => line.status === "current")?.line;
+  const shown = lineOf(options.entry) ?? current;
+  const lineRoot = (entry: NavEntry) =>
+    lines.find((line) => line.line === lineOf(entry))?.siteRoot ?? root;
+  return sidebarGroups(nav, entries, route, (entry) => sourceFile(lineRoot(entry), entry), {
+    // An older line's ids have the line in front.
+    id: (entry) => {
+      const line = lineOf(entry);
+      if (line === undefined || line === current) return entry.id;
+      return entry.id === line ? "index" : entry.id.slice(line.length + 1);
+    },
+    shown: (entry) => lineOf(entry) === shown,
+  });
+}
+
+/** The line an entry of a versioned build's collection is from, or `undefined`. */
+function lineOf(entry: object | undefined): string | undefined {
+  const data = (entry as { data?: unknown } | undefined)?.data;
+  const line = (data as { line?: unknown } | undefined)?.line;
+  return typeof line === "string" ? line : undefined;
 }
 
 /**
  * A collection entry's page record, from its build's `_ascribe/pages.json`:
  * its route, title, description, canonical address, and listing, as every
  * output Ascribe writes has them. `undefined` for an entry that isn't from an
- * Ascribe collection, or whose page has no record.
+ * Ascribe collection, or whose page has no record. An entry of an older line
+ * has that line's record.
  */
 export function pageRecord(entry: {
   filePath?: string | undefined;
   data?: unknown;
 }): PageRecord | undefined {
+  const found = entryRoot(entry);
+  if (found === undefined) return undefined;
+  return recordFor(found.lineRoot, found.source);
+}
+
+/** A line that publishes a page: its route there, and whether it's the line the page is from. */
+export interface PageVersion extends PageLine {
+  /** Whether this is the line of the entry asked about. */
+  own: boolean;
+}
+
+/**
+ * The lines of a versioned build that publish a collection entry's page,
+ * newest first, each with the page's route in it and whether it's the
+ * entry's own line, from `<output-dir>/_ascribe/versions.json`. A line that
+ * doesn't have the page isn't listed. Empty for an entry of a build that
+ * isn't versioned. `Versions.astro` writes them as a list of links.
+ */
+export function pageVersions(entry: {
+  filePath?: string | undefined;
+  data?: unknown;
+}): PageVersion[] {
+  const found = entryRoot(entry);
+  if (found === undefined) return [];
+  const own = lineOf(entry);
+  return pageLines(found.root, found.source).map((line) => ({
+    ...line,
+    own: own === undefined ? line.current : line.line === own,
+  }));
+}
+
+/**
+ * The site output root of the entry's build (the current line's, for a
+ * versioned build), the root of the line it's from, and its page's source
+ * path, or `undefined` for an entry from none of the integration's
+ * collections.
+ */
+function entryRoot(entry: {
+  filePath?: string | undefined;
+  data?: unknown;
+}): { root: string; lineRoot: string; source: string } | undefined {
   if (entry.filePath === undefined) return undefined;
-  const file = path.resolve(astroRoot, entry.filePath);
-  const roots = [...Object.values(collections), ...(siteRoot === "" ? [] : [siteRoot])];
-  const root = roots.find((candidate) => inside(candidate, file));
-  if (root === undefined) return undefined;
-  const data = entry.data as { source?: unknown } | undefined;
-  const source =
-    typeof data?.source === "string"
-      ? data.source
-      : path.relative(root, file).split(path.sep).join("/");
-  return recordFor(root, source);
+  const file = entry.filePath;
+  for (const root of declaredRoots()) {
+    const lineRoot = [root, ...(linesOf(root) ?? []).map((line) => line.siteRoot)].find(
+      (candidate) => inside(candidate, file),
+    );
+    if (lineRoot === undefined) continue;
+    const data = entry.data as { source?: unknown } | undefined;
+    const source =
+      typeof data?.source === "string"
+        ? data.source
+        : path.relative(lineRoot, path.resolve(astroRoot, file)).split(path.sep).join("/");
+    return { root, lineRoot, source };
+  }
+  return undefined;
+}
+
+/** The site output roots of the integration's entries. */
+function declaredRoots(): string[] {
+  return [...Object.values(collections), ...(siteRoot === "" ? [] : [siteRoot])];
 }
 
 /**
@@ -109,9 +261,9 @@ export function pageRecord(entry: {
  * names, or, with several and no name, the one the entries were loaded from.
  */
 function sidebarRoot(entries: readonly NavEntry[], name: string | undefined): string {
-  const file = entries[0]?.filePath;
-  if (name === undefined && Object.keys(collections).length > 1 && file !== undefined) {
-    const from = Object.values(collections).find((root) => inside(root, file));
+  const first = entries[0];
+  if (name === undefined && Object.keys(collections).length > 1 && first !== undefined) {
+    const from = entryRoot(first)?.root;
     if (from !== undefined) return from;
   }
   return rootFor(name);

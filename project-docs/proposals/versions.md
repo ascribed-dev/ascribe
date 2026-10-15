@@ -118,7 +118,7 @@ Settled: the current line is at the root, and every other live line is under its
 
 **The number goes after the base path.** A site at `/docs/` publishes 3.4 at `/docs/3.4/`. Routes come from one base path in `[consumer]` today, so each line's output is written with its own: every link inside the 3.4 pages starts with `/docs/3.4/`, and the plain output's absolute URLs follow.
 
-**The Astro integration changes with it.** It takes one build and one collection today, and checks that Astro's `base` is the project's base path. For a versioned build it needs a collection for each line, or one route keyed by line, and a check that allows for the number.
+**The Astro integration changes with it.** It takes one build and one collection today, and checks that Astro's `base` is the project's base path. For a versioned build it gives one collection with every line's pages, each entry carrying its line ([decision 30](../versions/README.md#decisions)), and a check that allows for the number.
 
 ### What every line knows about the others
 

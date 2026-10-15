@@ -525,9 +525,11 @@ pub(crate) fn targets(
                 .collect()
         }),
         builds: wants(TargetKind::Builds).map(|()| {
+            // A versioned build is listed once, by its current line.
             ctx.model
                 .builds
                 .iter()
+                .filter(|b| b.line_folder().is_none())
                 .map(|b| TargetBuild {
                     name: b.name.clone(),
                     editor: b.name == ctx.model.editor_build,

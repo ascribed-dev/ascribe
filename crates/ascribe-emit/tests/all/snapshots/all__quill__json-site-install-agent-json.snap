@@ -17,8 +17,8 @@ expression: text
     "type": "page"
   },
   "availability": {
-    "text": "cloud, self-managed preview 3.3",
-    "display": "Quill Cloud (GA); self-managed (preview, 3.3+)",
+    "text": "cloud, self-managed preview",
+    "display": "Quill Cloud (GA); self-managed (preview)",
     "scope": "page",
     "feature": null,
     "source": {
@@ -911,8 +911,8 @@ expression: text
         "lines": [78, 78]
       },
       "availability": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "scope": "section",
         "feature": null,
         "source": {
@@ -938,8 +938,8 @@ expression: text
         "lines": [79, 79]
       },
       "availability": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "scope": "section",
         "feature": null,
         "source": {
@@ -959,8 +959,8 @@ expression: text
       },
       "binding": "heading",
       "annotation": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "feature": null
       },
       "source": {
@@ -969,8 +969,8 @@ expression: text
         "lines": [80, 80]
       },
       "availability": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "scope": "section",
         "feature": null,
         "source": {
@@ -994,8 +994,8 @@ expression: text
         "lines": [82, 82]
       },
       "availability": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "scope": "section",
         "feature": null,
         "source": {
@@ -1019,8 +1019,8 @@ expression: text
         "lines": [84, 84]
       },
       "availability": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "scope": "section",
         "feature": null,
         "source": {
@@ -1077,8 +1077,8 @@ expression: text
         "lines": [86, 86]
       },
       "availability": {
-        "text": "cloud, self-managed preview 3.4",
-        "display": "Quill Cloud (GA); self-managed (preview, 3.4+)",
+        "text": "cloud, self-managed preview",
+        "display": "Quill Cloud (GA); self-managed (preview)",
         "scope": "section",
         "feature": null,
         "source": {

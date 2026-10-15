@@ -2,10 +2,11 @@
   "schema_version": 1,
   "ascribe_version": "{version}",
   "error": null,
-  "files_checked": 4,
-  "files_reported": 4,
+  "files_checked": 5,
+  "files_reported": 5,
   "builds_checked": [
     "site",
+    "site@3.4",
     "cloud",
     "self-managed-3.3"
   ],

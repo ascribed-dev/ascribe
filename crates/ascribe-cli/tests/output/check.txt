@@ -7,4 +7,4 @@
    │
    │ Help: Link to the page's file instead of its route
 ───╯
-checked 4 files for every build, reported on 4: 0 errors, 1 warning, 0 advice
+checked 5 files for every build, reported on 5: 0 errors, 1 warning, 0 advice

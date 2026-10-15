@@ -1,5 +1,5 @@
-//! The Quill project (`examples/quill`) resolves under all three of its
-//! builds with no problems (so it indexes and expands with none too), and
+//! The Quill project (`examples/quill`) resolves under all four of its
+//! builds (three declared, one of them versioned with two lines) with no problems (so it indexes and expands with none too), and
 //! its index says two things about the install page: it includes the
 //! prerequisites fragment, and its source ids are its headings'.
 
@@ -27,11 +27,18 @@ fn resolve_all(project: &Project, build: &str) -> Vec<ResolvedPage> {
     let b = project.model().build(build).expect("a build");
     let resolved =
         project.resolve_build(b, &DefaultRouter::from_consumer(&project.model().consumer));
-    assert!(
-        resolved.dropped.is_empty(),
-        "{build}: {:?}",
-        resolved.dropped
-    );
+    // Only the page self-managed 3.5 added is left out, of every build but 3.5's.
+    let dropped: Vec<String> = resolved
+        .dropped
+        .iter()
+        .map(|d| d.path.to_string())
+        .collect();
+    let expected: &[&str] = if build == "site" {
+        &[]
+    } else {
+        &["webhooks.md"]
+    };
+    assert_eq!(dropped, expected, "{build}");
     resolved.pages
 }
 
@@ -44,15 +51,15 @@ fn quill_resolves_under_every_build_with_no_problems() {
         .iter()
         .map(|b| b.name.clone())
         .collect();
-    assert_eq!(builds, ["site", "cloud", "self-managed-3.3"]);
+    assert_eq!(builds, ["site", "site@3.4", "cloud", "self-managed-3.3"]);
     for name in &builds {
         let pages = resolve_all(&project, name);
         let paths: Vec<String> = pages.iter().map(|p| p.path.to_string()).collect();
-        assert_eq!(
-            paths,
-            ["install-agent.md", "keys.md", "quickstart.md"],
-            "{name}"
-        );
+        let mut expected = vec!["install-agent.md", "keys.md", "quickstart.md"];
+        if name == "site" {
+            expected.push("webhooks.md");
+        }
+        assert_eq!(paths, expected, "{name}");
         for page in &pages {
             assert!(
                 page.problems.is_empty(),

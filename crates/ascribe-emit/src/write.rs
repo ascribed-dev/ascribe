@@ -3,12 +3,14 @@
 
 use std::path::Path;
 
-use ascribe_model::Build;
-use ascribe_resolve::{AstroRouter, Project};
+use ascribe_model::{Build, ContentModel};
+use ascribe_resolve::{AstroRouter, Project, ResolvedBuild};
+
+use ascribe_core::RelPath;
 
 use crate::{
-    EmitContext, EmitError, Emitter, FileKind, JsonEmitter, OutputDir, OutputOptions, PlainEmitter,
-    SiteEmitter, emit,
+    Contents, EmitContext, EmitError, EmittedFile, Emitter, FileKind, JsonEmitter, OutputDir,
+    OutputOptions, PlainEmitter, SiteEmitter, VERSIONS_PATH, emit, versions_json,
 };
 
 /// One of the outputs a build can write.
@@ -82,29 +84,31 @@ pub fn write_outputs(
     options: &WriteOptions,
     on_event: &mut dyn FnMut(&WriteEvent),
 ) -> Result<Vec<Written>, EmitError> {
-    let model = index.model();
-    let output = OutputDir::lock_in(root, Path::new(&model.project.output_dir))?;
-    let router = AstroRouter::from_consumer(&model.consumer);
-
-    let plain = PlainEmitter::new(model);
-    let json = JsonEmitter;
-    let site = SiteEmitter::new(model).with_anchors(options.anchors);
-    let mut emitters: Vec<&dyn Emitter> = Vec::new();
-    for o in &options.outputs {
-        let emitter: &dyn Emitter = match o {
-            Output::Plain => &plain,
-            Output::Json => &json,
-            Output::Site => &site,
-        };
-        if !emitters.iter().any(|x| x.name() == emitter.name()) {
-            emitters.push(emitter);
-        }
-    }
-
+    let output = OutputDir::lock_in(root, Path::new(&index.model().project.output_dir))?;
     let mut warned: Vec<String> = Vec::new();
     let mut written = Vec::new();
     for build in builds {
+        // An older line's addresses are under its folder.
+        let index = index.for_build(build);
+        let index = index.as_ref();
+        let model = index.model();
+        let router = AstroRouter::from_consumer(&model.consumer);
+        let plain = PlainEmitter::new(model);
+        let json = JsonEmitter;
+        let site = SiteEmitter::new(model).with_anchors(options.anchors);
+        let mut emitters: Vec<&dyn Emitter> = Vec::new();
+        for o in &options.outputs {
+            let emitter: &dyn Emitter = match o {
+                Output::Plain => &plain,
+                Output::Json => &json,
+                Output::Site => &site,
+            };
+            if !emitters.iter().any(|x| x.name() == emitter.name()) {
+                emitters.push(emitter);
+            }
+        }
         let resolved = index.resolve_build(build, &router);
+        under_older_line(index.model(), build, &resolved)?;
         let cx = EmitContext::new(index, root, build);
         for emitter in &emitters {
             for warning in emitter.warnings(&cx) {
@@ -135,5 +139,62 @@ pub fn write_outputs(
             written.push(done);
         }
     }
+    // What the lines share is above the builds, written whichever builds
+    // were asked for, and removed with the project's last `[releases]`.
+    match versions_json(index)? {
+        Some(text) => {
+            let file = EmittedFile {
+                path: RelPath::parse(VERSIONS_PATH).map_err(|e| EmitError::Invalid {
+                    message: format!("{VERSIONS_PATH}: {e}"),
+                })?,
+                kind: FileKind::Generated,
+                source: None,
+                url: None,
+                contents: Contents::Text(text),
+            };
+            output.replace_shared(&[file])?;
+        }
+        None => {
+            output.remove_shared()?;
+        }
+    }
     Ok(written)
+}
+
+/// Refuses a page of a versioned build's current line whose route would be
+/// under an older line's, `3.4/index.md` beside a line `3.4`, since the two
+/// can't be published at one address.
+fn under_older_line(
+    model: &ContentModel,
+    build: &Build,
+    resolved: &ResolvedBuild,
+) -> Result<(), EmitError> {
+    if !build.line.as_ref().is_some_and(|l| l.current) {
+        return Ok(());
+    }
+    let older: Vec<(&str, String)> = model
+        .builds
+        .iter()
+        .filter(|b| b.declared_name() == build.declared_name())
+        .filter_map(|b| Some((b.name.as_str(), b.line_folder()?)))
+        .collect();
+    let mut found = Vec::new();
+    for page in &resolved.pages {
+        let id = format!("{}/", AstroRouter::entry_id(&page.path));
+        for (name, folder) in &older {
+            if id.starts_with(folder.as_str()) {
+                found.push(format!("`{}` is under `{name}`'s pages", page.path));
+            }
+        }
+    }
+    if found.is_empty() {
+        return Ok(());
+    }
+    Err(EmitError::Invalid {
+        message: format!(
+            "build `{}` can't publish a page where an older line's pages are: {}. Rename the folder",
+            build.name,
+            found.join("; ")
+        ),
+    })
 }

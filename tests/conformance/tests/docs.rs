@@ -380,6 +380,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
         "names",
         "Dimensions, names, lifecycle states, notes, and features",
     ),
+    ("releases", "`[releases]`"),
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),

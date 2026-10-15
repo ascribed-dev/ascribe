@@ -157,3 +157,34 @@ export async function twoProjects(name: string): Promise<string> {
   );
   return root;
 }
+
+/** A page only the newest line has. */
+const UPGRADE_PAGE = `---
+type: page
+title: Upgrade to 3.5
+available: self-managed 3.5
+---
+
+Back to [setting up Loom](<My Setup.md>).
+`;
+
+/**
+ * A copy whose build is versioned: two live lines of `self-managed`, 3.4 and
+ * 3.5, so the site serves 3.5's pages at `/docs/` and 3.4's at `/docs/3.4/`,
+ * and a page only 3.5 has.
+ */
+export async function versioned(name: string): Promise<string> {
+  const root = await copySite(name);
+  await edit(path.join(root, "ascribe.toml"), (text) =>
+    text
+      .replace(
+        'availability = "badge"',
+        'availability = "badge"\nversions = "self-managed"\n\n[releases.self-managed]\nlive = ["3.4", "3.5"]',
+      ),
+  );
+  await write(root, { "content/Guides/Upgrade.md": UPGRADE_PAGE });
+  await edit(path.join(root, "src", "nav.ts"), (text) =>
+    text.replace('pages: ["Guides/My Setup.md"]', 'pages: ["Guides/My Setup.md", "Guides/Upgrade.md"]'),
+  );
+  return root;
+}

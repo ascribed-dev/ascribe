@@ -45,11 +45,12 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
     const api = await activated();
     await openAt(keys);
     const expected = [
-      "page (4)",
+      "page (5)",
       "  Broken (broken.md)",
       "  Install the Quill agent (install-agent.md)",
       "  API keys (keys.md)",
       "  Try Quill in the browser (quickstart.md)",
+      "  Webhooks (webhooks.md)",
       "Fragments (1)",
       "  _fragments/prerequisites.md (1 file)",
       "    install-agent.md (includes it)",
@@ -80,7 +81,7 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
     );
     assert.ok(model.includes("  api (1 use)"), model.join("\n"));
     assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
-    assert.ok(model.includes("Builds (3)"), model.join("\n"));
+    assert.ok(model.includes("Builds (4)"), model.join("\n"));
     const product = items[0]?.children.find((item) => item.label === "product");
     assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
   });
@@ -95,9 +96,11 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
         return items.length > 0 ? items : undefined;
       }),
       [
-        "Linked from (1)",
+        "Linked from (2)",
         "  install-agent.md (docs/install-agent.md)",
         "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)",
+        "  webhooks.md (docs/webhooks.md)",
+        "    The agent posts an event to each webhook in `quill.yaml`. See [API keys](keys.md). (line 8)",
       ],
     );
     const api = await activated();
@@ -130,7 +133,7 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
         const page = api.ui.sidebar
           .items("pages")[0]
           ?.children.find((p) => p.description === "keys.md");
-        return page?.tooltip.includes("2 links and includes") ? page : undefined;
+        return page?.tooltip.includes("3 links and includes") ? page : undefined;
       });
       assert.ok(incoming());
     } finally {

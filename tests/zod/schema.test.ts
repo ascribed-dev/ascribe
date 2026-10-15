@@ -16,7 +16,12 @@ import * as quill from "./generated/quill.schema.ts";
 describe("the Quill schema", () => {
   it("accepts the frontmatter of every page of the site build", () => {
     const pages = Object.entries(frontmatter);
-    expect(pages.map(([path]) => path)).toEqual(["install-agent.md", "keys.md", "quickstart.md"]);
+    expect(pages.map(([path]) => path)).toEqual([
+      "install-agent.md",
+      "keys.md",
+      "quickstart.md",
+      "webhooks.md",
+    ]);
     for (const [path, data] of pages) {
       const result = quill.schema.safeParse(data);
       expect(result.success, `${path}: ${JSON.stringify(result.error?.issues)}`).toBe(true);
@@ -27,12 +32,21 @@ describe("the Quill schema", () => {
     const page = quill.pageSchema.parse(frontmatter["install-agent.md"]);
     expect(page.available).toEqual([
       { target: "cloud", dimension: "deployment", states: ["ga"], text: "Quill Cloud (GA)" },
+      // 3.3 is before the oldest live line, 3.4, so the site's lines don't show it.
       {
         target: "self-managed",
         dimension: "deployment",
         states: ["preview"],
-        versions: ["3.3"],
-        text: "self-managed (preview, 3.3+)",
+        text: "self-managed (preview)",
+      },
+    ]);
+    expect(quill.pageSchema.parse(frontmatter["webhooks.md"]).available).toEqual([
+      {
+        target: "self-managed",
+        dimension: "deployment",
+        states: ["ga"],
+        versions: ["3.5"],
+        text: "self-managed (GA, 3.5+)",
       },
     ]);
   });
@@ -44,9 +58,15 @@ describe("the Quill schema", () => {
   });
 
   it("rejects an unknown key, a missing title, and a source-style available", () => {
-    expect(quill.pageSchema.safeParse({ type: "page", title: "T", surprise: 1 }).success).toBe(false);
-    expect(quill.pageSchema.safeParse({ type: "page", description: "no title" }).success).toBe(false);
-    expect(quill.pageSchema.safeParse({ type: "page", title: "T", available: "cloud" }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", title: "T", surprise: 1 }).success).toBe(
+      false,
+    );
+    expect(quill.pageSchema.safeParse({ type: "page", description: "no title" }).success).toBe(
+      false,
+    );
+    expect(
+      quill.pageSchema.safeParse({ type: "page", title: "T", available: "cloud" }).success,
+    ).toBe(false);
   });
 
   it("takes variant as a mapping to a value or a list", () => {
@@ -57,7 +77,9 @@ describe("the Quill schema", () => {
       source: "a.md",
     });
     expect(ok.success).toBe(true);
-    expect(quill.pageSchema.safeParse({ type: "page", title: "T", variant: "cloud" }).success).toBe(false);
+    expect(quill.pageSchema.safeParse({ type: "page", title: "T", variant: "cloud" }).success).toBe(
+      false,
+    );
   });
 
   it("lists the content types", () => {
@@ -137,9 +159,15 @@ describe("the full content model's schema", () => {
       source: "reference/toml.md",
       formatted: { title: "<code>ascribe.toml</code> reference" },
     };
-    expect(full.referenceSchema.parse(page).formatted.title).toBe("<code>ascribe.toml</code> reference");
+    expect(full.referenceSchema.parse(page).formatted.title).toBe(
+      "<code>ascribe.toml</code> reference",
+    );
     // The site output always writes it beside the title.
-    expect(full.referenceSchema.safeParse({ type: "reference", title: "R", source: "r.md" }).success).toBe(false);
-    expect(full.referenceSchema.safeParse({ ...page, formatted: { title: "R", nope: "" } }).success).toBe(false);
+    expect(
+      full.referenceSchema.safeParse({ type: "reference", title: "R", source: "r.md" }).success,
+    ).toBe(false);
+    expect(
+      full.referenceSchema.safeParse({ ...page, formatted: { title: "R", nope: "" } }).success,
+    ).toBe(false);
   });
 });

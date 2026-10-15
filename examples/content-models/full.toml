@@ -67,6 +67,11 @@ scheme = "numeric"
 current = "3.5"
 # :snippet-end:
 
+# :snippet-start: releases
+[releases.self-managed]
+live = ["3.4", "3.5"]
+# :snippet-end:
+
 # A new state, and a built-in state relabeled.
 # :snippet-start: lifecycle
 [lifecycle.sunset]
