@@ -63,7 +63,8 @@ export function currentRelease(toml = readFileSync(path.join(ROOT, "docs/ascribe
   const live = (parse(toml) as { releases?: { ascribe?: { live?: unknown } } }).releases?.ascribe
     ?.live;
   const lines = Array.isArray(live) ? live.filter((l) => typeof l === "string") : [];
-  if (lines.length === 0) throw new Error("docs/ascribe.toml has no live line in [releases.ascribe]");
+  if (lines.length === 0)
+    throw new Error("docs/ascribe.toml has no live line in [releases.ascribe]");
   return lines.reduce((newest, line) => (newer(line, newest) ? line : newest));
 }
 
