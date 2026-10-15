@@ -75,6 +75,7 @@ use ascribe_core::{FileId, RelPath, Router, Slugger, Span};
 use ascribe_model::{Build, Listing, Segment};
 use ascribe_syntax::{Block, BlockKind};
 
+pub use availability::{InLine, in_release_line};
 pub(crate) use glossary::Terms;
 pub use glossary::glossary_targets;
 pub(crate) use inlines::prose_lists;

@@ -49,6 +49,8 @@ planned = ["3.6"]
 
 Every line of a target has the same number of parts, planned lines are newer than every live line, and archived lines older.
 
+When a planned line ships, [`ascribe versions release`](release.md#release-day) moves it to `live` and rewrites the marks that named it through a feature; `ascribe versions list` shows the lines, and `ascribe versions changes` what differs between two.
+
 ## What the checks find
 
 With the list, `ascribe check` checks each version a mark names, in pages and in `ascribe.toml`'s features and builds:

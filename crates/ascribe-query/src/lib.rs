@@ -14,7 +14,8 @@
 //! - [`rules`]: a project's rules, for the instruction files an agent reads;
 //! - [`permalinks`]: the permalinks the content declares, against the
 //!   project's list, and names checked against a list;
-//! - [`report`]: what state a project is in, section by section.
+//! - [`report`]: what state a project is in, section by section;
+//! - [`versions`]: a project's release lines, and what differs between two.
 //!
 //! The `ascribe` commands of the same names call these and print what they
 //! return; each answer is the command's JSON. Every answer carries
@@ -33,6 +34,7 @@ pub mod refs;
 pub mod render;
 pub mod report;
 pub mod rules;
+pub mod versions;
 
 pub use agents_index::{AgentsIndex, IndexPage, agents_index};
 pub use error::QueryError;
@@ -47,6 +49,7 @@ pub use refs::{Asked, Place, Refs, TargetKind, refs};
 pub use render::{Rendered, render};
 pub use report::{Report, report};
 pub use rules::{pointer, rules};
+pub use versions::{VersionChanges, VersionsList};
 
 /// The version of every answer's JSON schema.
 pub const SCHEMA_VERSION: u32 = 1;

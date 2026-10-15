@@ -46,7 +46,7 @@ mod tests {
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::{RenameError, ServeError};
+    use ascribe_lsp::{ReleaseError, RenameError, ServeError};
     use ascribe_query::QueryError;
     use ascribe_sources::SourcesError;
 
@@ -59,6 +59,7 @@ mod tests {
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
     use crate::commands::templates::TemplatesError;
+    use crate::commands::versions::VersionsError;
     use crate::context::Failure;
 
     /// Every error code, once, with what it means. A tool that wraps a
@@ -212,6 +213,57 @@ mod tests {
             "ascribe.toml can't be changed in place",
         ),
         ("model_unwritable", "ascribe.toml can't be written"),
+        ("bad_line", "a line isn't named as a mark names one"),
+        ("no_lines", "a target has no lines in [releases]"),
+        ("undeclared_line", "a target's list doesn't declare a line"),
+        ("release_no_lines", "release's target has no lines"),
+        (
+            "release_bad_line",
+            "release's line isn't one the target's lines can hold",
+        ),
+        ("release_line_live", "release's line is live already"),
+        ("release_line_archived", "release's line is archived"),
+        (
+            "release_line_not_next",
+            "a planned line comes before release's line",
+        ),
+        (
+            "release_line_unplanned",
+            "release's line isn't planned, nor between current and planned",
+        ),
+        (
+            "release_next_missing",
+            "a feature names the line and nothing says where it moves",
+        ),
+        ("release_next_bad", "--next can't be the next line"),
+        (
+            "release_mark_unrewritable",
+            "a mark release would rewrite can't be rewritten in place",
+        ),
+        (
+            "release_model_invalid",
+            "ascribe.toml wouldn't load after the release",
+        ),
+        (
+            "release_build_failed",
+            "release can't build the outputs to compare",
+        ),
+        (
+            "release_outputs_changed",
+            "a release step that should change no output would",
+        ),
+        (
+            "release_without_git",
+            "no git to say whether release's files can be put back",
+        ),
+        (
+            "release_files_unrestorable",
+            "files release would write are untracked or changed",
+        ),
+        (
+            "release_unwritable",
+            "a file release changes can't be written",
+        ),
         (
             "rename_target_missing",
             "rename names something not in the project",
@@ -378,7 +430,10 @@ mod tests {
                 | QueryError::BadTarget { .. }
                 | QueryError::Render(_)
                 | QueryError::PermalinksListInvalid { .. }
-                | QueryError::NotRetirable { .. } => {}
+                | QueryError::NotRetirable { .. }
+                | QueryError::BadLine { .. }
+                | QueryError::NoLines { .. }
+                | QueryError::UndeclaredLine { .. } => {}
             }
         }
         fn agents(e: &SyncError) {
@@ -430,6 +485,32 @@ mod tests {
                 | TemplatesError::Unknown { .. } => {}
             }
         }
+        fn release(e: &ReleaseError) {
+            match e {
+                ReleaseError::NoLines { .. }
+                | ReleaseError::BadLine { .. }
+                | ReleaseError::AlreadyLive { .. }
+                | ReleaseError::Archived { .. }
+                | ReleaseError::NotOldestPlanned { .. }
+                | ReleaseError::Unplanned { .. }
+                | ReleaseError::NeedsNext { .. }
+                | ReleaseError::BadNext { .. }
+                | ReleaseError::MarkUnrewritable { .. }
+                | ReleaseError::ModelEdit(_)
+                | ReleaseError::ModelInvalid(_)
+                | ReleaseError::Build(_)
+                | ReleaseError::OutputsChanged { .. } => {}
+            }
+        }
+        fn versions(e: &VersionsError) {
+            match e {
+                VersionsError::BadLine(_)
+                | VersionsError::BadNext(_)
+                | VersionsError::NoGit { .. }
+                | VersionsError::NotRestorable { .. }
+                | VersionsError::Unwritable { .. } => {}
+            }
+        }
         fn rename_command(e: &RenameCommandError) {
             match e {
                 RenameCommandError::BadTarget { .. } | RenameCommandError::Unwritable { .. } => {}
@@ -453,6 +534,8 @@ mod tests {
             permalinks,
             rename,
             rename_command,
+            release,
+            versions,
             templates,
             templates_command,
             init,
@@ -690,6 +773,70 @@ mod tests {
             Box::new(PermalinksError::NoReason),
             Box::new(PermalinksError::ModelUnchanged(text())),
             Box::new(PermalinksError::ModelUnwritable {
+                path: path(),
+                message: text(),
+            }),
+            Box::new(QueryError::BadLine { given: text() }),
+            Box::new(QueryError::NoLines {
+                target: text(),
+                targets: Vec::new(),
+            }),
+            Box::new(QueryError::UndeclaredLine {
+                target: text(),
+                line: text(),
+                lines: Vec::new(),
+            }),
+            Box::new(ReleaseError::NoLines { target: text() }),
+            Box::new(ReleaseError::BadLine {
+                target: text(),
+                line: text(),
+                why: text(),
+            }),
+            Box::new(ReleaseError::AlreadyLive {
+                target: text(),
+                line: text(),
+            }),
+            Box::new(ReleaseError::Archived {
+                target: text(),
+                line: text(),
+            }),
+            Box::new(ReleaseError::NotOldestPlanned {
+                target: text(),
+                line: text(),
+                oldest: text(),
+            }),
+            Box::new(ReleaseError::Unplanned {
+                target: text(),
+                line: text(),
+                why: text(),
+            }),
+            Box::new(ReleaseError::NeedsNext {
+                features: vec![text()],
+            }),
+            Box::new(ReleaseError::BadNext {
+                next: text(),
+                why: text(),
+            }),
+            Box::new(ReleaseError::MarkUnrewritable {
+                path: text(),
+                line: 1,
+                written: text(),
+                key: text(),
+            }),
+            Box::new(ReleaseError::ModelEdit(text())),
+            Box::new(ReleaseError::ModelInvalid(text())),
+            Box::new(ReleaseError::Build(text())),
+            Box::new(ReleaseError::OutputsChanged {
+                step: "a step",
+                files: vec![text()],
+            }),
+            Box::new(VersionsError::BadLine(text())),
+            Box::new(VersionsError::BadNext(text())),
+            Box::new(VersionsError::NoGit { why: text() }),
+            Box::new(VersionsError::NotRestorable {
+                files: vec![text()],
+            }),
+            Box::new(VersionsError::Unwritable {
                 path: path(),
                 message: text(),
             }),

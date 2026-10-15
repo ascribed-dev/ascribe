@@ -1,0 +1,3 @@
+In 3.5 and not 3.4:
+  docs/keys.md:19: the section "Sign webhook events"
+  docs/webhooks.md:5: the page "Webhooks"

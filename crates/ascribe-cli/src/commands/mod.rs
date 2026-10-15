@@ -22,3 +22,4 @@ pub mod report;
 pub mod sources;
 pub mod templates;
 pub mod vale;
+pub mod versions;

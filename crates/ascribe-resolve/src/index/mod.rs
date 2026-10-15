@@ -206,6 +206,14 @@ pub struct AvailabilityMarker {
     pub spec: Option<Result<AvailabilitySpec, AvailabilityError>>,
 }
 
+impl AvailabilityMarker {
+    /// Whether the mark is on the section under a heading: written at the
+    /// top of the section, after its heading.
+    pub fn binds_section(&self) -> bool {
+        matches!(self.binding, Some(Bound::Heading))
+    }
+}
+
 /// Indexes one file.
 ///
 /// `path` is the file's content path, `source` its text. The result depends on

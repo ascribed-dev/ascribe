@@ -960,6 +960,37 @@ pub fn in_line(line: &Version, version: &Version) -> bool {
     version.components.starts_with(&line.components)
 }
 
+/// A line named as a mark names it, `self-managed 3.4`: the target, and the
+/// line, with spans in `text`. `None` when it isn't a name and a version
+/// with space between.
+pub fn named_line(text: &str) -> Option<(String, Version)> {
+    let text = text.trim();
+    let (target, line) = text.split_once(char::is_whitespace)?;
+    let line = line.trim_start();
+    let at = text.len() - line.len();
+    let version = ascribe_core::availability::parse_version(line, at).ok()?;
+    crate::is_name_word(target).then(|| (target.to_owned(), version))
+}
+
+impl Releases {
+    /// The oldest planned line newer than `line`: the one a feature that
+    /// names `line` moves to when `line` is released.
+    pub fn following(&self, line: &Version) -> Option<&Version> {
+        self.planned
+            .iter()
+            .rev()
+            .find(|l| l.compare(line) == Ordering::Greater)
+    }
+
+    /// The status of the line spelled as `line` is, when it's declared.
+    pub fn status_of(&self, line: &Version) -> Option<LineStatus> {
+        self.lines()
+            .into_iter()
+            .find(|(l, _)| l.components == line.components)
+            .map(|(_, status)| status)
+    }
+}
+
 /// A lifecycle state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LifecycleState {

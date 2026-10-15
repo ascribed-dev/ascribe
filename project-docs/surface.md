@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/command/questions.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/check.md`, `docs/content/command/questions.md`, `docs/content/examples/sources.md`, `docs/content/review/diff.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -44,6 +44,9 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>] [--keep-type]` | `text`, `json` |
 | `ascribe templates status` | Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. | `[--exit-code] [--diff <NAME>]` | `text`, `json` |
 | `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. |  |  |
+| `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
+| `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
+| `ascribe versions release` | Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
 
 On every command:
 
@@ -719,6 +722,9 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/sources-update.schema.json` | SourcesUpdateReport | What `ascribe sources update --format json` writes: how each source's pin moved, and the pages whose examples the new copies change. |
 | `schemas/templates-eject.schema.json` | TemplatesEjectReport | What `ascribe templates eject` did: the files it wrote and the types it added, or, when it refused anything, what it refused, and then it wrote nothing. |
 | `schemas/templates-status.schema.json` | TemplatesStatusReport | What `ascribe templates status` found: for each template the project took, whether the set and the project have changed it since the copy, and each template of the set it doesn't have. |
+| `schemas/versions-changes.schema.json` | VersionsChangesReport | What differs between two lines of one target. |
+| `schemas/versions-list.schema.json` | VersionsListReport | Every target's release lines. |
+| `schemas/versions-release.schema.json` | VersionsReleaseReport | What `ascribe versions release --format json` writes: the line released, the files and marks rewritten, the features moved, and what the release changes in the outputs. |
 
 ## The docs
 
@@ -761,6 +767,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
 | `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
 | `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
+| `contracts/json-reports/versions.md` | JSON reports: `ascribe versions` | reference |
 | `contracts/output-layout.md` | Output-layout contract | reference |
 | `contracts/permalinks-list.md` | The permalinks list | reference |
 | `contracts/site-render.md` | Site-render contract | reference |
@@ -778,6 +785,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/index.md` | Page templates | how-to |
 | `versions/index.md` | Versions | how-to |
+| `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/variants.md` | Content that varies | tutorial |
 

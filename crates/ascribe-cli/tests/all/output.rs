@@ -875,3 +875,80 @@ fn agents_sync() {
         &stdout(&run(dir.path(), &["agents", "sync"], 0)),
     );
 }
+
+/// `ascribe versions` on `examples/quill`, run from its folder: the
+/// command reference's examples. The release is a dry run, so it writes
+/// nothing there.
+#[test]
+fn versions() {
+    let quill = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+    expect(
+        "versions-list.txt",
+        &stdout(&run(&quill, &["versions", "list"], 0)),
+    );
+    expect(
+        "versions-changes.txt",
+        &stdout(&run(
+            &quill,
+            &["versions", "changes", "self-managed 3.4", "3.5"],
+            0,
+        )),
+    );
+    expect(
+        "versions-notes.md",
+        &stdout(&run(
+            &quill,
+            &[
+                "versions",
+                "changes",
+                "self-managed 3.4",
+                "3.5",
+                "--format",
+                "markdown",
+            ],
+            0,
+        )),
+    );
+}
+
+/// `ascribe versions release` on a copy of `examples/quill` that plans 3.6,
+/// with a section marked for it through a feature: the command reference's
+/// example.
+#[test]
+fn versions_release() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        root,
+    );
+    let model = fs::read_to_string(root.join("ascribe.toml")).unwrap();
+    let lines = "live = [\"3.4\", \"3.5\"]\n";
+    assert!(model.contains(lines), "examples/quill lists its lines");
+    let model = model.replacen(lines, &format!("{lines}planned = [\"3.6\"]\n"), 1)
+        + "\n[features.sso]\nname = \"Single sign-on\"\navailable = \"self-managed 3.6\"\n";
+    write(root, "ascribe.toml", &model);
+    let keys = fs::read_to_string(root.join("docs/keys.md")).unwrap();
+    write(
+        root,
+        "docs/keys.md",
+        &format!(
+            "{keys}\n## Sign in with SSO\n@available: sso\n\nKeys can be created by single sign-on.\n"
+        ),
+    );
+    expect(
+        "versions-release.txt",
+        &stdout(&run(
+            root,
+            &[
+                "versions",
+                "release",
+                "self-managed 3.6",
+                "--next",
+                "3.7",
+                "--dry-run",
+            ],
+            0,
+        )),
+    );
+}
