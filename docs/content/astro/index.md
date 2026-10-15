@@ -104,6 +104,7 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 @available: next
 `<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines of a [versioned build](#versions): those that have the page, or the page it replaces or the page that replaces it, as links, the others unlinked, and the archived lines that have an address. It renders nothing for a build that isn't versioned.
 
+@available: next
 `<VersionBanner entry={entry} />`, from `@ascribed/astro/VersionBanner.astro`, says on an older line's page which version it documents, and links to the current line's. It renders nothing on the current line.
 
 #### The sidebar

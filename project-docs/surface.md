@@ -96,7 +96,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
 | `[permalinks]` | Names for something outside the docs to link to that no heading or page declares: a permalink ended on purpose, and a second name for one. | §20 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
-| `[listing]` | How pages are listed, set once for many: the whole site, the pages of a versioned build's older lines, the pages under a folder, or the pages of a content type. | §22 |
+| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
 
 ## Diagnostics
 

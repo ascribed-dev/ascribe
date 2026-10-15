@@ -113,10 +113,13 @@ The layout keeps the character set, the viewport, icons, theme colors, styles, t
 
 `astro build` writes one sitemap for the site, `sitemap.xml` at Astro's `base`, and `astro dev` serves it there. It lists by absolute address, with no dates:
 
-- every page of every project that isn't `unlisted`, and whose canonical address is its own, when the site has a route that shows it: a project whose collection the site only quotes from adds nothing, and an older line of a [versioned build](index.md#versions) adds only the pages the current line has nothing in the place of;
+- every page of every project that isn't `unlisted`, when the site has a route that shows it: a project whose collection the site only quotes from adds nothing;
 - every other page Astro built, such as a changelog page of the site's own, except a permalink's forwarding page, the not-found page, and the routes in the `sitemap` option's `exclude`.
 
 `astro dev` knows only the routes of the site's own that have no parameters, so a page of the site's own that a route's `getStaticPaths` lists is in the built sitemap only.
+
+@available: next
+Of a [versioned build](index.md#versions), a page is listed only when its canonical address is its own, so an older line adds only the pages the current line has nothing in the place of, and each current page is listed once.
 
 A sitemap needs absolute addresses, so a site with no `site` (`[consumer] site`, or Astro's) gets none, and the build warns. A site with its own `sitemap.xml` in `public/` keeps it, the integration writes none, and `robots.txt` points to the site's.
 

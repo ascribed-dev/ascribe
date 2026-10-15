@@ -1,9 +1,8 @@
-How pages are listed, set once for many: the whole site, the pages of a versioned build's older lines, the pages under a folder, or the pages of a content type. Each value is one of the values of a page's `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), from open to closed: `listed`, `unquoted`, `unlisted`.
+How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. Each value is one of the values of a page's `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), from open to closed: `listed`, `unquoted`, `unlisted`.
 
 ```toml
 [listing]
 default = "listed"
-older-lines = "unlisted"
 
 [listing.folders]
 "internal/" = "unlisted"
@@ -15,13 +14,13 @@ changelog = "unquoted"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `default` | string | `"listed"` | Every page's listing. |
-| `older-lines` | string | `"listed"` | The listing of every page of a live line of a versioned build other than its current line: `site@3.4`'s, and not `site`'s. It governs search engines and agents together. |
 | `folders` | table of strings | `{}` | A listing for every page under a folder, keyed by the folder's path from the content root, ending in `/`, with its name's case as it is on disk. A folder's pages are every page whose path starts with it, in folders under it too. |
 | `types` | table of strings | `{}` | A listing for every page of a content type, keyed by the type's name. |
 
-A page's listing is the strictest of its own and the rules it's under: the site's `default`, `older-lines` in an older line, every folder it's under, and its type's. A folder and a type have no order between them: a page under both gets the stricter. A rule can only restrict. A page MAY set the same value as its rule, or a stricter one, and a page that sets a looser one is an error at the page (`listing-loosened`), since the project contradicts itself. A page that sets a value looser than `older-lines` is an error in each older line that publishes it (`listing-loosened-in-line`), and fine in the current line. A folder under another folder, and a folder, a type, or `older-lines` under the `default`, MUST NOT be looser than it (`model-listing-looser`).
+A page's listing is the strictest of its own and the rules it's under: the site's `default`, every folder it's under, and its type's. A folder and a type have no order between them: a page under both gets the stricter. A rule can only restrict. A page MAY set the same value as its rule, or a stricter one, and a page that sets a looser one is an error at the page (`listing-loosened`), since the project contradicts itself. A folder under another folder, and a folder or a type under the `default`, MUST NOT be looser than it (`model-listing-looser`).
 
-An older line's pages point their canonical links at the current line's, so a search engine sends readers to the current line however `older-lines` is set. `unlisted` keeps an older line out of the index altogether, its pages out of the sitemap and `llms.txt`, for a project whose old pages still outrank its new ones.
+@available: next
+**`older-lines`** (a string, `"listed"` by default) is the listing of every page of a live line of a versioned build other than its current line: `site@3.4`'s, and not `site`'s. It governs search engines and agents together. A page in an older line is under it as well as the rules above, between `default` and a folder's or a type's; it MUST NOT be looser than `default` (`model-listing-looser`); and a page that sets a value looser than it is an error in each older line that publishes it (`listing-loosened-in-line`), and fine in the current line. An older line's pages point their canonical links at the current line's, so a search engine sends readers to the current line however it's set: `older-lines = "unlisted"` keeps an older line out of the index altogether, its pages out of the sitemap and `llms.txt`, for a project whose old pages still outrank its new ones.
 
 A `default` stricter than `listed` is for a site that isn't public yet: no page in it can be listed until the default changes, and a page that says otherwise is the same error.
 

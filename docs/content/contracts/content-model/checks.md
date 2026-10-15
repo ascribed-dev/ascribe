@@ -155,7 +155,10 @@ The crawlers of each purpose are data Ascribe ships, each with its operator, the
 
 @include: ../../_fragments/content-model/listing.md
 
-**Rules** (§24.12): each value is one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`); a folder is a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule); a type is a content type the model declares, or `page` when it declares none (`model-listing-type`); no rule is looser than a folder's it's under, or than `default` (`model-listing-looser`); no other key (`model-unknown-key`). A page that's looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`, and `listing-loosened-in-line` for `older-lines`, which only an older line's pages are under.
+**Rules** (§24.12): each value is one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`); a folder is a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule); a type is a content type the model declares, or `page` when it declares none (`model-listing-type`); no rule is looser than a folder's it's under, or than `default` (`model-listing-looser`); no other key (`model-unknown-key`). A page that's looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
+
+@available: next
+`older-lines` is held to `default` by `model-listing-looser`, as a folder's and a type's rules are. A page looser than `older-lines`, which only an older line's pages are under, is SPEC §8.2's `listing-loosened-in-line`.
 
 ---
 
