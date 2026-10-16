@@ -160,11 +160,21 @@ fn quill_project_case_matches_the_example() {
     );
 }
 
-/// Every local path a Quill page includes, links to, or embeds.
+/// Every local path a Quill page includes, links to, or embeds. A memo's
+/// lines are never read, so a link in one isn't a reference (SPEC §4.10).
 fn references(markdown: &str) -> Vec<String> {
     let mut out = Vec::new();
+    let mut in_memo = false;
     for line in markdown.lines() {
         let trimmed = line.trim_start();
+        if in_memo {
+            in_memo = trimmed.trim_end() != "@end";
+            continue;
+        }
+        if trimmed.trim_end() == "@memo:" {
+            in_memo = true;
+            continue;
+        }
         if let Some(rest) = trimmed.strip_prefix("@include")
             && let Some((_, path)) = rest.split_once(':')
         {
