@@ -1,0 +1,8 @@
+description: >-
+  A placeholder in a block quote of the template is a placeholder like any
+  other, and one a page still has is reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-left, file: how-to/rotate-keys.md, line: 11, severity: advice}

@@ -327,9 +327,11 @@ fn start_with(page_type: &ContentType, text: &str) -> String {
     let fence = answer::fence(text);
     let lead = if page_type.template.is_some() {
         "Start the file with this text, the type's template with the title set. Write over \
-         each placeholder, the text in `{curly brackets}`, and each quoted instruction, and \
-         leave out a part that's marked optional and doesn't apply: `ascribe check` reports \
-         what's left of the template (`template-placeholder-left`)."
+         each placeholder, the text in `{curly brackets}`, and leave out a part that's marked \
+         optional and doesn't apply: `ascribe check` reports what's left of the template \
+         (`template-placeholder-left`). Its memos, the `@memo` lines, are the template's \
+         instructions to you: follow each, then delete it or keep it. A memo is never \
+         published."
     } else {
         "Start the file with this frontmatter, and fill in each empty field:"
     };

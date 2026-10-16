@@ -13,6 +13,9 @@ The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/tem
 
 Ascribe converts each one into an Ascribe page, with a script, and changes nothing of their wording: what the template says about itself is taken out, its title moves into the frontmatter, and each `{placeholder}` is written as `\{placeholder}`, so it shows as written and isn't read as a phrase. Each guide says at its top where it came from. `ascribe templates list` shows the set, and which release it's from.
 
+@available: next
+A template's instructions to the writer, such as `{This section is optional}`, are [memos](../writing/directives.md#memo), with their words: `@memo: This section is optional`. A memo is about the block below it, or about its section when it's at the top of one, so an instruction that ended a section moves to the top of it. A memo is never published: follow it, then delete it or keep it. A paragraph that marks where the page's own text goes, such as the how-to's `{Optional: Explanatory text}` in a step, stays a placeholder.
+
 The set has six templates, for a how-to, a concept, a tutorial, a reference, a troubleshooting page, and release notes. Each is one of theirs, and has a type of the same name.
 
 ## Take the templates
@@ -122,9 +125,14 @@ There's no command that writes the page for you at the terminal: copying the fil
 
 - **A placeholder,** the template's text from a `\{` to its closing brace, that the page still has word for word. Its brace has to be escaped on the page too, as it is in the template: a phrase with a placeholder's name, such as `{product}`, is the page's own, and so is a placeholder quoted in inline code or a code block. One that runs across blocks, as the how-to's "See also" opens a brace in a paragraph and closes it at the end of a list, is reported once, where it starts, when the page has all of it.
 - **A frontmatter field** with the value the template gives it, such as `title: "Title"`.
+
+@available: ascribe (ga 0.3.1, removed 0.3.3)
 - **An instruction,** a paragraph the template has in a block quote, that the page still has whole. A block quote of your own isn't one.
 
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
+
+@available: next
+A memo the page keeps from its template isn't reported, and **Go to Next Placeholder** passes over it: it's never published, so what to do with it is yours to decide. A placeholder in a block quote is reported as any other is.
 
 The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
 

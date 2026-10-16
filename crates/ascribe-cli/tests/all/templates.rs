@@ -209,6 +209,41 @@ fn eject_with_no_name_gives_six_types_whose_templates_check_and_are_formatted() 
     assert!(errors.is_empty(), "{errors:#?}");
     let fmt = ascribe(dir.path(), &["fmt", "--check"]);
     assert_eq!(code_of(&fmt), 0, "{}{}", stdout(&fmt), stderr(&fmt));
+
+    // Built with nothing filled in, no output has a template's instructions
+    // to the writer, its memos, but where the page has the same words.
+    let mut memos = Vec::new();
+    for template in ascribe_templates::set().templates {
+        let text =
+            fs::read_to_string(dir.path().join("templates").join(&template.template)).unwrap();
+        let (mut open, mut found, mut rest) = (false, Vec::new(), String::new());
+        for line in text.lines().map(str::trim) {
+            match (open, line.strip_prefix("@memo:").map(str::trim)) {
+                (false, Some("")) => open = true,
+                (false, Some(memo)) => found.push(memo.to_owned()),
+                (true, _) if line == "@end" => open = false,
+                (true, _) => found.push(line.to_owned()),
+                (false, None) => rest.push_str(&format!("{line}\n")),
+            }
+        }
+        memos.extend(found.into_iter().filter(|m| !rest.contains(m.as_str())));
+    }
+    assert!(memos.len() > 20, "{memos:#?}");
+    let build = ascribe(dir.path(), &["build"]);
+    assert_eq!(code_of(&build), 0, "{}{}", stdout(&build), stderr(&build));
+    let mut outputs = vec![dir.path().join(".ascribe/build")];
+    let mut read = 0;
+    while let Some(path) = outputs.pop() {
+        if path.is_dir() {
+            outputs.extend(fs::read_dir(&path).unwrap().map(|e| e.unwrap().path()));
+        } else if let Ok(text) = fs::read_to_string(&path) {
+            read += 1;
+            for memo in &memos {
+                assert!(!text.contains(memo.as_str()), "{}: {memo}", path.display());
+            }
+        }
+    }
+    assert!(read > 0);
 }
 
 #[test]
@@ -681,6 +716,15 @@ fn the_new_page_prompt_has_the_template_and_the_guide_and_its_check_runs_where_i
             .unwrap_or_else(|| panic!("{text}"));
         assert!(guide < started, "{text}");
         assert!(text.contains(body), "{text}");
+        assert!(body.contains("\n@memo: "), "{body}");
+        assert!(
+            text.contains(
+                "Its memos, the `@memo` lines, are the template's instructions to you: follow \
+                 each, then delete it or keep it."
+            ),
+            "{text}"
+        );
+        assert!(!text.contains("quoted instruction"), "{text}");
         assert!(
             !text.contains(&format!("{base}templates/how-to.md")),
             "{text}"

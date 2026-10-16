@@ -295,6 +295,13 @@ fn next_placeholder_steps_through_what_the_template_left_and_comes_round() {
         .filter(|p| *p == "\\{insert a brief description of the task}")
         .count();
     assert_eq!(twice, 2);
+    // The template's instructions are memos, read and not filled in, so
+    // none is a place.
+    assert!(text.contains("@memo: This section is optional\n"), "{text}");
+    assert!(
+        !seen.iter().any(|p| p.contains("This section is optional")),
+        "{seen:#?}"
+    );
 }
 
 #[test]
