@@ -13,7 +13,7 @@ This crate is [comrak](https://github.com/kivikakk/comrak), vendored and changed
 
 ## Why fork
 
-Ascribe changes CommonMark's block structure: a directive line interrupts a paragraph, is never a lazy continuation line, follows CommonMark's container rules, and, when it has a text primary, continues onto following lines as a paragraph does (SPEC §3.2, §3.4, §3.9). These rules have to live inside the block parser. Walking the tree an unmodified parser produces can't recover the right structure: unmodified comrak folds an unindented `@note` into the list item above it, where Ascribe ends the list. comrak has no extension point for new block types, so the new block is added to a fork.
+Ascribe changes CommonMark's block structure: a directive line interrupts a paragraph, is never a lazy continuation line, follows CommonMark's container rules, and, when it has a text primary, continues onto following lines as a paragraph does (SPEC §3.2, §3.4, §3.9). A raw container's opener keeps the lines up to its `@end` as text, as a fenced code block does (SPEC §3.5). These rules have to live inside the block parser. Walking the tree an unmodified parser produces can't recover the right structure: unmodified comrak folds an unindented `@note` into the list item above it, where Ascribe ends the list. comrak has no extension point for new block types, so the new block is added to a fork.
 
 The alternative was markdown-rs, a state-machine CommonMark parser built for MDX. Adding a block construct there means writing a new construct in its tokenizer (states, events, and the resolver), integrating it with its document and flow content types, and teaching its event-to-tree conversion about it, and its extension points are designed around MDX's needs. It would also need its own fork, with its own merge burden, and the CommonMark baseline would have to be redone. In the comrak fork, every block-level requirement fits the existing block-parser model, which is a port of the CommonMark reference implementation: the CommonMark 0.31.2 suite passes 652 of 652 with the Ascribe option off and on (see [`tests/commonmark/README.md`](../../tests/commonmark/README.md)), upstream's own unit tests pass, and parsing a 7 MB document takes about 120 ms with the option on or off.
 
@@ -51,9 +51,11 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `NodeValue::accepts_lines` | An Ascribe line takes its own line |
 | | | `Node::can_contain_type` | An Ascribe line contains only its primary's paragraph |
 | `src/parser/options.rs` | 1 | `Extension` | The `ascribe: Option<Arc<AscribeOptions>>` option, after `front_matter_delimiter` |
-| `src/parser/mod.rs` | 13 | module list | `mod ascribe;` |
-| | | `check_open_blocks_inner` | An Ascribe line stays open while its primary's paragraph does |
+| `src/parser/mod.rs` | 15 | module list | `mod ascribe;` |
+| | | `check_open_blocks_inner` | An Ascribe line stays open while its primary's paragraph does, and a raw container's opener until a line that's only `@end` at its indent (`continues_raw_container`) |
 | | | `open_new_blocks` | `handle_ascribe_line` in the chain of block starts, between block quotes and ATX headings |
+| | | `open_new_blocks` | No block starts inside a raw container's opener, as none does in a code block (`holds_raw_lines`; changed condition) |
+| | | `add_text_to_container` | A blank line in a raw container doesn't make its list loose, as one in a fenced code block doesn't |
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
@@ -73,6 +75,8 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | `src/tests/pathological.rs` | 1 | `pathological_emphases` | A 10 second timeout, was 4: the debug build passed 4 seconds on CI's Linux runner ([#157](https://github.com/ascribed-dev/ascribe/issues/157)) |
 
 In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
+
+Raw containers added 10 lines and changed 6 in `parser/mod.rs`, in 3 hunks (the `AscribeLine` arm of `check_open_blocks_inner` split by `raw_container`, a condition in `open_new_blocks`, and an arm in `add_text_to_container`), with the scanner and the hooks in Ascribe's own two files. They add no node and no `NodeValue` variant: the opener's `NodeAscribeLine` carries `raw_container`.
 
 Link reference definition support added 68 lines and changed 7 in two upstream files, in 7 hunks (`lib.rs` and `parser/mod.rs`; about half the added lines are comments), and the definition types and `locate` in `src/ascribe.rs`. It adds no node and no `NodeValue` variant, and doesn't change what is parsed.
 

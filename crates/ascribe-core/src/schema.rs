@@ -70,11 +70,13 @@ pub enum Builtin {
     Snippet,
     /// `@intended` (§4.9).
     Intended,
+    /// `@memo` (§4.10).
+    Memo,
 }
 
 impl Builtin {
     /// Every built-in directive, in SPEC §4 order.
-    pub const ALL: [Builtin; 9] = [
+    pub const ALL: [Builtin; 10] = [
         Builtin::Id,
         Builtin::Include,
         Builtin::Variant,
@@ -84,6 +86,7 @@ impl Builtin {
         Builtin::Details,
         Builtin::Snippet,
         Builtin::Intended,
+        Builtin::Memo,
     ];
 
     /// The keyword, without `@`.
@@ -98,6 +101,7 @@ impl Builtin {
             Builtin::Details => "details",
             Builtin::Snippet => "snippet",
             Builtin::Intended => "intended",
+            Builtin::Memo => "memo",
         }
     }
 
@@ -241,7 +245,34 @@ impl Builtin {
                 description: Some("Acknowledge a check's problem in the next block.".into()),
                 ..base
             },
+            Builtin::Memo => DirectiveSchema {
+                forms: Forms::BOTH,
+                // SPEC §3.4: a line primary in line form. A container's
+                // lines are raw (SPEC §3.5).
+                primary: Primary::Reason { required: true },
+                binding: Some(Binding::HeadingOrBlock),
+                description: Some(
+                    "A note to the people who maintain the page, never published.".into(),
+                ),
+                ..base
+            },
         }
+    }
+}
+
+impl DirectiveSchema {
+    /// Whether the directive's container is raw (SPEC §3.5): its lines are
+    /// text up to a line that's only `@end` at the opener's indent, and
+    /// nothing reads them. `@memo` is the one built-in with a raw container.
+    pub fn raw_container(&self) -> bool {
+        self.origin == Origin::Builtin(Builtin::Memo)
+    }
+
+    /// Whether the directive's container binds, as its line form does
+    /// (SPEC §3.8): it's about the section it tops, or the block after its
+    /// end line. Only `@memo`'s does.
+    pub fn container_binds(&self) -> bool {
+        self.origin == Origin::Builtin(Builtin::Memo)
     }
 }
 
@@ -304,8 +335,9 @@ pub enum Primary {
         required: bool,
     },
     /// A line primary (SPEC §3.4) that holds plain text: the reason an
-    /// acknowledgement gives (SPEC §4.9). Built-in `@intended` only; a
-    /// content model can't declare it.
+    /// acknowledgement gives (SPEC §4.9), or a memo's text (SPEC §4.10).
+    /// Built-in `@intended` and `@memo` only; a content model can't declare
+    /// it.
     Reason {
         /// Whether the line form must have one.
         required: bool,
@@ -427,7 +459,7 @@ mod tests {
     /// SPEC §4's table, row by row: name, forms, primary, binding.
     #[test]
     fn builtins_match_the_spec_table() {
-        let table: [(&str, Forms, Primary, Option<Binding>); 9] = [
+        let table: [(&str, Forms, Primary, Option<Binding>); 10] = [
             (
                 "id",
                 Forms::LINE,
@@ -467,6 +499,12 @@ mod tests {
                 Primary::Reason { required: true },
                 Some(Binding::Block),
             ),
+            (
+                "memo",
+                Forms::BOTH,
+                Primary::Reason { required: true },
+                Some(Binding::HeadingOrBlock),
+            ),
         ];
         let schemas = builtin_schemas();
         assert_eq!(schemas.len(), table.len());
@@ -489,7 +527,9 @@ mod tests {
             if s.groupable {
                 assert_eq!(s.forms, Forms::CONTAINER, "{name}");
             }
-            if s.forms.container {
+            // `@memo`'s line form must have its text; its container holds
+            // the text instead.
+            if s.forms.container && !s.raw_container() {
                 assert!(!s.primary.is_required(), "{name}");
             }
             if let Attributes::Declared(attrs) = &s.attributes {

@@ -33,6 +33,7 @@ Write the phrase (`{product}`), not the text it stands for.
 - `@available: <spec>` under a heading or above a block: where it applies, as targets with an optional state and version (`cloud, self-managed preview 3.4`), or a feature's key
 - `@note {type=<type>}: <text>`, or `@note:` … `@end` around several blocks: a callout. Here: types `note`, `tip`, `important`, `warning`, `caution`
 - `@steps` on the line above an ordered list: the list is a procedure
+- `@memo: <text>` under a heading or above a block, or `@memo:` … `@end` around several lines: a note for whoever maintains the page, never published
 
 ### Links
 

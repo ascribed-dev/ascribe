@@ -1,0 +1,10 @@
+description: >-
+  Touching is measured from a container memo's `@end`: a blank line after it
+  is the warning a following-block directive gets, and canonical form removes
+  it, leaving the memo's own blank line alone.
+spec: ["4.10", "3.8", "8.3"]
+tags: [check, format]
+
+diagnostics:
+  - {slug: binding-blank-line, line: 7}
+formatted: formatted.md

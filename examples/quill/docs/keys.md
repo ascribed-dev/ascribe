@@ -11,6 +11,12 @@ Sign in to {cloud} and open **Settings → Keys**.
 
 ## Rotate keys
 @id: rotate-keys
+@memo:
+Rotation comes before revocation: support found that people who revoke
+first lock out their own agents. See [the incident](notes/2026-08.md).
+
+Keep the {product} name out of the heading; search shows it already.
+@end
 
 Generate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [](install-agent.md#install-agent).
 

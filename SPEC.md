@@ -232,7 +232,7 @@ Each directive's schema declares whether it takes a primary and of which kind:
 
   A text primary is always inline content, never a block. A line that would turn a paragraph into something else stays text: a setext underline `===` or a table delimiter row continues the primary, and a leading `[label]: /url` is text, not a link reference definition. A `---` line can't underline a primary, so it ends the primary and is a thematic break. Likewise, an ordered list that doesn't start at 1 can't interrupt a paragraph, so a line such as `2. Two.` continues a text primary; a blank line before it starts the list.
 
-- A **line primary** (an availability spec, or a reason) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) and `@intended` (§4.9) take one.
+- A **line primary** (an availability spec, or a reason) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4), `@intended` (§4.9), and `@memo` (§4.10) take one.
 
 ### 3.5 Forms
 
@@ -263,6 +263,8 @@ Each directive's schema declares which forms it permits (§7.2), and processors 
 After either error, the line keeps the form its own line gives it: a trailing colon still opens a container, and a container-only directive missing its colon is treated as if the colon were there. The error is reported once, at that line, and the container's `@end` still closes it.
 
 **Closing.** `@end` closes the innermost open container. There are no named closers. Every container MUST be closed before its enclosing block (list item, blockquote, group arm, or document) ends.
+
+**Raw containers.** A directive's schema can make its container **raw**: its lines are text, as a fenced code block's are, from the line after the opener up to a line that's only `@end` at the opener's indent, with nothing after it but whitespace. Nothing in them is a block, a directive, an inline, or a heading, so a fence that doesn't close, a `#` line, or another opener inside doesn't change the page around it. The lines keep the prefixes of the container the opener is in (list indentation, `>` markers), and the closing line must have them too. A raw container can't hold a line that's only `@end` at its opener's indent, since that line closes it; an `@end` at another indent is text. `@memo` (§4.10) is the one built-in directive with a raw container.
 
 Because the form is visible on the directive's own line, mistakes are reported where they happen. A container note whose trailing colon is missing binds only its first block, and its `@end` is then an end line with no open container, which is an error. A trailing colon added by mistake leaves a container unclosed, which is also an error.
 
@@ -329,6 +331,8 @@ A heading's **section** is the heading plus all content up to the next heading o
 
 Following-block directives **stack**: several in a row all bind the block the last of them touches. Any block except a heading can be bound, including a thematic break or a raw HTML block. A line-form directive whose content is its own text primary, such as a one-line `@note: …`, is a block too, so `@available` directly above it binds the note. So is `@snippet`, which becomes a code block (§4.8). A directive that renders nothing of its own, such as `@id`, `@include`, or an end line, isn't a block, so a following-block directive directly above one has nothing to bind.
 
+**A container that binds.** A container's content is what it holds, and a container has no binding, except where a directive's schema says its container binds as its line form does; `@memo` (§4.10) is the one built-in whose container does. What such a container is about is decided from its opening line, as its line form's is: at the top of a section, the section; anywhere else, the next block after its end line in the same container. Touching is measured from the end line: the block it's about starts on the line after it, and a blank line there is the warning a following-block directive gets. With nothing after its end line in its container, outside the top of a section, it's the error a following-block directive with no block gets, reported at the opening line. It stacks as following-block directives do, in either order: a following-block directive directly above it binds what it binds.
+
 Sections are found within one container: a heading-bound directive binds a heading in its own document, list item, blockquote, directive container, or arm, never one outside it. A container's first blocks have no heading above them, as at the start of a document.
 
 The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
@@ -367,6 +371,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
 | `@snippet` | line | identifier (address) | self | Take a code example from a file |
 | `@intended` | line | line (reason) | following block | Acknowledge a check's problem as intended |
+| `@memo` | line, container (raw) | line (text), in line form | top of section, else following block, in either form | Keep a note for the people who maintain the page, never published |
 
 ### 4.1 `@id`
 
@@ -696,6 +701,29 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 - **What it does.** A problem an acknowledgement covers isn't reported. Processors SHOULD count acknowledged problems, and list them with their reasons where they list problems.
 - **When nothing needs it.** An acknowledgement that covers no problem in any build is itself reported as advice (§8.2), so acknowledgements don't outlive what they excused. Processors report it only when they've checked every build.
 - **Never in an output.** An acknowledgement changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. `@intended` renders nothing, and the `intended` key isn't in a page's frontmatter in any output.
+
+### 4.10 `@memo`
+
+Keeps a note for the people and agents who maintain a page: why it's written the way it is, beside what it's about. A memo is never published, and nothing reads what it says.
+
+```
+## Rotate a key
+@memo:
+Rotation comes before revocation: support found that people who revoke
+first lock out their own agents. See [the incident](notes/2026-08.md).
+@end
+
+Generate a new key, then restart the agent.
+
+@memo: Kept to one sentence; the support macro quotes it.
+Revoke the old key once every agent uses the new one.
+```
+
+- **Forms:** line and container. **Binding:** top of section, else following block, in either form (§3.8). **Primary:** in line form, REQUIRED text (a line primary, §3.4): plain text, the rest of the line. **Attributes:** none.
+- **The container is raw** (§3.5): its lines are the memo's text, as written. It's about what its opening line says it's about, and the block it's about starts directly after its `@end`.
+- **Nothing reads a memo.** Its text isn't inline content: a `{key}` in it isn't a phrase, a link isn't checked and isn't a use of its target, an `@include` isn't followed, a `#` line isn't a heading and gets no id, and a processor that checks prose doesn't check it.
+- **Never in an output.** A memo changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. A memo in a fragment is part of the fragment, and no page that includes the fragment publishes it.
+- **Never a change.** Comparing two versions of a page compares what they publish, so a page whose only change is to a memo hasn't changed.
 
 ---
 
@@ -1069,7 +1097,7 @@ Processors accept any spacing the grammar allows (§3.1, §3.3). Each construct 
 - Values quoted only when necessary.
 - No empty attribute block: `@note`, not `@note {}`.
 - No trailing whitespace after a container's `:`.
-- No blank line between a following-block directive and its block.
+- No blank line between a following-block directive and its block, or between a container that binds and the block after its end line.
 - `:` directly after the name or attribute block, followed by one space before a primary, or ending the line for a container.
 - Directive lines inside a list item indented exactly to the item's content column.
 
@@ -1081,7 +1109,7 @@ A formatter changes only Ascribe constructs, and never how a page renders:
 - It keeps a blank line between a following-block directive and its block when removing it would change how the page renders (a list's tightness), when the directive has a text primary, or when anything but blank lines sits in the gap (a link reference definition).
 - It leaves an attribute block with a bare or repeated key as written. An undeclared key keeps its place, and the rest are ordered and respaced. A quoted value that needs no quotes loses them.
 - It removes an empty attribute block after an image, and leaves an image's attribute block in a table cell, and a table row's attribute block, as written.
-- Title lines are left as written.
+- Title lines are left as written, and so are a raw container's lines (§3.5). Its opener and end line keep their indentation when it holds an `@end` at another indent, which moving them could make close it.
 
 ---
 

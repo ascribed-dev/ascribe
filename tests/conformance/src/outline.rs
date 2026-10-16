@@ -118,7 +118,8 @@ pub struct Directive {
     pub primary: Option<String>,
     /// The title from a title line, with whitespace normalized.
     pub title: Option<String>,
-    /// What a line-form directive applies to. Content field.
+    /// What a line-form directive, or a container that binds (`@memo`),
+    /// applies to. Content field.
     pub binding: Option<Binding>,
     /// A container's blocks. Always empty in line form.
     pub children: Outline,
@@ -335,9 +336,6 @@ fn node_from_value(value: &Value, path: &str) -> Result<Node, OutlineError> {
             let children = f.children()?;
             if form == Form::Line && !children.is_empty() {
                 return err(path, "a line-form directive has no children");
-            }
-            if form == Form::Container && binding.is_some() {
-                return err(path, "a container has no binding");
             }
             Node::Directive(Directive {
                 name,

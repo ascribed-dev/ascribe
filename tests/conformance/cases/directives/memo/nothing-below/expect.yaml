@@ -1,0 +1,10 @@
+description: >-
+  A line memo with nothing after it, outside the top of a section, is the
+  error any following-block directive with no block gets; one with no text is
+  missing its primary.
+spec: ["4.10", "3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-primary, line: 5}
+  - {slug: binding-no-block, line: 9}

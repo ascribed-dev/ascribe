@@ -1,0 +1,14 @@
+description: >-
+  A line memo is a line primary of plain text, and below a paragraph it's
+  about the block it touches.
+spec: ["4.10", "3.4", "3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Rotate keys
+  - paragraph: Generate a new key.
+  - directive: memo
+    primary: "Kept to one sentence; the support macro quotes [it](macro.md)."
+    binding: following-block
+  - paragraph: Restart the agent.

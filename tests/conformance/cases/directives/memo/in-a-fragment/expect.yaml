@@ -1,0 +1,14 @@
+description: >-
+  A memo in a fragment is part of the fragment, and no page that includes it
+  publishes it.
+spec: ["4.10", "4.2", "9.2"]
+tags: [resolve, include]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: Before.
+          - paragraph: Shared text.
+          - paragraph: After.

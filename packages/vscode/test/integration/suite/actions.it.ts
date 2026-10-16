@@ -320,22 +320,22 @@ describe("the editor's actions", () => {
 
     it("makes the selected text a phrase, in ascribe.toml and the page", async () => {
       // "the agent" in "… and restart the agent. To install …".
-      const editor = await open("keys.md", 14, 0);
-      const line = lines(editor)[14] ?? "";
+      const editor = await open("keys.md", 20, 0);
+      const line = lines(editor)[20] ?? "";
       const start = line.indexOf("the agent.");
-      editor.selection = new vscode.Selection(14, start, 14, start + "the agent".length);
+      editor.selection = new vscode.Selection(20, start, 20, start + "the agent".length);
       // A refactoring saves the files it changes: put them back afterwards.
       const files = [uriOf("docs", "keys.md"), uriOf("ascribe.toml")];
       const saved = await Promise.all(files.map((uri) => vscode.workspace.fs.readFile(uri)));
       const record = await run("makePhrase", ["agent", "no"]);
       assert.equal(record.done, true, record.messages.join());
-      assert.ok(lines(editor)[14]?.includes("and restart {agent}. To install the agent"));
+      assert.ok(lines(editor)[20]?.includes("and restart {agent}. To install the agent"));
       const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
       assert.ok(
         model.getText().includes('\napi = "https://api.quill.dev/v3/"\nagent = "the agent"\n'),
       );
       await vscode.commands.executeCommand("undo");
-      assert.equal(lines(editor)[14], line);
+      assert.equal(lines(editor)[20], line);
       for (const [i, uri] of files.entries()) {
         const bytes = saved[i];
         if (bytes) await vscode.workspace.fs.writeFile(uri, bytes);

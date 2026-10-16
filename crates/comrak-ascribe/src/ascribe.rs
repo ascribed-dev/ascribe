@@ -7,6 +7,11 @@
 //! recognizes it. The parser hooks that call the scanner are in
 //! `parser/ascribe.rs`.
 //!
+//! A directive whose keyword is marked raw opens a **raw container**: its
+//! opener takes every line after it as text, up to a line that's only `@end`
+//! at the opener's indent, which is then an Ascribe line of its own. Nothing
+//! between them is a block (SPEC §3.5).
+//!
 //! The fork only finds Ascribe lines and gives them the right block structure.
 //! It doesn't parse the directive head (the name's attributes, form, and
 //! primary kind); `ascribe-syntax` does that from [`NodeAscribeLine::raw`].
@@ -60,6 +65,9 @@ pub struct AscribeKeyword {
     /// continues onto following lines as a paragraph does, so the parser needs
     /// to know which keywords have one.
     pub text_primary: bool,
+    /// Whether the directive's container is raw (SPEC §3.5): its opener
+    /// keeps the lines up to its `@end` as text, and none of them is a block.
+    pub raw: bool,
 }
 
 impl AscribeOptions {
@@ -77,8 +85,19 @@ impl AscribeOptions {
 
     /// Adds a keyword, replacing any earlier entry for the same name.
     pub fn insert(&mut self, name: impl Into<String>, text_primary: bool) {
-        self.keywords
-            .insert(name.into(), AscribeKeyword { text_primary });
+        self.insert_keyword(
+            name,
+            AscribeKeyword {
+                text_primary,
+                raw: false,
+            },
+        );
+    }
+
+    /// Adds a keyword with everything the parser needs to know about it,
+    /// replacing any earlier entry for the same name.
+    pub fn insert_keyword(&mut self, name: impl Into<String>, keyword: AscribeKeyword) {
+        self.keywords.insert(name.into(), keyword);
     }
 
     /// Looks up a keyword by name, without the `@`.
@@ -105,6 +124,12 @@ impl AscribeOptions {
 /// primary's inline content from its first character to the end of its last
 /// line. Otherwise the node has no children.
 ///
+/// A line that opens a raw container (see [`raw_container`]) has no
+/// children either, and its sourcepos runs on through the last line before
+/// its `@end`, or through the last line of its own container when it's
+/// unclosed. The lines are the node's content, as a code block's are.
+///
+/// [`raw_container`]: Self::raw_container
 /// [`Paragraph`]: crate::nodes::NodeValue::Paragraph
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct NodeAscribeLine {
@@ -119,6 +144,11 @@ pub struct NodeAscribeLine {
     /// When the line has a non-empty text primary, the byte offset in
     /// [`raw`](Self::raw) where it starts.
     pub text_primary: Option<usize>,
+
+    /// When the line opens a raw container, the columns its `@` is indented
+    /// past its own container's content. The line that closes it is `@end`
+    /// alone, at that same indent.
+    pub raw_container: Option<usize>,
 }
 
 /// A link reference definition (`[label]: destination "title"`), which comrak
@@ -222,6 +252,9 @@ pub(crate) struct ScannedLine {
     /// Where a non-empty text primary starts, if the keyword takes one and
     /// the line has one.
     pub text_primary: Option<usize>,
+    /// Whether the line opens a raw container: the keyword's container is
+    /// raw, and the line is an opener, its `:` with nothing after it.
+    pub opens_raw: bool,
 }
 
 /// Recognizes an Ascribe line (SPEC §3.2). `line` starts at the line's first
@@ -256,12 +289,45 @@ pub(crate) fn scan_line(line: &str, options: &AscribeOptions) -> Option<ScannedL
     } else {
         None
     };
+    let opens_raw = keyword.raw && is_opener(&bytes[..content_end], name_end);
 
     Some(ScannedLine {
         name_end,
         content_end,
         text_primary,
+        opens_raw,
     })
+}
+
+/// Whether a head opens a container (SPEC §3.5): its optional attribute
+/// block closes, and its `:` has nothing after it but spaces and tabs. A head
+/// that can't be read doesn't.
+fn is_opener(bytes: &[u8], mut i: usize) -> bool {
+    let skip_ows = |i: &mut usize| {
+        while matches!(bytes.get(*i), Some(b' ' | b'\t')) {
+            *i += 1;
+        }
+    };
+    skip_ows(&mut i);
+    if bytes.get(i) == Some(&b'{') {
+        let Some(end) = skip_attributes(bytes, i) else {
+            return false;
+        };
+        i = end;
+        skip_ows(&mut i);
+    }
+    if bytes.get(i) != Some(&b':') {
+        return false;
+    }
+    i += 1;
+    skip_ows(&mut i);
+    i == bytes.len()
+}
+
+/// Whether `line`, from its first non-space character, closes a raw
+/// container: it's `@end` and nothing else but trailing spaces and tabs.
+pub(crate) fn is_raw_end(line: &str) -> bool {
+    line.trim_end_matches([' ', '\t', '\r', '\n']) == "@end"
 }
 
 /// Finds where a non-empty primary starts: after the optional attribute block
@@ -384,11 +450,19 @@ mod tests {
     }
 
     fn options() -> AscribeOptions {
-        AscribeOptions::new()
+        let mut options = AscribeOptions::new()
             .keyword("note", true)
             .keyword("include", false)
             .keyword("end", false)
-            .keyword("quill-demo", true)
+            .keyword("quill-demo", true);
+        options.insert_keyword(
+            "memo",
+            AscribeKeyword {
+                text_primary: false,
+                raw: true,
+            },
+        );
+        options
     }
 
     fn scan(line: &str) -> Option<ScannedLine> {
@@ -476,6 +550,34 @@ mod tests {
         assert_eq!(primary("@note {type=tip: text"), None);
         assert_eq!(primary(r#"@note {label="unclosed}: text"#), None);
         assert_eq!(primary("@note hello: text"), None);
+    }
+
+    #[test]
+    fn finds_raw_container_openers() {
+        let opens = |line: &str| scan(line).is_some_and(|s| s.opens_raw);
+        for line in [
+            "@memo:",
+            "@memo:  \t\r\n",
+            "@memo {}:",
+            "@memo { a=\"}\" } :",
+        ] {
+            assert!(opens(line), "{line:?} opens a raw container");
+        }
+        for line in [
+            "@memo: text",
+            "@memo",
+            "@memo {a=b",
+            "@memo {a=b:",
+            "@memo x:",
+            "@note:",
+        ] {
+            assert!(!opens(line), "{line:?} doesn't open a raw container");
+        }
+        assert!(is_raw_end("@end"));
+        assert!(is_raw_end("@end \t\r\n"));
+        assert!(!is_raw_end("@end x"));
+        assert!(!is_raw_end("@endx"));
+        assert!(!is_raw_end("@end:"));
     }
 
     #[test]

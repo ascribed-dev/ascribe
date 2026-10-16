@@ -808,6 +808,38 @@ fn links_and_includes_go_to_their_targets() {
 }
 
 #[test]
+fn nothing_in_a_memo_is_a_problem_a_link_or_a_phrase() {
+    let f = quill();
+    let keys = f.path("docs/keys.md");
+    let text = read(&f, "docs/keys.md");
+    // Quill's memo links to a file that doesn't exist and holds `{product}`.
+    assert!(text.contains("@memo:\n") && text.contains("(notes/2026-08.md)"));
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert_eq!(client.diagnostics(&keys), Vec::new());
+    assert!(definition(&mut client, &keys, at(&text, "notes/2026-08.md", 2)).is_none());
+    assert!(definition(&mut client, &keys, at(&text, "{product} name", 2)).is_none());
+    assert!(hover(&mut client, &keys, at(&text, "{product} name", 2)).is_none());
+    let links = client
+        .request(
+            "textDocument/documentLink",
+            json!({ "textDocument": text_doc(&keys) }),
+        )
+        .response_result
+        .expect("a result");
+    let memo = text.find("@memo:").unwrap();
+    let end = memo + text[memo..].find("@end").unwrap();
+    let (from, to) = (position(&text, memo), position(&text, end));
+    for link in links.as_array().into_iter().flatten() {
+        let line = &link["range"]["start"]["line"];
+        assert!(
+            line.as_u64() < from["line"].as_u64() || line.as_u64() > to["line"].as_u64(),
+            "a link in the memo: {link}"
+        );
+    }
+}
+
+#[test]
 fn an_id_goes_to_its_heading() {
     let f = quill();
     let keys = f.path("docs/keys.md");

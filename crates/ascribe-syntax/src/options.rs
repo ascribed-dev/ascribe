@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use ascribe_core::{DirectiveSchema, END_KEYWORD, FileId, Primary, builtin_schemas};
-use comrak_ascribe::ascribe::AscribeOptions;
+use comrak_ascribe::ascribe::{AscribeKeyword, AscribeOptions};
 
 /// What the parser needs to know about the project.
 ///
@@ -55,15 +55,19 @@ impl ParseOptions {
         self.schemas.iter().find(|s| s.name == name)
     }
 
-    /// The keyword set for the block parser: every schema, and `end`.
+    /// The keyword set for the block parser: every schema, and `end`, with
+    /// which take a text primary and which have a raw container.
     pub(crate) fn keywords(&self) -> Arc<AscribeOptions> {
         let mut seen: HashMap<&str, ()> = HashMap::new();
         let mut keywords = AscribeOptions::new();
         for schema in &self.schemas {
             if seen.insert(&schema.name, ()).is_none() && schema.name != END_KEYWORD {
-                keywords.insert(
+                keywords.insert_keyword(
                     schema.name.clone(),
-                    matches!(schema.primary, Primary::Text { .. }),
+                    AscribeKeyword {
+                        text_primary: matches!(schema.primary, Primary::Text { .. }),
+                        raw: schema.raw_container(),
+                    },
                 );
             }
         }

@@ -69,6 +69,13 @@ pub use files::{FormatFilesError, Formatted, Refused, format_files};
 use indent::Owner;
 pub use skip::NON_BLOCKING;
 
+/// Whether a raw container holds a line that's `@end` at some indent: one
+/// that doesn't close it now, and might once its opener's indent changed.
+fn holds_an_end_line(source: &str, container: &ascribe_syntax::Container) -> bool {
+    ascribe_syntax::raw_container_text(source, container)
+        .is_some_and(|text| text.lines().any(|l| l.trim() == "@end"))
+}
+
 /// The parse options a project's content model gives: its directive schemas
 /// (the built-ins, then the widgets) and its note types. Formatting with
 /// options built any other way works, but the widgets' attribute order and
@@ -173,6 +180,12 @@ impl Ctx<'_> {
         }
     }
 
+    /// From the start of `span` to the end of its line, where a problem
+    /// with the line's head would be reported.
+    fn line_of(&self, span: Span) -> Span {
+        Span::new(span.start(), span.end().max(self.line_end(span.start())))
+    }
+
     /// Replaces `span` with `text`, unless that's already what it holds.
     pub(crate) fn replace(&mut self, span: Span, text: &str) {
         if self.source.get(span.range()) != Some(text) {
@@ -186,23 +199,36 @@ impl Ctx<'_> {
         for (i, block) in blocks.iter().enumerate() {
             match &block.kind {
                 BlockKind::Directive(line) => {
-                    self.directive(line, owner);
+                    self.directive(line, owner, false);
                     blank::rule(self, blocks, i, owner);
                 }
                 BlockKind::Container(container) => {
-                    self.directive(&container.opener, owner);
+                    // A raw container's lines are left as written. Its opener
+                    // and end line close it only at the same indent, so they
+                    // move together or not at all: neither moves when one of
+                    // them has an error, or when moving them could make a
+                    // line in it close it.
+                    let keep_indent = container.raw.is_some()
+                        && (holds_an_end_line(self.source, container)
+                            || self.has_error(self.line_of(container.opener.span))
+                            || container
+                                .end
+                                .as_ref()
+                                .is_some_and(|e| self.has_error(self.line_of(e.span))));
+                    self.directive(&container.opener, owner, keep_indent);
                     self.blocks(&container.children, owner);
                     if let Some(end) = &container.end {
-                        self.end_line(end, owner);
+                        self.end_line(end, owner, keep_indent);
                     }
+                    blank::rule(self, blocks, i, owner);
                 }
                 BlockKind::Group(group) => {
                     for arm in &group.arms {
-                        self.directive(&arm.opener, owner);
+                        self.directive(&arm.opener, owner, false);
                         self.blocks(&arm.children, owner);
                     }
                     if let Some(end) = &group.end {
-                        self.end_line(end, owner);
+                        self.end_line(end, owner, false);
                     }
                 }
                 // An end line the structure pass left flat closes nothing,
@@ -227,8 +253,9 @@ impl Ctx<'_> {
         }
     }
 
-    /// A directive line or container opener: its indentation and its head.
-    fn directive(&mut self, line: &DirectiveLine, owner: Owner) {
+    /// A directive line or container opener: its indentation, unless
+    /// `keep_indent`, and its head.
+    fn directive(&mut self, line: &DirectiveLine, owner: Owner, keep_indent: bool) {
         // The title line itself is left as written.
         // Titles hold inlines too, and an image in one has an attribute block.
         if let Some(title) = &line.title {
@@ -249,13 +276,15 @@ impl Ctx<'_> {
         if self.has_error(span) {
             return;
         }
-        indent::rule(self, line.name_span.start(), owner);
+        if !keep_indent {
+            indent::rule(self, line.name_span.start(), owner);
+        }
         head::rules(self, line);
     }
 
-    fn end_line(&mut self, end: &EndLine, owner: Owner) {
+    fn end_line(&mut self, end: &EndLine, owner: Owner, keep_indent: bool) {
         let line = Span::new(end.span.start(), self.line_end(end.span.start()));
-        if end.extra.is_some() || self.has_error(line) {
+        if end.extra.is_some() || self.has_error(line) || keep_indent {
             return;
         }
         indent::rule(self, end.span.start(), owner);

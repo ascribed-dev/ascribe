@@ -526,6 +526,28 @@ fn refs_cuts_the_list_and_says_how_to_see_it_all() {
 }
 
 #[test]
+fn refs_lists_no_use_from_inside_a_memo() {
+    let dir = project();
+    let install = || json(dir.path(), &["refs", "site/docs/install.md"], 0)["total"].clone();
+    let before = install();
+    let keys = dir.path().join("site/docs/keys.md");
+    let text = fs::read_to_string(&keys).expect("keys.md");
+    let memo = "@memo:\nSee [install](install.md), [the incident](notes/gone.md), and \
+                {product}.\n@end\n";
+    write(&keys, &format!("{text}\n{memo}Text.\n"));
+    assert_eq!(install(), before);
+    let phrase = json(
+        dir.path(),
+        &["refs", "phrase:product", "--config", "site"],
+        0,
+    );
+    assert_eq!(phrase["total"], 3, "{phrase}");
+    // The same link outside the memo is a use.
+    write(&keys, &format!("{text}\nSee [install](install.md).\n"));
+    assert_ne!(install(), before);
+}
+
+#[test]
 fn refs_to_nothing_is_exit_code_1() {
     let dir = project();
     let value = json(dir.path(), &["refs", "phrase:nope", "--config", "site"], 1);

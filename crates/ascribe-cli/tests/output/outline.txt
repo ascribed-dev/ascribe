@@ -3,6 +3,6 @@ docs/keys.md, type page
 
 docs/keys.md:7: ## Create a key  #create-key
 docs/keys.md:12: ## Rotate keys  #rotate-keys
-docs/keys.md:17: ## Sign webhook events  #sign-webhooks
+docs/keys.md:23: ## Sign webhook events  #sign-webhooks
 
 Link to a heading as `keys.md#<id>`.

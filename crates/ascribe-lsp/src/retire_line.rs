@@ -927,7 +927,7 @@ fn mark_only(file: &FileIndex, mark: &Mark<'_>) -> Option<Span> {
 }
 
 fn binds_following(block: &Block) -> bool {
-    matches!(&block.kind, BlockKind::Directive(l) if l.binding == Some(Bound::FollowingBlock))
+    block.binding() == Some(Bound::FollowingBlock)
 }
 
 /// The list of sibling blocks holding the directive written at `at`, and

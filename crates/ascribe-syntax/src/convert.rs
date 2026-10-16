@@ -401,7 +401,14 @@ impl<'a> Converter<'a> {
             return (end.span, BlockKind::End(end));
         }
         let directive = self.directive_line(node, line, head, name_span, at);
-        (directive.span, BlockKind::Directive(directive))
+        // A raw container's opener holds its lines (SPEC §3.5): the block
+        // runs through the last of them, and the structure pass keeps them
+        // as the container's `raw`.
+        let span = match line.raw_container {
+            Some(_) => directive.span.cover(self.span(node)),
+            None => directive.span,
+        };
+        (span, BlockKind::Directive(directive))
     }
 
     fn end_line(&mut self, head: &Head, name_span: Span, at: usize, name: &str) -> EndLine {
@@ -458,17 +465,22 @@ impl<'a> Converter<'a> {
         };
 
         let primary = self.primary(node, line, &head, at, schema.as_ref());
-        if let (Some(schema), None) = (&schema, &primary)
-            && schema.primary.is_required()
-        {
-            self.report_missing(schema, name_span);
-        }
-
         let form = if colon.is_some() && head.primary_start.is_none() && unexpected.is_none() {
             Form::Container
         } else {
             Form::Line
         };
+        // A container opener's colon ends its line: what a required primary
+        // would say is in the container (`@memo:`).
+        let opens_container =
+            form == Form::Container && schema.as_ref().is_some_and(|s| s.forms.container);
+        if let (Some(schema), None) = (&schema, &primary)
+            && schema.primary.is_required()
+            && !opens_container
+        {
+            self.report_missing(schema, name_span);
+        }
+
         let end = match &primary {
             Some(PrimaryValue::Text(text)) => text.span.end(),
             _ => at + head.content_end,
@@ -499,6 +511,9 @@ impl<'a> Converter<'a> {
                 },
             ),
             Primary::Availability { .. } => ("an availability spec", "cloud"),
+            Primary::Reason { .. } if schema.raw_container() => {
+                ("text", "Why this section comes first.")
+            }
             Primary::Reason { .. } => ("a reason", "Why the problem is intended."),
             Primary::Text { .. } | Primary::None => ("text", "Text that fits here."),
         };

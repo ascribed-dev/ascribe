@@ -7,5 +7,5 @@ Sign in to Quill Cloud and open **Settings → Keys**.
 <!--ascribe-anchor tag="h2" source="keys.md:12-12"-->
 ## Rotate keys <ascribe-attributes id="rotate-keys"></ascribe-attributes>
 
-<!--ascribe-anchor tag="p" source="keys.md:15-15"-->
+<!--ascribe-anchor tag="p" source="keys.md:21-21"-->
 Generate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [Install the agent](/install-agent/#install-agent).

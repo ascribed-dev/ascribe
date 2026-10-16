@@ -1,0 +1,14 @@
+description: >-
+  An `@available` directly above a container memo binds what the memo is
+  about, the block after its `@end`, so a build that filters the block out
+  takes the memo and the directive with it.
+spec: ["4.10", "3.8", "9.3"]
+tags: [resolve]
+
+builds:
+  sm-3.5:
+    pages:
+      input.md:
+        outline:
+          - paragraph: Before.
+          - paragraph: After.

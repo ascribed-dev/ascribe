@@ -1,0 +1,15 @@
+description: >-
+  A line memo directly above a container memo is about what the container is
+  about: the block after its `@end`.
+spec: ["4.10", "3.8"]
+tags: [structure]
+
+outline:
+  - paragraph: Before.
+  - directive: memo
+    primary: The short reason.
+    binding: following-block
+  - directive: memo
+    form: container
+    binding: following-block
+  - paragraph: The block below.

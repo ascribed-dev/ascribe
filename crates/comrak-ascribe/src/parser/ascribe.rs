@@ -23,8 +23,15 @@
 //! - **The primary stays a paragraph.** It's inline content (SPEC §3.4), so a
 //!   setext underline, a table delimiter row, or a leading link reference
 //!   definition doesn't change it; see [`is_text_primary`].
+//! - **A raw container's opener** takes the lines after it, as a fenced code
+//!   block does, and nothing in them starts a block: `open_new_blocks` stops
+//!   at it ([`holds_raw_lines`]). `check_open_blocks` keeps it open until a
+//!   line that's only `@end` at its indent
+//!   ([`Parser::continues_raw_container`]); that line then starts an Ascribe
+//!   line of its own, as every end line does, and `ascribe-syntax` pairs the
+//!   two as it pairs any container.
 
-use crate::ascribe::{NodeAscribeLine, scan_line};
+use crate::ascribe::{NodeAscribeLine, is_raw_end, scan_line};
 use crate::nodes::{Node, NodeValue};
 use crate::parser::Parser;
 
@@ -52,6 +59,7 @@ where
             raw: raw.to_string(),
             name: raw[1..scanned.name_end].to_string(),
             text_primary: scanned.text_primary,
+            raw_container: scanned.opens_raw.then_some(self.indent),
         };
         *container = self.add_child(container, NodeValue::AscribeLine(Box::new(ntl)), start + 1);
 
@@ -63,6 +71,20 @@ where
 
         true
     }
+
+    /// Whether `line` is another line of the raw container whose opener is
+    /// indented `indent` columns: anything but a line that's only `@end` at
+    /// that indent, blank lines included. Called once the containers around
+    /// the opener have consumed their prefixes.
+    pub(super) fn continues_raw_container(&self, line: &str, indent: usize) -> bool {
+        self.blank || self.indent != indent || !is_raw_end(&line[self.first_nonspace..])
+    }
+}
+
+/// Whether `node` is a raw container's opener, whose lines are text: no
+/// block starts inside it.
+pub(super) fn holds_raw_lines(node: Node<'_>) -> bool {
+    matches!(&node.data().value, NodeValue::AscribeLine(line) if line.raw_container.is_some())
 }
 
 /// Whether `node` is the paragraph holding an Ascribe line's text primary.

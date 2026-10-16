@@ -369,9 +369,10 @@ impl<'p> BuildResolver<'p> {
         }
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
-        // Acknowledgements (SPEC §4.9) are for the checks: no output shows
-        // them, so a page reads as it would without them.
-        drop_acknowledgements(&mut blocks);
+        // Acknowledgements (SPEC §4.9) are for the checks, and memos
+        // (SPEC §4.10) for the people who maintain the page: no output shows
+        // either, so a page reads as it would without them.
+        drop_unpublished(&mut blocks);
         let frontmatter = frontmatter.and_then(without_acknowledgements);
         let permalink = permalinks::of_page(index);
         Some(ResolvedPage {
@@ -466,17 +467,24 @@ fn listing_loosened_in_line(
 /// intended (SPEC §4.9).
 const INTENDED: &str = "intended";
 
-/// Removes the `@intended` lines from `blocks` and the blocks in them.
-fn drop_acknowledgements(blocks: &mut Vec<ResolvedBlock>) {
-    blocks.retain(|b| {
-        !matches!(
-            &b.kind,
-            ResolvedKind::Leaf(Block { kind: BlockKind::Directive(line), .. }) if line.name == INTENDED
-        )
+/// The directive that keeps a note for the people who maintain a page
+/// (SPEC §4.10).
+const MEMO: &str = "memo";
+
+/// Removes what no output shows from `blocks` and the blocks in them: the
+/// `@intended` lines, and `@memo` in either form.
+fn drop_unpublished(blocks: &mut Vec<ResolvedBlock>) {
+    blocks.retain(|b| match &b.kind {
+        ResolvedKind::Leaf(Block {
+            kind: BlockKind::Directive(line),
+            ..
+        }) => line.name != INTENDED && line.name != MEMO,
+        ResolvedKind::Container { opener, .. } => opener.name != MEMO,
+        _ => true,
     });
     for block in blocks {
         for list in block.child_lists_mut() {
-            drop_acknowledgements(list);
+            drop_unpublished(list);
         }
     }
 }

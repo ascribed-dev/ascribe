@@ -1,0 +1,19 @@
+description: >-
+  At the top of a section a memo is about the section, in either form, and
+  stacks with the section's other directives.
+spec: ["4.10", "3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Rotate keys
+  - directive: id
+    primary: rotate-keys
+    binding: heading
+  - directive: memo
+    form: container
+    binding: heading
+  - directive: memo
+    primary: The order matters.
+    binding: heading
+  - paragraph: Generate a new key.

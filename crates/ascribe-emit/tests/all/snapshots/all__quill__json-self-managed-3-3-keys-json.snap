@@ -162,17 +162,17 @@ expression: text
         {
           "type": "text",
           "value": "Generate a new key, put it in ",
-          "span": [220, 250]
+          "span": [444, 474]
         },
         {
           "type": "code",
           "value": "quill.yaml",
-          "span": [250, 262]
+          "span": [474, 486]
         },
         {
           "type": "text",
           "value": ", and restart the agent. To install the agent first, see ",
-          "span": [262, 319]
+          "span": [486, 543]
         },
         {
           "type": "link",
@@ -189,25 +189,25 @@ expression: text
             {
               "type": "text",
               "value": "Install the agent",
-              "span": [319, 353]
+              "span": [543, 577]
             }
           ],
-          "span": [319, 353]
+          "span": [543, 577]
         },
         {
           "type": "text",
           "value": ".",
-          "span": [353, 354]
+          "span": [577, 578]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [220, 354],
-        "lines": [15, 15]
+        "span": [444, 578],
+        "lines": [21, 21]
       },
       "links": [
         {
-          "span": [319, 353],
+          "span": [543, 577],
           "kind": "link",
           "destination": "install-agent.md#install-agent",
           "target": {
