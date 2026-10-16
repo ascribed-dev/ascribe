@@ -1,11 +1,11 @@
 ---
 type: reference
 title: "`ascribe versions`"
-description: "List a project's release lines, say what differs between two, and release a line in one command."
+description: "List a project's release lines, say what differs between two, release a line in one command, and archive one into a folder of HTML."
 available: next
 ---
 
-The commands for a project's [release lines](index.md): what they are, what differs between two, and the release that makes a planned line live. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+The commands for a project's [release lines](index.md): what they are, what differs between two, the release that makes a planned line live, and the archive that keeps a line once it leaves. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## Release day
 
@@ -37,7 +37,7 @@ ascribe versions changes "self-managed 3.5" 3.6 --format markdown
 ## `ascribe versions`
 @id {permalink=true}: cli-versions
 
-Lists a project's release lines, says what differs between two, and releases one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
+Lists a project's release lines, says what differs between two, releases one, and archives one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list
@@ -89,3 +89,21 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 |---|---|
 | `0` | Released, or with `--dry-run`, it would be |
 | `2` | Nothing was written: the line can't be released, a mark can't be rewritten, a step that should change no output changes some, or git can't put the files back and there's no `--force` |
+
+### `ascribe versions archive`
+@id {permalink=true}: cli-versions-archive
+
+Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. [Archive a line](index.md#archive-a-line) says what's in it, and the [archive contract](../contracts/archive.md) its layout. In a copy of `examples/quill`, `ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.quill.dev/` writes the archive and says what to add to `ascribe.toml` once it's hosted:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-archive.txt
+
+`--to` is from the current folder, and is a folder that's empty or one an archive was written in: writing again replaces the files its manifest lists, and nothing else. It refuses a folder with anything else in it, writing nothing there. It writes nothing into the project, runs the checks for the line's build first, and refuses when they find an error. Archiving the current line works, and the text says it's unusual. A link to a page the line doesn't have is written as its text, and the text names each one.
+
+@include: ../_generated/cli-versions-archive-options.md
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `target`, `line`, `status` (`current`, `live`, or `planned`), `build` (the versioned build, as declared), `folder` (from the current folder), `contents` (the contents page, from the folder), `pages`, `assets`, `removed` (files of an earlier archive there that this one doesn't have), and `unlinked` (each link written as its text, with `file`, from the project's folder, `text`, `href`, and `line`, the line it led to when it led out of the line).
+
+| Code | Meaning |
+|---|---|
+| `0` | The archive is written |
+| `2` | Nothing was written: the project doesn't load, the line isn't declared or is archived, no build or more than one is versioned by its target and `--build` doesn't say which, the checks find an error, or the folder isn't empty and isn't an archive |

@@ -38,5 +38,6 @@ ascribe vale eject
 ascribe versions list     [--format text|json]
 ascribe versions changes  FROM TO [--format text|json|markdown]
 ascribe versions release  LINE [--next <LINE>] [--dry-run] [--force] [--format text|json]
+ascribe versions archive  LINE --to <DIR> [--build <NAME>] [--current <URL>] [--format text|json]
 ascribe --version
 ```

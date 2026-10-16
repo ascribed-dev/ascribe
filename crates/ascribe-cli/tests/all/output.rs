@@ -911,6 +911,34 @@ fn versions() {
     );
 }
 
+/// `ascribe versions archive` on a copy of `examples/quill`, into a folder
+/// in it: the command reference's example.
+#[test]
+fn versions_archive() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        root,
+    );
+    expect(
+        "versions-archive.txt",
+        &stdout(&run(
+            root,
+            &[
+                "versions",
+                "archive",
+                "self-managed 3.4",
+                "--to",
+                "archive/3.4",
+                "--current",
+                "https://docs.quill.dev/",
+            ],
+            0,
+        )),
+    );
+}
+
 /// `ascribe versions release` on a copy of `examples/quill` that plans 3.6,
 /// with a section marked for it through a feature: the command reference's
 /// example.

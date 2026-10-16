@@ -10,7 +10,7 @@ A product a team supports in more than one version needs docs for each: a reader
 1. **No versions.** The default. Nothing to configure, and nothing changes.
 2. **One site that knows its versions.** `[releases]` in `ascribe.toml` lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
 3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, which this page covers, with links from one line to another, and an older line that says what it is and where the current one is, to a reader, a search engine, and an agent.
-4. **An archive.** A line that's left the window, kept as a frozen copy. Not yet.
+4. **An archive.** A line rendered once more into a folder of HTML that needs nothing else, kept after it leaves the window.
 
 ## List the live lines
 
@@ -176,6 +176,33 @@ The last sentence links to the page in the current line, or the page that replac
 The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes all three into the layout.
 
 `astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. With `[consumer] agents = true`, each line's `llms.txt` and Markdown are published at its base path, `/docs/3.4/llms.txt`, with the response headers each line's pages need. A permalink forwards to the current line, whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
+
+## Archive a line
+
+Before a line leaves the window, keep a copy of it that needs nothing else: no site generator, no server, no script.
+
+```sh
+ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.example.com/docs/
+```
+
+The folder has a page for each page of the line, `install.md` as `install.html`, and works opened from a disk or served at any address, since every link between its pages is relative:
+
+- **Every page says what it is,** at its top: "Documentation for Self-managed 3.4. This version is no longer maintained." With `--current`, a link to the current documentation follows. Nothing in it is a date or a "latest" that would read wrongly later.
+- **A way around.** A sidebar on every page lists the pages by folder, each folder named by the title of its `index.md`, with the page you're on marked; each page lists its own sections, and links to the previous and next pages. The contents page lists every page: it's `index.html`, or `contents.html` when the line's own root `index.md` is `index.html`.
+- **It prints.** Printing a page leaves out the sidebar, keeps the statement, and writes each link's address after it. `all.html` has every page in order in one document, for one PDF of the whole line.
+- **It's kept out of search,** by `<meta name="robots" content="noindex">` on every page, and a `robots.txt` for a host that serves the folder at its own address.
+- **It has no script.** Tabs show one after another, each under its label, as the [element contract](../astro/elements.md) promises without JavaScript. The stylesheet is the element library's with the archive's own, and follows the reader's light or dark setting.
+
+A link to a page that isn't in the line goes to the page that takes its place there, as a link in the line's output does. A link that would lead out of the line to another one is written as its text, and the command names each. A link to another site stays a link.
+
+The archive is Ascribe's own render, not the site's: a project's site design isn't carried into it. Host the folder anywhere, then record its address, so the live site lists it among the lines:
+
+```toml
+[releases.self-managed.archived]
+"3.4" = { url = "https://archive.example.com/3.4/" }
+```
+
+`Versions.astro` lists an archived line that has a `url` after the live ones, as a link out of the site. The [archive contract](../contracts/archive.md) has the folder's layout.
 
 ## For agents
 
