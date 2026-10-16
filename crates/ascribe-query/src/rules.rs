@@ -22,6 +22,11 @@ pub const RULES_BUDGET: usize = 4_000;
 /// The most characters the phrases take within the rules.
 pub const MODEL_BUDGET: usize = 2_000;
 
+/// What the rules say of memos, in a project whose pages have one.
+pub const MEMO_SENTENCE: &str = "Read a block's `@memo` before changing the block, and keep \
+     the two together: a memo says why the page is written the way it is, and is never \
+     published.";
+
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
@@ -30,8 +35,12 @@ pub const MODEL_BUDGET: usize = 2_000;
 /// summary of each type ejected from the set is read through, from its
 /// `templates.lock`.
 ///
-/// When the whole is longer than [`RULES_BUDGET`], the page types' lines are
-/// cut first, and the cut says where the full list is; then the directives'.
+/// In a project whose pages have a `@memo`, the rules say to read a block's
+/// memo before changing it, in [`MEMO_SENTENCE`].
+///
+/// When the whole is longer than [`RULES_BUDGET`], the memo sentence is cut
+/// first; then the page types' lines, and the cut says where the full list
+/// is; then the directives'.
 pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPath) -> String {
     let model = project.model();
     let at = At::new(project, dir, root);
@@ -52,7 +61,13 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
         at.path_arg(),
         directive_reference_url(),
     );
-    let lines = directive_lines(model, &project.directive_names());
+    let used = project.directive_names();
+    let memo = if used.contains(Builtin::Memo.name()) {
+        format!("\n{MEMO_SENTENCE}\n")
+    } else {
+        String::new()
+    };
+    let lines = directive_lines(model, &used);
     let directives = |n: usize| -> String {
         if lines.is_empty() {
             return String::new();
@@ -69,22 +84,26 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
         }
         out
     };
-    let render = |types_taken: usize, directives_taken: usize| -> String {
+    let render = |memo: &str, types_taken: usize, directives_taken: usize| -> String {
         format!(
-            "{head}{}{phrases}{}{tail}",
+            "{head}{memo}{}{phrases}{}{tail}",
             section(Section::Types, types_intro(model), &types, types_taken, &at),
             directives(directives_taken)
         )
     };
-    let fits = |t: usize, d: usize| render(t, d).chars().count() <= RULES_BUDGET;
     let every_directive = lines.len();
+    let whole = render(&memo, types.len(), every_directive);
+    if whole.chars().count() <= RULES_BUDGET {
+        return whole;
+    }
+    let fits = |t: usize, d: usize| render("", t, d).chars().count() <= RULES_BUDGET;
     let types_taken = fit(&[types.len()], |taken| fits(taken[0], every_directive))[0];
     let directives_taken = if fits(types_taken, every_directive) {
         every_directive
     } else {
         fit(&[lines.len()], |taken| fits(0, taken[0]))[0]
     };
-    render(types_taken, directives_taken)
+    render("", types_taken, directives_taken)
 }
 
 /// A short text for a file above a project's folder (the repository's root
@@ -517,6 +536,50 @@ mod tests {
             "{rules}"
         );
         assert!(!rules.contains("\n- step by step"), "{rules}");
+    }
+
+    #[test]
+    fn a_project_with_a_memo_is_told_to_keep_it() {
+        let model = "spec = \"0.1\"\n";
+        let page = "---\ntitle: Keys\n---\n\n@memo: Kept short.\nRotate the key.\n";
+        let rules = rules_of(model, &[("docs/keys.md", page)]);
+        assert!(rules.contains(MEMO_SENTENCE), "{rules}");
+        let plain = "---\ntitle: Keys\n---\n\nRotate the key.\n";
+        let rules = rules_of(model, &[("docs/keys.md", plain)]);
+        assert!(!rules.contains("@memo"), "{rules}");
+    }
+
+    #[test]
+    fn the_memo_sentence_is_cut_before_the_type_lines() {
+        // Types whose lines take the budget but for a few characters more
+        // than the memo sentence leaves.
+        let mut model = String::from("spec = \"0.1\"\n");
+        let page = "---\ntype: kind-0\ntitle: Keys\n---\n\n@memo: Kept short.\nRotate the key.\n";
+        let mut i = 0;
+        loop {
+            let with = format!(
+                "{model}\n[types.kind-{i}]\npurpose = \"A page about one kind of thing.\"\n\n\
+                 [types.kind-{i}.frontmatter]\ntitle = \"string\"\n"
+            );
+            let rules = rules_of(&with, &[("docs/keys.md", page)]);
+            if !rules.contains(MEMO_SENTENCE) {
+                // The sentence went, and every type line stayed.
+                assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
+                assert!(
+                    !rules.contains("more: `ascribe model --section types`"),
+                    "{rules}"
+                );
+                assert_eq!(
+                    rules.lines().filter(|l| l.starts_with("- `kind-")).count(),
+                    i + 1,
+                    "{rules}"
+                );
+                return;
+            }
+            model = with;
+            i += 1;
+            assert!(i < 100, "the rules never ran over the budget");
+        }
     }
 
     #[test]

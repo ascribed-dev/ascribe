@@ -76,6 +76,9 @@ Beside each file it writes, `sync` says which agents read it, and when an agent 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
+@available: next
+When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tells the agent to read a block's memo before changing the block, and to keep the two together. When the rules run over their 4,000 characters, that sentence is cut before the page types.
+
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
 
 Here's what it writes for the Quill example:
