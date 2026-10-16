@@ -55,7 +55,18 @@ From the proposal's design:
 16. **The starter stops writing `src/nav.ts`.** A site with one keeps working: `sidebar()` still takes a list.
 17. **Left out:** a page in two sections, a section for a content type, an entry that isn't a page, an order for each build, weights in frontmatter, routes, a table of contents inside a page, generated pages, and a version switcher.
 
-From [phase 1](phase-1-decisions.md), to be filled in when the maintainer decides: how the navigation reaches a site and the JSON output, `sidebar()`'s signature and previous and next, `llms.txt`'s order without a file, the diagnostics, `ascribe model`'s JSON, `nav-label`'s rules, where a nested section sits and reading order, where the docs for it live, what `page-orphan` reports, and `unlisted`'s new reach.
+From [phase 1](phase-1-decisions.md), which keeps the options each was chosen from:
+
+18. **The navigation is a file of its own, `_ascribe/nav.json`,** in each site output root and in the JSON output, beside `pages.json`: the root section, each section `{ folder, label, page?, pages, sections }`, and each page `{ source, label, type }`, joined to the records on `source`. A label is there both ways, `label` plain and `formatted.label` in the output's formatted form. Routes aren't repeated. A versioned build's lines each have their own.
+19. **`sidebar(entries, options)` reads the project's navigation, and a site's own list is an option, `{ nav }`, which overrides it.** `neighbors(entry, entries, options)` gives `{ previous?, next? }`. `SidebarGroup` gains `sections`. A published API changes, so the changelog says **Behavior change**.
+20. **`llms.txt` follows the navigation always,** the default order included: one accepted output change for every project with a plain output, named file by file with decision 5's.
+21. **The diagnostics:** `nav-invalid` (error, `write`); `nav-page-unknown` and `nav-folder-unknown` (errors, `choose`, an unsafe fix to the closest name); `nav-duplicate` (error, `fix`, a safe fix removing the second); `section-page-both` (error, `choose`, on the folder's `index.md`, naming the page beside the folder); `nav-page-unplaced` and `nav-section-unplaced` (advice, `fix`, a safe fix that appends); and `nav-label-long` (advice, `write`). `nav-page-unplaced` is reported on the page, and its fix edits `ascribe.nav`.
+22. **`ascribe model` gains a `navigation` key,** the same tree as `nav.json` with each section's `listed`, and its `schema_version` doesn't move.
+23. **`nav-label` is a reserved frontmatter key,** one line, code spans allowed as in `title`, used wherever a page is an entry in a list; `llms.txt` keeps the title. A type can't declare it and a fragment can't use it.
+24. **A nested section whose own page is beside its folder sits where that page sits** among the parent's pages, by default or by its place in the parent's `pages`, so naming `diagnostics.md` in `checks/`'s list places the subsection there. One with an `index.md` and no page beside it comes after the parent's pages. Reading order follows the same placement, depth first, and the home page has no previous. Decision 9's `pages` may therefore name the page beside a nested folder.
+25. **The docs live in a feature folder, `docs/content/navigation/`:** the reference as its `index.md`, a how-to in phase 6, the contract at `contracts/navigation.md`, the file in `command/project-files.md`, and `sidebar()` and `neighbors()` in the Astro reference.
+26. **`page-orphan` keeps reporting a page no prose links to or includes,** and its message says what reaches the page: only the sidebar, or nothing but its address for one that's `unlisted`. Decision 14 reads so.
+27. **`unlisted` leaving a page out of the navigation amends search and answers' decision 15,** which made the setting about crawlers and agents; the decision file names it, and the content model reference's `listing` table changes in phase 2.
 
 ## The thread
 

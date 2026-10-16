@@ -50,8 +50,7 @@ From [phase 1](phase-1-decisions.md), which keeps the options each was chosen fr
 18. **`ascribe model` lists a term as `id`, `term`, `aliases`, `match`, `case_sensitive`, `page`, and `line`,** with no `definition` and no `link`, and its `schema_version` goes to 3. `page` is the path from the content root.
 19. **The diagnostics:** `model-unknown-key` for `[glossary] terms`, naming `pages` and `@term`; `model-glossary-page` (error, `choose`); `glossary-term-duplicate` (error, `write`, at the second, naming the first), replacing `model-glossary-duplicate-term`; `glossary-definition-missing` (error, `write`); `glossary-definition-long` (advice, `write`); and `term-off-glossary-page` (error, `choose`, with the fix that adds the page). `model-glossary-link` and `glossary-link-target-missing` go, their codes left as gaps. One constant, `DESCRIPTION_LIMIT`, serves both length checks; a setting is added to both at once if a project ever asks.
 20. **Ascribe's docs keep their glossary at `docs/content/glossary.md`,** type `reference`: the root holds what belongs to no one feature.
-
-One is open: [phase 1's decision 7](phase-1-decisions.md#7-a-link-an-author-writes-to-a-terms-heading), whether a link an author writes to a term's heading is a use of the term. It was raised after the six were answered, and phase 2 can't start without it, since Ascribe's docs have three `marked` terms whose links it decides.
+21. **A link an author writes to a term's heading is a use of the term:** it carries `data-ascribe-term` and the definition as its title, `glossary-term-unused` counts it, and `ascribe refs term:` lists it. Exactly a link whose destination is the term's heading by its id; a link to the glossary page, or to another heading in the section, is ordinary. It's how a `marked` term is linked, and the docs' three change as an accepted output.
 
 ## The thread
 

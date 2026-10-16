@@ -20,7 +20,7 @@ In `examples/astro-site`, list `pages = ["Options.md", "Optoins.md"]` under `Ref
 
 ### The checks
 
-Each of phase 1's diagnostics, with its place: in `ascribe.nav` at the value for the file's own problems, and on the page for `nav-page-unplaced` and `section-page-both`. The fixes are edits to `ascribe.nav` that keep its comments and layout (`toml_edit`, as `ascribe.toml`'s edits are made). `nav-page-unplaced`'s fix appends in title order among the unplaced, so applying every one at once gives the order the default already shows (decision 2).
+Each of phase 1's diagnostics, with its place: in `ascribe.nav` at the value for the file's own problems, on the page for `nav-page-unplaced`, and on the folder's `index.md` for `section-page-both`, naming the page beside the folder (README decision 21). The fixes are edits to `ascribe.nav` that keep its comments and layout (`toml_edit`, as `ascribe.toml`'s edits are made). `nav-page-unplaced`'s fix appends in title order among the unplaced, so applying every one at once gives the order the default already shows (decision 2).
 
 ### `page-orphan`
 

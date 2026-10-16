@@ -43,8 +43,8 @@ Build again: Start, Reference, Guides. The site has no list of its own.
 `ascribe-resolve` makes the project's navigation once, then each build's share:
 
 1. **The sections:** the content root and every folder under it with a page, at any depth, leaving out fragments and `_` names. Each section's own page: its `index.md`, or the page beside the folder with its name.
-2. **The default order:** sections in path order, the root first; in each, its own page, then its pages by type in `ascribe.toml`'s order, then by title. A nested section whose own page is beside its folder sits where that page sits among them; one with only an `index.md` comes after them (phase 1, decision 7).
-3. **The file's order over it:** listed sections in the file's order, then the rest in path order; in a section, its listed pages, then the rest by title. Listing a nested section's page beside its folder places the section there.
+2. **The default order:** sections in path order, the root first; in each, its own page, then its pages by type in `ascribe.toml`'s order, then by title. A nested section whose own page is beside its folder sits where that page sits among them; one with an `index.md` and no page beside it comes after the pages, in path order (README decision 24).
+3. **The file's order over it:** listed sections in the file's order, then the rest in path order; in a section, its listed pages, then the rest by title, a nested section moving with the page beside its folder when `pages` names it.
 4. **A build's share:** the pages it publishes and offers (not `unlisted`), and the sections left with one.
 
 Labels: a section's `label`, else its own page's title, else the folder's name with its first letter capitalized; the root's is "Start" (decision 5).

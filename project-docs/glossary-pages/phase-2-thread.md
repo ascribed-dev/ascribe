@@ -30,7 +30,7 @@ This is the thinnest slice that can ship: decision 5 leaves no release with both
 
 ## Context
 
-- README decisions 1 to 8, 11 to 13, 15, 16, 18, and 20, and phase 1's decision 7 once it's answered.
+- README decisions 1 to 8, 11 to 13, 15, 16, 18, and 20, and 21.
 - SPEC §4.1, §5.4, and §7.2; `crates/ascribe-core/src/schema.rs`, where `@id` is declared.
 - `crates/ascribe-model/src/model.rs` and `sections.rs`: `Glossary`, `GlossaryTerm`, and how `[glossary]` is loaded.
 - `crates/ascribe-resolve/src/index/mod.rs`: the source index, which holds every page's headings, its `@available` directives, and its `@snippet` uses, and nothing else of the directives.
@@ -54,7 +54,7 @@ A term is read from the source index. The index already holds every page's headi
 
 The definition is resolved for each build, by decision 15, when the build resolves the glossary's pages, and before any page is linked. Matching takes the terms and each one's link from there, as it takes them from the model today. A term is linked to the page that defines it, by decision 16 when more than one does.
 
-**A link an author writes to a term's heading** is whatever phase 1's decision 7 says, which is answered before this phase starts. A `marked` term depends on it: with `link` gone, its occurrences are linked by hand to the heading.
+**A link an author writes to a term's heading is a use of the term** (README decision 21): it gets the marker and the title an automatic link gets, `glossary-term-unused` counts it, and `ascribe refs term:` lists it. Exactly a link whose destination is the term's heading by its id; a link to the glossary page, or to another heading in the section, stays ordinary. It's how a `marked` term is linked, and the docs' three are the first case: their links gain the attribute and the title, named with `--accept`.
 
 **Vale's vocabulary** takes the project's terms and aliases instead of the model's. It's written before each Vale run, only when its words differ (`prepare` in `prose/setup.rs`), so a term added on a glossary page reaches it on the next run with no trigger of its own.
 
@@ -88,7 +88,7 @@ Each project lists its glossary pages in `pages`, marks each term's heading with
 6. The removals.
 7. `ascribe model`'s terms and schema.
 8. Every project moved, `docs/`'s glossary page, and the page in the site's sidebar.
-9. A link an author writes to a term's heading, as phase 1's decision 7 says, with a conformance case for a `marked` term.
+9. A link an author writes to a term's heading as a use of the term (README decision 21), with conformance cases for a `marked` term, a link to the glossary page, and a link to another heading in a term's section.
 10. The content model reference and contract, the directives reference, the diagnostics reference, an entry in `changes/` that says **Behavior change**, and the surface map.
 
 ## Out of scope

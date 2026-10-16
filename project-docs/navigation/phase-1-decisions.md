@@ -33,6 +33,8 @@ Each has a recommendation. The maintainer may take it, change it, or ask for mor
 
 **Recommended: A.** It's a tree, and the records are a table; a site that wants the order reads one file, and one that wants a page's details joins on `source`, as `sidebar()` does now with the collection. Routes aren't repeated: a page's route is its record's. A versioned build's lines each have their own, in their own roots.
 
+**Decided: A.** A tree in a file of its own, joined to the records on `source`, with each label both ways so a sidebar keeps a title's code spans. README decision 18.
+
 ### 2. `sidebar()`'s signature, and previous and next
 
 - **A. `sidebar(entries, options)`,** reading the project's navigation, with a site's own list as an option, `sidebar(entries, { nav })`, which overrides it. A site that calls `sidebar(nav, entries)` today moves its list into the options.
@@ -43,6 +45,8 @@ With each, a new **`neighbors(entry, entries, options)`** gives a page's previou
 
 **Recommended: A.** One signature, no test of an argument's shape, and it reads as what it is: the site's list overriding the project's. Before 1.0, a site that passes a list changes one call, and the Astro reference and the changelog say how. `SidebarGroup` gains `sections` for nesting; a site that draws one level ignores it.
 
+**Decided: A.** `sidebar(entries, { nav })`, and `neighbors(entry, entries, options)`. A published API changes, so the changelog entry says **Behavior change** and shows the one-line move. README decision 19.
+
 ### 3. `llms.txt`'s order in a project with no `ascribe.nav`
 
 The default order (decision 8) isn't `llms.txt`'s today: inside a section, `llms.txt` goes by path, and the default by type, then title.
@@ -51,6 +55,8 @@ The default order (decision 8) isn't `llms.txt`'s today: inside a section, `llms
 - **B. `llms.txt` keeps path order until a project has `ascribe.nav`.**
 
 **Recommended: A.** One order from one place is the proposal's point, and B is two orders a reader can tell apart. Decision 5 already changes every such `llms.txt`.
+
+**Decided: A.** `llms.txt` follows the navigation in every project, the default order included, as one accepted output change named file by file with decision 5's. README decision 20.
 
 ### 4. The diagnostics
 
@@ -67,6 +73,8 @@ The default order (decision 8) isn't `llms.txt`'s today: inside a section, `llms
 
 `nav-page-unplaced` is reported on the page, so an agent that wrote it sees it there, and its fix edits `ascribe.nav`. **Recommended:** as the table has it.
 
+**Decided: as the table has it, with one thing said more exactly.** `section-page-both` is reported on the folder's `index.md`, naming the page beside the folder: a page beside its folder is how a long page is split (decision #394), so the `index.md` is the one that arrived second whatever the paths' order says. README decision 21.
+
 ### 5. `ascribe model`'s JSON
 
 - **A. A `navigation` key, the same tree as `nav.json`,** with each section's `listed` (in the file or not), added without moving `schema_version`.
@@ -74,11 +82,15 @@ The default order (decision 8) isn't `llms.txt`'s today: inside a section, `llms
 
 **Recommended: A.** It's what the proposal says (`ascribe model` reports the sections and their order), and a key added moves no version.
 
+**Decided: A.** README decision 22.
+
 ### 6. `nav-label`
 
 A reserved frontmatter key, a string of one line, with code spans allowed as `title`'s are. It's used wherever a page is an entry in a list: a sidebar, previous and next, and the editor's Pages view. `llms.txt` keeps the title, since it's a page's name for an agent, not a menu's. A type can't declare a field `nav-label` (`model-field-reserved`), and a fragment can't use it.
 
 **Recommended:** as written.
+
+**Decided: as written.** `nav-label`'s formatted form travels as `formatted.label` in `nav.json`, so no second key is needed there. README decision 23.
 
 ### 7. Where a nested section sits, and reading order
 
@@ -91,9 +103,13 @@ Ascribe's site puts `checks/diagnostics.md` and its four parts, the nested secti
 
 **Reading order,** for previous and next, the archive, and `llms.txt`'s folding of nested sections, follows the same placement, depth first: a section's own page, then its entries in order, a nested section's own page followed by its pages and nested sections where it sits. The root's own page, the home page, has no previous.
 
+**Decided: A, with the reading order as written.** A nested section whose own page is beside its folder sits where that page sits; one with an `index.md` and no page beside it comes after the parent's pages. README decision 9 gains the sentence that `pages` may name the page beside a nested folder to place the subsection, and phase 2's step 3 orders by it. README decision 24.
+
 ### 8. Where the docs live
 
 **Recommended:** a feature folder, `docs/content/navigation/`, with the reference for `ascribe.nav` and `nav-label` as its `index.md` and, in phase 6, a how-to; the contract as `docs/content/contracts/navigation.md`, beside `permalinks-list.md`. `docs/content/command/project-files.md` lists the file, and the Astro reference documents `sidebar()` and `neighbors()`.
+
+**Decided: as recommended.** Navigation is a feature, so it gets a folder with every type of page about it (decision #452). README decision 25.
 
 ### 9. What `page-orphan` reports
 
@@ -105,16 +121,20 @@ Today it reports a page nothing links to or includes, other than an `index.md`, 
 
 **Recommended: A.** It keeps what's useful about the check, a page prose never points to, drops the hedge with a fact in its place, and adds no name.
 
+**Decided: A.** `page-orphan` stays what it is, a page no prose links to or includes, and its message says what does reach the page: the sidebar, or nothing but its address. README decision 14 is amended to say so. README decision 26.
+
 ### 10. `unlisted` in the sidebar
 
 README decision 11 leaves a page out of the navigation by `listing: unlisted`. That widens a setting the search and answers plan shipped (its decision 15), which was about crawlers and agents, to something readers see.
 
 **Recommended:** record it as an amendment of that decision, in a decision file that names it, and change the content model reference's `listing` table in phase 2, when the sidebar first follows it.
 
+**Decided: as recommended.** `unlisted` now also leaves a page out of the navigation readers see, by README decision 11; the decision file amends search and answers' decision 15 by name, and the `listing` table changes in phase 2. README decision 27.
+
 ## Tasks
 
-1. A decision file for each, in `project-docs/decisions/`, numbered by this plan's issue, as decided.
-2. The README's decisions list filled in.
+1. A decision file for each, in `project-docs/decisions/`, numbered by this plan's issue, as decided. _Waits:_ the plan has no issue and no pull request yet, and a decision file is named by one of the two.
+2. The README's decisions list filled in. _Done,_ 16 October 2026: decisions 18 to 27.
 
 ## Out of scope
 
