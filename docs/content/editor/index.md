@@ -209,21 +209,23 @@ A type with no template makes a page with its frontmatter: its `type`, the title
 ### The Ascribe sidebar
 @available: ascribe 0.3.0
 
-The Ascribe icon in the activity bar opens the Ascribe sidebar, with four views: **Projects**, **Used by**, **Pages**, and **Content model**.
+The Ascribe icon in the activity bar opens the Ascribe sidebar, with four views: **Projects**, **This page**, **Pages**, and **Content model**.
 
 #### The Projects view
 
 The **Projects** view lists every project in the workspace, started or not, by name, with its folder and an icon for its server's state. Under each is its `ascribe.toml`, which opens it, and, while its server runs, its editor build and the `ascribe` binary in use. Each project's buttons show its server's output, and restart its server when it's running or failed. The view updates as projects come and go and servers start and stop, and opening it starts no server. In a workspace with no project, it says how to start one.
 
-#### Used by, Pages, and Content model
+#### This page, Pages, and Content model
 
 The other three views show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
 
-- **Used by** lists what links to the active page, grouped by page, then what includes it. For a fragment, that's the files that include it. With the cursor on a heading, it narrows to the links to that heading, whichever page they reach it through. Each item opens the link or include.
+@available: next
+**This page** says what's known about the active page, in two sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Connections** lists what links to the page, grouped by file, under **Linked from**, and what includes it under **Included by**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading. Each item opens the link or include. Unsaved edits count.
+
 - **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
 
-Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; Used by updates as you move between pages and headings, while it's open.
+Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
 
 ### The status bar
 @available: ascribe 0.2.0

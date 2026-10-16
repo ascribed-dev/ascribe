@@ -147,6 +147,8 @@ pub(crate) struct Core {
     pub computing: bool,
     /// What `ascribe/preview` keeps between requests (`preview.rs`).
     pub(crate) preview_routes: crate::preview::RouteCache,
+    /// What `ascribe/page` keeps between requests (`page.rs`).
+    pub(crate) page_uses: crate::page::PageCache,
     /// The review base, while review is on (`review.rs`).
     pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
     /// What Vale found, and what's queued for it (`prose.rs`).
@@ -180,6 +182,7 @@ impl Core {
             can_watch: false,
             computing: false,
             preview_routes: Default::default(),
+            page_uses: Default::default(),
             review: None,
             prose: crate::prose::State::default(),
             epoch: 0,
