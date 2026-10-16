@@ -123,6 +123,19 @@ From [phase 6](phase-6-surfaces.md), made building it, for the maintainer to con
 66. **A hover on a version in a mark says the line it's in and its status,** and nothing for a version older than every declared line; **a hover on `replaces` says which page each line publishes,** and Go to Definition opens the replaced page. _Why:_ a version before every line is in none and is shown as the target alone (decision 34), which a hover on every old mark would only repeat.
 67. **Review in `astro dev` compares every line, and a page shows its own line's changes.** _Why:_ the site serves every line, so a reviewer who opens `/3.4/install/` expects that line's marks.
 
+From [phase 8](phase-8-archive.md), recorded before code:
+
+68. **An archive is a fourth emitter, `archive`, written only by `ascribe versions archive` and never by `ascribe build`.** The store is given a root, the `--to` folder, and keeps its manifest there as `archive.manifest.json`, naming the line's build (`site@3.4`). The ownership rules, the asset contract, and the refusal of a folder Ascribe didn't write apply as they are: a folder that isn't empty and has no manifest is refused, `archive_folder_not_empty`. _Why:_ a writer of its own would repeat the asset copying and the ownership rules, and the store's one missing piece was a root it's given.
+69. **An archive ships the element library's stylesheet and no script.** Tabs are labeled sections one after another, which the element contract already promises without JavaScript, and which prints. _Why:_ an archive with a script depends on that script working in a browser years from now.
+
+From [phase 8](phase-8-archive.md), made building it, for the maintainer to confirm in its pull request:
+
+70. **"Nothing links out" is about pages: a link to another site stays a link.** A link to a page of another line, or to a route the line doesn't have, is unwrapped to its text and listed by the command; a link to `https://…` is kept, and printed with its address. _Why:_ the plan's rule is that the archive needs nothing outside the folder to be read, and an outside address in a page is content, as it was when the line was live.
+71. **The archive's pages carry `Content-Security-Policy: script-src 'none'` and nothing stricter.** _Why:_ `'self'` for styles and images matches `file:` in Chromium but not in every browser, and the folder must open from a disk; no script is the guarantee that matters.
+72. **The command refuses a line `ascribe check` finds errors in, exit 2 with `archive_has_errors`, and refuses an archived line, `archive_line_archived`.** A planned line is built as `<build>@<line>` from the current line's build, and the command says it's not released. _Why:_ an archive is kept for years, so a broken page is worse there than in a build that's rebuilt; an archived line's source is no longer in the project to render.
+73. **The sidebar is in every page.** Measured on Ascribe's own docs (55 pages), it's about 5.9 KB a page, 16% of the pages' 2.0 MB; `all.html` is 1.6 MB and the stylesheet 20 KB. _Why:_ the plan asked for the weight to be measured and said, and it's small beside what a script to load it once would cost the folder.
+74. **The store's `.lock` file stays in the folder after a run,** as it does in an output directory, and the archive's contract names it. _Why:_ removing it would race another run, and it's empty.
+
 ## The thread
 
 **The use case:** `examples/quill` declares `live = ["3.4", "3.5"]` for `self-managed` and sets `versions = "self-managed"` on its site build. `ascribe build` writes two outputs. A page marked `self-managed 3.5` is in one and not the other, the pages about the cloud service are in both, and the Astro example serves the older line under `/3.4/`, where a list on each page links to the same page in the other line.
