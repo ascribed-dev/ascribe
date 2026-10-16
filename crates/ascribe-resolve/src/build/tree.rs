@@ -66,6 +66,12 @@ pub struct ResolvedPage {
     pub listing: Listing,
     /// Where [`ResolvedPage::listing`] comes from.
     pub listing_from: ListingFrom,
+    /// In an older line of a versioned build, the page the current line
+    /// publishes in this one's place: the page itself, or else the page
+    /// `replaces` links it with, nearest along the chain first. Its address
+    /// is this page's canonical one. `None` in the current line, in a build
+    /// that isn't versioned, and when the current line has neither.
+    pub current_page: Option<RelPath>,
     /// The blocks that survived the build, includes expanded.
     pub blocks: Vec<ResolvedBlock>,
     /// The assets the surviving content references, in document order, each

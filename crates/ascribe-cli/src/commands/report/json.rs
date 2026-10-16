@@ -328,7 +328,7 @@ struct PageRecordJson {
 struct ListingFromJson {
     /// `default` when nothing sets it, `page` for the page's own `listing`,
     /// or the level of the rule of `[listing]` it's under: `site`,
-    /// `folder`, or `type`.
+    /// `older-lines`, `folder`, or `type`.
     level: &'static str,
     /// For a folder's rule, the folder, as `[listing.folders]` names it.
     #[serde(skip_serializing_if = "Option::is_none")]

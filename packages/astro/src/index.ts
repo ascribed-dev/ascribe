@@ -233,17 +233,17 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
     }
     const root = normalizeBase(base);
     return {
-      projects: records.map(pageList),
+      projects: [
+        ...records.map(pageList),
+        // An older line's pages are the site's too: those the current line has point at it.
+        ...entries.flatMap((entry) =>
+          olderLines(entry.siteRoot).map((line) => pageList(readRecords(line.siteRoot))),
+        ),
+      ],
       routed,
       sitePages,
       excluded: [
         ...forwardingRoutes(entries.map((entry) => readPermalinks(entry.siteRoot))),
-        // An older line's pages, which aren't the site's own; what crawlers are told of them is to come.
-        ...entries.flatMap((entry) =>
-          olderLines(entry.siteRoot).flatMap((line) =>
-            pageList(readRecords(line.siteRoot)).map((page) => page.route),
-          ),
-        ),
         `${root}404`,
         `${root}500`,
         ...(options.sitemap?.exclude ?? []),
@@ -519,6 +519,19 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                           headersFor(siteRoot, pathname),
                         ),
                       );
+                      // Each older line's outputs for agents, at its own base path.
+                      server.middlewares.use((req, res, next) =>
+                        inOrder(
+                          olderLines(siteRoot).map((line) =>
+                            agentsMiddleware(line.plainRoot, line.base, (pathname) =>
+                              headersFor(line.siteRoot, pathname),
+                            ),
+                          ),
+                          req,
+                          res,
+                          next,
+                        ),
+                      );
                     }
                   }
                   // The sitemap and robots.txt, as the build would write them now.
@@ -658,7 +671,11 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           rules: mergeRules(
             entries
               .filter((entry) => entry.project.consumer.headers === "netlify")
-              .map((entry) => readHeaders(entry.siteRoot) ?? []),
+              .flatMap((entry) =>
+                [entry.siteRoot, ...olderLines(entry.siteRoot).map((line) => line.siteRoot)].map(
+                  (siteRoot) => readHeaders(siteRoot) ?? [],
+                ),
+              ),
           ),
           base,
           own: existsSync(ownHeaders) ? readFileSync(ownHeaders, "utf8") : undefined,
@@ -685,6 +702,15 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             (await copyAgentFiles(entry.agentsRoot, dir, folder))
           )
             logger.info(`copied llms.txt and each page's Markdown${where}`);
+          if (entry.agentsRoot !== undefined) {
+            for (const line of olderLines(entry.siteRoot)) {
+              const lineFolder = folderUnder(line.base, base);
+              if (await copyAgentFiles(line.plainRoot, dir, lineFolder))
+                logger.info(
+                  `copied ${line.build}'s llms.txt and each page's Markdown to ${lineFolder}`,
+                );
+            }
+          }
         }
       },
     },

@@ -26,7 +26,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
 | `ascribe lsp` | Runs the language server, speaking the Language Server Protocol over standard input and output. |  |  |
 | `ascribe mcp` | Runs an MCP server, speaking the Model Context Protocol over standard input and output, for an agent that has no shell, or a host that approves tools one by one. |  |  |
-| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, release lines, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources]` | `text`, `json` |
+| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|dimensions\|phrases\|features\|glossary\|widgets\|releases\|builds\|sources]` | `text`, `json` |
 | `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. | `[--check]` | `text`, `json` |
@@ -102,7 +102,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-217 in all. By severity: 37 advice, 156 error, 24 warning. By level: 193 file, 24 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 136 write.
+218 in all. By severity: 37 advice, 157 error, 24 warning. By level: 193 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 137 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -323,6 +323,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC219` | `replaces-same-page` | error | write | `{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line |
 | `ASC220` | `link-into-older-line` | advice | write | `{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place |
 | `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
+| `ASC222` | `listing-loosened-in-line` | error | write | this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there |
 
 ## The VS Code extension
 
@@ -596,6 +597,7 @@ What a site imports:
 | `@ascribed/astro/MissingPermalink.astro` | An import |
 | `@ascribed/astro/Head.astro` | An import |
 | `@ascribed/astro/Versions.astro` | An import |
+| `@ascribed/astro/VersionBanner.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |

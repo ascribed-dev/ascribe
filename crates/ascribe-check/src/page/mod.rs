@@ -530,12 +530,12 @@ fn llms_sizes(
     build: &Build,
     pages: &[ResolvedPage],
 ) -> Vec<Found> {
-    let model = index.model();
+    let model = index.model().for_build(build);
     if !model.consumer.agents {
         return Vec::new();
     }
     let mut found = Vec::new();
-    for file in llms::llms_files(model, &pages::records(model, pages)) {
+    for file in llms::llms_files(&model, build, &pages::records(&model, pages)) {
         let size = file.chars();
         if size <= llms::LLMS_TXT_LIMIT {
             continue;

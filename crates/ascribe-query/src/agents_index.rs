@@ -83,6 +83,8 @@ pub fn agents_index(
     folder: Option<&str>,
     limit: usize,
 ) -> Result<AgentsIndex, QueryError> {
+    // An older line's pages are routed under its folder.
+    let project = &*project.for_build(build);
     let model = project.model();
     let router = AstroRouter::from_consumer(&model.consumer);
     let resolved = project.resolve_build(build, &router);

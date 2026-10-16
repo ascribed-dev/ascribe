@@ -160,6 +160,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-listing-type` | A key of `[listing.types]` is a content type. | `` `{type}` in `[listing.types]` isn't a content type; use one of: {values} `` |
 | `model-listing-looser` | No rule is looser than a folder's it's under, or than `default`. | `` `{rule}` is looser than `{wider}` on line {line}, which it's under; a narrower rule can only restrict ``<br>`` `{rule}` is looser than the site's `{wider}` on line {line}; with that default, no folder or type can be listed more openly `` |
 
+@available: next
+`model-listing-looser` holds `older-lines` to `default` too.
+
 ---
 
 ## 25. Map of SPEC §7.2 to this file

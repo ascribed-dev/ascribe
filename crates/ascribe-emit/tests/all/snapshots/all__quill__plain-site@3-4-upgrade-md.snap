@@ -2,6 +2,8 @@
 source: crates/ascribe-emit/tests/all/quill.rs
 expression: text
 ---
+> Documentation for self-managed 3.4. The current version is 3.5: <https://docs.quill.dev/upgrade/>.
+
 # Upgrade the agent
 
 Available: self-managed (GA)

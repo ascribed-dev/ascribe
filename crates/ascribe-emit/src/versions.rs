@@ -1,8 +1,10 @@
 //! `_ascribe/versions.json`: what every line of each versioned build knows
 //! about the others (output layout contract §1.5). It's above the builds'
 //! folders, the one file the builds share, and says, for each versioned
-//! build, its target, its lines, newest first, each page's route in each
-//! line that publishes it, and which page replaces which.
+//! build, its target and the target's label, its live lines, newest first,
+//! with the day each one's support ends, the lines that have left, with
+//! where each can still be read, each page's route in each line that
+//! publishes it, and which page replaces which.
 
 use std::collections::BTreeMap;
 
@@ -28,16 +30,29 @@ struct Versions<'a> {
 #[derive(Serialize)]
 struct VersionedBuild<'a> {
     target: &'a str,
+    label: &'a str,
     lines: Vec<Line<'a>>,
     pages: BTreeMap<String, Page<'a>>,
 }
 
+/// A live line, with its output, or an archived one, with none.
 #[derive(Serialize)]
 struct Line<'a> {
     line: &'a str,
     status: &'static str,
-    build: &'a str,
-    base: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    build: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base: Option<String>,
+    /// A live line's last day of support, from `ends`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ends: Option<String>,
+    /// Where an archived line can still be read.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    url: Option<&'a str>,
+    /// The day an archived line's support ended.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ended: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -86,15 +101,23 @@ pub fn versions_json(index: &Project) -> Result<Option<String>, EmitError> {
             .entry(build.declared_name())
             .or_insert_with(|| VersionedBuild {
                 target,
+                label: model.value_label(target).unwrap_or(target),
                 lines: Vec::new(),
                 pages: BTreeMap::new(),
             });
         let router = AstroRouter::from_consumer(&model.for_build(build).consumer);
+        let ends = model
+            .releases_of(target)
+            .and_then(|r| r.ends.iter().find(|e| e.line.text == line.line.text))
+            .map(|e| e.date.to_string());
         entry.lines.push(Line {
             line: &line.line.text,
             status: if line.current { "current" } else { "live" },
-            build: &build.name,
-            base: line_base(model, build),
+            build: Some(&build.name),
+            base: Some(line_base(model, build)),
+            ends,
+            url: None,
+            ended: None,
         });
         for page in index.pages() {
             if index.dropped(&page.path, build).is_none() {
@@ -110,6 +133,24 @@ pub fn versions_json(index: &Project) -> Result<Option<String>, EmitError> {
                     .0
                     .push((&line.line.text, router.route(&page.path)));
             }
+        }
+    }
+    // The lines that have left the window, after the live ones, newest
+    // first, as the list has them.
+    for entry in builds.values_mut() {
+        let Some(releases) = model.releases_of(entry.target) else {
+            continue;
+        };
+        for archived in &releases.archived {
+            entry.lines.push(Line {
+                line: &archived.line.text,
+                status: "archived",
+                build: None,
+                base: None,
+                ends: None,
+                url: archived.url.as_deref(),
+                ended: archived.ended.map(|d| d.to_string()),
+            });
         }
     }
     // Which page replaces which, between pages a line publishes, so a site

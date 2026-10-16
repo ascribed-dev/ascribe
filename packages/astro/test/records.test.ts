@@ -135,6 +135,27 @@ describe("sitemapAddresses", () => {
     ]);
   });
 
+  it("leaves out an older line's page whose canonical address is the current line's", () => {
+    const at = (route: string, canonical?: string): PageRecord => ({
+      ...page(route),
+      ...(canonical === undefined ? {} : { canonical: `https://docs.example.com${canonical}` }),
+    });
+    expect(
+      sitemapAddresses({
+        ...base,
+        projects: [
+          [at("/docs/install", "/docs/install")],
+          [at("/docs/3.4/install", "/docs/install"), at("/docs/3.4/old", "/docs/3.4/old")],
+          [at("/docs/3.4/bare")],
+        ],
+      }),
+    ).toEqual([
+      "https://docs.example.com/docs/3.4/bare",
+      "https://docs.example.com/docs/3.4/old",
+      "https://docs.example.com/docs/install",
+    ]);
+  });
+
   it("leaves out a project's pages that have no route in the site", () => {
     expect(
       sitemapAddresses({

@@ -2,6 +2,8 @@
 source: crates/ascribe-emit/tests/all/quill.rs
 expression: text
 ---
+> Documentation for self-managed 3.5.
+
 # Configure the agent
 
 Available: self-managed (GA, 3.5+)
