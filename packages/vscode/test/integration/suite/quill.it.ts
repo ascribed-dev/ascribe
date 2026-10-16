@@ -118,7 +118,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
   }
 
   const linkToRotate =
-    "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)";
+    "      A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)";
 
   it("says what the page is, and narrows its connections to the heading at the cursor", async () => {
     const api = await activated();
