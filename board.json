@@ -2329,7 +2329,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Versions: `ascribe versions archive` renders a line into a folder of HTML"
     },
     {
@@ -2414,7 +2414,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBHBHo",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Name the line in `ascribe agents index` of an older line"
     }
   ]
