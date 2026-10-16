@@ -2,7 +2,9 @@ description: >-
   When every build that publishes a mark's content is versioned by its
   target or filtered for it in the window, a mark whose versions are all at
   or before the oldest live line is advice, offered the mark without them,
-  keeping its state; and content in no live or planned line is a warning.
+  keeping its state; a version inside the oldest line but after its start,
+  which that line's output shows, isn't; and content in no live or planned
+  line is a warning.
   A build filtered for another target publishes only content that names it.
 spec: ["4.4", "9.3"]
 tags: [check]
@@ -11,5 +13,4 @@ diagnostics:
   - {slug: available-same-in-every-line, file: ascribe.toml, line: 22, column: 14}
   - {slug: available-same-in-every-line, file: index.md, line: 6, column: 13}
   - {slug: available-same-in-every-line, file: index.md, line: 9, column: 13}
-  - {slug: available-same-in-every-line, file: index.md, line: 12, column: 13}
   - {slug: available-in-no-line, file: index.md, line: 15, column: 13}
