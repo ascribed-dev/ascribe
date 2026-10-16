@@ -1,1 +1,0 @@
-- **`Versions.astro` lists the lines of the page a page replaces, and of the page that replaces it.** A page rewritten under a new path and its old page link to each other, from `replaces` and `replaced-by` in `versions.json`. See [Publish with Astro](docs/content/versions/index.md#publish-with-astro).

@@ -192,7 +192,7 @@ In the editor, `listing:` in a page's frontmatter completes its three values, an
 
 **Rules.** Each value is one of the three (`model-invalid-value`). A folder is a path from the content root ending in `/`, with no `.` or `..` part or pattern characters, of a folder that's there, with its name's case as on disk (`model-listing-folder`). A type is one the project declares, or `page` when it declares none (`model-listing-type`). A rule isn't looser than a folder's it's under, or than `default` (`model-listing-looser`). A page isn't looser than a rule it's under (`listing-loosened`). No other key is allowed in `[listing]` (`model-unknown-key`).
 
-@available: next
+@available: ascribe 0.3.2
 In an older line of a versioned build, a page isn't looser than `older-lines` either (`listing-loosened-in-line`).
 
 ---

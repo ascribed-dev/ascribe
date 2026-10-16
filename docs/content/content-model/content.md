@@ -35,16 +35,16 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `live` {available=next} | array of strings (versions) | `[]` | The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each. |
-| `planned` {available=next} | array of strings (versions) | `[]` | Lines that haven't shipped, each newer than every live line. A version in one is **planned**: its availability reads `Self-managed (planned, 3.6)` in every output, and stops being planned when its line moves to `live`, with no other edit. |
-| `ends` {available=next} | table of dates | none | The last day each live line is supported, by line: `"3.4" = 2027-01-31`, a TOML date, unquoted. |
-| `archived` {available=next} | table of tables | none | Lines that have left the window, each older than every live line, by line. Each takes `url`, where the line can still be read, and `ended`, the day its support ended, both optional: `"3.2" = {}` declares a line that's readable nowhere. |
+| `live` {available="ascribe 0.3.2"} | array of strings (versions) | `[]` | The lines a reader can be on, in any order. A build [versioned](output.md#16-buildsname) by the target gives one output for each. |
+| `planned` {available="ascribe 0.3.2"} | array of strings (versions) | `[]` | Lines that haven't shipped, each newer than every live line. A version in one is **planned**: its availability reads `Self-managed (planned, 3.6)` in every output, and stops being planned when its line moves to `live`, with no other edit. |
+| `ends` {available="ascribe 0.3.2"} | table of dates | none | The last day each live line is supported, by line: `"3.4" = 2027-01-31`, a TOML date, unquoted. |
+| `archived` {available="ascribe 0.3.2"} | table of tables | none | Lines that have left the window, each older than every live line, by line. Each takes `url`, where the line can still be read, and `ended`, the day its support ended, both optional: `"3.2" = {}` declares a line that's readable nowhere. |
 
 `[releases]` itself takes one key beside the targets' tables:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `planned-label` {available=next} | string | `"planned"` | The word a reader sees for a planned version, in place of its state: `Self-managed (planned, 3.6)`. |
+| `planned-label` {available="ascribe 0.3.2"} | string | `"planned"` | The word a reader sees for a planned version, in place of its state: `Self-managed (planned, 3.6)`. |
 
 **Rules.** `<target>` is a declared dimension value that isn't versionless (`model-releases-target`). Each line is a version, quoted, listed once, and every line of one target, in every list, has the same number of parts (`model-releases-line`). A line is in one list, planned lines are newer than every live line, and archived lines older (`model-releases-order`). A line in `ends` is a live line (`model-releases-ends`), and a date is a TOML date (`model-wrong-type`). Any other key is an error (`model-unknown-key`).
 

@@ -79,7 +79,7 @@ checksum = "7d902e3d592a523def97af8f317b08ce16b7ab854c1985a0c671e6f15cebc236"
 
 [[package]]
 name = "ascribe-check"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-core",
  "ascribe-emit",
@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-cli"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ariadne",
  "ascribe-check",
@@ -127,7 +127,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-commonmark-suite"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "comrak",
  "comrak-ascribe",
@@ -139,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-conformance"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
@@ -159,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-core"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "proptest",
  "serde",
@@ -169,7 +169,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-corpora"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-diff"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
@@ -208,7 +208,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-emit"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-core",
  "ascribe-model",
@@ -228,7 +228,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-fmt"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-commonmark-suite",
  "ascribe-core",
@@ -242,7 +242,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-lsp"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-mcp"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -277,7 +277,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-model"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-core",
  "serde_yaml_ng",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-query"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-resolve"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-core",
  "ascribe-model",
@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-sources"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
@@ -332,7 +332,7 @@ dependencies = [
 
 [[package]]
 name = "ascribe-syntax"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-commonmark-suite",
  "ascribe-core",
@@ -342,11 +342,11 @@ dependencies = [
 
 [[package]]
 name = "ascribe-synthetic"
-version = "0.3.1"
+version = "0.3.2"
 
 [[package]]
 name = "ascribe-templates"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "ascribe-check",
  "ascribe-core",

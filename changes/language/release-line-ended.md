@@ -1,1 +1,0 @@
-- **A live line whose support has ended is reported.** `[releases.<target>.ends]` gives each live line's last day of support, and `ascribe check` reports a line whose date has passed as advice, `release-line-ended`, as of today in UTC, or the day `ASCRIBE_TODAY` gives, as `review-overdue` does. See [`ascribe check`](docs/content/checks/check.md).

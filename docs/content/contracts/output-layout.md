@@ -147,7 +147,7 @@ The site output holds `_ascribe/pages.json`: a record of each page the build pub
 
 A page that's `unlisted` isn't in `llms.txt`. A later version may add keys to the file, to an entry, or to `robots`; it doesn't change these.
 
-@available: next
+@available: ascribe 0.3.2
 In an older line of a versioned build (§1.5), a page's `canonical` is the route in the current line of the same page, or of the page the current line publishes in its place, following `replaces` (SPEC §2.1); a page the current line has neither of keeps its own. A site lists a page in its sitemap only when `canonical` is its own address. `listing_from.level` is `older-lines` for `[listing] older-lines`, which only a page of an older line is under, and is named after the type's rule and before `default`.
 
 ### 1.4 The headers
@@ -184,7 +184,7 @@ The site output holds `_ascribe/headers.json`: the response headers the build's 
 Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, such as a list of redirects beside `headers`, or more headers to a rule; it doesn't change these.
 
 ### 1.5 The versions file
-@available: next
+@available: ascribe 0.3.2
 
 A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/versions.json`: for each versioned build, its lines and which of them publishes each page, at which route, so a site can link a page to the same page in another line. It's above the builds' folders, the one file they share, and it's owned through the folder's own manifest, `_ascribe/manifest.json`, in the format of §3, so the rules of §2 and §4 hold for it as for an emitter root. Every `ascribe build` of a project with `[releases]` writes it, for every versioned build, whichever builds it was asked for. The first build of a project without `[releases]` removes it, then the manifest, then the folder when nothing else is in it. An `_ascribe` folder that has files and no manifest isn't Ascribe's: a build that would write there fails and leaves it alone, and one that wouldn't leaves it alone too.
 
