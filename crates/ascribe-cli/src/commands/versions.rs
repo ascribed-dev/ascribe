@@ -1514,7 +1514,6 @@ fn counted(unused: &[UnusedJson], mark_kind: bool) -> String {
     }
 }
 
-/// What's left in no line, and the marks that say nothing: counted, or,
 /// The command that runs `flag` next. After a dry run the line is still
 /// live, and the command needs its `--url`: listing stays a dry run, and
 /// removing retires it. Once it's retired, the flag alone.
@@ -1529,6 +1528,7 @@ fn retire_with(json: &RetireJson, args: &RetireArgs, flag: &str) -> String {
     }
 }
 
+/// What's left in no line, and the marks that say nothing: counted, or,
 /// with `--show-unused` or `--remove-unused`, each listed.
 fn write_unused_lines(
     out: &mut dyn Write,
