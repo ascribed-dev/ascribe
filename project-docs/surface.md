@@ -102,7 +102,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-217 in all. By severity: 37 advice, 156 error, 24 warning. By level: 193 file, 24 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 136 write.
+218 in all. By severity: 37 advice, 157 error, 24 warning. By level: 193 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 137 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -323,6 +323,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC219` | `replaces-same-page` | error | write | `{build}` publishes both `{path}` and `{other}`, which each replace `{replaced}`; one page takes its place in a line |
 | `ASC220` | `link-into-older-line` | advice | write | `{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place |
 | `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
+| `ASC222` | `listing-loosened-in-line` | error | write | this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there |
 
 ## The VS Code extension
 
@@ -596,6 +597,7 @@ What a site imports:
 | `@ascribed/astro/MissingPermalink.astro` | An import |
 | `@ascribed/astro/Head.astro` | An import |
 | `@ascribed/astro/Versions.astro` | An import |
+| `@ascribed/astro/VersionBanner.astro` | An import |
 | `@ascribed/astro/content` | An import |
 | `@ascribed/astro/permalinks` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |

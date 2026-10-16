@@ -181,6 +181,74 @@ fn a_snippet_reads_its_code_at_the_revision_through_its_source() {
 }
 
 #[test]
+fn a_snippet_of_a_tested_example_is_tested_at_the_revision() {
+    // The examples' config and observations are at the source's root, which
+    // its `include` doesn't reach; they're read whatever it says, so the
+    // revision has them too.
+    let repo = Repo::new();
+    let model = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n\
+                 [sources.code]\npath = \"..\"\ninclude = [\"service/src/**\"]\n\
+                 [builds.site]\n";
+    repo.write("site/ascribe.toml", model);
+    repo.write(
+        "site/docs/index.md",
+        "# Home\n\n@snippet: code:service/src/app.py\n",
+    );
+    repo.write("service/src/app.py", "main()\n");
+    repo.write("service/README.md", "# Service\n");
+    repo.write(
+        "ascribe.examples.toml",
+        "include = [\"service/src/**\"]\ntest = \"pytest\"\n\n[environment]\n\
+         python = { label = \"Python\", command = \"python --version\" }\n",
+    );
+    repo.write(
+        "examples.observations/default.toml",
+        &format!(
+            "version = 1\nascribe = \"0.3.1\"\ncommand = \"pytest\"\n\n[environment]\n\
+             os = \"linux\"\narch = \"x64\"\npython = \"Python 3.12.1\"\n\n[files]\n\
+             \"service/src/app.py\" = \"{}\"\n",
+            ascribe_model::example_hash(b"main()\n"),
+        ),
+    );
+    let commit = repo.commit("first");
+
+    let revision = read_at(&repo.path("site"), &commit);
+    assert_eq!(
+        revision.fs.probe(&rel("../ascribe.examples.toml")),
+        Probe::File
+    );
+    assert_eq!(
+        revision
+            .fs
+            .probe(&rel("../examples.observations/default.toml")),
+        Probe::File
+    );
+    // Nothing else outside `include` is listed.
+    assert_eq!(
+        revision.fs.probe(&rel("../service/README.md")),
+        Probe::Missing
+    );
+    let project = revision.project();
+    let page = project.expand(&rel("index.md")).expect("the page");
+    let mut snippets = Vec::new();
+    page.visit(&mut |block| {
+        if let Some(snippet) = &block.snippet {
+            snippets.push(snippet.clone());
+        }
+    });
+    let [snippet] = snippets.as_slice() else {
+        panic!("one snippet, found {}", snippets.len());
+    };
+    let status = snippet.example.as_ref().map(|e| e.status);
+    assert_eq!(status, Some(ascribe_resolve::ExampleStatus::Current));
+    assert!(
+        snippet.info.contains("tested=\"Python 3.12.1 on Linux\""),
+        "{}",
+        snippet.info
+    );
+}
+
+#[test]
 fn a_content_root_above_the_project_folder() {
     let repo = Repo::new();
     repo.write(

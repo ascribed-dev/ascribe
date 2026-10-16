@@ -1,7 +1,8 @@
 // A versioned build in one site: a copy of the example with two live lines
 // of `self-managed`, 3.4 and 3.5, and a page only 3.5 has. One collection
 // holds both lines' pages, 3.5's at `/docs/` and 3.4's at `/docs/3.4/`, each
-// page lists the lines that have it, and `astro dev` rebuilds both.
+// page lists the lines, a 3.4 page says what it is and where the current one
+// is, to a reader and in its head, and `astro dev` rebuilds both.
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import type { Browser, Page } from "playwright-core";
@@ -21,6 +22,7 @@ import { versioned } from "./sites.js";
 let browser: Browser;
 let root: string;
 let server: Awaited<ReturnType<typeof servePreview>>;
+let unlistedServer: Awaited<ReturnType<typeof servePreview>> | undefined;
 
 beforeAll(async () => {
   root = await versioned("versions");
@@ -32,6 +34,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
   await server?.stop();
+  await unlistedServer?.stop();
   await rm(path.join(siteDir, ".e2e-tmp"), { recursive: true, force: true });
 });
 
@@ -78,9 +81,12 @@ describe("a versioned build", () => {
     await home.close();
   });
 
-  it("publishes a page only in the lines that have it, and lists no others", async () => {
+  it("publishes a page only in the lines that have it, and lists the others unlinked", async () => {
     const page = await open(`${BASE}/guides/upgrade`);
-    expect(await page.getByRole("navigation", { name: "Versions" }).count()).toBe(0);
+    expect(await versionsOf(page)).toEqual([{ line: "3.5", href: `${BASE}/guides/upgrade`, own: true }]);
+    expect(
+      await page.getByRole("navigation", { name: "Versions" }).locator("[data-missing]").textContent(),
+    ).toBe("3.4 (not in this version)");
     await page.close();
     const missing = await browser.newPage();
     expect((await missing.goto(`${server.origin}${BASE}/3.4/guides/upgrade`))?.status()).toBe(404);
@@ -124,6 +130,29 @@ describe("a versioned build", () => {
     }
   });
 
+  it("says on an older line's page which version it is, and links to the current one", async () => {
+    const older = await open(`${BASE}/3.4/guides/my-setup`);
+    const banner = older.locator("[data-version-banner]");
+    expect((await banner.textContent())?.replace(/\s+/g, " ").trim()).toBe(
+      "Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.",
+    );
+    expect(await banner.getByRole("link").getAttribute("href")).toBe(`${BASE}/guides/my-setup`);
+    await older.close();
+    const current = await open(`${BASE}/guides/my-setup`);
+    expect(await current.locator("[data-version-banner]").count()).toBe(0);
+    await current.close();
+  });
+
+  it("points an older line's canonical link at the current line's page", async () => {
+    for (const route of [`${BASE}/guides/my-setup`, `${BASE}/3.4/guides/my-setup`]) {
+      const page = await open(route);
+      expect(await page.locator("link[rel=canonical]").getAttribute("href"), route).toBe(
+        `https://docs.example.com${BASE}/guides/my-setup`,
+      );
+      await page.close();
+    }
+  });
+
   it("serves each line's linked files at its base path", async () => {
     for (const base of [BASE, `${BASE}/3.4`]) {
       const response = await fetch(`${server.origin}${base}/_ascribe/files/downloads/loom.yaml`);
@@ -138,15 +167,25 @@ describe("a versioned build", () => {
     );
   });
 
-  it("leaves an older line's pages out of the sitemap, as not the site's own", async () => {
+  it("lists each page in the sitemap once, at the current line's address", async () => {
     const sitemap = await (await fetch(`${server.origin}${BASE}/sitemap.xml`)).text();
     expect(sitemap).toContain(`https://docs.example.com${BASE}/guides/my-setup<`);
     expect(sitemap).not.toContain(`${BASE}/3.4`);
   });
 
-  it("publishes the current line's Markdown for agents, and not an older line's", async () => {
-    expect((await fetch(`${server.origin}${BASE}/guides/my-setup.md`)).status).toBe(200);
-    expect((await fetch(`${server.origin}${BASE}/3.4/guides/my-setup.md`)).status).toBe(404);
+  it("publishes each line's Markdown and llms.txt for agents, an older line's pointing at the current", async () => {
+    const current = await (await fetch(`${server.origin}${BASE}/guides/my-setup.md`)).text();
+    expect(current).toContain("> Documentation for Self-managed 3.5.");
+    const older = await fetch(`${server.origin}${BASE}/3.4/guides/my-setup.md`);
+    expect(older.status).toBe(200);
+    expect(await older.text()).toContain(
+      `The current version is 3.5: <https://docs.example.com${BASE}/guides/my-setup>.`,
+    );
+    const index = await (await fetch(`${server.origin}${BASE}/3.4/llms.txt`)).text();
+    expect(index).toMatch(/^# .* \(Self-managed 3\.4\)\n/);
+    expect(index).toContain(`[llms.txt](https://docs.example.com${BASE}/llms.txt)`);
+    expect(index).toContain(`(https://docs.example.com${BASE}/3.4/guides/my-setup.md)`);
+    expect(index).not.toContain("upgrade");
   });
 
   it("rebuilds every line in astro dev", async () => {
@@ -165,4 +204,26 @@ describe("a versioned build", () => {
       await dev.stop();
     }
   }, 90_000);
+});
+
+describe("a versioned build that keeps its older lines out of an index", () => {
+  it("marks every older page noindex, and leaves it out of the sitemap and llms.txt", async () => {
+    const root = await versioned("versions-unlisted");
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.includes("[listing]")
+        ? text.replace("[listing]", '[listing]\nolder-lines = "unlisted"')
+        : `${text}\n[listing]\nolder-lines = "unlisted"\n`,
+    );
+    await buildSite(root);
+    const unlisted = await servePreview(root);
+    unlistedServer = unlisted;
+    const page = await browser.newPage();
+    await page.goto(`${unlisted.origin}${BASE}/3.4/guides/my-setup`);
+    expect(await page.locator('meta[name="robots"]').getAttribute("content")).toContain("noindex");
+    await page.close();
+    const sitemap = await (await fetch(`${unlisted.origin}${BASE}/sitemap.xml`)).text();
+    expect(sitemap).not.toContain(`${BASE}/3.4`);
+    const index = await (await fetch(`${unlisted.origin}${BASE}/3.4/llms.txt`)).text();
+    expect(index).not.toContain("my-setup.md");
+  });
 });

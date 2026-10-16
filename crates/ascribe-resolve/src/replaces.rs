@@ -30,11 +30,17 @@ pub fn replaces_target(written: &str, page: &RelPath, model: &ContentModel) -> O
 /// Where a page's `replaces` value is written in its file: its value on the
 /// frontmatter's top-level `replaces` line. `None` when the page has none.
 pub fn replaces_span(index: &FileIndex) -> Option<Span> {
+    frontmatter_value_span(index, REPLACES)
+}
+
+/// Where a top-level frontmatter key's value is written in a page's file.
+/// `None` when the page has no such line.
+pub(crate) fn frontmatter_value_span(index: &FileIndex, key: &str) -> Option<Span> {
     let fm = index.document.frontmatter.as_ref()?;
     let text = index.source.get(fm.content.range())?;
     let line = frontmatter_lines(text)
         .into_iter()
-        .find(|l| l.indent == 0 && l.item.is_none() && l.key == Some(REPLACES))?;
+        .find(|l| l.indent == 0 && l.item.is_none() && l.key == Some(key))?;
     let start = fm.content.start() + line.value_start;
     Some(Span::new(start, start + line.value.len()))
 }

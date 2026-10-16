@@ -320,7 +320,11 @@ impl<'p> BuildResolver<'p> {
             .and_then(|l| l.as_str())
             .and_then(Listing::from_name);
         let type_name = index.content_type(model).map(|t| t.name.as_str());
-        let (listing, listing_from) = model.listing_of(path.as_str(), type_name, own);
+        let older_line = self.build.line.as_ref().is_some_and(|l| !l.current);
+        let (listing, listing_from) = model.listing_in(path.as_str(), type_name, own, older_line);
+        if older_line {
+            problems.extend(listing_loosened_in_line(model, index, type_name, own));
+        }
         // Step 5: heading ids.
         ids::assign(project, &mut blocks, self.slugger.as_ref());
         // Acknowledgements (SPEC §4.9) are for the checks: no output shows
@@ -340,6 +344,7 @@ impl<'p> BuildResolver<'p> {
             permalink,
             listing,
             listing_from,
+            current_page: None,
             blocks,
             assets: Vec::new(),
             problems,
@@ -355,6 +360,7 @@ impl<'p> BuildResolver<'p> {
         links::resolve(self, &mut page);
         // Step 7: glossary.
         glossary::link_terms(self, &mut page);
+        page.current_page = self.current_page(path);
         Some(page)
     }
 
@@ -378,6 +384,40 @@ impl<'p> BuildResolver<'p> {
             dropped,
         }
     }
+}
+
+/// A page of an older line whose own `listing` is looser than `[listing]
+/// older-lines` (`listing-loosened-in-line`). A page looser than a rule it's under in
+/// every build is the file-level check's to report, so it isn't reported
+/// here again.
+fn listing_loosened_in_line(
+    model: &ascribe_model::ContentModel,
+    index: &crate::index::FileIndex,
+    type_name: Option<&str>,
+    own: Option<Listing>,
+) -> Option<crate::expand::PageProblem> {
+    let own = own?;
+    let rule = model.listing.older_lines.as_ref()?;
+    if own >= rule.listing
+        || model
+            .listing_rule(index.path.as_str(), type_name)
+            .is_some_and(|r| own < r.listing)
+    {
+        return None;
+    }
+    let span = crate::replaces::frontmatter_value_span(index, Listing::KEY)?;
+    let issue = ascribe_core::Issue::new(
+        ascribe_core::diagnostics::LISTING_LOOSENED_IN_LINE,
+        ascribe_core::Location::new(index.file, span),
+    )
+    .with_arg("listing", own.name())
+    .with_arg("rule", rule.text.clone())
+    .with_arg("line", rule.line.to_string())
+    .with_arg("strict", rule.listing.name());
+    Some(crate::expand::PageProblem {
+        issue,
+        via: Arc::from(Vec::new()),
+    })
 }
 
 /// The frontmatter key and the directive that acknowledge a problem as

@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::ContentModel;
+use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
 use ascribe_resolve::{
     FileSystem, Layout, Probe, Project, Sources, in_nested_project, is_source_path,
 };
@@ -248,8 +249,9 @@ impl GitFs {
 /// The folders, from the repository's root, that a project at `project_dir`
 /// reads: its own, its content root's, and, for each source, the part of its
 /// folder its `include` patterns can reach (the patterns' segments before
-/// the first wildcard). One outside the repository is left out: nothing
-/// there can be read.
+/// the first wildcard), with its tested examples' `ascribe.examples.toml` and
+/// observations, which are read whatever `include` says. One outside the
+/// repository is left out: nothing there can be read.
 fn listed(project_dir: &RelPath, layout: &Layout, model: &ContentModel) -> Vec<RelPath> {
     let mut out = vec![project_dir.clone()];
     out.extend(project_dir.join(layout.content_root.as_str()).ok());
@@ -261,6 +263,8 @@ fn listed(project_dir: &RelPath, layout: &Layout, model: &ContentModel) -> Vec<R
             out.push(folder);
             continue;
         }
+        out.extend(folder.join(EXAMPLES_FILE).ok());
+        out.extend(folder.join(OBSERVATIONS_FOLDER).ok());
         for pattern in &source.include {
             let fixed: Vec<&str> = pattern
                 .as_str()

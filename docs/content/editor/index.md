@@ -56,7 +56,9 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - **Add a stable @id for this heading**, for a heading whose id could change.
 - Did-you-mean corrections for misspelled directives, attributes, and frontmatter keys.
 - **Remove** text on a directive line that isn't part of the directive.
-- **Copy the command** {available=next}, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
+
+@available: next
+- **Copy the command**, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
 ### Prompt agent
 
@@ -84,11 +86,13 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.
 - In an attribute block: the directive's attribute keys, then their allowed values, such as note types or a dimension's values with their labels. After an image: the declared image attributes.
 - In `@available:` and frontmatter `available:`: targets, dimension names, feature keys, and lifecycle states.
-- In frontmatter `type:` {available="ascribe 0.3.1"}: the content types `ascribe.toml` declares, each with what it's for.
+- In frontmatter `type:`: the content types `ascribe.toml` declares, each with what it's for.
 - After `{` in text: the declared phrases, each with its value.
-- In a source's [`ascribe.examples.toml`](../examples/tested.md) {available=next}: its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.
+
+@available: next
+- In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
 ### Hover
 
@@ -96,7 +100,9 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - A phrase: its value.
 - An availability spec or feature key: what it means, in the words the published site uses.
 - A directive or attribute key: its description. A dimension key: its values and labels.
-- A `@snippet`'s address {available=next}: its file, as a link that opens it, and its region and lines. For a [tested example](../examples/tested.md), what it was tested with, "Changed after its last test run", or "Not tested", with the observations behind it, and where to run `ascribe observe`.
+
+@available: next
+- A `@snippet`'s address: its file, as a link that opens it, and its region and lines. For a [tested example](../examples/tested.md), what it was tested with, "Changed after its last test run", or "Not tested", with the observations behind it, and where to run `ascribe observe`.
 
 ### Navigation
 

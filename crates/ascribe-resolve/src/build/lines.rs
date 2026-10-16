@@ -85,6 +85,26 @@ impl<'p> BuildResolver<'p> {
         }
     }
 
+    /// In an older line, the page the current line publishes in `path`'s
+    /// place: `path` itself, or else the page `replaces` links it with,
+    /// nearest along the chain first (SPEC §9.3). `None` in the current line,
+    /// in a build that isn't versioned, and when the current line has
+    /// neither.
+    pub(crate) fn current_page(&self, path: &RelPath) -> Option<RelPath> {
+        if self.build.line.as_ref()?.current {
+            return None;
+        }
+        let current = self
+            .lines()
+            .into_iter()
+            .find(|b| b.line.as_ref().is_some_and(|l| l.current))?;
+        let current = self.line_resolver(current);
+        if current.is_published(path) {
+            return Some(path.clone());
+        }
+        current.replacement(path)
+    }
+
     /// The page this line publishes in `target`'s place: one of the pages
     /// `replaces` links it with, either way, nearest along the chain first,
     /// and a page that replaces before the page it replaces.

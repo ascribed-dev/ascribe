@@ -171,7 +171,7 @@ Back to [setting up Loom](<My Setup.md>).
 /**
  * A copy whose build is versioned: two live lines of `self-managed`, 3.4 and
  * 3.5, so the site serves 3.5's pages at `/docs/` and 3.4's at `/docs/3.4/`,
- * and a page only 3.5 has.
+ * 3.4's support ending on 31 January 2027, and a page only 3.5 has.
  */
 export async function versioned(name: string): Promise<string> {
   const root = await copySite(name);
@@ -179,7 +179,7 @@ export async function versioned(name: string): Promise<string> {
     text
       .replace(
         'availability = "badge"',
-        'availability = "badge"\nversions = "self-managed"\n\n[releases.self-managed]\nlive = ["3.4", "3.5"]',
+        'availability = "badge"\nversions = "self-managed"\n\n[releases.self-managed]\nlive = ["3.4", "3.5"]\n\n[releases.self-managed.ends]\n"3.4" = 2027-01-31',
       ),
   );
   await write(root, { "content/Guides/Upgrade.md": UPGRADE_PAGE });

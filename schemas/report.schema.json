@@ -881,7 +881,7 @@
           ]
         },
         "level": {
-          "description": "`default` when nothing sets it, `page` for the page's own `listing`,\nor the level of the rule of `[listing]` it's under: `site`,\n`folder`, or `type`.",
+          "description": "`default` when nothing sets it, `page` for the page's own `listing`,\nor the level of the rule of `[listing]` it's under: `site`,\n`older-lines`, `folder`, or `type`.",
           "type": "string"
         },
         "line": {

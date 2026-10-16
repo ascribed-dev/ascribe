@@ -690,6 +690,9 @@ pub const LINK_INTO_OLDER_LINE: DiagnosticSlug = DiagnosticSlug("link-into-older
 /// `ASC221`, advice, page level: a content check (area `pages`).
 pub const LINK_FRAGMENT_DROPPED: DiagnosticSlug = DiagnosticSlug("link-fragment-dropped");
 
+/// `ASC222`, error, page level: SPEC §8.2, "Frontmatter | `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes (page level, per build)".
+pub const LISTING_LOOSENED_IN_LINE: DiagnosticSlug = DiagnosticSlug("listing-loosened-in-line");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -909,6 +912,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     REPLACES_SAME_PAGE,
     LINK_INTO_OLDER_LINE,
     LINK_FRAGMENT_DROPPED,
+    LISTING_LOOSENED_IN_LINE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

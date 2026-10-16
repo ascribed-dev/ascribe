@@ -348,6 +348,19 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Read more:** [A page that replaces another](../writing/directives.md#a-page-that-replaces-another) in the directive reference.
 
+### ASC222 `listing-loosened-in-line`
+@id {permalink=true}: ASC222
+
+Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes.
+
+**Message:** this page is `{listing}`, and `{rule}` on line \{line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there
+
+**Fix:** Remove the page's `listing`, which the rule already sets in an older line, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list an older line's pages more openly, change `older-lines` in `[listing]`.
+
+**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+
 ## Lists
 
 ### ASC052 `list-ended-by-directive`
