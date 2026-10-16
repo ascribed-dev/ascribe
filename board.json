@@ -2264,8 +2264,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/515"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Versions: what a reader and a crawler are told about an older line"
     },
     {
@@ -2283,8 +2286,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/514"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Versions: the editor, review, and the tools show a page once"
     },
     {
@@ -2373,8 +2379,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/508"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBFCVA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/513"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`ascribe versions changes`: a page that `replaces` another is one entry"
     },
     {
@@ -2387,9 +2396,26 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/509"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBFCZk",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/511"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "docs: a literal `{available=next}` in a list item in editor/index.md isn't a mark"
+    },
+    {
+      "content": {
+        "body": "From the review of #515: `ascribe agents index --build site@3.4` on quill (with `agents = true`) gives a heading of `## docs.quill.dev`, while that line's `llms.txt` says `# docs.quill.dev (self-managed 3.4)` (decision 57 in `project-docs/versions/README.md`). An index pasted into a product's `AGENTS.md` is read without its address bar, so it should name the line too, the same way `llms.txt` does, for a build with more than one live line.\n\nWhere: `crates/ascribe-resolve/src/llms.rs` (`compact_index`, and `line_header`, which `llms_files` uses), called from `crates/ascribe-query/src/agents_index.rs`.",
+        "number": 516,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Name the line in `ascribe agents index` of an older line",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/516"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBHBHo",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Name the line in `ascribe agents index` of an older line"
     }
   ]
 }
