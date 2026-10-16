@@ -32,7 +32,7 @@
 mod anchor;
 pub(crate) mod blocks;
 mod element;
-mod frontmatter;
+pub(crate) mod frontmatter;
 mod headers;
 mod inline;
 mod pages;

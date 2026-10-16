@@ -1,6 +1,6 @@
 # Design
 
-Ascribe's mark and design tokens, and the images made from them. Everything Ascribe shows takes its colors, type, and mark from here: the docs site, the element library, review, the HTML report, the Astro toolbar, and the VS Code extension. The decisions behind them are under [The look](../project-docs/decisions.md#the-look) in `project-docs/decisions.md`.
+Ascribe's mark and design tokens, and the images made from them. Everything Ascribe shows takes its colors, type, and mark from here: the docs site, the element library, review, the HTML report, an archive, the Astro toolbar, and the VS Code extension. The decisions behind them are under [The look](../project-docs/decisions.md#the-look) in `project-docs/decisions.md`.
 
 ## The files
 
@@ -66,6 +66,7 @@ Reuse a token when the new use means the same thing: a new panel is `color.surfa
 | `packages/review/src/marks/marks.css` | `--ascribe-review-*`, public |
 | `packages/review/src/overlay/style.ts` | The overlay's own, from `--ascribe-review-*` |
 | `packages/review/src/report/report.css` | `--r-*`, and the element library's in dark |
+| `crates/ascribe-emit/src/archive/archive.css` | `--a-*`, an archive's own; an archive's `style.css` is the element library's, then this |
 | `packages/astro/src/toolbar/style.ts` | The toolbar panel's own |
 | `site/src/styles/site.css` | The docs site's own |
 | `packages/vscode/src/webview/preview.css` | `--ascribe-*` from the editor's theme, with fallbacks |

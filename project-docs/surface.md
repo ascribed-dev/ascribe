@@ -47,6 +47,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
 | `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
+| `ascribe versions archive` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
 
 On every command:
 
@@ -724,6 +725,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/sources-update.schema.json` | SourcesUpdateReport | What `ascribe sources update --format json` writes: how each source's pin moved, and the pages whose examples the new copies change. |
 | `schemas/templates-eject.schema.json` | TemplatesEjectReport | What `ascribe templates eject` did: the files it wrote and the types it added, or, when it refused anything, what it refused, and then it wrote nothing. |
 | `schemas/templates-status.schema.json` | TemplatesStatusReport | What `ascribe templates status` found: for each template the project took, whether the set and the project have changed it since the copy, and each template of the set it doesn't have. |
+| `schemas/versions-archive.schema.json` | VersionsArchiveReport | What `ascribe versions archive --format json` writes: the line, the folder, and what's in it. |
 | `schemas/versions-changes.schema.json` | VersionsChangesReport | What differs between two lines of one target. |
 | `schemas/versions-list.schema.json` | VersionsListReport | Every target's release lines. |
 | `schemas/versions-release.schema.json` | VersionsReleaseReport | What `ascribe versions release --format json` writes: the line released, the files and marks rewritten, the features moved, and what the release changes in the outputs. |
@@ -757,6 +759,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
 | `content-model/index.md` | `ascribe.toml` reference | reference |
 | `content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
+| `contracts/archive.md` | Archive contract | reference |
 | `contracts/assets.md` | Asset contract | reference |
 | `contracts/content-model.md` | `ascribe.toml` format contract | reference |
 | `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing | reference |

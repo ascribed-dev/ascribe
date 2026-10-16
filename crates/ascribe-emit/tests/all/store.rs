@@ -507,3 +507,72 @@ fn a_manifest_that_lists_a_path_on_a_drive_is_refused() {
     let err = replace(&out, "site", &[page("a.md", "A")]).expect_err("a bad entry");
     assert!(matches!(err, StoreError::BadEntry { .. }), "{err}");
 }
+
+#[test]
+fn an_archive_is_written_at_the_top_of_its_folder_with_its_manifest_beside() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let dir = tmp.path().join("archive");
+    let output = OutputDir::lock_archive(&dir).expect("lock");
+    output
+        .replace_archive(
+            "site@3.4",
+            &[page("a.html", "A"), page("guide/b.html", "B")],
+        )
+        .expect("write");
+    assert_eq!(read(&dir.join("a.html")), "A");
+    assert_eq!(read(&dir.join("guide/b.html")), "B");
+    let manifest = read(&dir.join("archive.manifest.json"));
+    assert!(manifest.contains("\"build\": \"site@3.4\""), "{manifest}");
+    assert!(manifest.contains("\"emitter\": \"archive\""), "{manifest}");
+    assert!(!dir.join(".staging").exists());
+}
+
+#[test]
+fn an_archive_written_again_replaces_what_its_manifest_lists_and_nothing_else() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let dir = tmp.path().join("archive");
+    OutputDir::lock_archive(&dir)
+        .and_then(|o| o.replace_archive("site@3.4", &[page("a.html", "A"), page("b.html", "B")]))
+        .expect("first");
+    write(&dir.join("notes.txt"), "mine");
+    let replaced = OutputDir::lock_archive(&dir)
+        .and_then(|o| o.replace_archive("site@3.4", &[page("a.html", "A2")]))
+        .expect("second");
+    assert_eq!(replaced.removed, 1);
+    assert_eq!(read(&dir.join("a.html")), "A2");
+    assert!(!dir.join("b.html").exists());
+    assert_eq!(read(&dir.join("notes.txt")), "mine");
+}
+
+#[test]
+fn a_folder_that_isnt_empty_or_an_archive_is_refused_and_left_as_it_was() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let dir = tmp.path().join("folder");
+    write(&dir.join("index.html"), "someone else's");
+    let err = OutputDir::lock_archive(&dir).expect_err("refused");
+    assert!(matches!(err, StoreError::NotEmpty { .. }), "{err}");
+    assert_eq!(ascribe_core::Coded::code(&err), "archive_folder_not_empty");
+    assert!(!dir.join(".lock").exists());
+    assert_eq!(read(&dir.join("index.html")), "someone else's");
+}
+
+#[test]
+fn a_folder_a_run_left_only_its_lock_and_staging_in_is_still_empty() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let dir = tmp.path().join("archive");
+    write(&dir.join(".lock"), "");
+    fs::create_dir_all(dir.join(".staging")).expect("staging");
+    OutputDir::lock_archive(&dir)
+        .and_then(|o| o.replace_archive("site@3.4", &[page("a.html", "A")]))
+        .expect("written");
+    assert_eq!(read(&dir.join("a.html")), "A");
+}
+
+#[test]
+fn an_archive_file_cant_take_the_manifests_name() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let err = OutputDir::lock_archive(tmp.path())
+        .and_then(|o| o.replace_archive("site@3.4", &[page("archive.manifest.json", "x")]))
+        .expect_err("refused");
+    assert!(matches!(err, StoreError::Conflicts(_)), "{err}");
+}

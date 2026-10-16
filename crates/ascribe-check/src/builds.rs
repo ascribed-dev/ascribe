@@ -134,6 +134,24 @@ pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, Unknow
         .count())
 }
 
+/// How many errors [`diagnose`] would report for one build, which needn't be
+/// one the content model declares: `ascribe versions archive` checks a
+/// planned line's build, made for it by
+/// [`ContentModel::line_build`](ascribe_model::ContentModel::line_build).
+/// As [`count_errors`], without the checks that can't report one.
+pub fn count_errors_in(project: &Project, build: &Build) -> usize {
+    let checker = PageChecker::new(project).errors_only();
+    let mut diagnostics = check_files_with(project, Some(&checker));
+    diagnostics.extend(checker.check_builds(&[build]));
+    let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    Acknowledgements::of(project)
+        .apply(project.model(), diagnostics, false)
+        .diagnostics
+        .iter()
+        .filter(|d| d.severity == crate::Severity::Error)
+        .count()
+}
+
 /// What the language server reports, for `ascribe check --editor-build`:
 /// the file-level diagnostics, and the page-level ones of the editor's build
 /// alone (`[editor] build`; `ContentModel::editor_default_build`), without

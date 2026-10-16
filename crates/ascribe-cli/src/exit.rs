@@ -265,6 +265,22 @@ mod tests {
             "a file release changes can't be written",
         ),
         (
+            "archive_no_build",
+            "no build is versioned by the line's target",
+        ),
+        (
+            "archive_line_archived",
+            "archive's line is archived, so has no output",
+        ),
+        (
+            "archive_has_errors",
+            "the checks found errors in the line's build",
+        ),
+        (
+            "archive_folder_not_empty",
+            "archive's folder has files and isn't an archive",
+        ),
+        (
             "rename_target_missing",
             "rename names something not in the project",
         ),
@@ -349,6 +365,7 @@ mod tests {
                 | StoreError::UnknownVersion { .. }
                 | StoreError::BadEntry { .. }
                 | StoreError::Link { .. }
+                | StoreError::NotEmpty { .. }
                 | StoreError::Conflicts(_)
                 | StoreError::Io { .. } => {}
             }
@@ -508,7 +525,12 @@ mod tests {
                 | VersionsError::BadNext(_)
                 | VersionsError::NoGit { .. }
                 | VersionsError::NotRestorable { .. }
-                | VersionsError::Unwritable { .. } => {}
+                | VersionsError::Unwritable { .. }
+                | VersionsError::ArchiveNoBuild { .. }
+                | VersionsError::ArchiveBuildRequired { .. }
+                | VersionsError::ArchiveUnknownBuild { .. }
+                | VersionsError::ArchiveLineArchived { .. }
+                | VersionsError::ArchiveErrors { .. } => {}
             }
         }
         fn rename_command(e: &RenameCommandError) {
@@ -554,6 +576,7 @@ mod tests {
                     entry: text(),
                 },
                 StoreError::Link { path: text() },
+                StoreError::NotEmpty { dir: text() },
                 StoreError::Conflicts(vec![text()]),
                 StoreError::Io {
                     action: "write",
@@ -839,6 +862,25 @@ mod tests {
             Box::new(VersionsError::Unwritable {
                 path: path(),
                 message: text(),
+            }),
+            Box::new(VersionsError::ArchiveNoBuild { target: text() }),
+            Box::new(VersionsError::ArchiveBuildRequired {
+                target: text(),
+                builds: vec![text()],
+            }),
+            Box::new(VersionsError::ArchiveUnknownBuild {
+                build: text(),
+                target: text(),
+                builds: vec![text()],
+            }),
+            Box::new(VersionsError::ArchiveLineArchived {
+                target: text(),
+                line: text(),
+            }),
+            Box::new(VersionsError::ArchiveErrors {
+                count: 1,
+                build: text(),
+                listed: text(),
             }),
             Box::new(RenameError::Missing(text())),
             Box::new(RenameError::Refused(text())),

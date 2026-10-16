@@ -70,6 +70,17 @@ jobs:
             echo "::error file=ascribe.examples.toml::An example the docs show changed since it was last observed. Run \`cargo run -p ascribe-cli -- observe\` in the repository's root, and commit examples.observations/default.toml."
             exit 1
           }
+      # An archive of examples/quill's older line (`ascribe versions archive`),
+      # kept as an artifact so each pull request has one to open from disk.
+      - if: runner.os == 'Linux'
+        name: Archive examples/quill's 3.4 line
+        run: ./target/debug/ascribe versions archive "self-managed 3.4" --to "$RUNNER_TEMP/quill-archive" --config examples/quill
+      - if: runner.os == 'Linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: quill-archive-3.4
+          path: ${{ runner.temp }}/quill-archive
+          if-no-files-found: error
       # Vale, for crates/ascribe-check/tests/all/vale.rs, which runs a real
       # Vale on Linux and fails there without one. A pinned release, checked
       # against its published checksum.

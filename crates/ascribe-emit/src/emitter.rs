@@ -118,7 +118,20 @@ pub struct PageContext<'a> {
     emitter: &'a dyn Emitter,
 }
 
-impl PageContext<'_> {
+impl<'a> PageContext<'a> {
+    /// The context of a page `emitter` writes at `output`.
+    pub(crate) fn new(
+        emit: &'a EmitContext<'a>,
+        output: RelPath,
+        emitter: &'a dyn Emitter,
+    ) -> PageContext<'a> {
+        PageContext {
+            emit,
+            output,
+            emitter,
+        }
+    }
+
     /// Where this emitter puts an asset a reference on this page uses, and how
     /// the page refers to it.
     pub fn asset(&self, asset: &RelPath, usage: AssetUse) -> Placement {

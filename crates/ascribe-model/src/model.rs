@@ -1451,6 +1451,40 @@ impl ContentModel {
         std::borrow::Cow::Owned(model)
     }
 
+    /// The build that renders `line` of the versioned build declared as
+    /// `build`: the model's own for a live line, and for a planned line one
+    /// made as an older line's is, named `<build>@<line>`, which no output
+    /// of `ascribe build` is. `None` when no build is declared as `build`
+    /// and versioned, or the line is neither live nor planned.
+    pub fn line_build(&self, build: &str, line: &Version) -> Option<Build> {
+        let lines: Vec<&Build> = self
+            .builds
+            .iter()
+            .filter(|b| b.declared_name() == build && b.line.is_some())
+            .collect();
+        if let Some(found) = lines.iter().find(|b| {
+            b.line
+                .as_ref()
+                .is_some_and(|l| l.line.components == line.components)
+        }) {
+            return Some((*found).clone());
+        }
+        let current = lines
+            .iter()
+            .find(|b| b.line.as_ref().is_some_and(|l| l.current))?;
+        let releases = self.releases_of(current.versions.as_deref()?)?;
+        if releases.status_of(line) != Some(LineStatus::Planned) {
+            return None;
+        }
+        let mut made = (*current).clone();
+        made.name = format!("{build}@{}", line.text);
+        if let Some(l) = made.line.as_mut() {
+            l.line = line.clone();
+            l.current = false;
+        }
+        Some(made)
+    }
+
     /// `[releases.<target>]` for a target, when the project lists its lines.
     pub fn releases_of(&self, target: &str) -> Option<&Releases> {
         self.releases.iter().find(|r| r.target == target)

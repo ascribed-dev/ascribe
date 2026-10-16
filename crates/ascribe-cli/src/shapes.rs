@@ -222,6 +222,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::versions::ReleaseJson>(),
     },
     Shape {
+        file: "versions-archive",
+        title: "VersionsArchiveReport",
+        written_by: "`ascribe versions archive --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::versions::ArchiveJson>(),
+    },
+    Shape {
         file: "diff-html-data",
         title: "ReportData",
         written_by: "`ascribe diff --format html`, for the report's script",

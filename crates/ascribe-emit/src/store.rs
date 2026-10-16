@@ -20,6 +20,10 @@ const STAGING_DIR: &str = ".staging";
 const SHARED_DIR: &str = "_ascribe";
 /// The shared folder's manifest, inside it.
 const SHARED_MANIFEST: &str = "manifest.json";
+/// The manifest's `emitter` for an archive, and its staging folder.
+const ARCHIVE: &str = "archive";
+/// An archive's manifest, at the top of the archive's directory.
+const ARCHIVE_MANIFEST: &str = "archive.manifest.json";
 
 /// Where one output's files and manifest are.
 struct Place {
@@ -116,6 +120,15 @@ pub enum StoreError {
         /// The link.
         path: String,
     },
+    /// An archive was to be written in a directory that has files and no
+    /// archive manifest, so isn't an archive Ascribe wrote.
+    #[error(
+        "{dir} isn't empty, and isn't an archive Ascribe wrote; name an empty folder, or one an archive was written in"
+    )]
+    NotEmpty {
+        /// The directory.
+        dir: String,
+    },
     /// Files that would be overwritten or can't be created, or paths that
     /// collide.
     #[error("the output can't be written:\n{}", .0.iter().map(|c| format!("  - {c}")).collect::<Vec<_>>().join("\n"))]
@@ -140,6 +153,7 @@ impl ascribe_core::Coded for StoreError {
             StoreError::UnknownVersion { .. } => "unknown_manifest_version",
             StoreError::BadEntry { .. } => "bad_manifest_entry",
             StoreError::Link { .. } => "output_link",
+            StoreError::NotEmpty { .. } => "archive_folder_not_empty",
             StoreError::Conflicts(_) => "output_conflicts",
             StoreError::Io { .. } => "output_io",
         }
@@ -249,6 +263,29 @@ impl OutputDir {
             return Err(link_error(&link));
         }
         OutputDir::lock(&project.join(output_dir))
+    }
+
+    /// [`OutputDir::lock`] on a directory an archive is written in, after
+    /// checking, before anything is written there, that it's empty or an
+    /// archive Ascribe wrote: a folder that's neither gains no lock file.
+    ///
+    /// # Errors
+    ///
+    /// [`StoreError::NotEmpty`], and as [`OutputDir::lock`].
+    pub fn lock_archive(dir: &Path) -> Result<OutputDir, StoreError> {
+        refuse_link(dir)?;
+        if fs::symlink_metadata(dir).is_ok() {
+            if !dir.is_dir() {
+                return Err(StoreError::Conflicts(vec![format!(
+                    "{} is a file, and a directory is needed there",
+                    dir.display()
+                )]));
+            }
+            refuse_unowned_archive(dir)?;
+        }
+        let output = OutputDir::lock(dir)?;
+        refuse_unowned_archive(&output.root)?;
+        Ok(output)
     }
 
     /// The output directory.
@@ -376,6 +413,66 @@ impl OutputDir {
             )]));
         }
         let staging = self.root.join(STAGING_DIR).join(SHARED_DIR);
+        let result = self.replace_staged(&place, files, &staging, OutputOptions::default());
+        let _ = fs::remove_dir_all(&staging);
+        let _ = fs::remove_dir(self.root.join(STAGING_DIR));
+        result
+    }
+
+    /// The manifest of an archive written into this directory:
+    /// `<dir>/archive.manifest.json`, beside the archive's files.
+    pub fn archive_manifest_path(&self) -> PathBuf {
+        self.root.join(ARCHIVE_MANIFEST)
+    }
+
+    fn archive_place(&self, build: &str) -> Place {
+        Place {
+            build: build.to_owned(),
+            emitter: ARCHIVE.to_owned(),
+            parent: self.root.clone(),
+            files: self.root.clone(),
+            manifest: self.archive_manifest_path(),
+            temp: self
+                .root
+                .join(STAGING_DIR)
+                .join(format!(".manifest-{ARCHIVE}.tmp")),
+        }
+    }
+
+    /// Replaces the archive in this directory with `files`, the archive of
+    /// `build`, written at its top rather than under a build's folder, by
+    /// the same rules as a build's output, through the manifest
+    /// `archive.manifest.json` beside them. A directory that has anything in it besides the lock, and no
+    /// manifest, isn't an archive Ascribe wrote, and is refused.
+    ///
+    /// # Errors
+    ///
+    /// As [`OutputDir::replace`].
+    pub fn replace_archive(
+        &self,
+        build: &str,
+        files: &[EmittedFile],
+    ) -> Result<Replaced, StoreError> {
+        let place = self.archive_place(build);
+        refuse_links_below(&self.root, &format!("{STAGING_DIR}/{ARCHIVE}"))?;
+        refuse_link(&place.temp)?;
+        refuse_link(&place.manifest)?;
+        refuse_unowned_archive(&self.root)?;
+        let reserved = [ARCHIVE_MANIFEST, LOCK_FILE, STAGING_DIR];
+        let taken: Vec<String> = files
+            .iter()
+            .filter(|f| {
+                f.path
+                    .segments()
+                    .next()
+                    .is_some_and(|first| reserved.contains(&first))
+            })
+            .map(|f| format!("{} is a name the archive's own files take", f.path))
+            .collect();
+        if !taken.is_empty() {
+            return Err(StoreError::Conflicts(taken));
+        }
+        let staging = self.root.join(STAGING_DIR).join(ARCHIVE);
         let result = self.replace_staged(&place, files, &staging, OutputOptions::default());
         let _ = fs::remove_dir_all(&staging);
         let _ = fs::remove_dir(self.root.join(STAGING_DIR));
@@ -733,6 +830,26 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
         }
     }
     Ok(manifest.files)
+}
+
+/// Refuses `dir` for an archive when something besides the lock and the
+/// staging folder is in it and no manifest says Ascribe wrote it: a folder a
+/// run left with only those in it is still empty to the next.
+fn refuse_unowned_archive(dir: &Path) -> Result<(), StoreError> {
+    if fs::symlink_metadata(dir.join(ARCHIVE_MANIFEST)).is_ok() {
+        return Ok(());
+    }
+    let entries = fs::read_dir(dir).map_err(io_err("can't read", dir))?;
+    for entry in entries {
+        let entry = entry.map_err(io_err("can't read", dir))?;
+        let name = entry.file_name();
+        if name != LOCK_FILE && name != STAGING_DIR {
+            return Err(StoreError::NotEmpty {
+                dir: dir.display().to_string(),
+            });
+        }
+    }
+    Ok(())
 }
 
 /// Refuses a link at `path`.

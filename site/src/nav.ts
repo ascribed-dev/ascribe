@@ -68,6 +68,7 @@ export const nav: NavGroup[] = [
       "contracts/site-render.md",
       "contracts/output-layout.md",
       "contracts/assets.md",
+      "contracts/archive.md",
       "contracts/tested-examples.md",
       "contracts/json-reports.md",
       "contracts/json-reports/diff.md",

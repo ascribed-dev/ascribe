@@ -1,7 +1,8 @@
 //! `ascribe versions`: a project's release lines. `list` shows them,
-//! `changes` says what differs between two from the marks alone, and
+//! `changes` says what differs between two from the marks alone,
 //! `release` makes a line live, rewriting the marks that named it through
-//! a feature.
+//! a feature, and `archive` renders a line into a folder of HTML that needs
+//! nothing else.
 
 use std::collections::BTreeMap;
 use std::io::{self, Write};
@@ -11,7 +12,9 @@ use std::process::ExitCode;
 use ascribe_core::availability::parse_version;
 use ascribe_core::{Coded, RelPath};
 use ascribe_diff::{DiffError, Repository};
+use ascribe_emit::{ArchiveOptions, OutputDir};
 use ascribe_lsp::{Released, Releasing};
+use ascribe_model::LineStatus;
 use ascribe_query::versions::{LineChange, VersionChanges, VersionsList};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
@@ -51,6 +54,15 @@ pub enum Command {
     /// unchanged, unless --force.
     #[command(after_help = docs_link!("cli-versions-release"))]
     Release(ReleaseArgs),
+    /// Render a line into a folder of HTML that needs nothing else: every
+    /// page, with a statement of what it is, a sidebar, a contents page,
+    /// and a print stylesheet, marked so crawlers leave it alone, working
+    /// from a disk with no server.
+    ///
+    /// Writes nothing into the project: the text says what to add to
+    /// [releases] once the folder is hosted.
+    #[command(after_help = docs_link!("cli-versions-archive"))]
+    Archive(ArchiveArgs),
 }
 
 /// Arguments of `ascribe versions list`.
@@ -116,6 +128,35 @@ pub struct ReleaseArgs {
     pub format: Format,
 }
 
+/// Arguments of `ascribe versions archive`.
+#[derive(Debug, ClapArgs)]
+pub struct ArchiveArgs {
+    /// The line to archive, named as a mark names it: "self-managed 3.4".
+    /// It's live or planned.
+    #[arg(value_name = "LINE")]
+    pub line: String,
+
+    /// The folder to write the archive in, from the current folder: an
+    /// empty one, or one an archive was written in, whose files it
+    /// replaces.
+    #[arg(long, value_name = "DIR")]
+    pub to: PathBuf,
+
+    /// The versioned build to archive the line of, when two builds are
+    /// versioned by the line's target.
+    #[arg(long, value_name = "NAME")]
+    pub build: Option<String>,
+
+    /// The address of the current documentation, which the statement at
+    /// the top of every page links to.
+    #[arg(long, value_name = "URL")]
+    pub current: Option<String>,
+
+    /// How to show what was written.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
+}
+
 /// Why `ascribe versions release` wrote nothing, apart from the line.
 #[derive(Debug, thiserror::Error)]
 pub enum VersionsError {
@@ -144,6 +185,54 @@ pub enum VersionsError {
         /// The files, from the current folder.
         files: Vec<String>,
     },
+    /// No build is versioned by the line's target.
+    #[error(
+        "no build is versioned by {target}, so it has no line to archive: set `versions = \"{target}\"` on a build"
+    )]
+    ArchiveNoBuild {
+        /// The target.
+        target: String,
+    },
+    /// Several builds are versioned by the line's target, and none was
+    /// named.
+    #[error("several builds are versioned by {target}, so name one with --build: {}", .builds.join(", "))]
+    ArchiveBuildRequired {
+        /// The target.
+        target: String,
+        /// The builds.
+        builds: Vec<String>,
+    },
+    /// `--build` names no build versioned by the line's target.
+    #[error("--build {build} isn't a build versioned by {target}; those are {}", .builds.join(", "))]
+    ArchiveUnknownBuild {
+        /// The build, as given.
+        build: String,
+        /// The target.
+        target: String,
+        /// The builds versioned by it.
+        builds: Vec<String>,
+    },
+    /// The line is archived already, so it has no output to render.
+    #[error("{target} {line} is archived; only a live or planned line can be archived")]
+    ArchiveLineArchived {
+        /// The target.
+        target: String,
+        /// The line.
+        line: String,
+    },
+    /// The checks found errors in the build.
+    #[error(
+        "the checks found {count} error{} in build `{build}`, so nothing was written; {listed}",
+        if *.count == 1 { "" } else { "s" }
+    )]
+    ArchiveErrors {
+        /// How many.
+        count: usize,
+        /// The build checked.
+        build: String,
+        /// What lists them.
+        listed: String,
+    },
     /// A file can't be written.
     #[error("can't write {}: {message}", path.display())]
     Unwritable {
@@ -162,6 +251,11 @@ impl Coded for VersionsError {
             VersionsError::NoGit { .. } => "release_without_git",
             VersionsError::NotRestorable { .. } => "release_files_unrestorable",
             VersionsError::Unwritable { .. } => "release_unwritable",
+            VersionsError::ArchiveNoBuild { .. } => "archive_no_build",
+            VersionsError::ArchiveBuildRequired { .. } => "build_required",
+            VersionsError::ArchiveUnknownBuild { .. } => "unknown_build",
+            VersionsError::ArchiveLineArchived { .. } => "archive_line_archived",
+            VersionsError::ArchiveErrors { .. } => "archive_has_errors",
         }
     }
 }
@@ -176,6 +270,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         Command::List(args) => run_list(global, &args, &mut out, &mut err),
         Command::Changes(args) => run_changes(global, &args, &mut out, &mut err),
         Command::Release(args) => run_release(global, &args, &mut out, &mut err),
+        Command::Archive(args) => run_archive(global, &args, &mut out, &mut err),
     };
     let _ = out.flush();
     exit::code(code)
@@ -768,4 +863,244 @@ fn write_release(
         )?;
     }
     Ok(())
+}
+
+/// What `ascribe versions archive --format json` writes: the line, the
+/// folder, and what's in it.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct ArchiveJson {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The target.
+    target: String,
+    /// The line archived, as `[releases.<target>]` writes it.
+    line: String,
+    /// The line's status: `current`, `live`, or `planned`.
+    status: &'static str,
+    /// The build the line is a line of, as it's declared.
+    build: String,
+    /// The folder written, from the current folder, with `/`.
+    folder: String,
+    /// The contents page, from the folder: `index.html`, or
+    /// `contents.html` when the line's root page is `index.html`.
+    contents: String,
+    /// How many pages the archive has.
+    pages: usize,
+    /// How many copies of images and files they use it has.
+    assets: usize,
+    /// How many files of an archive written there before it no longer
+    /// has, removed.
+    removed: usize,
+    /// Each link written as its text: a link out of the line, or to an
+    /// address no page of the line has.
+    unlinked: Vec<UnlinkedJson>,
+}
+
+/// A link an archive writes as its text.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct UnlinkedJson {
+    /// The page it's on, from the project root.
+    file: String,
+    /// Its text.
+    text: String,
+    /// Where it led.
+    href: String,
+    /// For a link out of the line, the line it led to.
+    line: Option<String>,
+}
+
+/// The version of the archive's JSON.
+const ARCHIVE_SCHEMA_VERSION: u32 = 1;
+
+/// Exit codes: 0 when the archive is written; 2 when it can't be: the line
+/// isn't declared, live, or planned, no build or more than one is
+/// versioned by its target, the checks find errors, or the folder isn't
+/// empty and isn't an archive Ascribe wrote.
+fn run_archive(
+    global: &Global,
+    args: &ArchiveArgs,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> u8 {
+    let project = match load_project(global) {
+        Ok(project) => project,
+        Err(failure) => return answer::report_failure(err, &failure),
+    };
+    let index = project.index();
+    let model = index.model();
+    let (target, line) = match ascribe_query::versions::declared_line(model, &args.line) {
+        Ok(found) => found,
+        Err(e) => return answer::fail(err, &e),
+    };
+    let status = model.releases_of(&target).and_then(|r| r.status_of(&line));
+    if status == Some(LineStatus::Archived) {
+        let error = VersionsError::ArchiveLineArchived {
+            target,
+            line: line.text,
+        };
+        return answer::fail(err, &error);
+    }
+    let mut declared: Vec<String> = Vec::new();
+    for build in &model.builds {
+        if build.versions.as_deref() == Some(target.as_str())
+            && !declared.iter().any(|d| d == build.declared_name())
+        {
+            declared.push(build.declared_name().to_owned());
+        }
+    }
+    let declared_build = match (&args.build, declared.as_slice()) {
+        (_, []) => return answer::fail(err, &VersionsError::ArchiveNoBuild { target }),
+        (Some(name), builds) if !builds.contains(name) => {
+            let error = VersionsError::ArchiveUnknownBuild {
+                build: name.clone(),
+                target,
+                builds: declared,
+            };
+            return answer::fail(err, &error);
+        }
+        (Some(name), _) => name.clone(),
+        (None, [one]) => one.clone(),
+        (None, _) => {
+            let error = VersionsError::ArchiveBuildRequired {
+                target,
+                builds: declared,
+            };
+            return answer::fail(err, &error);
+        }
+    };
+    let Some(build) = model.line_build(&declared_build, &line) else {
+        let error = VersionsError::ArchiveLineArchived {
+            target,
+            line: line.text,
+        };
+        return answer::fail(err, &error);
+    };
+    // The checks of the line's own build, as `ascribe build` runs them,
+    // before anything is written.
+    let errors = ascribe_check::count_errors_in(&project, &build);
+    if errors > 0 {
+        let listed = if model.builds.iter().any(|b| b.name == build.name) {
+            format!("`ascribe check --build {}` lists them", build.name)
+        } else {
+            // A planned line's build is made for the archive alone.
+            "`ascribe check` checks the live lines, so it lists those they share with this one"
+                .to_owned()
+        };
+        let error = VersionsError::ArchiveErrors {
+            count: errors,
+            build: build.name.clone(),
+            listed,
+        };
+        return answer::fail(err, &error);
+    }
+    let options = ArchiveOptions {
+        current: args.current.clone(),
+    };
+    let archive = match ascribe_emit::archive(&index, project.root(), &build, &options) {
+        Ok(archive) => archive,
+        Err(e) => return answer::fail(err, &e),
+    };
+    let replaced = match OutputDir::lock_archive(&args.to)
+        .and_then(|dir| dir.replace_archive(&build.name, &archive.files))
+    {
+        Ok(replaced) => replaced,
+        Err(e) => return answer::fail(err, &e),
+    };
+    let status = match status {
+        Some(LineStatus::Current) => "current",
+        Some(LineStatus::Planned) => "planned",
+        _ => "live",
+    };
+    let content = project.content_root();
+    let json = ArchiveJson {
+        schema_version: ARCHIVE_SCHEMA_VERSION,
+        ascribe_version: env!("CARGO_PKG_VERSION"),
+        target,
+        line: line.text,
+        status,
+        build: declared_build,
+        folder: answer::path_from_here(&args.to),
+        contents: archive.contents.to_string(),
+        pages: archive.pages,
+        assets: archive
+            .files
+            .iter()
+            .filter(|f| f.kind == ascribe_emit::FileKind::Asset)
+            .count(),
+        removed: replaced.removed,
+        unlinked: archive
+            .unlinked
+            .iter()
+            .map(|u| UnlinkedJson {
+                file: content
+                    .join(u.page.as_str())
+                    .map_or_else(|_| u.page.to_string(), |p| p.to_string()),
+                text: u.text.clone(),
+                href: u.href.clone(),
+                line: u.line.clone(),
+            })
+            .collect(),
+    };
+    let result = match args.format {
+        Format::Json => answer::write_json(out, &json),
+        Format::Text => write_archive(out, &json, project.root()),
+    };
+    answer::written(result, err).unwrap_or(exit::OK)
+}
+
+fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Result<()> {
+    let (target, line) = (&a.target, &a.line);
+    match a.status {
+        "current" => writeln!(
+            out,
+            "{target} {line} is the current line: an archive is usually of a line that's leaving."
+        )?,
+        "planned" => writeln!(out, "{target} {line} is planned, and not released yet.")?,
+        _ => {}
+    }
+    writeln!(
+        out,
+        "Wrote {} page{} to {}. Open {}/{}.",
+        a.pages,
+        if a.pages == 1 { "" } else { "s" },
+        a.folder,
+        a.folder,
+        a.contents
+    )?;
+    if !a.unlinked.is_empty() {
+        writeln!(
+            out,
+            "{} written as text, since the page {} to isn't in the line:",
+            if a.unlinked.len() == 1 {
+                "A link is".to_owned()
+            } else {
+                format!("{} links are", a.unlinked.len())
+            },
+            if a.unlinked.len() == 1 {
+                "it leads"
+            } else {
+                "each leads"
+            }
+        )?;
+        for u in &a.unlinked {
+            let to = match &u.line {
+                Some(l) => format!("{} in {l}", u.href),
+                None => u.href.clone(),
+            };
+            writeln!(
+                out,
+                "  {}: \"{}\" led to {to}",
+                answer::path_from_here(&root.join(&u.file)),
+                u.text
+            )?;
+        }
+    }
+    writeln!(out, "Host the folder, then record its address:")?;
+    writeln!(out, "  [releases.{target}.archived]")?;
+    writeln!(out, "  \"{line}\" = {{ url = \"…\" }}")
 }
