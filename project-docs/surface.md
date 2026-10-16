@@ -824,8 +824,6 @@ READMEs published with a package, a crate, or the repository:
 | `crates/ascribe-emit/README.md` |
 | `crates/ascribe-fmt/README.md` |
 | `crates/ascribe-lsp/README.md` |
-| `crates/ascribe-lsp/README.md` |
-| `crates/ascribe-lsp/README.md` |
 | `crates/ascribe-mcp/README.md` |
 | `crates/ascribe-model/README.md` |
 | `crates/ascribe-query/README.md` |
