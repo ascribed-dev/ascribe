@@ -183,6 +183,6 @@ With [`[consumer] agents = true`](../agents/index.md), each line has its own out
 
 - **`llms.txt`** lists the line's pages, and its heading names the line: `# Loom (Self-managed 3.4)`. An older line's opens with a line pointing at the current line's: "This is an older version. The current version is 3.5: [llms.txt](https://docs.example.com/docs/llms.txt)."
 - **Each page's Markdown** opens with the line that says which version it is, above.
-- **`ascribe agents index --build site@3.4`** writes the compact index of a line for a product's `AGENTS.md`. Without `--build`, it's the current line's.
+- **`ascribe agents index --build site@3.4`** writes the compact index of a line for a product's `AGENTS.md`, its heading naming the line as `llms.txt`'s does. Without `--build`, it's the current line's.
 
 A line kept out of an index with `[listing] older-lines = "unlisted"` lists nothing in its `llms.txt`.

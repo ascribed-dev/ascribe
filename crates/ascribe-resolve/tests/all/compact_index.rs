@@ -46,7 +46,7 @@ fn index(model: &str, folder: Option<&str>, limit: usize) -> CompactIndex {
     let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(build, &router);
     let records = pages::records(project.model(), &resolved.pages);
-    compact_index(project.model(), &records, folder, limit)
+    compact_index(project.model(), build, &records, folder, limit)
 }
 
 fn paths(pages: &[ascribe_core::RelPath]) -> Vec<&str> {
@@ -135,7 +135,7 @@ fn long_index(model: &str, folder: Option<&str>, limit: usize) -> CompactIndex {
     let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(build, &router);
     let records = pages::records(project.model(), &resolved.pages);
-    compact_index(project.model(), &records, folder, limit)
+    compact_index(project.model(), build, &records, folder, limit)
 }
 
 #[test]
