@@ -12,6 +12,7 @@
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
 //! | `content` | A page's description and review date, code blocks' languages |
+//! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 //! | `template` | What a page still has of its type's template, never filled in |
@@ -19,6 +20,7 @@
 mod acknowledge;
 mod attrs;
 mod avail;
+mod comment;
 mod content;
 mod frontmatter;
 mod refs;
@@ -203,10 +205,8 @@ impl Ctx<'_> {
                     }
                 }
                 BlockKind::CodeBlock(code) => self.check_code_language(block, code),
-                BlockKind::HtmlBlock(_)
-                | BlockKind::ThematicBreak
-                | BlockKind::End(_)
-                | BlockKind::Title(_) => {}
+                BlockKind::HtmlBlock(html) => self.check_html_block(blocks, i, html),
+                BlockKind::ThematicBreak | BlockKind::End(_) | BlockKind::Title(_) => {}
             }
         }
     }
@@ -244,8 +244,8 @@ impl Ctx<'_> {
                 InlineKind::Text(_)
                 | InlineKind::Code(_)
                 | InlineKind::SoftBreak
-                | InlineKind::HardBreak
-                | InlineKind::Html(_) => {}
+                | InlineKind::HardBreak => {}
+                InlineKind::Html(_) => self.check_html_inline(inline.span),
             }
         }
     }

@@ -1,0 +1,8 @@
+description: >-
+  A comment written for another tool is acknowledged with `@intended` above
+  its block, and isn't reported; the rest are.
+spec: ["4.10", "4.9"]
+tags: [check]
+
+diagnostics:
+  - {slug: html-comment, line: 11}

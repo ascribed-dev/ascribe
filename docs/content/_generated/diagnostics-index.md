@@ -220,3 +220,4 @@
 | [ASC220](../checks/diagnostics/content-checks.md#ASC220) | `link-into-older-line` | Advice | Page | write |
 | [ASC221](../checks/diagnostics/content-checks.md#ASC221) | `link-fragment-dropped` | Advice | Page | write |
 | [ASC222](../checks/diagnostics/pages.md#ASC222) | `listing-loosened-in-line` | Error | Page | write |
+| [ASC223](../checks/diagnostics/content-checks.md#ASC223) | `html-comment` | Advice | File | review |

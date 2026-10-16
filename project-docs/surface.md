@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-218 in all. By severity: 37 advice, 157 error, 24 warning. By level: 193 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 137 write.
+219 in all. By severity: 38 advice, 157 error, 24 warning. By level: 194 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 12 review, 137 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -327,6 +327,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC220` | `link-into-older-line` | advice | write | `{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place |
 | `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
 | `ASC222` | `listing-loosened-in-line` | error | write | this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there |
+| `ASC223` | `html-comment` | advice | review | an HTML comment is in the published page's source; a memo isn't |
 
 ## The VS Code extension
 
@@ -497,6 +498,7 @@ The standard requests it answers, by the type that names each in the code:
 | `CodeLensRequest` | The Language Server Protocol's |
 | `InlayHintRequest` | The Language Server Protocol's |
 | `CodeActionRequest` | The Language Server Protocol's |
+| `FoldingRangeRequest` | The Language Server Protocol's |
 | `Formatting` | The Language Server Protocol's |
 | `Rename` | The Language Server Protocol's |
 | `PrepareRenameRequest` | The Language Server Protocol's |

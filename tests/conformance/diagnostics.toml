@@ -4073,3 +4073,39 @@ reference = "content-model/checks.md#22-listing"
 row = "Frontmatter | `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes (page level, per build)"
 message = "this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there"
 fix = "Remove the page's `listing`, which the rule already sets in an older line, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list an older line's pages more openly, change `older-lines` in `[listing]`."
+
+[[diagnostic]]
+code = "ASC223"
+slug = "html-comment"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "block"
+area = "pages"
+spec = "4.10"
+reference = "writing/directives.md#memo"
+when = "A page or a fragment has an HTML comment, as a block or inside a paragraph. A comment in a code block or a memo isn't one, and Vale's own comments, such as `<!-- vale off -->`, aren't reported"
+message = "an HTML comment is in the published page's source; a memo isn't"
+fix = "An HTML comment isn't private: it's in the source of every published page, and in the JSON output. Write it as a `@memo` instead, which keeps the same text beside the same block and out of every output: the editor's quick fix, **Rewrite as a memo**, does it for a comment that's a block of its own. A comment written for another tool, which has to stay a comment, is acknowledged with `@intended {check=html-comment}` above its block."
+example.wrong = '''
+---
+title: Plans
+---
+
+<!-- Keep this table in the order of the plans' prices. -->
+| Plan | Seats |
+|---|---|
+| Team | 10 |
+'''
+example.right = '''
+---
+title: Plans
+---
+
+@memo: Keep this table in the order of the plans' prices.
+| Plan | Seats |
+|---|---|
+| Team | 10 |
+'''

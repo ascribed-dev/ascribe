@@ -1,0 +1,9 @@
+description: >-
+  An HTML comment inside a paragraph or a table cell is reported at the
+  comment.
+spec: ["4.10"]
+tags: [check]
+
+diagnostics:
+  - {slug: html-comment, line: 5, column: 30}
+  - {slug: html-comment, line: 9, column: 20}

@@ -1,0 +1,9 @@
+description: >-
+  An HTML comment is reported at the comment, as a block of its own or
+  inside a block of HTML. One in a code block or a memo isn't.
+spec: ["4.10"]
+tags: [check]
+
+diagnostics:
+  - {slug: html-comment, line: 5, column: 1, severity: advice}
+  - {slug: html-comment, line: 11, column: 1}
