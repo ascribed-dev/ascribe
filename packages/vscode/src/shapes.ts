@@ -7,6 +7,7 @@
 // - PreviewResult (the language server, answering `ascribe/preview`)
 // - SetBaseResult (the language server, answering `ascribe/review/setBase`)
 // - ChangesResult (the language server, answering `ascribe/review/changes`)
+// - BaseFileResult (the language server, answering `ascribe/review/baseFile`)
 // - ContextResult (the language server, answering `ascribe/context`)
 // - TargetsResult (the language server, answering `ascribe/targets`)
 // - InventoryResult (the language server, answering `ascribe/inventory`)
@@ -81,6 +82,20 @@ export interface AttributePair {
    * `null` for a key with no value.
    */
   value: string | null;
+}
+
+/** The answer to `ascribe/review/baseFile`. */
+export interface BaseFileResult {
+  /**
+   * The file's text at the base; `null` when the base doesn't have it, or
+   * there's no base.
+   */
+  text: string | null;
+  /**
+   * Why there's no text, when that isn't because the base doesn't have
+   * the file: review is off, or the file isn't the project's.
+   */
+  problem: string | null;
 }
 
 /** The base of a comparison, in the report. */

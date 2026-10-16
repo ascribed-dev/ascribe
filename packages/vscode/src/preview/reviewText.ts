@@ -7,7 +7,7 @@ import { countsText } from "./counts.js";
 import type { BaseInfo, ChangedPage, PageDiff } from "./protocol.js";
 
 /** The content model's file, which `because` names last when it's a cause. */
-const MODEL_FILE = "ascribe.toml";
+export const MODEL_FILE = "ascribe.toml";
 
 /**
  * The base as the header and the status bar name it: the revision asked for,

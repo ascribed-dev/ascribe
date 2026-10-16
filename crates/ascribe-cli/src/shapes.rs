@@ -264,6 +264,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_lsp::ChangesResult>(),
     },
     Shape {
+        file: "lsp-base-file",
+        title: "BaseFileResult",
+        written_by: "the language server, answering `ascribe/review/baseFile`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::BaseFileResult>(),
+    },
+    Shape {
         file: "lsp-context",
         title: "ContextResult",
         written_by: "the language server, answering `ascribe/context`",
@@ -325,6 +332,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-preview",
             "lsp-set-base",
             "lsp-changes",
+            "lsp-base-file",
             "lsp-context",
             "lsp-targets",
             "lsp-inventory",

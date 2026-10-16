@@ -30,6 +30,11 @@ export interface ReviewHost {
   refresh(): void;
   /** Opens a page in the editor and the preview, and goes to its first change. */
   showPage(uri: vscode.Uri): Promise<void>;
+  /**
+   * Opens the preview's submit dialog for the project: on the page it shows,
+   * when that's the project's, else on `page`, opened first.
+   */
+  submitReview(server: ProjectServer, page: vscode.Uri | undefined): Promise<void>;
 }
 
 /** What the extension returns for tests. */
@@ -68,8 +73,15 @@ export class ReviewController implements vscode.Disposable {
   private readonly bases = new Map<string, BaseInfo>();
   private readonly item: vscode.StatusBarItem;
   private disposables: vscode.Disposable[] = [];
+  private readonly updated = new vscode.EventEmitter<void>();
   /** The pull request's threads, for the projects with review on. */
   readonly threads: ThreadsController;
+
+  /**
+   * Fires when review may show something else: it started or stopped, the
+   * active project changed, or the threads did.
+   */
+  readonly onDidUpdate = this.updated.event;
 
   constructor(
     private readonly projects: ProjectRegistry,
@@ -90,6 +102,7 @@ export class ReviewController implements vscode.Disposable {
   register(): void {
     this.disposables.push(
       this.item,
+      this.updated,
       vscode.commands.registerCommand("ascribe.startReview", () =>
         this.startCommand(this.runningTarget()),
       ),
@@ -202,11 +215,28 @@ export class ReviewController implements vscode.Disposable {
     };
   }
 
+  /** The project review is showing: the active page's or the preview's, while review is on for it. */
+  current(): ProjectServer | undefined {
+    const server = this.target();
+    return server && this.baseOf(server) ? server : undefined;
+  }
+
+  /** Opens a changed page in the editor and the preview, at its first change. */
+  showPage(uri: vscode.Uri): Promise<void> {
+    return this.host.showPage(uri);
+  }
+
+  /** Opens the submit dialog for the project's review, in the preview. */
+  submitReview(server: ProjectServer, page: vscode.Uri | undefined): Promise<void> {
+    return this.host.submitReview(server, page);
+  }
+
   /** Shows the status bar item for the active Ascribe page's or the preview's project. */
   update(): void {
     const server = this.target();
     const base = server && this.baseOf(server);
     void vscode.commands.executeCommand("setContext", "ascribe.reviewOn", base !== undefined);
+    this.updated.fire();
     if (!server || !this.isAscribeContext()) {
       this.visible = false;
       this.item.hide();

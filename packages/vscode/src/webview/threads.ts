@@ -41,6 +41,8 @@ export class Threads {
   private reported: OverlayData | undefined;
   /** The thread count the header last showed. */
   private shownCount: number | undefined;
+  /** Whether to open the submit dialog once the threads are read. */
+  private submitWanted = false;
 
   constructor(
     private readonly content: HTMLElement,
@@ -70,6 +72,7 @@ export class Threads {
         host: this.host(),
         onUpdate: () => {
           this.report();
+          this.trySubmit();
           const count = this.overlay?.threadCount();
           if (count !== this.shownCount) {
             this.shownCount = count;
@@ -79,6 +82,17 @@ export class Threads {
       });
     }
     if (view.goTo !== null) this.overlay.goToThread(view.goTo);
+    if (view.submit) {
+      this.submitWanted = true;
+      this.trySubmit();
+    }
+  }
+
+  /** Opens the submit dialog, once the threads are read, when it was asked for. */
+  private trySubmit(): void {
+    if (!this.submitWanted || this.overlay?.unsentCount() === undefined) return;
+    this.submitWanted = false;
+    this.overlay.submitReview();
   }
 
   /** Whether the overlay is on the page. */
@@ -128,6 +142,7 @@ export class Threads {
     this.listeners = [];
     this.data = undefined;
     this.shownCount = undefined;
+    this.submitWanted = false;
     for (const waiter of this.waiting.values()) waiter.reject({ message: "Review stopped." });
     this.waiting.clear();
   }

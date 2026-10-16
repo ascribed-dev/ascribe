@@ -16,6 +16,7 @@ const ON: ThreadsView = {
   gh: false,
   message: null,
   goTo: null,
+  submit: false,
 };
 
 describe("threadsNotice", () => {

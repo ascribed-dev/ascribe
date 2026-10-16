@@ -11,9 +11,9 @@ It provides initialization, document and file synchronization, diagnostics, and
 semantic tokens; completion, hover, go to definition, find references, document
 links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
 rename, and formatting; and the custom requests `ascribe/preview`,
-`ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/context`,
-`ascribe/targets`, `ascribe/edit`, `ascribe/buildView`, `ascribe/inventory`,
-and `ascribe/page`.
+`ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/review/baseFile`,
+`ascribe/context`, `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`,
+`ascribe/inventory`, and `ascribe/page`.
 
 ## The project
 
@@ -148,9 +148,9 @@ project: it emits one page, indexes only the files a position is asked for
 once per set of pages (a cache keyed by the model revision and a hash of the
 page paths), not per request. See the table under Performance.
 
-## Review: `ascribe/review/setBase` and `ascribe/review/changes`
+## Review: `ascribe/review/setBase`, `ascribe/review/changes`, and `ascribe/review/baseFile`
 
-Two custom requests compare the project with a git revision, its **base**,
+Three custom requests compare the project with a git revision, its **base**,
 as `ascribe diff` does (`ascribe-diff`), so the preview can mark what changed.
 Nothing runs `git` until a base is set: a server without `git` on the path
 works as before, and `setBase` says why it can't.
@@ -187,6 +187,15 @@ it's for listing on demand, not per keystroke: the preview's `review: true`
 compares only its page (`ascribe_diff::compare_page_in`). The base keeps the
 last list with the snapshot it came from, so asking again before the next
 edit is free, and the pages as they were, rendered once each.
+
+**`ascribe/review/baseFile`** (`{ "textDocument": { "uri": … } }`) answers
+a file's text at the base, for an editor's diff of the source changes when it
+can't ask git itself: VS Code's Git extension is off, or has no repository
+for the file. The file is `ascribe.toml` or a source file in the content
+root, and its text is the base's source index's, so the request runs no
+`git`. The result is `{ text, problem }`: `text` is `null` when the base
+doesn't have the file (a new page), and `problem` says why there's no text
+otherwise: review is off, or the file is outside the content root.
 
 A base costs about as much memory as the project: on the synthetic
 3,000-page project, the project's source index is 67 MB and the base adds

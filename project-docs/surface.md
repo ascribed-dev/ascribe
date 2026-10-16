@@ -332,7 +332,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-66 commands, 35 of them actions.
+72 commands, 35 of them actions.
 
 Commands that aren't actions:
 
@@ -356,6 +356,12 @@ Commands that aren't actions:
 | Ascribe: Stop Review | `ascribe.stopReview` |
 | Ascribe: Changed Pages | `ascribe.changedPages` |
 | Ascribe: Refresh Comments | `ascribe.refreshComments` |
+| Ascribe: Submit Review… | `ascribe.submitReview` |
+| Ascribe: Open Source Changes | `ascribe.openSourceChanges` |
+| Ascribe: Open Changed Page | `ascribe.review.openPage` |
+| Ascribe: Open Page's Source Changes | `ascribe.review.pageSourceChanges` |
+| Ascribe: Show Advice | `ascribe.review.showAdvice` |
+| Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
 | Ascribe: Show Server Output | `ascribe.showOutput` |
 | Ascribe: Restart Language Server | `ascribe.restartServer` |
 | Ascribe: Refresh | `ascribe.projects.refresh` |
@@ -429,6 +435,7 @@ Views:
 
 | View | Id |
 |---|---|
+| Review | `ascribe.review` |
 | Projects | `ascribe.projects` |
 | This page | `ascribe.thisPage` |
 | Pages | `ascribe.pages` |
@@ -455,10 +462,10 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 66 |
+| `commandPalette` | 72 |
 | `editor/title` | 5 |
-| `view/title` | 2 |
-| `view/item/context` | 2 |
+| `view/title` | 7 |
+| `view/item/context` | 3 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |
@@ -482,6 +489,7 @@ Ascribe's own requests:
 | `ascribe/preview` | `crates/ascribe-lsp/src/preview.rs` |
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
+| `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/targets` | `crates/ascribe-lsp/src/targets.rs` |
 
 The standard requests it answers, by the type that names each in the code:

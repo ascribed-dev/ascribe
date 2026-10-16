@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import type { PromptRequest } from "@ascribed/review/github";
 import type { Prompts } from "../actions/promptAgent.js";
 import type { ProjectServer } from "../client.js";
-import { samePath } from "../projects.js";
+import { comparable, samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import { choices, lineDescription, type ChosenBuilds } from "../ui/chosenBuild.js";
 import { shellHtml } from "./html.js";
@@ -150,6 +150,8 @@ export class PreviewController implements vscode.Disposable {
   private firstChangeOf: string | undefined;
   /** The thread to go to once its page is drawn: one opened from another page's list. */
   private threadToGo: { file: string; threadId: string } | undefined;
+  /** The project whose submit dialog to open once its page is drawn, by comparable folder. */
+  private submitFor: string | undefined;
   private threadsLog: ThreadsReport[] = [];
   private captureExternal = false;
   private externalLog: string[] = [];
@@ -189,6 +191,7 @@ export class PreviewController implements vscode.Disposable {
           if (this.panel) this.schedule(0);
         },
         showPage: (uri) => this.showPage(uri),
+        submitReview: (server, page) => this.submitReview(server, page),
       },
       context.workspaceState,
     );
@@ -577,7 +580,9 @@ export class PreviewController implements vscode.Disposable {
       if (server) {
         const goTo = this.threadToGo?.file === document.uri.fsPath ? this.threadToGo : undefined;
         if (goTo) this.threadToGo = undefined;
-        review.threads = this.review.threads.view(server, goTo?.threadId ?? null);
+        const submit = this.submitFor === comparable(server.project.folder);
+        if (submit) this.submitFor = undefined;
+        review.threads = this.review.threads.view(server, goTo?.threadId ?? null, submit);
       }
     }
     const message: Extract<ToWebview, { type: "render" }> = {
@@ -1028,6 +1033,21 @@ export class PreviewController implements vscode.Disposable {
       ...(viewColumn === undefined ? {} : { viewColumn }),
       preview: false,
     });
+  }
+
+  /**
+   * Opens the submit dialog for a project's review: on the page the preview
+   * shows, when it's the project's, else on `page`, opened first.
+   */
+  private async submitReview(server: ProjectServer, page: vscode.Uri | undefined): Promise<void> {
+    this.submitFor = comparable(server.project.folder);
+    const shown = this.panel && this.document && this.projects.serverFor(this.document.uri);
+    if (this.panel && shown === server) {
+      this.panel.reveal(undefined, false);
+      this.schedule(0);
+    } else if (page) {
+      await this.showPage(page, false);
+    }
   }
 
   /** Opens a changed page and its preview, and (with `firstChange`) goes to its first change once it's drawn. */

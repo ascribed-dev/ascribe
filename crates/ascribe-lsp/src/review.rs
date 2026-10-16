@@ -5,6 +5,8 @@
 //!   [`Revision`], and keeps it beside the live snapshot. `null` drops it.
 //! - `ascribe/review/changes` lists the pages of a build that differ from the
 //!   base, computed against the current snapshot, so unsaved edits count.
+//! - `ascribe/review/baseFile` answers a source file's text at the base, for
+//!   the editor's diff of the source changes where it can't ask git itself.
 //! - `ascribe/preview` with `review: true` adds the page's changes and the
 //!   page as it was (`preview.rs`).
 //!
@@ -29,7 +31,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_core::RelPath;
-use ascribe_core::path::normalize;
+use ascribe_core::path::{normalize, relative_path};
 use ascribe_diff::html::PageTitle;
 use ascribe_diff::{Base, BaseInfo, DiffError, PageDiff, Repository, Revision, Side};
 use ascribe_emit::formatted_title;
@@ -45,6 +47,9 @@ pub const SET_BASE_METHOD: &str = "ascribe/review/setBase";
 
 /// The method that lists the changed pages.
 pub const CHANGES_METHOD: &str = "ascribe/review/changes";
+
+/// The method that answers a source file's text at the base.
+pub const BASE_FILE_METHOD: &str = "ascribe/review/baseFile";
 
 /// The parameters of `ascribe/review/setBase`.
 #[derive(Debug, Default, Deserialize)]
@@ -104,6 +109,26 @@ pub struct ChangesResult {
     pub pages: Vec<Json>,
     /// Why there are no pages to list, when that isn't because nothing
     /// changed.
+    pub problem: Option<String>,
+}
+
+/// The parameters of `ascribe/review/baseFile`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseFileParams {
+    /// The file: a page, a fragment, or `ascribe.toml`.
+    pub text_document: lsp_types::TextDocumentIdentifier,
+}
+
+/// The answer to `ascribe/review/baseFile`.
+#[derive(Debug, Default, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct BaseFileResult {
+    /// The file's text at the base; `null` when the base doesn't have it, or
+    /// there's no base.
+    pub text: Option<String>,
+    /// Why there's no text, when that isn't because the base doesn't have
+    /// the file: review is off, or the file isn't the project's.
     pub problem: Option<String>,
 }
 
@@ -260,6 +285,62 @@ impl Core {
             content_root: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             review: self.review.clone(),
         })
+    }
+}
+
+/// What `ascribe/review/baseFile` needs from the server's state.
+pub(crate) struct BaseFileTarget {
+    root: PathBuf,
+    content_root: PathBuf,
+    review: Option<Arc<ReviewBase>>,
+}
+
+impl Core {
+    /// Takes what `ascribe/review/baseFile` needs.
+    pub(crate) fn base_file_target(&self) -> Option<BaseFileTarget> {
+        let loaded = self.loaded.as_ref()?;
+        Some(BaseFileTarget {
+            root: normalize(&loaded.root),
+            content_root: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
+            review: self.review.clone(),
+        })
+    }
+}
+
+/// Answers `ascribe/review/baseFile` for the file at `path`: the content
+/// model's text, or a source file's, as the base has them. The base's
+/// source index keeps each file's text, so nothing runs `git`.
+pub(crate) fn base_file(target: Option<&BaseFileTarget>, path: Option<&Path>) -> BaseFileResult {
+    let problem = |text: &str| BaseFileResult {
+        text: None,
+        problem: Some(text.to_owned()),
+    };
+    let Some(target) = target else {
+        return problem("There is no project loaded, so there is no base.");
+    };
+    let Some(review) = &target.review else {
+        return problem("Review is off for this project.");
+    };
+    let Some(path) = path.map(normalize) else {
+        return problem("That isn't a file.");
+    };
+    if path == target.root.join(ascribe_model::MODEL_FILE) {
+        return BaseFileResult {
+            text: review.project.is_some().then(|| review.model_text.clone()),
+            problem: None,
+        };
+    }
+    let Some(content_path) = relative_path(&target.content_root, &path).filter(RelPath::is_inside)
+    else {
+        return problem("That file isn't in the project's content root.");
+    };
+    BaseFileResult {
+        text: review
+            .project
+            .as_ref()
+            .and_then(|project| project.file(&content_path))
+            .map(|file| file.source.to_string()),
+        problem: None,
     }
 }
 

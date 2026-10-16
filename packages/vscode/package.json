@@ -303,7 +303,8 @@
       {
         "command": "ascribe.stopReview",
         "title": "Stop Review",
-        "category": "Ascribe"
+        "category": "Ascribe",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "ascribe.changedPages",
@@ -316,6 +317,41 @@
         "title": "Refresh Comments",
         "category": "Ascribe",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "ascribe.submitReview",
+        "title": "Submit Review…",
+        "category": "Ascribe",
+        "icon": "$(check)"
+      },
+      {
+        "command": "ascribe.openSourceChanges",
+        "title": "Open Source Changes",
+        "category": "Ascribe",
+        "icon": "$(diff-multiple)"
+      },
+      {
+        "command": "ascribe.review.openPage",
+        "title": "Open Changed Page",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.pageSourceChanges",
+        "title": "Open Page's Source Changes",
+        "category": "Ascribe",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "ascribe.review.showAdvice",
+        "title": "Show Advice",
+        "category": "Ascribe",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "ascribe.review.hideAdvice",
+        "title": "Hide Advice",
+        "category": "Ascribe",
+        "icon": "$(eye-closed)"
       },
       {
         "command": "ascribe.showOutput",
@@ -398,6 +434,12 @@
     },
     "views": {
       "ascribe": [
+        {
+          "id": "ascribe.review",
+          "name": "Review",
+          "contextualTitle": "Ascribe",
+          "when": "ascribe.active && ascribe.reviewOn"
+        },
         {
           "id": "ascribe.projects",
           "name": "Projects",
@@ -1031,6 +1073,30 @@
           "when": "ascribe.active && ascribe.reviewOn"
         },
         {
+          "command": "ascribe.submitReview",
+          "when": "ascribe.active && ascribe.reviewOn && ascribe.review.unsent"
+        },
+        {
+          "command": "ascribe.openSourceChanges",
+          "when": "ascribe.active && ascribe.reviewOn"
+        },
+        {
+          "command": "ascribe.review.openPage",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.pageSourceChanges",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.showAdvice",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.hideAdvice",
+          "when": "false"
+        },
+        {
           "command": "ascribe.showOutput",
           "when": "ascribe.active"
         },
@@ -1112,6 +1178,31 @@
       ],
       "view/title": [
         {
+          "command": "ascribe.submitReview",
+          "when": "view == ascribe.review && ascribe.review.unsent",
+          "group": "navigation@1"
+        },
+        {
+          "command": "ascribe.openSourceChanges",
+          "when": "view == ascribe.review",
+          "group": "navigation@2"
+        },
+        {
+          "command": "ascribe.review.showAdvice",
+          "when": "view == ascribe.review && !ascribe.review.advice",
+          "group": "navigation@3"
+        },
+        {
+          "command": "ascribe.review.hideAdvice",
+          "when": "view == ascribe.review && ascribe.review.advice",
+          "group": "navigation@3"
+        },
+        {
+          "command": "ascribe.stopReview",
+          "when": "view == ascribe.review",
+          "group": "navigation@4"
+        },
+        {
           "command": "ascribe.newPage",
           "when": "view == ascribe.pages",
           "group": "navigation"
@@ -1123,6 +1214,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "ascribe.review.pageSourceChanges",
+          "when": "view == ascribe.review && viewItem == ascribe.review.page",
+          "group": "inline@1"
+        },
         {
           "command": "ascribe.projects.showOutput",
           "when": "view == ascribe.projects && viewItem =~ /^ascribe\\.project\\./",

@@ -88,6 +88,8 @@ export interface ThreadsView {
   message: string | null;
   /** A thread to go to once the overlay has read the threads: one opened from another page. */
   goTo: string | null;
+  /** Open the submit dialog once the overlay has read the threads: Submit Review… from the Review view. */
+  submit: boolean;
 }
 
 /**
