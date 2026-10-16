@@ -5,15 +5,13 @@ description: "{One sentence that says what a reader can do once they've followed
 ---
 
 ## Overview
+@memo: Optional: Specify when and why your user might want to perform the task.
 
 This guide explains how to \{insert a brief description of the task}.
 
-\{Optional: Specify when and why your user might want to perform the task.}
-
 ## Before you start
 
-\{This section is optional}
-
+@memo: This section is optional
 Before you \{insert a brief description of the task}, ensure:
 
 * Prerequisite 1
@@ -22,10 +20,8 @@ Before you \{insert a brief description of the task}, ensure:
 
 ## \{Task name }
 
-\{Optional: Provide a concise description of the purpose of this task. Only include this if the purpose is not clear from the task title.}
-
-\{You can use this format to describe your steps:}
-
+@memo: Optional: Provide a concise description of the purpose of this task. Only include this if the purpose is not clear from the task title.
+@memo: You can use this format to describe your steps:
 @steps
 1. \{Write the step here. Use a verb to start.}
 
@@ -42,10 +38,9 @@ Before you \{insert a brief description of the task}, ensure:
     2.2. \{Substep 2}
 
 ### \{Sub-task}
+@memo: This section is optional. Include a sub-task only if the task is big and complex.
 
 ...
-
-\{This section is optional. Include a sub-task only if the task is big and complex.}
 
 ## See also
 

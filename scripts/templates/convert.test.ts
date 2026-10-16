@@ -22,7 +22,7 @@ import {
   write,
 } from "./convert.ts";
 
-const rules = { description: "{Say what it's for.}", about: [], directives: [] };
+const rules = { description: "{Say what it's for.}", about: [], memos: [], directives: [] };
 
 function template(body: string): string {
   return `# {Product} title\n\n> Read the [guide](./guide.md).\n>\n> Text in {curly brackets}.\n\n${body}\n\n---\n\n> Explore other templates.\n`;
@@ -159,6 +159,106 @@ test("a paragraph a rule says is about the template goes whole, and one it doesn
   );
 });
 
+function body(page: string): string {
+  return page.slice(page.indexOf("---\n\n", 4) + 5);
+}
+
+test("an instruction before a block is a memo in its place, touching the block", () => {
+  expect(
+    body(
+      convertTemplate(
+        "t",
+        template("## Overview\n\n{Optional: Say why.}\n\nThis explains {the task}."),
+        {
+          ...rules,
+          memos: ["{Optional: Say why.}"],
+        },
+      ),
+    ),
+  ).toBe("## Overview\n\n@memo: Optional: Say why.\nThis explains \\{the task}.\n");
+});
+
+test("an instruction before `@steps` stacks with it, and is about the list", () => {
+  expect(
+    body(
+      convertTemplate("t", template("## Do it\n\n{Use this format:}\n\n1. {Do it.}\n2. Then."), {
+        ...rules,
+        memos: ["{Use this format:}"],
+        directives: [{ directive: "@steps", before: "1. {Do it.}" }],
+      }),
+    ),
+  ).toBe("## Do it\n\n@memo: Use this format:\n@steps\n1. \\{Do it.}\n2. Then.\n");
+});
+
+test("an instruction that ends its section goes to the top of the section, under its heading and `@id`", () => {
+  const memos = { ...rules, memos: ["{This is optional. Use it only when the task is big.}"] };
+  expect(
+    body(
+      convertTemplate(
+        "t",
+        template(
+          "## Sub-task\n@id: sub\n\n...\n\n{This is optional.\nUse it only when the task is big.}\n\n## See also\n\nLinks.",
+        ),
+        memos,
+      ),
+    ),
+  ).toBe(
+    "## Sub-task\n@id: sub\n@memo: This is optional. Use it only when the task is big.\n\n...\n\n## See also\n\nLinks.\n",
+  );
+  expect(
+    body(
+      convertTemplate(
+        "t",
+        template("## Last\n\n{This is optional. Use it only when the task is big.}"),
+        memos,
+      ),
+    ),
+  ).toBe("## Last\n@memo: This is optional. Use it only when the task is big.\n");
+});
+
+test("an instruction of several lines too long for one is a container with their lines", () => {
+  const long = "a".repeat(100);
+  expect(
+    body(
+      convertTemplate(
+        "t",
+        template(
+          `## Links\n\n{Use this section for ${long}\nand say "Related" ${long}.}\n\nSee these.`,
+        ),
+        {
+          ...rules,
+          memos: [`{Use this section for ${long} and say "Related" ${long}.}`],
+        },
+      ),
+    ),
+  ).toBe(
+    `## Links\n\n@memo:\nUse this section for ${long}\nand say "Related" ${long}.\n@end\nSee these.\n`,
+  );
+});
+
+test("an instruction that ends a list item, or one the rule doesn't find, stops the conversion", () => {
+  const convert = (source: string, memo: string) => () =>
+    convertTemplate("how-to", template(source), { ...rules, memos: [memo] });
+  expect(
+    convert(
+      "## Steps\n\n1. {Do it.}\n\n    {Optional: The result.}\n\n2. Then.",
+      "{Optional: The result.}",
+    ),
+  ).toThrow(
+    new ConversionError(
+      "how-to: the memo `{Optional: The result.}` is the last block of a container with no heading, so it has nothing to be about",
+    ),
+  );
+  expect(convert("{Optional: Say why.}\n\n## Overview", "{Optional: Say why.}")).toThrow(
+    ConversionError,
+  );
+  expect(convert("## Overview\n\n{Say why.}", "{Say something else.}")).toThrow(
+    new ConversionError(
+      "how-to: the rule `memos` found 0 paragraphs `{Say something else.}`, not one",
+    ),
+  );
+});
+
 test("a template without the shape the steps expect stops the conversion", () => {
   expect(() => convertTemplate("t", "Text.\n", rules)).toThrow(
     new ConversionError("t: the template doesn't open with a level-1 heading (line 1)"),
@@ -210,7 +310,7 @@ test(
   "every rule of rules.toml is used, at one place, and the script stops without it",
   { timeout: 60_000 },
   async (context) => {
-    // A directive or an `about` paragraph finds its line exactly once, or the
+    // A directive, an `about` paragraph, or a memo finds its place exactly once, or the
     // conversion throws. Taken away, each changes what the script writes, so
     // `convert.ts --check` stops on the committed copies.
     const pin = readPin();
@@ -232,6 +332,10 @@ test(
         ...all.about.map((first, i): [string, typeof all] => [
           `about \`${first}\``,
           { ...all, about: all.about.filter((_, j) => j !== i) },
+        ]),
+        ...all.memos.map((text, i): [string, typeof all] => [
+          `memo \`${text}\``,
+          { ...all, memos: all.memos.filter((_, j) => j !== i) },
         ]),
       ];
       for (const [rule, rules] of without)
