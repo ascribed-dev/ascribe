@@ -16,7 +16,7 @@ import { STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
-import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
+import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { Walkthrough } from "./ui/walkthrough.js";
 import { FormatterOffer } from "./ui/formatter.js";
@@ -51,7 +51,9 @@ export interface AscribeApi {
     statusBar: StatusBarApi;
     projects: ProjectsViewApi;
     lens: BuildLensApi;
-    /** The Used by, Pages, and Content model views. */
+    /** The This page view. */
+    thisPage: ThisPageApi;
+    /** The Pages and Content model views. */
     sidebar: SidebarApi;
     /** Check Every Build's problems. */
     everyBuild: EveryBuildApi;
@@ -229,6 +231,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       statusBar: statusBar.api,
       projects: projectsView.api,
       lens: lens.api,
+      thisPage: sidebar.thisPageApi,
       sidebar: sidebar.api,
       everyBuild: checks.api,
       whenBuildsKnown: () => builds.whenSettled(),

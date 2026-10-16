@@ -1,14 +1,14 @@
-// What the Used by, Pages, and Content model views show, worked out from
+// What the This page, Pages, and Content model views show, worked out from
 // plain values so the unit tests can check it without VS Code.
 
 import type {
-  ContextNode,
-  ContextResult,
   InventoryEntry,
   InventoryFragment,
   InventoryPage,
   InventoryResult,
   ModelKind,
+  PagePlace,
+  PageResult,
 } from "../shapes.js";
 
 /** How an item of a view looks. */
@@ -22,6 +22,8 @@ export interface ItemLook {
   dimmed: boolean;
   /** Whether it has children. */
   expandable: boolean;
+  /** Whether it starts expanded, when it has children. */
+  expanded?: boolean;
 }
 
 // Pages.
@@ -210,50 +212,97 @@ export function modelLook(node: ModelNode): ItemLook {
   };
 }
 
-// Used by.
+// This page.
 
-/** A place that uses the active page, heading, or fragment. */
-export interface Place {
-  /** The file's URI. */
-  uri: string;
-  /** The file's path relative to the project's folder. */
-  path: string;
-  /** Where, as the server's range. */
-  range: { start: { line: number; character: number }; end: { line: number; character: number } };
-  /** The text of the place's first line, trimmed. */
-  text: string;
+/** A link to or an include of the active page, or of the heading at the cursor. */
+export type Place = PagePlace;
+
+/** An item of the This page view. */
+export type ThisPageNode =
+  | { kind: "about"; rows: readonly AboutRow[] }
+  | {
+      kind: "connections";
+      heading: string | undefined;
+      linked: number;
+      included: number;
+      groups: readonly ThisPageNode[];
+    }
+  | { kind: "group"; group: "links" | "includes"; files: readonly PlacesInFile[] }
+  | { kind: "file"; file: PlacesInFile }
+  | { kind: "place"; place: Place }
+  | { kind: "row"; row: AboutRow };
+
+/** A row of About: a label and what it says. */
+interface AboutRow {
+  label: string;
+  value: string;
+  tooltip: string;
 }
 
-/** An item of the Used by view. */
-export type UsedByNode =
-  | { kind: "section"; section: "links" | "includes"; files: readonly UsedByFile[] }
-  | { kind: "file"; file: UsedByFile }
-  | { kind: "place"; place: Place };
-
 /** The places in one file. */
-interface UsedByFile {
+interface PlacesInFile {
   uri: string;
   path: string;
   places: readonly Place[];
 }
 
-/** Whether a place is an `@include`, rather than a link. */
-function isInclude(place: Place): boolean {
-  return /^(?:[>\s]|[-*+]\s|\d+[.)]\s)*@include\b/.test(place.text);
+/** The This page view's top level: About, then Connections; nothing for a file that isn't a page. */
+export function thisPageRoots(page: PageResult): ThisPageNode[] {
+  const { about } = page;
+  if (!about) return [];
+  const rows: AboutRow[] = [
+    { label: "Title", value: about.title ?? basename(about.path), tooltip: about.path },
+    {
+      label: "Type",
+      value: about.fragment ? "fragment" : (about.type ?? "none"),
+      tooltip: about.fragment
+        ? "A fragment exists to be included, and is published only where it is"
+        : about.type === null
+          ? "No one content type applies to it"
+          : `Content type ${about.type}`,
+    },
+    about.fragment
+      ? {
+          label: "Address",
+          value: "only where it's included",
+          tooltip: "A fragment has no address of its own",
+        }
+      : { label: "Address", value: about.address ?? "", tooltip: "Its address on the site" },
+  ];
+  if (!about.fragment) {
+    rows.push(
+      about.markdownAddress === null
+        ? {
+            label: "Markdown",
+            value: "not published",
+            tooltip: "The project publishes no Markdown versions ([consumer] agents)",
+          }
+        : {
+            label: "Markdown",
+            value: about.markdownAddress,
+            tooltip: "Its Markdown version's address, which agents read",
+          },
+    );
+  }
+  const links = byFile(page.linkedFrom);
+  const includes = byFile(page.includedBy);
+  return [
+    { kind: "about", rows },
+    {
+      kind: "connections",
+      heading: page.heading?.text,
+      linked: page.linkedFrom.length,
+      included: page.includedBy.length,
+      groups: [
+        { kind: "group", group: "links", files: links },
+        { kind: "group", group: "includes", files: includes },
+      ],
+    },
+  ];
 }
 
-/** The Used by view's top level: the links, grouped by file, then the includes. */
-export function usedByRoots(places: readonly Place[]): UsedByNode[] {
-  const links = byFile(places.filter((p) => !isInclude(p)));
-  const includes = byFile(places.filter(isInclude));
-  const nodes: UsedByNode[] = [];
-  if (links.length > 0) nodes.push({ kind: "section", section: "links", files: links });
-  if (includes.length > 0) nodes.push({ kind: "section", section: "includes", files: includes });
-  return nodes;
-}
-
-function byFile(places: readonly Place[]): UsedByFile[] {
-  const files = new Map<string, UsedByFile & { places: Place[] }>();
+function byFile(places: readonly Place[]): PlacesInFile[] {
+  const files = new Map<string, PlacesInFile & { places: Place[] }>();
   for (const place of places) {
     const file = files.get(place.uri) ?? { uri: place.uri, path: place.path, places: [] };
     file.places.push(place);
@@ -262,31 +311,52 @@ function byFile(places: readonly Place[]): UsedByFile[] {
   return [...files.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** An item's children in the Used by view. */
-export function usedByChildren(node: UsedByNode): UsedByNode[] {
+/** An item's children in the This page view. */
+export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
   switch (node.kind) {
-    case "section":
+    case "about":
+      return node.rows.map((row) => ({ kind: "row", row }));
+    case "connections":
+      return [...node.groups];
+    case "group":
       return node.files.map((file) => ({ kind: "file", file }));
     case "file":
       return node.file.places.map((place) => ({ kind: "place", place }));
     case "place":
+    case "row":
       return [];
   }
 }
 
-/** How an item of the Used by view looks. */
-export function usedByLook(node: UsedByNode): ItemLook {
+/** How an item of the This page view looks. */
+export function thisPageLook(node: ThisPageNode): ItemLook {
   switch (node.kind) {
-    case "section": {
+    case "about":
+      return { ...section("About", "", "info", "What the page is"), expanded: true };
+    case "connections": {
+      const to = node.heading === undefined ? "to the page" : `to “${node.heading}”`;
+      return {
+        ...section(
+          "Connections",
+          to,
+          "references",
+          `${count(node.linked, "link", "links")} and ${count(node.included, "include", "includes")} ${to}`,
+        ),
+        expanded: true,
+      };
+    }
+    case "group": {
       const places = node.files.reduce((n, f) => n + f.places.length, 0);
-      return node.section === "links"
-        ? group("Linked from", places, "link", count(node.files.length, "file", "files"))
-        : group(
-            "Included by",
-            places,
-            "file-symlink-file",
-            count(node.files.length, "file", "files"),
-          );
+      const look =
+        node.group === "links"
+          ? group("Linked from", places, "link", count(node.files.length, "file", "files"))
+          : group(
+              "Included by",
+              places,
+              "file-symlink-file",
+              count(node.files.length, "file", "files"),
+            );
+      return { ...look, dimmed: places === 0, expandable: places > 0 };
     }
     case "file":
       return {
@@ -306,31 +376,23 @@ export function usedByLook(node: UsedByNode): ItemLook {
         dimmed: false,
         expandable: false,
       };
+    case "row":
+      return {
+        label: node.row.label,
+        description: node.row.value,
+        tooltip: node.row.tooltip,
+        icon: "blank",
+        dimmed: false,
+        expandable: false,
+      };
   }
 }
 
-/** A heading, as `ascribe/context` reports one. */
-export type HeadingAt = Extract<ContextNode, { kind: "heading" }>;
-
-/**
- * What the Used by view asks about: the heading the cursor is in, as the
- * server parsed it, or the page when it's in none. A `#` line in a code
- * block or the frontmatter isn't a heading.
- */
-export function headingAt(context: Pick<ContextResult, "at"> | null): HeadingAt | undefined {
-  return context?.at.find((node): node is HeadingAt => node.kind === "heading");
-}
-
-/** A heading's text as the view names it: its first line, without `#` markers. */
-export function headingTitle(source: string): string {
-  const line = source.split(/\r?\n/)[0] ?? "";
-  return line
-    .replace(/^ {0,3}#{1,6}(?=\s|$)/, "")
-    .replace(/\s#+\s*$/, "")
-    .trim();
-}
-
 // Shared.
+
+function section(label: string, description: string, icon: string, tooltip: string): ItemLook {
+  return { label, description, tooltip, icon, dimmed: false, expandable: true };
+}
 
 function group(label: string, size: number, icon: string, tooltip: string): ItemLook {
   return { label, description: String(size), tooltip, icon, dimmed: false, expandable: true };

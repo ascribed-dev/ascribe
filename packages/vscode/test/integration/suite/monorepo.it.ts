@@ -227,7 +227,7 @@ describe("with several projects, one nested in another", () => {
         await api.ui.projects.refresh();
         await api.whenSettled();
         assert.deepEqual(await viewed(), shown);
-        // Used by, Pages, and Content model have no running project to show.
+        // This page, Pages, and Content model have no running project to show.
         await api.ui.sidebar.whenSettled();
         assert.deepEqual(api.ui.sidebar.items("pages"), []);
         assert.deepEqual(api.ui.sidebar.items("model"), []);

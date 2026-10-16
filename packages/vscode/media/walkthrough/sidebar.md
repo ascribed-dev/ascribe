@@ -1,7 +1,7 @@
 # The Ascribe sidebar
 
 - **Projects**: every project in the workspace, and whether its language server is running.
-- **Used by**: what links to the page you're on, or to the heading at the cursor.
+- **This page**: the page you're on, its title, type, and addresses, and what links to it or to the heading at the cursor.
 - **Pages**: the project's pages by type, its fragments, and pages nothing links to.
 - **Content model**: the project's phrases, features, glossary terms, and the rest, with how many places use each.
 

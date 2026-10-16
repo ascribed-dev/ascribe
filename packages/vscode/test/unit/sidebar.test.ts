@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { InventoryResult } from "../../src/shapes.js";
+import type { InventoryResult, PageResult } from "../../src/shapes.js";
 import {
-  headingAt,
-  headingTitle,
   modelChildren,
   modelLook,
   modelRoots,
@@ -10,10 +8,11 @@ import {
   pagesLook,
   pagesPath,
   pagesRoots,
-  usedByChildren,
-  usedByLook,
-  usedByRoots,
+  thisPageChildren,
+  thisPageLook,
+  thisPageRoots,
   type Place,
+  type ThisPageNode,
 } from "../../src/ui/sidebar.js";
 
 /** The item at `i`, which the test expects to be there. */
@@ -136,61 +135,111 @@ describe("the Content model view", () => {
   });
 });
 
-describe("the Used by view", () => {
+describe("the This page view", () => {
   const place = (path: string, line: number, text: string): Place => ({
     uri: `file:///p/docs/${path}`,
-    path: `docs/${path}`,
+    path,
     range: range(line),
     text,
   });
-  const places = [
-    place("b.md", 3, "See [setup](a.md#setup)."),
-    place("a2.md", 7, "- [Install](a.md)"),
-    place("b.md", 9, "Again: [a](a.md)."),
-    place("guide.md", 2, "@include: _a.md"),
-    place("list.md", 4, "> - @include: _a.md#x"),
-  ];
+  const about = {
+    path: "keys.md",
+    fragment: false,
+    title: "API keys",
+    type: "page",
+    address: "/keys/",
+    markdownAddress: "/keys.md",
+  };
+  const page: PageResult = {
+    about,
+    heading: { id: "rotate-keys", text: "Rotate keys", range: range(11) },
+    linkedFrom: [
+      place("b.md", 3, "See [rotate](keys.md#rotate-keys)."),
+      place("a.md", 7, "- [Rotate](keys.md#rotate-keys)"),
+      place("b.md", 9, "Again: [a](keys.md#rotate-keys)."),
+    ],
+    includedBy: [],
+  };
 
-  it("lists links grouped by file, then includes", () => {
-    const roots = usedByRoots(places);
-    expect(roots.map((n) => [usedByLook(n).label, usedByLook(n).description])).toEqual([
-      ["Linked from", "3"],
-      ["Included by", "2"],
+  /** Every item as `label (description)`, depth first. */
+  function flat(nodes: ThisPageNode[], depth = 0): string[] {
+    return nodes.flatMap((node) => {
+      const look = thisPageLook(node);
+      return [
+        `${"  ".repeat(depth)}${look.label}${look.description ? ` (${look.description})` : ""}`,
+        ...flat(thisPageChildren(node), depth + 1),
+      ];
+    });
+  }
+
+  it("says what the page is, then what links to the heading, by file", () => {
+    expect(flat(thisPageRoots(page))).toEqual([
+      "About",
+      "  Title (API keys)",
+      "  Type (page)",
+      "  Address (/keys/)",
+      "  Markdown (/keys.md)",
+      "Connections (to “Rotate keys”)",
+      "  Linked from (3)",
+      "    a.md (a.md)",
+      "      - [Rotate](keys.md#rotate-keys) (line 8)",
+      "    b.md (b.md)",
+      "      See [rotate](keys.md#rotate-keys). (line 4)",
+      "      Again: [a](keys.md#rotate-keys). (line 10)",
+      "  Included by (0)",
     ]);
-    const files = usedByChildren(nth(roots, 0));
-    expect(files.map((n) => usedByLook(n).description)).toEqual(["docs/a2.md", "docs/b.md"]);
-    const inB = usedByChildren(nth(files, 1));
-    expect(inB.map((n) => [usedByLook(n).label, usedByLook(n).description])).toEqual([
-      ["See [setup](a.md#setup).", "line 4"],
-      ["Again: [a](a.md).", "line 10"],
+    const roots = thisPageRoots(page);
+    expect(roots.map((n) => thisPageLook(n).expanded)).toEqual([true, true]);
+    const included = nth(thisPageChildren(nth(roots, 1)), 1);
+    expect(thisPageLook(included)).toMatchObject({ dimmed: true, expandable: false });
+  });
+
+  it("is about the whole page outside any heading, and says what isn't published", () => {
+    const whole = thisPageRoots({
+      ...page,
+      about: { ...about, markdownAddress: null },
+      heading: null,
+      linkedFrom: [],
+      includedBy: [place("guide.md", 2, "@include: keys.md")],
+    });
+    expect(flat(whole)).toEqual([
+      "About",
+      "  Title (API keys)",
+      "  Type (page)",
+      "  Address (/keys/)",
+      "  Markdown (not published)",
+      "Connections (to the page)",
+      "  Linked from (0)",
+      "  Included by (1)",
+      "    guide.md (guide.md)",
+      "      @include: keys.md (line 3)",
     ]);
   });
 
-  it("has nothing to show when nothing uses the page", () => {
-    expect(usedByRoots([])).toEqual([]);
+  it("says a fragment is published only where it's included", () => {
+    const fragment = thisPageRoots({
+      ...page,
+      about: {
+        path: "_setup.md",
+        fragment: true,
+        title: null,
+        type: null,
+        address: null,
+        markdownAddress: null,
+      },
+      heading: null,
+    });
+    expect(flat([nth(fragment, 0)])).toEqual([
+      "About",
+      "  Title (_setup.md)",
+      "  Type (fragment)",
+      "  Address (only where it's included)",
+    ]);
   });
 
-  it("asks about the heading the server says the cursor is in", () => {
-    const heading = {
-      kind: "heading" as const,
-      range: range(4),
-      level: 2,
-      id: "install",
-      explicitId: false,
-    };
-    const section = { kind: "section" as const, range: range(4), headingId: "install" };
-    expect(headingAt({ at: [heading, section] })).toBe(heading);
-    // A `# comment` in a code block is in a code block, not a heading.
-    const code = { kind: "codeBlock" as const, range: range(9), info: "sh", fenced: true };
-    expect(headingAt({ at: [code, section] })).toBe(undefined);
-    expect(headingAt(null)).toBe(undefined);
-  });
-
-  it("names a heading by its text", () => {
-    expect(headingTitle("## Install")).toBe("Install");
-    expect(headingTitle("   # Top #")).toBe("Top");
-    expect(headingTitle("## Rotating {product} keys")).toBe("Rotating {product} keys");
-    expect(headingTitle("Setext title\n============")).toBe("Setext title");
-    expect(headingTitle("## C# tips")).toBe("C# tips");
+  it("has nothing to show for a file that isn't a page", () => {
+    expect(thisPageRoots({ about: null, heading: null, linkedFrom: [], includedBy: [] })).toEqual(
+      [],
+    );
   });
 });

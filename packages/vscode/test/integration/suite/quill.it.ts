@@ -9,9 +9,10 @@ import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
 // The sidebar's views run first, while the project's pages are the example's own.
-describe("the sidebar's Used by, Pages, and Content model views on examples/quill", () => {
+describe("the sidebar's This page, Pages, and Content model views on examples/quill", () => {
   const keys = uriOf("docs", "keys.md");
   const quickstart = uriOf("docs", "quickstart.md");
+  const installAgent = uriOf("docs", "install-agent.md");
 
   /** A view's items as `label (description)`, with their children, depth first. */
   function flat(items: SidebarItem[], depth = 0): string[] {
@@ -23,9 +24,21 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
 
   async function settled(): Promise<ReturnType<typeof flat>> {
     const api = await activated();
-    await api.ui.sidebar.whenSettled();
-    return flat(api.ui.sidebar.items("usedBy"));
+    await api.ui.thisPage.whenSettled();
+    return flat(api.ui.thisPage.items());
   }
+
+  /** Waits for This page to show what `wanted` accepts, and returns what it shows. */
+  async function showing(what: string, wanted: (items: string[]) => boolean): Promise<string[]> {
+    return waitFor(what, async () => {
+      const items = await settled();
+      return wanted(items) ? items : undefined;
+    }).catch(() => settled());
+  }
+
+  /** Accepts exactly `expected`. */
+  const exactly = (expected: string[]) => (items: string[]) =>
+    items.join("\n") === expected.join("\n");
 
   /** Opens a page with the cursor at the start of the line that starts with `line`. */
   async function openAt(uri: vscode.Uri, line?: string): Promise<void> {
@@ -92,38 +105,94 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
     assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
   });
 
-  it("follows the active page and narrows to the heading at the cursor", async () => {
-    // Used by asks only while it's showing.
-    await vscode.commands.executeCommand("ascribe.usedBy.focus");
-    await openAt(keys);
-    assert.deepEqual(
-      await waitFor("Used by for keys.md", async () => {
-        const items = await settled();
-        return items.length > 0 ? items : undefined;
-      }),
-      [
-        "Linked from (4)",
-        "  configure-legacy.md (docs/configure-legacy.md)",
-        "    Put the key under `key:` in `quill.yaml`. To make one, see [API keys](keys.md). (line 13)",
-        "  configure.md (docs/configure.md)",
-        "    Put the key in `quill.d/key`. To make one, see [API keys](keys.md). (line 14)",
-        "  install-agent.md (docs/install-agent.md)",
-        "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)",
-        "  webhooks.md (docs/webhooks.md)",
-        "    The agent posts an event to each webhook in `quill.yaml`. See [API keys](keys.md). (line 8)",
-      ],
-    );
+  /** What This page shows for keys.md, with what links to `heading` (else the page). */
+  function keysPage(connections: string[]): string[] {
+    return [
+      "About",
+      "  Title (API keys)",
+      "  Type (page)",
+      "  Address (/keys/)",
+      "  Markdown (not published)",
+      ...connections,
+    ];
+  }
+
+  const linkToRotate =
+    "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 94)";
+
+  it("says what the page is, and narrows its connections to the heading at the cursor", async () => {
     const api = await activated();
-    /** Waits for Used by's message, which says what it answered. */
-    const answered = (message: string) =>
-      waitFor(message, async () => {
-        const items = await settled();
-        return api.ui.sidebar.message("usedBy") === message ? items : undefined;
-      });
-    await openAt(keys, "## Rotate keys");
-    assert.equal((await answered("What links to “Rotate keys”")).length, 3);
+    // This page asks only while it's showing.
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await openAt(
+      keys,
+      "Generate a new key, put it in `quill.yaml`, and restart the agent. To install the agent first, see [](install-agent.md#install-agent).",
+    );
+    const rotate = keysPage([
+      "Connections (to “Rotate keys”)",
+      "  Linked from (1)",
+      "    install-agent.md (install-agent.md)",
+      linkToRotate,
+      "  Included by (0)",
+    ]);
+    assert.deepEqual(await showing("This page under Rotate keys", exactly(rotate)), rotate);
+    assert.ok(
+      api.ui.thisPage
+        .items()[1]
+        ?.children[0]?.children[0]?.children[0]?.opens?.endsWith("/docs/install-agent.md:94"),
+    );
+    // A cursor move asks once.
+    const asked = api.ui.thisPage.asked();
     await openAt(keys, "## Create a key");
-    assert.deepEqual(await answered("Nothing links to or includes “Create a key”."), []);
+    const create = keysPage([
+      "Connections (to “Create a key”)",
+      "  Linked from (0)",
+      "  Included by (0)",
+    ]);
+    assert.deepEqual(await showing("This page under Create a key", exactly(create)), create);
+    assert.equal(api.ui.thisPage.asked(), asked + 1);
+    // Above the first heading, the whole page.
+    await openAt(keys);
+    const whole = await showing("This page for keys.md", (items) =>
+      items.includes("Connections (to the page)"),
+    );
+    assert.equal(whole[6], "  Linked from (4)", whole.join("\n"));
+  });
+
+  it("counts an unsaved edit's link before it's saved", async () => {
+    const original = readFileSync(installAgent.fsPath, "utf8");
+    try {
+      const document = await vscode.workspace.openTextDocument(installAgent);
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(
+        installAgent,
+        document.positionAt(original.length),
+        "\nRotate them with [](keys.md#rotate-keys).\n",
+      );
+      assert.ok(await vscode.workspace.applyEdit(edit));
+      await openAt(keys, "## Rotate keys");
+      const items = await showing("two links to Rotate keys", (shown) =>
+        shown.includes("  Linked from (2)"),
+      );
+      assert.equal(items[6], "  Linked from (2)", items.join("\n"));
+      assert.ok(document.isDirty);
+    } finally {
+      await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));
+      await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
+      writeFileSync(installAgent.fsPath, original);
+    }
+  });
+
+  it("asks a file that isn't a page to be opened", async () => {
+    const api = await activated();
+    await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uriOf("ascribe.toml")),
+    );
+    await waitFor("the message", async () => {
+      await api.ui.thisPage.whenSettled();
+      return api.ui.thisPage.message() === "Open a page to see what's known about it.";
+    });
+    assert.deepEqual(api.ui.thisPage.items(), []);
   });
 
   it("counts again when a page of the project is saved", async () => {
