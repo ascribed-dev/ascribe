@@ -87,7 +87,7 @@ In a project with a `@memo` in any page, the rules `ascribe agents sync` writes 
 - A Vale comment and an acknowledged comment aren't reported.
 - In VS Code, typing `@me` offers `@memo`, a memo's text is colored as a comment, and a container folds.
 - No page under `docs/content/` has an HTML comment that's reported, the published docs pages have none of the generators' notes in their source, and `ascribe fmt --check` on the docs passes.
-- `node scripts/compare/outputs.ts --base main` shows only the docs' pages that lost a comment, each named with `--accept`.
+- `node scripts/compare/outputs.ts --base main` shows every project the same: the binary changes no output, since it builds the same sources on both sides. The docs' pages lose the generators' comments through their source, which a build of `docs/` at `main` and at the branch, with one binary, shows: their site and JSON outputs differ only by the comments and the blank lines after them, beside the pages whose prose this phase changes.
 
 ## Verify
 
