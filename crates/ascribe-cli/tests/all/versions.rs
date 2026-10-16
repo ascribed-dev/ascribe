@@ -465,3 +465,57 @@ fn the_text_and_the_notes_name_the_page_replaced() {
     );
     assert!(!notes.contains("Removed"), "{notes}");
 }
+
+/// A project with `REWRITTEN`'s lines and these pages, each `(file, title,
+/// available, replaces)`.
+fn pages(list: &[(&str, &str, &str, Option<&str>)]) -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "ascribe.toml", REWRITTEN);
+    for (file, title, available, replaces) in list {
+        let replaces = replaces.map_or(String::new(), |r| format!("replaces: {r}\n"));
+        write(
+            dir.path(),
+            &format!("docs/{file}"),
+            &format!("---\ntitle: {title}\navailable: {available}\n{replaces}---\n\nText.\n"),
+        );
+    }
+    dir
+}
+
+#[test]
+fn a_page_in_a_line_stops_the_chain() {
+    // `b` took `a`'s place and is in both lines, so `c`, replacing `b`,
+    // isn't in place of `a`.
+    let dir = pages(&[
+        ("a.md", "A", "prod (ga 1.0, removed 1.1)", None),
+        ("b.md", "B", "prod 1.0", Some("a.md")),
+        ("c.md", "C", "prod 1.1", Some("b.md")),
+    ]);
+    assert_eq!(
+        entries(dir.path(), "prod 1.0", "1.1", "added"),
+        [("docs/c.md".to_owned(), None)]
+    );
+    assert_eq!(
+        entries(dir.path(), "prod 1.0", "1.1", "removed"),
+        [("docs/a.md".to_owned(), None)]
+    );
+}
+
+#[test]
+fn a_page_added_too_stops_the_chain() {
+    // `y` replaces `z` itself; `x`, replacing `y`, doesn't reach `z`
+    // through it, though it comes first.
+    let dir = pages(&[
+        ("x.md", "X", "prod 1.1", Some("y.md")),
+        ("y.md", "Y", "prod 1.1", Some("z.md")),
+        ("z.md", "Z", "prod (ga 1.0, removed 1.1)", None),
+    ]);
+    assert_eq!(
+        entries(dir.path(), "prod 1.0", "1.1", "added"),
+        [
+            ("docs/x.md".to_owned(), None),
+            ("docs/y.md".to_owned(), Some("docs/z.md".to_owned())),
+        ]
+    );
+    assert!(entries(dir.path(), "prod 1.0", "1.1", "removed").is_empty());
+}

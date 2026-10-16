@@ -294,6 +294,9 @@ pub fn changes(project: &Project, from: &str, to: &str) -> Result<VersionChanges
     // The pages added and removed whole, by their entry.
     let mut added_pages: Vec<(usize, RelPath)> = Vec::new();
     let mut removed_pages: Vec<(usize, RelPath)> = Vec::new();
+    // The pages whose own mark keeps them out of both lines, which a chain
+    // of `replaces` runs through.
+    let mut in_neither: HashSet<RelPath> = HashSet::new();
     let mut files: Vec<&FileIndex> = project.files().collect();
     files.sort_by(|a, b| a.path.cmp(&b.path));
     for file in files {
@@ -321,6 +324,11 @@ pub fn changes(project: &Project, from: &str, to: &str) -> Result<VersionChanges
                     .map_or(f.span.start(), |i| f.content.start() + i)
             });
             page_level = Some(compare(model, &spec, &target, &from, &to));
+            let available =
+                |line: &Version| in_release_line(model, &spec, &target, line).map(|l| l.available);
+            if available(&from) == Some(false) && available(&to) == Some(false) {
+                in_neither.insert(file.path.clone());
+            }
             marks.push((at, "page", spec));
         }
         for marker in &file.availability {
@@ -371,20 +379,22 @@ pub fn changes(project: &Project, from: &str, to: &str) -> Result<VersionChanges
             }
         }
     }
-    pair_replaced(project, &mut out, &added_pages, &removed_pages);
+    pair_replaced(project, &mut out, &added_pages, &removed_pages, &in_neither);
     Ok(out)
 }
 
 /// Makes each page added in place of one removed one change: the added
 /// page's entry names the removed one, whose own entry goes. The two are
-/// linked by `replaces`, either way, through pages neither line has; an
-/// added page takes the removed page nearest along the chain, the newer
-/// side first, that no page before it took.
+/// linked by `replaces`, either way, directly or through pages neither
+/// line has: a page in a line between them stops the chain, since it took
+/// the place itself. An added page takes the removed page nearest along
+/// the chain, the newer side first, that no page before it took.
 fn pair_replaced(
     project: &Project,
     out: &mut VersionChanges,
     added: &[(usize, RelPath)],
     removed: &[(usize, RelPath)],
+    in_neither: &HashSet<RelPath>,
 ) {
     if added.is_empty() || removed.is_empty() {
         return;
@@ -392,7 +402,7 @@ fn pair_replaced(
     let links = project.replacements();
     let mut taken: Vec<usize> = Vec::new();
     for (entry, page) in added {
-        let Some(gone) = nearest_removed(&links, page, removed, &taken) else {
+        let Some(gone) = nearest_removed(&links, page, removed, &taken, in_neither) else {
             continue;
         };
         taken.push(gone);
@@ -413,12 +423,14 @@ fn pair_replaced(
 }
 
 /// The entry of the removed page `replaces` links `page` with, nearest
-/// first, that isn't `taken`.
+/// first, that isn't `taken`, walking on only through pages `in_neither`
+/// line.
 fn nearest_removed(
     links: &BTreeMap<RelPath, RelPath>,
     page: &RelPath,
     removed: &[(usize, RelPath)],
     taken: &[usize],
+    in_neither: &HashSet<RelPath>,
 ) -> Option<usize> {
     let mut seen: HashSet<&RelPath> = HashSet::from([page]);
     let mut queue: VecDeque<&RelPath> = VecDeque::from([page]);
@@ -435,7 +447,9 @@ fn nearest_removed(
             {
                 return Some(*entry);
             }
-            queue.push_back(next);
+            if in_neither.contains(next) {
+                queue.push_back(next);
+            }
         }
     }
     None
