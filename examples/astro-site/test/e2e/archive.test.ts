@@ -1,9 +1,10 @@
 // The archive of `examples/quill`'s `self-managed 3.4`, opened from a disk
 // in Chromium with the network off: every page loads with nothing from
-// outside the folder and no script, every link in it leads to a file in it,
-// and printing a page hides its sidebar.
+// outside the folder and no script but the search's, every link in it leads
+// to a file in it, printing a page hides its sidebar, and the search box
+// finds pages and headings, or is absent with scripts off.
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -52,8 +53,12 @@ function pages(): string[] {
 }
 
 /** A page of the archive, opened from the disk, with every request outside the folder refused. */
-async function open(file: string, media: "screen" | "print" = "screen"): Promise<Page> {
-  const context = await browser.newContext({ offline: true });
+async function open(
+  file: string,
+  media: "screen" | "print" = "screen",
+  javaScriptEnabled = true,
+): Promise<Page> {
+  const context = await browser.newContext({ offline: true, javaScriptEnabled });
   const page = await context.newPage();
   const inside = pathToFileURL(folder).href;
   await page.route("**/*", (route) => {
@@ -68,11 +73,13 @@ async function open(file: string, media: "screen" | "print" = "screen"): Promise
 }
 
 describe("an archive opened from a disk", () => {
-  it("loads every page with its stylesheet, nothing from outside, and no script", async () => {
+  it("loads every page with its stylesheet, nothing from outside, and no script but the search's", async () => {
     expect(pages()).toContain("index.html");
     for (const file of pages()) {
+      const scripts = readFileSync(path.join(folder, file), "utf8").match(/<script[^>]*>/g) ?? [];
+      for (const script of scripts) expect(script, file).toMatch(/^<script src="(\.\/|(\.\.\/)+)search\.js" /);
+      expect(scripts.length, file).toBe(file === "all.html" ? 0 : 1);
       const page = await open(file);
-      expect(await page.locator("script").count(), file).toBe(0);
       expect(await page.locator('meta[name="robots"]').getAttribute("content"), file).toBe("noindex");
       await expect(page.locator(".archive-statement").innerText()).resolves.toContain(
         "Documentation for self-managed 3.4.",
@@ -127,11 +134,68 @@ describe("an archive opened from a disk", () => {
     await page.context().close();
   });
 
+  it("leaves the search box out of print", async () => {
+    const page = await open("install-agent.html", "print");
+    await expect(page.locator(".archive-search").count()).resolves.toBe(1);
+    await expect(page.locator(".archive-search").isVisible()).resolves.toBe(false);
+    await page.context().close();
+  });
+
   it("shows each tab under its label without a script", async () => {
     const page = await open("install-agent.html");
     const tabs = page.locator("ascribe-tab");
     expect(await tabs.count()).toBeGreaterThan(1);
     for (const tab of await tabs.all()) await expect(tab.isVisible()).resolves.toBe(true);
     await page.context().close();
+  });
+});
+
+describe("searching an archive opened from a disk", () => {
+  /** The results listed for `query`, typed into the box of `file`. */
+  async function searchFor(page: Page, query: string): Promise<string[]> {
+    await page.getByRole("searchbox", { name: "Search this version" }).fill(query);
+    await expect
+      .poll(() => page.getByRole("status").innerText())
+      .toMatch(/result|Nothing found/);
+    return page
+      .locator(".archive-search-results a")
+      .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).getAttribute("href") ?? ""));
+  }
+
+  it("finds a heading by a word in it, and the result opens the page there", async () => {
+    const page = await open("keys.html");
+    const found = await searchFor(page, "troubleshooting");
+    expect(found[0]).toBe("./install-agent.html#troubleshooting");
+    await expect(page.getByRole("status").innerText()).resolves.toMatch(/^\d+ results? for “troubleshooting”\.$/);
+    await page.locator(".archive-search-results a").first().click();
+    await page.waitForURL(/install-agent\.html#troubleshooting$/);
+    await expect(page.locator("#troubleshooting").isVisible()).resolves.toBe(true);
+    await page.context().close();
+  });
+
+  it("finds a word in a code block", async () => {
+    const page = await open("upgrade.html");
+    expect(await searchFor(page, "--version")).toEqual(["./install-agent.html#install-agent"]);
+    await expect(page.locator(".archive-search-results mark").first().innerText()).resolves.toBe("--version");
+    await page.context().close();
+  });
+
+  it("says when nothing is found", async () => {
+    const page = await open("index.html");
+    expect(await searchFor(page, "zeppelin")).toEqual([]);
+    await expect(page.getByRole("status").innerText()).resolves.toBe("Nothing found for “zeppelin”.");
+    expect(outside).toEqual([]);
+    await page.context().close();
+  });
+
+  it("leaves the box out with scripts off, and every page whole", async () => {
+    for (const file of pages().filter((p) => p !== "all.html")) {
+      const page = await open(file, "screen", false);
+      await expect(page.locator(".archive-search").count(), file).resolves.toBe(0);
+      await expect(page.getByRole("searchbox").count(), file).resolves.toBe(0);
+      await expect(page.locator("main h1").isVisible(), file).resolves.toBe(true);
+      expect(await page.getByRole("navigation", { name: "Pages" }).getByRole("link").count(), file).toBeGreaterThan(1);
+      await page.context().close();
+    }
   });
 });

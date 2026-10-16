@@ -47,7 +47,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
 | `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
-| `ascribe versions archive` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
+| `ascribe versions archive` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
 
 On every command:
 
@@ -816,6 +816,7 @@ READMEs published with a package, a crate, or the repository:
 | `crates/ascribe-syntax/README.md` |
 | `crates/ascribe-templates/README.md` |
 | `docs/README.md` |
+| `packages/archive/README.md` |
 | `packages/astro/README.md` |
 | `packages/cli/README.md` |
 | `packages/elements/README.md` |

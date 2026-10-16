@@ -75,6 +75,15 @@
       "minimum": 0,
       "type": "integer"
     },
+    "search_index_bytes": {
+      "description": "The size of the search index, `search-index.js`, in bytes.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "search_index_large": {
+      "description": "Whether the search index is large enough that a reader's first\nsearch waits for it to load.",
+      "type": "boolean"
+    },
     "status": {
       "description": "The line's status: `current`, `live`, or `planned`.",
       "type": "string"
@@ -103,6 +112,8 @@
     "pages",
     "assets",
     "removed",
+    "search_index_bytes",
+    "search_index_large",
     "unlinked"
   ],
   "title": "VersionsArchiveReport",

@@ -19,6 +19,8 @@ archive/3.4/
 ├── contents.html           the contents page, when index.html is the root page
 ├── all.html                every page in reading order, in one document
 ├── style.css               the stylesheet
+├── search.js               the search script
+├── search-index.js         the search index
 ├── robots.txt              User-agent: *, Disallow: /
 ├── install.html            one file for each page
 ├── guide/
@@ -34,13 +36,13 @@ The folder is replaced by the output layout contract's rules: a file is written 
 
 ## 2. A page
 
-Each page is one complete HTML document that loads nothing from outside the folder and runs no script:
+Each page is one complete HTML document that loads nothing from outside the folder and runs no script but the search's (§6):
 
-- `<meta name="robots" content="noindex">`, and a content security policy of `script-src 'none'`.
+- `<meta name="robots" content="noindex">`, and a content security policy of `script-src 'self' file:`: the folder's own script files, served or opened from a disk, and no script written in a page.
 - A `<title>` of the page's title and the line: `Install the Quill agent · self-managed 3.4`.
 - One stylesheet, `style.css`, linked relatively: the element library's stylesheet, then the archive's own. Every element of the [element contract](../astro/elements.md) renders as it does without its script; tabs show one after another, each under its label.
 - The statement, `<header class="archive-statement">`: "Documentation for self-managed 3.4. This version is no longer maintained.", with the target's label (content model contract §6) and the line, and with `--current` a `<span class="archive-current">` holding a link to that address.
-- The sidebar, `<nav class="archive-sidebar">`: a link to the contents page, then each folder's pages, the content root's first with no name, then each folder in path order named by the title of its `index` page, or by its path. In a folder, its `index` page comes first, then the rest by path. The page shown has `aria-current="page"`.
+- The sidebar, `<nav class="archive-sidebar">`: the search script's `<script>` (§6), a link to the contents page, then each folder's pages, the content root's first with no name, then each folder in path order named by the title of its `index` page, or by its path. In a folder, its `index` page comes first, then the rest by path. The page shown has `aria-current="page"`.
 - The page, `<main class="archive-page">`: the title as an `<h1>`, the page's availability as `<ascribe-availability scope="page">`, the page's level 2 and 3 headings as `<nav class="archive-on-this-page">`, the content as `render_site_html` renders the site output, and `<nav class="archive-pager">` with `rel="prev"` and `rel="next"` links in the sidebar's order.
 
 ## 3. Links
@@ -54,9 +56,18 @@ Every link between files of the archive is relative, starting `./` or `../`, so 
 ## 4. The other files
 
 - **The contents page** lists every page by folder, as the sidebar does, with a heading for each named folder, and links to `all.html`. It's `index.html`, or `contents.html` when the line's root page is `index.html`.
-- **`all.html`** holds every page once, in the sidebar's order, each an `<article>` with its title and availability, its links relative to the top of the folder. It has the statement and no sidebar. It's for printing the set, so its ids aren't unique: two pages with a heading of the same name both have its id, and a link to it in `all.html` goes to the first.
+- **`all.html`** holds every page once, in the sidebar's order, each an `<article>` with its title and availability, its links relative to the top of the folder. It has the statement and no sidebar, so no search. It's for printing the set, so its ids aren't unique: two pages with a heading of the same name both have its id, and a link to it in `all.html` goes to the first.
 - **`robots.txt`** is `User-agent: *` and `Disallow: /`, for a host that serves the folder at its own origin.
 
 ## 5. Print
 
-The stylesheet's print rules hide the sidebar, the statement's link, and the previous and next links; keep the statement; write each link's address in parentheses after its text; and start each page of `all.html` on a new sheet.
+The stylesheet's print rules hide the sidebar, the search box, the statement's link, and the previous and next links; keep the statement; write each link's address in parentheses after its text; and start each page of `all.html` on a new sheet.
+
+## 6. Search
+
+Every page with a sidebar, the contents page too, can search the archive. Nothing is requested from outside the folder, and nothing is stored in the browser.
+
+- **The script,** `search.js`, is the same file in every archive one version of Ascribe writes. The sidebar starts with `<script src="…/search.js" data-index="…/search-index.js" data-root="…/" defer>`, each address relative to the page. The script puts the box in that element's place, a `<div class="archive-search" role="search">` with a labeled search field, a `role="status"` line that says how many results there are, and the results as links; with scripts off there's no box.
+- **The index,** `search-index.js`, is a script that sets `globalThis.ascribeArchiveIndex`, since a page opened from a disk can't fetch a file. The box adds it to the page the first time it's used. Its value is JSON: `version` (1), and `pages`, every page in the sidebar's order, each with `href`, its file's address from the top of the folder; `title`, as text; and `sections`, its text by heading, the text before its first heading first, each with `id`, the heading's id on the page (empty before the first heading); `heading`, as text; and `text`, whitespace collapsed. A page's text is taken from the resolved page, not its HTML: paragraphs, list items, table cells, code blocks, and directives' titles, without raw HTML. The archive of a line is the same bytes when made twice from one commit, its index included.
+- **A query** finds the pages and headings that have every one of its words, ignoring case, a word matching inside a longer one: first each page whose title has them, then each heading that has them, then each heading whose text has them, each in the sidebar's order and each address once. A result links to the page at its heading, and shows the words around the match with the query's words marked. Twenty are listed, and the status line says how many there are.
+- **The command says the index's size,** and when it's over 8 MB, that a reader's first search waits for it to load. It writes it whatever its size.
