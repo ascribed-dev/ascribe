@@ -16,13 +16,14 @@ import { ACTIONS, commandId } from "../../src/actions/registry.js";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts";
 
+/** What each fragment starts with: a memo, touching its table, saying what generates it. */
 const HEADER =
-  "<!-- Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts. " +
-  `Edit the manifest, or a command's description in the test, then run \`${BLESS}\`. -->\n`;
+  "@memo: Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts; " +
+  `edit the manifest, or a command's description in the test, then run \`${BLESS}\` to rewrite it.\n`;
 
 const ACTIONS_HEADER =
-  "<!-- Generated from packages/vscode/src/actions/registry.ts by packages/vscode/test/unit/docs.test.ts. " +
-  `Edit the registry, then run \`${BLESS}\`. -->\n`;
+  "@memo: Generated from packages/vscode/src/actions/registry.ts by packages/vscode/test/unit/docs.test.ts; " +
+  `edit the registry, then run \`${BLESS}\` to rewrite it.\n`;
 
 /** What each command in the palette does, by id. */
 const commands: Record<string, string> = {
@@ -149,7 +150,7 @@ function cell(text: string): string {
 
 /** The settings table, in the manifest's order. */
 function settings(): string {
-  let out = `${HEADER}\n| Setting | Default | What it does |\n|---|---|---|\n`;
+  let out = `${HEADER}| Setting | Default | What it does |\n|---|---|---|\n`;
   for (const [key, setting] of Object.entries(manifest.contributes.configuration.properties)) {
     const value: unknown = setting.default;
     const empty = value === "" || (Array.isArray(value) && value.length === 0);
@@ -172,7 +173,7 @@ function commandTable(): string {
       .filter((entry) => entry.when === "false")
       .map((entry) => entry.command),
   );
-  let out = `${HEADER}\n| Command | What it does |\n|---|---|\n`;
+  let out = `${HEADER}| Command | What it does |\n|---|---|\n`;
   let actionsListed = false;
   for (const command of manifest.contributes.commands) {
     if (hidden.has(command.command)) continue;
@@ -191,7 +192,7 @@ function commandTable(): string {
 
 /** The actions table, in the registry's order. */
 function actionTable(): string {
-  let out = `${ACTIONS_HEADER}\n| Action | What it does | Where it applies |\n|---|---|---|\n`;
+  let out = `${ACTIONS_HEADER}| Action | What it does | Where it applies |\n|---|---|---|\n`;
   for (const action of ACTIONS) {
     const lightbulb = action.lightbulb ? " Also in the lightbulb." : "";
     out += `| **${action.title}** | ${cell(action.description)}.${lightbulb} | ${cell(action.where)} |\n`;
@@ -201,7 +202,7 @@ function actionTable(): string {
 
 /** The tools for agents, in the manifest's order, by the name chat references them with. */
 function toolTable(): string {
-  let out = `${HEADER}\n| Tool | What it gives |\n|---|---|\n`;
+  let out = `${HEADER}| Tool | What it gives |\n|---|---|\n`;
   for (const tool of manifest.contributes.languageModelTools) {
     out += `| \`#${tool.toolReferenceName}\`${availability(tool.name)} | ${cell(tool.userDescription)} |\n`;
   }

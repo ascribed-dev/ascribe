@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `[NAME]...`: The names to check.
 - `--from <FILE>`: Also check the names in this file, one on each line. Blank lines and lines that start with `#` are skipped.
 - `--against <PATH>`: The list to check against. By default, the ascribe.permalinks beside the project's ascribe.toml.

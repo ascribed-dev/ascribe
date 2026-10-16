@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `--build <NAME>`: Build only this build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--emit <OUTPUTS>`: Which outputs to write, separated by commas. All of them by default.
   - `site`: Markdown plus web components, for an Astro site.

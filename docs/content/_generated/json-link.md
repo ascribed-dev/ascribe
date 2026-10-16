@@ -1,4 +1,4 @@
-<!-- Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/link.schema.json. Change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. -->
+@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/link.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
 [`schemas/link.schema.json`]({repo}/blob/main/schemas/link.schema.json):
 
 ```json

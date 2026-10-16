@@ -1,5 +1,4 @@
-<!-- Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts. Edit the manifest, or a command's description in the test, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`. -->
-
+@memo: Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts; edit the manifest, or a command's description in the test, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts` to rewrite it.
 | Tool | What it gives |
 |---|---|
 | `#ascribe_editor_problems` {available="ascribe 0.3.0"} | The problems Ascribe's language server reports in a file or project as the editor has it, saved or not, for the editor's build. |

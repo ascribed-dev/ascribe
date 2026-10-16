@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 ```text
 ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]
 ascribe agents rules      [PATH]

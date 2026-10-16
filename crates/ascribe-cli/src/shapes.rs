@@ -506,8 +506,8 @@ fn the_docs_show_the_commands_schemas() {
     let mut stale = Vec::new();
     for shape in SHAPES.iter().filter(|s| s.command) {
         let fragment = format!(
-            "<!-- Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, \
-             with schemas/{file}.schema.json. Change the types, then run `{BLESS}`. -->\n\
+            "@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, \
+             with schemas/{file}.schema.json; change the types, then run `{BLESS}` to rewrite it.\n\
              [`schemas/{file}.schema.json`]({{repo}}/blob/main/schemas/{file}.schema.json):\n\n\
              ```json\n{schema}```\n",
             file = shape.file,
