@@ -17,17 +17,21 @@
 //! still longer than the limit is reported by `ascribe check`
 //! (`llms-section-large`); it is written all the same.
 //!
+//! In a versioned build with more than one live line, each line has its
+//! own: its heading names the line, `Loom (Self-managed 3.4)`, and an older
+//! line's opens with a line pointing at the current line's index.
+//!
 //! The emitter writes the files ([`llms_files`]) and the checks measure the
 //! same ones, so what is reported is what is published.
 
 use ascribe_core::RelPath;
-use ascribe_model::{ContentModel, Field, FieldRole};
+use ascribe_model::{Build, ContentModel, Field, FieldRole};
 use ascribe_syntax::{BlockKind, ParseOptions};
 
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
 use crate::index::heading_text;
-use crate::pages::{PageRecord, PageRecords};
+use crate::pages::{PageRecord, PageRecords, current_line_router};
 
 /// The version of the delivery spec the outputs for agents follow. Its
 /// checker, `afdocs`, is pinned in `examples/astro-site/package.json`.
@@ -93,13 +97,15 @@ impl Section<'_> {
     }
 }
 
-/// The `llms.txt` files of a build, from its page records ([`crate::pages::records`]),
+/// The `llms.txt` files of `build`, from its page records ([`crate::pages::records`]),
 /// in their order: the root file first, then a file per section when the
 /// index is split. A page that isn't offered, being `unlisted`, isn't in
-/// any.
-pub fn llms_files(model: &ContentModel, records: &PageRecords) -> Vec<LlmsFile> {
+/// any. `model` is the one the build's pages are routed with
+/// ([`ContentModel::for_build`]).
+pub fn llms_files(model: &ContentModel, build: &Build, records: &PageRecords) -> Vec<LlmsFile> {
     let router = AstroRouter::from_consumer(&model.consumer);
     let absolute = |path: &str| absolute_url(model, &router.url_of(path));
+    let line = line_header(model, build);
     let entries = entries(&router, records, |record| {
         absolute(&router.markdown_path(&record.source))
     });
@@ -113,7 +119,7 @@ pub fn llms_files(model: &ContentModel, records: &PageRecords) -> Vec<LlmsFile> 
         .map(|e| e.page.clone())
         .next();
 
-    let whole = index(&name, &summary, &sections.iter().collect::<Vec<_>>());
+    let whole = index(&line, &name, &summary, &sections.iter().collect::<Vec<_>>());
     if whole.chars().count() <= LLMS_TXT_LIMIT {
         return vec![LlmsFile {
             path: "llms.txt".to_owned(),
@@ -157,13 +163,13 @@ pub fn llms_files(model: &ContentModel, records: &PageRecords) -> Vec<LlmsFile> 
         files.push(LlmsFile {
             path,
             url,
-            text: index(&section.heading, &summary, &[section]),
+            text: index(&line, &section.heading, &summary, &[section]),
             page: index_page
                 .or(section.entries.first())
                 .map(|e| e.page.clone()),
         });
     }
-    let mut text = header(&name, &summary);
+    let mut text = header(&line, &name, &summary);
     for section in &top {
         push_section(&mut text, section);
     }
@@ -291,17 +297,63 @@ fn folder_heading(page: &RelPath) -> String {
     }
 }
 
+/// What an index of a line of a versioned build says about the line: the
+/// words after its name, ` (Self-managed 3.4)`, and in an older line, a
+/// paragraph pointing at the current line's index. Empty for a build that
+/// isn't versioned, or has one live line.
+#[derive(Default)]
+struct LineHeader {
+    suffix: String,
+    pointer: Option<String>,
+}
+
+fn line_header(model: &ContentModel, build: &Build) -> LineHeader {
+    let (Some(target), Some(line)) = (&build.versions, &build.line) else {
+        return LineHeader::default();
+    };
+    if line.current && line.oldest.text == line.line.text {
+        return LineHeader::default();
+    }
+    let label = model.value_label(target).unwrap_or(target);
+    let suffix = format!(" ({label} {})", line.line.text);
+    let current = model
+        .releases_of(target)
+        .and_then(|releases| releases.live.first());
+    let pointer = match current {
+        Some(current) if !line.current => {
+            let url = absolute_url(model, &current_line_router(model, build).url_of("llms.txt"));
+            Some(format!(
+                "This is an older version. The current version is {}: [llms.txt]({url}).",
+                current.text
+            ))
+        }
+        _ => None,
+    };
+    LineHeader { suffix, pointer }
+}
+
 /// A whole index: the header, then each section.
-fn index(name: &str, summary: &str, sections: &[&Section<'_>]) -> String {
-    let mut text = header(name, summary);
+fn index(line: &LineHeader, name: &str, summary: &str, sections: &[&Section<'_>]) -> String {
+    let mut text = header(line, name, summary);
     for section in sections {
         push_section(&mut text, section);
     }
     text
 }
 
-fn header(name: &str, summary: &str) -> String {
-    format!("# {}\n\n> {}\n", one_line(name), one_line(summary))
+fn header(line: &LineHeader, name: &str, summary: &str) -> String {
+    let mut text = format!(
+        "# {}{}\n\n> {}\n",
+        one_line(name),
+        line.suffix,
+        one_line(summary)
+    );
+    if let Some(pointer) = &line.pointer {
+        text.push('\n');
+        text.push_str(pointer);
+        text.push('\n');
+    }
+    text
 }
 
 fn push_section(text: &mut String, section: &Section<'_>) {

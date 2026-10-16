@@ -805,6 +805,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[listing]\ndefault = \"unquoted\"\n[listing.types]\npage = \"listed\" #!\n",
         ),
         case(
+            "model-listing-looser",
+            Some("default"),
+            "spec = \"0.1\"\n[listing]\ndefault = \"unlisted\"\nolder-lines = \"unquoted\" #!\n",
+        ),
+        case(
             "model-checks-vale",
             None,
             "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\nconfig = \".vale.ini\" #!\n",

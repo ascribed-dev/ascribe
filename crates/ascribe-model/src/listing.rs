@@ -1,9 +1,10 @@
 //! `[listing]`: how a project's pages are listed, set once for many: the
-//! site's `default`, `[listing.folders]` by a folder from the content root,
-//! and `[listing.types]` by a content type. Each value is one of a page's
+//! site's `default`, `older-lines` for the pages of a versioned build's older
+//! lines, `[listing.folders]` by a folder from the content root, and
+//! `[listing.types]` by a content type. Each value is one of a page's
 //! `listing` values. A rule under a stricter one is an error, since a
 //! narrower setting can only restrict: a folder under a stricter folder, and
-//! a folder or a type under a stricter default.
+//! a folder, a type, or `older-lines` under a stricter default.
 
 use std::path::Path;
 
@@ -15,7 +16,7 @@ use crate::names::list;
 use crate::toml_util::{V, entries, join, sp};
 
 impl Loader<'_> {
-    /// `[listing]`: `default`, `folders`, and `types`. `types` are the
+    /// `[listing]`: `default`, `older-lines`, `folders`, and `types`. `types` are the
     /// model's content types, and `content_root` is where folders are from.
     pub(crate) fn listing(
         &mut self,
@@ -28,12 +29,22 @@ impl Loader<'_> {
         let Some(t) = self.as_table("listing", v) else {
             return out;
         };
-        self.check_keys("listing", t, &["default", "folders", "types"]);
+        self.check_keys(
+            "listing",
+            t,
+            &["default", "older-lines", "folders", "types"],
+        );
         for (key, key_span, value) in entries(t) {
             if key == "default"
                 && let Some(listing) = self.listing_value("listing.default", value)
             {
                 out.default = Some(self.listing_rule(ListingLevel::Site, listing, key_span, value));
+            }
+            if key == "older-lines"
+                && let Some(listing) = self.listing_value("listing.older-lines", value)
+            {
+                out.older_lines =
+                    Some(self.listing_rule(ListingLevel::OlderLines, listing, key_span, value));
             }
         }
         if let Some(folders) = t.get("folders")
@@ -160,9 +171,13 @@ impl Loader<'_> {
     }
 
     /// A rule under a stricter one: a folder under a stricter folder, and a
-    /// folder or a type under a stricter `default`.
+    /// folder, a type, or `older-lines` under a stricter `default`.
     fn listing_looser(&mut self, rules: &ListingRules) {
-        let narrower = rules.folders.iter().chain(&rules.types);
+        let narrower = rules
+            .older_lines
+            .iter()
+            .chain(&rules.folders)
+            .chain(&rules.types);
         for rule in narrower {
             let wider = rules
                 .folders

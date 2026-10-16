@@ -73,8 +73,10 @@ pub struct PageRecord {
     pub title: Option<String>,
     /// Its description, as plain text on one line: what `llms.txt` shows.
     pub description: Option<String>,
-    /// Its own address, absolute: the site and the route. `None` without a
-    /// site.
+    /// Its canonical address, absolute: the site and its route in the
+    /// current line, which in an older line is the route of the page the
+    /// current line has in its place ([`ResolvedPage::current_page`]), and
+    /// otherwise its own. `None` without a site.
     pub canonical: Option<String>,
     /// Its `listing` (SPEC §2.1), after the rules of `[listing]`.
     pub listing: Listing,
@@ -123,8 +125,11 @@ pub fn records<'a>(
         .zip(steps)
         .map(|(page, breadcrumbs)| {
             let route = router.route(&page.path);
+            let canonical_route = canonical_route(model, page);
             PageRecord {
-                canonical: site.as_ref().map(|site| format!("{site}{route}")),
+                canonical: site
+                    .as_ref()
+                    .map(|site| format!("{site}{}", canonical_route.as_ref().unwrap_or(&route))),
                 source: page.path.clone(),
                 title: page.title.clone(),
                 description: llms::description(model, page),
@@ -151,6 +156,28 @@ pub fn records<'a>(
             .collect(),
         robots_groups: robots_groups(model),
     }
+}
+
+/// The route of the page whose address is `page`'s canonical one, when
+/// that isn't its own: in an older line, the route in the current line of
+/// the page it has in `page`'s place ([`ResolvedPage::current_page`]).
+/// `model` is the one the line's pages are routed with
+/// ([`ContentModel::for_build`]).
+pub fn canonical_route(model: &ContentModel, page: &ResolvedPage) -> Option<String> {
+    let current = page.current_page.as_ref()?;
+    let build = model.build(&page.build)?;
+    Some(current_line_router(model, build).route(current))
+}
+
+/// The router of the current line of `build`'s versioned build, given
+/// `model`, the one `build`'s pages are routed with
+/// ([`ContentModel::for_build`]): the same as theirs, under the current
+/// line's base path. `build`'s own for the current line and a build that
+/// isn't versioned.
+pub fn current_line_router(model: &ContentModel, build: &ascribe_model::Build) -> AstroRouter {
+    let router = AstroRouter::from_consumer(&model.consumer);
+    let base = build.current_base(router.base());
+    AstroRouter::with_base(&base, router.trailing_slash())
 }
 
 /// The headers a host sends with one path.

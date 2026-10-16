@@ -1,0 +1,76 @@
+---
+// What an older line of a versioned build is, and where the current one is,
+// at the top of each of its pages, from `<output-dir>/_ascribe/versions.json`:
+//
+//   Documentation for Self-managed 3.4. Support ends on 31 January 2027.
+//   See this page for 3.5.
+//
+// The link goes to the page in the current line, or the page that takes its
+// place there, and to the current line's home when it has neither, in words
+// that say so. The second sentence is left out when the line has no `ends`.
+// A layout includes it given the page's collection entry:
+//
+//   import VersionBanner from "@ascribed/astro/VersionBanner.astro";
+//   <VersionBanner entry={entry} />
+//
+// It renders nothing on the current line, or for a page of a build that isn't
+// versioned. Each sentence's words are a property, so a site can translate
+// them. It writes no styles: the site's own select it by
+// `[data-version-banner]`, or the `class` given.
+import { versionNotice } from "@ascribed/astro/content";
+
+interface Props {
+  /** The page's collection entry. */
+  entry: { filePath?: string | undefined; data?: unknown };
+  /** Before the line's label and number. Default: "Documentation for". */
+  documentation?: string;
+  /** Before the last day the line is supported. Default: "Support ends on". */
+  supportEnds?: string;
+  /** The link to the page in the current line, before its number. Default: "See this page for". */
+  samePage?: string;
+  /** The link to the current line's home, before its number. Default: "See the documentation for". */
+  home?: string;
+  /** The locale the date is written in. Default: "en-GB", as in 31 January 2027. */
+  locale?: string;
+  /** A class for the banner. */
+  class?: string;
+}
+
+const {
+  entry,
+  documentation = "Documentation for",
+  supportEnds = "Support ends on",
+  samePage = "See this page for",
+  home = "See the documentation for",
+  locale = "en-GB",
+  class: className,
+} = Astro.props;
+const notice = versionNotice(entry);
+const ends =
+  notice?.ends === undefined
+    ? undefined
+    : new Date(`${notice.ends}T00:00:00Z`).toLocaleDateString(locale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+---
+
+{
+  notice !== undefined && (
+    <aside class={className} data-version-banner data-line={notice.line}>
+      <p>
+        {documentation} {notice.label} {notice.line}.{" "}
+        {ends !== undefined && (
+          <>
+            {supportEnds} <time datetime={notice.ends}>{ends}</time>.{" "}
+          </>
+        )}
+        <a href={notice.route} data-current-line={notice.current}>
+          {notice.samePage ? samePage : home} {notice.current}.
+        </a>
+      </p>
+    </aside>
+  )
+}

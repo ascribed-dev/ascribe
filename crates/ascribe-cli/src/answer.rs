@@ -317,7 +317,8 @@ pub fn build<'m>(
         })
 }
 
-/// The build `--build` names, or else the model's only build.
+/// The build `--build` names, or else the model's only build: of a
+/// versioned build, its current line, which keeps the build's name.
 pub fn one_build<'m>(
     model: &'m ascribe_model::ContentModel,
     name: Option<&str>,
@@ -325,8 +326,12 @@ pub fn one_build<'m>(
     if let Some(build) = build(model, name)? {
         return Ok(build);
     }
-    match model.builds.as_slice() {
-        [only] => Ok(only),
+    let mut declared = model
+        .builds
+        .iter()
+        .filter(|b| b.line.as_ref().is_none_or(|line| line.current));
+    match (declared.next(), declared.next()) {
+        (Some(only), None) => Ok(only),
         _ => Err(QueryError::BuildRequired {
             builds: build_names(model),
         }),

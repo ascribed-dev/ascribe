@@ -23,7 +23,8 @@
     "src/Permalink.astro",
     "src/MissingPermalink.astro",
     "src/Head.astro",
-    "src/Versions.astro"
+    "src/Versions.astro",
+    "src/VersionBanner.astro"
   ],
   "exports": {
     ".": {
@@ -43,6 +44,7 @@
     "./MissingPermalink.astro": "./src/MissingPermalink.astro",
     "./Head.astro": "./src/Head.astro",
     "./Versions.astro": "./src/Versions.astro",
+    "./VersionBanner.astro": "./src/VersionBanner.astro",
     "./content": {
       "types": "./dist/content.d.ts",
       "default": "./dist/content.js"
