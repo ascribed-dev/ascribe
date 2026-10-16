@@ -2350,7 +2350,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Versions: `ascribe versions retire`"
     },
     {
@@ -2369,7 +2369,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Versions: search in an archive"
     },
     {
