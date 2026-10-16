@@ -89,7 +89,7 @@ pub fn agents_index(
     let router = AstroRouter::from_consumer(&model.consumer);
     let resolved = project.resolve_build(build, &router);
     let records = pages::records(model, &resolved.pages);
-    let index = llms::compact_index(model, &records, folder, limit);
+    let index = llms::compact_index(model, build, &records, folder, limit);
     let mut copied = Vec::new();
     if folder.is_some() {
         let cx = EmitContext::new(project, project_root, build);

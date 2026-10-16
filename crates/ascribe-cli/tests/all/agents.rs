@@ -1121,6 +1121,24 @@ fn the_index_of_ascribes_docs_lists_every_offered_page_under_its_limit() {
 }
 
 #[test]
+fn the_index_of_a_line_is_headed_as_its_llms_txt_is() {
+    let repo = repository("quill");
+    let dir = repo.path();
+    let config = dir.join("ascribe.toml");
+    let text = read(&config).replace(
+        "site = \"https://docs.quill.dev\"",
+        "site = \"https://docs.quill.dev\"\nagents = true",
+    );
+    write(&config, &text);
+    run(dir, &["build", "--build", "site@3.4", "--emit", "plain"], 0);
+    let llms = read(&dir.join(".ascribe/build/site@3.4/plain/llms.txt"));
+    let heading = llms.lines().next().unwrap_or_default();
+    assert_eq!(heading, "# docs.quill.dev (self-managed 3.4)");
+    let index = stdout(&run(dir, &["agents", "index", "--build", "site@3.4"], 0));
+    assert!(index.starts_with(&format!("#{heading}\n")), "{index}");
+}
+
+#[test]
 fn a_second_index_into_a_file_changes_nothing() {
     let repo = repository("quill");
     let dir = repo.path();

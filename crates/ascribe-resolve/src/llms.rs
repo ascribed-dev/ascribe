@@ -298,8 +298,9 @@ fn folder_heading(page: &RelPath) -> String {
 }
 
 /// What an index of a line of a versioned build says about the line: the
-/// words after its name, ` (Self-managed 3.4)`, and in an older line, a
-/// paragraph pointing at the current line's index. Empty for a build that
+/// words after its name, ` (Self-managed 3.4)`, which the compact index's
+/// heading has too ([`compact_index`]), and in an older line, a paragraph
+/// pointing at the current line's index. Empty for a build that
 /// isn't versioned, or has one live line.
 #[derive(Default)]
 struct LineHeader {
@@ -475,12 +476,14 @@ pub struct CompactIndex {
 /// that folder (`folder/guides/setup.md`), for an index beside a copy of the
 /// pages.
 ///
-/// An index longer than `limit` leaves out descriptions first, from the last
-/// page back, then pages, from the last back, and ends with a sentence that
-/// says what it left out and where every page is. A page that isn't offered
-/// isn't in it.
+/// Of a line of a versioned build, its heading names the line as that
+/// line's `llms.txt` does. An index longer than `limit` leaves out
+/// descriptions first, from the last page back, then pages, from the last
+/// back, and ends with a sentence that says what it left out and where every
+/// page is. A page that isn't offered isn't in it.
 pub fn compact_index(
     model: &ContentModel,
+    build: &Build,
     records: &PageRecords,
     folder: Option<&str>,
     limit: usize,
@@ -509,8 +512,10 @@ pub fn compact_index(
             )
         }),
     };
+    let line = line_header(model, build);
     let compact = Compact {
         name: &name,
+        line: &line.suffix,
         summary: &summary,
         sections: &sections,
         everywhere: everywhere.as_deref(),
@@ -573,6 +578,8 @@ fn folder_path(folder: &str, path: &str) -> String {
 /// What a compact index is written from.
 struct Compact<'a> {
     name: &'a str,
+    /// The words after the name that name the line ([`LineHeader`]).
+    line: &'a str,
     summary: &'a str,
     sections: &'a [Section<'a>],
     /// Where every page is, in Markdown, for the sentence about the pages
@@ -586,8 +593,9 @@ impl Compact<'_> {
     /// with their descriptions.
     fn text(&self, pages: usize, described: usize) -> String {
         let mut text = format!(
-            "## {}\n\n> {}\n",
+            "## {}{}\n\n> {}\n",
             one_line(self.name),
+            self.line,
             one_line(self.summary)
         );
         let mut at = 0;
