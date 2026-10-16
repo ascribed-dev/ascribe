@@ -18,6 +18,12 @@
     "content": {
       "patterns": [
         {
+          "include": "#memo-container"
+        },
+        {
+          "include": "#memo-line"
+        },
+        {
           "include": "#end-line"
         },
         {
@@ -36,6 +42,65 @@
           "include": "#phrase"
         }
       ]
+    },
+    "memo-container": {
+      "begin": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(memo)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(:)[ \\t]*$",
+      "end": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(end)[ \\t]*$",
+      "name": "meta.directive.memo.ascribe",
+      "contentName": "comment.block.memo.ascribe",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.directive.ascribe"
+        },
+        "2": {
+          "name": "keyword.control.directive.ascribe"
+        },
+        "3": {
+          "name": "meta.attributes.ascribe",
+          "patterns": [
+            {
+              "include": "#attributes"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.directive.ascribe"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.directive.ascribe"
+        },
+        "2": {
+          "name": "keyword.control.end.ascribe"
+        }
+      }
+    },
+    "memo-line": {
+      "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(memo)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
+      "name": "meta.directive.ascribe",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.ascribe"
+        },
+        "2": {
+          "name": "keyword.control.directive.ascribe"
+        },
+        "3": {
+          "name": "meta.attributes.ascribe",
+          "patterns": [
+            {
+              "include": "#attributes"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.directive.ascribe"
+        },
+        "5": {
+          "name": "meta.primary.ascribe comment.line.memo.ascribe"
+        }
+      }
     },
     "end-line": {
       "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(end)[ \\t]*$",

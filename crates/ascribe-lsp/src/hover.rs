@@ -4,8 +4,8 @@
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version, parse_availability};
 use ascribe_core::schema::{
-    AttributeSchema, AttributeType, Attributes, DefaultValue, DirectiveSchema, Origin, Primary,
-    SetMember,
+    AttributeSchema, AttributeType, Attributes, Builtin, DefaultValue, DirectiveSchema, Origin,
+    Primary, SetMember,
 };
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_emit::labels::{availability_display, availability_display_of_text};
@@ -310,6 +310,9 @@ pub(crate) fn describe_directive(schema: &DirectiveSchema) -> String {
         Primary::Identifier { .. } => Some("an identifier (a path, id, or key)"),
         Primary::Text { .. } => Some("text"),
         Primary::Availability { .. } => Some("an availability spec or feature key"),
+        Primary::Reason { .. } if schema.origin == Origin::Builtin(Builtin::Memo) => {
+            Some("the memo's text, as plain text")
+        }
         Primary::Reason { .. } => Some("the reason, as plain text"),
     };
     if let Some(primary) = primary {

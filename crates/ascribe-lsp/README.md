@@ -10,7 +10,7 @@ disagree (SPEC §8, §10).
 It provides initialization, document and file synchronization, diagnostics, and
 semantic tokens; completion, hover, go to definition, find references, document
 links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
-rename, and formatting; and the custom requests `ascribe/preview`,
+rename, formatting, and folding ranges; and the custom requests `ascribe/preview`,
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/context`,
 `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`, and `ascribe/inventory`.
 
@@ -587,8 +587,8 @@ prompt.
 Advertised: incremental text document sync (open/close, and save, without the text), semantic
 tokens (full and range), the position encoding, and completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, references,
-document links, CodeLens, inlay hints, code actions, document formatting, rename (with
-`prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
+document links, CodeLens, inlay hints, code actions, document formatting, folding
+ranges, rename (with `prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
@@ -700,6 +700,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `definition.rs` | Go to definition |
 | `references.rs` | Find all references |
 | `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
+| `folding.rs` | Folding ranges |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
 **Completion** is decided from the line up to the cursor (a file being typed
@@ -723,6 +724,11 @@ items and marked incomplete, so the client asks again as the author types.
 plain-text preview of the first paragraph), an include (the same; a fragment
 says so), a phrase (its value), an availability spec or feature key (SPEC
 §9.4's text), and a directive or attribute key (its schema).
+
+**Folding ranges**: each closed container `@memo`, from its opening line to
+its `@end`, so it folds to its first line. A page's other folding (headings,
+lists, code blocks) is the client's Markdown support's, which knows nothing of
+a container; VS Code merges the ranges of every provider.
 
 **Go to definition**: links and includes to the file or heading;
 `@id`'s primary to its heading; phrases and feature keys to their entries in
@@ -886,6 +892,7 @@ scaffold and the protocol types), over `tower-lsp-server`.
 - `tests/all/navigation.rs` scripts every navigation feature over a copy of
   `examples/quill` (with a features registry added): each completion context,
   hover, definition, document links, CodeLens and its command, inlay hints,
+  folding ranges,
   answers after an edit or a deletion, the negotiated encodings, files outside
   the project, and a request of every kind at every position of several files
   (including multi-byte text) that must never fail.

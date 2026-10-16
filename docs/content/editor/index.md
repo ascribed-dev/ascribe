@@ -140,6 +140,9 @@ When another extension is VS Code's formatter for Markdown, such as Prettier thr
 
 Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon as a file opens. Once the server is running, it adds what depends on the content model: declared and undeclared phrases, project widgets, and **title lines**, shown distinctly so a paragraph that accidentally became a title stands out.
 
+@available: next
+A [memo](../writing/directives.md#memo)'s text is colored as a comment, in either form, and nothing in it is colored as a link, a phrase, or a heading. A container memo folds to its first line, beside the folding of headings, lists, and code blocks.
+
 ### Preview
 
 **Ascribe: Open Page Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker shows the page as any build publishes it, starting with the editor's build: it changes the [build you're looking at](index.md#the-status-bar), which the status bar names and switches too.
