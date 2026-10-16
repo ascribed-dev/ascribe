@@ -13,6 +13,8 @@ mod support;
 
 #[path = "all/agents.rs"]
 mod agents;
+#[path = "all/archive.rs"]
+mod archive;
 #[path = "all/assets.rs"]
 mod assets;
 #[path = "all/formatted.rs"]

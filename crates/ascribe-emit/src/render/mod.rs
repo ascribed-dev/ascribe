@@ -187,7 +187,7 @@ fn attribute_name_len(text: &str) -> Option<usize> {
 
 /// `&quot;`, `&amp;`, `&lt;`, and `&gt;` decoded; any other `&` is literal.
 /// One pass, so `&amp;lt;` is `&lt;`.
-fn decode(value: &str) -> String {
+pub(crate) fn decode(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut rest = value;
     while let Some(at) = rest.find('&') {
@@ -209,7 +209,7 @@ fn decode(value: &str) -> String {
     out
 }
 
-fn encode(value: &str) -> String {
+pub(crate) fn encode(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     for ch in value.chars() {
         match ch {
@@ -593,7 +593,7 @@ fn meta_value(meta: &str, key: &str) -> Option<String> {
 }
 
 /// The attributes comrak wrote on a tag, as `(name, decoded value)`.
-fn parse_existing(text: &str) -> Option<Vec<(String, String)>> {
+pub(crate) fn parse_existing(text: &str) -> Option<Vec<(String, String)>> {
     let mut out = Vec::new();
     let mut rest = text.trim_start();
     while !rest.is_empty() {
@@ -609,7 +609,7 @@ fn parse_existing(text: &str) -> Option<Vec<(String, String)>> {
 
 /// ` name="value"` for each attribute: the existing ones, with those the
 /// marker sets replacing them, and the marker's other attributes after.
-fn write_attributes(existing: &[(String, String)], marker: &[(String, String)]) -> String {
+pub(crate) fn write_attributes(existing: &[(String, String)], marker: &[(String, String)]) -> String {
     let mut all: Vec<(String, String)> = existing.to_vec();
     for (name, value) in marker {
         match all.iter_mut().find(|(n, _)| n == name) {

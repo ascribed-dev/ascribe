@@ -1,4 +1,4 @@
-//! Emitters for Ascribe's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation.
+//! Emitters for Ascribe's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation, and the archive of a line.
 //!
 //! # What an emitter does
 //!
@@ -38,6 +38,7 @@
 //!
 //! The JSON output's schema is in the crate's README.
 
+pub mod archive;
 pub mod assets;
 mod emitter;
 mod error;
@@ -51,6 +52,7 @@ mod versions;
 mod write;
 pub mod zod;
 
+pub use archive::{ARCHIVE_ALL, ARCHIVE_STYLESHEET, Archive, ArchiveOptions, Unlinked, archive};
 pub use assets::Placement;
 pub use emitter::{
     Emission, EmitContext, EmittedPage, Emitter, PageContext, PlacedAsset, Position, emit,

@@ -1,0 +1,242 @@
+/*
+ * An archive's own styles (`ascribe versions archive`): the statement at the
+ * top of every page, the sidebar, the page, previous and next, and print.
+ * The elements' are @ascribed/elements' style.css, before these in the
+ * archive's style.css.
+ */
+
+:root {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, light. */
+  --a-page: #ffffff;
+  --a-ink: #22272e;
+  --a-muted: #676c75;
+  --a-side: #f7f9fd;
+  --a-line: #e3e6ec;
+  --a-accent: #5962e8;
+  --a-code: #f7f9fd;
+  --a-notice: #fef5eb;
+  --a-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --a-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --a-space: 1rem;
+  --a-space-small: 0.5rem;
+  --a-radius: 0.375rem;
+  --a-caption: 600 0.75rem/1.4;
+  --a-small: 400 0.875rem/1.5;
+  --a-body: 400 1rem/1.6;
+  --a-h1: 700 1.875rem/1.2;
+  /* End of generated frame. */
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, dark. */
+    --a-page: #0c0f16;
+    --a-ink: #f0f3f7;
+    --a-muted: #a5a9b2;
+    --a-side: #13171f;
+    --a-line: #393d46;
+    --a-accent: #91a1fe;
+    --a-code: #13171f;
+    --a-notice: #2b1a03;
+    /* End of generated frame. */
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--a-page);
+  color: var(--a-ink);
+  font: var(--a-body) var(--a-ui);
+}
+
+a {
+  color: var(--a-accent);
+}
+
+code,
+pre {
+  font-family: var(--a-mono);
+  font-size: 0.875em;
+}
+
+pre {
+  overflow-x: auto;
+  padding: var(--a-space-small) var(--a-space);
+  border-radius: var(--a-radius);
+  background: var(--a-code);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--a-line);
+  text-align: left;
+}
+
+.archive-statement {
+  padding: var(--a-space-small) var(--a-space);
+  border-bottom: 1px solid var(--a-line);
+  background: var(--a-notice);
+}
+
+.archive-statement p {
+  margin: 0;
+}
+
+.archive-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.archive-sidebar {
+  flex: 0 0 16rem;
+  box-sizing: border-box;
+  padding: var(--a-space);
+  border-right: 1px solid var(--a-line);
+  background: var(--a-side);
+  font: var(--a-small) var(--a-ui);
+}
+
+.archive-sidebar ul {
+  margin: 0 0 var(--a-space);
+  padding: 0;
+  list-style: none;
+}
+
+.archive-sidebar li {
+  margin: 0.25rem 0;
+}
+
+.archive-sidebar a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.archive-sidebar a:hover {
+  text-decoration: underline;
+}
+
+.archive-sidebar a[aria-current="page"] {
+  color: var(--a-accent);
+  font-weight: 600;
+}
+
+.archive-folder {
+  margin: var(--a-space) 0 var(--a-space-small);
+  color: var(--a-muted);
+  font: var(--a-caption) var(--a-ui);
+  text-transform: uppercase;
+}
+
+.archive-page,
+.archive-all {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 48rem;
+  padding: var(--a-space) calc(var(--a-space) * 2) calc(var(--a-space) * 3);
+}
+
+.archive-page h1,
+.archive-all h1 {
+  font: var(--a-h1) var(--a-ui);
+}
+
+.archive-on-this-page {
+  margin: var(--a-space) 0;
+  padding: var(--a-space-small) var(--a-space);
+  border-left: 2px solid var(--a-line);
+  font: var(--a-small) var(--a-ui);
+}
+
+.archive-on-this-page ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-level-3 {
+  padding-left: var(--a-space);
+}
+
+.archive-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--a-space);
+  margin-top: calc(var(--a-space) * 3);
+  padding-top: var(--a-space);
+  border-top: 1px solid var(--a-line);
+}
+
+.archive-pager a[rel="next"] {
+  margin-left: auto;
+}
+
+@media (max-width: 48rem) {
+  .archive-layout {
+    flex-direction: column;
+  }
+
+  .archive-sidebar {
+    flex-basis: auto;
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--a-line);
+  }
+}
+
+@media print {
+  .archive-sidebar,
+  .archive-current,
+  .archive-pager,
+  .archive-all-link {
+    display: none;
+  }
+
+  body {
+    background: transparent;
+    color: CanvasText;
+  }
+
+  .archive-statement {
+    padding: 0 0 var(--a-space-small);
+    background: transparent;
+  }
+
+  .archive-page,
+  .archive-all {
+    max-width: none;
+    padding: 0;
+  }
+
+  .archive-all article + article > h1:first-child {
+    break-before: page;
+  }
+
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  pre,
+  figure,
+  img {
+    break-inside: avoid;
+  }
+
+  .archive-page a[href]:not([href^="#"])::after,
+  .archive-all a[href]:not([href^="#"])::after {
+    content: " (" attr(href) ")";
+    font-size: 0.875em;
+  }
+}
