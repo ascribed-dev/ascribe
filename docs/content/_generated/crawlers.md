@@ -1,5 +1,4 @@
-<!-- Generated from crates/ascribe-model/data/crawlers.toml by tests/conformance/tests/docs.rs. Edit the data, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->
-
+@memo: Generated from crates/ascribe-model/data/crawlers.toml by tests/conformance/tests/docs.rs; edit the data, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 | Purpose | Token | Operator | What the operator says of `robots.txt` | Read |
 |---|---|---|---|---|
 | `training` | `GPTBot` | OpenAI | Follows it. | [2026-10-12](https://developers.openai.com/api/docs/bots) |

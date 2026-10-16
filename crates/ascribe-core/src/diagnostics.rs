@@ -693,6 +693,9 @@ pub const LINK_FRAGMENT_DROPPED: DiagnosticSlug = DiagnosticSlug("link-fragment-
 /// `ASC222`, error, page level: SPEC §8.2, "Frontmatter | `listing` looser than `[listing] older-lines`, on a page an older line of a versioned build publishes (page level, per build)".
 pub const LISTING_LOOSENED_IN_LINE: DiagnosticSlug = DiagnosticSlug("listing-loosened-in-line");
 
+/// `ASC223`, advice, file level: a content check (area `pages`).
+pub const HTML_COMMENT: DiagnosticSlug = DiagnosticSlug("html-comment");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -913,6 +916,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_INTO_OLDER_LINE,
     LINK_FRAGMENT_DROPPED,
     LISTING_LOOSENED_IN_LINE,
+    HTML_COMMENT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -957,6 +961,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     RELEASE_LINE_ENDED,
     LINK_INTO_OLDER_LINE,
     LINK_FRAGMENT_DROPPED,
+    HTML_COMMENT,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
@@ -974,4 +979,5 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (LINK_EXTERNAL_BROKEN, crate::Place::Block),
     (AVAILABILITY_LEFT_BEHIND, crate::Place::Entry),
     (TITLE_HEADING_DIFFERS, crate::Place::Page),
+    (HTML_COMMENT, crate::Place::Block),
 ];

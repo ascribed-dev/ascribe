@@ -17,6 +17,7 @@ mod definition;
 mod docs;
 mod edit;
 mod examples;
+mod folding;
 mod formatting;
 mod fsx;
 mod headless;

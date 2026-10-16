@@ -60,6 +60,7 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
             "documentFormattingProvider",
             "documentLinkProvider",
             "executeCommandProvider",
+            "foldingRangeProvider",
             "hoverProvider",
             "inlayHintProvider",
             "positionEncoding",

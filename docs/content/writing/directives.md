@@ -560,6 +560,7 @@ Revoke the old key once every agent uses the new one.
 - **A line memo** is the rest of its line, and needs some text. **A container memo** is every line up to a line that's only `@end` at the memo's own indent, as written. It takes no attributes.
 - **Nothing reads a memo.** A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
 - **It changes no output.** No build, preview, or report shows a memo, wherever it is, a fragment included, and a change to a memo alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
+- **An HTML comment isn't private:** it's in the source of every published page. `ascribe check` reports one as advice, [`html-comment`](../checks/diagnostics/content-checks.md#ASC223), and the editor's quick fix **Rewrite as a memo** turns a comment that's a block of its own into a memo about the same block, or about its section when it's the section's last block. A comment written for another tool is acknowledged with `@intended {check=html-comment}` above its block, and Vale's own comments, such as `<!-- vale off -->`, aren't reported.
 
 ## Project widgets
 

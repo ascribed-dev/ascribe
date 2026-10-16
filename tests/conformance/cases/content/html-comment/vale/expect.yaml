@@ -1,0 +1,7 @@
+description: >-
+  Vale's own comments, a block or inside a paragraph, aren't reported: Vale
+  reads them.
+spec: ["4.10"]
+tags: [check]
+
+diagnostics: []

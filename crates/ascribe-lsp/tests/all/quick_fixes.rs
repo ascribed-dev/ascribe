@@ -1139,3 +1139,66 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         );
     }
 }
+
+/// The page `body` gives, after its HTML comment's **Rewrite as a memo**,
+/// once the server has checked it again; `None` when the comment has no
+/// such fix.
+fn rewritten_as_memo(body: &str) -> Option<String> {
+    let f = quill();
+    let path = f.path("docs/plans.md");
+    let text = format!("---\ntype: page\ntitle: Plans\ndescription: Plans.\n---\n\n{body}");
+    write(&f, "docs/plans.md", &text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let diag = diagnostic(&client, &path, "html-comment");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action["title"] == "Rewrite as a memo")?;
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut client, &changed);
+    // Nothing links to the new page, which is all that's left.
+    assert_eq!(client.codes(&path), ["page-orphan"]);
+    let fixed = read(&f, "docs/plans.md");
+    Some(fixed[fixed.find("---\n\n").expect("frontmatter") + 5..].to_owned())
+}
+
+#[test]
+fn a_comment_above_a_block_becomes_a_memo_in_its_place() {
+    assert_eq!(
+        rewritten_as_memo(
+            "<!-- Keep this table in the order of the plans' prices. -->\n\n| Plan | Price |\n|---|---|\n| Team | $10 |\n"
+        )
+        .as_deref(),
+        Some(
+            "@memo: Keep this table in the order of the plans' prices.\n| Plan | Price |\n|---|---|\n| Team | $10 |\n"
+        )
+    );
+    // More lines make a container, in its own block quote.
+    assert_eq!(
+        rewritten_as_memo("> <!-- One,\n>      and two. -->\n> Quoted.\n").as_deref(),
+        Some("> @memo:\n> One,\n> and two.\n> @end\n> Quoted.\n")
+    );
+}
+
+#[test]
+fn a_comment_that_ends_a_section_becomes_a_memo_at_its_top() {
+    assert_eq!(
+        rewritten_as_memo(
+            "## Plans\n@id: plans\n\nText.\n\n<!-- Prices are monthly. -->\n\n## Next\n"
+        )
+        .as_deref(),
+        Some("## Plans\n@id: plans\n@memo: Prices are monthly.\n\nText.\n\n## Next\n")
+    );
+}
+
+#[test]
+fn a_comment_that_ends_a_list_item_gets_no_fix() {
+    assert_eq!(
+        rewritten_as_memo("## Plans\n\n- Team\n\n  <!-- Ask sales. -->\n- Business\n"),
+        None
+    );
+    assert_eq!(
+        rewritten_as_memo("Text.\n\n<!-- Before any heading. -->\n"),
+        None
+    );
+}

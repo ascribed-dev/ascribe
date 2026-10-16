@@ -1,5 +1,4 @@
-<!-- Generated from packages/vscode/src/actions/registry.ts by packages/vscode/test/unit/docs.test.ts. Edit the registry, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`. -->
-
+@memo: Generated from packages/vscode/src/actions/registry.ts by packages/vscode/test/unit/docs.test.ts; edit the registry, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts` to rewrite it.
 | Action | What it does | Where it applies |
 |---|---|---|
 | **Wrap in a note** | Put the paragraph or the selected blocks in an `@note` callout. Also in the lightbulb. | A paragraph, or whole blocks selected |

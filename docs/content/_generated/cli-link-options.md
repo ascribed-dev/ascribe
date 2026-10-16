@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `TARGET`: The link's destination, as the page would write it: `keys.md`, `keys.md#rotate-keys`, `#install`.
 - `--from <PAGE>`: The page the link is on: a path from the current directory, or from the content root.
 - `--format <FORMAT>`: How to show the answer.

@@ -365,6 +365,17 @@ impl Writer<'_> {
     }
 }
 
+/// Whether an HTML comment, `<!-- … -->` as written, is one of Vale's own:
+/// its text starts with the word `vale`, as `<!-- vale off -->` and
+/// `<!-- vale Ascribe.Repeated = NO -->` do. The prose given to Vale keeps
+/// every comment, so these still work.
+pub(crate) fn is_vale_comment(comment: &str) -> bool {
+    let text = comment.strip_prefix("<!--").unwrap_or(comment).trim_start();
+    text.strip_prefix("vale").is_some_and(|rest| {
+        rest.is_empty() || rest.starts_with(char::is_whitespace) || rest.starts_with("-->")
+    })
+}
+
 /// What an empty link's text stands in for: its target's file name without
 /// the extension, or its fragment, or `link`.
 fn stand_in(destination: &str) -> String {

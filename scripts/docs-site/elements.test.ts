@@ -20,9 +20,10 @@ const NAMES = "packages/elements/src/names.ts";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts";
 
+/** What the fragment starts with: a memo, touching its table, saying what generates it. */
 const HEADER =
-  `<!-- Generated from ${STYLESHEET} by scripts/docs-site/elements.test.ts. ` +
-  `Say what a new property sets in the test, then run \`${BLESS}\`. -->\n`;
+  `@memo: Generated from ${STYLESHEET} by scripts/docs-site/elements.test.ts; ` +
+  `say what a new property sets in the test, then run \`${BLESS}\` to rewrite it.\n`;
 
 function read(file: string): string {
   return readFileSync(path.join(root, file), "utf8");
@@ -111,7 +112,7 @@ test("the reference's table of custom properties is the stylesheet's", () => {
   expect(stale, `\`sets\` names properties ${STYLESHEET} doesn't have`).toEqual([]);
 
   const rows = listed.map((property) => `| \`${property}\` | ${describe(property, types)} |`);
-  const fragment = `${HEADER}\n| Property | What it sets |\n|---|---|\n${rows.join("\n")}\n`;
+  const fragment = `${HEADER}| Property | What it sets |\n|---|---|\n${rows.join("\n")}\n`;
   if (process.env.ASCRIBE_BLESS === "1") {
     writeFileSync(path.join(root, FRAGMENT), fragment);
   }

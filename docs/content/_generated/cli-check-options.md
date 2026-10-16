@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - @available: ascribe 0.3.0
   `[PATHS]...`: Files and directories to report on, relative to the current directory. The whole project is still checked, since links, includes, and ids need it, and only the problems that count for these paths are shown: those in a file under one of them, or with a related place in one (a problem a fragment causes on the page that includes it). Such a problem in a fragment is shown once, at its first include. Without `--config`, the project is the nearest `ascribe.toml` at or above the first path, and every path must be in it. By default, the whole project.
 - @available: ascribe 0.3.0

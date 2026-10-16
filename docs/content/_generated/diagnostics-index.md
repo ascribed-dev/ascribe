@@ -1,5 +1,4 @@
-<!-- Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs. Edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->
-
+@memo: Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 | Code | Name | Severity | Level | Next step |
 |---|---|---|---|---|
 | [ASC001](../checks/diagnostics/directives.md#ASC001) | `attribute-unknown-key` | Error | File | choose |
@@ -220,3 +219,4 @@
 | [ASC220](../checks/diagnostics/content-checks.md#ASC220) | `link-into-older-line` | Advice | Page | write |
 | [ASC221](../checks/diagnostics/content-checks.md#ASC221) | `link-fragment-dropped` | Advice | Page | write |
 | [ASC222](../checks/diagnostics/pages.md#ASC222) | `listing-loosened-in-line` | Error | Page | write |
+| [ASC223](../checks/diagnostics/content-checks.md#ASC223) | `html-comment` | Advice | File | review |

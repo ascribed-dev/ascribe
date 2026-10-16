@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `[SECTION]...`: The sections to report, in any order. By default, those that need nothing outside the project: `problems`, `inventory`, and `builds`.
   - `problems`: What `ascribe check` finds, counted by check, by file, and by kind of next step; and every acknowledgement, with its reason.
   - `inventory`: Pages by type and by owner; overdue reviews, orphan pages, and unused entries.

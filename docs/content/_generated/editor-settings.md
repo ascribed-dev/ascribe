@@ -1,5 +1,4 @@
-<!-- Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts. Edit the manifest, or a command's description in the test, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`. -->
-
+@memo: Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts; edit the manifest, or a command's description in the test, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts` to rewrite it.
 | Setting | Default | What it does |
 |---|---|---|
 | `ascribe.path` | empty | The `ascribe` binary to run, for every project. When empty, each project's own `node_modules/.bin/ascribe`, then the binary included in the extension. Changing it restarts the servers that have started. |

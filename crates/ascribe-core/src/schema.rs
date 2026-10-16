@@ -251,9 +251,7 @@ impl Builtin {
                 // lines are raw (SPEC §3.5).
                 primary: Primary::Reason { required: true },
                 binding: Some(Binding::HeadingOrBlock),
-                description: Some(
-                    "A note to the people who maintain the page, never published.".into(),
-                ),
+                description: Some("Text for whoever edits the page next, never published.".into()),
                 ..base
             },
         }
