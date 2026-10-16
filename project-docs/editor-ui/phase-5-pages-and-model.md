@@ -29,7 +29,7 @@ In VS Code, in Ascribe's docs, a page with an error is red in Pages, as in the E
   | On | Item | Does |
   |---|---|---|
   | A page | Open Preview to the Side | `ascribe.openPreview` on it |
-  | A page | Copy Link | Its address from the content root, as **Copy a link to this section** writes one |
+  | A page | Copy Link | Its source path from the content root, `/keys.md`, which is what a link in a page uses, as **Copy a link to this section** writes `/guides/install.md#install-cli`. The published address is This page's Address row |
   | A page or fragment | Rename or Move… | Asks for the new path, then makes the edits renaming the file in the Explorer makes |
   | A page or fragment | Find All References | The references peek at the page's start |
   | A page or fragment | Reveal in Explorer | `revealInExplorer` |
@@ -37,7 +37,7 @@ In VS Code, in Ascribe's docs, a page with an error is red in Pages, as in the E
 
 - **Orphans Only,** a toggle in the title bar backed by a context key, replaces the Orphans group, and covers fragments that nothing includes too.
 
-Pages keeps its grouping, by content type today; the [navigation proposal](../proposals/navigation.md) changes it, and these actions apply to whatever groups it has. New Page Here is offered on a group that's a folder only.
+Pages keeps its grouping, by content type today; the [navigation plan](../navigation/phase-5-editor.md) changes it, and these actions apply to whatever groups it has. New Page Here is offered on a group that's a folder only.
 
 ### Content model
 
@@ -58,7 +58,7 @@ Pages keeps its grouping, by content type today; the [navigation proposal](../pr
 
 ## Out of scope
 
-- Pages' structure (the navigation proposal).
+- Pages' structure (the navigation plan).
 - Dragging an entry from Content model into a page (decision 5).
 - Inserting a glossary term, a feature, a dimension, or a note type.
 

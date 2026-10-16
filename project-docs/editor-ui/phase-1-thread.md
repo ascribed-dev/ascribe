@@ -37,13 +37,13 @@ The request answers from the snapshot, so unsaved edits are in it. A file that i
 
 ### The view
 
-`ascribe.usedBy` becomes `ascribe.thisPage`, named **This page**, in the same place. Two sections, **About** and **Connections**, each collapsible. About's rows are a label and a description ("Address", "/keys/"). Connections' items open the link or include, as Used by's do, grouped by file then line. Its title says which heading narrows it.
+`ascribe.usedBy` becomes `ascribe.thisPage`, named **This page**, in the same place and the same container, with the same `when`. A change made against Used by, such as the memos plan's phase 6, moves to This page by the rename and nothing else. Two sections, **About** and **Connections**, each collapsible. About's rows are a label and a description ("Address", "/keys/"). Connections' items open the link or include, as Used by's do, grouped by file then line. Its title says which heading narrows it.
 
 The view asks once for each cursor move, after the same debounce Used by has, and only while it's visible.
 
 ### Measuring
 
-On Ascribe's own docs, a cursor move answered by `ascribe/page` is timed against Used by's two requests for the same move, over the same 50 moves on a long page and a short one, and the numbers go in the pull request. If `ascribe/page` is slower, stop and report: decision 11 says what changes.
+On Ascribe's own docs, a cursor move answered by `ascribe/page` is timed against Used by's two requests for the same move, over the same 50 moves on a long page and a short one, and the numbers go in the pull request. The server's time and the round trip are recorded apart, since what keeping the cursor-free part costs shows in the first and what one request saves over two shows in the second. If `ascribe/page` is slower, stop and report: decision 11 says what changes.
 
 ## Tasks
 

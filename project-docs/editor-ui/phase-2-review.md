@@ -6,7 +6,7 @@ Part of [The editor's views](README.md). Needs phase 1.
 
 While review is on, a Review view lists the changed pages with their counts, their problems, and a badge for unsent comments, and opens the branch's source changes in VS Code's diff.
 
-On a checkout of a pull request's branch, run **Ascribe: Start Review**. A **Review** view appears first in the sidebar: the changed pages under Added, Changed, and Removed, each with "3 changes, 1 open thread", and a page changed through a fragment saying `via _fragments/requirements.md`. Choosing a page opens it and its preview at its first change. Add a comment, and the view's badge says 1. **Problems in changed pages** lists the errors and warnings on those pages and nowhere else. **Open Source Changes** opens one diff of every changed source file against the base. **Ascribe: Stop Review**, and the view is gone.
+On a checkout of a pull request's branch, run **Ascribe: Start Review**. A **Review** view appears first in the sidebar: the changed pages under Added, Changed, and Removed, each with "3 changes, 1 open thread", and a page changed through a fragment saying `via _fragments/requirements.md`. Choosing a page opens it and its preview at its first change. Add a comment, and the view's badge says 1. **Problems on these pages** lists the errors and warnings on those pages and nowhere else. **Open Source Changes** opens one diff of every changed source file against the base. **Ascribe: Stop Review**, and the view is gone.
 
 ## Context
 
@@ -25,7 +25,7 @@ On a checkout of a pull request's branch, run **Ascribe: Start Review**. A **Rev
 `ascribe.review`, **Review**, first in the container, `when: ascribe.reviewOn`. Its items:
 
 - **Three groups,** Added, Changed, and Removed, each page by title with its counts as Changed Pages has them, and "via …" when its own file didn't change. Choosing a page does what choosing it in Changed Pages does. A removed page opens the preview's **As it was**.
-- **Problems in changed pages,** the last group: VS Code's diagnostics for the changed pages' files, errors and warnings, and advice under a toggle in the view's title bar, each opening its place. It's drawn from the same list of pages as the groups above, so it changes when they do.
+- **Problems on these pages,** the last group: VS Code's diagnostics for the changed pages' files, errors and warnings, and advice under a toggle in the view's title bar, each opening its place. It's drawn from the same list of pages as the groups above, so it changes when they do. Its label says "on these pages", not "in the changes": a problem the page had before the branch is listed too (Out of scope), and the label mustn't read as the branch's doing.
 - **The badge** is the unsent comments' count, with a tooltip saying so, and none at zero.
 - **The title bar:** Submit Review…, which does what the preview's bar does; Open Source Changes; and Stop Review.
 - **A page's inline button:** its own files' diff, the page's file and what it changed through.
@@ -47,11 +47,11 @@ While review is on, This page gains a **Review** section: whether the branch cha
 ## Tasks
 
 1. The view, its groups, its badge, and its title bar, with its test API.
-2. Problems in changed pages, and its advice toggle.
+2. Problems on these pages, and its advice toggle.
 3. Open Source Changes and the page items' diff, through the Git extension, and the server's fallback with its request.
 4. This page's Review section.
 5. Tests: unit tests for the grouping and the file list; `review.it.ts` for the view, the badge after a comment, the problems section, and the diff with the Git extension and without it.
-6. The docs: review's how-to (step 3 reads from the view, step 5 counts from its badge), the editor page's review section (the view, Open Source Changes, This page's Review section), `changes/review/review-view.md`, and the surface map.
+6. The docs: review's how-to (step 3 reads from the view, step 5 counts from its badge, and a page's own source-diff button comes before Open Source Changes, since it works on a branch of any size); the editor page's review section (the view, the problems group and what it counts, Open Source Changes, This page's Review section); `changes/review/review-view.md`; and the surface map.
 
 ## Out of scope
 

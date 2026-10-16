@@ -46,9 +46,9 @@ From the proposal's design and its review:
 11. **This page is answered by one request, `ascribe/page`,** which takes the page and the heading at the cursor. The parts that don't depend on the cursor are answered from what the server keeps for the page, so a cursor move costs what Used by's two requests cost now. The problems are VS Code's diagnostics.
 12. **The Review view's changed pages, and its problems, are the server's,** from the base `ascribe/review/setBase` set, so they never disagree with `ascribe diff`.
 13. **The base side of Open Source Changes comes from the Git extension first** (its API's `toGitUri`), and from documents the server serves through `GitFs` where the Git extension is off.
-14. **"Shown in N pages" is placed from the saved file.** The server registers the lens for its sources' folders by dynamic registration, and reads the regions from disk, as a build does. The client doesn't send it code files.
+14. **"Shown in N pages" is placed from the saved file.** The server registers the lens for its sources' folders by dynamic registration, and reads the regions from disk, as a build does. The client doesn't send it code files. **A code file in more than one project's sources gets a lens from each,** each counting its own project's pages and naming the project ("docs: shown in 3 pages"); a file one project shows gets one lens, unnamed. The pages are in different projects, built and published apart, so one count across them would add things a writer can't act on together.
 15. **`source.fixAll.ascribe` is every safe fix for the file's problems,** the set `ascribe check --fix` applies to it, and runs on save only where someone sets it in `editor.codeActionsOnSave`.
-16. **The skill's key, `ascribe.agentsSynced`, is set only for a copy in a folder VS Code's chat loads skills from.** The rules aren't shipped: they're made from a project's model.
+16. **The skill's key, `ascribe.agentsSynced`, is set only for a copy in a folder VS Code's chat loads skills from:** `.github/skills/`, `.claude/skills/`, or `.agents/skills/` in a workspace folder, which takes in both of `sync`'s. The rules aren't shipped: they're made from a project's model.
 17. **Insert at the Cursor writes into the project's last Markdown editor,** which the extension tracks, since VS Code's active editor is none while a webview has focus.
 
 No decision phase comes first: nothing in this plan changes the language, an output, a command's JSON, or a published package's API. `ascribe/page`'s result is a type the extension generates from the server's, like `ascribe/inventory`'s, and can change with both.
@@ -74,7 +74,7 @@ No decision phase comes first: nothing in this plan changes the language, an out
 |---|---|
 | The Review view, and This page's Review section | 2 |
 | The lens in code files, and the fix-all action | 3 |
-| The rest of About, Health, and what the page includes | 4 |
+| The rest of About, Health, and what the page includes; each page's builds in `ascribe/inventory`, which phase 5's dimming reads | 4 |
 | Pages' and Content model's actions, filters, colors, and dimming | 5 |
 | Removing Projects, and Switch Project | 6 |
 | The skill in chat, and the drop and paste check | 7 |
@@ -107,7 +107,7 @@ Each phase's result is something a person can open or run. None builds a layer f
 
 - **[Memos](../memos/README.md),** phase 6, lists memos in Used by. Built after this plan's phase 1, it fills This page's Memos section instead; built before, phase 1 keeps them when Used by becomes This page.
 - **[Glossary pages](../glossary-pages/README.md)** moves terms onto pages. Content model's glossary entries then open their headings, and their Find All References and Rename are the glossary plan's.
-- **[Navigation](../proposals/navigation.md),** a proposal, gives Pages its structure: sections in order, dragging to reorder, fragments by folder. Phase 5 adds to whatever structure Pages has when it lands, by content type today.
+- **[Navigation](../navigation/README.md)** gives Pages its structure, in its phase 5: sections in order, dragging to reorder, fragments by folder. This plan's phase 5 adds to whatever structure Pages has when it lands, by content type today.
 - **[Versions](../versions/README.md).** Content model lists the versions once `ascribe model` reports them; phase 5 adds them if they're there.
 
 ## Rules for every phase

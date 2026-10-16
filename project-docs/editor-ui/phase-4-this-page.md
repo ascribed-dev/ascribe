@@ -16,7 +16,7 @@ In VS Code, open a page of Ascribe's docs. **About** has, beside its title and a
   - the description field and the limit `description-too-long` checks;
   - the field with the review role and today's date, as `review-overdue` reads them (`ASCRIBE_TODAY` in tests);
   - the page's availability, and its builds, as `check` resolves the page for each;
-  - its listing (`Listing` and `ListingLevel` in `crates/ascribe-model/src/model.rs`), as the page record carries it;
+  - its listing (`Listing` and `ListingLevel` in `crates/ascribe-model/src/model.rs`), which `pages.json` writes as `listing` and `listing_from`;
   - its permalinks, as `ascribe permalinks list` lists them;
   - the template it started from and `template_places` (`crates/ascribe-check/src/checks/template.rs`);
   - the Markdown size `page-size` measures per build;
@@ -53,6 +53,8 @@ A row with nothing to say isn't shown: no review field, no template, no permalin
 
 The Problems row is VS Code's diagnostics for the file, counted in the extension; the server adds nothing for it.
 
+**One answer for each fact.** Where a row says something an output also writes, the server takes it from the code that writes the output, not a second reading of the model: the listing and where it comes from are what `pages.json`'s `listing` and `listing_from` would be for the page, the size is `page-size`'s measure, and the builds are the builds' own. A test of the server compares each with the output for the same page, so the view and the output can't disagree.
+
 ### The inventory
 
 Each page in `ascribe/inventory` gains `builds`, the builds that publish it, for phase 5's dimming. It's the same set About's Builds row shows, from the same place in the server.
@@ -75,7 +77,7 @@ Each page in `ascribe/inventory` gains `builds`, the builds that publish it, for
 
 - The goal's rows, for a page of Ascribe's docs, in a test of the server.
 - With `ASCRIBE_TODAY` past a page's review date, About says overdue, and `ascribe check` reports `review-overdue` for the same page.
-- Size agrees with `page-size`'s measure of the same build.
+- Size agrees with `page-size`'s measure of the same build, and Listing with `pages.json`'s `listing` and `listing_from` for the same page, in tests that build the project.
 - A cursor move still asks one request, and phase 1's measurement still holds.
 
 ## Verify

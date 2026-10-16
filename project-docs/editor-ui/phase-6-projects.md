@@ -24,6 +24,7 @@ In VS Code, open Ascribe's own repository. The sidebar has This page, Pages, and
 - **`ascribe.multipleProjects`,** a context key the registry sets as its list changes: found, left out, or deleted. True at two or more.
 - **Ascribe: Switch Project** (`ascribe.switchProject`): a quick pick of the projects, as the goal describes, with **Show Output** and **Restart** as item buttons (Restart on a running or failed server only, as the view had it). Choosing one sets the sidebar's project and starts its server if it isn't running. It's in the Command Palette, as a title button on Pages and Content model, and in the status bar item's menu, each `when: ascribe.multipleProjects`.
 - **The jump:** the sidebar's project is the chosen one until a file of another project becomes active, and then it follows, as `follow` does now.
+- **A server that fails to start:** the views show the project's name with "The language server failed to start" and **Show Output** and **Restart** as their message's links, not "Waiting for the project's language server", and Switch Project's item for it says "failed". The sidebar stays on that project until another is chosen or a file of another becomes active.
 - **The view goes:** `ascribe.projects`, its commands, its menus, and `ProjectsViewApi`. Its welcome entries move to Pages, which loses `when: ascribe.active`. The Refresh button's job, asking the running servers for their builds again, is a button in Switch Project's title.
 - **The cap's message** names **Switch Project** and `ascribe.projects.exclude`.
 - **The test API** gains `switchProject`, answered as the status bar's menu is, and `monorepo.it.ts` and `sidebar.test.ts` move onto it.
@@ -32,7 +33,7 @@ The binary, which only the Projects view and the status bar's tooltip showed, is
 
 ## Tasks
 
-1. The context key, with unit tests for 0, 1, 2, and a project left out.
+1. The context key, with unit tests for 0, 1, 2, and a project left out; and the views' message for a chosen project whose server failed.
 2. Switch Project, its buttons, the jump, and its test API.
 3. The view's removal, the welcome entries on Pages, and the cap's message.
 4. `monorepo.it.ts` and `sidebar.test.ts` moved, and the full matrix run from the branch (Actions → CI → Run workflow), since the multi-project tests are about paths.
