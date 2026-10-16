@@ -179,7 +179,7 @@ The sidebar shows the pages of the page's own line when the layout passes the en
 
 ## Archive a line
 
-Before a line leaves the window, keep a copy of it that needs nothing else: no site generator, no server, no script.
+Before a line leaves the window, keep a copy of it that needs nothing else: no site generator, no server, and no script but its search.
 
 ```sh
 ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.example.com/docs/
@@ -190,8 +190,9 @@ The folder has a page for each page of the line, `install.md` as `install.html`,
 - **Every page says what it is,** at its top: "Documentation for Self-managed 3.4. This version is no longer maintained." With `--current`, a link to the current documentation follows. Nothing in it is a date or a "latest" that would read wrongly later.
 - **A way around.** A sidebar on every page lists the pages by folder, each folder named by the title of its `index.md`, with the page you're on marked; each page lists its own sections, and links to the previous and next pages. The contents page lists every page: it's `index.html`, or `contents.html` when the line's own root `index.md` is `index.html`.
 - **It prints.** Printing a page leaves out the sidebar, keeps the statement, and writes each link's address after it. `all.html` has every page in order in one document, for one PDF of the whole line.
-- **It's kept out of search,** by `<meta name="robots" content="noindex">` on every page, and a `robots.txt` for a host that serves the folder at its own address.
-- **It has no script.** Tabs show one after another, each under its label, as the [element contract](../astro/elements.md) promises without JavaScript. The stylesheet is the element library's with the archive's own, and follows the reader's light or dark setting.
+- **It can be searched,** from a box at the top of the sidebar, opened from a disk too. Typing lists the pages and headings that have every word, best first: a page's title, then a heading, then the text under one, code blocks included, with the words around each match. A result opens the page at its heading. Search is the archive's one script, and its index is `search-index.js`, which the box loads the first time it's used; the command says how large it is. Nothing is fetched from anywhere else, and nothing is stored in the browser.
+- **It's kept out of search engines,** by `<meta name="robots" content="noindex">` on every page, and a `robots.txt` for a host that serves the folder at its own address.
+- **It reads without a script.** With scripts off, the search box isn't shown, and the sidebar and the contents page are the way around. Tabs show one after another, each under its label, as the [element contract](../astro/elements.md) promises without JavaScript. The stylesheet is the element library's with the archive's own, and follows the reader's light or dark setting.
 
 A link to a page that isn't in the line goes to the page that takes its place there, as a link in the line's output does. A link that would lead out of the line to another one is written as its text, and the command names each. A link to another site stays a link.
 

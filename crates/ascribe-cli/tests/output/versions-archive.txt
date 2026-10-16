@@ -1,4 +1,5 @@
 Wrote 5 pages to archive/3.4. Open archive/3.4/index.html.
+Its search index is 4 KB.
 A link is written as text, since the page it leads to isn't in the line:
   docs/upgrade.md: "webhooks" led to /webhooks/ in 3.5
 Host the folder, then record its address:

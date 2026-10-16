@@ -1,6 +1,7 @@
 /*
  * An archive's own styles (`ascribe versions archive`): the statement at the
- * top of every page, the sidebar, the page, previous and next, and print.
+ * top of every page, the sidebar and its search box, the page, previous and
+ * next, and print.
  * The elements' are @ascribed/elements' style.css, before these in the
  * archive's style.css.
  */
@@ -182,6 +183,75 @@ td {
   margin-left: auto;
 }
 
+.archive-search {
+  margin: 0 0 var(--a-space);
+}
+
+.archive-search label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--a-muted);
+  font: var(--a-caption) var(--a-ui);
+  text-transform: uppercase;
+}
+
+.archive-search input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--a-line);
+  border-radius: var(--a-radius);
+  background: var(--a-page);
+  color: inherit;
+  font: inherit;
+}
+
+.archive-search input:focus-visible,
+.archive-search-results a:focus-visible {
+  outline: 2px solid var(--a-accent);
+  outline-offset: 1px;
+}
+
+.archive-search-status:empty {
+  display: none;
+}
+
+.archive-search-status {
+  margin: var(--a-space-small) 0 0;
+  color: var(--a-muted);
+}
+
+.archive-sidebar .archive-search-results {
+  margin: var(--a-space-small) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-sidebar .archive-search-results li {
+  margin: 0;
+  border-bottom: 1px solid var(--a-line);
+}
+
+.archive-sidebar .archive-search-results a {
+  display: block;
+  padding: var(--a-space-small) 0.25rem;
+}
+
+.archive-search-where {
+  display: block;
+  font-weight: 600;
+}
+
+.archive-search-context {
+  display: block;
+  color: var(--a-muted);
+}
+
+.archive-search mark {
+  background: var(--a-notice);
+  color: inherit;
+}
+
 @media (max-width: 48rem) {
   .archive-layout {
     flex-direction: column;
@@ -197,6 +267,7 @@ td {
 
 @media print {
   .archive-sidebar,
+  .archive-search,
   .archive-current,
   .archive-pager,
   .archive-all-link {

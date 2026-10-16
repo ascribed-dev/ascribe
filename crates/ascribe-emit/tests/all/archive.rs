@@ -67,6 +67,8 @@ fn the_folder_has_the_pages_their_assets_and_its_own_files() {
             "playground.png",
             "quickstart.html",
             "robots.txt",
+            "search-index.js",
+            "search.js",
             "style.css",
             "upgrade.html",
         ]
@@ -103,7 +105,7 @@ fn every_link_and_image_in_the_folder_leads_to_a_file_in_it() {
 }
 
 #[test]
-fn every_page_says_what_it_is_keeps_crawlers_out_and_has_no_script() {
+fn every_page_says_what_it_is_keeps_crawlers_out_and_runs_only_the_search() {
     let archive = archived(Some("https://docs.quill.dev/"));
     for (path, html) in texts(&archive).iter().filter(|(p, _)| p.ends_with(".html")) {
         assert!(
@@ -122,8 +124,64 @@ fn every_page_says_what_it_is_keeps_crawlers_out_and_has_no_script() {
             html.contains("<meta name=\"robots\" content=\"noindex\">"),
             "{path}"
         );
-        assert!(!html.contains("<script"), "{path}");
+        assert!(
+            html.contains(
+                "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'self' file:\">"
+            ),
+            "{path}"
+        );
+        let scripts = html.matches("<script").count();
+        if path == "all.html" {
+            assert_eq!(scripts, 0, "{path}");
+        } else {
+            assert_eq!(scripts, 1, "{path}");
+            assert!(
+                html.contains(
+                    "<script src=\"./search.js\" data-index=\"./search-index.js\" data-root=\"./\" defer></script>"
+                ),
+                "{path}"
+            );
+        }
     }
+}
+
+#[test]
+fn the_search_index_has_each_page_by_heading_with_its_code() {
+    let archive = archived(None);
+    assert_eq!(
+        archive.search_index,
+        texts(&archive)["search-index.js"].len()
+    );
+    let script = &texts(&archive)["search-index.js"];
+    let json = script
+        .split_once(" = ")
+        .and_then(|(_, rest)| rest.strip_suffix(";\n"))
+        .expect("the index's JSON");
+    let index: serde_json::Value = serde_json::from_str(json).expect("JSON");
+    let pages = index["pages"].as_array().expect("pages");
+    let hrefs: Vec<&str> = pages.iter().filter_map(|p| p["href"].as_str()).collect();
+    assert_eq!(
+        hrefs,
+        [
+            "configure-legacy.html",
+            "install-agent.html",
+            "keys.html",
+            "quickstart.html",
+            "upgrade.html",
+        ]
+    );
+    let install = &pages[1];
+    assert_eq!(install["title"], "Install the Quill agent");
+    let section = install["sections"]
+        .as_array()
+        .expect("sections")
+        .iter()
+        .find(|s| s["id"] == "install-agent")
+        .expect("the heading");
+    assert_eq!(section["heading"], "Install the agent");
+    let text = section["text"].as_str().expect("text");
+    assert!(text.contains("npm install -g @quill/agent"), "{text}");
+    assert!(text.contains("quill --version"), "{text}");
 }
 
 #[test]

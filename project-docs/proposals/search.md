@@ -273,7 +273,7 @@ A real inverted index, and the engine that comes with it, would be worth weighin
 - **Replace.** Search finds the line; the edit is the author's or the agent's. Changing a phrase's value is already one line, and renaming is the editor's.
 - **Searching a git revision,** or what changed. `ascribe diff` answers "what changed for readers".
 - **A persistent index,** as above.
-- **A search view in the sidebar.** The quick pick first; a view if people keep results open.
+- **A search view in the sidebar.** The quick pick first; a view if people keep results open. Microsoft Learn's authoring pack and Dendron's Lookup each put their finding and inserting in one quick pick, and VS Code's UX guidelines keep the sidebar for what a command can't do.
 
 Later: [memos](memos.md), once they exist, could be searched alongside pages.
 

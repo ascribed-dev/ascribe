@@ -11,7 +11,8 @@
 //! links to the previous and next pages. Beside the pages are the assets
 //! they use, mirrored as the plain output places them, the stylesheet
 //! (the element library's, then the archive's own), a contents page, every
-//! page in one document for printing (`all.html`), and a `robots.txt`.
+//! page in one document for printing (`all.html`), a `robots.txt`, and
+//! the search: its script and its index ([`search`]).
 //!
 //! Every link between pages is relative, so the folder works from a disk
 //! and at any address. A link out of the line, and a link to an address
@@ -33,6 +34,10 @@ use crate::render::{decode, encode, parse_existing, render_site_html, write_attr
 use crate::site::blocks::{Renderer, availability_element};
 use crate::site::frontmatter;
 use crate::store::{Contents, EmittedFile, FileKind};
+
+mod search;
+
+pub use search::{LARGE_SEARCH_INDEX, SEARCH_INDEX, SEARCH_SCRIPT};
 
 /// The archive's stylesheet, at the top of its folder.
 pub const ARCHIVE_STYLESHEET: &str = "style.css";
@@ -72,6 +77,8 @@ pub struct Archive {
     pub contents: RelPath,
     /// Each link written as its text, by page.
     pub unlinked: Vec<Unlinked>,
+    /// The size of the search index, `search-index.js`, in bytes.
+    pub search_index: usize,
 }
 
 /// A link the archive writes as its text: a link out of the line, or to an
@@ -132,6 +139,14 @@ pub fn archive(
         .iter()
         .filter(|f| f.kind == FileKind::Page)
         .count();
+    let search_index = emission
+        .files
+        .iter()
+        .find(|f| f.path.as_str() == SEARCH_INDEX)
+        .map_or(0, |f| match &f.contents {
+            Contents::Text(text) => text.len(),
+            _ => 0,
+        });
     let unlinked = emitter
         .unlinked
         .into_inner()
@@ -141,6 +156,7 @@ pub fn archive(
         pages,
         contents: emitter.nav.contents,
         unlinked: unlinked.into_iter().collect(),
+        search_index,
     })
 }
 
@@ -443,8 +459,11 @@ impl ArchiveEmitter {
         out.push_str("<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n");
         out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
         out.push_str("<meta name=\"robots\" content=\"noindex\">\n");
+        // The archive's own scripts, from the folder: `'self'` where it's
+        // served, and `file:` opened from a disk, which `'self'` doesn't
+        // match in every browser (decision 76).
         out.push_str(
-            "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">\n",
+            "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'self' file:\">\n",
         );
         out.push_str(&format!("<title>{}</title>\n", encode(title)));
         out.push_str(&format!(
@@ -490,6 +509,15 @@ impl ArchiveEmitter {
             }
         };
         let mut out = String::from("<nav class=\"archive-sidebar\" aria-label=\"Pages\">\n");
+        // The search box, which the script draws in its place: with
+        // scripts off, there's none.
+        let file = |name: &str| RelPath::parse(name).unwrap_or_else(|_| RelPath::root());
+        out.push_str(&format!(
+            "<script src=\"{}\" data-index=\"{}\" data-root=\"{}\" defer></script>\n",
+            encode(&relative(dir, &file(SEARCH_SCRIPT))),
+            encode(&relative(dir, &file(SEARCH_INDEX))),
+            encode(&root_of(dir)),
+        ));
         out.push_str(&format!(
             "<p><a href=\"{}\"{}>Contents</a></p>\n",
             encode(&relative(dir, &self.nav.contents)),
@@ -572,6 +600,24 @@ impl ArchiveEmitter {
     }
 }
 
+impl ArchiveEmitter {
+    /// `search-index.js`: every page's text by heading, in reading order.
+    fn search_index(&self, build: &ResolvedBuild) -> String {
+        let by_path: BTreeMap<&RelPath, &ResolvedPage> =
+            build.pages.iter().map(|p| (&p.path, p)).collect();
+        let pages: Vec<search::IndexPage> = self
+            .nav
+            .pages
+            .iter()
+            .filter_map(|nav| {
+                let page = by_path.get(&nav.source)?;
+                Some(search::index_page(page, &nav.output, title_text(page)))
+            })
+            .collect();
+        search::index_script(&pages)
+    }
+}
+
 impl Emitter for ArchiveEmitter {
     fn name(&self) -> &'static str {
         "archive"
@@ -607,6 +653,8 @@ impl Emitter for ArchiveEmitter {
             generated(ROBOTS, "User-agent: *\nDisallow: /\n".to_owned())?,
             generated(self.nav.contents.as_str(), self.contents_html())?,
             generated(ARCHIVE_ALL, self.all_html(cx, build))?,
+            generated(SEARCH_SCRIPT, search::SCRIPT.to_owned())?,
+            generated(SEARCH_INDEX, self.search_index(build))?,
         ])
     }
 }
@@ -628,6 +676,17 @@ fn relative(dir: &RelPath, file: &RelPath) -> String {
             .relative_from(dir)
             .unwrap_or_else(|| format!("./{file}")),
     )
+}
+
+/// The address of the top of the folder from the folder `dir`: `./`, or
+/// `../` for each folder down.
+fn root_of(dir: &RelPath) -> String {
+    let depth = dir.segments().count();
+    if depth == 0 {
+        "./".to_owned()
+    } else {
+        "../".repeat(depth)
+    }
 }
 
 /// `html` written for a page in the folder `dir`, with each relative

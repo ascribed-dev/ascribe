@@ -210,6 +210,11 @@ fn the_docs_phrases_match_their_sources() {
     for name in packages {
         let file = format!("packages/{name}/package.json");
         let manifest = package(&file);
+        // A private package that has no version, as `@ascribed/archive`,
+        // which only the binary carries, isn't released.
+        if manifest["private"].as_bool() == Some(true) && manifest.get("version").is_none() {
+            continue;
+        }
         compare("version", &file, manifest["version"].as_str().unwrap());
     }
 
