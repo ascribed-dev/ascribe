@@ -18,11 +18,13 @@ coverage/
 .DS_Store
 .playwright-mcp/
 
-# The shared launch and task configurations for running the extension; the
+# The shared launch and task configurations for running the extension, and
+# the workspace settings that leave the test fixtures out of its projects; the
 # rest of .vscode/ is each person's own.
 .vscode/*
 !.vscode/launch.json
 !.vscode/tasks.json
+!.vscode/settings.json
 THIRD-PARTY-NOTICES
 
 # Local mockups

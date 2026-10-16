@@ -4,10 +4,12 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   channelName,
+  expandBraces,
   globFolder,
   nestedProjects,
   ownedElsewhere,
   owningProject,
+  projectExclude,
   projectName,
   samePath,
   throughFolder,
@@ -249,5 +251,54 @@ describe("throughFolder", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
+  });
+});
+
+describe("projectExclude", () => {
+  it("leaves out node_modules alone when nothing else is set", () => {
+    expect(projectExclude({}, [])).toBe("**/node_modules/**");
+  });
+
+  it("adds the files.exclude patterns that are on, and the setting's", () => {
+    expect(
+      projectExclude(
+        { "**/.git": true, "**/build": false, "**/*.js": { when: "$(basename).ts" } },
+        ["tests/**", "packages/vscode/test/**"],
+      ),
+    ).toBe("{**/node_modules/**,**/.git,tests/**,packages/vscode/test/**}");
+  });
+
+  it("expands a pattern's own braces, since VS Code's don't nest", () => {
+    expect(projectExclude({}, ["fixtures/{a,b}/**"])).toBe(
+      "{**/node_modules/**,fixtures/a/**,fixtures/b/**}",
+    );
+  });
+
+  it("drops what isn't a pattern, blanks, and repeats", () => {
+    expect(projectExclude({}, ["", "  ", 3, "**/node_modules/**", "tests/**"])).toBe(
+      "{**/node_modules/**,tests/**}",
+    );
+  });
+});
+
+describe("expandBraces", () => {
+  it("gives each alternative of a group", () => {
+    expect(expandBraces("*.{md,mdx}")).toEqual(["*.md", "*.mdx"]);
+  });
+
+  it("expands nested and repeated groups", () => {
+    expect(expandBraces("{a,b{1,2}}/{x,y}")).toEqual([
+      "a/x",
+      "a/y",
+      "b1/x",
+      "b1/y",
+      "b2/x",
+      "b2/y",
+    ]);
+  });
+
+  it("leaves a pattern with no group, or an unclosed one, as it is", () => {
+    expect(expandBraces("tests/**")).toEqual(["tests/**"]);
+    expect(expandBraces("odd{name")).toEqual(["odd{name"]);
   });
 });

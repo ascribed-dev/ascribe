@@ -82,6 +82,62 @@ export function globFolder(folder: string): string {
   return folder.replace(/\\/g, "/").replace(/[*?[{]/g, "[$&]");
 }
 
+/**
+ * The pattern that leaves folders out of the search for projects: every
+ * `node_modules`, each pattern `files.exclude` turns on (`true`, not a `when`
+ * clause), and each of `ascribe.projects.exclude`, as one brace group.
+ * VS Code's globs don't nest braces, so each pattern's own are expanded first.
+ */
+export function projectExclude(
+  filesExclude: Readonly<Record<string, unknown>>,
+  projectsExclude: readonly unknown[],
+): string {
+  const patterns = [
+    "**/node_modules/**",
+    ...Object.entries(filesExclude)
+      .filter(([, on]) => on === true)
+      .map(([pattern]) => pattern),
+    ...projectsExclude.filter((pattern): pattern is string => typeof pattern === "string"),
+  ];
+  const all = [
+    ...new Set(
+      patterns
+        .flatMap(expandBraces)
+        .map((pattern) => pattern.trim())
+        .filter((pattern) => pattern !== ""),
+    ),
+  ];
+  const [only] = all;
+  return all.length === 1 && only !== undefined ? only : `{${all.join(",")}}`;
+}
+
+/**
+ * A glob pattern's alternatives, one pattern each: `*.{md,mdx}` is `*.md`
+ * and `*.mdx`. Groups nest, and a brace with no partner is left as it is.
+ */
+export function expandBraces(pattern: string): string[] {
+  const open = pattern.indexOf("{");
+  if (open < 0) return [pattern];
+  let depth = 0;
+  const commas: number[] = [];
+  for (let i = open; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) {
+        const before = pattern.slice(0, open);
+        const after = pattern.slice(i + 1);
+        const starts = [open, ...commas];
+        const ends = [...commas, i];
+        const options = starts.map((start, n) => pattern.slice(start + 1, ends[n] ?? i));
+        return options.flatMap((option) => expandBraces(before + option + after));
+      }
+    } else if (c === "," && depth === 1) commas.push(i);
+  }
+  return [pattern];
+}
+
 /** A path with forward slashes, if it's a Windows path. */
 function slashed(file: string): string {
   return /^[a-zA-Z]:|^\\\\/.test(file) ? file.replace(/\\/g, "/") : file;
