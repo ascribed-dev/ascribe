@@ -154,8 +154,8 @@ describe("the This page view", () => {
     about,
     heading: { id: "rotate-keys", text: "Rotate keys", range: range(11) },
     linkedFrom: [
-      place("b.md", 3, "See [rotate](keys.md#rotate-keys)."),
       place("a.md", 7, "- [Rotate](keys.md#rotate-keys)"),
+      place("b.md", 3, "See [rotate](keys.md#rotate-keys)."),
       place("b.md", 9, "Again: [a](keys.md#rotate-keys)."),
     ],
     includedBy: [],
@@ -172,7 +172,7 @@ describe("the This page view", () => {
     });
   }
 
-  it("says what the page is, then what links to the heading, by file", () => {
+  it("says what the page is, then what links to the heading, by file in the server's order", () => {
     expect(flat(thisPageRoots(page))).toEqual([
       "About",
       "  Title (API keys)",

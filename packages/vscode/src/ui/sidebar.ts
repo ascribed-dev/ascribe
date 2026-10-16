@@ -308,7 +308,8 @@ function byFile(places: readonly Place[]): PlacesInFile[] {
     file.places.push(place);
     files.set(place.uri, file);
   }
-  return [...files.values()].sort((a, b) => a.path.localeCompare(b.path));
+  // The server lists places file by file in content path order.
+  return [...files.values()];
 }
 
 /** An item's children in the This page view. */
