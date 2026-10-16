@@ -1,5 +1,4 @@
-<!-- Generated from packages/elements/css/style.css by scripts/docs-site/elements.test.ts. Say what a new property sets in the test, then run `ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts`. -->
-
+@memo: Generated from packages/elements/css/style.css by scripts/docs-site/elements.test.ts; say what a new property sets in the test, then run `ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts` to rewrite it.
 | Property | What it sets |
 |---|---|
 | `--ascribe-font-family` | The font of notes, tabs, and availability badges. |

@@ -263,6 +263,39 @@ describe("directive lines", () => {
   });
 });
 
+describe("memos (§4.10)", () => {
+  it("colors a line memo's text as a comment", () => {
+    const line = first("@memo: Kept to one sentence; {product} and [a link](x.md) are text.");
+    expect(textsWith(line, "keyword.control.directive")).toEqual(["memo"]);
+    expect(textsWith(line, "comment.line.memo").join("")).toBe(
+      "Kept to one sentence; {product} and [a link](x.md) are text.",
+    );
+    expect(textsWith(line, "meta.phrase")).toEqual([]);
+  });
+
+  it("colors a container memo's lines as one comment, up to its end line", () => {
+    const lines = tokenize(
+      "@memo:\nSee [the incident](notes.md) and {product}.\n# Not a heading\n\n```\n@end\nAfter.",
+    );
+    expect(textsWith(lines[0] ?? [], "keyword.control.directive")).toEqual(["memo"]);
+    expect(textsWith(lines[0] ?? [], "punctuation.separator.directive")).toEqual([":"]);
+    for (const line of lines.slice(1, 5)) {
+      for (const [text, scopes] of line) {
+        if (text) expect(scopes, text).toContain("comment.block.memo");
+        expect(scopes).not.toContain("meta.phrase");
+      }
+    }
+    expect(textsWith(lines[5] ?? [], "keyword.control.end")).toEqual(["end"]);
+    expect(lines[6]?.every(([, scopes]) => scopes.length === 0)).toBe(true);
+  });
+
+  it("colors a container memo in a block quote", () => {
+    const lines = tokenize("> @memo:\n> Why.\n> @end\n> After.");
+    expect(textsWith(lines[1] ?? [], "comment.block.memo").join("")).toContain("Why.");
+    expect(textsWith(lines[2] ?? [], "keyword.control.end")).toEqual(["end"]);
+  });
+});
+
 describe("phrases (§5.1)", () => {
   it("highlights {key} in prose, against punctuation and words", () => {
     const line = first("Sign in to {cloud} and {cloud}'s {cloud}-hosted, or {api-v2}.");

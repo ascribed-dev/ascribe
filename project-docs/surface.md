@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-218 in all. By severity: 37 advice, 157 error, 24 warning. By level: 193 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 11 review, 137 write.
+219 in all. By severity: 38 advice, 157 error, 24 warning. By level: 194 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 12 review, 137 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -327,6 +327,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC220` | `link-into-older-line` | advice | write | `{path}` isn't in the current line, so this link leads to it in {line}; the current line usually needs a page in its place |
 | `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
 | `ASC222` | `listing-loosened-in-line` | error | write | this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there |
+| `ASC223` | `html-comment` | advice | review | an HTML comment is in the published page's source; a memo isn't |
 
 ## The VS Code extension
 
@@ -506,6 +507,7 @@ The standard requests it answers, by the type that names each in the code:
 | `CodeLensRequest` | The Language Server Protocol's |
 | `InlayHintRequest` | The Language Server Protocol's |
 | `CodeActionRequest` | The Language Server Protocol's |
+| `FoldingRangeRequest` | The Language Server Protocol's |
 | `Formatting` | The Language Server Protocol's |
 | `Rename` | The Language Server Protocol's |
 | `PrepareRenameRequest` | The Language Server Protocol's |
@@ -715,6 +717,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/init.schema.json` | InitReport | What `ascribe init` did. |
 | `schemas/link.schema.json` | LinkReport | What `ascribe link <TARGET> --from <PAGE>` answers. |
 | `schemas/lsp-agent-prompt.schema.json` | AgentPromptResult | The answer to `ascribe/agentPrompt`, or `null` when there's nothing to prompt about: the file has no problem, the diagnostic is no longer reported, review is off, or the page or fragment didn't change. |
+| `schemas/lsp-base-file.schema.json` | BaseFileResult | The answer to `ascribe/review/baseFile`. |
 | `schemas/lsp-build-view.schema.json` | BuildViewResult | The answer to `ascribe/buildView`. |
 | `schemas/lsp-changes.schema.json` | ChangesResult | The answer to `ascribe/review/changes`. |
 | `schemas/lsp-context.schema.json` | ContextResult | The answer to `ascribe/context`. |
@@ -820,6 +823,8 @@ READMEs published with a package, a crate, or the repository:
 | `crates/ascribe-diff/README.md` |
 | `crates/ascribe-emit/README.md` |
 | `crates/ascribe-fmt/README.md` |
+| `crates/ascribe-lsp/README.md` |
+| `crates/ascribe-lsp/README.md` |
 | `crates/ascribe-lsp/README.md` |
 | `crates/ascribe-mcp/README.md` |
 | `crates/ascribe-model/README.md` |

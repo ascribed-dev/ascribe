@@ -357,9 +357,9 @@ fn check_fragments(prefix: &str, fragments: &[(String, String)]) {
 #[test]
 fn the_crawlers_table_is_current() {
     let mut text = String::from(
-        "<!-- Generated from crates/ascribe-model/data/crawlers.toml by \
-         tests/conformance/tests/docs.rs. Edit the data, then run \
-         `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n\n\
+        "@memo: Generated from crates/ascribe-model/data/crawlers.toml by \
+         tests/conformance/tests/docs.rs; edit the data, then run \
+         `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n\
          | Purpose | Token | Operator | What the operator says of `robots.txt` | Read |\n\
          |---|---|---|---|---|\n",
     );
@@ -421,10 +421,12 @@ const AREAS: &[(&str, &str)] = &[
     ("examples", "Tested examples"),
 ];
 
-/// What each fragment starts with: what generates it, and how.
-const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by \
-     tests/conformance/tests/docs.rs. Edit the registry, then run \
-     `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
+/// What each fragment starts with: a memo saying what generates it, and
+/// how. It touches the fragment's first block, or, where that's a heading,
+/// which a memo can't be about, it's at the top of the first section.
+const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml by \
+     tests/conformance/tests/docs.rs; edit the registry, then run \
+     `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics in two (directives, and links, pages, and
@@ -448,8 +450,8 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PAGES)
         .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
-    let mut directives = HEADER.to_owned();
-    let mut source_pages = HEADER.to_owned();
+    let mut directives = String::new();
+    let mut source_pages = String::new();
     let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
     for (i, (construct, entries)) in constructs.into_iter().enumerate() {
         let (out, page) = if i < split {
@@ -464,7 +466,7 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
-    let mut content_model = HEADER.to_owned();
+    let mut content_model = String::new();
     for (group, title) in RULE_GROUPS {
         let _ = write!(content_model, "\n## {title}\n");
         for entry in active
@@ -476,7 +478,7 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
-    let mut content_checks = HEADER.to_owned();
+    let mut content_checks = String::new();
     for (area, title) in AREAS {
         let _ = write!(content_checks, "\n## {title}\n");
         for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
@@ -494,19 +496,37 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
     let all = index(active.iter().copied(), &page_of);
     vec![
         ("diagnostics-index.md".to_owned(), all),
-        ("diagnostics-directives.md".to_owned(), directives),
-        ("diagnostics-pages.md".to_owned(), source_pages),
-        ("diagnostics-content-model.md".to_owned(), content_model),
-        ("diagnostics-content-checks.md".to_owned(), content_checks),
+        (
+            "diagnostics-directives.md".to_owned(),
+            with_memo(&directives),
+        ),
+        ("diagnostics-pages.md".to_owned(), with_memo(&source_pages)),
+        (
+            "diagnostics-content-model.md".to_owned(),
+            with_memo(&content_model),
+        ),
+        (
+            "diagnostics-content-checks.md".to_owned(),
+            with_memo(&content_checks),
+        ),
     ]
+}
+
+/// A fragment that starts with a heading, with [`HEADER`] at the top of its
+/// first section: a memo can't be about a heading.
+fn with_memo(body: &str) -> String {
+    let body = body.trim_start_matches('\n');
+    match body.split_once('\n') {
+        Some((heading, rest)) => format!("{heading}\n{HEADER}{rest}"),
+        None => format!("{HEADER}{body}"),
+    }
 }
 
 /// The index: a table of the diagnostics, in code order, each linked to its
 /// entry on its page of the reference, whose anchor is its code.
 fn index<'a>(entries: impl Iterator<Item = &'a Entry>, page_of: &BTreeMap<&str, &str>) -> String {
-    let mut out = format!(
-        "{HEADER}\n| Code | Name | Severity | Level | Next step |\n|---|---|---|---|---|\n"
-    );
+    let mut out =
+        format!("{HEADER}| Code | Name | Severity | Level | Next step |\n|---|---|---|---|---|\n");
     for entry in entries {
         let _ = writeln!(
             out,

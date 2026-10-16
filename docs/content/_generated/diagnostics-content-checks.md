@@ -1,6 +1,5 @@
-<!-- Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs. Edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->
-
 ## Pages
+@memo: Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 
 ### ASC149 `page-size`
 @id {permalink=true}: ASC149
@@ -121,6 +120,19 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Give the heading on the page it lands on the same id, with `@id`, or link to the page without `#` and the id.
 
 **Read more:** [Links between lines](../writing/directives.md#links-between-lines) in the directive reference.
+
+### ASC223 `html-comment`
+@id {permalink=true}: ASC223
+
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo)
+
+**When:** A page or a fragment has an HTML comment, as a block or inside a paragraph. A comment in a code block or a memo isn't one, and Vale's own comments, such as `<!-- vale off -->`, aren't reported.
+
+**Message:** an HTML comment is in the published page's source; a memo isn't
+
+**Fix:** An HTML comment isn't private: it's in the source of every published page, and in the JSON output. Write it as a `@memo` instead, which keeps the same text beside the same block and out of every output: the editor's quick fix, **Rewrite as a memo**, does it for a comment that's a block of its own. A comment written for another tool, which has to stay a comment, is acknowledged with `@intended {check=html-comment}` above its block.
+
+**Read more:** [`@memo`](../writing/directives.md#memo) in the directive reference.
 
 ## Across the project
 

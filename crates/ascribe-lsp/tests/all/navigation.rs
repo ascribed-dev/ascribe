@@ -147,6 +147,7 @@ fn the_capabilities_are_advertised() {
     assert!(caps["documentLinkProvider"].is_object());
     assert!(caps["codeLensProvider"].is_object());
     assert_eq!(caps["inlayHintProvider"], true);
+    assert_eq!(caps["foldingRangeProvider"], true);
     assert_eq!(
         caps["executeCommandProvider"]["commands"],
         json!(["ascribe.openFile"])
@@ -187,6 +188,22 @@ fn directive_names_come_from_the_model() {
     assert!(labels(&complete(&mut client, &page, "> @in$0\n")).contains(&"include".to_owned()));
     // Not in the middle of a sentence.
     assert!(items(&complete(&mut client, &page, "mail me@no$0\n")).is_empty());
+}
+
+#[test]
+fn a_memo_is_offered_with_both_its_forms() {
+    let f = quill();
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+    let list = complete(&mut client, &page, "# T\n\n@me$0\n");
+    let memo = item(&list, "memo");
+    assert_eq!(new_text(&memo), "memo");
+    assert_eq!(
+        memo["detail"],
+        "Text for whoever edits the page next, never published."
+    );
+    let docs = memo["documentation"]["value"].as_str().unwrap();
+    assert!(docs.contains("Forms: line, container"), "{docs}");
 }
 
 #[test]
@@ -699,6 +716,71 @@ fn hovering_a_directive_describes_it_from_its_schema() {
     let value = hover_text(&mut client, &page, json!({ "line": 0, "character": 12 }));
     assert!(value.contains("`heading` (boolean"), "{value}");
     assert!(value.contains("default `true`"), "{value}");
+}
+
+#[test]
+fn hovering_a_memo_says_it_is_never_published() {
+    let f = quill();
+    let keys = f.path("docs/keys.md");
+    let text = read(&f, "docs/keys.md");
+    let mut client = Client::start(&f.root());
+    let value = hover_text(&mut client, &keys, at(&text, "@memo:", 2));
+    assert!(
+        value.starts_with("**@memo**, a built-in directive"),
+        "{value}"
+    );
+    assert!(
+        value.contains("Text for whoever edits the page next, never published."),
+        "{value}"
+    );
+    assert!(value.contains("Primary: the memo's text"), "{value}");
+}
+
+// -- Folding ----------------------------------------------------------------------
+
+fn folding(client: &mut Client, path: &Path) -> Vec<Value> {
+    client
+        .request(
+            "textDocument/foldingRange",
+            json!({ "textDocument": text_doc(path) }),
+        )
+        .response_result
+        .expect("a result")
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+}
+
+#[test]
+fn a_container_memo_folds_to_its_first_line() {
+    let f = quill();
+    let keys = f.path("docs/keys.md");
+    let text = read(&f, "docs/keys.md");
+    let mut client = Client::start(&f.root());
+    let memo = text.find("@memo:").unwrap();
+    let end = memo + text[memo..].find("@end").unwrap();
+    let (from, to) = (position(&text, memo), position(&text, end));
+    assert_eq!(
+        folding(&mut client, &keys),
+        vec![json!({ "startLine": from["line"], "endLine": to["line"], "kind": "comment" })]
+    );
+    // In a list item and a block quote too; a line memo and an unclosed
+    // container don't fold.
+    client.open(
+        &keys,
+        2,
+        "- Item\n\n  @memo:\n  One.\n  @end\n  Text.\n\n> @memo:\n> Two.\n> @end\n> Text.\n\n@memo: Line.\nText.\n\n@memo:\nOpen.\n",
+    );
+    let lines: Vec<(u64, u64)> = folding(&mut client, &keys)
+        .iter()
+        .map(|r| {
+            (
+                r["startLine"].as_u64().unwrap(),
+                r["endLine"].as_u64().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(lines, vec![(2, 4), (7, 9)]);
 }
 
 // -- Go to definition -------------------------------------------------------------

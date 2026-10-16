@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - @available: ascribe 0.3.0
   `[PAGE]`: Show only this page's changes, block by block, or, for a fragment, the pages that changed through it: a path from the current directory, or from the content root. With `--format prompt`, the prompt is about this page alone, in the first build it changed in, or about the pages that changed through a fragment.
 - `--base <REV>`: The revision to compare with, anything git accepts (a branch, a tag, a commit). By default, the repository's default branch, the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists. The comparison starts from the merge base of that revision and `HEAD`, as a pull request shows its changes, so commits made on the base branch since you branched aren't listed. A shallow clone (what `actions/checkout` makes by default) may not have the merge base: fetch more history (`fetch-depth: 0`) or use `--base-exact`.

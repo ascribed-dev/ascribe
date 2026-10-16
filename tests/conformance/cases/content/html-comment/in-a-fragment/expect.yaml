@@ -1,0 +1,7 @@
+description: >-
+  An HTML comment in a fragment is reported in the fragment.
+spec: ["4.10", "4.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: html-comment, file: _shared.md, line: 1}

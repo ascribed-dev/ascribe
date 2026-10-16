@@ -17,10 +17,11 @@ use crate::cli::Cli;
 
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs";
 
-/// What each fragment starts with: what generates it, and how.
-const HEADER: &str = "<!-- Generated from the help text in crates/ascribe-cli/src/ by \
-     crates/ascribe-cli/src/docs.rs. Edit the help text, then run \
-     `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->\n";
+/// What each fragment starts with: a memo, touching its first block, saying
+/// what generates it, and how.
+const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/src/ by \
+     crates/ascribe-cli/src/docs.rs; edit the help text, then run \
+     `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.\n";
 
 /// Options newer than their command, as `(command, option, availability)`:
 /// the reference marks each with `@available: <availability>`. An option no
@@ -504,7 +505,7 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
         .map(|(name, _)| name.len())
         .max()
         .unwrap_or(0);
-    let mut out = format!("{HEADER}\n```text\n");
+    let mut out = format!("{HEADER}```text\n");
     for (name, command) in commands {
         let usage: Vec<String> = command
             .get_arguments()
@@ -555,7 +556,7 @@ fn usage(arg: &Arg) -> String {
 /// A list item for each argument: how it's written, then its help, its
 /// values, and its default.
 fn options(command: &str, args: &[&Arg]) -> String {
-    let mut out = format!("{HEADER}\n");
+    let mut out = HEADER.to_owned();
     for arg in args {
         out.push_str("- ");
         let id = arg.get_id().as_str();

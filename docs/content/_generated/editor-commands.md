@@ -1,5 +1,4 @@
-<!-- Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts. Edit the manifest, or a command's description in the test, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`. -->
-
+@memo: Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts; edit the manifest, or a command's description in the test, then run `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts` to rewrite it.
 | Command | What it does |
 |---|---|
 | **Ascribe: Open Page Preview to the Side** | Opens the page preview of the active page beside the editor, starting its project's server if it hasn't started. |

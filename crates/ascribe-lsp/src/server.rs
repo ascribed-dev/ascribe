@@ -15,18 +15,19 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, PrepareRenameRequest, References,
-    Rename, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
+    FoldingRangeRequest, Formatting, GotoDefinition, HoverRequest, InlayHintRequest,
+    PrepareRenameRequest, References, Rename, Request as _, SemanticTokensFullRequest,
+    SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
     CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
-    DocumentLinkOptions, ExecuteCommandOptions, GotoDefinitionResponse, HoverProviderCapability,
-    InitializeParams, InitializeResult, OneOf, RenameOptions, SemanticTokens,
-    SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
-    SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
-    ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities,
-    WorkspaceServerCapabilities,
+    DocumentLinkOptions, ExecuteCommandOptions, FoldingRangeProviderCapability,
+    GotoDefinitionResponse, HoverProviderCapability, InitializeParams, InitializeResult, OneOf,
+    RenameOptions, SemanticTokens, SemanticTokensFullOptions, SemanticTokensOptions,
+    SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensServerCapabilities,
+    ServerCapabilities, ServerInfo, ShowDocumentParams, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Uri,
+    WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
 };
 
 use crate::compute::{Outcome, compute};
@@ -158,6 +159,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             inlay_hint_provider: Some(OneOf::Left(true)),
             code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
             document_formatting_provider: Some(OneOf::Left(true)),
+            folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
             rename_provider: Some(OneOf::Right(RenameOptions {
                 prepare_provider: Some(true),
                 work_done_progress_options: Default::default(),
@@ -450,6 +452,13 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                 })
             }
             CodeActionRequest::METHOD => code_action_request(shared, &request),
+            FoldingRangeRequest::METHOD => {
+                navigation(shared, &request, |p: lsp_types::FoldingRangeParams| {
+                    (p.text_document.uri, |ctx: &Ctx| {
+                        Some(crate::folding::folding_ranges(ctx))
+                    })
+                })
+            }
             Formatting::METHOD => navigation(shared, &request, |p: DocumentFormattingParams| {
                 (p.text_document.uri.clone(), move |ctx: &Ctx| {
                     Some(crate::formatting::format(ctx, p))

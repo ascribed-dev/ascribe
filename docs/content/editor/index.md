@@ -60,6 +60,9 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - Did-you-mean corrections for misspelled directives, attributes, and frontmatter keys.
 - **Remove** text on a directive line that isn't part of the directive.
 
+@available: next
+- **Rewrite as a memo**, for an [HTML comment](../writing/directives.md#memo) that's a block of its own. One line becomes a line memo and more a container, about the block below it, or at the top of the section when the comment is the section's last block. A comment at the end of a list item, or before a page's first heading, gets no fix, since where its memo belongs is yours to say.
+
 @available: ascribe 0.3.2
 - **Copy the command**, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
@@ -139,6 +142,9 @@ When another extension is VS Code's formatter for Markdown, such as Prettier thr
 ### Highlighting
 
 Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon as a file opens. Once the server is running, it adds what depends on the content model: declared and undeclared phrases, project widgets, and **title lines**, shown distinctly so a paragraph that accidentally became a title stands out.
+
+@available: next
+A [memo](../writing/directives.md#memo)'s text is colored as a comment, in either form, and nothing in it is colored as a link, a phrase, or a heading. A container memo folds to its first line, beside the folding of headings, lists, and code blocks.
 
 ### Preview
 

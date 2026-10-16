@@ -1,5 +1,4 @@
-<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
-
+@memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `LINE`: The line to retire, named as a mark names it: "self-managed 3.4". It's the oldest live line.
 - `--url <URL>`: The address the line's archive is read at, recorded as its `url` in [releases].
 - `--dry-run`: Say what the retirement would do, and write nothing.
