@@ -281,17 +281,10 @@ impl OutputDir {
                     dir.display()
                 )]));
             }
-            if fs::symlink_metadata(dir.join(ARCHIVE_MANIFEST)).is_err() {
-                let mut entries = fs::read_dir(dir).map_err(io_err("can't read", dir))?;
-                if entries.next().is_some() {
-                    return Err(StoreError::NotEmpty {
-                        dir: dir.display().to_string(),
-                    });
-                }
-            }
+            refuse_unowned_archive(dir)?;
         }
         let output = OutputDir::lock(dir)?;
-        output.refuse_unowned_archive()?;
+        refuse_unowned_archive(&output.root)?;
         Ok(output)
     }
 
@@ -464,7 +457,7 @@ impl OutputDir {
         refuse_links_below(&self.root, &format!("{STAGING_DIR}/{ARCHIVE}"))?;
         refuse_link(&place.temp)?;
         refuse_link(&place.manifest)?;
-        self.refuse_unowned_archive()?;
+        refuse_unowned_archive(&self.root)?;
         let reserved = [ARCHIVE_MANIFEST, LOCK_FILE, STAGING_DIR];
         let taken: Vec<String> = files
             .iter()
@@ -484,25 +477,6 @@ impl OutputDir {
         let _ = fs::remove_dir_all(&staging);
         let _ = fs::remove_dir(self.root.join(STAGING_DIR));
         result
-    }
-
-    /// Refuses this directory for an archive when something besides the
-    /// lock is in it and no manifest says Ascribe wrote it.
-    fn refuse_unowned_archive(&self) -> Result<(), StoreError> {
-        if fs::symlink_metadata(self.archive_manifest_path()).is_ok() {
-            return Ok(());
-        }
-        let entries = fs::read_dir(&self.root).map_err(io_err("can't read", &self.root))?;
-        for entry in entries {
-            let entry = entry.map_err(io_err("can't read", &self.root))?;
-            let name = entry.file_name();
-            if name != LOCK_FILE && name != STAGING_DIR {
-                return Err(StoreError::NotEmpty {
-                    dir: self.root.display().to_string(),
-                });
-            }
-        }
-        Ok(())
     }
 
     /// Removes the files the builds share, when a project no longer has any:
@@ -856,6 +830,26 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
         }
     }
     Ok(manifest.files)
+}
+
+/// Refuses `dir` for an archive when something besides the lock and the
+/// staging folder is in it and no manifest says Ascribe wrote it: a folder a
+/// run left with only those in it is still empty to the next.
+fn refuse_unowned_archive(dir: &Path) -> Result<(), StoreError> {
+    if fs::symlink_metadata(dir.join(ARCHIVE_MANIFEST)).is_ok() {
+        return Ok(());
+    }
+    let entries = fs::read_dir(dir).map_err(io_err("can't read", dir))?;
+    for entry in entries {
+        let entry = entry.map_err(io_err("can't read", dir))?;
+        let name = entry.file_name();
+        if name != LOCK_FILE && name != STAGING_DIR {
+            return Err(StoreError::NotEmpty {
+                dir: dir.display().to_string(),
+            });
+        }
+    }
+    Ok(())
 }
 
 /// Refuses a link at `path`.

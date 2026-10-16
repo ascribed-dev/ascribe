@@ -557,6 +557,18 @@ fn a_folder_that_isnt_empty_or_an_archive_is_refused_and_left_as_it_was() {
 }
 
 #[test]
+fn a_folder_a_run_left_only_its_lock_and_staging_in_is_still_empty() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let dir = tmp.path().join("archive");
+    write(&dir.join(".lock"), "");
+    fs::create_dir_all(dir.join(".staging")).expect("staging");
+    OutputDir::lock_archive(&dir)
+        .and_then(|o| o.replace_archive("site@3.4", &[page("a.html", "A")]))
+        .expect("written");
+    assert_eq!(read(&dir.join("a.html")), "A");
+}
+
+#[test]
 fn an_archive_file_cant_take_the_manifests_name() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let err = OutputDir::lock_archive(tmp.path())
