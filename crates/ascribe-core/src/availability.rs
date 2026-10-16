@@ -140,6 +140,110 @@ impl AvailabilitySpec {
     }
 }
 
+/// `spec` with what it says of `target` at or before `oldest` left out,
+/// where that changes nothing after it: the simplest spec that means the
+/// same at every version from `oldest` on. `None` when nothing changes.
+///
+/// A version at or before `oldest` goes, and the state stays:
+/// `self-managed 3.2` becomes `self-managed`, and `self-managed deprecated
+/// 3.2` becomes `self-managed deprecated`. A history drops the steps before
+/// the one in effect at `oldest`, which keeps its version, and becomes that
+/// step's state when no step starts after `oldest`: `self-managed (preview
+/// 3.3, ga 3.5, deprecated 3.6)` becomes `self-managed (ga 3.5, deprecated
+/// 3.6)` with `oldest` 3.5, and `self-managed deprecated` with `oldest`
+/// 3.6. `ga` with no version is written as the target alone. Other targets'
+/// entries are kept as they are.
+///
+/// A line's output shows a spec this way, with `oldest` its oldest live
+/// line, and retiring a line rewrites each mark to it.
+pub fn without_versions_through(
+    spec: &AvailabilitySpec,
+    target: &str,
+    oldest: &Version,
+) -> Option<AvailabilitySpec> {
+    let old = |v: &Version| v.compare(oldest).is_le();
+    let state_alone = |state: &Name| {
+        if state.text == "ga" {
+            Detail::None
+        } else {
+            Detail::State {
+                state: state.clone(),
+                version: None,
+            }
+        }
+    };
+    let mut changed = false;
+    let entries = spec
+        .entries
+        .iter()
+        .map(|e| {
+            let detail = match &e.detail {
+                _ if e.target.text != target => None,
+                Detail::Version(v) if old(v) => Some(Detail::None),
+                Detail::State {
+                    state,
+                    version: Some(v),
+                } if old(v) => Some(state_alone(state)),
+                Detail::History(steps) => match steps.iter().rposition(|s| old(&s.version)) {
+                    Some(k) if k + 1 == steps.len() => Some(state_alone(&steps[k].state)),
+                    Some(k) if k > 0 => Some(Detail::History(steps[k..].to_vec())),
+                    _ => None,
+                },
+                _ => None,
+            };
+            match detail {
+                Some(detail) => {
+                    changed = true;
+                    Entry {
+                        detail,
+                        ..e.clone()
+                    }
+                }
+                None => e.clone(),
+            }
+        })
+        .collect();
+    changed.then_some(AvailabilitySpec {
+        entries,
+        span: spec.span,
+    })
+}
+
+/// A spec written out as an author writes it (SPEC §4.4): entries separated
+/// by `, `, and a history's steps too, one space inside each.
+pub fn spec_text(spec: &AvailabilitySpec) -> String {
+    spec.entries
+        .iter()
+        .map(entry_text)
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// One entry written out as [`spec_text`] writes it: `self-managed preview
+/// 3.4`, or `self-managed (preview 3.3, ga 3.5)`.
+pub fn entry_text(entry: &Entry) -> String {
+    let target = &entry.target.text;
+    match &entry.detail {
+        Detail::None => target.clone(),
+        Detail::Version(v) => format!("{target} {}", v.text),
+        Detail::State {
+            state,
+            version: None,
+        } => format!("{target} {}", state.text),
+        Detail::State {
+            state,
+            version: Some(v),
+        } => format!("{target} {} {}", state.text, v.text),
+        Detail::History(steps) => {
+            let steps: Vec<String> = steps
+                .iter()
+                .map(|s| format!("{} {}", s.state.text, s.version.text))
+                .collect();
+            format!("{target} ({})", steps.join(", "))
+        }
+    }
+}
+
 /// A syntax error in an availability spec.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AvailabilityError {
@@ -607,6 +711,110 @@ mod tests {
         let text = "cloud, é";
         let e = err(text);
         assert_eq!(snippet(text, &e), "é");
+    }
+
+    /// The rows of the table in the reference's section on retiring a
+    /// line, with 3.5 the oldest live line.
+    #[test]
+    fn a_spec_without_the_versions_before_the_window() {
+        let oldest = parse_version("3.5", 0).expect("a version");
+        for (text, simpler) in [
+            ("self-managed 3.4", Some("self-managed")),
+            (
+                "self-managed deprecated 3.2",
+                Some("self-managed deprecated"),
+            ),
+            (
+                "self-managed (preview 3.3, ga 3.5, deprecated 3.6)",
+                Some("self-managed (ga 3.5, deprecated 3.6)"),
+            ),
+            ("cloud, self-managed 3.4", Some("cloud, self-managed")),
+            ("self-managed ga 3.1", Some("self-managed")),
+            ("self-managed (preview 3.1, ga 3.3)", Some("self-managed")),
+            (
+                "self-managed (ga 3.0, removed 3.4)",
+                Some("self-managed removed"),
+            ),
+            ("self-managed (preview 3.3, ga 3.6)", None),
+            ("self-managed 3.5.1", None),
+            ("self-managed 3.6", None),
+            ("self-managed", None),
+            ("cloud", None),
+            ("other 3.1", None),
+        ] {
+            let got = without_versions_through(&ok(text), "self-managed", &oldest);
+            assert_eq!(got.as_ref().map(spec_text).as_deref(), simpler, "{text}");
+        }
+    }
+
+    /// The state an entry has at `version`, as SPEC §9.3 reads it: `None`
+    /// before its first step.
+    fn state_at(entry: &Entry, version: &[u64]) -> Option<String> {
+        let started = |v: &Version| compare_components(version, &v.components).is_ge();
+        match &entry.detail {
+            Detail::None => Some("ga".to_owned()),
+            Detail::Version(v) => started(v).then(|| "ga".to_owned()),
+            Detail::State { state, version } => version
+                .as_ref()
+                .is_none_or(started)
+                .then(|| state.text.clone()),
+            Detail::History(steps) => steps
+                .iter()
+                .rev()
+                .find(|s| started(&s.version))
+                .map(|s| s.state.text.clone()),
+        }
+    }
+
+    proptest::proptest! {
+        /// The rewritten spec and the original agree at every version from
+        /// the oldest line on, whatever the history.
+        #[test]
+        fn the_simpler_spec_means_the_same_in_every_remaining_line(
+            starts in proptest::collection::btree_set((0u64..6, 0u64..4), 1..5),
+            states in proptest::collection::vec(0usize..4, 5),
+            kind in 0usize..3,
+            oldest in (0u64..7, 0u64..5),
+        ) {
+            let names = ["ga", "preview", "deprecated", "removed"];
+            let starts: Vec<_> = starts.into_iter().collect();
+            let detail = match kind {
+                0 => format!("{}.{}", starts[0].0, starts[0].1),
+                1 => format!("{} {}.{}", names[states[0]], starts[0].0, starts[0].1),
+                _ => format!(
+                    "({})",
+                    starts
+                        .iter()
+                        .zip(&states)
+                        .map(|((a, b), s)| format!("{} {a}.{b}", names[*s]))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+            };
+            let text = format!("cloud, self-managed {detail}");
+            let spec = ok(&text);
+            let oldest = parse_version(&format!("{}.{}", oldest.0, oldest.1), 0).expect("a version");
+            let Some(simpler) = without_versions_through(&spec, "self-managed", &oldest) else {
+                return Ok(());
+            };
+            let simpler = ok(&spec_text(&simpler));
+            proptest::prop_assert_eq!(&simpler.entries[0].target.text, "cloud");
+            for major in 0..8 {
+                for minor in 0..6 {
+                    for patch in 0..2 {
+                        let v = [major, minor, patch];
+                        if compare_components(&v, &oldest.components).is_lt() {
+                            continue;
+                        }
+                        proptest::prop_assert_eq!(
+                            state_at(&spec.entries[1], &v),
+                            state_at(&simpler.entries[1], &v),
+                            "{} and {} at {:?}", text, spec_text(&simpler), v
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]
