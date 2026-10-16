@@ -139,7 +139,7 @@ One existing check gets better. `page-orphan` reports a page nothing links to, a
 
 ## In the editor
 
-The Pages view gains a way to show pages as the navigation has them: sections, in order, each with its pages.
+The Pages view shows pages as the navigation has them: sections, in order, each with its pages. It stops grouping them by content type, the grouping settled 6 calls an oversight. With no `ascribe.nav` that's the default order, so every project gets it. Fragments aren't in the navigation, and stay a group of their own, by folder.
 
 - **Dragging a page within its section** reorders it. The drop is one edit to `ascribe.nav`, made as any edit is, so undo, the dirty marker, and git behave as for typing. The first drag in a section that lists no pages writes the section's list as it stands, then moves the one.
 - **Dragging a section** reorders the sections.
@@ -148,6 +148,8 @@ The Pages view gains a way to show pages as the navigation has them: sections, i
 - **Renaming a section or a page's label** edits `label` or `nav-label`.
 
 With no `ascribe.nav`, the view shows the default order, and the first drag creates the file.
+
+The view is a native tree, and the drags are VS Code's `TreeDragAndDropController`, which is stable. Dendron, the knowledge-base extension, built its tree in a webview to get drag and drop and went back to a native one in 0.93. The view reveals the page in the active editor when the editor changes, as Foam's and Terraform's views follow the open file: VS Code's API for a tree to track its active item is still proposed, so it's `reveal`.
 
 Renaming or moving a page, from the editor or with `ascribe rename`, updates `ascribe.nav` as it updates links.
 

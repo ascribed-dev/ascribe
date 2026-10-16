@@ -11,7 +11,7 @@ In VS Code, `F12` on "rollouts" in `getting-started.md` opens `glossary.md` at "
 ## Context
 
 - README decisions 1 to 6 and 17.
-- `crates/ascribe-lsp/src/`: `definition.rs`, which goes to `[glossary.terms.<id>]` in `ascribe.toml` today; `complete.rs`; `code_action.rs`; `references.rs`; `rename.rs`; `hover.rs`; and the document symbols the outline is built from.
+- `crates/ascribe-lsp/src/`: `definition.rs`, which goes to `[glossary.terms.<id>]` in `ascribe.toml` today; `complete.rs`; `code_action.rs`; `references.rs`; `rename.rs`; and `hover.rs`. The server answers no document symbols: a page's Outline, its breadcrumbs, and `Ctrl+T` come from VS Code's Markdown extension, since the client serves pages as `markdown` (`packages/vscode/src/client.ts`), and they list every heading, a term's among them.
 - `crates/ascribe-cli/src/commands/rename.rs`.
 - The quick fix **Add a stable @id**, for a term whose heading has none.
 
@@ -23,7 +23,7 @@ In VS Code, `F12` on "rollouts" in `getting-started.md` opens `glossary.md` at "
 - **Hover** on a `@term` heading shows the definition for the editor's build and how many pages use the term.
 - **Quick fixes:** `term-off-glossary-page`'s, which adds the page to `pages`; `glossary-definition-missing`'s, which puts a paragraph with the cursor in it under the heading; and, on a term with no `@id`, **Add a stable @id**, since the term's id is its heading's.
 - **Rename.** Renaming a term's heading id, from the editor or `ascribe rename`, renames the term: every link to the heading changes, as now. An acknowledgement of the term sits at its heading (decision 17), so nothing but links names the id. Rewording the heading's text changes the term's text, and the editor says so when the heading has no `@id`, since its id changes too.
-- **The outline.** A term's heading is a symbol of its own kind in the editor's outline, so a long glossary can be searched by term.
+- **Finding a term by name** needs nothing new. A term is a heading, so the page's Outline and `Ctrl+T` already list it. A document symbol provider in the server would add a second outline beside the Markdown extension's, since VS Code shows one tree for each provider, so the server doesn't answer one for the sake of terms.
 
 ## Tasks
 
@@ -31,12 +31,11 @@ In VS Code, `F12` on "rollouts" in `getting-started.md` opens `glossary.md` at "
 2. Completion and hover.
 3. The quick fixes.
 4. Rename, from the editor and the command, with tests.
-5. The outline's symbols.
-6. The editor's page, `changes/`, and the surface map.
+5. The editor's page, `changes/`, and the surface map.
 
 ## Out of scope
 
-- A view of every term in the sidebar.
+- A view of every term in the sidebar. The Content model view lists the terms with their uses already, from the inventory phase 2 moves onto the pages.
 - Anything in the site.
 
 ## Acceptance criteria

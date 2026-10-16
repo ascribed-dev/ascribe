@@ -36,7 +36,7 @@ The quick fix writes `@memo: Keep this table in the order of the plans' prices.`
 - **Completion** offers `@memo` where a directive can go, with both forms, from its schema.
 - **Highlighting.** A memo's text is colored as a comment, in both forms, by the grammars. A container's lines are one region, so a link or a brace inside isn't colored as one.
 - **Hover** on `@memo` says what it is: text for whoever edits next, never published.
-- **Folding** closes a container memo to its first line.
+- **Folding** closes a container memo to its first line. The server answers no folding ranges today: a page's folding is VS Code's Markdown extension's, which folds headings, lists, and code blocks and knows nothing of a container. VS Code merges the ranges of every provider, so the server's add the memo's to the Markdown extension's.
 
 ### `html-comment`
 

@@ -122,7 +122,7 @@ A glossary page is an ordinary page otherwise. It has a type, frontmatter, and a
 | `ascribe-resolve` | Terms from the glossary's pages; the definition for each build |
 | `ascribe-check` | The page-level errors, and the unused check's place |
 | `ascribe-emit` | The link's title and the JSON output, from the derived definition. The site output's markup doesn't change |
-| `ascribe-lsp` | Hover, go to definition on a term, completion and a quick fix for `@term`, and the outline |
+| `ascribe-lsp` | Hover, go to definition on a term, and completion and a quick fix for `@term` |
 | `ascribe-query`, `ascribe-mcp` | `ascribe model` lists terms with the page each is on |
 | `ascribe-fmt` | Canonical form for `@term` and its attributes |
 | The docs | The directive reference, `ascribe.toml`'s reference and its contract, and a guide to the glossary, which doesn't exist |
