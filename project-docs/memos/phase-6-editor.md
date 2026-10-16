@@ -27,7 +27,7 @@ The second implementation of the memo store reads `.ascribe/memos/`, in the same
 - **A lens** on a heading, or on a block, with memos about it: "1 memo" or "3 memos", one outdated when one is. It opens the memo, or a pick list of them.
 - **Ascribe: Add Memo** and **Ascribe: Add Personal Memo**, in the Command Palette, and in the actions bar and the editor's **Ascribe** submenu, which list what applies at the cursor. `about` is the section the cursor is in, by its id, or the page when there's no heading; `quote` is the selection, or the first line of the block at the cursor. The file is named from the quote's first words, and never over a file that's there.
 - **In a memo file:** completion of `about`'s targets as `ascribe refs` takes them, a link from `about` to its target, and the checks' diagnostics as the file changes. A memo file is watched as a page is.
-- **Used by** lists the memos about the target, beside its links and includes. If the [editor UI proposal](../proposals/editor-ui.md#this-page) is built first, it's **This page**'s Memos section instead.
+- **Used by** lists the memos about the target, beside its links and includes. Once the [editor UI plan](../editor-ui/phase-1-thread.md)'s phase 1 is built, it's **This page**'s Memos section instead.
 
 ### Rename
 
