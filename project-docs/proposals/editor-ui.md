@@ -36,6 +36,8 @@ Three views, and a fourth while review is on:
 
 They're native trees. Whether a view would be better as a webview is a question for later, below.
 
+Pages being always shown keeps the Ascribe container in a workspace with no project, as Projects does today. That's deliberate: it's where the welcome messages say how to start one.
+
 ### No Projects view
 
 A workspace with one project, the common case, has its project in the status bar already. For more than one:
@@ -51,26 +53,27 @@ Pages loses `when: ascribe.active` and takes the two welcome messages. The 50-pr
 
 **Used by** becomes **This page**: what Ascribe knows about the active page that an author can use, in sections.
 
-- **About:** the title, the type, the address, and the address of its Markdown version; the description, or "missing", with its length against the limit; the review date, due in so many days or overdue since when, from the field `review-overdue` reads; the page's availability, and the builds that publish it and leave it out; and the template it was started from, with the placeholders left.
+- **About:** the title, the type, the address, and the address of its Markdown version; the description, or "missing", with its length against the limit; the review date, due in so many days or overdue since when, from the field `review-overdue` reads; the page's availability, and the builds that publish it and leave it out; its listing (listed, unquoted, or unlisted) and the rule it came from, which answers why a page isn't in the sitemap or `llms.txt`; its permalinks, the page's and its headings', which are what a product links to and what a rename must keep; and the template it was started from, with the placeholders left.
 - **Health:** the problems on the page by severity, which open the Problems panel filtered to it; its size against `page-size`'s limit in its largest build, before it's over; and its tested examples, each tested, stale, or not tested.
 - **Connections:** linked from, narrowed to the heading at the cursor and saying which; included by; and what the page includes, its fragments and its snippets with their files.
 - **Memos,** from the [memos plan](../memos/phase-6-editor.md).
 - **Review,** while review is on: whether the branch changes the page, how many changes it has, and its open threads.
 
-Most of it comes from one new request, `ascribe/page`, answered by the server as `ascribe/inventory` is. The problems are VS Code's own diagnostics, and the review section is what the review already has.
+Most of it comes from one new request, `ascribe/page`, answered by the server as `ascribe/inventory` is. It takes the page and the heading at the cursor in one call, since Connections narrows to the heading, and it's asked as the cursor moves, as Used by's request is today. So the parts that don't depend on the cursor, which are most of it, are answered from what the server keeps for the page, and a move within the page costs what Used by's request costs now. The problems are VS Code's own diagnostics, and the review section is what the review already has.
 
 ### Pages
 
 The [navigation proposal](navigation.md#in-the-editor) gives Pages its structure: sections in order, dragging to reorder, a page not yet placed shown where it will appear, fragments by folder, and the page in the active editor revealed. Beyond that:
 
 - **A page's context menu:** Open Preview to the Side, which is the one inline button; Copy Link, the page's address from the content root; Rename or Move, which makes the edits renaming its file in the Explorer does; Find All References; and Reveal in Explorer. A section's menu has **New Page Here**, which runs New Page with the folder chosen.
-- **Problem colors:** a page with errors is red and one with warnings yellow, as in the Explorer, by giving each item its file as `resourceUri`. Whether VS Code decorates a custom tree's items that way is the first thing the plan confirms; if it doesn't, a page's item says its count.
+- **Problem colors:** a page with errors is red and one with warnings yellow, as in the Explorer. A tree item with its file as `resourceUri` gets the Explorer's decorations from the same providers, problems among them.
 - **A page the current build leaves out is dimmed,** as the build lens dims text. The inventory says which builds publish each page, as This page needs too.
 - **Orphans are a filter,** in the title bar, for pages and fragments, not a group.
 
 ### Content model
 
-- **An entry's context menu:** Find All References; Rename, for a phrase or a dimension value; and **Insert at the Cursor**, for a phrase or a widget. Insert runs the actions bar's operation with the entry already chosen, into the editor that was last active, at its cursor. Where the cursor can't take one, it says what the bar's hint says, and changes nothing.
+- **An entry's context menu:** Find All References; Rename, for a phrase or a dimension value; and **Insert at the Cursor**, for a phrase or a widget. Insert runs the actions bar's operation with the entry already chosen, into the last Markdown editor of the project, at its cursor. The extension keeps track of that editor, which nothing does today: VS Code's active editor is none while the preview or another webview has focus. Where the cursor can't take one, it says what the bar's hint says, and changes nothing.
+- **No dragging an entry into a page.** That's a different drag from the navigation proposal's, which moves pages within Pages to reorder them, and stays.
 - **"Unused only"**, a toggle in the title bar.
 - **Page types,** and the versions once [versions](versions.md) ships, since `ascribe model` reports both and the view doesn't.
 
@@ -80,17 +83,17 @@ While review is on, a **Review** view lists the pages the branch changes:
 
 - **Grouped as Added, Changed, and Removed,** each page with its count of changes and of open threads. A page changed only through something else says what, such as `_fragments/requirements.md` or `ascribe.toml`, as Changed Pages does.
 - **Choosing a page** opens it and its preview at its first change.
-- **A badge** counts the unsent comments, so they're seen with the preview closed.
+- **A badge** counts the unsent comments, so they're seen with the preview closed. It's a view badge, a stable API the sidebar hasn't used yet.
 - **Its title bar** has Submit Review…, Stop Review, and **Open Source Changes**, which opens VS Code's multi-file diff (`vscode.changes`) of the source files the branch changed. Each page's item has a button for its own files' diff. The preview shows what a change reads as; this shows the Markdown that made it.
 - **Problems in changed pages,** a section of the view: the problems on the pages the branch changes, and nothing else.
 
 The changed pages are the server's, from the base `ascribe/review/setBase` set, so the view, its problems, and `ascribe diff` never disagree. **Changed Pages** stays, for the keyboard and the preview's button.
 
-The diff's base side needs the base's text. The server reads it for `ascribe diff` through `GitFs`; it reaches VS Code either as documents the server serves, or as the Git extension's URIs for the revision. The plan settles which.
+The diff's base side needs the base's text. It comes first from VS Code's Git extension, whose API turns a file and a revision into a URI (`toGitUri`): the extension is built in and on by default, the diff editor gets the file's language from the URI, and the revision is the one `setBase` named. Review doesn't use the Git extension today, since it runs `git` itself, so this adds a dependency on it. Where the Git extension is off, the server serves the base's files as documents of its own, read through `GitFs` as `ascribe diff` reads them.
 
 ## In the editor
 
-- **"Shown in 3 pages",** a CodeLens in a code file, above a region or a file a `@snippet` shows. Choosing it lists the pages. It's for an engineer changing code the docs show, before the change reaches them. The server registers the lens for its sources' folders itself, by the protocol's dynamic registration, since the client doesn't send it code files.
+- **"Shown in 3 pages",** a CodeLens in a code file, above a region or a file a `@snippet` shows. Choosing it lists the pages. It's for an engineer changing code the docs show, before the change reaches them. The server registers the lens for its sources' folders itself, by the protocol's dynamic registration, since the client doesn't send it code files. **The lens is placed from the saved file:** the server knows a region's lines from disk, as a build does, so while lines are added above a region the lens sits where the region was until the file is saved. Sending the server the open code files under the sources too would keep it in place, but would have the server follow every edit to every code file opened under a source, which for a source rooted at the repository is every file an engineer opens.
 - **`source.fixAll.ascribe`:** every safe fix for the file's problems, the set `ascribe check --fix` applies to it. It's in the Source Action menu and at the top of the actions bar's fixes, as **Apply the safe fixes in this page**, and on save only for someone who sets `"editor.codeActionsOnSave": { "source.fixAll.ascribe": "explicit" }`. Every editor with a language client gets it.
 - **Drop and paste stay VS Code's.** The plan checks that what the Markdown extension writes passes `ascribe check`: its relative paths, its links to files, and its images' alt text. If it does, the editor's page says how to set `markdown.copyFiles.destination`. If it doesn't, Ascribe adds a drop handler that asks for the alt text, as **Insert an image** does.
 
@@ -98,11 +101,11 @@ The diff's base side needs the base's text. The server reads it for `ascribe dif
 
 The extension ships the skill in itself, through `chatSkills`, so VS Code's chat has it in a project that never ran `ascribe agents sync`:
 
-- **Only where there's no synced copy:** `when: ascribe.active && !ascribe.agentsSynced`, the key set when `.agents/skills/ascribe/` or `.claude/skills/ascribe/` exists, so chat never has two.
+- **Only where there's no synced copy chat can see:** `when: ascribe.active && !ascribe.agentsSynced`. The key is set when the synced skill is in a folder VS Code's chat loads skills from, so chat never has two copies and never has none. `sync` writes to `.agents/skills/ascribe/` and `.claude/skills/ascribe/`; the plan checks which folders chat reads, and sets the key only for a copy in one of them.
 - **The skill, and not the rules.** `SKILL.md` is the same for every project; the rules are made from a project's content model, so they can't be a file in the extension. They stay with `sync` and the MCP server's `ascribe://instructions/{+project}`.
 - **It writes nothing,** so the editor still sets up no agent files.
 
-The skill is the extension's version. A project using another `ascribe` gets a skill that may be a version apart until it syncs its own. The plan confirms `chatSkills` is stable in the VS Code version the extension requires.
+The skill is the extension's version. A project using another `ascribe` gets a skill that may be a version apart until it syncs its own. `chatSkills` takes a `path` to a `SKILL.md` and an optional `when`, which is all this needs.
 
 ## What it touches
 
@@ -114,7 +117,7 @@ The skill is the extension's version. A project using another `ascribe` gets a s
 | The docs | The editor's page (the sidebar, the status bar, the settings), review's how-to, the agents page, and `changes/` |
 | `project-docs/surface.md` | The commands and views, regenerated |
 
-No output, command, JSON report, or part of the language changes.
+No output, command's output, JSON report, or part of the language changes. The extension's commands do: Switch Project is new, and the surface map shows it.
 
 ## What this leaves out
 
@@ -148,7 +151,7 @@ Answered by the maintainer on 16 October 2026, while this proposal was drafted.
 2. **The sidebar follows the open file, after a switch too.** _Why:_ a pin would be state nothing on screen shows.
 3. **Used by becomes This page, and widens to what Ascribe knows about the page.** _Why:_ it's the one view about where the author is, and memos need a home.
 4. **This page is a native tree for now.** _Why:_ its rows are labels and descriptions; the webview question is kept for later.
-5. **Insert at the Cursor is for phrases and widgets, and there's no dragging from the tree.** _Why:_ they're the two kinds inserted by name; a drag does what the menu does, for more work.
+5. **Insert at the Cursor is for phrases and widgets, and there's no dragging an entry from Content model into a page.** _Why:_ they're the two kinds inserted by name; a drag does what the menu does, for more work.
 6. **The Review view has the problems in changed pages.** _Why:_ that's the whole of a "changed by this branch" filter, in the place a reviewer already is.
 7. **No language status item, no count lens, and no drop handler of Ascribe's own.** _Why:_ each repeats something that's already shown or already works.
 8. **The skill ships in the extension, where there's no synced copy.** _Why:_ it writes nothing, and a project that never ran `sync` gets it.
