@@ -2,8 +2,10 @@ description: >-
   A line's output shows no version of its target at or before the oldest
   live line, since every live line has that content, and keeps the state:
   `self-managed deprecated 3.2` shows `self-managed deprecated`. A version
-  inside the window stays. A build that isn't versioned shows every
-  version.
+  inside the window stays. A history keeps the step in effect at the
+  oldest line, with its version, and what follows it, or that step's
+  state alone when it's the last. A build that isn't versioned shows
+  every version.
 spec: ["9.3"]
 tags: [resolve]
 
@@ -38,6 +40,18 @@ builds:
             primary: self-managed 3.4.2
             binding: heading
           - paragraph: Since a patch of the oldest line.
+          - heading: 2
+            text: History
+          - directive: available
+            primary: self-managed (ga 3.4, deprecated 3.5)
+            binding: heading
+          - paragraph: Generally available from the oldest line.
+          - heading: 2
+            text: Old history
+          - directive: available
+            primary: self-managed deprecated
+            binding: heading
+          - paragraph: Deprecated before the window.
   site@3.4:
     pages:
       index.md:
@@ -68,6 +82,18 @@ builds:
             primary: self-managed 3.4.2
             binding: heading
           - paragraph: Since a patch of the oldest line.
+          - heading: 2
+            text: History
+          - directive: available
+            primary: self-managed (ga 3.4, deprecated 3.5)
+            binding: heading
+          - paragraph: Generally available from the oldest line.
+          - heading: 2
+            text: Old history
+          - directive: available
+            primary: self-managed deprecated
+            binding: heading
+          - paragraph: Deprecated before the window.
   badges:
     pages:
       index.md:
@@ -98,3 +124,15 @@ builds:
             primary: self-managed 3.4.2
             binding: heading
           - paragraph: Since a patch of the oldest line.
+          - heading: 2
+            text: History
+          - directive: available
+            primary: self-managed (preview 3.2, ga 3.4, deprecated 3.5)
+            binding: heading
+          - paragraph: Generally available from the oldest line.
+          - heading: 2
+            text: Old history
+          - directive: available
+            primary: self-managed (ga 3.1, deprecated 3.3)
+            binding: heading
+          - paragraph: Deprecated before the window.
