@@ -15,8 +15,13 @@ use support::{load, quill};
 fn archived(current: Option<&str>) -> Archive {
     let root = quill();
     let project = load(&root);
-    let line = ascribe_model::named_line("self-managed 3.4").expect("a line").1;
-    let build = project.model().line_build("site", &line).expect("the line's build");
+    let line = ascribe_model::named_line("self-managed 3.4")
+        .expect("a line")
+        .1;
+    let build = project
+        .model()
+        .line_build("site", &line)
+        .expect("the line's build");
     let options = ArchiveOptions {
         current: current.map(str::to_owned),
     };
@@ -79,7 +84,10 @@ fn every_link_and_image_in_the_folder_leads_to_a_file_in_it() {
     let archive = archived(None);
     let files: Vec<String> = archive.files.iter().map(|f| f.path.to_string()).collect();
     for (path, html) in texts(&archive).iter().filter(|(p, _)| p.ends_with(".html")) {
-        let dir = RelPath::parse(path).expect("a path").parent().expect("a folder");
+        let dir = RelPath::parse(path)
+            .expect("a path")
+            .parent()
+            .expect("a folder");
         for value in values(html, "href").into_iter().chain(values(html, "src")) {
             if value.starts_with('#') || value.starts_with("https://") {
                 continue;
@@ -105,10 +113,15 @@ fn every_page_says_what_it_is_keeps_crawlers_out_and_has_no_script() {
             "{path}"
         );
         assert!(
-            html.contains("<a href=\"https://docs.quill.dev/\">Read the current documentation.</a>"),
+            html.contains(
+                "<a href=\"https://docs.quill.dev/\">Read the current documentation.</a>"
+            ),
             "{path}"
         );
-        assert!(html.contains("<meta name=\"robots\" content=\"noindex\">"), "{path}");
+        assert!(
+            html.contains("<meta name=\"robots\" content=\"noindex\">"),
+            "{path}"
+        );
         assert!(!html.contains("<script"), "{path}");
     }
 }
@@ -137,11 +150,17 @@ fn every_page_is_in_the_sidebar_of_every_other_and_in_all_html_once() {
         .filter(|f| f.kind == FileKind::Page)
         .map(|f| f.path.as_str())
         .collect();
-    for (path, html) in texts.iter().filter(|(p, _)| p.ends_with(".html") && *p != "all.html") {
+    for (path, html) in texts
+        .iter()
+        .filter(|(p, _)| p.ends_with(".html") && *p != "all.html")
+    {
         let sidebar = &html[html.find("archive-sidebar").expect("a sidebar")..];
         let sidebar = &sidebar[..sidebar.find("</nav>").expect("its end")];
         for page in &pages {
-            assert!(sidebar.contains(&format!("href=\"./{page}\"")), "{path}: {page}");
+            assert!(
+                sidebar.contains(&format!("href=\"./{page}\"")),
+                "{path}: {page}"
+            );
         }
     }
     let all = &texts["all.html"];
@@ -175,15 +194,27 @@ fn folders_are_named_by_their_index_page_and_the_contents_page_moves_aside_for_t
     let project = support::memory_project(
         FOLDERS,
         &[
-            ("index.md", "---\ntitle: Home\n---\n\nSee [b](guide/b.md).\n"),
+            (
+                "index.md",
+                "---\ntitle: Home\n---\n\nSee [b](guide/b.md).\n",
+            ),
             ("guide/index.md", "---\ntitle: The guide\n---\n\nText.\n"),
-            ("guide/b.md", "---\ntitle: B\n---\n\nBack [home](../index.md).\n"),
-            ("guide/a.md", "---\ntitle: A\navailable: app 2.0\n---\n\nNew.\n"),
+            (
+                "guide/b.md",
+                "---\ntitle: B\n---\n\nBack [home](../index.md).\n",
+            ),
+            (
+                "guide/a.md",
+                "---\ntitle: A\navailable: app 2.0\n---\n\nNew.\n",
+            ),
             ("ref/z.md", "---\ntitle: Z\n---\n\nText.\n"),
         ],
     );
     let line = ascribe_model::named_line("app 2.0").expect("a line").1;
-    let build = project.model().line_build("site", &line).expect("a planned line's build");
+    let build = project
+        .model()
+        .line_build("site", &line)
+        .expect("a planned line's build");
     assert_eq!(build.name, "site@2.0");
     let archive = archive(
         &project,
@@ -196,7 +227,10 @@ fn folders_are_named_by_their_index_page_and_the_contents_page_moves_aside_for_t
     let texts = texts(&archive);
     let b = &texts["guide/b.html"];
     assert!(b.contains("<a href=\"../index.html\">home</a>"), "{b}");
-    assert!(b.contains("<link rel=\"stylesheet\" href=\"../style.css\">"), "{b}");
+    assert!(
+        b.contains("<link rel=\"stylesheet\" href=\"../style.css\">"),
+        "{b}"
+    );
     let sidebar = &b[b.find("archive-sidebar").expect("a sidebar")..];
     let sidebar = &sidebar[..sidebar.find("</nav>").expect("its end")];
     assert_eq!(
@@ -210,10 +244,22 @@ fn folders_are_named_by_their_index_page_and_the_contents_page_moves_aside_for_t
             "../ref/z.html"
         ]
     );
-    assert!(sidebar.contains("<p class=\"archive-folder\">The guide</p>"), "{sidebar}");
-    assert!(sidebar.contains("<p class=\"archive-folder\">ref</p>"), "{sidebar}");
-    assert!(b.contains("<a rel=\"prev\" href=\"./a.html\">Previous: A</a>"), "{b}");
-    assert!(b.contains("<a rel=\"next\" href=\"../ref/z.html\">Next: Z</a>"), "{b}");
+    assert!(
+        sidebar.contains("<p class=\"archive-folder\">The guide</p>"),
+        "{sidebar}"
+    );
+    assert!(
+        sidebar.contains("<p class=\"archive-folder\">ref</p>"),
+        "{sidebar}"
+    );
+    assert!(
+        b.contains("<a rel=\"prev\" href=\"./a.html\">Previous: A</a>"),
+        "{b}"
+    );
+    assert!(
+        b.contains("<a rel=\"next\" href=\"../ref/z.html\">Next: Z</a>"),
+        "{b}"
+    );
     let all = &texts["all.html"];
     assert!(all.contains("<a href=\"./index.html\">home</a>"), "{all}");
 }

@@ -609,7 +609,10 @@ pub(crate) fn parse_existing(text: &str) -> Option<Vec<(String, String)>> {
 
 /// ` name="value"` for each attribute: the existing ones, with those the
 /// marker sets replacing them, and the marker's other attributes after.
-pub(crate) fn write_attributes(existing: &[(String, String)], marker: &[(String, String)]) -> String {
+pub(crate) fn write_attributes(
+    existing: &[(String, String)],
+    marker: &[(String, String)],
+) -> String {
     let mut all: Vec<(String, String)> = existing.to_vec();
     for (name, value) in marker {
         match all.iter_mut().find(|(n, _)| n == name) {

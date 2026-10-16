@@ -13,8 +13,8 @@ use ascribe_core::availability::parse_version;
 use ascribe_core::{Coded, RelPath};
 use ascribe_diff::{DiffError, Repository};
 use ascribe_emit::{ArchiveOptions, OutputDir};
-use ascribe_model::LineStatus;
 use ascribe_lsp::{Released, Releasing};
+use ascribe_model::LineStatus;
 use ascribe_query::versions::{LineChange, VersionChanges, VersionsList};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
@@ -935,9 +935,7 @@ fn run_archive(
         Ok(found) => found,
         Err(e) => return answer::fail(err, &e),
     };
-    let status = model
-        .releases_of(&target)
-        .and_then(|r| r.status_of(&line));
+    let status = model.releases_of(&target).and_then(|r| r.status_of(&line));
     if status == Some(LineStatus::Archived) {
         let error = VersionsError::ArchiveLineArchived {
             target,
@@ -1003,11 +1001,12 @@ fn run_archive(
         Ok(archive) => archive,
         Err(e) => return answer::fail(err, &e),
     };
-    let replaced =
-        match OutputDir::lock_archive(&args.to).and_then(|dir| dir.replace_archive(&build.name, &archive.files)) {
-            Ok(replaced) => replaced,
-            Err(e) => return answer::fail(err, &e),
-        };
+    let replaced = match OutputDir::lock_archive(&args.to)
+        .and_then(|dir| dir.replace_archive(&build.name, &archive.files))
+    {
+        Ok(replaced) => replaced,
+        Err(e) => return answer::fail(err, &e),
+    };
     let status = match status {
         Some(LineStatus::Current) => "current",
         Some(LineStatus::Planned) => "planned",
@@ -1034,7 +1033,9 @@ fn run_archive(
             .unlinked
             .iter()
             .map(|u| UnlinkedJson {
-                file: content.join(u.page.as_str()).map_or_else(|_| u.page.to_string(), |p| p.to_string()),
+                file: content
+                    .join(u.page.as_str())
+                    .map_or_else(|_| u.page.to_string(), |p| p.to_string()),
                 text: u.text.clone(),
                 href: u.href.clone(),
                 line: u.line.clone(),
@@ -1076,7 +1077,11 @@ fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Resul
             } else {
                 format!("{} links are", a.unlinked.len())
             },
-            if a.unlinked.len() == 1 { "it leads" } else { "each leads" }
+            if a.unlinked.len() == 1 {
+                "it leads"
+            } else {
+                "each leads"
+            }
         )?;
         for u in &a.unlinked {
             let to = match &u.line {

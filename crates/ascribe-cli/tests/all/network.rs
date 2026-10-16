@@ -90,7 +90,12 @@ fn only_the_sources_module_reaches_another_repository() {
         "\"archive\"",
     ];
     let mut found = Vec::new();
+    // Only a file that starts a process can run `git`; elsewhere a word like
+    // "archive" is a name (the `archive` emitter's).
     for (path, text) in sources() {
+        if !text.contains("Command::new") {
+            continue;
+        }
         for word in reaching {
             if text.contains(word) {
                 found.push(format!("{path}: {word}"));

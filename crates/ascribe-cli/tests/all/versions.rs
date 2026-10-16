@@ -380,7 +380,11 @@ versions = "prod"
 fn archive_project(model: &str) -> TempDir {
     let dir = tempfile::tempdir().unwrap();
     write(dir.path(), "ascribe.toml", model);
-    write(dir.path(), "docs/a.md", "---\ntitle: A\n---\n\nSee [B](b.md).\n");
+    write(
+        dir.path(),
+        "docs/a.md",
+        "---\ntitle: A\n---\n\nSee [B](b.md).\n",
+    );
     write(
         dir.path(),
         "docs/b.md",
@@ -394,7 +398,9 @@ fn archive_writes_a_line_into_the_folder_and_nothing_into_the_project() {
     let dir = archive_project(VERSIONED);
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out/1.0", "--format", "json"],
+        &[
+            "versions", "archive", "prod 1.0", "--to", "out/1.0", "--format", "json",
+        ],
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let json: Value = serde_json::from_str(&stdout(&out)).unwrap();
@@ -408,23 +414,36 @@ fn archive_writes_a_line_into_the_folder_and_nothing_into_the_project() {
     assert!(!dir.path().join("out/1.0/b.html").exists());
     assert_eq!(read(dir.path(), "ascribe.toml"), VERSIONED);
     // Again, into the same folder: its own archive is replaced.
-    let again = ascribe(dir.path(), &["versions", "archive", "prod 1.0", "--to", "out/1.0"]);
+    let again = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.0", "--to", "out/1.0"],
+    );
     assert_eq!(code_of(&again), 0, "{}", stderr(&again));
 }
 
 #[test]
 fn archive_says_so_when_the_line_is_current() {
     let dir = archive_project(VERSIONED);
-    let out = ascribe(dir.path(), &["versions", "archive", "prod 1.1", "--to", "out"]);
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.1", "--to", "out"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
-    assert!(stdout(&out).starts_with("prod 1.1 is the current line"), "{}", stdout(&out));
+    assert!(
+        stdout(&out).starts_with("prod 1.1 is the current line"),
+        "{}",
+        stdout(&out)
+    );
 }
 
 #[test]
 fn archive_refuses_a_folder_that_isnt_its_own() {
     let dir = archive_project(VERSIONED);
     write(dir.path(), "out/keep.txt", "mine");
-    let out = ascribe(dir.path(), &["versions", "archive", "prod 1.0", "--to", "out"]);
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.0", "--to", "out"],
+    );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("isn't empty"), "{}", stderr(&out));
     assert_eq!(read(dir.path(), "out/keep.txt"), "mine");
@@ -433,26 +452,42 @@ fn archive_refuses_a_folder_that_isnt_its_own() {
 #[test]
 fn archive_refuses_an_archived_line_and_a_target_no_build_versions() {
     let dir = archive_project(VERSIONED);
-    let out = ascribe(dir.path(), &["versions", "archive", "prod 0.9", "--to", "out"]);
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 0.9", "--to", "out"],
+    );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("is archived"), "{}", stderr(&out));
     let unversioned = VERSIONED.replace("versions = \"prod\"\n", "");
     let dir = archive_project(&unversioned);
-    let out = ascribe(dir.path(), &["versions", "archive", "prod 1.0", "--to", "out"]);
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.0", "--to", "out"],
+    );
     assert_eq!(code_of(&out), 2);
-    assert!(stderr(&out).contains("no build is versioned by prod"), "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("no build is versioned by prod"),
+        "{}",
+        stderr(&out)
+    );
 }
 
 #[test]
 fn archive_needs_build_when_two_builds_are_versioned_by_the_target() {
-    let model = format!("{VERSIONED}\n[builds.other]\navailability = \"badge\"\nversions = \"prod\"\n");
+    let model =
+        format!("{VERSIONED}\n[builds.other]\navailability = \"badge\"\nversions = \"prod\"\n");
     let dir = archive_project(&model);
-    let out = ascribe(dir.path(), &["versions", "archive", "prod 1.0", "--to", "out"]);
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.0", "--to", "out"],
+    );
     assert_eq!(code_of(&out), 2);
     assert!(stderr(&out).contains("site, other"), "{}", stderr(&out));
     let out = ascribe(
         dir.path(),
-        &["versions", "archive", "prod 1.0", "--to", "out", "--build", "other"],
+        &[
+            "versions", "archive", "prod 1.0", "--to", "out", "--build", "other",
+        ],
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
 }
@@ -460,10 +495,21 @@ fn archive_needs_build_when_two_builds_are_versioned_by_the_target() {
 #[test]
 fn archive_refuses_a_line_whose_build_has_errors() {
     let dir = archive_project(VERSIONED);
-    write(dir.path(), "docs/c.md", "---\ntitle: C\n---\n\nSee [x](missing.md).\n");
-    let out = ascribe(dir.path(), &["versions", "archive", "prod 1.0", "--to", "out"]);
+    write(
+        dir.path(),
+        "docs/c.md",
+        "---\ntitle: C\n---\n\nSee [x](missing.md).\n",
+    );
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.0", "--to", "out"],
+    );
     assert_eq!(code_of(&out), 2);
-    assert!(stderr(&out).contains("nothing was written"), "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("nothing was written"),
+        "{}",
+        stderr(&out)
+    );
     assert!(!dir.path().join("out").exists());
 }
 

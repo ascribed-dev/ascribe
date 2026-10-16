@@ -441,9 +441,7 @@ impl ArchiveEmitter {
         let stylesheet = RelPath::parse(ARCHIVE_STYLESHEET).unwrap_or_else(|_| RelPath::root());
         let mut out = String::new();
         out.push_str("<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n");
-        out.push_str(
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n",
-        );
+        out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
         out.push_str("<meta name=\"robots\" content=\"noindex\">\n");
         out.push_str(
             "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">\n",

@@ -110,7 +110,12 @@ describe("an archive opened from a disk", () => {
       .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).getAttribute("href")));
     // The contents page first, then every page.
     expect(listed[0]).toBe("./index.html");
-    expect([...listed].sort()).toEqual(pages().filter((p) => p !== "all.html").map((p) => `./${p}`));
+    expect([...listed].sort((a, b) => String(a).localeCompare(String(b), "en"))).toEqual(
+      pages()
+        .filter((p) => p !== "all.html")
+        .map((p) => `./${p}`)
+        .sort((a, b) => a.localeCompare(b, "en")),
+    );
     await page.context().close();
   });
 

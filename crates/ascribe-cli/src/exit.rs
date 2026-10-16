@@ -264,7 +264,10 @@ mod tests {
             "release_unwritable",
             "a file release changes can't be written",
         ),
-        ("archive_no_build", "no build is versioned by the line's target"),
+        (
+            "archive_no_build",
+            "no build is versioned by the line's target",
+        ),
         (
             "archive_line_archived",
             "archive's line is archived, so has no output",
