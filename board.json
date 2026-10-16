@@ -2466,7 +2466,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/550"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "The editor's views: This page replaces Used by"
     },
     {
@@ -2506,7 +2506,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The editor's views: a Review view of the changed pages"
     },
     {
@@ -2525,7 +2525,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Memos: the memo in every surface, and HTML comments become memos"
     },
     {
