@@ -880,6 +880,7 @@ mod tests {
             Box::new(VersionsError::ArchiveErrors {
                 count: 1,
                 build: text(),
+                listed: text(),
             }),
             Box::new(RenameError::Missing(text())),
             Box::new(RenameError::Refused(text())),

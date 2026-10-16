@@ -222,7 +222,7 @@ pub enum VersionsError {
     },
     /// The checks found errors in the build.
     #[error(
-        "the checks found {count} error{} in build `{build}`, so nothing was written; `ascribe check --build {build}` lists them",
+        "the checks found {count} error{} in build `{build}`, so nothing was written; {listed}",
         if *.count == 1 { "" } else { "s" }
     )]
     ArchiveErrors {
@@ -230,6 +230,8 @@ pub enum VersionsError {
         count: usize,
         /// The build checked.
         build: String,
+        /// What lists them.
+        listed: String,
     },
     /// A file can't be written.
     #[error("can't write {}: {message}", path.display())]
@@ -978,19 +980,21 @@ fn run_archive(
         };
         return answer::fail(err, &error);
     };
-    // The checks, as `ascribe build` runs them, before anything is written.
-    let errors = match ascribe_check::diagnose(&project, std::slice::from_ref(&declared_build)) {
-        Ok(found) => found
-            .diagnostics
-            .iter()
-            .filter(|d| d.severity == ascribe_check::Severity::Error)
-            .count(),
-        Err(e) => return answer::fail(err, &e),
-    };
+    // The checks of the line's own build, as `ascribe build` runs them,
+    // before anything is written.
+    let errors = ascribe_check::count_errors_in(&project, &build);
     if errors > 0 {
+        let listed = if model.builds.iter().any(|b| b.name == build.name) {
+            format!("`ascribe check --build {}` lists them", build.name)
+        } else {
+            // A planned line's build is made for the archive alone.
+            "`ascribe check` checks the live lines, so it lists those they share with this one"
+                .to_owned()
+        };
         let error = VersionsError::ArchiveErrors {
             count: errors,
-            build: declared_build,
+            build: build.name.clone(),
+            listed,
         };
         return answer::fail(err, &error);
     }

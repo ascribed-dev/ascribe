@@ -54,7 +54,7 @@ Every link between files of the archive is relative, starting `./` or `../`, so 
 ## 4. The other files
 
 - **The contents page** lists every page by folder, as the sidebar does, with a heading for each named folder, and links to `all.html`. It's `index.html`, or `contents.html` when the line's root page is `index.html`.
-- **`all.html`** holds every page once, in the sidebar's order, each an `<article>` with its title and availability, its links relative to the top of the folder. It has the statement and no sidebar.
+- **`all.html`** holds every page once, in the sidebar's order, each an `<article>` with its title and availability, its links relative to the top of the folder. It has the statement and no sidebar. It's for printing the set, so its ids aren't unique: two pages with a heading of the same name both have its id, and a link to it in `all.html` goes to the first.
 - **`robots.txt`** is `User-agent: *` and `Disallow: /`, for a host that serves the folder at its own origin.
 
 ## 5. Print

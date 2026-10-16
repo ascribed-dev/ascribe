@@ -673,3 +673,56 @@ fn a_page_added_too_stops_the_chain() {
     );
     assert!(entries(dir.path(), "prod 1.0", "1.1", "removed").is_empty());
 }
+
+/// `prod` with 1.1 current and 1.0 live, or with 1.0 live and 1.1 planned,
+/// and a link to a heading 1.1 removes: an error in 1.1 alone.
+fn removed_heading(lines: &str) -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    let model = format!(
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[dimensions.release]\nvalues = [\"prod\"]\n\n[releases.prod]\n{lines}\n\n[builds.site]\navailability = \"badge\"\nversions = \"prod\"\n"
+    );
+    write(dir.path(), "ascribe.toml", &model);
+    write(
+        dir.path(),
+        "docs/a.md",
+        "---\ntitle: A\n---\n\nSee [old](b.md#old).\n",
+    );
+    write(
+        dir.path(),
+        "docs/b.md",
+        "---\ntitle: B\n---\n\nText.\n\n## Old\n@available: prod (ga 1.0, removed 1.1)\n\nOld.\n",
+    );
+    dir
+}
+
+#[test]
+fn archive_checks_the_line_it_archives_and_no_other() {
+    // The error is in the current line, 1.1; 1.0 has none.
+    let dir = removed_heading("live = [\"1.1\", \"1.0\"]");
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.0", "--to", "out"],
+    );
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.1", "--to", "out2"],
+    );
+    assert_eq!(code_of(&out), 2);
+    assert!(stderr(&out).contains("in build `site`"), "{}", stderr(&out));
+    // A planned line's errors, which `ascribe check` doesn't see.
+    let dir = removed_heading("live = [\"1.0\"]\nplanned = [\"1.1\"]");
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stderr(&check));
+    let out = ascribe(
+        dir.path(),
+        &["versions", "archive", "prod 1.1", "--to", "out"],
+    );
+    assert_eq!(code_of(&out), 2);
+    assert!(
+        stderr(&out).contains("in build `site@1.1`"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(!dir.path().join("out").exists());
+}

@@ -97,7 +97,7 @@ Renders a line, live or planned, into a folder of HTML that needs nothing else: 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-archive.txt
 
-`--to` is from the current folder, and is a folder that's empty or one an archive was written in: writing again replaces the files its manifest lists, and nothing else. It refuses a folder with anything else in it, writing nothing there. It writes nothing into the project, runs the checks for the line's build first, and refuses when they find an error. Archiving the current line works, and the text says it's unusual. A link to a page the line doesn't have is written as its text, and the text names each one.
+`--to` is from the current folder, and is a folder that's empty or one an archive was written in: writing again replaces the files its manifest lists, and nothing else. It refuses a folder with anything else in it, writing nothing there. It writes nothing into the project, runs the checks for the line's build first, and refuses when they find an error. A planned line's build is checked too, though `ascribe check` checks only the live lines, so the error names the build it found them in. Archiving the current line works, and the text says it's unusual. A link to a page the line doesn't have is written as its text, and the text names each one.
 
 @include: ../_generated/cli-versions-archive-options.md
 
