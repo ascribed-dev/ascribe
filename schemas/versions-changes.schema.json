@@ -21,6 +21,17 @@
             "null"
           ]
         },
+        "in_place_of": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlaceOf"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a page added, the page `from` has in its place and `to`\ndoesn't, when `replaces` links the two, either way: the pair is one\nchange, so that page isn't listed as removed."
+        },
         "kind": {
           "description": "What the mark is on: `page` (the frontmatter's `available`),\n`section` (a heading's), `block` (the block after it), or `row` (a\ntable row's).",
           "type": "string"
@@ -52,6 +63,30 @@
         "kind",
         "page",
         "text"
+      ],
+      "type": "object"
+    },
+    "PlaceOf": {
+      "description": "The page another takes the place of.",
+      "properties": {
+        "file": {
+          "description": "Its file, from the project root.",
+          "type": "string"
+        },
+        "line": {
+          "description": "Its mark's line, from 1.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "page": {
+          "description": "Its title, or the file's path when it has none.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "page"
       ],
       "type": "object"
     }

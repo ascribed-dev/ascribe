@@ -53,7 +53,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ### `ascribe versions changes`
 @id {permalink=true}: cli-versions-changes
 
-Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). Each is listed with its file and line, the page, the heading it's under, and its first line. A page whose own mark adds it is one entry, not an entry for each part of it. `ascribe versions changes "self-managed 3.4" 3.5` in `examples/quill`:
+Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). Each is listed with its file and line, the page, the heading it's under, and its first line. A page whose own mark adds it is one entry, not an entry for each part of it. A page added in place of one removed, which `replaces` links it with either way, is one entry too: it's listed as added, and names the page it's in place of, which isn't listed as removed. `ascribe versions changes "self-managed 3.4" 3.5` in `examples/quill`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-changes.txt
 
@@ -65,7 +65,7 @@ The second line is a version of the first's target, and either may come first. E
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/versions-notes.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `target`, `from`, `to`, and `added`, `removed`, and `changed`, each a list with `file`, `line`, `kind` (`page`, `section`, `block`, or `row`), `page` (its title), `heading` (left out at the top of a page), `text` (its first line), and, for a changed one, `from_state` and `to_state`, its state in each line, such as `deprecated`.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `target`, `from`, `to`, and `added`, `removed`, and `changed`, each a list with `file`, `line`, `kind` (`page`, `section`, `block`, or `row`), `page` (its title), `heading` (left out at the top of a page), `text` (its first line), for a changed one, `from_state` and `to_state`, its state in each line, such as `deprecated`, and, for a page added in place of another, `in_place_of`, with that page's `file`, `line`, and `page`.
 
 | Code | Meaning |
 |---|---|
