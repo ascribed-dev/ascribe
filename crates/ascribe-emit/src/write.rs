@@ -123,7 +123,37 @@ pub fn write_outputs(
             output.remove_shared()?;
         }
     }
+    // A line that has left the window has no output, and what a build of
+    // it wrote before goes.
+    let emitters = [
+        SiteEmitter::new(index.model()).name(),
+        PlainEmitter::new(index.model()).name(),
+        JsonEmitter.name(),
+    ];
+    for name in archived_lines(index.model()) {
+        for emitter in emitters {
+            output.remove_output(&name, emitter)?;
+        }
+    }
     Ok(written)
+}
+
+/// The name a build of each archived line of a versioned build would have
+/// had: `site@3.4`.
+fn archived_lines(model: &ContentModel) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for build in &model.builds {
+        let Some(releases) = build.versions.as_deref().and_then(|t| model.releases_of(t)) else {
+            continue;
+        };
+        for archived in &releases.archived {
+            let name = format!("{}@{}", build.declared_name(), archived.line.text);
+            if !out.contains(&name) {
+                out.push(name);
+            }
+        }
+    }
+    out
 }
 
 /// The name of the site output, whose files can carry anchors.

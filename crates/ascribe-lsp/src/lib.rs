@@ -35,6 +35,7 @@ mod references;
 mod release;
 mod rename;
 mod retire;
+mod retire_line;
 mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
@@ -75,6 +76,9 @@ pub use release::{
 };
 pub use rename::{RenameError, Renamed, Renaming, Rewritten, rename};
 pub use retire::{Retired, Retirement, retire};
+pub use retire_line::{
+    Redirect, RedirectWhy, RetireError, RetiredLine, RetiringLine, Unused, retire_line, unused_in,
+};
 pub use review::{
     CHANGES_METHOD as REVIEW_CHANGES_METHOD, ChangesParams, ChangesResult,
     SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,

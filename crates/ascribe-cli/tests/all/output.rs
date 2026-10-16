@@ -980,3 +980,26 @@ fn versions_release() {
         )),
     );
 }
+
+/// `ascribe versions retire` on `examples/quill`, as a dry run, so it
+/// writes nothing there: the command reference's example.
+#[test]
+fn versions_retire() {
+    let quill = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+    expect(
+        "versions-retire.txt",
+        &stdout(&run(
+            &quill,
+            &[
+                "versions",
+                "retire",
+                "self-managed 3.4",
+                "--url",
+                "https://archive.quill.dev/3.4/",
+                "--dry-run",
+                "--show-unused",
+            ],
+            0,
+        )),
+    );
+}

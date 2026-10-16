@@ -726,3 +726,408 @@ fn archive_checks_the_line_it_archives_and_no_other() {
     );
     assert!(!dir.path().join("out").exists());
 }
+
+// -- `versions retire` ------------------------------------------------------
+
+/// `prod` 1.0 and 1.1 live, beside `cloud`, which has no versions, and one
+/// build versioned by `prod`.
+const RETIRING: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[dimensions.deployment]
+values = ["cloud", "prod"]
+versionless = ["cloud"]
+
+[releases.prod]
+live = ["1.0", "1.1"]
+ends = { "1.0" = 2026-06-30 }
+
+[builds.site]
+availability = "badge"
+versions = "prod"
+"#;
+
+/// A page only `prod` has, with a block every line has, a block, a
+/// section, and a row no live line has, and a mark that says nothing once
+/// its version goes; and a page every line has, about both targets.
+const PROD: &str = "---\ntitle: Prod\navailable: prod\n---\n\nIntro.\n\n@available: prod 1.0\nSince 1.0, which says nothing now.\n\n@available: prod (ga 0.9, removed 1.1)\nGone in 1.1.\n\n## Old settings\n@available: prod (ga 0.8, removed 1.1)\n\nThey went.\n\n## Options\n\n| Option | Does |\n|---|---|\n| `a` {available=\"prod (ga 0.9, removed 1.1)\"} | A. |\n| `b` | B. |\n";
+
+const BOTH: &str = "---\ntitle: Both\navailable: cloud, prod 1.0\n---\n\nFor everyone.\n\n@available: prod deprecated 1.1\nOld, still here.\n";
+
+fn retiring_repository() -> TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "ascribe.toml", RETIRING);
+    write(dir.path(), "docs/prod.md", PROD);
+    write(dir.path(), "docs/both.md", BOTH);
+    git(dir.path(), &["init", "-q"]);
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "Start"]);
+    dir
+}
+
+fn retire(dir: &Path, extra: &[&str]) -> Output {
+    let mut args = vec![
+        "versions",
+        "retire",
+        "prod 1.0",
+        "--url",
+        "https://example.com/1.0/",
+    ];
+    args.extend_from_slice(extra);
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(&args)
+        .env("NO_COLOR", "1")
+        .env("ASCRIBE_TODAY", "2026-10-16")
+        .env_remove("GIT_DIR")
+        .env_remove("GIT_WORK_TREE")
+        .output()
+        .expect("run ascribe")
+}
+
+#[test]
+fn retire_without_an_address_names_the_archive_command() {
+    let dir = retiring_repository();
+    let out = ascribe(dir.path(), &["versions", "retire", "prod 1.0"]);
+    assert_eq!(code_of(&out), 2, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("ascribe versions archive \"prod 1.0\""),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(read(dir.path(), "ascribe.toml"), RETIRING);
+}
+
+#[test]
+fn retire_where_no_build_is_versioned_says_a_release_keeps_the_list() {
+    let docs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs");
+    let list = ascribe(&docs, &["versions", "list", "--format", "json"]);
+    let list: Value = serde_json::from_slice(&list.stdout).unwrap();
+    let current = list["targets"][0]["lines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["status"] == "current")
+        .unwrap()["line"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let line = format!("ascribe {current}");
+    let out = ascribe(
+        &docs,
+        &[
+            "versions",
+            "retire",
+            &line,
+            "--url",
+            "https://example.com/",
+            "--dry-run",
+        ],
+    );
+    assert_eq!(code_of(&out), 2, "{}", stderr(&out));
+    assert!(stderr(&out).contains("no build is versioned by `ascribe`"));
+    assert!(stderr(&out).contains("`ascribe versions release` keeps its list"));
+}
+
+#[test]
+fn retire_refuses_the_current_line_and_a_line_that_isnt_the_oldest() {
+    let dir = retiring_repository();
+    let out = ascribe(
+        dir.path(),
+        &["versions", "retire", "prod 1.1", "--url", "https://x/"],
+    );
+    assert_eq!(code_of(&out), 2);
+    assert!(
+        stderr(&out).contains("is the current line"),
+        "{}",
+        stderr(&out)
+    );
+    let out = ascribe(
+        dir.path(),
+        &["versions", "retire", "prod 0.9", "--url", "https://x/"],
+    );
+    assert_eq!(code_of(&out), 2);
+    assert!(stderr(&out).contains("isn't declared"), "{}", stderr(&out));
+}
+
+#[test]
+fn retire_archives_the_line_and_rewrites_the_marks_without_deleting_anything() {
+    let dir = retiring_repository();
+    let out = retire(dir.path(), &[]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let model = read(dir.path(), "ascribe.toml");
+    assert!(model.contains("live = [\"1.1\"]"), "{model}");
+    // `ends` gives the day, and leaves.
+    assert!(
+        model.contains("\"1.0\" = { url = \"https://example.com/1.0/\", ended = 2026-06-30 }"),
+        "{model}"
+    );
+    assert!(!model.contains("ends"), "{model}");
+    let prod = read(dir.path(), "docs/prod.md");
+    assert!(prod.contains("@available: prod\nSince 1.0"), "{prod}");
+    // Content in no live line is listed, not deleted.
+    assert!(prod.contains("Gone in 1.1."), "{prod}");
+    assert!(prod.contains("## Old settings"), "{prod}");
+    assert!(prod.contains("| `a` {available="), "{prod}");
+    let both = read(dir.path(), "docs/both.md");
+    assert!(both.contains("available: cloud, prod\n"), "{both}");
+    assert!(both.contains("@available: prod deprecated\n"), "{both}");
+    let text = stdout(&out);
+    assert!(
+        text.contains("prod 1.0 is archived, at https://example.com/1.0/."),
+        "{text}"
+    );
+    assert!(text.contains("No live line's output changed."), "{text}");
+    assert!(
+        text.contains("1 section, 1 block and 1 row are in no live line."),
+        "{text}"
+    );
+    assert!(
+        text.contains("1 mark says nothing once rewritten"),
+        "{text}"
+    );
+
+    // Run twice, the second run refuses: the line isn't live.
+    let again = retire(dir.path(), &[]);
+    assert_eq!(code_of(&again), 2);
+    assert!(
+        stderr(&again).contains("isn't live: it's archived already"),
+        "{}",
+        stderr(&again)
+    );
+}
+
+#[test]
+fn without_ends_the_line_ended_today() {
+    let dir = retiring_repository();
+    let model = RETIRING.replace("ends = { \"1.0\" = 2026-06-30 }\n", "");
+    write(dir.path(), "ascribe.toml", &model);
+    git(dir.path(), &["commit", "-q", "-am", "No end"]);
+    let out = retire(dir.path(), &[]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(read(dir.path(), "ascribe.toml").contains("ended = 2026-10-16"));
+}
+
+#[test]
+fn retire_lists_and_removes_what_no_line_has_and_the_marks_that_say_nothing() {
+    let dir = retiring_repository();
+    let out = retire(dir.path(), &["--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let json: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let unused: Vec<(String, String)> = json["unused"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|u| {
+            (
+                u["kind"].as_str().unwrap().to_owned(),
+                u["text"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        unused,
+        [
+            ("mark".to_owned(), "@available: prod".to_owned()),
+            ("block".to_owned(), "Gone in 1.1.".to_owned()),
+            ("section".to_owned(), "Old settings".to_owned()),
+            (
+                "row".to_owned(),
+                "| `a` {available=\"prod (ga 0.9, removed 1.1)\"} | A. |".to_owned()
+            ),
+        ]
+    );
+    git(dir.path(), &["commit", "-q", "-am", "Retire 1.0"]);
+
+    let shown = ascribe(
+        dir.path(),
+        &["versions", "retire", "prod 1.0", "--show-unused"],
+    );
+    assert_eq!(code_of(&shown), 0, "{}", stderr(&shown));
+    assert!(
+        stdout(&shown).contains("docs/prod.md:15: the section \"Old settings\""),
+        "{}",
+        stdout(&shown)
+    );
+    assert_eq!(read(dir.path(), "docs/prod.md").len(), json_len(dir.path()));
+
+    let removed = ascribe(
+        dir.path(),
+        &["versions", "retire", "prod 1.0", "--remove-unused"],
+    );
+    assert_eq!(code_of(&removed), 0, "{}", stderr(&removed));
+    assert_eq!(
+        read(dir.path(), "docs/prod.md"),
+        "---\ntitle: Prod\navailable: prod\n---\n\nIntro.\n\nSince 1.0, which says nothing now.\n\n## Options\n\n| Option | Does |\n|---|---|\n| `b` | B. |\n"
+    );
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+}
+
+#[test]
+fn the_commands_a_dry_run_names_work() {
+    let dir = retiring_repository();
+    let dry = retire(dir.path(), &["--dry-run"]);
+    assert_eq!(code_of(&dry), 0, "{}", stderr(&dry));
+    let text = stdout(&dry);
+    let review: Vec<&str> = text
+        .lines()
+        .filter_map(|l| l.split_once("Review each: ").map(|(_, c)| c))
+        .collect();
+    assert_eq!(review.len(), 2, "{text}");
+    for command in review {
+        let listed = run_named(dir.path(), command);
+        assert_eq!(code_of(&listed), 0, "{command}: {}", stderr(&listed));
+        let delete = stdout(&listed);
+        let delete = delete
+            .lines()
+            .find_map(|l| l.split_once(" with: ").map(|(_, c)| c.to_owned()))
+            .unwrap_or_else(|| panic!("{command}: {delete}"));
+        assert_eq!(
+            delete,
+            "ascribe versions retire \"prod 1.0\" --url https://example.com/1.0/ --remove-unused"
+        );
+    }
+    assert_eq!(read(dir.path(), "ascribe.toml"), RETIRING);
+}
+
+/// Runs a command the text names, `ascribe` and a quoted line among its
+/// words, in `dir`.
+fn run_named(dir: &Path, command: &str) -> Output {
+    let (before, rest) = command.split_once('"').unwrap();
+    let (line, after) = rest.split_once('"').unwrap();
+    let mut args: Vec<&str> = before.split_whitespace().skip(1).collect();
+    args.push(line);
+    args.extend(after.split_whitespace());
+    ascribe(dir, &args)
+}
+
+/// The length of `docs/prod.md` as committed, to show `--show-unused`
+/// wrote nothing.
+fn json_len(dir: &Path) -> usize {
+    let out = Command::new("git")
+        .current_dir(dir)
+        .args(["show", "HEAD:docs/prod.md"])
+        .output()
+        .expect("run git");
+    out.stdout.len()
+}
+
+/// Every file under `dir`, by its path from it, with its bytes.
+fn tree(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    fn walk(root: &Path, dir: &Path, out: &mut Vec<(String, Vec<u8>)>) {
+        for entry in fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                walk(root, &path, out);
+            } else {
+                let rel = path
+                    .strip_prefix(root)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                out.push((rel, fs::read(&path).unwrap()));
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(dir, dir, &mut out);
+    out.sort();
+    out
+}
+
+fn copy(from: &Path, to: &Path) {
+    for (rel, bytes) in tree(from) {
+        if rel.starts_with(".ascribe/") {
+            continue;
+        }
+        let path: PathBuf = rel.split('/').fold(to.to_path_buf(), |p, s| p.join(s));
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, bytes).unwrap();
+    }
+}
+
+/// Retiring 3.4 in a copy of `examples/quill` leaves 3.5's output byte for
+/// byte what moving the line in the list alone gives, and lists a redirect
+/// for every page 3.4 published. The JSON output records each mark as
+/// written, so it's the site and plain outputs that are compared, as
+/// `release` compares them.
+#[test]
+fn retiring_quills_older_line_changes_no_remaining_lines_output() {
+    let quill = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+    let listed = tempfile::tempdir().unwrap();
+    copy(&quill, listed.path());
+    let built = ascribe(listed.path(), &["build"]);
+    assert_eq!(code_of(&built), 0, "{}", stderr(&built));
+    let versions: Value = serde_json::from_str(&read(
+        listed.path(),
+        ".ascribe/build/_ascribe/versions.json",
+    ))
+    .unwrap();
+    let mut published: Vec<String> = versions["builds"]["site"]["pages"]
+        .as_object()
+        .unwrap()
+        .values()
+        .filter_map(|p| p["lines"]["3.4"].as_str().map(str::to_owned))
+        .collect();
+    published.sort();
+
+    // The list alone.
+    let model = read(listed.path(), "ascribe.toml").replace(
+        "live = [\"3.4\", \"3.5\"]",
+        "live = [\"3.5\"]\n\n[releases.self-managed.archived]\n\"3.4\" = { url = \"https://example.com/3.4/\", ended = 2026-10-16 }",
+    );
+    write(listed.path(), "ascribe.toml", &model);
+    let built = ascribe(listed.path(), &["build"]);
+    assert_eq!(code_of(&built), 0, "{}", stderr(&built));
+    // The retired line's output is gone.
+    assert!(!listed.path().join(".ascribe/build/site@3.4").exists());
+
+    // The command.
+    let retired = tempfile::tempdir().unwrap();
+    copy(&quill, retired.path());
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(retired.path())
+        .args([
+            "versions",
+            "retire",
+            "self-managed 3.4",
+            "--url",
+            "https://example.com/3.4/",
+            "--force",
+            "--format",
+            "json",
+        ])
+        .env("ASCRIBE_TODAY", "2026-10-16")
+        .output()
+        .unwrap();
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert_eq!(read(retired.path(), "ascribe.toml"), model);
+    let json: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let mut from: Vec<String> = json["redirects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["from"].as_str().unwrap().to_owned())
+        .collect();
+    from.sort();
+    assert_eq!(from, published);
+    assert!(
+        json["redirects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["from"] == "/3.4/configure-legacy/" && r["to"] == "/configure/")
+    );
+    let built = ascribe(retired.path(), &["build"]);
+    assert_eq!(code_of(&built), 0, "{}", stderr(&built));
+    for folder in ["site/site", "site/plain", "_ascribe"] {
+        let rel = format!(".ascribe/build/{folder}");
+        assert!(
+            tree(&listed.path().join(&rel)) == tree(&retired.path().join(&rel)),
+            "{folder} differs"
+        );
+    }
+}

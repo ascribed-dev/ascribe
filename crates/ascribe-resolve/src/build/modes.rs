@@ -14,7 +14,9 @@
 //! Each pass also says what it removed and why ([`Removed`]), so the editor
 //! shows what a build leaves out from the same decisions the build makes.
 
-use ascribe_core::availability::{AvailabilitySpec, Version, parse_availability};
+use ascribe_core::availability::{
+    AvailabilitySpec, Version, parse_availability, spec_text, without_versions_through,
+};
 use ascribe_core::{Issue, Location, diagnostics};
 use ascribe_model::{AvailabilityMode, Build, BuildLine, ContentModel, VariantMode};
 use std::collections::{HashMap, HashSet};
@@ -22,9 +24,7 @@ use std::sync::Arc;
 
 use ascribe_syntax::{Block, BlockKind, DirectiveLine};
 
-use super::availability::{
-    page_availability, spec_allows, spec_in_line, spec_text, without_old_versions,
-};
+use super::availability::{page_availability, spec_allows, spec_in_line};
 use super::tree::{
     Availability, DropReason, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedKind,
 };
@@ -462,7 +462,7 @@ impl Shown<'_> {
             return hit.clone();
         }
         let enclosing = a.enclosing.as_ref().map(|e| self.availability(e));
-        let spec = without_old_versions(&a.spec, self.target, self.oldest);
+        let spec = without_versions_through(&a.spec, self.target, self.oldest);
         let same_enclosing = match (&enclosing, &a.enclosing) {
             (Some(x), Some(y)) => Arc::ptr_eq(x, y),
             (None, None) => true,
@@ -497,7 +497,7 @@ impl Shown<'_> {
             }
             if let Some(annotation) = &mut block.annotation
                 && let Ok(spec) = parse_availability(&annotation.text, 0)
-                && let Some(spec) = without_old_versions(&spec, self.target, self.oldest)
+                && let Some(spec) = without_versions_through(&spec, self.target, self.oldest)
             {
                 annotation.text = spec_text(&spec);
             }
