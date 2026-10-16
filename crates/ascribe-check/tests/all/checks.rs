@@ -887,3 +887,34 @@ fn a_link_in_a_description_is_found_at_the_link_and_fixed_to_its_text() {
         .expect("description-link");
     assert!(d.fixes.is_empty());
 }
+
+/// The text of `body`'s page after its one diagnostic's one fix, which must
+/// be `memo-empty`'s and safe; `None` when it has no fix.
+fn empty_memo_removed(body: &str) -> Option<String> {
+    let text = page(body);
+    let p = project(&[("a.md", &text)]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "memo-empty");
+    let fix = d.fixes.first()?;
+    assert_eq!(fix.applicability, Applicability::Safe);
+    Some(apply_edits(&text, &fix.edits).expect("edits apply"))
+}
+
+/// An empty container memo's fix removes its lines, and a blank line after
+/// them when one is before them too; one that starts a list item has none.
+#[test]
+fn an_empty_memo_s_fix_removes_it() {
+    assert_eq!(
+        empty_memo_removed("Text.\n\n@memo:\n@end\nThe block.").as_deref(),
+        Some(page("Text.\n\nThe block.").as_str())
+    );
+    assert_eq!(
+        empty_memo_removed("## A\n\n@memo:\n\n@end\n\nText.").as_deref(),
+        Some(page("## A\n\nText.").as_str())
+    );
+    assert_eq!(
+        empty_memo_removed("> Text.\n>\n> @memo:\n> @end\n> The block.").as_deref(),
+        Some(page("> Text.\n>\n> The block.").as_str())
+    );
+    assert_eq!(empty_memo_removed("- @memo:\n  @end\n  The block."), None);
+}

@@ -4109,3 +4109,39 @@ title: Plans
 |---|---|
 | Team | 10 |
 '''
+
+[[diagnostic]]
+code = "ASC224"
+slug = "memo-empty"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+configurable = true
+area = "pages"
+spec = "4.10"
+reference = "writing/directives.md#memo"
+when = "A container memo has nothing between its opening line and its `@end`, or only blank lines"
+message = "this memo is empty"
+fix = "A memo that says nothing is almost always a slip: write what it was meant to say between `@memo:` and `@end`, or remove it. The fix removes it, which changes no output, since no output shows a memo."
+example.wrong = '''
+---
+title: Plans
+---
+
+@memo:
+@end
+| Plan | Seats |
+|---|---|
+| Team | 10 |
+'''
+example.right = '''
+---
+title: Plans
+---
+
+@memo: Keep this table in the order of the plans' prices.
+| Plan | Seats |
+|---|---|
+| Team | 10 |
+'''

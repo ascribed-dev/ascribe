@@ -696,6 +696,9 @@ pub const LISTING_LOOSENED_IN_LINE: DiagnosticSlug = DiagnosticSlug("listing-loo
 /// `ASC223`, advice, file level: a content check (area `pages`).
 pub const HTML_COMMENT: DiagnosticSlug = DiagnosticSlug("html-comment");
 
+/// `ASC224`, advice, file level: a content check (area `pages`).
+pub const MEMO_EMPTY: DiagnosticSlug = DiagnosticSlug("memo-empty");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -917,6 +920,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     LINK_FRAGMENT_DROPPED,
     LISTING_LOOSENED_IN_LINE,
     HTML_COMMENT,
+    MEMO_EMPTY,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -962,6 +966,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     LINK_INTO_OLDER_LINE,
     LINK_FRAGMENT_DROPPED,
     HTML_COMMENT,
+    MEMO_EMPTY,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
