@@ -1062,12 +1062,13 @@ fn run_archive(
 
 /// A size in bytes, as a person reads it: `12 KB`, `3.4 MB`.
 fn size(bytes: usize) -> String {
-    #[allow(clippy::cast_precision_loss)] // A size shown to one decimal.
-    let bytes = bytes as f64;
-    if bytes < 1_000_000.0 {
-        format!("{} KB", (bytes / 1_000.0).ceil().max(1.0))
+    let kilobytes = bytes.div_ceil(1_000).max(1);
+    if kilobytes < 1_000 {
+        format!("{kilobytes} KB")
     } else {
-        format!("{:.1} MB", bytes / 1_000_000.0)
+        #[allow(clippy::cast_precision_loss)] // A size shown to one decimal.
+        let megabytes = bytes as f64 / 1_000_000.0;
+        format!("{megabytes:.1} MB")
     }
 }
 
@@ -1130,4 +1131,18 @@ fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Resul
     writeln!(out, "Host the folder, then record its address:")?;
     writeln!(out, "  [releases.{target}.archived]")?;
     writeln!(out, "  \"{line}\" = {{ url = \"…\" }}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::size;
+
+    #[test]
+    fn a_size_is_in_kilobytes_rounded_up_then_megabytes() {
+        assert_eq!(size(0), "1 KB");
+        assert_eq!(size(3_501), "4 KB");
+        assert_eq!(size(999_000), "999 KB");
+        assert_eq!(size(999_001), "1.0 MB");
+        assert_eq!(size(8_250_000), "8.2 MB");
+    }
 }

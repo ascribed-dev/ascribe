@@ -36,9 +36,9 @@ The folder is replaced by the output layout contract's rules: a file is written 
 
 ## 2. A page
 
-Each page is one complete HTML document that loads nothing from outside the folder and runs no script but the search's (§6):
+Each page is one complete HTML document that Ascribe gives one script, the search's (§6):
 
-- `<meta name="robots" content="noindex">`, and a content security policy of `script-src 'self' file:`: the folder's own script files, served or opened from a disk, and no script written in a page.
+- `<meta name="robots" content="noindex">`, and a content security policy of `script-src 'self' file:`. No inline script runs, and no event handler or `javascript:` link. A script file does: the search's, and any a page's own raw HTML names with `<script src>` that the browser can load, from where the folder is served, or, opened from a disk, from anywhere on the reader's disk.
 - A `<title>` of the page's title and the line: `Install the Quill agent · self-managed 3.4`.
 - One stylesheet, `style.css`, linked relatively: the element library's stylesheet, then the archive's own. Every element of the [element contract](../astro/elements.md) renders as it does without its script; tabs show one after another, each under its label.
 - The statement, `<header class="archive-statement">`: "Documentation for self-managed 3.4. This version is no longer maintained.", with the target's label (content model contract §6) and the line, and with `--current` a `<span class="archive-current">` holding a link to that address.
