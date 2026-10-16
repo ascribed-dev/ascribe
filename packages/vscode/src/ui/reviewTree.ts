@@ -7,10 +7,10 @@ import type { ChangedPage } from "../preview/protocol.js";
 import type { ItemLook } from "./sidebar.js";
 
 /** A changed page's status, which is its group. */
-export type PageStatus = ChangedPage["status"];
+type PageStatus = ChangedPage["status"];
 
 /** The groups, in the view's order. */
-export const STATUSES: readonly PageStatus[] = ["added", "changed", "removed"];
+const STATUSES: readonly PageStatus[] = ["added", "changed", "removed"];
 
 const GROUP_NAMES: Record<PageStatus, string> = {
   added: "Added",

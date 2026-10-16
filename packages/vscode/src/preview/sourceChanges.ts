@@ -12,7 +12,7 @@ import { DIFF_FILES_LIMIT, diffTitle, type SourceFile } from "../ui/reviewTree.j
 import type { BaseFileResult, BaseInfo } from "../shapes.js";
 
 /** The scheme of a file's text at the base, as the language server answers it. */
-export const BASE_SCHEME = "ascribe-base";
+const BASE_SCHEME = "ascribe-base";
 
 /** The language server's request for a file's text at the base (`crates/ascribe-lsp/README.md`). */
 const BASE_FILE_REQUEST = "ascribe/review/baseFile";
