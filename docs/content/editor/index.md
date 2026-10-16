@@ -40,7 +40,7 @@ After you install the extension, VS Code opens its walkthrough, **Get Started wi
 
 Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../content-model/output.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
 
-@available: next
+@available: ascribe 0.3.2
 When that build is [versioned](../versions/index.md), they're for every line of it, and a problem only some lines have says which, such as "(only in build `site@3.4`)".
 
 The [content checks](../checks/diagnostics/content-checks.md) about the whole project, such as a page nothing links to or a phrase nothing uses, need every page, so they run when you save, not as you type. Until you save a file you've changed, it doesn't show theirs. The image checks run only in `ascribe check`.
@@ -60,7 +60,7 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - Did-you-mean corrections for misspelled directives, attributes, and frontmatter keys.
 - **Remove** text on a directive line that isn't part of the directive.
 
-@available: next
+@available: ascribe 0.3.2
 - **Copy the command**, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
 ### Prompt agent
@@ -94,7 +94,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.
 
-@available: next
+@available: ascribe 0.3.2
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
 ### Hover
@@ -104,13 +104,13 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - An availability spec or feature key: what it means, in the words the published site uses.
 - A directive or attribute key: its description. A dimension key: its values and labels.
 
-@available: next
+@available: ascribe 0.3.2
 - A version in an availability spec, for a target with [release lines](../versions/index.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
-@available: next
+@available: ascribe 0.3.2
 - `replaces` in frontmatter: the page it replaces, and which page each line publishes. Go to Definition opens the replaced page.
 
-@available: next
+@available: ascribe 0.3.2
 - A `@snippet`'s address: its file, as a link that opens it, and its region and lines. For a [tested example](../examples/tested.md), what it was tested with, "Changed after its last test run", or "Not tested", with the observations behind it, and where to run `ascribe observe`.
 
 ### Navigation
@@ -153,7 +153,7 @@ The preview shows images and files from the content root, and from directories e
 @available: ascribe 0.2.0
 A [`@snippet`](../writing/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
 
-@available: next
+@available: ascribe 0.3.2
 A [tested example](../examples/tested.md)'s advice, `example-stale` and `example-unobserved`, follows its source's observations and `ascribe.examples.toml`: when `ascribe observe` writes an observation, or the config changes on disk, the pages that show the source's examples are checked again. An edit to the example's own file still waits for the page to change, and so does the preview's tested line.
 
 ### Site preview
@@ -230,7 +230,7 @@ Click it for a menu of the project: **Switch build**, **Check every build**, **S
 
 Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](index.md#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
 
-@available: next
+@available: ascribe 0.3.2
 A [versioned](../versions/index.md) build's lines are listed under it, the current line first, such as `site@3.4` for line 3.4: the preview of a line is at its address, and the lens dims what that line leaves out, a page new in a later line whole.
 
 ### The build lens

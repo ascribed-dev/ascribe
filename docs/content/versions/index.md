@@ -2,7 +2,7 @@
 type: how-to
 title: Versions
 description: Publishing the docs of more than one version of a product from one source, a site for each version a reader can be on.
-available: next
+available: ascribe 0.3.2
 ---
 
 A product a team supports in more than one version needs docs for each: a reader on 3.4 should read about 3.4, and find the same page for 3.5. Ascribe does this from one source, the marks the pages already have, in four levels a project opts into one at a time:

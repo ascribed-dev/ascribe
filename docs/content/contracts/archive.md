@@ -2,7 +2,7 @@
 type: reference
 title: Archive contract
 description: What ascribe versions archive writes into a folder, how it records what it wrote, and what each page holds.
-available: next
+available: ascribe 0.3.2
 ---
 
 This contract says what `ascribe versions archive` writes: one line of a versioned build, rendered once more by Ascribe alone into a folder of HTML that needs nothing else. An archive is a file format people keep for years, so what's here changes only by a recorded decision. [Archive a line](../versions/index.md#archive-a-line) is the guide.

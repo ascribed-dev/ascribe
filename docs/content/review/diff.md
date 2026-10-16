@@ -19,10 +19,10 @@ The text output lists each build's changed pages with counts, and where a change
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
-@available: next
+@available: ascribe 0.3.2
 The [lines](../versions/index.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
 
-@available: next
+@available: ascribe 0.3.2
 ```text
 site: 2 pages changed
   install.md: 1 changed, in every line
@@ -65,7 +65,7 @@ It lists the changed pages of each build, with counts, and marks a page that cha
 - a **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it;
 - a **moved** block has a double bar and the label Moved, with a link to a stub at its old place, and back.
 
-@available: next
+@available: ascribe 0.3.2
 The lines of a versioned build are one build in the list: a changed page is listed once, with "in every line" or the lines it changed in, and a **Line** switch shows it as each line publishes it.
 
 A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes ("2 changes").
@@ -98,7 +98,7 @@ The prompt asks for a report, not edits: a review reads the change, and its auth
 | `blocks_omitted` | boolean | Only with `--pages-only`, and then `true`: each page's `changes` is empty, and its `counts` still count them. |
 | `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order. |
 
-@available: next
+@available: ascribe 0.3.2
 Each line of a versioned build is an entry of its own in `builds`, such as `site@3.4`, its pages' routes under the line's folder.
 
 Each page:

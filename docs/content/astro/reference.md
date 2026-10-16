@@ -35,7 +35,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
   **Writes the site's sitemap and `robots.txt`** from every project's page records, and gives a layout each page's head ([search engines and crawlers](reference.md#search-engines-and-crawlers)), in `astro dev` and in the built site.
 - @available: ascribe 0.3.0
   **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] headers = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](reference.md#response-headers)).
-- @available: next
+- @available: ascribe 0.3.2
   **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([Versions](index.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
@@ -118,7 +118,7 @@ The layout keeps the character set, the viewport, icons, theme colors, styles, t
 
 `astro dev` knows only the routes of the site's own that have no parameters, so a page of the site's own that a route's `getStaticPaths` lists is in the built sitemap only.
 
-@available: next
+@available: ascribe 0.3.2
 Of a [versioned build](index.md#versions), a page is listed only when its canonical address is its own, so an older line adds only the pages the current line has nothing in the place of, and each current page is listed once.
 
 A sitemap needs absolute addresses, so a site with no `site` (`[consumer] site`, or Astro's) gets none, and the build warns. A site with its own `sitemap.xml` in `public/` keeps it, the integration writes none, and `robots.txt` points to the site's.

@@ -4,6 +4,8 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+## 0.3.2 (2026-10-16)
+
 ### The language
 
 - **A line's output leaves out a history's states from before the window.** With 3.5 and 3.6 live, `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` shows as `self-managed (ga 3.5, deprecated 3.6)` in each line's output, as `ascribe versions retire` writes the mark, where it showed the whole history before. See [Build a site for each line](docs/content/versions/index.md#what-each-line-has).

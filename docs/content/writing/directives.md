@@ -52,7 +52,7 @@ available: cloud, self-managed preview 3.3
 A page says what type it is with `type`, the name of a [content type](../content-model/index.md#41-page-types) `ascribe.toml` declares, conventionally its first key. In a project that declares types, every page names one, wherever its file is; in a project that declares none, every page is of the implicit type `page`, and names none. A fragment has no type, and can't use `type`.
 
 ### A page that replaces another
-@available: next
+@available: ascribe 0.3.2
 
 A page rewritten for a newer release, at a new path, says which page it takes the place of with `replaces`, written as a link to that page is:
 
@@ -583,7 +583,7 @@ See [](keys.md#rotate-keys).
 - In each build, a link's target page must be published. To link from shared content to a page a build drops, put the link in a `@variant` arm the same build removes.
 
 ### Links between lines
-@available: next
+@available: ascribe 0.3.2
 
 In a build versioned by a target ([versions](../versions/index.md)), a link to a page a line doesn't publish isn't an error. It goes, in order, to:
 

@@ -101,10 +101,10 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 @available: ascribe 0.2.0
 `<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
 
-@available: next
+@available: ascribe 0.3.2
 `<Versions entry={entry} />`, from `@ascribed/astro/Versions.astro`, lists the lines of a [versioned build](#versions): those that have the page, or the page it replaces or the page that replaces it, as links, the others unlinked, and the archived lines that have an address. It renders nothing for a build that isn't versioned.
 
-@available: next
+@available: ascribe 0.3.2
 `<VersionBanner entry={entry} />`, from `@ascribed/astro/VersionBanner.astro`, says on an older line's page which version it documents, and links to the current line's. It renders nothing on the current line.
 
 #### The sidebar
@@ -228,7 +228,7 @@ The files are static, so any host serves them. A few things the spec asks are th
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
 
 ## Versions
-@available: next
+@available: ascribe 0.3.2
 
 With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [Publish with Astro](../versions/index.md#publish-with-astro) says what the collection, the layout, and `astro dev` do with them. Each line's `llms.txt` and Markdown are published at its base path, an older line's pages name the current line's as canonical, and the sitemap lists each page once. A permalink always forwards to the current line.
 

@@ -103,7 +103,7 @@ const available: Record<string, string> = {
   [ACTIONS_ROW]: "ascribe 0.3.0",
   "ascribe.newPage": "ascribe 0.3.1",
   "ascribe.nextPlaceholder": "ascribe 0.3.1",
-  "ascribe.projects.exclude": "next",
+  "ascribe.projects.exclude": "ascribe 0.3.2",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */
