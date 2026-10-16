@@ -2444,7 +2444,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`available-same-in-every-line` offers to drop a patch version of the oldest line, which a line's output shows"
     },
     {
@@ -2565,7 +2565,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Memos: a template's instructions to the writer are memos"
     },
     {
@@ -2894,7 +2894,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBX3Tg",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Memos: say something about an empty container memo"
     }
   ]
