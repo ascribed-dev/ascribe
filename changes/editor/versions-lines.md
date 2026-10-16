@@ -1,1 +1,0 @@
-- **Switch build lists a versioned build's lines, and the lens and the preview follow the line chosen.** The current line comes first. In an older line, the preview is at the line's address and the lens dims a page new in a later line whole. See [Versions](docs/content/versions/index.md#in-the-editor-in-review-and-in-the-tools).
