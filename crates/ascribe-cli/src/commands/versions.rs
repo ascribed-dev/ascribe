@@ -1487,6 +1487,20 @@ fn counted(unused: &[UnusedJson], mark_kind: bool) -> String {
 }
 
 /// What's left in no line, and the marks that say nothing: counted, or,
+/// The command that runs `flag` next. After a dry run the line is still
+/// live, and the command needs its `--url`: listing stays a dry run, and
+/// removing retires it. Once it's retired, the flag alone.
+fn retire_with(json: &RetireJson, args: &RetireArgs, flag: &str) -> String {
+    let named = format!("ascribe versions retire \"{} {}\"", json.target, json.line);
+    match &json.url {
+        Some(url) if args.dry_run && json.retired && flag == "--show-unused" => {
+            format!("{named} --dry-run --url {url} {flag}")
+        }
+        Some(url) if args.dry_run && json.retired => format!("{named} --url {url} {flag}"),
+        _ => format!("{named} {flag}"),
+    }
+}
+
 /// with `--show-unused` or `--remove-unused`, each listed.
 fn write_unused_lines(
     out: &mut dyn Write,
@@ -1517,8 +1531,8 @@ fn write_unused_lines(
         } else {
             writeln!(
                 out,
-                "{content} {verb} in no live line. Review each: ascribe versions retire \"{} {}\" --show-unused",
-                json.target, json.line
+                "{content} {verb} in no live line. Review each: {}",
+                retire_with(json, args, "--show-unused")
             )?;
         }
     }
@@ -1531,8 +1545,8 @@ fn write_unused_lines(
         } else {
             writeln!(
                 out,
-                "{marks} {verb} nothing once rewritten, and can go. Review each: ascribe versions retire \"{} {}\" --show-unused",
-                json.target, json.line
+                "{marks} {verb} nothing once rewritten, and can go. Review each: {}",
+                retire_with(json, args, "--show-unused")
             )?;
         }
     }
@@ -1555,10 +1569,9 @@ fn write_unused_lines(
         if !json.unused.is_empty() && !removed {
             writeln!(
                 out,
-                "Delete {} with: ascribe versions retire \"{} {}\" --remove-unused",
+                "Delete {} with: {}",
                 if json.unused.len() == 1 { "it" } else { "them" },
-                json.target,
-                json.line
+                retire_with(json, args, "--remove-unused")
             )?;
         }
     }
@@ -1624,23 +1637,28 @@ fn write_retire(
     if !r.builds_changed.is_empty() {
         writeln!(
             out,
-            "Builds that aren't lines of {target} show a version from before the window, and change:"
+            "Builds that aren't lines of {target} change what they show:"
         )?;
         for o in &r.builds_changed {
-            let mut pages: Vec<&str> = o
-                .changed
-                .iter()
-                .chain(&o.added)
-                .chain(&o.removed)
-                .map(String::as_str)
-                .collect();
-            pages.sort_unstable();
+            let parts: Vec<String> = [
+                ("adds", &o.added),
+                ("removes", &o.removed),
+                ("changes", &o.changed),
+            ]
+            .into_iter()
+            .filter(|(_, files)| !files.is_empty())
+            .map(|(verb, files)| {
+                let mut files: Vec<&str> = files.iter().map(String::as_str).collect();
+                files.sort_unstable();
+                format!("{verb} {}", files.join(", "))
+            })
+            .collect();
             writeln!(
                 out,
-                "  {}'s {} output: {}",
+                "  {}'s {} output {}",
                 o.build,
                 o.output,
-                pages.join(", ")
+                parts.join("; ")
             )?;
         }
         if !args.force {

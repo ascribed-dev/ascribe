@@ -966,6 +966,44 @@ fn retire_lists_and_removes_what_no_line_has_and_the_marks_that_say_nothing() {
     assert_eq!(code_of(&check), 0, "{}", stdout(&check));
 }
 
+#[test]
+fn the_commands_a_dry_run_names_work() {
+    let dir = retiring_repository();
+    let dry = retire(dir.path(), &["--dry-run"]);
+    assert_eq!(code_of(&dry), 0, "{}", stderr(&dry));
+    let text = stdout(&dry);
+    let review: Vec<&str> = text
+        .lines()
+        .filter_map(|l| l.split_once("Review each: ").map(|(_, c)| c))
+        .collect();
+    assert_eq!(review.len(), 2, "{text}");
+    for command in review {
+        let listed = run_named(dir.path(), command);
+        assert_eq!(code_of(&listed), 0, "{command}: {}", stderr(&listed));
+        let delete = stdout(&listed);
+        let delete = delete
+            .lines()
+            .find_map(|l| l.split_once(" with: ").map(|(_, c)| c.to_owned()))
+            .unwrap_or_else(|| panic!("{command}: {delete}"));
+        assert_eq!(
+            delete,
+            "ascribe versions retire \"prod 1.0\" --url https://example.com/1.0/ --remove-unused"
+        );
+    }
+    assert_eq!(read(dir.path(), "ascribe.toml"), RETIRING);
+}
+
+/// Runs a command the text names, `ascribe` and a quoted line among its
+/// words, in `dir`.
+fn run_named(dir: &Path, command: &str) -> Output {
+    let (before, rest) = command.split_once('"').unwrap();
+    let (line, after) = rest.split_once('"').unwrap();
+    let mut args: Vec<&str> = before.split_whitespace().skip(1).collect();
+    args.push(line);
+    args.extend(after.split_whitespace());
+    ascribe(dir, &args)
+}
+
 /// The length of `docs/prod.md` as committed, to show `--show-unused`
 /// wrote nothing.
 fn json_len(dir: &Path) -> usize {
