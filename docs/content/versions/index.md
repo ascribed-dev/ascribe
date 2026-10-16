@@ -89,7 +89,7 @@ A versioned build's `availability` is `badge`: a build that filters is already o
 
 A line keeps content whose `available` doesn't name the target, and content that's available for the target at some version in the line. Content that begins at `3.4.2` is in 3.4; so is content removed at `3.4.2`, since it was there at `3.4.0`. What isn't in a line is removed from its output, as a filtered build removes it: a section, a table row, or a whole page. The current line also keeps content marked for a version after it, shown as it is in any badge build, such as "3.6+".
 
-What's left is marked as a badge build marks it, but a version at or before the oldest live line isn't shown, since every reader has it: with 3.4 and 3.5 live, `self-managed 3.3` shows the target alone, `self-managed deprecated 3.2` shows "deprecated", and `self-managed 3.4.2` shows its version. A build that isn't versioned shows them all.
+What's left is marked as a badge build marks it, but a version at or before the oldest live line isn't shown, since every reader has it: with 3.4 and 3.5 live, `self-managed 3.3` shows the target alone, `self-managed deprecated 3.2` shows "deprecated", and `self-managed 3.4.2` shows its version. A history keeps the state in effect when the window opens and what follows: with 3.5 and 3.6 live, `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` shows `self-managed (ga 3.5, deprecated 3.6)`. A build that isn't versioned shows them all.
 
 `ascribe check` checks each line as a build. A problem in more than one line is reported once, saying so.
 
@@ -203,6 +203,35 @@ The archive is Ascribe's own render, not the site's: a project's site design isn
 ```
 
 `Versions.astro` lists an archived line that has a `url` after the live ones, as a link out of the site. The [archive contract](../contracts/archive.md) has the folder's layout.
+
+## Retire a line
+
+Once its archive is hosted, take the line out of the source. The order matters, since after the clean-up the source no longer holds what the line needs:
+
+1. **Archive it,** as above, while every line's content is still there.
+2. **Host the archive,** and note its address.
+3. **Retire it:**
+
+   ```sh
+   ascribe versions retire "self-managed 3.4" --url https://archive.example.com/3.4/
+   ```
+
+4. **Add the redirects** it lists to your host.
+
+The retirement moves 3.4 from `live` to `archived`, with its `url` and the day it ended, so `Versions.astro` lists it as an archive and `ascribe build` stops writing its output, removing the folder it wrote before. Then, with 3.5 the oldest line, each mark for the target is rewritten to the simplest spec that means the same in every line still live or planned:
+
+| A mark | With 3.5 and 3.6 live | Why |
+|---|---|---|
+| `self-managed 3.4` | `self-managed` | Every live line has it |
+| `self-managed deprecated 3.2` | `self-managed deprecated` | The state is still worth showing |
+| `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` | `self-managed (ga 3.5, deprecated 3.6)` | The steps before the window go; the one in effect when it opens stays |
+| `cloud, self-managed 3.4` | `cloud, self-managed` | Other targets are untouched |
+
+A feature's spec in `ascribe.toml` is rewritten the same way. No live line's output changes, and the command proves it by building before and after. A build that isn't a line, such as a badge build that shows "3.4+", does change, so the command names its pages and needs `--force`.
+
+The retirement deletes nothing on its own. Content that only 3.4 had, and a mark that says nothing any more, such as `@available: self-managed` on a page of a site for self-managed alone, is listed with `--show-unused`, and deleted with `--remove-unused` once you've read the list. A mark that says nothing still draws a badge, which is why it's yours to remove.
+
+Each address 3.4 published should go somewhere: to the same page in the current line, to the page that replaced it there, or to its page in the archive. The command lists them, the replaced pages in its text and every address in its JSON, each as `from` and `to`, and writes nothing for a host. The [command reference](release.md#cli-versions-retire) has its options.
 
 ## For agents
 

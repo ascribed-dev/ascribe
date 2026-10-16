@@ -1,0 +1,269 @@
+{
+  "$defs": {
+    "FeatureJson": {
+      "description": "A feature moved by the release.",
+      "properties": {
+        "from": {
+          "description": "Its spec before.",
+          "type": "string"
+        },
+        "kept": {
+          "description": "The other targets its spec names, left as they were.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "key": {
+          "description": "Its key.",
+          "type": "string"
+        },
+        "to": {
+          "description": "Its spec after.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "from",
+        "to",
+        "kept"
+      ],
+      "type": "object"
+    },
+    "FileJson": {
+      "description": "A source file the release rewrites.",
+      "properties": {
+        "file": {
+          "description": "The file, from the project root.",
+          "type": "string"
+        },
+        "marks": {
+          "description": "Each mark rewritten.",
+          "items": {
+            "$ref": "#/$defs/MarkJson"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "file",
+        "marks"
+      ],
+      "type": "object"
+    },
+    "MarkJson": {
+      "description": "A mark the release rewrites.",
+      "properties": {
+        "from": {
+          "description": "The feature it named.",
+          "type": "string"
+        },
+        "line": {
+          "description": "Its line, from 1.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "to": {
+          "description": "The spec it names now.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "line",
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "OutputJson": {
+      "description": "One output the release changes.",
+      "properties": {
+        "added": {
+          "description": "The files it gains, by their path in the output.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "build": {
+          "description": "The build: `site`, or an older line's, `site@3.4`. Empty for the\nfile the lines share.",
+          "type": "string"
+        },
+        "changed": {
+          "description": "The files that change.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "output": {
+          "description": "The output: `site`, `plain`, or `json`, or `_ascribe` for the file\nthe lines share.",
+          "type": "string"
+        },
+        "removed": {
+          "description": "The files it loses.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "build",
+        "output",
+        "added",
+        "removed",
+        "changed"
+      ],
+      "type": "object"
+    },
+    "RedirectJson": {
+      "description": "An address and where it should go, as the headers list writes a path.",
+      "properties": {
+        "from": {
+          "description": "The address, from the site's root.",
+          "type": "string"
+        },
+        "to": {
+          "description": "Where it should go: a path from the site's root, or the archive's\nfull address.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "UnusedJson": {
+      "description": "Content no line has, or a mark that says nothing.",
+      "properties": {
+        "file": {
+          "description": "The file, from the project root.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "`page`, `section`, `block`, `row`, or `mark`, for a mark that says\nnothing and can go while its content stays.",
+          "type": "string"
+        },
+        "line": {
+          "description": "The mark's line, from 1.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "text": {
+          "description": "Its first line: a page's title, a section's heading, a block's or a\nrow's first line, or the mark.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "kind",
+        "text"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe versions retire --format json` writes: the line, its\naddress, the marks rewritten, what no line has any more, and where each\nof the line's addresses should go.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "ended": {
+      "description": "The day the line's support ended: its `ends`, or the day it was\nretired.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "features": {
+      "description": "Each feature whose spec is rewritten.",
+      "items": {
+        "$ref": "#/$defs/FeatureJson"
+      },
+      "type": "array"
+    },
+    "files": {
+      "description": "Each source file whose marks are rewritten, from the project root.",
+      "items": {
+        "$ref": "#/$defs/FileJson"
+      },
+      "type": "array"
+    },
+    "line": {
+      "description": "The line, as `[releases.<target>]` writes it.",
+      "type": "string"
+    },
+    "outputs": {
+      "description": "The outputs of builds that aren't lines of the target that the\nrewrite changes, by build and output: they need `--force`, and a dry\nrun lists them.",
+      "items": {
+        "$ref": "#/$defs/OutputJson"
+      },
+      "type": "array"
+    },
+    "redirects": {
+      "description": "Where each address the line published should go, by address: the\nsame page in the current line, the page that replaces it there, or\nits page in the archive.",
+      "items": {
+        "$ref": "#/$defs/RedirectJson"
+      },
+      "type": "array"
+    },
+    "removed": {
+      "description": "Whether what `unused` lists was deleted, with `--remove-unused`.",
+      "type": "boolean"
+    },
+    "retired": {
+      "description": "Whether this run retired the line: false when it was archived\nalready, and the run only listed or removed what it left.",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "target": {
+      "description": "The target.",
+      "type": "string"
+    },
+    "unused": {
+      "description": "What no live or planned line has, and the marks that say nothing\nonce rewritten, by file and line.",
+      "items": {
+        "$ref": "#/$defs/UnusedJson"
+      },
+      "type": "array"
+    },
+    "url": {
+      "description": "Where the line's archive is read.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "written": {
+      "description": "Whether the files were written: false with `--dry-run`.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "written",
+    "retired",
+    "target",
+    "line",
+    "url",
+    "ended",
+    "features",
+    "files",
+    "unused",
+    "removed",
+    "redirects",
+    "outputs"
+  ],
+  "title": "VersionsRetireReport",
+  "type": "object"
+}

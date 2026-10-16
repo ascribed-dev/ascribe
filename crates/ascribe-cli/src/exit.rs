@@ -46,7 +46,7 @@ mod tests {
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::{ReleaseError, RenameError, ServeError};
+    use ascribe_lsp::{ReleaseError, RenameError, RetireError, ServeError};
     use ascribe_query::QueryError;
     use ascribe_sources::SourcesError;
 
@@ -254,11 +254,11 @@ mod tests {
         ),
         (
             "release_without_git",
-            "no git to say whether release's files can be put back",
+            "no git to say whether release's or retire's files can be put back",
         ),
         (
             "release_files_unrestorable",
-            "files release would write are untracked or changed",
+            "files release or retire would write are untracked or changed",
         ),
         (
             "release_unwritable",
@@ -279,6 +279,38 @@ mod tests {
         (
             "archive_folder_not_empty",
             "archive's folder has files and isn't an archive",
+        ),
+        ("retire_no_lines", "retire's target has no lines"),
+        ("retire_line_not_live", "retire's line isn't live"),
+        ("retire_line_current", "retire's line is the current one"),
+        (
+            "retire_line_not_oldest",
+            "an older live line comes before retire's line",
+        ),
+        (
+            "retire_not_versioned",
+            "no build is versioned by retire's target",
+        ),
+        ("retire_no_address", "retire's line has no address"),
+        (
+            "retire_mark_unrewritable",
+            "a mark retire would rewrite can't be rewritten in place",
+        ),
+        (
+            "retire_model_invalid",
+            "ascribe.toml wouldn't load after the retirement",
+        ),
+        (
+            "retire_build_failed",
+            "retire can't build the outputs to compare",
+        ),
+        (
+            "retire_outputs_changed",
+            "retire's rewrite would change a live line's output",
+        ),
+        (
+            "retire_builds_changed",
+            "retire's rewrite would change a build that isn't a line",
         ),
         (
             "rename_target_missing",
@@ -519,6 +551,22 @@ mod tests {
                 | ReleaseError::OutputsChanged { .. } => {}
             }
         }
+        fn retire(e: &RetireError) {
+            match e {
+                RetireError::NoLines { .. }
+                | RetireError::NotLive { .. }
+                | RetireError::Current { .. }
+                | RetireError::NotOldest { .. }
+                | RetireError::NotVersioned { .. }
+                | RetireError::NoAddress { .. }
+                | RetireError::MarkUnrewritable { .. }
+                | RetireError::ModelEdit(_)
+                | RetireError::ModelInvalid(_)
+                | RetireError::Build(_)
+                | RetireError::OutputsChanged { .. }
+                | RetireError::OtherBuildsChange { .. } => {}
+            }
+        }
         fn versions(e: &VersionsError) {
             match e {
                 VersionsError::BadLine(_)
@@ -557,6 +605,7 @@ mod tests {
             rename,
             rename_command,
             release,
+            retire,
             versions,
             templates,
             templates_command,
@@ -853,10 +902,50 @@ mod tests {
                 step: "a step",
                 files: vec![text()],
             }),
+            Box::new(RetireError::NoLines { target: text() }),
+            Box::new(RetireError::NotLive {
+                target: text(),
+                line: text(),
+                why: text(),
+            }),
+            Box::new(RetireError::Current {
+                target: text(),
+                line: text(),
+                oldest: text(),
+            }),
+            Box::new(RetireError::NotOldest {
+                target: text(),
+                line: text(),
+                oldest: text(),
+            }),
+            Box::new(RetireError::NotVersioned { target: text() }),
+            Box::new(RetireError::NoAddress {
+                target: text(),
+                line: text(),
+            }),
+            Box::new(RetireError::MarkUnrewritable {
+                path: text(),
+                line: 1,
+                written: text(),
+            }),
+            Box::new(RetireError::ModelEdit(text())),
+            Box::new(RetireError::ModelInvalid(text())),
+            Box::new(RetireError::Build(text())),
+            Box::new(RetireError::OutputsChanged {
+                files: vec![text()],
+            }),
+            Box::new(RetireError::OtherBuildsChange {
+                target: text(),
+                builds: vec![text()],
+            }),
             Box::new(VersionsError::BadLine(text())),
             Box::new(VersionsError::BadNext(text())),
-            Box::new(VersionsError::NoGit { why: text() }),
+            Box::new(VersionsError::NoGit {
+                command: "release",
+                why: text(),
+            }),
             Box::new(VersionsError::NotRestorable {
+                command: "release",
                 files: vec![text()],
             }),
             Box::new(VersionsError::Unwritable {

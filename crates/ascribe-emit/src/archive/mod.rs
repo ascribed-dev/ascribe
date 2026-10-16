@@ -144,9 +144,9 @@ pub fn archive(
     })
 }
 
-/// The file a page is written to: its source path with `.html` for its
-/// extension.
-fn page_file(page: &RelPath) -> RelPath {
+/// The file an archive writes a page to, from the archive's folder: its
+/// source path with `.html` for its extension.
+pub fn page_file(page: &RelPath) -> RelPath {
     let path = page.as_str();
     let stem = match page.extension() {
         Some(extension) => &path[..path.len() - extension.len() - 1],

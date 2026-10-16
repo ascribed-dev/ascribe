@@ -488,31 +488,40 @@ impl OutputDir {
     ///
     /// The manifest can't be read, or a file can't be removed.
     pub fn remove_shared(&self) -> Result<usize, StoreError> {
-        let place = self.shared_place();
         refuse_links_below(&self.root, SHARED_DIR)?;
-        if fs::symlink_metadata(&place.manifest).is_err() {
-            return Ok(0);
-        }
-        let previous = read_manifest(&place.manifest)?;
-        let mut removed = 0;
-        for old in &previous {
-            let path = place.files.join(&old.path);
-            if let Ok(meta) = fs::symlink_metadata(&path)
-                && !meta.is_dir()
-            {
-                fs::remove_file(&path).map_err(io_err("can't remove", &path))?;
-                removed += 1;
+        remove_owned(&self.shared_place())
+    }
+
+    /// Removes what one build and emitter wrote, when the build is gone: a
+    /// line that has left the window has no output. Each file the
+    /// emitter's manifest lists goes, then the manifest, then the emitter's
+    /// folder and the build's when nothing else is in them. With no
+    /// manifest there's nothing of Ascribe's to remove, and nothing is
+    /// touched. Returns how many files were removed.
+    ///
+    /// # Errors
+    ///
+    /// The manifest can't be read, or a file can't be removed.
+    pub fn remove_output(&self, build: &str, emitter: &str) -> Result<usize, StoreError> {
+        for name in [build, emitter] {
+            if name.is_empty() || name.starts_with('.') || name.contains(['/', '\\']) {
+                return Err(StoreError::Conflicts(vec![format!(
+                    "`{name}` can't be a directory name in the output"
+                )]));
             }
-            let mut dir = path.parent().map(Path::to_owned);
-            while let Some(d) = dir {
-                if d == place.files || fs::remove_dir(&d).is_err() {
-                    break;
-                }
-                dir = d.parent().map(Path::to_owned);
-            }
         }
-        fs::remove_file(&place.manifest).map_err(io_err("can't remove", &place.manifest))?;
-        let _ = fs::remove_dir(&place.files);
+        refuse_links_below(&self.root, &format!("{build}/{emitter}"))?;
+        refuse_link(&self.manifest_path(build, emitter))?;
+        let place = Place {
+            build: build.to_owned(),
+            emitter: emitter.to_owned(),
+            parent: self.root.join(build),
+            files: self.emitter_root(build, emitter),
+            manifest: self.manifest_path(build, emitter),
+            temp: self.manifest_temp(build, emitter),
+        };
+        let removed = remove_owned(&place)?;
+        let _ = fs::remove_dir(&place.parent);
         Ok(removed)
     }
 
@@ -787,6 +796,36 @@ impl OutputDir {
         }
         fs::rename(temp, dest).map_err(io_err("can't move into place", dest))
     }
+}
+
+/// Removes each file the manifest at `place` lists, then the manifest, then
+/// the folder when nothing else is in it; nothing when there's no manifest.
+/// Returns how many files were removed.
+fn remove_owned(place: &Place) -> Result<usize, StoreError> {
+    if fs::symlink_metadata(&place.manifest).is_err() {
+        return Ok(0);
+    }
+    let previous = read_manifest(&place.manifest)?;
+    let mut removed = 0;
+    for old in &previous {
+        let path = place.files.join(&old.path);
+        if let Ok(meta) = fs::symlink_metadata(&path)
+            && !meta.is_dir()
+        {
+            fs::remove_file(&path).map_err(io_err("can't remove", &path))?;
+            removed += 1;
+        }
+        let mut dir = path.parent().map(Path::to_owned);
+        while let Some(d) = dir {
+            if d == place.files || fs::remove_dir(&d).is_err() {
+                break;
+            }
+            dir = d.parent().map(Path::to_owned);
+        }
+    }
+    fs::remove_file(&place.manifest).map_err(io_err("can't remove", &place.manifest))?;
+    let _ = fs::remove_dir(&place.files);
+    Ok(removed)
 }
 
 /// Reads the manifest at `path`. No file means no previous output. A file that

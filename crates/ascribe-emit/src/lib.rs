@@ -52,7 +52,10 @@ mod versions;
 mod write;
 pub mod zod;
 
-pub use archive::{ARCHIVE_ALL, ARCHIVE_STYLESHEET, Archive, ArchiveOptions, Unlinked, archive};
+pub use archive::{
+    ARCHIVE_ALL, ARCHIVE_STYLESHEET, Archive, ArchiveOptions, Unlinked, archive,
+    page_file as archive_page_file,
+};
 pub use assets::Placement;
 pub use emitter::{
     Emission, EmitContext, EmittedPage, Emitter, PageContext, PlacedAsset, Position, emit,

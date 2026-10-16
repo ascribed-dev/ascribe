@@ -48,6 +48,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites the marks that name it through a feature, moves the feature on, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
 | `ascribe versions archive` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
+| `ascribe versions retire` | Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. | `LINE [--url <URL>] [--dry-run] [--force] [--show-unused] [--remove-unused]` | `text`, `json` |
 
 On every command:
 
@@ -730,6 +731,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/versions-changes.schema.json` | VersionsChangesReport | What differs between two lines of one target. |
 | `schemas/versions-list.schema.json` | VersionsListReport | Every target's release lines. |
 | `schemas/versions-release.schema.json` | VersionsReleaseReport | What `ascribe versions release --format json` writes: the line released, the files and marks rewritten, the features moved, and what the release changes in the outputs. |
+| `schemas/versions-retire.schema.json` | VersionsRetireReport | What `ascribe versions retire --format json` writes: the line, its address, the marks rewritten, what no line has any more, and where each of the line's addresses should go. |
 
 ## The docs
 

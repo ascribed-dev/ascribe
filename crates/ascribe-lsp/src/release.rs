@@ -14,7 +14,7 @@ use std::path::Path;
 
 use ascribe_check::Project;
 use ascribe_core::availability::{Detail, Version, parse_availability};
-use ascribe_core::{Coded, LineIndex, RelPath, Span, TextEdit, apply_edits};
+use ascribe_core::{Coded, Date, LineIndex, RelPath, Span, TextEdit, apply_edits};
 use ascribe_emit::{Contents, Output, WriteOptions, outputs_in_memory};
 use ascribe_model::{ContentModel, Feature, LineStatus, Releases, SourceBound, in_line};
 use ascribe_resolve::FileIndex;
@@ -348,7 +348,7 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
             .collect();
         live.push(line);
         let mut edits = vec![set_lines(&model_file, target, "live", live)?];
-        edits.extend(archive(&model_file, plan.releases, current)?);
+        edits.extend(archive(&model_file, plan.releases, current, None, None)?);
         text = finish(&model_file, edits)?;
     }
 
@@ -546,7 +546,7 @@ fn names_line(feature: &Feature, target: &str, line: &Version) -> bool {
         .any(|v| in_line(line, v))
 }
 
-fn entry_versions(detail: &Detail) -> Vec<&Version> {
+pub(crate) fn entry_versions(detail: &Detail) -> Vec<&Version> {
     match detail {
         Detail::None | Detail::State { version: None, .. } => Vec::new(),
         Detail::Version(v)
@@ -605,7 +605,7 @@ fn move_feature(
 
 /// The edit that sets one of a target's lists, newest first, written as
 /// the list writes its lines.
-fn set_lines(
+pub(crate) fn set_lines(
     file: &ModelFile<'_>,
     target: &str,
     key: &str,
@@ -623,32 +623,36 @@ fn set_lines(
     .map_err(ReleaseError::ModelEdit)
 }
 
-/// The edits that add `current` to the target's `archived`, with no
-/// address, and the day its support ended when `ends` has one, which then
-/// leaves `ends`.
-fn archive(
+/// The edits that add `line` to the target's `archived`, at `url` when
+/// one's given, and the day its support ended: the one `ends` has, which
+/// then leaves `ends`, or else `today` when one's given.
+pub(crate) fn archive(
     file: &ModelFile<'_>,
     releases: &Releases,
-    current: &Version,
+    line: &Version,
+    url: Option<&str>,
+    today: Option<Date>,
 ) -> Result<Vec<Edit>, ReleaseError> {
+    let current = line;
     let target = releases.target.as_str();
     let mut entry = InlineTable::new();
     let mut edits = Vec::new();
-    if let Some(end) = releases
+    if let Some(url) = url {
+        entry.insert("url", Value::from(url));
+    }
+    let end = releases
         .ends
         .iter()
-        .find(|e| e.line.components == current.components)
-    {
-        let date: toml_edit::Datetime = end
-            .date
+        .find(|e| e.line.components == current.components);
+    if let Some(end) = end {
+        edits.push(remove_end(file, target, &end.line.text)?);
+    }
+    if let Some(ended) = end.map(|e| e.date).or(today) {
+        let date: toml_edit::Datetime = ended
             .to_string()
             .parse()
-            .map_err(|_| ReleaseError::ModelEdit(format!("`{}` isn't a date", end.date)))?;
+            .map_err(|_| ReleaseError::ModelEdit(format!("`{ended}` isn't a date")))?;
         entry.insert("ended", Value::from(date));
-        edits.push(
-            file.remove_entry(&["releases", target, "ends"], &end.line.text)
-                .map_err(ReleaseError::ModelEdit)?,
-        );
     }
     entry.fmt();
     let value = Value::InlineTable(entry);
@@ -662,15 +666,35 @@ fn archive(
     Ok(edits)
 }
 
+/// The edit that takes `line` out of the target's `ends`: its entry in an
+/// `[releases.<target>.ends]` table, or in an inline `ends = { … }`, which
+/// goes whole with its last entry.
+fn remove_end(file: &ModelFile<'_>, target: &str, line: &str) -> Result<Edit, ReleaseError> {
+    let at = path(&["releases", target, "ends"]);
+    if let Some(toml_edit::Item::Value(Value::InlineTable(ends))) = file.get(&at) {
+        let mut rest = ends.clone();
+        rest.remove(line);
+        return if rest.is_empty() {
+            file.remove_entry(&["releases", target], "ends")
+        } else {
+            rest.fmt();
+            file.replace_value(&at, Value::InlineTable(rest))
+        }
+        .map_err(ReleaseError::ModelEdit);
+    }
+    file.remove_entry(&["releases", target, "ends"], line)
+        .map_err(ReleaseError::ModelEdit)
+}
+
 /// The text the edits give, checked.
-fn finish(file: &ModelFile<'_>, edits: Vec<Edit>) -> Result<String, ReleaseError> {
+pub(crate) fn finish(file: &ModelFile<'_>, edits: Vec<Edit>) -> Result<String, ReleaseError> {
     file.finish(edits)
         .map(|(_, text)| text)
         .map_err(ReleaseError::ModelEdit)
 }
 
 /// The content model in `text`.
-fn load(text: &str, root: &Path) -> Result<ContentModel, ReleaseError> {
+pub(crate) fn load(text: &str, root: &Path) -> Result<ContentModel, ReleaseError> {
     ascribe_check::type_files::load_model(text, root, SourceBound::Anywhere).map_err(|issues| {
         let messages: Vec<String> = issues
             .iter()
@@ -684,7 +708,7 @@ fn load(text: &str, root: &Path) -> Result<ContentModel, ReleaseError> {
 
 /// Every build's site and plain outputs, in memory, for `project` with `model` and the
 /// source files in `edited` holding their texts after.
-fn outputs(
+pub(crate) fn outputs(
     project: &Project,
     model: ContentModel,
     model_text: &str,
@@ -720,7 +744,10 @@ fn outputs(
 }
 
 /// The files that differ between two sets of outputs.
-fn compare(before: &BTreeMap<String, Contents>, after: &BTreeMap<String, Contents>) -> Vec<String> {
+pub(crate) fn compare(
+    before: &BTreeMap<String, Contents>,
+    after: &BTreeMap<String, Contents>,
+) -> Vec<String> {
     let mut out: Vec<String> = before
         .iter()
         .filter(|(path, contents)| after.get(*path) != Some(*contents))
@@ -732,7 +759,7 @@ fn compare(before: &BTreeMap<String, Contents>, after: &BTreeMap<String, Content
 }
 
 /// What differs between two sets of outputs, by build and output.
-fn changed_outputs(
+pub(crate) fn changed_outputs(
     before: &BTreeMap<String, Contents>,
     after: &BTreeMap<String, Contents>,
 ) -> Vec<ChangedOutput> {
@@ -883,7 +910,7 @@ enum Place {
 
 /// The frontmatter's `available` value, unquoted, and where it's written,
 /// when it's on its key's line.
-fn frontmatter_available(file: &FileIndex) -> Option<(String, Span)> {
+pub(crate) fn frontmatter_available(file: &FileIndex) -> Option<(String, Span)> {
     let fm = file.document.frontmatter.as_ref()?;
     let source: &str = &file.source;
     let base = fm.content.start();
@@ -895,7 +922,7 @@ fn frontmatter_available(file: &FileIndex) -> Option<(String, Span)> {
 }
 
 /// Whether a spec can be written as a plain YAML scalar.
-fn yaml_plain(spec: &str) -> bool {
+pub(crate) fn yaml_plain(spec: &str) -> bool {
     !spec.contains(": ")
         && !spec.contains(" #")
         && !spec.starts_with(|c: char| "[]{}&*!|>'\"%@`#-?:,".contains(c))

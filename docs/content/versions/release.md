@@ -1,11 +1,11 @@
 ---
 type: reference
 title: "`ascribe versions`"
-description: "List a project's release lines, say what differs between two, release a line in one command, and archive one into a folder of HTML."
+description: "List a project's release lines, say what differs between two, release a line in one command, archive one into a folder of HTML, and retire it from the source."
 available: next
 ---
 
-The commands for a project's [release lines](index.md): what they are, what differs between two, the release that makes a planned line live, and the archive that keeps a line once it leaves. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+The commands for a project's [release lines](index.md): what they are, what differs between two, the release that makes a planned line live, the archive that keeps a line once it leaves, and the retirement that takes it out of the source. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## Release day
 
@@ -37,7 +37,7 @@ ascribe versions changes "self-managed 3.5" 3.6 --format markdown
 ## `ascribe versions`
 @id {permalink=true}: cli-versions
 
-Lists a project's release lines, says what differs between two, releases one, and archives one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
+Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list
@@ -107,3 +107,29 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 |---|---|
 | `0` | The archive is written |
 | `2` | Nothing was written: the project doesn't load, the line isn't declared or is archived, no build or more than one is versioned by its target and `--build` doesn't say which, the checks find an error, or the folder isn't empty and isn't an archive |
+
+### `ascribe versions retire`
+@id {permalink=true}: cli-versions-retire
+
+Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. [Retire a line](index.md#retire-a-line) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In `examples/quill`, `ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --dry-run --show-unused` says what it would do:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-retire.txt
+
+The line's `ended` is its date in `ends`, which goes, or today when it had none: UTC, or `ASCRIBE_TODAY` when it's set, as the checks take it. Its address is `--url`, the one its archive is read at.
+
+It builds the project in memory before and after, and refuses when a live line's output changes: a line's output never showed a version from before the window, so the rewrite is meant to change none. A build that isn't a line of the target, such as a badge build or a filter build, does show those versions, so it names each of its pages that change, and the rewrite needs `--force` to go ahead. It writes only files git can put back as they were, as [`release`](#cli-versions-release) does, or anything with `--force`.
+
+It refuses a line that isn't live, which is why running it twice changes nothing the second time; the current line, and a live line that isn't the oldest; a line with no `--url`, since after the clean-up the source no longer holds what the line needs, so [`ascribe versions archive`](#cli-versions-archive) comes first; and a target no build is versioned by, whose list `release` already keeps to one live line.
+
+It deletes nothing unless it's told to. A page, section, block, or table row that no live or planned line has is listed with its file, line, and first line, and so is a mark that says nothing once rewritten: one for every target its scope allows, generally available, with nothing inside it relying on it. Such a mark still draws a badge, so the rewrite keeps it. `--show-unused` lists each, and `--remove-unused` deletes them, along with the `replaces` line of a page that replaced one it deletes. Both work on a line retired already.
+
+The addresses are listed and not written: a host's redirects file is yours to write. Each address the line published goes to the same page in the current line, to the page that replaces it there, or to its page in the archive when the current line has neither. The text names the replaced pages, and the JSON lists every address.
+
+@include: ../_generated/cli-versions-retire-options.md
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `written` (false with `--dry-run`), `retired` (false when the line was archived already and the run only listed or removed what it left), `target`, `line`, `url`, `ended`, `features` and `files` (as `release` writes them, each mark's `from` the spec it had), `unused` (each with `file`, `line`, `kind`, `page`, `section`, `block`, `row`, or `mark`, and `text`), `removed` (whether `--remove-unused` deleted them), `redirects` (each with `from`, a path from the site's root, and `to`, a path or the archive's full address, as the headers list writes them), and `outputs` (each build that isn't a line of the target and changes, with `build`, `output`, and the files `added`, `removed`, and `changed`).
+
+| Code | Meaning |
+|---|---|
+| `0` | Retired, or with `--dry-run`, it would be; or, on a line retired already, what it left is listed or deleted |
+| `2` | Nothing was written: the line can't be retired, it has no address, a mark can't be rewritten, a live line's output changes, a build that isn't a line changes and there's no `--force`, or git can't put the files back and there's no `--force` |

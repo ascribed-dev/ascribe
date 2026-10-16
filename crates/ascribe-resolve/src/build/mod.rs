@@ -147,6 +147,48 @@ impl Project {
         let (_, removed) = modes::apply(blocks, build, model, &mut Vec::new());
         Some(removed)
     }
+
+    /// Every spec written on a page, its frontmatter's and its fragments'
+    /// included, before any build's modes, each with the scope it sits in
+    /// ([`Availability::enclosing`]), in the order the page meets them. A
+    /// fragment included twice gives its specs once for each place. Empty
+    /// when the file isn't a page.
+    pub fn scopes(&self, page: &RelPath) -> Vec<Arc<Availability>> {
+        let Some(index) = self.file(page) else {
+            return Vec::new();
+        };
+        if index.kind != FileKind::Page {
+            return Vec::new();
+        }
+        let Some(expanded) = self.expand(page) else {
+            return Vec::new();
+        };
+        let page_spec = availability::page_availability(self.model(), index);
+        let blocks =
+            availability::annotate(self, &expanded.blocks, page_spec.clone(), &mut Vec::new());
+        let mut out: Vec<Arc<Availability>> = page_spec.into_iter().collect();
+        // A spec's enclosing ones come first, so each is met in page order.
+        fn note(out: &mut Vec<Arc<Availability>>, a: &Arc<Availability>) {
+            if out.iter().any(|b| Arc::ptr_eq(a, b)) {
+                return;
+            }
+            if let Some(e) = &a.enclosing {
+                note(out, e);
+            }
+            out.push(a.clone());
+        }
+        for block in &blocks {
+            block.visit(&mut |b| {
+                if let Some(a) = &b.availability {
+                    note(&mut out, a);
+                }
+                for row in &b.rows {
+                    note(&mut out, &row.availability);
+                }
+            });
+        }
+        out
+    }
 }
 
 /// Page ids of a page's headings, by the file and span each is written at.
