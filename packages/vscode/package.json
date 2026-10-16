@@ -404,8 +404,8 @@
           "contextualTitle": "Ascribe"
         },
         {
-          "id": "ascribe.usedBy",
-          "name": "Used by",
+          "id": "ascribe.thisPage",
+          "name": "This page",
           "contextualTitle": "Ascribe",
           "when": "ascribe.active"
         },

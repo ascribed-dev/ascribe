@@ -430,7 +430,7 @@ Views:
 | View | Id |
 |---|---|
 | Projects | `ascribe.projects` |
-| Used by | `ascribe.usedBy` |
+| This page | `ascribe.thisPage` |
 | Pages | `ascribe.pages` |
 | Content model | `ascribe.model` |
 
@@ -478,6 +478,7 @@ Ascribe's own requests:
 | `ascribe/context` | `crates/ascribe-lsp/src/context.rs` |
 | `ascribe/edit` | `crates/ascribe-lsp/src/edit.rs` |
 | `ascribe/inventory` | `crates/ascribe-lsp/src/inventory.rs` |
+| `ascribe/page` | `crates/ascribe-lsp/src/page.rs` |
 | `ascribe/preview` | `crates/ascribe-lsp/src/preview.rs` |
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
@@ -711,6 +712,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-context.schema.json` | ContextResult | The answer to `ascribe/context`. |
 | `schemas/lsp-edit.schema.json` | EditResult | The answer to `ascribe/edit`: the edit, or why there is none. |
 | `schemas/lsp-inventory.schema.json` | InventoryResult | The answer to `ascribe/inventory`. |
+| `schemas/lsp-page.schema.json` | PageResult | The answer to `ascribe/page`. |
 | `schemas/lsp-preview.schema.json` | PreviewResult | The answer to `ascribe/preview`. |
 | `schemas/lsp-set-base.schema.json` | SetBaseResult | The answer to `ascribe/review/setBase`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |

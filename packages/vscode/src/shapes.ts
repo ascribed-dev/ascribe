@@ -10,6 +10,7 @@
 // - ContextResult (the language server, answering `ascribe/context`)
 // - TargetsResult (the language server, answering `ascribe/targets`)
 // - InventoryResult (the language server, answering `ascribe/inventory`)
+// - PageResult (the language server, answering `ascribe/page`)
 // - EditResult (the language server, answering `ascribe/edit`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
@@ -927,6 +928,32 @@ export interface LspWorkspaceEdit {
 /** A kind of content model entry. */
 export type ModelKind = "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build";
 
+/** What a page or fragment is. */
+export interface PageAbout {
+  /** Its content path. */
+  path: string;
+  /** Whether it's a fragment, which is published only where it's included. */
+  fragment: boolean;
+  /** Its title (frontmatter `title`). */
+  title: string | null;
+  /**
+   * Its content type; `null` for a fragment, and when no one type
+   * applies.
+   */
+  type: string | null;
+  /**
+   * Its address, from the host's root, as the site output's links write
+   * it; `null` for a fragment.
+   */
+  address: string | null;
+  /**
+   * Its Markdown version's address, from the host's root, when the
+   * project publishes one (`[consumer] agents = true`); `null` otherwise,
+   * and for a fragment.
+   */
+  markdownAddress: string | null;
+}
+
 /** What changed on one page of a build. */
 export interface PageDiff {
   /** The page's content path. */
@@ -962,6 +989,62 @@ export interface PageDiff {
    * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
+}
+
+/** A heading of the page. */
+export interface PageHeading {
+  /** Its source id: its `@id`, or its slug. */
+  id: string;
+  /**
+   * Its text as plain text, with each declared phrase replaced by its
+   * value.
+   */
+  text: string;
+  /** The heading line, in the negotiated position encoding. */
+  range: LspRange;
+}
+
+/** A link or an `@include`. */
+export interface PagePlace {
+  /** The `file:` URI of the file it's written in. */
+  uri: string;
+  /** That file's content path. */
+  path: string;
+  /** The link or the directive line, in the negotiated position encoding. */
+  range: LspRange;
+  /** The text of the line it starts on, trimmed. */
+  text: string;
+}
+
+/**
+ * The answer to `ascribe/page`. A document that isn't a page or a fragment
+ * of the project gets an empty answer: no `about`, no heading, and empty
+ * lists.
+ */
+export interface PageResult {
+  /**
+   * What the page is; `null` when the document isn't a page or a
+   * fragment.
+   */
+  about: PageAbout | null;
+  /**
+   * The heading whose section holds the cursor, the innermost one with an
+   * id; `null` when the cursor is in none, and the lists are then about
+   * the whole file.
+   */
+  heading: PageHeading | null;
+  /**
+   * The links to the heading, or to the file when there's no heading:
+   * from other files, and, for a heading, from its own page and from a
+   * page that includes it. File by file in content path order, and in
+   * document order within a file.
+   */
+  linkedFrom: PagePlace[];
+  /**
+   * The `@include`s of the file, or of the heading's section, in the
+   * same order.
+   */
+  includedBy: PagePlace[];
 }
 
 /** Whether a page is new, gone, or different. */

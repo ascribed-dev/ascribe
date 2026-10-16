@@ -1,0 +1,191 @@
+{
+  "$defs": {
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "PageAbout": {
+      "description": "What a page or fragment is.",
+      "properties": {
+        "address": {
+          "description": "Its address, from the host's root, as the site output's links write\nit; `null` for a fragment.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fragment": {
+          "description": "Whether it's a fragment, which is published only where it's included.",
+          "type": "boolean"
+        },
+        "markdownAddress": {
+          "description": "Its Markdown version's address, from the host's root, when the\nproject publishes one (`[consumer] agents = true`); `null` otherwise,\nand for a fragment.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "description": "Its content path.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Its title (frontmatter `title`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "description": "Its content type; `null` for a fragment, and when no one type\napplies.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "fragment",
+        "title",
+        "type",
+        "address",
+        "markdownAddress"
+      ],
+      "type": "object"
+    },
+    "PageHeading": {
+      "description": "A heading of the page.",
+      "properties": {
+        "id": {
+          "description": "Its source id: its `@id`, or its slug.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The heading line, in the negotiated position encoding."
+        },
+        "text": {
+          "description": "Its text as plain text, with each declared phrase replaced by its\nvalue.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "range"
+      ],
+      "type": "object"
+    },
+    "PagePlace": {
+      "description": "A link or an `@include`.",
+      "properties": {
+        "path": {
+          "description": "That file's content path.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The link or the directive line, in the negotiated position encoding."
+        },
+        "text": {
+          "description": "The text of the line it starts on, trimmed.",
+          "type": "string"
+        },
+        "uri": {
+          "description": "The `file:` URI of the file it's written in.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "path",
+        "range",
+        "text"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/page`. A document that isn't a page or a fragment\nof the project gets an empty answer: no `about`, no heading, and empty\nlists.",
+  "properties": {
+    "about": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PageAbout"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "What the page is; `null` when the document isn't a page or a\nfragment."
+    },
+    "heading": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PageHeading"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The heading whose section holds the cursor, the innermost one with an\nid; `null` when the cursor is in none, and the lists are then about\nthe whole file."
+    },
+    "includedBy": {
+      "description": "The `@include`s of the file, or of the heading's section, in the\nsame order.",
+      "items": {
+        "$ref": "#/$defs/PagePlace"
+      },
+      "type": "array"
+    },
+    "linkedFrom": {
+      "description": "The links to the heading, or to the file when there's no heading:\nfrom other files, and, for a heading, from its own page and from a\npage that includes it. File by file in content path order, and in\ndocument order within a file.",
+      "items": {
+        "$ref": "#/$defs/PagePlace"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "about",
+    "heading",
+    "linkedFrom",
+    "includedBy"
+  ],
+  "title": "PageResult",
+  "type": "object"
+}

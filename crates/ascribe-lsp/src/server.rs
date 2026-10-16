@@ -474,6 +474,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            crate::page::METHOD => page_request(shared, &request),
             // A new page is asked for through any of the project's files.
             crate::edit::METHOD => edit_request(shared, &request),
             crate::targets::METHOD => {
@@ -570,6 +571,24 @@ where
     let (uri, compute) = read(params);
     let target = shared.lock().nav_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// `ascribe/page`, as [`answer`] answers it, with the uses the server keeps
+/// for the page.
+fn page_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::page::PageParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (target, cache) = {
+        let core = shared.lock();
+        (
+            core.nav_target(&params.text_document.uri),
+            core.page_uses.clone(),
+        )
+    };
+    let result = target
+        .map(|ctx| crate::page::page(&ctx, &cache, params.position))
+        .unwrap_or_default();
     to_json(request, result)
 }
 

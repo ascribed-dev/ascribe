@@ -108,6 +108,28 @@ impl Project {
         out
     }
 
+    /// Every place that uses the file at `path` or one of the headings
+    /// written in it, with what it uses, in the order of [`Project::uses`]:
+    /// what [`Project::uses`] lists for the file and for each of its
+    /// headings, from one search.
+    pub fn uses_of_file(&self, path: &RelPath) -> Vec<(Usable, Use)> {
+        let mut out = Vec::new();
+        visit(
+            self,
+            Some(&Usable::File(path.clone())),
+            None,
+            &mut |used, place| {
+                let (Usable::File(file) | Usable::Heading { file, .. }) = used else {
+                    return;
+                };
+                if file == path {
+                    out.push((used.clone(), place));
+                }
+            },
+        );
+        out
+    }
+
     /// How many places use each thing that is used at all: for every
     /// `target`, the length of [`Project::uses`].
     pub fn use_counts(&self) -> HashMap<Usable, usize> {
