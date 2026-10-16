@@ -613,6 +613,15 @@
           "scope": "window",
           "markdownDescription": "When to start the language server of each `ascribe.toml` project in the workspace. A project whose server hasn't started shows no problems in the Problems panel. A running server reports pages for the editor's build only (`[editor] build`); `ascribe check` checks every build."
         },
+        "ascribe.projects.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "window",
+          "markdownDescription": "Glob patterns, from each workspace folder, for folders whose `ascribe.toml` isn't a project, such as test fixtures: `tests/**`. A project there gets no language server, and isn't listed. Folders named `node_modules`, and those `files.exclude` hides, are left out too."
+        },
         "ascribe.formatOnSave": {
           "type": "boolean",
           "default": false,

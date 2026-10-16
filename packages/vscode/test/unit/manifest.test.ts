@@ -169,6 +169,7 @@ describe("package.json", () => {
       "ascribe.path",
       "ascribe.preview.scrollEditorWithPreview",
       "ascribe.preview.scrollPreviewWithEditor",
+      "ascribe.projects.exclude",
       "ascribe.review.sourceComments",
       "ascribe.startServers",
       "ascribe.trace.server",
@@ -176,6 +177,7 @@ describe("package.json", () => {
     expect(properties["ascribe.formatOnSave"]?.default).toBe(false);
     expect(properties["ascribe.trace.server"]?.default).toBe("off");
     expect(properties["ascribe.startServers"]?.default).toBe("onDemand");
+    expect(properties["ascribe.projects.exclude"]?.default).toEqual([]);
     expect(properties["ascribe.review.sourceComments"]?.default).toBe("auto");
     expect(properties["ascribe.review.sourceComments"]?.enum).toEqual(["auto", "on", "off"]);
     expect(properties["ascribe.agents.promptTarget"]?.default).toBe("clipboard");

@@ -103,6 +103,7 @@ const available: Record<string, string> = {
   [ACTIONS_ROW]: "ascribe 0.3.0",
   "ascribe.newPage": "ascribe 0.3.1",
   "ascribe.nextPlaceholder": "ascribe 0.3.1",
+  "ascribe.projects.exclude": "next",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */
@@ -150,7 +151,10 @@ function cell(text: string): string {
 function settings(): string {
   let out = `${HEADER}\n| Setting | Default | What it does |\n|---|---|---|\n`;
   for (const [key, setting] of Object.entries(manifest.contributes.configuration.properties)) {
-    const fallback = setting.default === "" ? "empty" : `\`${String(setting.default)}\``;
+    const value: unknown = setting.default;
+    const empty = value === "" || (Array.isArray(value) && value.length === 0);
+    const shown = typeof value === "string" ? value : JSON.stringify(value);
+    const fallback = empty ? "empty" : `\`${shown}\``;
     let what = setting.markdownDescription ?? setting.description ?? "";
     (setting.enum ?? []).forEach((value, i) => {
       const description = setting.enumDescriptions?.[i];

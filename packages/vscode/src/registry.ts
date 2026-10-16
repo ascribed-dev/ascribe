@@ -9,6 +9,7 @@ import {
   nestedProjects,
   ownedElsewhere,
   owningProject,
+  projectExclude,
   projectName,
   samePath,
   within,
@@ -39,7 +40,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private refreshing: Promise<void> = Promise.resolve();
   /** `ascribe.toml` files found beside opened files, for the next refresh to pick up. */
   private unknownConfigs = new Set<string>();
-  /** Those a refresh didn't pick up (under `node_modules`, or past the cap), so they aren't asked for again. */
+  /** Those a refresh didn't pick up (left out by `projectExclude`, or past the cap), so they aren't asked for again. */
   private readonly passedOver = new Set<string>();
   private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
   /** One watcher per workspace folder for changes on disk, by the folder's URI. */
@@ -101,6 +102,13 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
         }
         if (event.affectsConfiguration("ascribe.path")) void this.restartRunning();
         if (event.affectsConfiguration("ascribe.startServers")) void this.startAllIfConfigured();
+        if (
+          event.affectsConfiguration("ascribe.projects.exclude") ||
+          event.affectsConfiguration("files.exclude")
+        ) {
+          this.passedOver.clear();
+          void this.refresh();
+        }
       }),
     );
   }
@@ -208,7 +216,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     // One more than the cap, to know there were more.
     const found = await vscode.workspace.findFiles(
       "**/ascribe.toml",
-      "**/node_modules/**",
+      readProjectExclude(),
       MAX_PROJECTS + 1,
     );
     const all = found.map((uri) => uri.fsPath).sort();
@@ -249,7 +257,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     if (all.length > MAX_PROJECTS && !this.warnedOfCap) {
       this.warnedOfCap = true;
       this.servers[0]?.log(
-        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server.`,
+        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server. To leave out folders whose ascribe.toml isn't a project, such as test fixtures, add them to ascribe.projects.exclude.`,
       );
     }
 
@@ -411,4 +419,15 @@ function workspaceFolderOf(project: Project): WorkspaceFolder | undefined {
 function readStartServers(): StartServers {
   const value = vscode.workspace.getConfiguration("ascribe").get<string>("startServers");
   return value === "all" ? "all" : "onDemand";
+}
+
+/** What the search for projects leaves out: `node_modules`, `files.exclude`, and `ascribe.projects.exclude`. */
+function readProjectExclude(): string {
+  const filesExclude = vscode.workspace
+    .getConfiguration("files")
+    .get<Record<string, unknown>>("exclude");
+  const projectsExclude = vscode.workspace
+    .getConfiguration("ascribe")
+    .get<unknown[]>("projects.exclude");
+  return projectExclude(filesExclude ?? {}, Array.isArray(projectsExclude) ? projectsExclude : []);
 }

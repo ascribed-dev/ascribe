@@ -414,6 +414,7 @@ Settings:
 |---|---|---|
 | `ascribe.path` | `""` | The `ascribe` binary to run, for every project. |
 | `ascribe.startServers` | `"onDemand"` | When to start the language server of each `ascribe.toml` project in the workspace. |
+| `ascribe.projects.exclude` | `[]` | Glob patterns, from each workspace folder, for folders whose `ascribe.toml` isn't a project, such as test fixtures: `tests/**`. |
 | `ascribe.formatOnSave` | `false` | Format Ascribe constructs into canonical form when saving. |
 | `ascribe.agents.promptTarget` | `"clipboard"` | Where **Prompt agent** puts the prompt it builds for your agent. |
 | `ascribe.preview.scrollPreviewWithEditor` | `true` | Scroll the preview to the block at the top of the editor, and to the block the cursor moves to when it's out of view. |
