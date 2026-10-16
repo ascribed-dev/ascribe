@@ -895,6 +895,11 @@ pub(crate) struct ArchiveJson {
     /// How many files of an archive written there before it no longer
     /// has, removed.
     removed: usize,
+    /// The size of the search index, `search-index.js`, in bytes.
+    search_index_bytes: usize,
+    /// Whether the search index is large enough that a reader's first
+    /// search waits for it to load.
+    search_index_large: bool,
     /// Each link written as its text: a link out of the line, or to an
     /// address no page of the line has.
     unlinked: Vec<UnlinkedJson>,
@@ -1033,6 +1038,8 @@ fn run_archive(
             .filter(|f| f.kind == ascribe_emit::FileKind::Asset)
             .count(),
         removed: replaced.removed,
+        search_index_bytes: archive.search_index,
+        search_index_large: archive.search_index > ascribe_emit::archive::LARGE_SEARCH_INDEX,
         unlinked: archive
             .unlinked
             .iter()
@@ -1051,6 +1058,18 @@ fn run_archive(
         Format::Text => write_archive(out, &json, project.root()),
     };
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+/// A size in bytes, as a person reads it: `12 KB`, `3.4 MB`.
+fn size(bytes: usize) -> String {
+    let kilobytes = bytes.div_ceil(1_000).max(1);
+    if kilobytes < 1_000 {
+        format!("{kilobytes} KB")
+    } else {
+        #[allow(clippy::cast_precision_loss)] // A size shown to one decimal.
+        let megabytes = bytes as f64 / 1_000_000.0;
+        format!("{megabytes:.1} MB")
+    }
 }
 
 fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Result<()> {
@@ -1072,6 +1091,15 @@ fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Resul
         a.folder,
         a.contents
     )?;
+    if a.search_index_large {
+        writeln!(
+            out,
+            "Its search index is {}, so a reader's first search waits while it loads.",
+            size(a.search_index_bytes)
+        )?;
+    } else {
+        writeln!(out, "Its search index is {}.", size(a.search_index_bytes))?;
+    }
     if !a.unlinked.is_empty() {
         writeln!(
             out,
@@ -1103,4 +1131,18 @@ fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Resul
     writeln!(out, "Host the folder, then record its address:")?;
     writeln!(out, "  [releases.{target}.archived]")?;
     writeln!(out, "  \"{line}\" = {{ url = \"…\" }}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::size;
+
+    #[test]
+    fn a_size_is_in_kilobytes_rounded_up_then_megabytes() {
+        assert_eq!(size(0), "1 KB");
+        assert_eq!(size(3_501), "4 KB");
+        assert_eq!(size(999_000), "999 KB");
+        assert_eq!(size(999_001), "1.0 MB");
+        assert_eq!(size(8_250_000), "8.2 MB");
+    }
 }
