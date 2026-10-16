@@ -642,3 +642,43 @@ fn the_json_has_the_documented_shape() {
     assert!(change["words"]["now"].is_array());
     assert!(change.get("after").is_none());
 }
+
+#[test]
+fn a_change_to_a_memo_alone_is_no_change() {
+    let memo = "@memo:\nWhy this comes second.\n@end\nSecond paragraph";
+    let with_memo = PAGE.replace("Second paragraph", memo);
+    let a = version(MODEL, &[("install.md", &with_memo)]);
+    for edited in [
+        with_memo.replace(
+            "Why this comes second.",
+            "Why this is second: [the incident](notes/gone.md).\n\nKeep {product} out.",
+        ),
+        PAGE.replace(
+            "Second paragraph",
+            "@memo: Why this comes second.\nSecond paragraph",
+        ),
+        PAGE.to_owned(),
+    ] {
+        let b = version(MODEL, &[("install.md", &edited)]);
+        assert!(diff(&a, &b)[0].pages.is_empty(), "{edited}");
+    }
+}
+
+#[test]
+fn a_memo_added_beside_a_changed_paragraph_lists_the_paragraph_alone() {
+    let a = version(MODEL, &[("install.md", PAGE)]);
+    let b = version(
+        MODEL,
+        &[(
+            "install.md",
+            &PAGE.replace(
+                "Second paragraph with more words.",
+                "@memo: Kept short on purpose.\nSecond paragraph with fewer words.",
+            ),
+        )],
+    );
+    let page = page(&a, &b);
+    let change = only_change(&page);
+    assert_eq!(change.kind, ChangeKind::Changed);
+    assert_eq!(change.now.as_ref().unwrap().source, "install.md:10-10");
+}
