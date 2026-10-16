@@ -1,0 +1,14 @@
+description: >-
+  Line memos stack: each is about the block the last of them touches.
+spec: ["4.10", "3.8"]
+tags: [structure]
+
+outline:
+  - paragraph: Before.
+  - directive: memo
+    primary: First reason.
+    binding: following-block
+  - directive: memo
+    primary: Second reason.
+    binding: following-block
+  - paragraph: The block below.

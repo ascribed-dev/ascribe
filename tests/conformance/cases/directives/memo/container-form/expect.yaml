@@ -1,0 +1,14 @@
+description: >-
+  A container memo holds its lines as text and no block, and below a
+  paragraph it's about the block after its `@end`.
+spec: ["4.10", "3.5", "3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Rotate keys
+  - paragraph: Generate a new key.
+  - directive: memo
+    form: container
+    binding: following-block
+  - paragraph: Restart the agent.

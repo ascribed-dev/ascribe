@@ -113,7 +113,7 @@ fn tops_a_section(blocks: &[Block], i: usize) -> bool {
     blocks[..i]
         .iter()
         .rev()
-        .find(|b| !matches!(&b.kind, BlockKind::Directive(l) if l.binding == Some(Bound::Heading)))
+        .find(|b| b.binding() != Some(Bound::Heading))
         .is_some_and(|b| matches!(b.kind, BlockKind::Heading(_)))
 }
 

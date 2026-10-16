@@ -384,12 +384,20 @@ where
                     }
                 }
                 // ASCRIBE: an Ascribe line stays open only while its text
-                // primary's paragraph does.
-                NodeValue::AscribeLine(..) => {
-                    if self.blank || !container.last_child_is_open() {
-                        break;
+                // primary's paragraph does, and a raw container's opener
+                // until its `@end`.
+                NodeValue::AscribeLine(ref nal) => match nal.raw_container {
+                    Some(indent) => {
+                        if !self.continues_raw_container(line, indent) {
+                            break;
+                        }
                     }
-                }
+                    None => {
+                        if self.blank || !container.last_child_is_open() {
+                            break;
+                        }
+                    }
+                },
                 NodeValue::Table(..) => {
                     if !table::matches(&line[self.first_nonspace..], self.options.extension.spoiler)
                     {
@@ -773,7 +781,8 @@ where
         while !node_matches!(
             container,
             NodeValue::CodeBlock(..) | NodeValue::HtmlBlock(..)
-        ) && !{
+        ) && !ascribe::holds_raw_lines(container) // ASCRIBE: a raw container's lines are text.
+            && !{
             #[cfg(feature = "phoenix_heex")]
             {
                 node_matches!(container, NodeValue::HeexBlock(..))
@@ -1888,6 +1897,8 @@ where
                 | NodeValue::ThematicBreak
                 | NodeValue::Subtext => false,
                 NodeValue::CodeBlock(ref ncb) => !ncb.fenced,
+                // ASCRIBE: a raw container's blank lines are text, as a fence's are.
+                NodeValue::AscribeLine(..) => false,
                 NodeValue::Item(..) => {
                     container.first_child().is_some()
                         || container.data().sourcepos.start.line != self.line_number

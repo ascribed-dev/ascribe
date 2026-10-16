@@ -1,0 +1,8 @@
+description: >-
+  A container memo with nothing after its `@end`, outside the top of a
+  section, is reported at its opening line.
+spec: ["4.10", "3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-no-block, line: 7}

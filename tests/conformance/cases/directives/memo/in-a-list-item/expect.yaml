@@ -1,0 +1,31 @@
+description: >-
+  A container memo in a list item keeps the item's indentation, its `@end` is
+  the one at the opener's indent, and it's about the next block in the item.
+  Its lines, a nested item and a blank line among them, are no block, and
+  the list is tight as it would be without the memo.
+spec: ["4.10", "3.5", "3.9"]
+tags: [structure, resolve]
+
+outline:
+  - list: bullet
+    children:
+      - item:
+          - paragraph: One.
+          - directive: memo
+            form: container
+            binding: following-block
+          - paragraph: Still one.
+      - item:
+          - paragraph: Two.
+builds:
+  site:
+    pages:
+      input.md:
+        outline:
+          - list: bullet
+            children:
+              - item:
+                  - paragraph: One.
+                  - paragraph: Still one.
+              - item:
+                  - paragraph: Two.

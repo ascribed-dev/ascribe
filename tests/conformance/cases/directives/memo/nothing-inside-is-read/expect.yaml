@@ -1,0 +1,25 @@
+description: >-
+  Nothing in a container memo is read: a link to a file that doesn't exist, a
+  word in braces, an `@include`, a `#` line, a nested opener, and a fence that
+  doesn't close. The `@end` after them still closes the memo, no check reports
+  anything, and the build publishes the page as it is without the memo.
+spec: ["4.10", "3.5"]
+tags: [structure, check, page-check, resolve]
+
+outline:
+  - heading: 2
+    text: Rotate a key
+  - directive: memo
+    form: container
+    binding: heading
+  - paragraph: Generate a new key.
+diagnostics: []
+builds:
+  site:
+    pages:
+      input.md:
+        outline:
+          - heading: 2
+            text: Rotate a key
+          - paragraph: Generate a new key.
+    diagnostics: []

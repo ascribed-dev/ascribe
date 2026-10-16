@@ -413,13 +413,14 @@ fn heading_level(block: &ExpandedBlock) -> Option<u8> {
     }
 }
 
-/// Whether the block is a line-form directive that binds the block after it.
+/// Whether the block is a line-form directive, or a container that binds
+/// (`@memo`), that binds the block after it.
 fn binds_following(block: &ExpandedBlock) -> bool {
-    matches!(
-        &block.kind,
-        ExpandedKind::Leaf(Block { kind: BlockKind::Directive(l), .. })
-            if l.binding == Some(Bound::FollowingBlock)
-    )
+    match &block.kind {
+        ExpandedKind::Leaf(b) => b.binding() == Some(Bound::FollowingBlock),
+        ExpandedKind::Container { opener, .. } => opener.binding == Some(Bound::FollowingBlock),
+        _ => false,
+    }
 }
 
 impl Annotator<'_> {

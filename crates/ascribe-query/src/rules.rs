@@ -374,6 +374,10 @@ fn builtin_line(builtin: Builtin) -> String {
                                check's problem in it is intended; write one only when the \
                                user says the problem is intended"
             .to_owned(),
+        Builtin::Memo => "`@memo: <text>` under a heading or above a block, or `@memo:` … \
+                          `@end` around several lines: a note for whoever maintains the page, \
+                          never published"
+            .to_owned(),
     }
 }
 

@@ -2,7 +2,8 @@
 //! (SPEC §3.8, §8.3).
 //!
 //! A following-block directive belongs directly above the block it
-//! annotates, touching it. A blank line between them is allowed but hides
+//! annotates, touching it, and so does a container that binds (`@memo`),
+//! from its end line. A blank line between them is allowed but hides
 //! what the directive annotates, and canonical form removes it. Directives
 //! that stack (SPEC §3.8) are all removed from the blank lines that separate
 //! them from what follows, so a stack ends up touching its block.
@@ -27,8 +28,14 @@ use crate::{Ctx, Owner};
 /// Applies the rule to the directive at `blocks[index]`, if it's a
 /// following-block directive with something after it in the same container.
 pub(crate) fn rule(ctx: &mut Ctx<'_>, blocks: &[Block], index: usize, owner: Owner) {
-    let BlockKind::Directive(line) = &blocks[index].kind else {
-        return;
+    // A container that binds (`@memo`) is measured from its end line.
+    let (line, last) = match &blocks[index].kind {
+        BlockKind::Directive(line) => (line, line.span.end()),
+        BlockKind::Container(container) => match &container.end {
+            Some(end) => (&container.opener, end.span.end()),
+            None => return,
+        },
+        _ => return,
     };
     // A blank line between two blocks of a list item is what makes its list
     // loose, and closing the gap could make the list tight, which changes how
@@ -46,13 +53,13 @@ pub(crate) fn rule(ctx: &mut Ctx<'_>, blocks: &[Block], index: usize, owner: Own
     let Some(next) = blocks.get(index + 1) else {
         return;
     };
-    let head = Span::new(blocks[index].span.start(), line.span.end());
+    let head = Span::new(blocks[index].span.start(), last);
     if ctx.has_error(head) {
         return;
     }
     // The lines strictly between the directive's last line and the line the
     // next block starts on.
-    let from = ctx.next_line(line.span.end());
+    let from = ctx.next_line(last);
     let to = ctx.line_start(next.span.start());
     if from >= to {
         return;

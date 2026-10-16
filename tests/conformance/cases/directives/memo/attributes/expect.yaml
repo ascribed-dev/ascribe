@@ -1,0 +1,8 @@
+description: >-
+  A memo takes no attributes, in either form.
+spec: ["4.10", "3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, line: 5}
+  - {slug: attribute-unknown-key, line: 8}

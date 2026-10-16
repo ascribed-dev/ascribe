@@ -19,7 +19,7 @@ This page describes the language as you write it. The [Ascribe specification]({r
 - [Titles](directives.md#titles)
 - [Binding: what a directive applies to](directives.md#binding-what-a-directive-applies-to)
 - [Lists and block quotes](directives.md#lists-and-block-quotes)
-- [Built-in directives](directives.md#built-in-directives): [`@id`](directives.md#id), [`@include`](directives.md#include), [`@variant`](directives.md#variant), [`@available`](directives.md#available), [`@note`](directives.md#note), [`@steps`](directives.md#steps), [`@details`](directives.md#details), [`@snippet`](directives.md#snippet), [`@intended`](directives.md#intended)
+- [Built-in directives](directives.md#built-in-directives): [`@id`](directives.md#id), [`@include`](directives.md#include), [`@variant`](directives.md#variant), [`@available`](directives.md#available), [`@note`](directives.md#note), [`@steps`](directives.md#steps), [`@details`](directives.md#details), [`@snippet`](directives.md#snippet), [`@intended`](directives.md#intended), [`@memo`](directives.md#memo)
 - [Project widgets](directives.md#project-widgets)
 - [Phrases](directives.md#phrases)
 - [Links](directives.md#links)
@@ -227,6 +227,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 | [`@details`](directives.md#details) | line, container | none | Collapsible content |
 | [`@snippet`](directives.md#snippet) | line | an address | A code example from a file |
 | [`@intended`](directives.md#intended) | line | a reason | Say a check's problem is intended |
+| [`@memo`](directives.md#memo) {available=next} | line, container | text | Keep a note for whoever maintains the page, never published |
 
 ### `@id`
 
@@ -534,6 +535,31 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 An acknowledged problem isn't reported, but `ascribe check` and `ascribe build` count it in their summary (`1 acknowledged`), and list it, with its reason, in their [JSON report](../command/index.md). When an acknowledgement covers nothing in any build, because the problem was fixed or the check changed, `ascribe check` reports it as advice, `intended-unused`, with a fix that removes it. That's reported only when every build is checked: not with `--build` or `--editor-build`, and not in the editor.
 
 In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason. Its placeholder reason is reported as an error until you replace it, so the fix alone silences nothing.
+
+### `@memo`
+@available: next
+
+([SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo))
+
+Keeps a note for the people and agents who maintain the page: why a section comes first, why a table is laid out the way it is, why a caveat is there. A memo sits beside what it's about, and is never published.
+
+```markdown
+## Rotate a key
+@memo:
+Rotation comes before revocation: support found that people who revoke
+first lock out their own agents. See [the incident](notes/2026-08.md).
+@end
+
+Generate a new key, then restart the agent.
+
+@memo: Kept to one sentence; the support macro quotes it.
+Revoke the old key once every agent uses the new one.
+```
+
+- **What it's about** is decided as for `@available`: at the top of a section, the section; anywhere else, the block it touches. A container memo touches the block that starts on the line after its `@end`. Several memos stack, in either form, and `ascribe fmt` removes a blank line between a memo and its block.
+- **A line memo** is the rest of its line, and needs some text. **A container memo** is every line up to a line that's only `@end` at the memo's own indent, as written. It takes no attributes.
+- **Nothing reads a memo.** A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
+- **It changes no output.** No build, preview, or report shows a memo, wherever it is, a fragment included, and a change to a memo alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
 
 ## Project widgets
 

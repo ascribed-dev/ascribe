@@ -72,6 +72,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 | `@details` | SPEC §4.7 |
 | `@snippet` | SPEC §4.8 |
 | `@intended` | SPEC §4.9 |
+| `@memo` | SPEC §4.10 |
 
 ## `ascribe.toml`
 

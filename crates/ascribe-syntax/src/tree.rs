@@ -147,6 +147,19 @@ pub struct Block {
     pub kind: BlockKind,
 }
 
+impl Block {
+    /// What the block binds (SPEC §3.8), when it's a line-form directive with
+    /// a binding, or a container whose directive binds as its line form does
+    /// (`@memo`). `None` for every other block.
+    pub fn binding(&self) -> Option<Bound> {
+        match &self.kind {
+            BlockKind::Directive(line) => line.binding,
+            BlockKind::Container(container) => container.opener.binding,
+            _ => None,
+        }
+    }
+}
+
 /// The kinds of block.
 #[derive(Clone, Debug, PartialEq)]
 pub enum BlockKind {
@@ -365,8 +378,10 @@ pub struct DirectiveLine {
     /// line's own `span` still starts at the `@`.
     pub title: Option<TitleLine>,
     /// What a line-form directive applies to (SPEC §3.8). **Set by the
-    /// structure pass**; `None` on a container opener (and on a directive
-    /// whose schema has no binding).
+    /// structure pass**; `None` on a directive whose schema has no binding,
+    /// and on a container opener, except one whose container binds
+    /// (`@memo`, [`ascribe_core::DirectiveSchema::container_binds`]), which is
+    /// about what follows its end line.
     pub binding: Option<Bound>,
 }
 
@@ -473,7 +488,7 @@ pub struct EndLine {
 ///
 /// The span of its [`Block`] runs from the opener's title line (or the
 /// opener) through the end line, or, when it's unclosed, through its last
-/// block.
+/// block, or its last raw line.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Container {
     /// The opener: a directive line that opens a container, and whose title
@@ -481,10 +496,18 @@ pub struct Container {
     /// for a container-only directive written without its colon, which is
     /// still an opener and is reported (SPEC §3.5).
     pub opener: DirectiveLine,
-    /// The blocks between the opener and the end line.
+    /// The blocks between the opener and the end line. A raw container has
+    /// none.
     pub children: Vec<Block>,
     /// The end line that closes it; `None` when the container is unclosed.
     pub end: Option<EndLine>,
+    /// A raw container's lines (SPEC §3.5), which are text and no block:
+    /// from the start of the line after the opener through the end of the
+    /// line before the end line, without its line ending, or through the
+    /// last line that isn't empty when the container is unclosed. Empty, at
+    /// the start of the line after the opener, when there are none. `None`
+    /// for a container that isn't raw. [`raw_container_text`] reads them.
+    pub raw: Option<Span>,
 }
 
 /// A group of arms (SPEC §3.6): a run of openers of one groupable directive,
@@ -677,6 +700,48 @@ pub fn raw_text(source: &str, span: Span) -> String {
     out
 }
 
+/// The text of a raw container (SPEC §3.5), such as a `@memo`'s: its lines
+/// as written, each without the prefix the opener's line has (the list
+/// indentation and blockquote markers its container gives it), joined with
+/// `\n`. `None` for a container that isn't raw.
+///
+/// A line keeps whatever it has past that prefix, so indentation within the
+/// text stays.
+pub fn raw_container_text(source: &str, container: &Container) -> Option<String> {
+    let raw = container.raw?;
+    let at = container.opener.span.start();
+    let line_start = source
+        .get(..at)
+        .and_then(|before| before.rfind(['\n', '\r']))
+        .map_or(0, |i| i + 1);
+    let prefix = source.get(line_start..at).unwrap_or("");
+    let text = source.get(raw.range()).unwrap_or("");
+    if raw.is_empty() {
+        return Some(String::new());
+    }
+    let lines: Vec<&str> = split_lines(text)
+        .map(|line| strip_matching_prefix(line, prefix))
+        .collect();
+    Some(lines.join("\n"))
+}
+
+/// `line` without what matches `prefix`, character by character: each `>`
+/// in the prefix takes the line's next `>` and the spaces before it, and each
+/// space or tab the line's next one, if it has one there.
+fn strip_matching_prefix<'s>(line: &'s str, prefix: &str) -> &'s str {
+    let mut rest = line;
+    for c in prefix.chars() {
+        rest = match c {
+            '>' => {
+                let after = rest.trim_start_matches([' ', '\t']);
+                after.strip_prefix('>').unwrap_or(rest)
+            }
+            c => rest.strip_prefix(c).unwrap_or(rest),
+        };
+    }
+    rest
+}
+
 /// Strips container indentation and blockquote markers from the start of a
 /// continuation line.
 pub(crate) fn strip_prefix(line: &str) -> &str {
@@ -720,6 +785,16 @@ mod tests {
         assert_eq!(raw_text(source, Span::new(2, source.len())), "a\nb\nc");
         assert_eq!(raw_text("x\r\n  y\rz", Span::new(0, 8)), "x\ny\nz");
         assert_eq!(raw_text("abc", Span::new(1, 2)), "b");
+    }
+
+    #[test]
+    fn strips_the_openers_prefix_from_raw_lines() {
+        assert_eq!(strip_matching_prefix("  - x", "  "), "- x");
+        assert_eq!(strip_matching_prefix("    x", "  "), "  x");
+        assert_eq!(strip_matching_prefix("x", "  "), "x");
+        assert_eq!(strip_matching_prefix("> > x", "> > "), "x");
+        assert_eq!(strip_matching_prefix(">>  x", "> > "), " x");
+        assert_eq!(strip_matching_prefix(">", "> "), "");
     }
 
     #[test]

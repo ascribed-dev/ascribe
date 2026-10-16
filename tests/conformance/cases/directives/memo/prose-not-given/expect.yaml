@@ -1,0 +1,7 @@
+description: >-
+  Vale is given none of a memo's text, in either form.
+spec: ["4.10"]
+tags: [prose]
+
+diagnostics:
+  - {slug: prose, file: input.md, line: 9, column: 6, severity: advice}

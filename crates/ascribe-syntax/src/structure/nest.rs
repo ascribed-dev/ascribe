@@ -20,6 +20,8 @@ pub(super) struct Frame {
     children: Vec<Block>,
     /// The arms already finished. `Some` exactly when the frame is a group.
     arms: Option<Vec<Arm>>,
+    /// A raw container's lines (SPEC §3.5); see [`Container::raw`].
+    raw: Option<Span>,
 }
 
 /// Adds a block to the innermost open container, or to the scope.
@@ -114,12 +116,44 @@ impl Pass<'_> {
             .with_arg("depth", self.open.len().to_string());
             self.report(issue);
         }
+        // The block parser kept a raw container's lines in the opener's
+        // block, which runs through the last of them.
+        let raw = (schema.raw_container() && line.form == Form::Container).then(|| {
+            let from = self.after_line(line.span.end());
+            Span::new(from, span.end().max(from))
+        });
         frames.push(Frame {
             opener: line,
             start,
             children: Vec::new(),
             arms: schema.groupable.then(Vec::new),
+            raw,
         });
+    }
+
+    /// The offset of the end of the line before the one `offset` is on,
+    /// without its line ending; the start of the source on the first line.
+    fn before_line(&self, offset: usize) -> usize {
+        let before = self.source.get(..offset).unwrap_or("");
+        let Some(i) = before.rfind(['\n', '\r']) else {
+            return 0;
+        };
+        if before[..=i].ends_with("\r\n") {
+            i - 1
+        } else {
+            i
+        }
+    }
+
+    /// The offset of the start of the line after the one `offset` is on, or
+    /// the end of the source.
+    fn after_line(&self, offset: usize) -> usize {
+        let rest = self.source.get(offset..).unwrap_or("");
+        match rest.find(['\n', '\r']) {
+            Some(i) if rest[i..].starts_with("\r\n") => offset + i + 2,
+            Some(i) => offset + i + 1,
+            None => self.source.len(),
+        }
     }
 
     /// A groupable opener begins the next arm of the open group at `frames[k]`,
@@ -234,12 +268,25 @@ impl Pass<'_> {
             start,
             children,
             arms,
+            raw,
         } = frame;
         let end_span = end.as_ref().map(|e| e.span.end());
+        // A closed raw container's lines run to the end line, blank ones
+        // included.
+        let raw = match (raw, &end) {
+            (Some(raw), Some(end)) => {
+                let to = self.before_line(end.span.start());
+                Some(Span::new(raw.start(), to.max(raw.start())))
+            }
+            (raw, _) => raw,
+        };
         let Some(mut arms) = arms else {
             let mut children = children;
             self.finish_children(&mut children, Scope::Container);
-            let last = children.last().map_or(0, |b| b.span.end());
+            let last = children
+                .last()
+                .map_or(0, |b| b.span.end())
+                .max(raw.map_or(0, Span::end));
             let to = end_span.unwrap_or_else(|| last.max(opener.span.end()));
             return Block {
                 span: Span::new(start, to),
@@ -247,6 +294,7 @@ impl Pass<'_> {
                     opener,
                     children,
                     end,
+                    raw,
                 }),
             };
         };

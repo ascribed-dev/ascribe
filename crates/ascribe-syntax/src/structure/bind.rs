@@ -36,27 +36,37 @@ impl Pass<'_> {
     pub(super) fn bind(&mut self, children: &mut [Block], scope: Scope) {
         let mut classes: Vec<Class> = Vec::with_capacity(children.len());
         for (i, block) in children.iter().enumerate() {
-            let class = match &block.kind {
-                BlockKind::Directive(line) => {
+            let class = match self.binding_line(block) {
+                Some(line) => {
                     // SPEC §3.8, SPEC §3.8: a section starts at a heading in this
                     // same list of blocks. Before the first one there is no
                     // section, so nothing is at the top of one.
                     let top = i > 0
                         && match &children[i - 1].kind {
                             BlockKind::Heading(_) => true,
-                            BlockKind::Directive(_) => classes[i - 1] == Class::Heading,
+                            BlockKind::Directive(_) | BlockKind::Container(_) => {
+                                classes[i - 1] == Class::Heading
+                            }
                             _ => false,
                         };
-                    self.classify(line, top)
+                    // SPEC §3.5: an unclosed container runs to the end of
+                    // its own, which is what's reported.
+                    let unclosed =
+                        matches!(&block.kind, BlockKind::Container(c) if c.end.is_none());
+                    if unclosed {
+                        Class::Unreadable
+                    } else {
+                        self.classify(line, top)
+                    }
                 }
-                _ => Class::Other,
+                None => Class::Other,
             };
             classes.push(class);
         }
 
         let mut bound: Vec<Option<Bound>> = vec![None; children.len()];
         for i in 0..children.len() {
-            let BlockKind::Directive(line) = &children[i].kind else {
+            let Some(line) = self.binding_line(&children[i]) else {
                 continue;
             };
             bound[i] = match classes[i] {
@@ -77,9 +87,31 @@ impl Pass<'_> {
             };
         }
         for (block, bound) in children.iter_mut().zip(bound) {
-            if let BlockKind::Directive(line) = &mut block.kind {
-                line.binding = bound;
+            match &mut block.kind {
+                BlockKind::Directive(line) => line.binding = bound,
+                BlockKind::Container(container) if bound.is_some() => {
+                    container.opener.binding = bound;
+                }
+                _ => {}
             }
+        }
+    }
+
+    /// The directive line a block binds by: a line-form directive's own, or
+    /// the opener of a container whose directive binds as its line form
+    /// does (SPEC §3.8, `@memo`).
+    fn binding_line<'b>(&self, block: &'b Block) -> Option<&'b DirectiveLine> {
+        match &block.kind {
+            BlockKind::Directive(line) => Some(line),
+            BlockKind::Container(container)
+                if self
+                    .options
+                    .schema(&container.opener.name)
+                    .is_some_and(|s| s.container_binds()) =>
+            {
+                Some(&container.opener)
+            }
+            _ => None,
         }
     }
 
@@ -115,7 +147,7 @@ impl Pass<'_> {
         i: usize,
         scope: Scope,
     ) -> Bound {
-        let BlockKind::Directive(line) = &children[i].kind else {
+        let Some(line) = self.binding_line(&children[i]) else {
             return Bound::Unbound;
         };
         let at = self.location(line.name_span);
@@ -209,36 +241,29 @@ fn describe(kind: &BlockKind) -> &'static str {
 }
 
 /// The index of the heading a heading-bound directive binds, in the same
-/// list of blocks (`blocks[index]` is the directive).
+/// list of blocks (`blocks[index]` is the directive, or a container that
+/// binds).
 ///
-/// Returns `None` when `blocks[index]` isn't a directive bound to a heading.
+/// Returns `None` when `blocks[index]` isn't bound to a heading.
 pub fn bound_heading(blocks: &[Block], index: usize) -> Option<usize> {
-    let BlockKind::Directive(line) = &blocks.get(index)?.kind else {
-        return None;
-    };
-    if line.binding != Some(Bound::Heading) {
+    if blocks.get(index)?.binding() != Some(Bound::Heading) {
         return None;
     }
     // Only heading-bound directives stand between it and its heading.
     (0..index)
         .rev()
-        .find(|&k| !matches!(&blocks[k].kind, BlockKind::Directive(l) if l.binding == Some(Bound::Heading)))
+        .find(|&k| blocks[k].binding() != Some(Bound::Heading))
         .filter(|&k| matches!(blocks[k].kind, BlockKind::Heading(_)))
 }
 
 /// The index of the block a following-block directive binds, in the same list
-/// of blocks (`blocks[index]` is the directive). Directives that stack all
-/// bind the same block.
+/// of blocks (`blocks[index]` is the directive, or a container that binds).
+/// Directives that stack all bind the same block.
 ///
-/// Returns `None` when `blocks[index]` isn't a directive bound to a block.
+/// Returns `None` when `blocks[index]` isn't bound to a block.
 pub fn bound_block(blocks: &[Block], index: usize) -> Option<usize> {
-    let BlockKind::Directive(line) = &blocks.get(index)?.kind else {
-        return None;
-    };
-    if line.binding != Some(Bound::FollowingBlock) {
+    if blocks.get(index)?.binding() != Some(Bound::FollowingBlock) {
         return None;
     }
-    (index + 1..blocks.len()).find(|&k| {
-        !matches!(&blocks[k].kind, BlockKind::Directive(l) if l.binding == Some(Bound::FollowingBlock))
-    })
+    (index + 1..blocks.len()).find(|&k| blocks[k].binding() != Some(Bound::FollowingBlock))
 }

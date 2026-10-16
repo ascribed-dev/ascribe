@@ -7,7 +7,7 @@
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-use comrak_ascribe::ascribe::AscribeOptions;
+use comrak_ascribe::ascribe::{AscribeKeyword, AscribeOptions};
 use comrak_ascribe::nodes::{Node, NodeValue};
 use comrak_ascribe::{Arena, Options, format_commonmark, markdown_to_html, parse_document};
 
@@ -15,7 +15,7 @@ use comrak_ascribe::{Arena, Options, format_commonmark, markdown_to_html, parse_
 /// built-ins, only `@note` takes a text primary. In real use the content
 /// model supplies this set.
 fn keywords() -> AscribeOptions {
-    AscribeOptions::new()
+    let mut keywords = AscribeOptions::new()
         .keyword("id", false)
         .keyword("include", false)
         .keyword("variant", false)
@@ -24,7 +24,16 @@ fn keywords() -> AscribeOptions {
         .keyword("steps", false)
         .keyword("details", false)
         .keyword("end", false)
-        .keyword("quill-demo", true)
+        .keyword("quill-demo", true);
+    // `@memo`'s container is raw (SPEC §3.5).
+    keywords.insert_keyword(
+        "memo",
+        AscribeKeyword {
+            text_primary: false,
+            raw: true,
+        },
+    );
+    keywords
 }
 
 fn options() -> Options<'static> {
@@ -566,6 +575,121 @@ document
   ascribe_line "@end"
 "#,
     );
+}
+
+// ---------------------------------------------------------------------------
+// Raw containers
+// ---------------------------------------------------------------------------
+
+#[test]
+fn a_raw_container_keeps_its_lines_as_text() {
+    // A link, a phrase, a heading, a nested opener, a directive, and an
+    // unclosed fence: none of them is a block, and the `@end` after them
+    // still closes the memo.
+    assert_outline(
+        "Before.\n@memo:\n# Not a heading\n\n@note:\n[a](b.md) {product}\n```\n@end\nAfter.\n",
+        r#"
+document
+  paragraph
+    text "Before."
+  ascribe_line "@memo:"
+  ascribe_line "@end"
+  paragraph
+    text "After."
+"#,
+    );
+}
+
+#[test]
+fn only_end_at_the_openers_indent_closes_a_raw_container() {
+    assert_outline(
+        "@memo:\n  @end\n@end x\n@end\n",
+        r#"
+document
+  ascribe_line "@memo:"
+  ascribe_line "@end"
+"#,
+    );
+    assert_outline(
+        "  @memo:\n@end\n  @end  \n",
+        r#"
+document
+  ascribe_line "@memo:"
+  ascribe_line "@end  "
+"#,
+    );
+    // Without its `@end`, it runs to the end of its container.
+    assert_outline(
+        "> @memo:\n> # x\n\ny\n",
+        r#"
+document
+  block_quote
+    ascribe_line "@memo:"
+  paragraph
+    text "y"
+"#,
+    );
+}
+
+#[test]
+fn a_raw_container_lives_inside_its_containers() {
+    assert_outline(
+        "- a\n  @memo:\n  - b\n\n  c\n  @end\n- d\n",
+        r#"
+document
+  list tight=true
+    item
+      paragraph
+        text "a"
+      ascribe_line "@memo:"
+      ascribe_line "@end"
+    item
+      paragraph
+        text "d"
+"#,
+    );
+    assert_outline(
+        "> @memo:\n> text\n> @end\n",
+        r#"
+document
+  block_quote
+    ascribe_line "@memo:"
+    ascribe_line "@end"
+"#,
+    );
+}
+
+#[test]
+fn only_an_opener_is_raw() {
+    assert_outline(
+        "@memo: [a](b.md)\nText.\n",
+        r#"
+document
+  ascribe_line "@memo: [a](b.md)"
+  paragraph
+    text "Text."
+"#,
+    );
+}
+
+#[test]
+fn a_raw_containers_sourcepos_runs_to_its_last_line() {
+    let arena = Arena::new();
+    let md = "- item\n  @memo:\n  one\n\n  two\n  @end\n";
+    let root = parse_document(&arena, md, &options());
+    let lines = ascribe_lines(root);
+    assert_eq!(lines.len(), 2);
+    let NodeValue::AscribeLine(ref memo) = lines[0].data().value else {
+        unreachable!()
+    };
+    assert_eq!(memo.raw, "@memo:");
+    assert_eq!(memo.raw_container, Some(0));
+    assert_eq!(lines[0].data().sourcepos.to_string(), "2:3-5:5");
+    assert_eq!(lines[1].data().sourcepos.to_string(), "6:3-6:6");
+
+    let empty = parse_document(&arena, "@memo:\n@end\n", &options());
+    let lines = ascribe_lines(empty);
+    assert_eq!(lines[0].data().sourcepos.to_string(), "1:1-1:6");
 }
 
 // ---------------------------------------------------------------------------

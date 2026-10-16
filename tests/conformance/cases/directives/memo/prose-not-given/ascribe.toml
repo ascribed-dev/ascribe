@@ -1,0 +1,5 @@
+spec = "0.1"
+
+[checks.vale]
+preset = "quiet"
+in-check = true
