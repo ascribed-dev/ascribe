@@ -153,6 +153,14 @@ A site that isn't built with Astro has all a banner and a list of versions need 
 | A page's other lines | `pages.<path>.lines`, following `replaces` and `replaced-by` |
 | The lines that have left | the `lines[]` whose `status` is `archived`, and their `url` |
 
+## In the editor, in review, and in the tools
+
+The lines show wherever a build does, and a page that's the same in every line shows once:
+
+- **The editor.** Switch build lists a versioned build's lines under it, the current line first, and the build lens and the preview follow the line you choose: in 3.4, a page new in 3.5 is dimmed whole, and the preview is at the line's address, `/3.4/install/`. The editor checks every line of its build, and a problem only some lines have says which, such as "(only in build `site@3.4`)". A hover on a mark's version says which line it falls in, and a hover on `replaces` says which page each line publishes. [The editor](../editor/index.md) has the rest.
+- **Review.** `ascribe diff` lists a changed page once with the lines it changed in: "in every line" for a page the lines share, "only in 3.4" for a change inside a section only 3.4 has. The HTML report lists the page once too, and switches between the lines it changed in. [Diff](../review/diff.md) has the details.
+- **The tools.** `ascribe render install.md --build site@3.4` renders the page as that line publishes it, at its address under `/3.4/`, and so does `ascribe_render`. `ascribe model` has a `releases` section: each target's lines, with their status and the build that is each.
+
 ## Publish with Astro
 
 [`@ascribed/astro`](../astro/index.md) serves every line from one site, with no change to `astro.config.mjs` or `src/content.config.ts`. The collection has every line's pages: the current line's with their usual ids, and an older line's with the line in front, `3.4/install`, so the route `[...slug].astro` gives each is where Ascribe's links point. Each entry's data has `line` and `current`.

@@ -62,6 +62,29 @@
       ],
       "type": "object"
     },
+    "BuildLineEntry": {
+      "description": "A live line of a versioned build.",
+      "properties": {
+        "current": {
+          "description": "Whether it's the current line.",
+          "type": "boolean"
+        },
+        "line": {
+          "description": "The line, as `[releases.<target>] live` writes it.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The build that is the line: the versioned build's own name for the\ncurrent line, `<build>@<line>` for another.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "line",
+        "current"
+      ],
+      "type": "object"
+    },
     "Change": {
       "description": "One block's change.",
       "properties": {
@@ -342,6 +365,13 @@
         "editor": {
           "description": "Whether it is the editor's build (`[editor] build`): the picker's\ndefault.",
           "type": "boolean"
+        },
+        "lines": {
+          "description": "For a versioned build, its live lines, the current one first, each\na build the preview can render. Absent for a build that isn't\nversioned.",
+          "items": {
+            "$ref": "#/$defs/BuildLineEntry"
+          },
+          "type": "array"
         },
         "name": {
           "description": "The build's name.",

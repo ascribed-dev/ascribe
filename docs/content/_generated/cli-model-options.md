@@ -8,6 +8,7 @@
   - `features`: Features, with their availability.
   - `glossary`: Glossary terms.
   - `widgets`: Project widgets, with their attributes.
+  - `releases`: Release lines, each target's with its status and the builds that are it.
   - `builds`: Builds, with their variant and availability modes.
   - `sources`: Sources, with their folders and the files they make readable.
 - `--format <FORMAT>`: How to show the answer.

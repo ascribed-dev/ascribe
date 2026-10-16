@@ -19,6 +19,16 @@ The text output lists each build's changed pages with counts, and where a change
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
+@available: next
+The [lines](../versions/index.md) of a versioned build are listed together, under the build's name, and a page they share once, with the lines it changed in:
+
+@available: next
+```text
+site: 2 pages changed
+  install.md: 1 changed, in every line
+  upgrade.md: 1 changed, only in 3.4
+```
+
 @available: ascribe 0.3.0
 Name a page to see its changes: every changed block, as it was (`-`) and as it is (`+`), with where it's written. In changed prose, the words removed are marked `[-like this-]` and the words added `{+like this+}`, as `git diff --word-diff` marks them; a block that isn't prose, such as a code block, shows its lines on both sides, and a moved block shows its lines once. A build the page didn't change in says so. Name a fragment, or another file pages take text from, to see the pages that changed through it. `--format json` and `--format html` are narrowed the same way, with the same shape and fewer pages, and `--exit-code` exits with `1` only when what's shown changed. A PAGE that isn't a file of the project, at the base or now, is a usage error.
 
@@ -55,6 +65,9 @@ It lists the changed pages of each build, with counts, and marks a page that cha
 - a **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it;
 - a **moved** block has a double bar and the label Moved, with a link to a stub at its old place, and back.
 
+@available: next
+The lines of a versioned build are one build in the list: a changed page is listed once, with "in every line" or the lines it changed in, and a **Line** switch shows it as each line publishes it.
+
 A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes ("2 changes").
 
 **Show: Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. The arrows step through the changes ("3 of 10 on this page"), and after the last one offer the next changed page. Hovering over a block shows the source file and line it came from (`guides/install.md:12`). The colors work in light and dark, and every mark has a label as well as a color.
@@ -83,7 +96,10 @@ The prompt asks for a report, not edits: a review reads the change, and its auth
 | `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
 | `working_tree_errors` | number | How many errors `ascribe check` finds in the working tree for the builds compared (with the same `--build` options). The comparison runs either way. |
 | `blocks_omitted` | boolean | Only with `--pages-only`, and then `true`: each page's `changes` is empty, and its `counts` still count them. |
-| `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order |
+| `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order. |
+
+@available: next
+Each line of a versioned build is an entry of its own in `builds`, such as `site@3.4`, its pages' routes under the line's folder.
 
 Each page:
 

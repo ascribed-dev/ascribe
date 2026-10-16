@@ -326,20 +326,42 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
         }
         pages.extend(snapshot.including_pages(path));
     }
+    // A versioned build is checked in every line, the editor's line first,
+    // and a problem that isn't in every line says which it's in.
+    let mut lines: Vec<&ascribe_model::Build> = vec![&build];
+    if build.line.is_some() {
+        lines.extend(job.model.builds.iter().filter(|b| {
+            b.line.is_some() && b.declared_name() == build.declared_name() && b.name != build.name
+        }));
+    }
     let router = DefaultRouter::from_consumer(&job.model.consumer);
-    let resolved: Vec<Arc<ResolvedPage>> = {
+    let resolved: Vec<Vec<Arc<ResolvedPage>>> = {
         let mut cache = job.cache.lock().unwrap_or_else(PoisonError::into_inner);
         for affected in &job.affected {
             cache.apply(affected);
         }
-        pages
+        lines
             .iter()
-            .filter_map(|path| cache.resolve_page(snapshot.project(), path, &build, &router))
+            .map(|line| {
+                pages
+                    .iter()
+                    .filter_map(|path| cache.resolve_page(snapshot.project(), path, line, &router))
+                    .collect()
+            })
             .collect()
     };
-    let refs: Vec<&ResolvedPage> = resolved.iter().map(|p| &**p).collect();
+    let per_line: Vec<(&ascribe_model::Build, Vec<&ResolvedPage>)> = lines
+        .iter()
+        .zip(&resolved)
+        .map(|(line, pages)| (*line, pages.iter().map(|p| &**p).collect()))
+        .collect();
     let checker = PageChecker::with_index(&project, snapshot.project());
-    for d in checker.check_resolved(&build, &refs) {
+    for mut d in checker.check_resolved_builds(&per_line) {
+        if lines.len() > 1
+            && let Some(note) = d.builds_note_in(&lines)
+        {
+            d.message = format!("{} ({note})", d.message);
+        }
         if let Some(list) = by_file.get_mut(&d.location.file) {
             list.push(d);
         }

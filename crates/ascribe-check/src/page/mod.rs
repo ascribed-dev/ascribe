@@ -194,6 +194,26 @@ impl<'p> PageChecker<'p> {
         self.finish(vec![(Some(build.name.as_str()), found)])
     }
 
+    /// [`PageChecker::check_resolved`] for several builds, each with its own
+    /// resolved pages: each distinct problem once, naming the builds it
+    /// appears in, as [`PageChecker::check_builds`] names them.
+    pub fn check_resolved_builds(
+        &self,
+        builds: &[(&Build, Vec<&ResolvedPage>)],
+    ) -> Vec<Diagnostic> {
+        let per_build = builds
+            .iter()
+            .map(|(build, pages)| {
+                let found = pages
+                    .iter()
+                    .flat_map(|page| self.page(build, page))
+                    .collect();
+                (Some(build.name.as_str()), found)
+            })
+            .collect();
+        self.finish(per_build)
+    }
+
     /// The page-level diagnostics of `build` for these pages alone, each
     /// resolved from the checker's index: what [`PageChecker::check`]
     /// reports for them, apart from the content checks that need every page

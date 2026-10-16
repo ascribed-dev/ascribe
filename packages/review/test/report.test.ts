@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   changedPages,
   errorsNotice,
+  linesNote,
+  listBuilds,
   pageFragment,
   start,
   type BuildData,
@@ -258,5 +260,59 @@ describe("the report", () => {
     expect(
       changedPages([d.builds[0] as BuildData, { build: "cloud", pages: [page("guide.md")] }]),
     ).toBe("2 changed pages in 2 builds");
+  });
+
+  it("lists a changed page of a versioned build once, with the lines it changed in", () => {
+    const line = (line: string, current: boolean) => ({ build: "site", line, current });
+    const builds: BuildData[] = [
+      {
+        build: "site",
+        line: line("3.5", true),
+        pages: [page("keys.md"), page("quickstart.md")],
+      },
+      {
+        build: "site@3.4",
+        line: line("3.4", false),
+        pages: [page("quickstart.md", { route: "/3.4/quickstart/" })],
+      },
+      { build: "cloud", pages: [page("quickstart.md")] },
+    ];
+    const listed = listBuilds(builds);
+    expect(listed.map((b) => [b.build, b.pages.map((p) => p.path)])).toEqual([
+      ["site", ["keys.md", "quickstart.md"]],
+      ["cloud", ["quickstart.md"]],
+    ]);
+    const [site, cloud] = listed;
+    const shared = cloud?.pages[0];
+    if (!site || !cloud || !shared) throw new Error("both builds changed");
+    expect(site.pages.map((p) => linesNote(site, p))).toEqual(["only in 3.5", "in every line"]);
+    expect(linesNote(cloud, shared)).toBe("");
+    expect(changedPages(listed)).toBe("2 changed pages in 2 builds");
+  });
+
+  it("switches a page between the lines it changed in", () => {
+    const d = data();
+    const line = (line: string, current: boolean) => ({ build: "site", line, current });
+    d.builds = [
+      { build: "site", line: line("3.5", true), pages: [page("guide.md")] },
+      {
+        build: "site@3.4",
+        line: line("3.4", false),
+        pages: [page("guide.md", { route: "/3.4/guide/" })],
+      },
+    ];
+    d.limit = { pages: 300, omitted: 0 };
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, d);
+    expect(root.querySelector(".r-page-lines")?.textContent).toBe("in every line");
+    const lines = Array.from(root.querySelectorAll<HTMLButtonElement>(".r-lines button"));
+    expect(lines.map((b) => b.textContent)).toEqual(["3.5 (current)", "3.4"]);
+    expect(root.querySelector(".r-row:not(.r-lines) .r-grow")?.textContent).toContain("/guide/");
+    lines[1]?.click();
+    expect(root.querySelector(".r-row:not(.r-lines) .r-grow")?.textContent).toContain(
+      "/3.4/guide/",
+    );
+    expect(decodeURIComponent(location.hash)).toBe("#site@3.4/guide.md");
   });
 });

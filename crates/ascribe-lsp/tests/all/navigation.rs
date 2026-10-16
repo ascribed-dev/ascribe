@@ -659,9 +659,10 @@ fn hovering_availability_shows_it_in_words() {
         &page,
         at(&text, "@available: cloud, self-managed preview 3.4", 20),
     );
+    // The version's line, since the target has `[releases]`.
     assert_eq!(
         value,
-        "Available: Quill Cloud (GA); self-managed (preview, 3.4+)"
+        "Available: Quill Cloud (GA); self-managed (preview, 3.4+)\n\n- `self-managed 3.4`: in line 3.4, live"
     );
     // The frontmatter's `available`.
     let value = hover_text(
@@ -678,7 +679,7 @@ fn hovering_availability_shows_it_in_words() {
     let value = hover_text(&mut client, &page, json!({ "line": 1, "character": 16 }));
     assert_eq!(
         value,
-        "**Streaming sync** (feature `streaming-sync`)\n\nAvailable: Quill Cloud (GA); self-managed (preview, 3.4+)"
+        "**Streaming sync** (feature `streaming-sync`)\n\nAvailable: Quill Cloud (GA); self-managed (preview, 3.4+)\n\n- `self-managed 3.4`: in line 3.4, live"
     );
 }
 

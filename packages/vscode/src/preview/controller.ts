@@ -6,7 +6,7 @@ import type { Prompts } from "../actions/promptAgent.js";
 import type { ProjectServer } from "../client.js";
 import { samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { ChosenBuilds } from "../ui/chosenBuild.js";
+import { choices, lineDescription, type ChosenBuilds } from "../ui/chosenBuild.js";
 import { shellHtml } from "./html.js";
 import { checkMessage, GIT_COMMANDS, mayOpen } from "./messages.js";
 import type {
@@ -951,11 +951,14 @@ export class PreviewController implements vscode.Disposable {
       void vscode.window.showInformationMessage("Ascribe: there are no builds to choose from.");
       return;
     }
+    const described = new Map(result.builds.map((b) => [b.name, b.description]));
     const picked = await vscode.window.showQuickPick(
-      result.builds.map((b) => ({
+      choices(result.builds).map((b) => ({
         label: b.name,
-        description: b.editor ? "editor build" : "",
-        detail: b.description,
+        description: [lineDescription(b), b.editor ? "editor build" : ""]
+          .filter(Boolean)
+          .join(", "),
+        detail: described.get(b.line?.build ?? b.name) ?? "",
       })),
       { title: "Preview build", placeHolder: `Now previewing ${result.build}` },
     );

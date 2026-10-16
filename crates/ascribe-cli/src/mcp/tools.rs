@@ -121,7 +121,8 @@ pub const TOOLS: &[Spec] = &[
         command: "ascribe model",
         description: "Read what a project's content model allows before writing frontmatter, \
             a directive's attributes, or a phrase: page types and their fields, dimensions, \
-            phrases, features, glossary terms, widgets, builds, and sources. Example: {\"path\": \
+            phrases, features, glossary terms, widgets, release lines with their status, builds, \
+            and sources. Example: {\"path\": \
             \"docs\", \"section\": \"phrases\"} returns `phrases` such as `{\"key\": \
             \"product\", \"value\": \"Quill\"}`.",
         input: || {

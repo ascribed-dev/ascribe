@@ -87,7 +87,7 @@ import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
 import { runDiff, runPrompt } from "./review/diff.js";
 import { APP_ID } from "./review/protocol.js";
-import { readRoutes } from "./review/routes.js";
+import { readRoutes, type RoutedPage } from "./review/routes.js";
 import { channelProblem, ReviewServer, type ToolbarChannel } from "./review/server.js";
 import {
   devRouted,
@@ -99,7 +99,7 @@ import {
 import { anchorsFor, hasWarnings, reviewFor, runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
 import { copySchema } from "./schema.js";
-import { olderLines } from "./versions.js";
+import { linesOf, olderLines } from "./versions.js";
 
 export { default as rehypeAscribeAttributes } from "./rehype.js";
 export { satteriAscribeAttributes } from "./satteri.js";
@@ -384,7 +384,15 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             // first; `ascribe check` reports every line's warnings, so only what was built is said.
             const older = olderLines(entry.siteRoot).map((line) => line.build);
             if (older.length > 0) {
-              const lines = await runBuild({ ...run, build: older, outputs: ["site", ...plain] });
+              const lines = await runBuild({
+                ...run,
+                build: older,
+                outputs: [
+                  "site",
+                  ...plain,
+                  ...(entry === reviewed && review?.active ? (["json"] as const) : []),
+                ],
+              });
               if (lines.summary !== "") logger.info(lines.summary);
             }
             // The schema's copy inside the Astro root, for content.config.ts to import.
@@ -571,22 +579,40 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           const entry = reviewed;
           const builds = group.builds;
           const run = { binary, configPath: entry.project.configPath, cwd: entry.project.dir };
-          const jsonRoot = path.join(path.dirname(entry.siteRoot), "json");
+          // A versioned build is reviewed in every line, the current one first, each line's
+          // routes from its own JSON output.
+          const lines = () =>
+            linesOf(entry.siteRoot)?.map((line) => ({
+              build: line.build,
+              siteRoot: line.siteRoot,
+            })) ?? [{ build: entry.build, siteRoot: entry.siteRoot }];
+          const lineBuilds = () => lines().map((line) => line.build);
           review = new ReviewServer({
             channel: toolbar as ToolbarChannel,
             logger,
             build: entry.build,
             contentRoot: entry.project.contentRoot,
             channelProblem: channelProblem(server.config),
-            diff: (base) => runDiff({ ...run, build: entry.build, base }),
-            prompt: (page, base) => runPrompt({ ...run, build: entry.build, base, path: page }),
+            diff: (base) => runDiff({ ...run, build: lineBuilds(), base }),
+            prompt: (page, base) => runPrompt({ ...run, build: lineBuilds(), base, path: page }),
             projectDir: entry.project.dir,
             connect: async () => (await import("./review/github.js")).connect(entry.project.dir),
             writeRoutes: () =>
               builds.inTurn(async () => {
-                await runBuild({ ...run, build: entry.build, outputs: ["json"] });
+                await runBuild({ ...run, build: lineBuilds(), outputs: ["json"] });
               }),
-            readRoutes: () => readRoutes(jsonRoot),
+            readRoutes: async () => {
+              const all = new Map<string, RoutedPage>();
+              const versioned = lines().length > 1;
+              for (const line of lines()) {
+                const jsonRoot = path.join(path.dirname(line.siteRoot), "json");
+                for (const [route, page] of await readRoutes(jsonRoot)) {
+                  if (!all.has(route))
+                    all.set(route, versioned ? { ...page, build: line.build } : page);
+                }
+              }
+              return all;
+            },
           });
         }
       },

@@ -44,6 +44,9 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, `builds`, and `sources`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports/questions.md#ascribe-model) lists each section's fields.
 
+@available: next
+A project with [release lines](../versions/index.md) has a section for them, `releases` in JSON: each target's lines, with their status and the build that is each line. A versioned build says which target versions it and which line it is.
+
 ## `ascribe outline`
 @id {permalink=true}: cli-outline
 @available: ascribe 0.3.0
@@ -162,6 +165,9 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 A variant group the build keeps more than one arm of, which the site shows as tabs, is a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms, as the plain output writes it.
 
 `--build` is needed when `ascribe.toml` has more than one build. When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't rendered on its own; render a page that includes it.
+
+@available: next
+A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, renders the page as that line publishes it, its route and links under the line's folder.
 
 | Code | Meaning |
 |---|---|

@@ -207,6 +207,50 @@ describe("ReviewServer", () => {
     expect(view.contentRoot).toBe("/p/content");
   });
 
+  it("shows the changes of the line a page of a versioned build is viewed in", async () => {
+    const lines: DiffResult = {
+      ...DIFF,
+      pages: [page("guide.md", "/docs/guide"), page("new.md", "/docs/new")],
+      lines: [
+        { build: "site", pages: [page("guide.md", "/docs/guide"), page("new.md", "/docs/new")] },
+        {
+          build: "site@3.4",
+          pages: [
+            page("guide.md", "/docs/3.4/guide", {
+              counts: { changed: 2, added: 0, removed: 0, moved: 0 },
+            }),
+          ],
+        },
+      ],
+    };
+    const { channel } = serve({
+      diff: async () => lines,
+      readRoutes: async () =>
+        new Map([
+          [
+            "/docs/plain",
+            { path: "plain.md", title: "Plain", formatted_title: null, build: "site" },
+          ],
+          [
+            "/docs/3.4/plain",
+            { path: "plain.md", title: "Plain", formatted_title: null, build: "site@3.4" },
+          ],
+        ]),
+    });
+    await channel.request("start");
+    const older = (await channel.request("page", { route: "/docs/3.4/guide/" })).result as PageView;
+    expect(older.page?.route).toBe("/docs/3.4/guide");
+    expect(older.page?.counts.changed).toBe(2);
+    expect(older.changedPages.map((p) => p.path)).toEqual(["guide.md"]);
+    const current = (await channel.request("page", { route: "/docs/guide/" })).result as PageView;
+    expect(current.changedPages.map((p) => p.path)).toEqual(["guide.md", "new.md"]);
+    // An unchanged page of the older line lists that line's changes.
+    const plain = (await channel.request("page", { route: "/docs/3.4/plain" })).result as PageView;
+    expect(plain.path).toBe("plain.md");
+    expect(plain.page).toBeNull();
+    expect(plain.changedPages.map((p) => p.path)).toEqual(["guide.md"]);
+  });
+
   it("takes an unchanged page from its blocks, or from the routes, and says when a route isn't a page", async () => {
     const { channel, readRoutes } = serve();
     await channel.request("start");

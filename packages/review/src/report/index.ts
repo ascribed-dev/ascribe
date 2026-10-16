@@ -22,8 +22,11 @@ import type { BuildData, ImageRef, PageData, RenderedPage, ReportData } from "..
 export type { BuildData, ReportData } from "../shapes.js";
 
 interface State {
+  /** The index of the build in the list: a build, or a versioned build's lines. */
   build: number;
   page: number;
+  /** The index of the line shown, among the build's lines. */
+  line: number;
   show: Show;
   /** The change last gone to, or -1. */
   at: number;
@@ -89,11 +92,63 @@ function describeCounts(counts: PageData["counts"]): string {
 }
 
 /** `1 changed page`, or `3 changed pages in 2 builds`. */
-export function changedPages(builds: BuildData[]): string {
+export function changedPages(builds: readonly { pages: readonly { path: string }[] }[]): string {
   const paths = new Set(builds.flatMap((b) => b.pages.map((p) => p.path)));
   if (paths.size === 0) return "no changed pages";
   const pages = paths.size === 1 ? "1 changed page" : `${paths.size} changed pages`;
   return builds.length > 1 ? `${pages} in ${builds.length} builds` : pages;
+}
+
+/** A changed page once, with what changed on it in each line. */
+export interface ListedPage {
+  path: string;
+  /** Its data in each of the build's lines, `undefined` where it didn't change. */
+  in: (PageData | undefined)[];
+}
+
+/** A build in the report's list: a build, or a versioned build's lines together. */
+export interface ListedBuild {
+  /** The name the list shows: the build's, or the versioned build's. */
+  build: string;
+  /** The builds it stands for: one, or each line, in the data's order. */
+  lines: BuildData[];
+  /** Each changed page once, in path order. */
+  pages: ListedPage[];
+}
+
+/**
+ * The report's builds as its list shows them: the lines of a versioned build
+ * are one entry, each page that changed in any of them once.
+ */
+export function listBuilds(builds: readonly BuildData[]): ListedBuild[] {
+  const out: ListedBuild[] = [];
+  for (const build of builds) {
+    const name = build.line?.build;
+    const same = name === undefined ? undefined : out.find((b) => b.lines[0]?.line?.build === name);
+    if (same) same.lines.push(build);
+    else out.push({ build: name ?? build.build, lines: [build], pages: [] });
+  }
+  for (const listed of out) {
+    const paths = [...new Set(listed.lines.flatMap((b) => b.pages.map((p) => p.path)))].sort(
+      (a, b) => (a < b ? -1 : a > b ? 1 : 0),
+    );
+    listed.pages = paths.map((path) => ({
+      path,
+      in: listed.lines.map((b) => b.pages.find((p) => p.path === path)),
+    }));
+  }
+  return out.filter((b) => b.pages.length > 0);
+}
+
+/**
+ * Which lines a page changed in, for a versioned build: `in every line`, or
+ * `only in 3.5`; nothing for a build that isn't versioned.
+ */
+export function linesNote(listed: ListedBuild, page: ListedPage): string {
+  if (listed.lines.length < 2) return "";
+  const lines = listed.lines.filter((_, i) => page.in[i] !== undefined);
+  if (lines.length === listed.lines.length) return "in every line";
+  return `only in ${andList(lines.map((b) => b.line?.line ?? b.build))}`;
 }
 
 /**
@@ -195,10 +250,11 @@ export function pageFragment(data: ReportData, key: string): DocumentFragment {
 
 /** Reads the report's data and draws the report in `root`. */
 export function start(root: HTMLElement, data: ReportData): void {
-  const builds = data.builds.filter((b) => b.pages.length > 0);
+  const builds = listBuilds(data.builds);
   const state: State = {
     build: 0,
     page: 0,
+    line: 0,
     show: "changes",
     at: -1,
     breakdown: false,
@@ -207,27 +263,55 @@ export function start(root: HTMLElement, data: ReportData): void {
   let marks: Mark[] = [];
   let stopSources: (() => void) | undefined;
 
+  /** The line a page shows first: the line asked for when it changed there, else the first it changed in. */
+  const lineOf = (page: ListedPage | undefined, wanted: number): number => {
+    if (!page) return 0;
+    if (page.in[wanted] !== undefined) return wanted;
+    return Math.max(
+      page.in.findIndex((p) => p !== undefined),
+      0,
+    );
+  };
+
+  /** The page shown, in the line shown. */
+  const shown = (): PageData | undefined => builds[state.build]?.pages[state.page]?.in[state.line];
+
+  /** A page's address in the report: its build's, or its line's, name, and its path. */
+  const hashOf = (b: number, p: number, line: number): string | undefined => {
+    const listed = builds[b];
+    const page = listed?.pages[p];
+    const build = listed?.lines[line]?.build;
+    return page && build !== undefined
+      ? `#${encodeURIComponent(`${build}/${page.path}`)}`
+      : undefined;
+  };
+
   const fromHash = (): void => {
     const hash = decodeURIComponent(location.hash.slice(1));
     const slash = hash.indexOf("/");
     if (slash < 0) return;
-    const b = builds.findIndex((x) => x.build === hash.slice(0, slash));
+    const name = hash.slice(0, slash);
+    const b = builds.findIndex((x) => x.lines.some((l) => l.build === name));
     if (b < 0) return;
-    const p = builds[b]?.pages.findIndex((x) => x.path === hash.slice(slash + 1)) ?? -1;
+    const listed = builds[b];
+    const p = listed?.pages.findIndex((x) => x.path === hash.slice(slash + 1)) ?? -1;
     state.build = b;
     state.page = Math.max(p, 0);
+    state.line = lineOf(
+      listed?.pages[state.page],
+      listed?.lines.findIndex((l) => l.build === name) ?? 0,
+    );
   };
 
-  const open = (b: number, p: number, push = true): void => {
+  const open = (b: number, p: number, push = true, line = state.line): void => {
     state.build = b;
     state.page = p;
+    state.line = lineOf(builds[b]?.pages[p], line);
     state.at = -1;
     state.atEnd = false;
     state.breakdown = false;
-    const page = builds[b]?.pages[p];
-    if (push && page) {
-      history.replaceState(null, "", `#${encodeURIComponent(`${builds[b]?.build}/${page.path}`)}`);
-    }
+    const hash = hashOf(b, p, state.line);
+    if (push && hash !== undefined) history.replaceState(null, "", hash);
     render();
     root.querySelector<HTMLElement>(".r-main")?.scrollTo?.({ top: 0 });
   };
@@ -316,13 +400,18 @@ export function start(root: HTMLElement, data: ReportData): void {
     }
     const build = builds[state.build];
     if (!build) return;
-    const included = build.pages.filter((p) => !p.omitted);
-    const omitted = build.pages.filter((p) => p.omitted);
+    // Each page as it changed in the line shown, or the first it changed in.
+    const first = (listed: ListedPage): PageData | undefined =>
+      listed.in[lineOf(listed, state.line)];
+    const included = build.pages.filter((p) => first(p)?.omitted === false);
+    const omitted = build.pages.filter((p) => first(p)?.omitted !== false);
     side.append(h("h2", {}, [`Changed pages (${build.pages.length})`]));
     const list = h("ul", { class: "r-pages" });
-    build.pages.forEach((page, i) => {
-      if (!included.includes(page)) return;
-      const link = h("a", { href: `#${encodeURIComponent(`${build.build}/${page.path}`)}` }, [
+    build.pages.forEach((listed, i) => {
+      const page = first(listed);
+      if (!page || !included.includes(listed)) return;
+      const lines = linesNote(build, listed);
+      const link = h("a", { href: hashOf(state.build, i, lineOf(listed, state.line)) ?? "#" }, [
         h(
           "span",
           { class: "r-page-title" },
@@ -330,6 +419,7 @@ export function start(root: HTMLElement, data: ReportData): void {
         ),
         h("span", { class: "r-page-path" }, [page.path]),
         h("span", { class: "r-page-counts" }, [pageSummary(page)]),
+        lines === "" ? null : h("span", { class: "r-page-lines" }, [lines]),
         !page.own_file_changed && page.because.length > 0
           ? h("span", { class: "r-page-via" }, [`via ${page.because.join(", ")}`])
           : null,
@@ -348,7 +438,10 @@ export function start(root: HTMLElement, data: ReportData): void {
         h(
           "ul",
           { class: "r-omitted" },
-          omitted.map((p) => h("li", {}, [`${p.path}: ${pageSummary(p)}`])),
+          omitted.map((p) => {
+            const page = first(p);
+            return h("li", {}, [page ? `${p.path}: ${pageSummary(page)}` : p.path]);
+          }),
         ),
       );
     }
@@ -359,8 +452,30 @@ export function start(root: HTMLElement, data: ReportData): void {
   const renderControls = (): void => {
     controls.replaceChildren();
     const build = builds[state.build];
-    const page = build?.pages[state.page];
-    if (!build || !page) return;
+    const listed = build?.pages[state.page];
+    const page = shown();
+    if (!build || !listed || !page) return;
+    if (build.lines.length > 1) {
+      // The lines the page changed in, to see each one's rendering.
+      const lines = h("div", { class: "r-row r-lines" }, [
+        h("span", { class: "r-show" }, [`Line · ${linesNote(build, listed)}`]),
+      ]);
+      const seg = h("div", { class: "r-seg", role: "group", "aria-label": "Line" });
+      build.lines.forEach((line, i) => {
+        const changed = listed.in[i] !== undefined;
+        const label = line.line
+          ? `${line.line.line}${line.line.current ? " (current)" : ""}`
+          : line.build;
+        const attributes: Record<string, string> = { "aria-pressed": String(i === state.line) };
+        if (!changed) {
+          attributes.disabled = "";
+          attributes.title = `No change in ${line.line?.line ?? line.build}`;
+        }
+        seg.append(button(label, "", () => open(state.build, state.page, true, i), attributes));
+      });
+      lines.append(seg);
+      controls.append(lines);
+    }
     const row = h("div", { class: "r-row" });
     const info = h("span", { class: "r-grow" }, [h("b", {}, [page.path]), ` ${page.route}`]);
     if (!page.own_file_changed && page.because.length > 0) {
@@ -447,7 +562,8 @@ export function start(root: HTMLElement, data: ReportData): void {
     }
     if (state.atEnd) {
       const nextIndex = (state.page + 1) % build.pages.length;
-      const next = build.pages[nextIndex];
+      const nextListed = build.pages[nextIndex];
+      const next = nextListed?.in[lineOf(nextListed, state.line)];
       const notice = h("div", { class: "r-notice" }, [
         h("span", {}, ["That was the last change on this page."]),
       ]);
@@ -472,8 +588,7 @@ export function start(root: HTMLElement, data: ReportData): void {
     stopSources?.();
     stopSources = undefined;
     marks = [];
-    const build = builds[state.build];
-    const page = build?.pages[state.page];
+    const page = shown();
     main.replaceChildren(controls);
     status.textContent = "";
     article.replaceChildren();

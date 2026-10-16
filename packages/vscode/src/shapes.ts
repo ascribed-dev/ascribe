@@ -98,6 +98,19 @@ export interface BaseInfo {
 /** What a line-form directive applies to. */
 export type BindingKind = "self" | "heading" | "block" | "headingOrBlock";
 
+/** A live line of a versioned build. */
+export interface BuildLineEntry {
+  /**
+   * The build that is the line: the versioned build's own name for the
+   * current line, `<build>@<line>` for another.
+   */
+  name: string;
+  /** The line, as `[releases.<target>] live` writes it. */
+  line: string;
+  /** Whether it's the current line. */
+  current: boolean;
+}
+
 /**
  * The answer to `ascribe/buildView`. A document that isn't a source file of
  * the project, or a build the content model doesn't have, gets an answer
@@ -1016,6 +1029,12 @@ export interface PreviewBuild {
    * availability: badge`.
    */
   description: string;
+  /**
+   * For a versioned build, its live lines, the current one first, each
+   * a build the preview can render. Absent for a build that isn't
+   * versioned.
+   */
+  lines?: BuildLineEntry[];
 }
 
 /** A link to another page. */
@@ -1244,6 +1263,12 @@ export interface TargetBuild {
   name: string;
   /** Whether it's the editor's build (`[editor] build`). */
   editor: boolean;
+  /**
+   * For a versioned build, its live lines, the current one first: each
+   * is a build of its own a client can choose (`site@3.4`). Absent for
+   * a build that isn't versioned.
+   */
+  lines?: BuildLineEntry[];
 }
 
 /** A dimension. */

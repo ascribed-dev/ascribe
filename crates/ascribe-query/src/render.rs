@@ -74,6 +74,9 @@ pub fn render(
         ));
         return Ok(answer);
     }
+    // An older line's addresses are under its folder, as its output's are.
+    let project = project.for_build(build);
+    let project = project.as_ref();
     let router = AstroRouter::from_consumer(&project.model().consumer);
     let Some(page) = project.resolve_page(path, build, &router) else {
         return Err(QueryError::NotAPage {

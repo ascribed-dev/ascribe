@@ -2,13 +2,14 @@
 //! availability a spec resolves to, the rule of `[listing]` a page is
 //! under, and what a directive is.
 
+use ascribe_core::availability::{AvailabilitySpec, Detail, Version, parse_availability};
 use ascribe_core::schema::{
     AttributeSchema, AttributeType, Attributes, DefaultValue, DirectiveSchema, Origin, Primary,
     SetMember,
 };
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_emit::labels::{availability_display, availability_display_of_text};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, LineStatus, Placement};
 use ascribe_resolve::{Resolution, Snapshot};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position};
 
@@ -61,6 +62,7 @@ pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
             span,
             listing_markdown(&ctx.model, ctx.path.as_str(), ctx.page_type_name()),
         ),
+        Hit::Replaces(span) => (span, replaces_markdown(ctx)?),
         Hit::Directive(d) => {
             let schema = ctx
                 .model
@@ -181,20 +183,109 @@ fn describe_source(ctx: &Ctx, target: &RelPath, id: Option<&str>, fragment: bool
     out
 }
 
+/// The page a page's `replaces` names, and which of the two each line of
+/// a versioned build publishes. `None` when it names no page.
+fn replaces_markdown(ctx: &Ctx) -> Option<String> {
+    let replaced = ctx.snapshot.replaces(&ctx.path)?;
+    let mut out = format!(
+        "**Replaces** `{replaced}`\n\n{}",
+        describe_source(ctx, &replaced, None, false)
+    );
+    let mut lines: Vec<String> = Vec::new();
+    for build in ctx.model.builds.iter() {
+        let Some(line) = &build.line else {
+            continue;
+        };
+        let publishes = if ctx.snapshot.dropped(&ctx.path, build).is_none() {
+            "this page".to_owned()
+        } else if ctx.snapshot.dropped(&replaced, build).is_none() {
+            format!("`{replaced}`")
+        } else {
+            "neither".to_owned()
+        };
+        lines.push(format!(
+            "- {} (`{}`): {publishes}",
+            line.line.text, build.name
+        ));
+    }
+    if !lines.is_empty() {
+        out.push_str("\n\nEach line publishes:\n\n");
+        out.push_str(&lines.join("\n"));
+    }
+    Some(out)
+}
+
 /// A spec or feature key in words (SPEC §4.4, §9.4). `None` when the text isn't
 /// a valid spec: the diagnostics say so.
 fn availability_markdown(model: &ContentModel, text: &str) -> Option<String> {
     let text = text.trim();
     if let Some(feature) = model.feature(text) {
-        return Some(format!(
+        let mut out = format!(
             "**{}** (feature `{}`)\n\nAvailable: {}",
             feature.name,
             feature.key,
             availability_display(model, &feature.available)
-        ));
+        );
+        out.push_str(&release_lines(model, &feature.available));
+        return Some(out);
     }
     let display = availability_display_of_text(model, text)?;
-    Some(format!("Available: {display}"))
+    let mut out = format!("Available: {display}");
+    if let Ok(spec) = parse_availability(text, 0) {
+        out.push_str(&release_lines(model, &spec));
+    }
+    Some(out)
+}
+
+/// For each version a spec names of a target with `[releases]`, the line
+/// it's in and the line's status, as a list after a blank line; nothing
+/// when it names none.
+fn release_lines(model: &ContentModel, spec: &AvailabilitySpec) -> String {
+    let mut items: Vec<String> = Vec::new();
+    for entry in &spec.entries {
+        let Some(releases) = model.releases_of(&entry.target.text) else {
+            continue;
+        };
+        let versions: Vec<&Version> = match &entry.detail {
+            Detail::None => Vec::new(),
+            Detail::Version(v) => vec![v],
+            Detail::State { version, .. } => version.iter().collect(),
+            Detail::History(steps) => steps.iter().map(|s| &s.version).collect(),
+        };
+        for version in versions {
+            let Some(place) = releases.place(version) else {
+                continue;
+            };
+            let what = match place {
+                Placement::In(line, LineStatus::Current) => {
+                    format!("in line {}, the current line", line.text)
+                }
+                Placement::In(line, status) => {
+                    format!("in line {}, {}", line.text, status.as_str())
+                }
+                Placement::Ahead { newest } => {
+                    format!(
+                        "newer than every declared line; the newest is {}",
+                        newest.text
+                    )
+                }
+                Placement::Between { line, older, newer } => format!(
+                    "in line {line}, which isn't declared: between {} and {}",
+                    older.text, newer.text
+                ),
+                // Older than every line: in every line, so nothing to say.
+                Placement::Before => continue,
+            };
+            let item = format!("- `{} {}`: {what}", entry.target.text, version.text);
+            if !items.contains(&item) {
+                items.push(item);
+            }
+        }
+    }
+    if items.is_empty() {
+        return String::new();
+    }
+    format!("\n\n{}", items.join("\n"))
 }
 
 pub(crate) fn describe_directive(schema: &DirectiveSchema) -> String {

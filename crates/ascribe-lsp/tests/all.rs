@@ -30,6 +30,8 @@ mod edit;
 mod edit_examples;
 #[path = "all/examples.rs"]
 mod examples;
+#[path = "all/lines.rs"]
+mod lines;
 #[path = "all/model_edits.rs"]
 mod model_edits;
 #[path = "all/navigation.rs"]

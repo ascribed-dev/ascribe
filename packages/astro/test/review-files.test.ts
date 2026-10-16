@@ -41,6 +41,23 @@ describe("parseDiff", () => {
     expect(parseDiff(JSON.stringify(broken), "site").errors).toBe(3);
     expect(() => parseDiff("{}", "site")).toThrow();
   });
+
+  it("takes each line's pages, the first line's as the build's", () => {
+    const json = JSON.stringify({
+      schema_version: 1,
+      base: { requested: "main", commit: "abc", merge_base: "def" },
+      builds: [
+        { build: "site", pages: [{ path: "a.md" }] },
+        { build: "site@3.4", pages: [] },
+      ],
+    });
+    const result = parseDiff(json, ["site", "site@3.4"]);
+    expect(result.pages).toEqual([{ path: "a.md" }]);
+    expect(result.lines).toEqual([
+      { build: "site", pages: [{ path: "a.md" }] },
+      { build: "site@3.4", pages: [] },
+    ]);
+  });
 });
 
 describe("routes", () => {
