@@ -1735,7 +1735,7 @@
     },
     {
       "content": {
-        "body": "## Ascribe report\n\n0 errors, 0 warnings, 7 advice.\n\n### External links\n\nChecked 30 addresses, asking about each. Nothing is remembered from an earlier run, so every failure is reported.\n\n5 links to look at:\n\n- `content/_generated/crawlers.md:7`: [ASC169] `https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers` moved permanently to `https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers`; link to the new address\n- `content/_generated/crawlers.md:12`: [ASC169] `https://docs.perplexity.ai/guides/bots` moved permanently to `https://docs.perplexity.ai/docs/resources/perplexity-crawlers`; link to the new address\n- `content/_generated/crawlers.md:17`: [ASC169] `https://docs.perplexity.ai/guides/bots` moved permanently to `https://docs.perplexity.ai/docs/resources/perplexity-crawlers`; link to the new address\n- `content/_generated/crawlers.md:20`: [ASC169] `https://developers.facebook.com/docs/sharing/webmasters/web-crawlers/` moved permanently to `https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers`; link to the new address\n- `content/reference/content-model/checks.md:168`: [ASC169] `https://developers.google.com/search/docs/crawling-indexing/google-user-triggered-fetchers` moved permanently to `https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers`; link to the new address\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 24 pass, 2 warn, 1 fail, 1 skip.\n\nTo change:\n\n- [ASC170] the site passes the delivery spec's `content-start-position` check with a warning: 23 of 50 sampled pages have content starting at 10–50% (worst 36%). Put each page's content earlier in its HTML than the navigation, or in `<main>`: the site's page template.\n- [ASC171] the site fails the delivery spec's `markdown-content-parity` check, which what Ascribe writes should pass: 2 of 50 pages have substantive content differences between markdown and HTML (avg 2% missing). Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-html`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/38266288051)\n",
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 1 advice.\n\n### External links\n\nChecked 36 addresses: asked about 4, and reused 32 answers, the oldest from 15 October.\n\nNone is broken or moved.\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 24 pass, 3 warn, 1 skip.\n\nTo change:\n\n- [ASC171] the site passes the delivery spec's `llms-txt-links-resolve` check with a warning, which what Ascribe writes should pass without one: 49/50 same-origin sampled links resolve (98%); 1 broken; 1 failed to fetch. Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/38891121089)\n",
         "number": 423,
         "repository": "ascribed-dev/ascribe",
         "title": "Docs report: links and the published site",
@@ -2328,8 +2328,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/519"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Versions: `ascribe versions archive` renders a line into a folder of HTML"
     },
     {
@@ -2383,7 +2386,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/513"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`ascribe versions changes`: a page that `replaces` another is one entry"
     },
     {
@@ -2413,8 +2416,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/516"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBHBHo",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/518"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Name the line in `ascribe agents index` of an older line"
     }
   ]
