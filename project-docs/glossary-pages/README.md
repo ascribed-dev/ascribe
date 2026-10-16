@@ -79,7 +79,7 @@ One is open: [phase 1's decision 7](phase-1-decisions.md#7-a-link-an-author-writ
 | Left out | Phase |
 |---|---|
 | A term with no definition, a long definition, `@term` off a glossary page, a term in a build that doesn't publish its section, and `@intended` at a term's heading in place of `[[intended]] term` | 3 |
-| Go to definition, completion, the quick fixes, rename, and the outline | 4 |
+| Go to definition, completion, the quick fixes, and rename | 4 |
 | A guide to the glossary | 5 |
 
 After phase 2, a term with no paragraph has an empty definition, a long one is used whole, `@term` on a page that isn't in `pages` is ignored, and `glossary-term-unused` is still acknowledged with `[[intended]] term`, which names the heading's id. Two terms with the same text are an error from the start, since matching can't choose between them. The reference says what's true at each step.
