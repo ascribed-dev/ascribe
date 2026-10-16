@@ -38,6 +38,8 @@ mod model_edits;
 mod navigation;
 #[path = "all/new_page.rs"]
 mod new_page;
+#[path = "all/page.rs"]
+mod page;
 #[path = "all/preview.rs"]
 mod preview;
 #[path = "all/prose.rs"]

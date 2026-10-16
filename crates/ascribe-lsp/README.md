@@ -12,7 +12,8 @@ semantic tokens; completion, hover, go to definition, find references, document
 links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
 rename, and formatting; and the custom requests `ascribe/preview`,
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/context`,
-`ascribe/targets`, `ascribe/edit`, `ascribe/buildView`, and `ascribe/inventory`.
+`ascribe/targets`, `ascribe/edit`, `ascribe/buildView`, `ascribe/inventory`,
+and `ascribe/page`.
 
 ## The project
 
@@ -487,6 +488,48 @@ pass over the snapshot (`Project::use_counts`). It answers from the current
 snapshot, so it includes unsaved edits. See [Performance](#performance) for
 its cost.
 
+## What's known about a page: `ascribe/page`
+
+A custom request that answers what the page is, and what links to and
+includes the heading at the cursor, for the editor's This page view, in one
+request:
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/docs/keys.md" }, "position": { "line": 14, "character": 0 } }
+```
+
+Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-page.schema.json`):
+
+```jsonc
+{
+  "about": { "path": "keys.md", "fragment": false, "title": "API keys", "type": "page",
+             "address": "/keys/", "markdownAddress": null },
+  "heading": { "id": "rotate-keys", "text": "Rotate keys", "range": { "start": …, "end": … } },
+  "linkedFrom": [{ "uri": "file:///…/docs/install-agent.md", "path": "install-agent.md",
+                   "range": { "start": …, "end": … }, "text": "See [](keys.md#rotate-keys)." }],
+  "includedBy": []
+}
+```
+
+- `heading` is the innermost heading with an id whose section holds the
+  cursor, and `null` above the first heading. `linkedFrom` and `includedBy`
+  are then about the heading, else the whole file, and are what Find All
+  References lists for the same thing ([Navigation](#navigation)), split into
+  links and `@include`s, each with the trimmed text of the line it starts on.
+- `address` is the page's route, from the host's root, as the site output's
+  links write it, and `markdownAddress` its Markdown version's, when the
+  project publishes one (`[consumer] agents = true`). A fragment has neither.
+- A document that isn't a page or a fragment of the project gets
+  `{ "about": null, "heading": null, "linkedFrom": [], "includedBy": [] }`.
+
+The links to and includes of the file and of each of its headings are found
+in one search (`ascribe_resolve::Project::uses_of_file`), with their line
+texts, and kept for the file until the snapshot changes (`PageCache` in
+`src/page.rs`), so a cursor move on the same file only picks the heading's
+share. It answers from the current snapshot, so it includes unsaved edits.
+See [Performance](#performance) for its cost.
+
 ## What a build leaves out: `ascribe/buildView`
 
 A custom request that says what a build leaves out of a page, for a client
@@ -850,6 +893,33 @@ go stale: the links and includes the project resolved, the phrases and
 availability markers it indexed, each directive line, and the glossary's terms
 in each page's prose. Without the glossary term, the 3,000-page median is
 15 ms.
+
+### This page
+
+`cargo bench -p ascribe-lsp --bench page` (release build) starts the server
+on Ascribe's own docs, opens a long page
+(`docs/content/writing/directives.md`, 641 lines) and a short one
+(`docs/content/agents/measuring.md`, 65 lines), and moves the cursor to the
+same 50 lines of each, once the server is idle. Each move is asked both as
+the This page view asks it, one `ascribe/page`, and as the Used by view it
+replaced did: `ascribe/context`, then `textDocument/references` at the heading
+it found, unless that was the heading it asked about last. The server's time
+is from when it begins handling a request to its answer, summed over a move's
+requests; the round trip is from the first request sent to the last answer,
+over an in-process connection. Median (p95) per move, one run on a 4-core
+2.1 GHz Xeon container:
+
+| Page | Used by, server | `ascribe/page`, server | Used by, round trip | `ascribe/page`, round trip |
+|---|---|---|---|---|
+| Long | 0.30 ms (3.8) | 0.22 ms (0.35) | 0.49 ms (4.1) | 0.36 ms (0.54) |
+| Short | 0.23 ms (3.2) | 0.15 ms (0.30) | 0.40 ms (4.0) | 0.32 ms (0.60) |
+
+The first request about a file in a snapshot pays for the search, as Used by's
+`textDocument/references` did on every heading it moved to (3 to 4 ms here);
+later moves only pick the heading's places. In the editor, each request also
+crosses the process boundary, so a move with one request saves one crossing
+more than the round trips show. The bench exits non-zero when `ascribe/page`'s
+median is slower on either measure.
 
 ## Library choice
 

@@ -285,6 +285,29 @@ fn counts_are_the_lengths_of_the_lists() {
 }
 
 #[test]
+fn a_files_uses_are_the_lists_of_the_file_and_its_headings() {
+    let p = quill();
+    for file in p.files() {
+        let all = p.uses_of_file(&file.path);
+        let mut targets = vec![Usable::File(file.path.clone())];
+        targets.extend(file.headings.iter().map(|h| Usable::Heading {
+            file: file.path.clone(),
+            id: h.source_id.clone(),
+        }));
+        for target in &targets {
+            let listed: Vec<_> = all
+                .iter()
+                .filter(|(used, _)| used == target)
+                .map(|(_, place)| place.clone())
+                .collect();
+            assert_eq!(listed, p.uses(target), "{target:?}");
+        }
+        assert!(all.iter().all(|(used, _)| targets.contains(used)));
+    }
+    assert!(!p.uses_of_file(&path("_setup.md")).is_empty());
+}
+
+#[test]
 fn directive_names_are_every_directive_written_once() {
     let project = project(&[
         (
