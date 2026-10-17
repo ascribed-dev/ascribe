@@ -31,6 +31,7 @@ import {
   pagesDrop,
   contentPathOf,
   followedProject,
+  labelRename,
   pagesFind,
   pagesLook,
   pagesParent,
@@ -41,6 +42,7 @@ import {
   thisPageChildren,
   thisPageLook,
   thisPageRoots,
+  viewsNotice,
   type ItemLook,
   type ModelNode,
   type PagesNode,
@@ -512,14 +514,8 @@ export class SidebarViews implements vscode.Disposable {
       ),
       vscode.commands.registerCommand(RENAME_LABEL, (node?: PagesNode) =>
         node
-          ? this.renameLabel(node, (value) =>
-              Promise.resolve(
-                vscode.window.showInputBox({
-                  title: "Rename Label",
-                  prompt: "The section's label in every sidebar. Leave it empty for its default.",
-                  value,
-                }),
-              ),
+          ? this.renameLabel(node, (value, prompt) =>
+              Promise.resolve(vscode.window.showInputBox({ title: "Rename Label", prompt, value })),
             ).then((said) => said && this.say(said))
           : undefined,
       ),
@@ -904,36 +900,29 @@ export class SidebarViews implements vscode.Disposable {
   private showMessages(): void {
     const server = this.server;
     const result = this.inventory;
-    // A server that failed to start: the views' welcome says so, with its links.
-    if (server?.state === "failed") {
+    // A server that failed to start, or that Switch Project started and
+    // hasn't answered: the views name its project.
+    const notice = server && viewsNotice(server.state, this.projects.name(server.project), result);
+    if (notice) {
       for (const tree of [this.pages, this.model]) {
         if (tree.view) {
-          tree.view.message = "";
-          tree.view.description = this.projects.name(server.project);
+          tree.view.message = notice.message;
+          tree.view.description = notice.description;
         }
       }
       return;
     }
-    // A server Switch Project started, until it answers: the views name its project.
-    const starting = server?.state === "starting" && !result;
-    if (starting) {
-      for (const tree of [this.pages, this.model]) {
-        if (tree.view) tree.view.description = this.projects.name(server.project);
-      }
-    }
     if (this.pages.view) {
-      this.pages.view.message = starting
-        ? STARTING
-        : server && !result
+      this.pages.view.message =
+        server && !result
           ? "Open a page of the project to list its pages."
           : result && this.orphansOnly && this.pagesRoots().length === 0
             ? "No orphans: something links to or includes every page and fragment."
             : "";
     }
     if (this.model.view) {
-      this.model.view.message = starting
-        ? STARTING
-        : server && !result
+      this.model.view.message =
+        server && !result
           ? "Open a page of the project to list its content model."
           : result && this.unusedOnly && modelRoots(result, true).length === 0
             ? "Nothing unused: every entry is used."
@@ -973,19 +962,49 @@ export class SidebarViews implements vscode.Disposable {
     return this.editNav("placePage", { page: node.path });
   }
 
-  /** Rename Label…, on a section: its `label` in `ascribe.nav`, or none for its default. */
+  /**
+   * Rename Label…, on a section or a page: the section's `label` in
+   * `ascribe.nav`, or the page's `nav-label`, or none for its default.
+   */
   private async renameLabel(
     node: PagesNode,
-    ask: (value: string) => Promise<string | undefined>,
+    ask: (value: string, prompt: string) => Promise<string | undefined>,
   ): Promise<string | undefined> {
-    if (node.kind !== "section") return undefined;
-    const label = await ask(node.section.labelSet ?? node.section.label);
+    const rename = labelRename(node);
+    if (!rename) return undefined;
+    const label = await ask(rename.value, rename.prompt);
     if (label === undefined) return undefined;
-    return this.editNav("setSectionLabel", { folder: node.section.folder, label: label || null });
+    if (rename.action === "setSectionLabel") {
+      return this.editNav("setSectionLabel", { folder: rename.folder, label: label || null });
+    }
+    const content = this.inventory?.contentUri;
+    if (!content) return undefined;
+    return this.requestEdit(contentFile(content, rename.page), rename.page, "setPageLabel", {
+      label: label || null,
+    });
   }
 
   /** Asks the server for an edit of `ascribe.nav`, and applies it; what it says when it can't. */
-  private async editNav(
+  private editNav(
+    action: string,
+    args: Record<string, string | null>,
+  ): Promise<string | undefined> {
+    const server = this.server;
+    if (server?.state !== "running") {
+      return Promise.resolve("the project's language server isn't running.");
+    }
+    // Asked through the project's ascribe.toml, as any of its files will do.
+    return this.requestEdit(vscode.Uri.file(server.project.config), "ascribe.nav", action, args);
+  }
+
+  /**
+   * Asks the server for an `ascribe/edit` operation through `uri`, and
+   * applies its edit to `changed` unsaved, as typing is; what it says when
+   * it can't.
+   */
+  private async requestEdit(
+    uri: vscode.Uri,
+    changed: string,
     action: string,
     args: Record<string, string | null>,
   ): Promise<string | undefined> {
@@ -994,14 +1013,15 @@ export class SidebarViews implements vscode.Disposable {
     const at = { line: 0, character: 0 };
     try {
       const result = await server.requestEdit("ascribe/edit", {
-        textDocument: { uri: vscode.Uri.file(server.project.config).toString() },
+        textDocument: { uri: uri.toString() },
         range: { start: at, end: at },
         action,
         args,
       });
       if ("error" in result) return result.error;
-      if (!(await vscode.workspace.applyEdit(result.edit)))
-        return "ascribe.nav couldn't be changed.";
+      if (!(await vscode.workspace.applyEdit(result.edit))) {
+        return `${changed} couldn't be changed.`;
+      }
     } catch (error) {
       server.reportFeatureError("Pages", error);
       return undefined;
@@ -1254,9 +1274,6 @@ const FAILED = "ascribe.sidebar.failed";
 /** The commands of the views' welcome while their project's server has failed. */
 const SHOW_OUTPUT = "ascribe.sidebar.showOutput";
 const RESTART = "ascribe.sidebar.restart";
-
-/** What Pages and Content model say while their project's server starts. */
-const STARTING = "Starting the project's language server.";
 
 /** What This page says when the active file isn't a page of a project. */
 const NO_PAGE = "Open a page to see what's known about it.";

@@ -117,6 +117,8 @@ pub enum EditAction {
     SetPageVariant,
     /// Sets the page's `available`.
     SetPageAvailable,
+    /// Sets the page's `nav-label`, or takes it out.
+    SetPageLabel,
     /// Links the selected text.
     LinkSelection,
     /// Inserts a link that takes its target's title.
@@ -165,7 +167,7 @@ pub enum EditAction {
 
 impl EditAction {
     /// Every action, in the order the README documents them.
-    pub const ALL: [EditAction; 40] = [
+    pub const ALL: [EditAction; 41] = [
         EditAction::WrapNote,
         EditAction::SetNoteType,
         EditAction::UnwrapNote,
@@ -188,6 +190,7 @@ impl EditAction {
         EditAction::MarkAvailable,
         EditAction::SetPageVariant,
         EditAction::SetPageAvailable,
+        EditAction::SetPageLabel,
         EditAction::LinkSelection,
         EditAction::InsertLink,
         EditAction::InsertPhrase,
@@ -345,6 +348,7 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         EditAction::MarkAvailable => page::mark_available(&page),
         EditAction::SetPageVariant => page::set_variant(&page),
         EditAction::SetPageAvailable => page::set_available(&page),
+        EditAction::SetPageLabel => page::set_label(&page),
         EditAction::LinkSelection => inline::link_selection(&page),
         EditAction::InsertLink => inline::insert_link(&page),
         EditAction::InsertPhrase => inline::insert_phrase(&page),

@@ -179,6 +179,65 @@ fn the_navigation_follows_ascribe_nav_as_its_typed_closed_and_saved() {
     );
 }
 
+#[test]
+fn a_page_s_label_is_its_nav_label_and_rename_label_sets_it() {
+    let f = project(None);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let entry = |inventory: &Value, path: &str| {
+        inventory["pages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["path"] == path)
+            .cloned()
+            .unwrap_or_else(|| panic!("no page {path}"))
+    };
+    let setup = entry(&inventory(&mut client, &f), "Guides/My Setup.md");
+    assert_eq!(setup["label"], "My setup");
+    assert_eq!(setup["navLabel"], Value::Null);
+
+    // Asked through the page, which isn't open: a name with a space, as
+    // the view joins it to the content root.
+    let path = f.path("docs/Guides/My Setup.md");
+    let text = page("My setup");
+    let set = |client: &mut Client, label: Value| {
+        let at = json!({ "line": 0, "character": 0 });
+        client
+            .request(
+                "ascribe/edit",
+                json!({
+                    "textDocument": { "uri": uri(&path).as_str() },
+                    "range": { "start": at, "end": at },
+                    "action": "setPageLabel",
+                    "args": { "label": label },
+                }),
+            )
+            .response_result
+            .expect("an answer")
+    };
+    let after = applied(&set(&mut client, json!("Setup")), &path, &text);
+    assert_eq!(
+        after,
+        "---\ntitle: My setup\nnav-label: Setup\n---\n\nText.\n"
+    );
+    client.open(&path, 1, &after);
+    client.settle();
+    let setup = entry(&inventory(&mut client, &f), "Guides/My Setup.md");
+    assert_eq!(setup["label"], "Setup");
+    assert_eq!(setup["navLabel"], "Setup");
+    assert_eq!(setup["title"], "My setup");
+
+    // Empty takes it out, and the title is its label again.
+    let cleared = applied(&set(&mut client, json!("")), &path, &after);
+    assert_eq!(cleared, text);
+    client.replace(&path, 2, &cleared);
+    client.settle();
+    let setup = entry(&inventory(&mut client, &f), "Guides/My Setup.md");
+    assert_eq!(setup["label"], "My setup");
+    assert_eq!(setup["navLabel"], Value::Null);
+}
+
 /// The edit `ascribe/edit` answers `action` with.
 fn edit(client: &mut Client, f: &Fixture, action: &str, args: Value) -> Value {
     let at = json!({ "line": 0, "character": 0 });

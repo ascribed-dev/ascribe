@@ -1030,6 +1030,92 @@ fn the_frontmatter_changes_only_its_own_key() {
     );
 }
 
+#[test]
+fn a_page_s_nav_label_is_set_replaced_and_taken_out() {
+    let mut h = Harness::new();
+    let page = "---\ntitle: Rotate the API keys # the title\n\ndescription: How.\n---\n\n‸Text.\n";
+    assert_eq!(
+        h.after(page, "setPageLabel", json!({ "label": "Keys" })),
+        "---\ntitle: Rotate the API keys # the title\n\ndescription: How.\nnav-label: Keys\n---\n\nText.\n"
+    );
+    let labelled = "---\ntitle: T\nnav-label: Old # short\ndescription: D.\n---\n‸Text.\n";
+    assert_eq!(
+        h.after(labelled, "setPageLabel", json!({ "label": "  New: two  " })),
+        "---\ntitle: T\nnav-label: \"New: two\" # short\ndescription: D.\n---\nText.\n"
+    );
+    // Empty or missing takes it out, its line with it.
+    let removed = "---\ntitle: T\ndescription: D.\n---\nText.\n";
+    assert_eq!(
+        h.after(labelled, "setPageLabel", json!({ "label": "" })),
+        removed
+    );
+    assert_eq!(h.after(labelled, "setPageLabel", json!({})), removed);
+    assert_eq!(
+        h.after(
+            "---\ntitle: T\nnav-label: Old\n---\n‸Text.\n",
+            "setPageLabel",
+            json!({ "label": null })
+        ),
+        "---\ntitle: T\n---\nText.\n"
+    );
+    // Already so, or none to take out: nothing changes.
+    assert_eq!(
+        h.after(labelled, "setPageLabel", json!({ "label": "Old" })),
+        labelled.replace('‸', "")
+    );
+    assert_eq!(
+        h.after("‸Text.\n", "setPageLabel", json!({ "label": "" })),
+        "Text.\n"
+    );
+    assert_eq!(
+        h.after("‸Text.\n", "setPageLabel", json!({ "label": "Keys" })),
+        "---\nnav-label: Keys\n---\nText.\n"
+    );
+    // A page written on Windows keeps its line endings.
+    let crlf = "---\r\ntitle: T\r\nnav-label: Old\r\n---\r\n‸Text.\r\n";
+    assert_eq!(
+        h.after(crlf, "setPageLabel", json!({ "label": "New" })),
+        "---\r\ntitle: T\r\nnav-label: New\r\n---\r\nText.\r\n"
+    );
+    assert_eq!(
+        h.after(crlf, "setPageLabel", json!({ "label": "" })),
+        "---\r\ntitle: T\r\n---\r\nText.\r\n"
+    );
+    assert_eq!(
+        h.after(
+            "---\r\ntitle: T\r\n---\r\n‸Text.\r\n",
+            "setPageLabel",
+            json!({ "label": "New" })
+        ),
+        "---\r\ntitle: T\r\nnav-label: New\r\n---\r\nText.\r\n"
+    );
+    // Longer than the title is advice, which never refuses an edit.
+    assert_eq!(
+        h.after(
+            "---\ntitle: T\n---\n‸Text.\n",
+            "setPageLabel",
+            json!({ "label": "A longer label" })
+        ),
+        "---\ntitle: T\nnav-label: A longer label\n---\nText.\n"
+    );
+    assert_eq!(
+        h.error(page, "setPageLabel", json!({ "label": "One\ntwo" })),
+        "A label is one line."
+    );
+    let fragment = h
+        .run_as(
+            "docs/_labelled.md",
+            "‸Text.\n",
+            "setPageLabel",
+            json!({ "label": "Keys" }),
+        )
+        .unwrap_err();
+    assert!(
+        fragment.starts_with("A fragment has no frontmatter keys"),
+        "{fragment}"
+    );
+}
+
 // -- Links, phrases, and images ---------------------------------------------
 
 #[test]
