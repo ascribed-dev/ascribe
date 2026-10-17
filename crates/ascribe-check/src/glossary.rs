@@ -10,12 +10,11 @@ use std::collections::BTreeMap;
 
 use ascribe_core::{FileId, Issue, Location, diagnostics};
 
-use crate::{Diagnostic, Project};
+use crate::Diagnostic;
 
 /// What the check found, by file, in source order. `index` is the project's
 /// source index; `file` gives the project's id of one of its files.
 pub(crate) fn check(
-    _project: &Project,
     index: &ascribe_resolve::Project,
     file: &dyn Fn(FileId) -> FileId,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {

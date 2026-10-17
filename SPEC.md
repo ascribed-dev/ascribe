@@ -833,7 +833,7 @@ A glossary is one or more pages, which the content model lists (§7.2). Each hea
 
 Processors link occurrences of glossary terms to their definitions according to each term's settings, else the glossary's. Authors don't mark glossary terms where they're used, except for a term whose settings turn automatic linking off (`match = "marked"`): processors don't link that term, and authors link the occurrences that mean it to its heading with an ordinary link (§5.2), for words that also have ordinary senses.
 
-**A link an author writes to a term's heading is a use of the term,** as a linked occurrence is, and outputs show it as one. Exactly a link whose destination is the term's heading by its id is; a link to the glossary page, or to another heading in the term's section, is an ordinary link.
+**A link an author writes to a term's heading is a use of the term,** as a linked occurrence is, and outputs show it as one. Exactly a link whose destination is the term's heading by its id is; a link to the glossary page, or to another heading in the term's section, is an ordinary link. Where a term is linked only at its first occurrence, such a link counts as that occurrence, so a processor doesn't also link a later one on the page.
 
 Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish isn't linked in that build.
 

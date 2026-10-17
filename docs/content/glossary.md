@@ -4,7 +4,7 @@ title: Glossary
 description: The terms these docs use, each with a sentence on what it means and a link to the page that documents it.
 ---
 
-Each term below is linked from the pages that use it, with its first sentence as the link's title. Build, phrase, and variant are ordinary words too, so they're linked only where a page links them here.
+Each term below is linked from the pages that use it, with its first paragraph as the link's title. Build, phrase, and variant are ordinary words too, so they're linked only where a page links them here.
 
 ## Build
 @term {aliases=builds, match=marked}

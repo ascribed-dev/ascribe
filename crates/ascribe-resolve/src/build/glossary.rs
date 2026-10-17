@@ -22,7 +22,8 @@
 //!   occurrences that mean it.
 //! - A term isn't linked on a glossary page that shows it.
 //! - A link an author writes to a term's heading is a use of the term, as a
-//!   linked occurrence is, except on a glossary page that shows it.
+//!   linked occurrence is, except on a glossary page that shows it. Under
+//!   `match = "first"` it's the page's linked occurrence, so no other is.
 //!
 //! A linked occurrence becomes an ordinary link, and each use is listed in
 //! [`ResolvedBlock::glossary`] with the term's definition.
@@ -253,7 +254,7 @@ impl Linker<'_, '_> {
 
     /// The links in a block that an author wrote to a term's heading: each a
     /// use of the term (SPEC §5.4).
-    fn written(&self, block: &ResolvedBlock) -> Vec<GlossaryUse> {
+    fn written(&mut self, block: &ResolvedBlock) -> Vec<GlossaryUse> {
         let mut used = Vec::new();
         for link in &block.links {
             let LinkTarget::Page {
@@ -284,6 +285,7 @@ impl Linker<'_, '_> {
                 url: url.clone(),
                 definition: t.definition.clone(),
             });
+            self.linked.insert(t.term.id.clone());
         }
         used
     }

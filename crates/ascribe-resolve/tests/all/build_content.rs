@@ -727,6 +727,71 @@ fn a_term_isnt_linked_on_its_own_glossary_page() {
     assert!(glossed(&resolve(&p, "glossary.md", "site")).is_empty());
 }
 
+fn definitions(page: &ResolvedPage) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    page.visit(&mut |b| {
+        out.extend(
+            b.glossary
+                .iter()
+                .map(|g| (g.term.clone(), g.definition.clone())),
+        );
+    });
+    out
+}
+
+#[test]
+fn a_definition_is_its_paragraph_as_plain_text_for_each_build() {
+    // Markup reduced to its text and a phrase substituted; a paragraph a
+    // fragment brings in; the paragraph of the variant the build keeps; and a
+    // section that opens with a list, which has none.
+    let glossary = "---\ntype: page\ntitle: Glossary\n---\n\n\
+## Agent\n@term\n\n\
+The *{product}* agent, see [docs](index.md), `code`, ![the logo](a.png) and <b>bold</b>\n   text.\n\n\
+## Relay\n@term\n\n@include: _relay.md\n\n\
+## Workspace\n@term\n\n\
+@variant {deployment=cloud}:\nA hosted workspace.\n@end\n\
+@variant {deployment=self-managed}:\nA workspace on your servers.\n@end\n\n\
+## Mirror\n@term\n\n- One.\n- Two.\n";
+    let p = project(&[
+        (
+            "index.md",
+            &page("The agent and the relay share a workspace and a mirror.\n"),
+        ),
+        ("glossary.md", glossary),
+        ("_relay.md", "Passes *messages* on.\n"),
+    ]);
+    let in_build = |build: &str| definitions(&resolve(&p, "index.md", build));
+    let shared = |workspace: &str| {
+        vec![
+            (
+                "agent".to_owned(),
+                "The Quill agent, see docs, code, the logo and bold text.".to_owned(),
+            ),
+            ("relay".to_owned(), "Passes messages on.".to_owned()),
+            ("workspace".to_owned(), workspace.to_owned()),
+            ("mirror".to_owned(), String::new()),
+        ]
+    };
+    assert_eq!(in_build("cloud"), shared("A hosted workspace."));
+    assert_eq!(
+        in_build("sm-npm-pnpm"),
+        shared("A workspace on your servers.")
+    );
+}
+
+#[test]
+fn an_authors_link_to_a_term_is_its_first_occurrence() {
+    let p = glossary_project(
+        "See [the key](glossary.md#api-key) first.\n\nLater the API key rotates.\n",
+    );
+    // With `match = "first"`, the author's link is the page's link to the
+    // term, so the later occurrence stays text.
+    assert_eq!(
+        glossed(&resolve(&p, "index.md", "site")),
+        [("api-key".to_owned(), "the key".to_owned())]
+    );
+}
+
 #[test]
 fn a_glossary_link_is_an_ordinary_link_in_the_resolved_inlines() {
     let p = glossary_project("Use the API key.\n");

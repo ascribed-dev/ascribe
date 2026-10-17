@@ -369,7 +369,7 @@ impl<'p> PageChecker<'p> {
             self.errors_only,
         );
         let permalinks = crate::permalinks::check(self.project, &self.indexed.index, &file);
-        let glossary = crate::glossary::check(self.project, &self.indexed.index, &file);
+        let glossary = crate::glossary::check(&self.indexed.index, &file);
         let nav = crate::nav::check(self.project, &self.indexed.index, &file, self.errors_only);
         for (id, found) in permalinks.into_iter().chain(glossary).chain(nav) {
             let list = out.entry(id).or_default();
