@@ -4,7 +4,10 @@ import {
   navFor,
   navigationGroups,
   navProblems,
+  neighborsIn,
   pageRoute,
+  readingOrder,
+  readingPages,
   sidebarGroups,
   type Navigation,
 } from "../src/nav.js";
@@ -182,6 +185,48 @@ describe("navigationGroups", () => {
     expect(nested?.pages.map((page) => page.href)).toEqual(["/checks/diagnostics/pages"]);
   });
 
+  it("puts a page beside a top folder in that folder's group, as reading order does", () => {
+    // `guides.md` beside `guides/`, and `zfaq.md` after it among the root's pages.
+    const beside: Navigation = {
+      version: 1,
+      root: {
+        folder: "",
+        label: "Start",
+        page: { source: "index.md", label: "Home" },
+        pages: [
+          { source: "guides.md", label: "Guides" },
+          { source: "zfaq.md", label: "Zebra FAQ" },
+        ],
+        sections: [
+          {
+            folder: "guides/",
+            label: "Guides",
+            page: { source: "guides.md", label: "Guides" },
+            pages: [{ source: "guides/alpha.md", label: "Alpha" }],
+            sections: [],
+          },
+        ],
+      },
+    };
+    const entries = ["index.md", "guides.md", "zfaq.md", "guides/alpha.md"].map((file) => ({
+      id: entryId(file),
+      filePath: file,
+    }));
+    const drawn = navigationGroups(
+      beside,
+      entries,
+      (entry) => `/${entry.id}`,
+      (entry) => entry.filePath,
+    );
+    expect(drawn.map((group) => [group.label, group.pages.map((page) => page.label)])).toEqual([
+      ["Start", ["Home", "Zebra FAQ"]],
+      ["Guides", ["Guides", "Alpha"]],
+    ]);
+    expect(readingOrder(beside).map((page) => page.label)).toEqual(
+      drawn.flatMap((group) => group.pages.map((page) => page.label)),
+    );
+  });
+
   it("leaves the root out when it has no pages", () => {
     const empty: Navigation = {
       version: 1,
@@ -222,5 +267,86 @@ describe("navFor", () => {
 
   it("is empty for no pages", () => {
     expect(navFor([])).toEqual([]);
+  });
+});
+
+describe("readingOrder", () => {
+  const page = (source: string) => ({ source, label: source });
+  // `checks/` with `diagnostics.md` beside `checks/diagnostics/`, placed among
+  // its pages, and `extra/`, with an `index.md`, after them.
+  const navigation: Navigation = {
+    version: 1,
+    root: {
+      folder: "",
+      label: "Start",
+      page: page("index.md"),
+      pages: [page("about.md")],
+      sections: [
+        {
+          folder: "checks/",
+          label: "Checks",
+          page: page("checks/index.md"),
+          pages: [page("checks/check.md"), page("checks/diagnostics.md"), page("checks/vale.md")],
+          sections: [
+            {
+              folder: "checks/extra/",
+              label: "Extra",
+              page: page("checks/extra/index.md"),
+              pages: [page("checks/extra/more.md")],
+              sections: [],
+            },
+            {
+              folder: "checks/diagnostics/",
+              label: "Diagnostics",
+              page: page("checks/diagnostics.md"),
+              pages: [page("checks/diagnostics/pages.md")],
+              sections: [],
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  it("goes depth first, a nested section in its own page's place", () => {
+    expect(readingOrder(navigation).map((p) => p.source)).toEqual([
+      "index.md",
+      "about.md",
+      "checks/index.md",
+      "checks/check.md",
+      "checks/diagnostics.md",
+      "checks/diagnostics/pages.md",
+      "checks/vale.md",
+      "checks/extra/index.md",
+      "checks/extra/more.md",
+    ]);
+  });
+
+  it("joins each page to its entry, and gives a page its previous and next", () => {
+    const entries = readingOrder(navigation).map((p) => ({ id: p.source.replace(/\.md$/, "") }));
+    const pages = readingPages(
+      navigation,
+      entries,
+      (entry) => `/${entry.id}/`,
+      (entry) => `${entry.id}.md`,
+    );
+    const around = (id: string) => {
+      const { previous, next } = neighborsIn(pages, (p) => p.entry.id === id);
+      return [previous?.href, next?.href];
+    };
+    expect(around("index")).toEqual([undefined, "/about/"]);
+    expect(around("checks/diagnostics/pages")).toEqual(["/checks/diagnostics/", "/checks/vale/"]);
+    expect(around("checks/extra/more")).toEqual(["/checks/extra/index/", undefined]);
+    expect(around("gone")).toEqual([undefined, undefined]);
+  });
+
+  it("passes over a page the collection has no entry for", () => {
+    const pages = readingPages(
+      navigation,
+      [{ id: "index" }, { id: "checks/vale" }],
+      (entry) => entry.id,
+      (entry) => `${entry.id}.md`,
+    );
+    expect(pages.map((p) => p.href)).toEqual(["index", "checks/vale"]);
   });
 });

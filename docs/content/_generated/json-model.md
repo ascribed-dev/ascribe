@@ -265,6 +265,81 @@
       ],
       "type": "object"
     },
+    "ModelNavPage": {
+      "description": "A page of the navigation.",
+      "properties": {
+        "label": {
+          "description": "Its label: its `nav-label` as plain text, else its title, else its\nfile name without `.md`.",
+          "type": "string"
+        },
+        "source": {
+          "description": "Its path from the content root.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Its content type's name, when it has one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "label"
+      ],
+      "type": "object"
+    },
+    "ModelNavSection": {
+      "description": "A section of the navigation: a folder and its pages, in order.",
+      "properties": {
+        "folder": {
+          "description": "The folder, from the content root, ending in `/`; `\"\"` for the root.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Its label: from `ascribe.nav`, else its own page's title, else its\nfolder's name with its first letter capitalized, and \"Start\" for the\nroot.",
+          "type": "string"
+        },
+        "listed": {
+          "description": "Whether `ascribe.nav` lists it.",
+          "type": "boolean"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelNavPage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its own page: its `index.md`, or the page beside the folder with its\nname, which is then one of the parent's `pages` too."
+        },
+        "pages": {
+          "description": "Its pages in order, its own page not among them.",
+          "items": {
+            "$ref": "#/$defs/ModelNavPage"
+          },
+          "type": "array"
+        },
+        "sections": {
+          "description": "Its nested sections with a page, in order: each one whose own page\nis among `pages` right after that page, then the rest.",
+          "items": {
+            "$ref": "#/$defs/ModelNavSection"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "folder",
+        "label",
+        "pages",
+        "sections",
+        "listed"
+      ],
+      "type": "object"
+    },
     "ModelObservation": {
       "description": "An observation of a source's examples.",
       "properties": {
@@ -584,6 +659,17 @@
         "array",
         "null"
       ]
+    },
+    "navigation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelNavSection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The project's navigation, its root section: every page that isn't\n`unlisted`, in order, as each build's `_ascribe/nav.json` has its\nshare of it. Only in the whole report."
     },
     "phrases": {
       "description": "Phrases, in declaration order.",

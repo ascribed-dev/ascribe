@@ -11,10 +11,10 @@ use ascribe_core::Router;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{
     FieldRole, FrontmatterSchema, Listing, ListingLevel, Purpose, TYPE_KEY, TypeMatch,
-    crawler_tokens, types, validate_frontmatter,
+    crawler_tokens, inline, types, validate_frontmatter,
 };
 use ascribe_resolve::{
-    AstroRouter, Local, REPLACES, RefKind, Target, llms, pages, reference_target,
+    AstroRouter, Local, NAV_LABEL, REPLACES, RefKind, Target, llms, pages, reference_target,
 };
 use ascribe_syntax::{BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
 use serde_yaml_ng::Value;
@@ -341,7 +341,8 @@ impl Ctx<'_> {
     /// The reserved keys on a page (SPEC §2.1): `available` holds an
     /// availability spec, `variant` a mapping of dimensions to values,
     /// `permalink` a name with the characters an `@id` has, `replaces` the
-    /// path of a page, and `listing` one of its values.
+    /// path of a page, `nav-label` a string on one line, and `listing` one
+    /// of its values.
     fn check_reserved_keys(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
         // SPEC §2.1: a value of the wrong shape is a type mismatch.
         let Value::Mapping(map) = value else { return };
@@ -387,6 +388,24 @@ impl Ctx<'_> {
                 ),
             }
         }
+        if let Some(v) = map.get(NAV_LABEL) {
+            let node = index.get(NAV_LABEL);
+            let at = node.map_or(first_line, |n| n.value);
+            match v {
+                Value::String(label) if label.contains(['\n', '\r']) => {
+                    let issue = Issue::new(
+                        diagnostics::FRONTMATTER_TYPE_MISMATCH,
+                        Location::new(self.id, at),
+                    )
+                    .with_arg("field", NAV_LABEL)
+                    .with_arg("expected", "a label on one line, such as `Keys`")
+                    .with_arg("found", "a string of more than one line");
+                    self.report(issue);
+                }
+                Value::String(label) => self.check_nav_label_length(label, map.get("title"), at),
+                other => self.mismatch(NAV_LABEL, "a label on one line, such as `Keys`", other, at),
+            }
+        }
         if let Some(v) = map.get(Listing::KEY) {
             let node = index.get(Listing::KEY);
             let at = node.map_or(first_line, |n| n.value);
@@ -410,6 +429,35 @@ impl Ctx<'_> {
                 }
             }
         }
+    }
+
+    /// A `nav-label` longer than the title it shortens (`nav-label-long`),
+    /// each counted in characters as a reader sees it, without code spans'
+    /// backticks when the title is read with inline markup.
+    fn check_nav_label_length(&mut self, label: &str, title: Option<&Value>, at: Span) {
+        let Some(title) = title.and_then(Value::as_str) else {
+            return;
+        };
+        let inline = self
+            .page_type
+            .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"))
+            .is_some_and(|f| f.inline.is_some());
+        let length = |text: &str| {
+            let text = if inline {
+                inline::plain_text(&inline::parse(text, &|_| None))
+            } else {
+                text.to_owned()
+            };
+            text.trim().chars().count()
+        };
+        let (label_length, title_length) = (length(label), length(title));
+        if label_length <= title_length {
+            return;
+        }
+        let issue = Issue::new(diagnostics::NAV_LABEL_LONG, Location::new(self.id, at))
+            .with_arg("length", label_length.to_string())
+            .with_arg("title", title_length.to_string());
+        self.report(issue);
     }
 
     /// A `replaces` that doesn't name a page (`replaces-not-a-page`): it's

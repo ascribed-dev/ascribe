@@ -1,0 +1,11 @@
+description: >-
+  `nav-label` is a page's short name in a list. It's a string on one line, a
+  fragment can't use it, and one longer than the title it shortens is advice,
+  counted as a reader sees each, without a code span's backticks.
+spec: ["2.1", "2.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _frag.md, line: 2}
+  - {slug: frontmatter-type-mismatch, file: list.md, line: 4}
+  - {slug: nav-label-long, file: sync.md, line: 4, severity: advice}

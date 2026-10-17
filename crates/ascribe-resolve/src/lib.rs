@@ -99,9 +99,9 @@ pub use astro::AstroRouter;
 pub use build::{
     Annotation, Availability, BuildResolver, DeclaredPermalink, DefaultRouter, Destination,
     DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds, InLine, LinkTarget,
-    PagePermalink, Permalink, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild,
-    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
-    glossary_targets, in_release_line, permalinks,
+    NAV_LABEL, NavLabel, PagePermalink, Permalink, Removal, Removed, ResolvedArm, ResolvedBlock,
+    ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope,
+    Substitution, glossary_targets, in_release_line, permalinks,
 };
 pub use closest::{Closest, closest_fixes, closest_targets, link_href};
 pub use expand::{
@@ -127,7 +127,7 @@ pub use memos::{
     PERSONAL_MEMOS_FOLDER, Personal, Placement, folder_in_content, is_memo_path, place,
 };
 pub use named::{BadTarget, EntryKind, Named, PREFIXES};
-pub use navigation::{BuildNavigation, NavPage, Navigation, Section, SharedSection};
+pub use navigation::{BuildNavigation, NavPage, Navigation, Section, SharedSection, file_label};
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };

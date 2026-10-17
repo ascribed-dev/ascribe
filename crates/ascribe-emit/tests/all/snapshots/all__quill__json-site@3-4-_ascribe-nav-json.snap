@@ -1,0 +1,39 @@
+---
+source: crates/ascribe-emit/tests/all/quill.rs
+expression: text
+---
+{
+  "version": 1,
+  "root": {
+    "folder": "",
+    "label": "Start",
+    "pages": [
+      {
+        "source": "keys.md",
+        "label": "API keys",
+        "type": "page"
+      },
+      {
+        "source": "configure-legacy.md",
+        "label": "Configure the agent (3.4)",
+        "type": "page"
+      },
+      {
+        "source": "install-agent.md",
+        "label": "Install the Quill agent",
+        "type": "page"
+      },
+      {
+        "source": "quickstart.md",
+        "label": "Try Quill in the browser",
+        "type": "page"
+      },
+      {
+        "source": "upgrade.md",
+        "label": "Upgrade the agent",
+        "type": "page"
+      }
+    ],
+    "sections": []
+  }
+}

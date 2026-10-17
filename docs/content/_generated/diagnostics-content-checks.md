@@ -160,6 +160,19 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
+### ASC237 `nav-label-long`
+@id {permalink=true}: ASC237
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+
+**When:** A page's `nav-label` is longer than its `title`, each counted in characters as a reader sees it.
+
+**Message:** this `nav-label` is \{length} characters, longer than the \{title}-character title it stands for in the sidebar
+
+**Fix:** A `nav-label` is a page's short name in a list, a sidebar or previous and next, where the title is too long to read at a glance. Shorten it, or remove it, and the title is the page's name there too.
+
+**Read more:** [A page's label](../navigation/index.md#a-page-s-label) in the navigation reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`

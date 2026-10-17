@@ -10,9 +10,12 @@ use std::collections::BTreeMap;
 use ascribe_core::RelPath;
 use ascribe_model::examples::Status;
 use ascribe_model::{
-    AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Source, VariantMode,
+    AvailabilityMode, ContentModel, Field, FieldType, GlossaryMatch, Listing, Source, VariantMode,
 };
-use ascribe_resolve::{FileSystem, FolderExamples, Probe};
+use ascribe_resolve::navigation::ROOT_LABEL;
+use ascribe_resolve::{
+    FileSystem, FolderExamples, Probe, Project, Section as NavSection, file_label,
+};
 use serde::Serialize;
 
 use crate::ASCRIBE_VERSION;
@@ -128,6 +131,113 @@ pub struct ModelReport {
     /// Sources, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sources: Option<Vec<ModelSource>>,
+    /// The project's navigation, its root section: every page that isn't
+    /// `unlisted`, in order, as each build's `_ascribe/nav.json` has its
+    /// share of it. Only in the whole report.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub navigation: Option<ModelNavSection>,
+}
+
+/// A section of the navigation: a folder and its pages, in order.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelNavSection {
+    /// The folder, from the content root, ending in `/`; `""` for the root.
+    pub folder: String,
+    /// Its label: from `ascribe.nav`, else its own page's title, else its
+    /// folder's name with its first letter capitalized, and "Start" for the
+    /// root.
+    pub label: String,
+    /// Its own page: its `index.md`, or the page beside the folder with its
+    /// name, which is then one of the parent's `pages` too.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page: Option<ModelNavPage>,
+    /// Its pages in order, its own page not among them.
+    pub pages: Vec<ModelNavPage>,
+    /// Its nested sections with a page, in order: each one whose own page
+    /// is among `pages` right after that page, then the rest.
+    pub sections: Vec<ModelNavSection>,
+    /// Whether `ascribe.nav` lists it.
+    pub listed: bool,
+}
+
+/// A page of the navigation.
+#[derive(Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct ModelNavPage {
+    /// Its path from the content root.
+    pub source: String,
+    /// Its label: its `nav-label` as plain text, else its title, else its
+    /// file name without `.md`.
+    pub label: String,
+    /// Its content type's name, when it has one.
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub type_name: Option<String>,
+}
+
+/// The project's navigation, for [`ModelReport::navigation`]: `ascribe.nav`'s
+/// order over the default, every page that isn't `unlisted`, and the
+/// sections left with one.
+pub fn navigation(project: &Project) -> ModelNavSection {
+    let navigation = project.navigation();
+    nav_section(project, &navigation.root, true).unwrap_or_else(|| ModelNavSection {
+        folder: String::new(),
+        label: navigation
+            .root
+            .label
+            .clone()
+            .unwrap_or_else(|| ROOT_LABEL.to_owned()),
+        page: None,
+        pages: Vec::new(),
+        sections: Vec::new(),
+        listed: navigation.root.listed,
+    })
+}
+
+fn nav_section(project: &Project, section: &NavSection, root: bool) -> Option<ModelNavSection> {
+    let page = section.page.as_ref().and_then(|p| nav_page(project, p));
+    let pages: Vec<ModelNavPage> = section
+        .pages
+        .iter()
+        .filter_map(|p| nav_page(project, p))
+        .collect();
+    let sections: Vec<ModelNavSection> = section
+        .sections
+        .iter()
+        .filter_map(|s| nav_section(project, s, false))
+        .collect();
+    if !root && page.is_none() && pages.is_empty() && sections.is_empty() {
+        return None;
+    }
+    Some(ModelNavSection {
+        folder: section.folder.clone(),
+        label: section.label(project),
+        page,
+        pages,
+        sections,
+        listed: section.listed,
+    })
+}
+
+/// The page at `path`, unless it's `unlisted`.
+fn nav_page(project: &Project, path: &RelPath) -> Option<ModelNavPage> {
+    let model = project.model();
+    let file = project.file(path)?;
+    let type_name = file.content_type(model).map(|t| t.name.as_str());
+    let own = file
+        .frontmatter
+        .as_ref()
+        .and_then(|f| f.get(Listing::KEY))
+        .and_then(|l| l.as_str())
+        .and_then(Listing::from_name);
+    if model.listing_of(path.as_str(), type_name, own).0 == Listing::Unlisted {
+        return None;
+    }
+    Some(ModelNavPage {
+        source: path.to_string(),
+        label: file_label(file, model),
+        type_name: type_name.map(str::to_owned),
+    })
 }
 
 /// A page type.
@@ -446,6 +556,7 @@ pub fn model(
         releases: wants(Section::Releases).map(|()| releases(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
         sources: wants(Section::Sources).map(|()| sources(model, fs)),
+        navigation: None,
     }
 }
 

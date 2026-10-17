@@ -235,7 +235,7 @@ A later version adds keys and changes none of these.
 ### 1.6 The navigation
 @available: next
 
-The site output holds `_ascribe/nav.json`: the build's share of the project's navigation (SPEC §7.8), the sections and pages in order with their labels, for a site to draw its sidebar from, joined to the page records (§1.3) on `source`. It's `generated` in the manifest, and written for every build, with an empty root section when the build has no pages. Its fields, and how a reader places a nested section, are the [navigation contract](navigation.md). A versioned build's lines each have their own, in their own roots.
+The site output holds `_ascribe/nav.json`: the build's share of the project's navigation (SPEC §7.8), the sections and pages in order with their labels, for a site to draw its sidebar from, joined to the page records (§1.3) on `source`. It's `generated` in the manifest, and written for every build, with an empty root section when the build has no pages. Its fields, and how a reader places a nested section, are the [navigation contract](navigation.md). A versioned build's lines each have their own, in their own roots. The JSON output holds the same file, its formatted labels as pieces, as its pages' formatted titles are.
 
 ## 2. What Ascribe owns
 

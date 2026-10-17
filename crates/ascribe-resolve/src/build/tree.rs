@@ -54,6 +54,9 @@ pub struct ResolvedPage {
     /// leaves out has its default's. The plain text of each is in
     /// [`ResolvedPage::frontmatter`].
     pub formatted: Vec<FormattedField>,
+    /// The page's `nav-label` (SPEC §2.1), its name where it's an entry in
+    /// a list, read as its title is.
+    pub nav_label: Option<NavLabel>,
     /// The page-level availability (the frontmatter `available`, after
     /// feature keys), which every node inherits unless it has its own.
     pub availability: Option<Arc<Availability>>,
@@ -93,6 +96,19 @@ pub struct PagePermalink {
     pub name: String,
     /// The `permalink` line of the frontmatter.
     pub at: Location,
+}
+
+/// The reserved frontmatter key that names a page where it's an entry in a
+/// list: a sidebar, previous and next (SPEC §2.1).
+pub const NAV_LABEL: &str = "nav-label";
+
+/// A page's `nav-label`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NavLabel {
+    /// As plain text.
+    pub text: String,
+    /// In pieces, when the page's `title` is read with inline markup.
+    pub formatted: Option<Vec<Segment>>,
 }
 
 /// A frontmatter field read with inline markup.

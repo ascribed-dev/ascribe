@@ -9,7 +9,7 @@ import Head from "@ascribed/astro/Head.astro";
 // what it is and where the current one is.
 import Versions from "@ascribed/astro/Versions.astro";
 import VersionBanner from "@ascribed/astro/VersionBanner.astro";
-import { sidebar, type Formatted } from "@ascribed/astro/content";
+import { neighbors, sidebar, type Formatted } from "@ascribed/astro/content";
 
 interface Props {
   entry: CollectionEntry<"docs">;
@@ -41,8 +41,11 @@ const labelHtml = (of: { label: string; formatted?: Formatted }) =>
 const { available } = page(entry);
 // The sidebar: the project's navigation, in ascribe.nav's order or the
 // default one, each page with its address and label. With a versioned build,
-// it shows the pages of the line this page is in.
-const groups = sidebar(await getCollection("docs"), { entry });
+// it shows the pages of the line this page is in. Previous and next are the
+// pages before and after this one in the navigation's reading order.
+const entries = await getCollection("docs");
+const groups = sidebar(entries, { entry });
+const { previous, next } = neighbors(entry, entries);
 ---
 
 <!doctype html>
@@ -92,6 +95,22 @@ const groups = sidebar(await getCollection("docs"), { entry });
         </ul>
       </nav>
       <article><slot /></article>
+      <nav aria-label="Previous and next">
+        {
+          previous && (
+            <a rel="prev" href={previous.href}>
+              Previous: <Fragment set:html={labelHtml(previous)} />
+            </a>
+          )
+        }
+        {
+          next && (
+            <a rel="next" href={next.href}>
+              Next: <Fragment set:html={labelHtml(next)} />
+            </a>
+          )
+        }
+      </nav>
     </main>
   </body>
 </html>

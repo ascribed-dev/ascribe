@@ -105,7 +105,7 @@ fn llms_txt_lists_exactly_the_pages_a_build_publishes() {
 }
 
 #[test]
-fn llms_txt_is_named_and_summarized_by_the_home_page_and_sectioned_by_folder() {
+fn llms_txt_is_named_and_summarized_by_the_home_page_and_sectioned_by_the_navigation() {
     let project = memory_project(
         &agents_model(),
         &[
@@ -128,12 +128,58 @@ fn llms_txt_is_named_and_summarized_by_the_home_page_and_sectioned_by_folder() {
     assert_eq!(
         files["llms.txt"],
         "# Quill\n\n> Docs for Quill, the editor.\n\n\
-         ## Pages\n\n\
+         ## Start\n\n\
          - [Quill](https://docs.quill.dev/docs/index.md): Docs for Quill, the editor.\n\
          - [Install](https://docs.quill.dev/docs/install.md)\n\n\
          ## How-to guides\n\n\
          - [How-to guides](https://docs.quill.dev/docs/guides.md)\n\
          - [Sync](https://docs.quill.dev/docs/guides/sync.md): Keep two copies the same.\n"
+    );
+}
+
+#[test]
+fn llms_txt_follows_ascribe_nav_with_nested_sections_folded_in_reading_order() {
+    let page = |title: &str| format!("---\ntype: guide\ntitle: {title}\nnav-label: Short\n---\n");
+    let sources = [
+        ("index.md", page("Home")),
+        ("install.md", page("Install")),
+        ("about.md", page("About")),
+        ("guides/index.md", page("Guides")),
+        ("guides/sync.md", page("Sync")),
+        ("guides/backup.md", page("Back up")),
+        ("guides/backup/restore.md", page("Restore")),
+        ("guides/zebra.md", page("Zebra")),
+        ("reference/options.md", page("Options")),
+    ];
+    let refs: Vec<(&str, &str)> = sources.iter().map(|(p, t)| (*p, t.as_str())).collect();
+    let nav = "version = 1\n\n\
+        [[sections]]\nfolder = \"\"\npages = [\"install.md\"]\n\n\
+        [[sections]]\nfolder = \"reference/\"\nlabel = \"Look it up\"\n\n\
+        [[sections]]\nfolder = \"guides/\"\npages = [\"zebra.md\", \"backup.md\"]\n";
+    let project = memory_project_with_files(&agents_model(), &refs, &[("ascribe.nav", nav)]);
+    let files = plain_files(&project, "site");
+    let url = |p: &str| format!("https://docs.quill.dev/docs/{p}");
+    assert_eq!(
+        files["llms.txt"],
+        format!(
+            "# Home\n\n> Every page of this documentation, each linked to its Markdown version.\n\n\
+             ## Start\n\n\
+             - [Home]({})\n- [Install]({})\n- [About]({})\n\n\
+             ## Look it up\n\n\
+             - [Options]({})\n\n\
+             ## Guides\n\n\
+             - [Guides]({})\n- [Zebra]({})\n- [Back up]({})\n- [Restore]({})\n- [Sync]({})\n",
+            url("index.md"),
+            url("install.md"),
+            url("about.md"),
+            url("reference/options.md"),
+            url("guides.md"),
+            url("guides/zebra.md"),
+            url("guides/backup.md"),
+            url("guides/backup/restore.md"),
+            url("guides/sync.md"),
+        ),
+        "the titles, not the `nav-label`s, in the file's order"
     );
 }
 

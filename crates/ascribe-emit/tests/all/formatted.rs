@@ -77,6 +77,42 @@ fn the_json_output_lists_the_formatted_fields() {
 }
 
 #[test]
+fn the_json_output_s_navigation_is_the_site_s_with_labels_in_pieces() {
+    let p = project("'`ascribe.toml` reference'");
+    let json = emit_build(Path::new("/nowhere"), &p, "site", &JsonEmitter);
+    let json: serde_json::Value =
+        serde_json::from_str(&json["_ascribe/nav.json"]).expect("the JSON output's navigation");
+    let site = emit_build(
+        Path::new("/nowhere"),
+        &p,
+        "site",
+        &ascribe_emit::SiteEmitter::new(p.model()),
+    );
+    let site: serde_json::Value =
+        serde_json::from_str(&site["_ascribe/nav.json"]).expect("the site's navigation");
+    let toml = &json["root"]["sections"][0]["pages"][0];
+    assert_eq!(toml["source"], "reference/toml.md");
+    assert_eq!(toml["label"], "ascribe.toml reference");
+    assert_eq!(
+        toml["formatted"]["label"],
+        serde_json::json!([
+            { "type": "code", "value": "ascribe.toml" },
+            { "type": "text", "value": " reference" },
+        ])
+    );
+    assert_eq!(
+        site["root"]["sections"][0]["pages"][0]["formatted"]["label"],
+        "<code>ascribe.toml</code> reference"
+    );
+    // The same tree but for the formatted labels.
+    let mut plain = json.clone();
+    plain["root"]["sections"][0]["pages"][0]["formatted"] = serde_json::Value::Null;
+    let mut site_plain = site.clone();
+    site_plain["root"]["sections"][0]["pages"][0]["formatted"] = serde_json::Value::Null;
+    assert_eq!(plain, site_plain);
+}
+
+#[test]
 fn a_title_without_code_spans_still_has_a_formatted_form() {
     let p = project("Keys");
     assert_eq!(

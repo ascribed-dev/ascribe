@@ -31,7 +31,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use ascribe_core::RelPath;
 use ascribe_model::{ContentModel, NavFile, Segment};
 
-use crate::build::{ResolvedBuild, ResolvedPage};
+use crate::build::{NAV_LABEL, ResolvedBuild, ResolvedPage};
 use crate::index::{FileIndex, FileKind};
 use crate::project::Project;
 
@@ -117,6 +117,8 @@ pub struct BuildNavigation<'a> {
 /// A section as one build has it.
 #[derive(Clone, Debug)]
 pub struct SharedSection<'a> {
+    /// The section of the project's navigation it's the share of.
+    pub section: &'a Section,
     /// The folder, from the content root, ending in `/`; `""` for the root.
     pub folder: &'a str,
     /// Its label as plain text.
@@ -132,14 +134,74 @@ pub struct SharedSection<'a> {
     pub sections: Vec<SharedSection<'a>>,
 }
 
+impl<'a> SharedSection<'a> {
+    /// Its pages in reading order, depth first: its own page, then its
+    /// pages, each nested section whose own page is beside its folder right
+    /// after that page, with its pages and nested sections, and the other
+    /// nested sections after them, each from its own page. The content root
+    /// reads as a sidebar groups it: its own page and its pages that aren't
+    /// beside a folder, then each top section from its own page.
+    pub fn reading_order(&self) -> Vec<&NavPage<'a>> {
+        let mut out = Vec::new();
+        if self.folder.is_empty() {
+            out.extend(&self.page);
+            out.extend(self.pages.iter().filter(|p| !self.is_beside(p)));
+            for section in &self.sections {
+                section.read(true, &mut out);
+            }
+        } else {
+            self.read(true, &mut out);
+        }
+        out
+    }
+
+    /// Whether `page` is the own page of one of its nested sections, beside
+    /// that section's folder.
+    pub fn is_beside(&self, page: &NavPage<'_>) -> bool {
+        self.sections.iter().any(|s| {
+            s.page
+                .as_ref()
+                .is_some_and(|p| p.page.path == page.page.path)
+        })
+    }
+
+    fn read<'s>(&'s self, own: bool, out: &mut Vec<&'s NavPage<'a>>) {
+        if own && let Some(page) = &self.page {
+            out.push(page);
+        }
+        let mut read = vec![false; self.sections.len()];
+        for page in &self.pages {
+            out.push(page);
+            for (at, nested) in self.sections.iter().enumerate() {
+                if !read[at]
+                    && nested
+                        .page
+                        .as_ref()
+                        .is_some_and(|p| p.page.path == page.page.path)
+                {
+                    read[at] = true;
+                    nested.read(false, out);
+                }
+            }
+        }
+        for (nested, read) in self.sections.iter().zip(read) {
+            if !read {
+                nested.read(true, out);
+            }
+        }
+    }
+}
+
 /// A page as a build's navigation has it.
 #[derive(Clone, Debug)]
 pub struct NavPage<'a> {
     /// The page.
     pub page: &'a ResolvedPage,
-    /// Its label as plain text: its title, or its file name without `.md`.
+    /// Its label as plain text: its `nav-label`, else its title, else its
+    /// file name without `.md`.
     pub label: String,
-    /// Its label in pieces, when its title is read with inline markup.
+    /// Its label in pieces, when it's read with inline markup, as the title
+    /// is.
     pub formatted: Option<&'a [Segment]>,
     /// Its content type's name, when it has one.
     pub type_name: Option<&'a str>,
@@ -187,13 +249,23 @@ impl Navigation {
         project: &'a Project,
         build: &'a ResolvedBuild,
     ) -> BuildNavigation<'a> {
+        self.share_of(project, &build.pages)
+    }
+
+    /// [`Navigation::share`] of a build that publishes `pages`.
+    pub fn share_of<'a>(
+        &'a self,
+        project: &'a Project,
+        pages: &'a [ResolvedPage],
+    ) -> BuildNavigation<'a> {
         let published: BTreeMap<&RelPath, &ResolvedPage> =
-            build.pages.iter().map(|p| (&p.path, p)).collect();
+            pages.iter().map(|p| (&p.path, p)).collect();
         let sharer = Sharer { project, published };
         BuildNavigation {
             root: sharer
                 .section(&self.root, true)
                 .unwrap_or_else(|| SharedSection {
+                    section: &self.root,
                     folder: "",
                     label: self
                         .root
@@ -335,6 +407,7 @@ impl<'a> Sharer<'a> {
             (None, false) => self.section_label(section),
         };
         Some(SharedSection {
+            section,
             folder: &section.folder,
             label,
             formatted,
@@ -367,16 +440,47 @@ impl<'a> Sharer<'a> {
             return None;
         }
         let model = self.project.model();
+        let (label, formatted) = match &page.nav_label {
+            Some(own) => (own.text.clone(), own.formatted.as_deref()),
+            None => (
+                page.title.clone().unwrap_or_else(|| stem(path).to_owned()),
+                page.formatted_title(),
+            ),
+        };
         Some(NavPage {
             page,
-            label: page.title.clone().unwrap_or_else(|| stem(path).to_owned()),
-            formatted: page.formatted_title(),
+            label,
+            formatted,
             type_name: self
                 .project
                 .file(path)
                 .and_then(|f| f.content_type(model))
                 .map(|t| t.name.as_str()),
         })
+    }
+}
+
+/// A page's label as the source has it, before a build: its `nav-label` as
+/// plain text, else its title, else its file name without `.md`.
+pub fn file_label(file: &FileIndex, model: &ContentModel) -> String {
+    let own = file
+        .frontmatter
+        .as_ref()
+        .and_then(|f| f.get(NAV_LABEL))
+        .and_then(|l| l.as_str());
+    let inline = file
+        .content_type(model)
+        .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"))
+        .is_some_and(|f| f.inline.is_some());
+    match own {
+        Some(own) if inline => {
+            ascribe_model::inline::plain_text(&ascribe_model::inline::parse(own, &|_| None))
+        }
+        Some(own) => own.to_owned(),
+        None => file
+            .title
+            .clone()
+            .unwrap_or_else(|| stem(&file.path).to_owned()),
     }
 }
 

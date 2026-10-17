@@ -20,9 +20,9 @@ export interface Formatted {
 export interface SidebarPage<E> {
   entry: E;
   href: string;
-  /** Its label as plain text: its title. */
+  /** Its label as plain text: its `nav-label`, else its title. */
   label: string;
-  /** Its label as HTML, when the title is read with inline markup. */
+  /** Its label as HTML, when it's read with inline markup, as the title is. */
   formatted?: Formatted;
 }
 
@@ -150,10 +150,14 @@ export function navigationGroups<E extends NavEntry>(
     };
   };
   const { root } = navigation;
-  const top = { ...group(root, undefined), sections: [] };
+  // A top section's own page beside its folder is in that section's group.
+  const top = {
+    ...group({ ...root, pages: root.pages.filter((nav) => !beside(root, nav)) }, undefined),
+    sections: [],
+  };
   const groups = [
     ...(top.pages.length === 0 ? [] : [top]),
-    ...root.sections.map((section) => group(section, root)),
+    ...root.sections.map((section) => group(section, undefined)),
   ];
   if (missing.length > 0) {
     throw new Error(
@@ -161,6 +165,95 @@ export function navigationGroups<E extends NavEntry>(
     );
   }
   return groups;
+}
+
+/**
+ * The navigation's pages in reading order, depth first: a section's own
+ * page, then its pages, each nested section whose own page is beside its
+ * folder right after that page, with its pages and nested sections, and the
+ * other nested sections after them, each from its own page. The content
+ * root reads as the sidebar groups it: its own page and its pages that
+ * aren't beside a folder, then each top section from its own page. Previous
+ * and next follow it, as an archive and `llms.txt` do.
+ */
+export function readingOrder(navigation: Navigation): NavPage[] {
+  const out: NavPage[] = [];
+  const read = (section: NavSection, own: boolean) => {
+    if (own && section.page !== undefined) out.push(section.page);
+    const done = section.sections.map(() => false);
+    for (const page of section.pages) {
+      out.push(page);
+      section.sections.forEach((nested, at) => {
+        if (!done[at] && nested.page?.source === page.source) {
+          done[at] = true;
+          read(nested, false);
+        }
+      });
+    }
+    section.sections.forEach((nested, at) => {
+      if (!done[at]) read(nested, true);
+    });
+  };
+  const { root } = navigation;
+  if (root.page !== undefined) out.push(root.page);
+  out.push(...root.pages.filter((nav) => !beside(root, nav)));
+  for (const section of root.sections) read(section, true);
+  return out;
+}
+
+/** Whether `page` is the own page of one of `section`'s nested sections. */
+function beside(section: NavSection, page: NavPage): boolean {
+  return section.sections.some((nested) => nested.page?.source === page.source);
+}
+
+/** A page's previous and next, each with its entry, its address, and its label. */
+export interface Neighbors<E> {
+  previous?: SidebarPage<E>;
+  next?: SidebarPage<E>;
+}
+
+/**
+ * The pages before and after `at` in `pages`, the order a reader goes in.
+ * Neither, for a page that isn't in it.
+ */
+export function neighborsIn<E>(
+  pages: readonly SidebarPage<E>[],
+  at: (page: SidebarPage<E>) => boolean,
+): Neighbors<E> {
+  const i = pages.findIndex(at);
+  if (i === -1) return {};
+  const previous = pages[i - 1];
+  const next = pages[i + 1];
+  return {
+    ...(previous === undefined ? {} : { previous }),
+    ...(next === undefined ? {} : { next }),
+  };
+}
+
+/**
+ * The navigation's pages in reading order, each with its entry, its
+ * address, and its label. `source` gives an entry's page's source path.
+ * A page the collection has no entry for is passed over.
+ */
+export function readingPages<E extends NavEntry>(
+  navigation: Navigation,
+  entries: readonly E[],
+  route: (entry: E) => string,
+  source: (entry: E) => string,
+): SidebarPage<E>[] {
+  const bySource = new Map(entries.map((entry) => [source(entry), entry]));
+  return readingOrder(navigation).flatMap((nav) => {
+    const entry = bySource.get(nav.source);
+    if (entry === undefined) return [];
+    return [
+      {
+        entry,
+        href: route(entry),
+        label: nav.label,
+        ...(nav.formatted === undefined ? {} : { formatted: nav.formatted }),
+      },
+    ];
+  });
 }
 
 /**

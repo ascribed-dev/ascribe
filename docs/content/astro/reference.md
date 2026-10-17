@@ -239,12 +239,33 @@ It returns the groups in order. The content root's pages are the first group, la
 | `formatted.label` | The label as HTML, when it's a title with code (`inline = "code"`). |
 | `folder` | The section's folder, from the content root. Absent in a site's own list. |
 | `page` | The section's own page. |
-| `pages` | Its pages in order, each `{ entry, href, label, formatted? }`: the collection entry, its address, the one Ascribe's links use, and its label. A section's `index.md` is first among them; an own page beside the folder, such as `checks/diagnostics.md` for `checks/diagnostics/`, is among the parent's pages instead, and the nested group sits right after it. |
+| `pages` | Its pages in order, each `{ entry, href, label, formatted? }`: the collection entry, its address, the one Ascribe's links use, and its label. A section's `index.md` is first among them; an own page beside the folder, such as `checks/diagnostics.md` for `checks/diagnostics/`, is among the parent's pages instead, and the nested group sits right after it. A top section's own page beside its folder, such as `guides.md` for `guides/`, is first in that section's group, not in the root's. |
 | `sections` | Its nested sections, as groups, in order. Empty in a site's own list. A layout that draws one level leaves them out. |
 
 The build fails when the navigation names a page the collection has no entry for, which happens only when the site output is from another build than the collection; build again.
 
 A site that passed its list first, `sidebar(nav, entries, options)`, passes it as an option: `sidebar(entries, { ...options, nav })`.
+
+A page's label is its [`nav-label`](../navigation/index.md#a-page-s-label) when it has one, and its title otherwise.
+
+### Previous and next
+@id: neighbors
+@available: next
+
+`neighbors(entry, entries, options)`, from `@ascribed/astro/content`, gives a page's previous and next: the pages before and after it in the navigation's [reading order](../navigation/index.md#sections-and-pages), depth first, so a nested section's pages follow its own page. `entry` is the page's collection entry and `entries` the collection; the options are `name` and `nav`, as `sidebar()` takes them. With a [versioned build](index.md#versions), both are in the line `entry` is on.
+
+```astro
+---
+import { getCollection } from "astro:content";
+import { neighbors } from "@ascribed/astro/content";
+
+const { previous, next } = neighbors(entry, await getCollection("docs"));
+---
+{previous && <a rel="prev" href={previous.href}>{previous.label}</a>}
+{next && <a rel="next" href={next.href}>{next.label}</a>}
+```
+
+It returns `{ previous?, next? }`, each `{ entry, href, label, formatted? }`, as a page of a sidebar group is. The first page has no `previous`, and the last no `next`; a page the navigation leaves out, such as one that's `unlisted`, has neither. With a site's own list, `nav`, they're the pages before and after it in the list's groups, in order.
 
 ## Review in the site preview
 @id {permalink=true}: review-in-the-site-preview

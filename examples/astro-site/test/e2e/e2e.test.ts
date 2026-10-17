@@ -350,10 +350,13 @@ describe("the built site", () => {
   });
 });
 
+/** The page documents under `dir`, leaving out `_ascribe/`, the output's own files. */
 function jsonFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
     entry.isDirectory()
-      ? jsonFiles(path.join(dir, entry.name))
+      ? entry.name === "_ascribe"
+        ? []
+        : jsonFiles(path.join(dir, entry.name))
       : entry.name.endsWith(".json")
         ? [path.join(dir, entry.name)]
         : [],

@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-232 in all. By severity: 44 advice, 163 error, 25 warning. By level: 207 file, 25 page. By kind of next step: 54 choose, 17 fix, 7 outside, 12 review, 142 write.
+233 in all. By severity: 45 advice, 163 error, 25 warning. By level: 208 file, 25 page. By kind of next step: 54 choose, 17 fix, 7 outside, 12 review, 143 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -341,6 +341,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC234` | `section-page-both` | error | choose | `{folder}` has this `index.md` and `{page}` beside it, and a section has one own page; keep one of them |
 | `ASC235` | `nav-page-unplaced` | advice | fix | `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title |
 | `ASC236` | `nav-section-unplaced` | advice | fix | ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order |
+| `ASC237` | `nav-label-long` | advice | write | this `nav-label` is {length} characters, longer than the {title}-character title it stands for in the sidebar |
 
 ## The VS Code extension
 

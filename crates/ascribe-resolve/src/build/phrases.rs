@@ -13,7 +13,7 @@ use ascribe_syntax::{BlockKind, Inline, InlineKind, LinkForm, Phrase};
 use serde_yaml_ng::Value;
 
 use super::inlines::own_lists_mut;
-use super::tree::{FormattedField, ResolvedBlock, ResolvedKind, Substitution};
+use super::tree::{FormattedField, NAV_LABEL, NavLabel, ResolvedBlock, ResolvedKind, Substitution};
 use crate::index::substitute_with;
 use crate::project::Project;
 use crate::references::destination_phrases;
@@ -231,6 +231,42 @@ pub(crate) fn frontmatter(
         }
     }
     (out, formatted)
+}
+
+/// A page's `nav-label` (SPEC §2.1), read as its type's `title` is: with
+/// phrases substituted when `title` takes them, and in pieces when `title`
+/// sets `inline`. `None` when the page has none, or it isn't a string.
+pub(crate) fn nav_label(
+    model: &ContentModel,
+    build: &Build,
+    page_type: Option<&ContentType>,
+    value: &Value,
+) -> Option<NavLabel> {
+    let written = value.get(NAV_LABEL)?.as_str()?;
+    let values: Values<'_> = &|key| model.phrase_in(key, build);
+    let title = page_type.and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"));
+    let phrases = title.is_some_and(|f| f.phrases);
+    match title {
+        Some(field) if field.inline.is_some() => {
+            let segments = if phrases {
+                inline::parse(written, &|key| values(key).map(str::to_owned))
+            } else {
+                inline::parse(written, &|_| None)
+            };
+            Some(NavLabel {
+                text: inline::plain_text(&segments),
+                formatted: Some(segments),
+            })
+        }
+        _ => Some(NavLabel {
+            text: if phrases {
+                substitute_text(written, values)
+            } else {
+                written.to_owned()
+            },
+            formatted: None,
+        }),
+    }
 }
 
 fn typed(value: &mut Value, ty: &FieldType, phrases: bool, model: Values<'_>) {

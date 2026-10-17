@@ -48,7 +48,7 @@ Code blocks are always fenced (the fence is longer than any backtick run in the 
 
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; with `agents = true`, each page opens with `<ascribe-for-agents>` (element contract §8); `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`, `_ascribe/permalinks.json`, `_ascribe/pages.json`, the build's page records from `ascribe_resolve::pages` (output-layout contract §1.3), and `_ascribe/headers.json`, the response headers each page's Markdown version needs from the host, from the same records (§1.4). A page's `listing` is in its record and left out of its frontmatter. `prepare` refuses a build whose pages share a route.
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; with `agents = true`, each page opens with `<ascribe-for-agents>` (element contract §8); `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`, `_ascribe/permalinks.json`, `_ascribe/pages.json`, the build's page records from `ascribe_resolve::pages` (output-layout contract §1.3), and `_ascribe/headers.json`, the response headers each page's Markdown version needs from the host, from the same records (§1.4), and `_ascribe/nav.json`, the build's share of the navigation (§1.6). A page's `listing` is in its record and left out of its frontmatter. `prepare` refuses a build whose pages share a route.
 
 | Source | Output |
 |---|---|
@@ -76,7 +76,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ## JSON
 
-One document per page, at the page's source path with `.json` for `.md`. `schemaVersion` is `1`. It changes only when a field is removed or changes meaning; consumers ignore fields they don't know. Spans are UTF-8 byte offsets, `[start, end]`, from the start of the file (frontmatter included); lines count from 1. Every `file` is a content path, so a consumer can point back at the source.
+One document per page, at the page's source path with `.json` for `.md`. `schemaVersion` is `1`. It changes only when a field is removed or changes meaning; consumers ignore fields they don't know. Spans are UTF-8 byte offsets, `[start, end]`, from the start of the file (frontmatter included); lines count from 1. Every `file` is a content path, so a consumer can point back at the source. Beside the pages, `generated` adds `_ascribe/nav.json`, the site output's navigation with its formatted labels as pieces.
 
 ### Page
 

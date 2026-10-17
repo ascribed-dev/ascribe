@@ -82,9 +82,9 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves seven keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, `listing`, and `replaces` (below).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves eight keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, `listing`, `replaces`, and `nav-label` (below).
 
-- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, one of `listing`'s values, or a link destination) is a frontmatter value of the wrong type (§8.2).
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, one of `listing`'s values, a link destination, or a string on one line) is a frontmatter value of the wrong type (§8.2).
 - `type` says which content type a page is (§7.2). Its value is the name of a type the content model declares. In a project that declares types, every page MUST name one, and a page that names none, or names one that isn't declared, is an error (§8.2). In a project that declares none, its pages have the implicit type `page` and name no type. Tools that write frontmatter put `type` first.
 
   ```yaml
@@ -118,6 +118,14 @@ An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY
   replaces: install-legacy.md
   ---
   ```
+- `nav-label` is a page's name where it's an entry in a list: a sidebar, and the links to the previous and next pages (§7.8). Its value is a string on one line, read as the page's `title` is, code spans and phrases included where `title` takes them. A page without one is named by its title there. Elsewhere, `llms.txt` (§9.4) among them, a page keeps its title. A processor SHOULD advise where a `nav-label` is longer than the title it shortens.
+
+  ```yaml
+  ---
+  title: Create and rotate API keys
+  nav-label: Keys
+  ---
+  ```
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
 
 ### 2.2 Pages and fragments
@@ -129,7 +137,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `type`, `available`, `variant`, `permalink`, and `listing`; a fragment has no content type, and availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, and `nav-label`; a fragment has no content type, and availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -1011,7 +1019,8 @@ pages = ["install.md", "configure.md"]
 - `version` is `1`. Each `[[sections]]` table lists one section: `folder`, its path from the content root ending in `/`, or `""` for the content root; optionally `pages`, the file names of pages in that folder, in order, which may name the page beside a nested folder but not the section's own page; and optionally `label`, one line. Nothing else may be written. The tables' order is the sections' order.
 - **The default order:** sections in path order, the content root first. In each, its own page first, then its pages by their content type, in the order the content model declares types (§7.2), then by title. A nested section whose own page is beside its folder sits right after that page among its parent's pages; any other comes after the parent's pages, in path order.
 - **The file's order over it:** the sections the file lists come first, in its order, among their siblings, and the rest after, in path order. In a section that lists `pages`, those pages come first, in its order, and the rest after, by title; a nested section whose own page is named moves with it. A section with no `pages` has the default order.
-- A section's **label** is its `label`, else its own page's title, else its folder's name with its first letter capitalized. The content root's is "Start" unless `label` says otherwise.
+- A section's **label** is its `label`, else its own page's title, else its folder's name with its first letter capitalized. The content root's is "Start" unless `label` says otherwise. A page's label is its `nav-label` (§2.1), else its title.
+- **Reading order** is a section's own page, then its pages in order, a nested section whose own page is beside its folder right after that page, with its pages and nested sections, and the other nested sections after them, each from its own page; from the content root, depth first, except that the content root's own page beside a top folder is read with that folder's section: the root's own page and its pages that aren't beside a folder come first, then each top section from its own page, as a sidebar groups them. A page's previous and next are the pages before and after it in reading order, and the home page has no previous.
 - **One navigation for a project.** A build's navigation is its share: the pages it publishes and offers (§2.1), so a page that's `unlisted` isn't in it, and the sections left with one.
 - A file that can't be read as above is an error, and the project has the default order, as if it had no file.
 - A file that reads is an error where it names what the project doesn't have, and what it names wrongly is passed over: a `folder` that isn't a section; a `pages` entry that isn't a page in its folder, or that names the section's `index.md`; and a folder listed a second time, or a page named a second time in one section's `pages`, the second counting for nothing.
@@ -1124,7 +1133,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
-| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment | Error |
+| Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`, `nav-label`) on a fragment | Error |
 | Frontmatter | `listing` looser than a rule of the content model the page is under | Error |
 | Frontmatter | `replaces` that doesn't name a page | Error |
 | Frontmatter | A page that `replaces` itself, or a chain of `replaces` that comes back to where it started (page level) | Error |
@@ -1257,11 +1266,11 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A `@variant` group with more than one arm left, which the site output makes a switcher, opens with a line saying a reader sees one of its arms at a time, and by which dimension's label when the arms are dimensional: `A reader sees one of the next 3 sections at a time, chosen by package manager.` Each arm is then a section under a heading one level below the section the group is in (at most level 6), naming each of its dimensions and values, as `### Package manager: pnpm`, or with a labeled arm's title.
 - A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
 
-**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid. In a versioned build with more than one live line (§9.3), each line has its own, under its base path: its `llms.txt` lists the line's pages, its heading names the line, and an older line's opens with a paragraph that links to the current line's `llms.txt`.
+**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by its title, in the sections of the build's navigation (§7.8): the content root's pages first, under its label, then each top section, its nested sections' pages in reading order, each linked to its Markdown version with its description. An index too long for one fetch is split into one per top section. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid. In a versioned build with more than one live line (§9.3), each line has its own, under its base path: its `llms.txt` lists the line's pages, its heading names the line, and an older line's opens with a paragraph that links to the current line's `llms.txt`.
 
 **Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1) and where it comes from (the page, a rule of the content model, or neither), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root, with a group for each kind of crawler the content model disallows, naming every crawler of that kind the processor knows. A page's canonical address is its own, except in an older line of a versioned build (§9.3), where it's the address in the current line of the same page, or of the page the current line publishes in its place, following `replaces` (§2.1) as a link does (§5.2); a page the current line has neither of keeps its own. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
 
-**Navigation.** The site output holds the build's navigation (§7.8), a tree: the content root's section, each section with its folder, its label, its own page, its pages, and its nested sections, in order, and each page with its source path, its label, and its content type, joined to its record on the source path. A label is its title as plain text, and in the output's formatted form where the title has one. A build with no pages has an empty root.
+**Navigation.** The site output holds the build's navigation (§7.8), a tree: the content root's section, each section with its folder, its label, its own page, its pages, and its nested sections, in order, and each page with its source path, its label, and its content type, joined to its record on the source path. A page's label is its `nav-label`, else its title, and a section's as §7.8 gives it, each as plain text, and in the output's formatted form where the title has one. A build with no pages has an empty root. The JSON output holds the same tree, its formatted labels in its own form.
 
 **JSON output.** The resolved tree, for custom consumers.
 

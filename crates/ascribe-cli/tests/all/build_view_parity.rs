@@ -267,7 +267,10 @@ fn parity(source: &Path) -> usize {
         for entry in fs::read_dir(&dir).expect("read_dir") {
             let path = entry.expect("entry").path();
             if path.is_dir() {
-                stack.push(path);
+                // `_ascribe/` holds the output's own files, such as its navigation.
+                if !path.ends_with("_ascribe") {
+                    stack.push(path);
+                }
             } else if path.extension().is_some_and(|e| e == "json") {
                 let rel = path.strip_prefix(json_dir(&whole.name)).unwrap();
                 let rel = rel

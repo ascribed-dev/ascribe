@@ -1379,7 +1379,7 @@ next = "write"
 evidence = []
 spec = "2.2"
 reference = "content-model/index.md#43-fragments"
-row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`) on a fragment"
+row = "Frontmatter | Reserved key (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`, `nav-label`) on a fragment"
 message = "`{key}` is reserved for pages, and fragments can't use it"
 messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
 fix = "Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it."
@@ -4331,3 +4331,18 @@ when = "`ascribe.nav` lists one or more of a section's sibling sections and not 
 message = "ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order"
 messages.root = "ascribe.nav lists other sections at the content root and not `{folder}`, so it comes after them, in path order"
 fix = "Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them. A file that writes `sections = [...]` inline gets no fix: add each section to its list."
+
+[[diagnostic]]
+code = "ASC237"
+slug = "nav-label-long"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "2.1"
+reference = "navigation/index.md#a-page-s-label"
+configurable = true
+area = "pages"
+when = "A page's `nav-label` is longer than its `title`, each counted in characters as a reader sees it"
+message = "this `nav-label` is {length} characters, longer than the {title}-character title it stands for in the sidebar"
+fix = "A `nav-label` is a page's short name in a list, a sidebar or previous and next, where the title is too long to read at a glance. Shorten it, or remove it, and the title is the page's name there too."

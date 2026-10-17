@@ -5,12 +5,12 @@ description: What _ascribe/nav.json in a build's site output holds, the project'
 available: next
 ---
 
-Each build's site output has its share of the project's [navigation](../navigation/index.md) (SPEC §7.8) as `_ascribe/nav.json`, beside the page records (output-layout contract §1.6). `@ascribed/astro`'s `sidebar()` reads it; a site built another way can too. This contract says what the file holds and what a reader can rely on.
+Each build's site output has its share of the project's [navigation](../navigation/index.md) (SPEC §7.8) as `_ascribe/nav.json`, beside the page records (output-layout contract §1.6). `@ascribed/astro`'s `sidebar()` and `neighbors()` read it; a site built another way can too. The JSON output has the same file at the same path, with each formatted label in that output's form. This contract says what the file holds and what a reader can rely on.
 
 | Who | Uses this contract to |
 |---|---|
-| `ascribe build` | Write the file, for every build |
-| `sidebar()` in `@ascribed/astro`, or a site of your own | Draw a sidebar, joining each page to its collection entry or record |
+| `ascribe build` | Write the file, for every build, in the site output and the JSON output |
+| `sidebar()` and `neighbors()` in `@ascribed/astro`, or a site of your own | Draw a sidebar and link each page to its previous and next, joining each page to its collection entry or record |
 
 ## 1. The file
 
@@ -56,8 +56,8 @@ Each build's site output has its share of the project's [navigation](../navigati
 | `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
 | `root` | The content root's section. A build with no pages has it with no `page`, and empty `pages` and `sections`. |
 | `folder` | A section's folder, from the content root, ending in `/`; `""` for the root. |
-| `label` | A section's label as plain text: its `label` in `ascribe.nav`, else its own page's title, else its folder's name with its first letter capitalized; the root's is `Start` unless the file gives it another. |
-| `formatted.label` | The label as HTML, with code spans as `<code>`, when it's a title read with inline markup (`inline = "code"`), as a page's `formatted.title` is in the site output. Absent otherwise. |
+| `label` | A section's label as plain text: its `label` in `ascribe.nav`, else its own page's title, else its folder's name with its first letter capitalized; the root's is `Start` unless the file gives it another. A page's label is its `nav-label`, else its title. |
+| `formatted.label` | The label in its formatted form, when it's read with inline markup (`inline = "code"`), as a page's `formatted.title` is: HTML with code spans as `<code>` in the site output, and pieces in the JSON output. Absent otherwise. |
 | `page` | A section's own page, when the build publishes and offers it: its `index.md`, or the page beside the folder with its name. Absent otherwise. |
 | `pages` | A section's pages in order, its own page never among them. |
 | `sections` | A section's nested sections that keep a page in the build, in order. |
@@ -68,8 +68,12 @@ Each build's site output has its share of the project's [navigation](../navigati
 
 A nested section whose own page is beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, has that page as its `page`, and the page is also in the parent's `pages`. A reader places the nested section right after that page. A nested section whose `page` isn't in the parent's `pages`, one with an `index.md` or none, comes after the parent's pages. `sections` lists the ones placed by a page first, in their pages' order, then the rest, so a reader that draws `pages` and then `sections` keeps the order, and one that interleaves them places each where its page is.
 
-## 3. What a reader can rely on
+## 3. Reading order
+
+The pages in reading order are a section's `page`, then its `pages`, each followed by the nested section it places, then the nested sections no page places, from `root`, depth first, each page once. At `root`, a page that's a top section's `page` is read with that section: `root`'s `page` and its other `pages` come first, then each of its `sections` from its `page`, so the order is a sidebar's groups read one after another. It's the order of previous and next in `neighbors()` and in an archive.
+
+## 4. What a reader can rely on
 
 - Every `source` is a page the build publishes, that isn't `unlisted`, and has a record in `pages.json`. A page is in the file once, but for the page beside a nested folder, which is in its parent's `pages` and is the nested section's `page`.
 - The file is the same text for the same project and build on every platform.
-- A later version may add keys, such as a page's short label; it doesn't change these.
+- A later version may add keys; it doesn't change these.

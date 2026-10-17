@@ -201,8 +201,8 @@ pub(crate) fn is_calendar_date(s: &str) -> bool {
 /// - `frontmatter-missing-field`;
 /// - `frontmatter-type-mismatch`;
 /// - `frontmatter-reserved-in-fragment`, for a page's reserved keys
-///   (`available`, `variant`, `permalink`, `listing`, and `type`) in a
-///   fragment. On a page, those keys are accepted here; their values are
+///   (`available`, `variant`, `permalink`, `listing`, `replaces`, `type`,
+///   and `nav-label`) in a fragment. On a page, those keys are accepted here; their values are
 ///   checked elsewhere (SPEC §4.3).
 ///
 /// Choosing which schema applies to a page is [`crate::ContentModel::type_of`].
@@ -291,7 +291,13 @@ impl Cx<'_> {
         if top
             && matches!(
                 key,
-                "available" | "variant" | "permalink" | "listing" | "replaces" | "type"
+                "available"
+                    | "variant"
+                    | "permalink"
+                    | "listing"
+                    | "replaces"
+                    | "type"
+                    | "nav-label"
             )
         {
             match self.schema.owner {
