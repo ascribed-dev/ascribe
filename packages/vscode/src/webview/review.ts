@@ -132,12 +132,14 @@ export class Review {
       this.content.removeAttribute(DATA_SHOW);
       return;
     }
-    // A removed page is drawn as it was, whole: it has nothing to mark.
+    // A removed page is drawn as it was, whole: it has nothing to mark, and
+    // no source now for a hover to name.
     if (removed(view)) {
       this.marks = [];
+      this.stopSources?.();
+      this.stopSources = undefined;
       clearMarks(this.content);
       setShow(this.content, "was");
-      this.stopSources ??= showSources(this.content);
       return;
     }
     let was: ParentNode | null = null;
