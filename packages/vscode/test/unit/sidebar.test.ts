@@ -7,9 +7,11 @@ import type {
   PageResult,
 } from "../../src/shapes.js";
 import {
+  contentPathOf,
   modelChildren,
   modelLook,
   modelRoots,
+  NEXT_PLACEHOLDER,
   pagesChildren,
   pagesDrop,
   pagesFind,
@@ -17,12 +19,11 @@ import {
   pagesParent,
   pagesPath,
   pagesRoots,
+  SHOW_PROBLEMS,
+  SWITCH_BUILD,
   thisPageChildren,
   thisPageLook,
   thisPageRoots,
-  NEXT_PLACEHOLDER,
-  SHOW_PROBLEMS,
-  SWITCH_BUILD,
   type Place,
   type ThisPageNode,
   type ThisPageReview,
@@ -754,5 +755,27 @@ describe("the This page view", () => {
         includes: [],
       }),
     ).toEqual([]);
+  });
+});
+
+describe("a file's content path, for revealing it in Pages", () => {
+  it("is the path below the content root, in the file's own case", () => {
+    expect(contentPathOf("/work/docs/Guides/My Setup.md", "/work/docs")).toBe("Guides/My Setup.md");
+    expect(contentPathOf("/work/docs/Guides/My Setup.md", "/work/docs/")).toBe(
+      "Guides/My Setup.md",
+    );
+  });
+
+  it("matches a Windows drive in either case, as the server and VS Code write it", () => {
+    expect(contentPathOf("c:\\work\\docs\\Guides\\My Setup.md", "C:\\work\\docs")).toBe(
+      "Guides/My Setup.md",
+    );
+    expect(contentPathOf("C:\\Work\\Docs\\index.md", "c:\\work\\docs")).toBe("index.md");
+  });
+
+  it("is nothing outside the root, or for the root itself", () => {
+    expect(contentPathOf("/work/docs-old/index.md", "/work/docs")).toBeUndefined();
+    expect(contentPathOf("/work/docs", "/work/docs")).toBeUndefined();
+    expect(contentPathOf("/Work/docs/index.md", "/work/docs")).toBeUndefined();
   });
 });

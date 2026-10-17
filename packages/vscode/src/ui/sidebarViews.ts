@@ -11,6 +11,7 @@ import {
   pagesChildren,
   pagesDraggable,
   pagesDrop,
+  contentPathOf,
   pagesFind,
   pagesLook,
   pagesParent,
@@ -542,9 +543,9 @@ export class SidebarViews implements vscode.Disposable {
     const uri = vscode.window.activeTextEditor?.document.uri;
     const content = this.inventory?.contentUri;
     if (!view?.visible || !uri || !content || this.inventoryFrom !== this.server) return;
-    const root = vscode.Uri.parse(content).path.replace(/\/$/, "");
-    if (!uri.path.startsWith(`${root}/`)) return;
-    const node = pagesFind(this.pagesRoots(), uri.path.slice(root.length + 1));
+    const page = contentPathOf(uri.fsPath, vscode.Uri.parse(content).fsPath);
+    if (page === undefined) return;
+    const node = pagesFind(this.pagesRoots(), page);
     if (!node || view.selection[0] === node) return;
     view
       .reveal(node, { select: true, focus: false, expand: true })

@@ -1,7 +1,9 @@
 // What the This page, Pages, and Content model views show, worked out from
 // plain values so the unit tests can check it without VS Code.
 
+import * as path from "node:path";
 import { pageDetail } from "../preview/reviewText.js";
+import { comparable, within } from "../projects.js";
 import type {
   ChangedPage,
   InventoryEntry,
@@ -194,6 +196,22 @@ export function pagesPath(node: PagesNode): string | undefined {
     default:
       return undefined;
   }
+}
+
+/**
+ * The content path of `file`, a file system path, in the content root
+ * `root`, or `undefined` outside it. Windows paths compare without case, as
+ * the server writes the drive in upper case and VS Code in lower; the path
+ * keeps the file's own case.
+ */
+export function contentPathOf(file: string, root: string): string | undefined {
+  if (!within(file, root) || comparable(file) === comparable(root)) return undefined;
+  // `comparable` folds a Windows path's case, so the path is cut from the
+  // file's own, normalised the same way but in its case.
+  const normal = /^[a-zA-Z]:|^\\\\/.test(file)
+    ? path.win32.normalize(file).replace(/\\/g, "/")
+    : path.posix.normalize(file);
+  return normal.slice(comparable(root).length + 1);
 }
 
 /** The context value of an item, which its menu's commands are shown by. */

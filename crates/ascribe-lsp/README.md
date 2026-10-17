@@ -361,7 +361,7 @@ TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 
 | Result | Meaning |
 |---|---|
-| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change; for `newPage`, its `documentChanges` create the page and then give it its text; for the navigation's actions, it changes `ascribe.nav`, keeping its comments, or, with no file, its `documentChanges` create it and give it its text, and `select` is in the new page. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
+| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change; for `newPage`, its `documentChanges` create the page and then give it its text, and `select` is in the new page; for the navigation's actions, it changes `ascribe.nav`, keeping its comments, or, with no file, its `documentChanges` create it and give it its text, and `select` is `null`. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
 | `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
 
 The operations, where each applies, and its arguments (`?` is optional):
