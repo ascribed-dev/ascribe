@@ -36,7 +36,7 @@ description = { type = "string", role = "description" }
 [types.how-to]
 template = "templates/how-to.md"
 guide = ["templates/how-to.guide.md", "templates/how-to.ascribe.md"]
-purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, or taking the page templates."
+purpose = "Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, taking the page templates, or keeping a page's reasons in memos."
 
 [types.how-to.frontmatter]
 title = { type = "string", inline = "code" }

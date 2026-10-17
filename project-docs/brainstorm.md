@@ -4,8 +4,8 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
-- **Planned.** [Versions](versions/README.md), [memos](memos/README.md), and [the glossary as pages](glossary-pages/README.md).
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
+- **Planned.** [Versions](versions/README.md) and [the glossary as pages](glossary-pages/README.md).
 - **Proposed.** [Search](proposals/search.md), [navigation](proposals/navigation.md), and [the rest of the cache](proposals/cache.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.

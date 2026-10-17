@@ -69,6 +69,7 @@ A pull request's changes are read the way readers will see them: in the site's o
 [Why Ascribe](why.md) says which problems these answer, from what teams that keep docs as code report, and what Ascribe doesn't do.
 
 ## Start
+@memo: Getting started's first two sections install these two (decision 86 in project-docs/decisions.md), and scripts/docs-site/facts.test.ts fails when the commands here differ from theirs.
 
 Install the command in your project's directory:
 
@@ -87,7 +88,6 @@ Then [read getting started]({site}/go/getting-started/): it sets up a project, w
 ## Where it's going
 
 - **Search.** Find where the pages say something as readers see it, through phrases, fragments, and variants, and edit it at its source.
-- **Notes.** Why a page is written the way it is, kept beside it for the people and agents who change it, and never shown to readers.
 
 ## Early, and open source
 

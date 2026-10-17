@@ -18,7 +18,12 @@ export const nav: NavGroup[] = [
   { label: "Start", pages: ["index.md", "getting-started.md"] },
   {
     label: "Writing pages",
-    pages: ["writing/directives.md", "writing/memo-files.md", "writing/variants.md"],
+    pages: [
+      "writing/directives.md",
+      "writing/memo-files.md",
+      "writing/memos.md",
+      "writing/variants.md",
+    ],
   },
   {
     label: "The content model",

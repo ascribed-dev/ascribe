@@ -8,6 +8,8 @@ permalink: docs
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
 - [Content that varies](writing/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 - [Directive reference](writing/directives.md): the language: directives, attributes, titles, phrases, links, and images.
+- @available: next
+  [Memos](writing/memos.md): keeping the reason a page is written the way it is beside it, for the people and agents who change it, and never for its readers.
 - [`ascribe.toml` reference](content-model/index.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
 - @available: ascribe 0.3.0
   [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
