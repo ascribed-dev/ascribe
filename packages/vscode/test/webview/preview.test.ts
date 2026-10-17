@@ -640,6 +640,7 @@ const THREADS_ON = {
   gh: false,
   message: null,
   goTo: null,
+  submit: false,
 } as const;
 
 /**

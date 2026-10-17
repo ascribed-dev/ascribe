@@ -17,6 +17,7 @@ import {
   findPullRequest,
   ghTransport,
   openReview,
+  pagesShowing,
   promptProject,
   readCheckout,
   ReviewError,
@@ -28,6 +29,7 @@ import {
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
 import { ascribeElsewhere } from "../agents/reach.js";
+import type { PageThread } from "../ui/sidebar.js";
 import type { ProjectServer } from "../client.js";
 import { nodePathEnvironment } from "../environment.js";
 import { comparable, throughFolder } from "../projects.js";
@@ -212,8 +214,11 @@ export class ThreadsController implements vscode.Disposable {
     }
   }
 
-  /** What the preview shows about the project's threads; `null` when there's no pull request. */
-  view(server: ProjectServer, goTo: string | null): ThreadsView | null {
+  /**
+   * What the preview shows about the project's threads; `null` when there's
+   * no pull request. `submit` opens the submit dialog once they're read.
+   */
+  view(server: ProjectServer, goTo: string | null, submit = false): ThreadsView | null {
     const connection = this.connection(server);
     if (!connection || connection.state === "none") return null;
     if (connection.state === "signed-out") {
@@ -224,6 +229,7 @@ export class ThreadsController implements vscode.Disposable {
         gh: connection.gh,
         message: connection.reason ?? null,
         goTo: null,
+        submit: false,
       };
     }
     if (connection.state === "error") {
@@ -234,6 +240,7 @@ export class ThreadsController implements vscode.Disposable {
         gh: false,
         message: connection.message,
         goTo: null,
+        submit: false,
       };
     }
     const pr = connection.session.pullRequest;
@@ -244,6 +251,7 @@ export class ThreadsController implements vscode.Disposable {
       gh: false,
       message: null,
       goTo,
+      submit,
     };
   }
 
@@ -336,6 +344,82 @@ export class ThreadsController implements vscode.Disposable {
       project: promptProject(server.project.folder),
       changedPages: () => this.host.changedPages(server),
     });
+  }
+
+  /**
+   * How many open threads show on each of `pages`, by content path: a
+   * thread on a fragment shows on the pages that include it. `undefined`
+   * when review comments aren't on, or GitHub couldn't be read.
+   */
+  async openThreads(
+    server: ProjectServer,
+    pages: readonly ChangedPage[],
+  ): Promise<Map<string, number> | undefined> {
+    const session = this.session(server);
+    if (!session) return undefined;
+    try {
+      const counts = new Map<string, number>();
+      for (const thread of await session.allThreads()) {
+        if (thread.resolved) continue;
+        for (const page of pagesShowing(thread.path, pages)) {
+          counts.set(page.path, (counts.get(page.path) ?? 0) + 1);
+        }
+      }
+      return counts;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * The open threads that show on the page at `path`: on its own file, or,
+   * when the branch changed it (`page`), on a file it changed through, as
+   * `pagesShowing` decides. `undefined` when review comments aren't on, or
+   * GitHub couldn't be read.
+   */
+  async threadsOn(
+    server: ProjectServer,
+    path: string,
+    page: ChangedPage | null,
+  ): Promise<PageThread[] | undefined> {
+    const session = this.session(server);
+    if (!session) return undefined;
+    try {
+      const pages = page ? [page] : [];
+      return (await session.allThreads())
+        .filter(
+          (thread) =>
+            !thread.resolved &&
+            (thread.path === path || pagesShowing(thread.path, pages).length > 0),
+        )
+        .map((thread) => {
+          const first = thread.comments[0];
+          return {
+            id: thread.id,
+            path: thread.path,
+            line: thread.lines?.first,
+            author: first?.author?.login,
+            excerpt: (first?.body ?? "").trim().split("\n")[0] ?? "",
+          };
+        })
+        .sort((a, b) => a.path.localeCompare(b.path) || (a.line ?? 0) - (b.line ?? 0));
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * How many comments the reviewer hasn't submitted; `undefined` when review
+   * comments aren't on, or GitHub couldn't be read.
+   */
+  async unsent(server: ProjectServer): Promise<number | undefined> {
+    const session = this.session(server);
+    if (!session) return undefined;
+    try {
+      return (await session.pending()).count;
+    } catch {
+      return undefined;
+    }
   }
 
   private async open(server: ProjectServer, interactive: boolean): Promise<Connection> {

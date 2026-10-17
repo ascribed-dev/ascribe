@@ -338,7 +338,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-66 commands, 35 of them actions.
+73 commands, 35 of them actions.
 
 Commands that aren't actions:
 
@@ -362,6 +362,13 @@ Commands that aren't actions:
 | Ascribe: Stop Review | `ascribe.stopReview` |
 | Ascribe: Changed Pages | `ascribe.changedPages` |
 | Ascribe: Refresh Comments | `ascribe.refreshComments` |
+| Ascribe: Submit Review… | `ascribe.submitReview` |
+| Ascribe: Open Source Changes | `ascribe.openSourceChanges` |
+| Ascribe: Open Changed Page | `ascribe.review.openPage` |
+| Ascribe: Open Thread in the Preview | `ascribe.review.openThread` |
+| Ascribe: Open Page's Source Changes | `ascribe.review.pageSourceChanges` |
+| Ascribe: Show Advice | `ascribe.review.showAdvice` |
+| Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
 | Ascribe: Show Server Output | `ascribe.showOutput` |
 | Ascribe: Restart Language Server | `ascribe.restartServer` |
 | Ascribe: Refresh | `ascribe.projects.refresh` |
@@ -435,6 +442,7 @@ Views:
 
 | View | Id |
 |---|---|
+| Review | `ascribe.review` |
 | Projects | `ascribe.projects` |
 | This page | `ascribe.thisPage` |
 | Pages | `ascribe.pages` |
@@ -461,10 +469,10 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 66 |
+| `commandPalette` | 73 |
 | `editor/title` | 5 |
-| `view/title` | 2 |
-| `view/item/context` | 2 |
+| `view/title` | 7 |
+| `view/item/context` | 3 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |
@@ -488,6 +496,7 @@ Ascribe's own requests:
 | `ascribe/preview` | `crates/ascribe-lsp/src/preview.rs` |
 | `ascribe/review/setBase` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/review/changes` | `crates/ascribe-lsp/src/review.rs` |
+| `ascribe/review/baseFile` | `crates/ascribe-lsp/src/review.rs` |
 | `ascribe/targets` | `crates/ascribe-lsp/src/targets.rs` |
 
 The standard requests it answers, by the type that names each in the code:
@@ -714,6 +723,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/init.schema.json` | InitReport | What `ascribe init` did. |
 | `schemas/link.schema.json` | LinkReport | What `ascribe link <TARGET> --from <PAGE>` answers. |
 | `schemas/lsp-agent-prompt.schema.json` | AgentPromptResult | The answer to `ascribe/agentPrompt`, or `null` when there's nothing to prompt about: the file has no problem, the diagnostic is no longer reported, review is off, or the page or fragment didn't change. |
+| `schemas/lsp-base-file.schema.json` | BaseFileResult | The answer to `ascribe/review/baseFile`. |
 | `schemas/lsp-build-view.schema.json` | BuildViewResult | The answer to `ascribe/buildView`. |
 | `schemas/lsp-changes.schema.json` | ChangesResult | The answer to `ascribe/review/changes`. |
 | `schemas/lsp-context.schema.json` | ContextResult | The answer to `ascribe/context`. |

@@ -501,6 +501,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             crate::agent_prompt::METHOD => agent_prompt_request(shared, &request),
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
             crate::review::CHANGES_METHOD => changes_request(shared, &request),
+            crate::review::BASE_FILE_METHOD => base_file_request(shared, &request),
             method => Err(Response::new_err(
                 request.id.clone(),
                 ErrorCode::MethodNotFound as i32,
@@ -951,6 +952,17 @@ fn changes_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
     to_json(
         request,
         crate::review::changes(target.as_ref(), params.build.as_deref()),
+    )
+}
+
+fn base_file_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::review::BaseFileParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let path = crate::uri::uri_to_path(&params.text_document.uri);
+    let target = shared.lock().base_file_target();
+    to_json(
+        request,
+        crate::review::base_file(target.as_ref(), path.as_deref()),
     )
 }
 

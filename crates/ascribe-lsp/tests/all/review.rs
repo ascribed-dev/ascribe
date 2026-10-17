@@ -269,6 +269,57 @@ fn a_new_page_is_added_and_has_no_page_as_it_was() {
     assert_eq!(listed["pages"][0]["formatted_title"], Value::Null);
 }
 
+fn base_file(client: &mut Client, path: &Path) -> Value {
+    client
+        .request(
+            "ascribe/review/baseFile",
+            json!({ "textDocument": { "uri": support::uri(path).as_str() } }),
+        )
+        .response_result
+        .expect("the request succeeds")
+}
+
+#[test]
+fn a_file_at_the_base_is_its_committed_text_whatever_the_buffer_says() {
+    let f = repository();
+    let fragment = f.path("docs/_fragments/check.md");
+    f.write("docs/_fragments/check.md", "Check the version first.\n");
+    f.write("docs/new.md", "---\ntitle: New\n---\n\nFresh.\n");
+    let mut client = Client::start(&f.root());
+    client.settle();
+
+    // Without a base there's nothing to read.
+    assert_eq!(
+        base_file(&mut client, &fragment),
+        json!({ "text": null, "problem": "Review is off for this project." })
+    );
+
+    set_base(&mut client, json!({ "base": "main" }));
+    client.open(&fragment, 1, "Check the version first.\n");
+    client.replace(&fragment, 2, "Check the version twice.\n");
+    assert_eq!(
+        base_file(&mut client, &fragment),
+        json!({ "text": FRAGMENT, "problem": null })
+    );
+    assert_eq!(
+        base_file(&mut client, &f.path("docs/install.md"))["text"],
+        PAGE
+    );
+    // A new page isn't at the base.
+    assert_eq!(
+        base_file(&mut client, &f.path("docs/new.md")),
+        json!({ "text": null, "problem": null })
+    );
+    assert_eq!(
+        base_file(&mut client, &f.path("ascribe.toml"))["text"],
+        MODEL
+    );
+    // A file outside the content root isn't the base's to answer.
+    let outside = base_file(&mut client, &f.root().join("README.md"));
+    assert_eq!(outside["text"], Value::Null);
+    assert!(outside["problem"].is_string(), "{outside}");
+}
+
 #[test]
 fn a_title_with_code_is_listed_and_previewed_formatted() {
     let f = repository();

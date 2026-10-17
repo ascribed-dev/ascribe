@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/review/baseFile`.",
+  "properties": {
+    "problem": {
+      "description": "Why there's no text, when that isn't because the base doesn't have\nthe file: review is off, or the file isn't the project's.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "text": {
+      "description": "The file's text at the base; `null` when the base doesn't have it, or\nthere's no base.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "text",
+    "problem"
+  ],
+  "title": "BaseFileResult",
+  "type": "object"
+}

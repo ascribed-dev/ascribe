@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
+import type { ChangedPage } from "../preview/protocol.js";
+import type { ReviewController } from "../preview/review.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { InventoryResult, PageResult } from "../shapes.js";
 import {
@@ -17,6 +19,7 @@ import {
   type ModelNode,
   type PagesNode,
   type ThisPageNode,
+  type ThisPageReview,
 } from "./sidebar.js";
 
 /** How long after the last save, or switch of project, the inventory is asked for again. */
@@ -59,6 +62,8 @@ export interface ThisPageApi {
   message(): string | undefined;
   /** How many times it has asked the server, which is once for each cursor move it answers. */
   asked(): number;
+  /** Goes to an open thread its Review section lists, by id, as choosing it does. */
+  openThread(id: string): Promise<void>;
   /** Settles when every refresh that is due has finished. */
   whenSettled(): Promise<void>;
 }
@@ -74,6 +79,8 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
     readonly children: (node: N) => N[],
     readonly look: (node: N) => ItemLook,
     readonly opens: (node: N) => { uri: vscode.Uri; selection?: vscode.Range } | undefined,
+    /** The command an item runs in place of opening a file, if it runs one. */
+    readonly command: (node: N) => vscode.Command | undefined = () => undefined,
   ) {}
 
   getTreeItem(node: N): vscode.TreeItem {
@@ -93,7 +100,10 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
       look.dimmed ? new vscode.ThemeColor("disabledForeground") : undefined,
     );
     const target = this.opens(node);
-    if (target) {
+    const command = this.command(node);
+    if (command) {
+      item.command = command;
+    } else if (target) {
       item.command = {
         command: "vscode.open",
         title: "Open",
@@ -143,6 +153,10 @@ export class SidebarViews implements vscode.Disposable {
   private inventoryFrom: ProjectServer | undefined;
   private inventoryAsked = 0;
   private page: PageResult | undefined;
+  /** What review says about the page, while review is on for its project. */
+  private pageReview: ThisPageReview | undefined;
+  /** The file This page shows. */
+  private pageFile: vscode.Uri | undefined;
   /** Counts the cursor's stops, so an older stop's answer is dropped. */
   private pageLooked = 0;
   /** How many times This page has asked the server. */
@@ -178,7 +192,7 @@ export class SidebarViews implements vscode.Disposable {
   );
 
   private readonly thisPage = new Tree<ThisPageNode>(
-    () => (this.page ? thisPageRoots(this.page) : []),
+    () => (this.page ? thisPageRoots(this.page, this.pageReview) : []),
     thisPageChildren,
     thisPageLook,
     (node) => {
@@ -189,9 +203,16 @@ export class SidebarViews implements vscode.Disposable {
         selection: new vscode.Range(start.line, start.character, end.line, end.character),
       };
     },
+    (node) =>
+      node.kind === "thread"
+        ? { command: OPEN_THREAD, title: "Open Thread in the Preview", arguments: [node] }
+        : undefined,
   );
 
-  constructor(private readonly projects: ProjectRegistry) {}
+  constructor(
+    private readonly projects: ProjectRegistry,
+    private readonly review: ReviewController,
+  ) {}
 
   get api(): SidebarApi {
     const tree = (view: "pages" | "model") => (view === "pages" ? this.pages : this.model);
@@ -208,6 +229,7 @@ export class SidebarViews implements vscode.Disposable {
       items: () => this.thisPage.items(),
       message: () => this.thisPage.view?.message || undefined,
       asked: () => this.pageAsked,
+      openThread: (id) => this.openThread(id),
       whenSettled: () => this.whenSettled(),
     };
   }
@@ -256,6 +278,15 @@ export class SidebarViews implements vscode.Disposable {
         if (server === this.server) this.follow(true);
       }),
       this.projects.onDidChangeProjects(() => this.follow(true)),
+      vscode.commands.registerCommand(OPEN_THREAD, (node?: ThisPageNode) =>
+        node?.kind === "thread" ? this.openThread(node.thread.id) : undefined,
+      ),
+      // Review turned on or off, or the pull request's threads changed: This
+      // page asks again while it shows a review, or its project's is on.
+      this.review.onDidUpdate(() => {
+        const on = this.server !== undefined && this.review.baseOf(this.server) !== undefined;
+        if (on || this.pageReview) this.soon("thisPage");
+      }),
     );
     this.follow(true);
   }
@@ -374,18 +405,55 @@ export class SidebarViews implements vscode.Disposable {
     } catch {
       page = null;
     }
+    const review = page?.about ? await this.reviewOf(server, page.about.path) : undefined;
     if (looked !== this.pageLooked) return;
-    this.showThisPage(page?.about ? page : undefined, page?.about ? undefined : NO_PAGE);
+    this.pageFile = document.uri;
+    this.showThisPage(page?.about ? page : undefined, page?.about ? undefined : NO_PAGE, review);
+  }
+
+  /**
+   * What review says about the page at `path`, while review is on for its
+   * project: the Review view's data for one page, from the same requests.
+   */
+  private async reviewOf(server: ProjectServer, path: string): Promise<ThisPageReview | undefined> {
+    const base = this.review.baseOf(server);
+    if (!base) return undefined;
+    let changed: ChangedPage | null = null;
+    try {
+      const changes = await this.review.changesOf(server);
+      changed = changes.pages.find((page) => page.path === path) ?? null;
+    } catch {
+      return undefined;
+    }
+    return {
+      base: this.review.baseNameOf(server, base),
+      page: changed,
+      threads: await this.review.threads.threadsOn(server, path, changed),
+    };
+  }
+
+  /** Goes to a thread This page lists, in the preview of the page it shows. */
+  private async openThread(id: string): Promise<void> {
+    if (!this.pageFile || !this.pageReview?.threads?.some((thread) => thread.id === id)) return;
+    await this.review.openThread(this.pageFile, id);
   }
 
   /** Shows an answer in This page, or a message in place of one. */
-  private showThisPage(page: PageResult | undefined, message: string | undefined): void {
+  private showThisPage(
+    page: PageResult | undefined,
+    message: string | undefined,
+    review?: ThisPageReview,
+  ): void {
     if (page === undefined) this.pageLooked++;
     this.page = page;
+    this.pageReview = page && review;
     if (this.thisPage.view) this.thisPage.view.message = message ?? "";
     this.thisPage.changed.fire();
   }
 }
+
+/** The command a thread in This page's Review section runs. */
+const OPEN_THREAD = "ascribe.review.openThread";
 
 /** What This page says when the active file isn't a page of a project. */
 const NO_PAGE = "Open a page to see what's known about it.";

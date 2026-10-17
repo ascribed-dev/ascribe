@@ -1,5 +1,6 @@
 # The Ascribe sidebar
 
+- **Review**, while review is on: the changed pages, their problems, and the comments you haven't submitted.
 - **Projects**: every project in the workspace, and whether its language server is running.
 - **This page**: the page you're on, its title, type, and addresses, and what links to it or to the heading at the cursor.
 - **Pages**: the project's pages by type, its fragments, and pages nothing links to.

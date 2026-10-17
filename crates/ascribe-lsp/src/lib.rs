@@ -83,6 +83,7 @@ pub use retire_line::{
     Redirect, RedirectWhy, RetireError, RetiredLine, RetiringLine, Unused, retire_line, unused_in,
 };
 pub use review::{
+    BASE_FILE_METHOD as REVIEW_BASE_FILE_METHOD, BaseFileParams, BaseFileResult,
     CHANGES_METHOD as REVIEW_CHANGES_METHOD, ChangesParams, ChangesResult,
     SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,
 };

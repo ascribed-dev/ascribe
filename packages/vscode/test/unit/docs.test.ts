@@ -54,6 +54,10 @@ const commands: Record<string, string> = {
     "Lists the pages the change touches in the preview's build; choosing one opens it and its preview.",
   "ascribe.refreshComments":
     "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../editor/index.md#comments-in-the-preview).",
+  "ascribe.submitReview":
+    "Opens the preview's dialog for submitting your review's comments, on the page it shows or the first changed page. Shown while you have comments to submit. It's in the Review view's title bar too.",
+  "ascribe.openSourceChanges":
+    "Opens one diff of the changed pages' source files, at the base against the working tree: each page's own file, and the fragments and pages it changed through. It's in the Review view's title bar too. See [The Review view](../editor/index.md#the-review-view).",
   "ascribe.promptAgentFile":
     "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../agents/index.md#prompt-your-agent).",
   "ascribe.promptAgentProject":
@@ -105,6 +109,8 @@ const available: Record<string, string> = {
   "ascribe.newPage": "ascribe 0.3.1",
   "ascribe.nextPlaceholder": "ascribe 0.3.1",
   "ascribe.projects.exclude": "ascribe 0.3.2",
+  "ascribe.submitReview": "next",
+  "ascribe.openSourceChanges": "next",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

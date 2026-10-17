@@ -4,7 +4,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import * as vscode from "vscode";
 import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
-import type { PageDiff } from "../../../src/preview/protocol.js";
+import type { ChangedPage, FromWebview, PageDiff } from "../../../src/preview/protocol.js";
+import { pageDetail } from "../../../src/preview/reviewText.js";
+import type { OpenedDiff } from "../../../src/preview/sourceChanges.js";
+import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
+import { StatefulGitHub } from "./fakeGitHub.js";
 import { activated, diagnosticsOf, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
 // Review in the preview with the real `ascribe lsp`, on a copy of
@@ -277,5 +281,252 @@ describe("agents' tools, with the real language server on a quill repository", (
       await invoke("ascribe_review_threads"),
       /no open pull request|isn't signed in|hasn't been read/,
     );
+  });
+});
+
+// The Review view on the same repository, its branch's pull request on a
+// fake GitHub: the remote is added for the suite and taken away after it.
+describe("the Review view, with a fake GitHub", () => {
+  const install = uriOf("docs", "install-agent.md");
+  const keys = uriOf("docs", "keys.md");
+  const git = (...args: string[]) =>
+    execFileSync("git", args, { cwd: workspace(), encoding: "utf8" }).trim();
+  let api: AscribeApi;
+  let github: StatefulGitHub;
+  let seq = 2000;
+  let firstThread: string;
+
+  const settled = async () => {
+    await api.ui.review.whenSettled();
+    return api.ui.review;
+  };
+  /** The view's items as `[label, description, children]`, problems' children left out. */
+  const shape = (items: SidebarItem[]): unknown[] =>
+    items.map((item) => [
+      item.label,
+      item.description,
+      item.label === "Problems on these pages" ? [] : shape(item.children),
+    ]);
+  const problems = (items: SidebarItem[]) =>
+    items.find((item) => item.label === "Problems on these pages");
+
+  before(async () => {
+    api = await activated();
+    await api.whenSettled();
+    git("remote", "add", "origin", "https://github.com/acme/quill.git");
+    github = new StatefulGitHub({
+      number: 7,
+      baseOid: git("rev-parse", "HEAD"),
+      headOid: git("rev-parse", "HEAD"),
+      files: ["docs/install-agent.md"],
+    });
+    firstThread = github.addThread("docs/install-agent.md", 8, "Which changes does it sync?").id;
+    api.preview.review.threads.useTransport(() => github);
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+    await vscode.commands.executeCommand("ascribe.openPreview");
+  });
+
+  after(async () => {
+    await api.preview.review.stop(workspace());
+    api.preview.review.threads.useTransport(undefined);
+    api.ui.review.sourceChanges.useGitExtension(true);
+    git("remote", "remove", "origin");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("isn't there while review is off", async () => {
+    const view = await settled();
+    assert.equal(view.project(), undefined);
+    assert.deepEqual(view.items(), []);
+  });
+
+  it("lists the pages `ascribe diff` lists, with their counts and open threads", async () => {
+    const started = await api.preview.review.start(workspace(), "main");
+    assert.equal(started.problem, null);
+    const view = await waitFor("the view's pages", async () => {
+      const shown = await settled();
+      return shown.items().length > 0 ? shown : undefined;
+    });
+    assert.equal(view.project(), workspace());
+    const report = JSON.parse(
+      execFileSync(api.binary()?.path ?? "ascribe", ["diff", "--format", "json"], {
+        cwd: workspace(),
+        encoding: "utf8",
+      }),
+    ) as { builds: { build: string; pages: PageDiff[] }[] };
+    const listed = await api.preview.review.changedPages(workspace());
+    const fromCli = report.builds.find((b) => b.pages.length > 0)?.pages ?? [];
+    assert.deepEqual(
+      listed.map((p) => [p.path, p.status, p.because, p.counts]),
+      fromCli.map((p) => [p.path, p.status, p.because, p.counts]),
+    );
+    assert.deepEqual(shape(view.items()), [
+      [
+        "Changed",
+        "1",
+        [
+          [
+            "Install the Quill agent",
+            `${pageDetail(listed[0] as ChangedPage)} · 1 open thread`,
+            [],
+          ],
+        ],
+      ],
+      ["Problems on these pages", "none", []],
+    ]);
+    assert.equal(view.items()[0]?.children[0]?.opens, install.toString());
+  });
+
+  it("opens a page and its preview", async () => {
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
+    await api.preview.whenDrawn("keys.md", (r) => r.result.page?.path === "keys.md");
+    const chosen = Date.now();
+    const [page] = await api.preview.review.changedPages(workspace());
+    await vscode.commands.executeCommand("ascribe.review.openPage", {
+      kind: "page",
+      page: { page, openThreads: 1 },
+    });
+    await waitFor(
+      "the page in the editor",
+      () => vscode.window.activeTextEditor?.document.uri.fsPath === install.fsPath,
+    );
+    await api.preview.whenDrawn(
+      "the page in the preview",
+      (r) => r.result.page?.path === "install-agent.md" && r.sentAt >= chosen,
+    );
+  });
+
+  it("counts an unsent comment on its badge", async () => {
+    assert.equal((await settled()).badge(), undefined);
+    await api.preview.receive({
+      type: "threads",
+      id: ++seq,
+      method: "comment",
+      params: {
+        anchor: { source: "install-agent.md:12-12", via: [] },
+        body: "Say which repository.",
+      },
+    } as FromWebview);
+    await vscode.commands.executeCommand("ascribe.refreshComments");
+    const badge = await waitFor("the badge", async () => (await settled()).badge());
+    assert.deepEqual(badge, { value: 1, tooltip: "1 comment you haven't submitted" });
+  });
+
+  it("shows the page's review in This page, and opens a thread in the preview", async () => {
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const editor = await vscode.window.showTextDocument(install);
+    editor.selection = new vscode.Selection(0, 0, 0, 0);
+    const [page] = await api.preview.review.changedPages(workspace());
+    const review = await waitFor("This page's Review section", async () => {
+      await api.ui.thisPage.whenSettled();
+      return api.ui.thisPage.items().find((item) => item.label === "Review");
+    });
+    assert.equal(review.description, "against main");
+    assert.deepEqual(
+      review.children[0] && [review.children[0].label, review.children[0].description],
+      ["Changed", pageDetail(page as ChangedPage)],
+    );
+    const threads = review.children[1];
+    assert.equal(threads?.label, "Open threads");
+    assert.ok(
+      threads.children.some(
+        (t) =>
+          t.label === "Which changes does it sync?" && t.description === "ana · install-agent.md:8",
+      ),
+      JSON.stringify(threads),
+    );
+    // The Connections section still follows, so the view's other sections don't move.
+    assert.deepEqual(
+      api.ui.thisPage.items().map((item) => item.label),
+      ["About", "Review", "Connections"],
+    );
+
+    await api.ui.thisPage.openThread(firstThread);
+    await waitFor("the thread in the preview", () =>
+      api.preview.threadsOpened().includes(firstThread),
+    );
+  });
+
+  it("lists the problems on the changed pages", async () => {
+    const editor = await vscode.window.showTextDocument(install);
+    const end = editor.document.lineCount;
+    await editor.edit((edit) =>
+      edit.insert(new vscode.Position(end, 0), "\nSee [nothing](no-such-page.md).\n"),
+    );
+    try {
+      await diagnosticsOf(install, (d) => d.some((x) => x.message.includes("no-such-page")));
+      const listed = await waitFor("the problem in the view", async () => {
+        const group = problems((await settled()).items());
+        return group && group.children.length > 0 ? group : undefined;
+      });
+      assert.ok(
+        listed.children.some((c) => c.label.includes("no-such-page")),
+        JSON.stringify(listed),
+      );
+      assert.ok(listed.children.every((c) => c.description.startsWith("install-agent.md:")));
+    } finally {
+      // Undo acts on what has focus, which the preview can take as it goes to a thread.
+      await vscode.window.showTextDocument(install);
+      await vscode.commands.executeCommand("undo");
+    }
+    await diagnosticsOf(install, (d) => !d.some((x) => x.message.includes("no-such-page")));
+  });
+
+  it("opens the same source files with the Git extension and without it", async () => {
+    const opened = async () => {
+      const before = api.ui.review.sourceChanges.opened().length;
+      await vscode.commands.executeCommand("ascribe.openSourceChanges");
+      return waitFor("the diff", () => api.ui.review.sourceChanges.opened()[before]);
+    };
+    const baseTexts = async (diff: OpenedDiff) =>
+      Promise.all(
+        diff.files.map(async (file) =>
+          file.original === null
+            ? null
+            : (await vscode.workspace.openTextDocument(vscode.Uri.parse(file.original))).getText(),
+        ),
+      );
+    const withGit = await opened();
+    assert.match(withGit.title, /^Source changes against main/);
+    assert.deepEqual(
+      withGit.files.map((f) => f.label),
+      ["install-agent.md", "_fragments/prerequisites.md"],
+    );
+    assert.ok(
+      withGit.files.every((f) => f.original?.startsWith("git:")),
+      JSON.stringify(withGit.files),
+    );
+    const committed = withGit.files.map((f) => git("show", `HEAD:docs/${f.label}`));
+
+    api.ui.review.sourceChanges.useGitExtension(false);
+    const withoutGit = await opened();
+    assert.deepEqual(
+      withoutGit.files.map((f) => [f.label, f.modified]),
+      withGit.files.map((f) => [f.label, f.modified]),
+    );
+    assert.ok(
+      withoutGit.files.every((f) => f.original?.startsWith("ascribe-base:")),
+      JSON.stringify(withoutGit.files),
+    );
+    assert.deepEqual(
+      (await baseTexts(withoutGit)).map((t) => t?.replace(/\r\n/g, "\n")),
+      committed.map((t) => `${t}\n`),
+    );
+    assert.deepEqual(await baseTexts(withGit), await baseTexts(withoutGit));
+  });
+
+  it("is gone once review stops", async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.window.showTextDocument(install);
+    await vscode.commands.executeCommand("ascribe.stopReview");
+    await waitFor("review to stop", () => api.preview.review.base(workspace()) === undefined);
+    const view = await settled();
+    assert.equal(view.project(), undefined);
+    assert.deepEqual(view.items(), []);
+    await waitFor("This page without its Review section", async () => {
+      await api.ui.thisPage.whenSettled();
+      const labels = api.ui.thisPage.items().map((item) => item.label);
+      return labels.length > 0 && !labels.includes("Review");
+    });
   });
 });

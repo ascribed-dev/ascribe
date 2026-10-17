@@ -13,6 +13,7 @@ import {
   thisPageRoots,
   type Place,
   type ThisPageNode,
+  type ThisPageReview,
 } from "../../src/ui/sidebar.js";
 
 /** The item at `i`, which the test expects to be there. */
@@ -235,6 +236,75 @@ describe("the This page view", () => {
       "  Type (fragment)",
       "  Address (only where it's included)",
     ]);
+  });
+
+  describe("while review is on", () => {
+    const changed: ThisPageReview["page"] = {
+      path: "keys.md",
+      route: "/keys/",
+      status: "changed",
+      own_file_changed: false,
+      because: ["_setup.md"],
+      page_changed: [],
+      counts: { changed: 2, added: 1, removed: 0, moved: 0 },
+      title: "API keys",
+      formatted_title: null,
+    };
+    const thread = (id: string, path: string, line: number | undefined) => ({
+      id,
+      path,
+      line,
+      author: "octocat",
+      excerpt: `Comment ${id}`,
+    });
+
+    it("adds Review after About: what the branch changed, and the open threads", () => {
+      const review: ThisPageReview = {
+        base: "main",
+        page: changed,
+        threads: [thread("a", "_setup.md", 3), thread("b", "keys.md", undefined)],
+      };
+      const roots = thisPageRoots({ ...page, linkedFrom: [] }, review);
+      expect(flat(roots)).toEqual([
+        "About",
+        "  Title (API keys)",
+        "  Type (page)",
+        "  Address (/keys/)",
+        "  Markdown (/keys.md)",
+        "Review (against main)",
+        "  Changed (2 changed · 1 added · via _setup.md)",
+        "  Open threads (2)",
+        "    Comment a (octocat · _setup.md:3)",
+        "    Comment b (octocat · keys.md)",
+        "Connections (to “Rotate keys”)",
+        "  Linked from (0)",
+        "  Included by (0)",
+      ]);
+      const reviewNode = nth(roots, 1);
+      expect(thisPageLook(reviewNode).expanded).toBe(true);
+      expect(thisPageLook(nth(thisPageChildren(reviewNode), 1)).expanded).toBe(true);
+    });
+
+    it("says when the branch doesn't change the page, and dims no open threads", () => {
+      const roots = thisPageRoots(page, { base: "origin/release", page: null, threads: [] });
+      const reviewNode = nth(roots, 1);
+      expect(flat([reviewNode])).toEqual([
+        "Review (against origin/release)",
+        "  Unchanged (this branch doesn't change it)",
+        "  Open threads (0)",
+      ]);
+      const threads = nth(thisPageChildren(reviewNode), 1);
+      expect(thisPageLook(threads)).toMatchObject({ dimmed: true, expandable: false });
+    });
+
+    it("leaves the threads out when the pull request's aren't known, and calls a new page added", () => {
+      const roots = thisPageRoots(page, {
+        base: "main",
+        page: { ...changed, status: "added", own_file_changed: true, because: [] },
+        threads: undefined,
+      });
+      expect(flat([nth(roots, 1)])).toEqual(["Review (against main)", "  Added (New page)"]);
+    });
   });
 
   it("has nothing to show for a file that isn't a page", () => {

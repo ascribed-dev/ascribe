@@ -54,7 +54,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] Rename (`Rename`), what can be renamed at a position (`PrepareRenameRequest`), and the edits when a file is moved (`WillRenameFiles`), all in `crates/ascribe-lsp/src/refactor.rs`.
 - [ ] The command a CodeLens runs (`ExecuteCommand`, `ascribe.openFile`).
 - [ ] The page preview (`ascribe/preview`; `crates/ascribe-lsp/src/preview.rs`).
-- [ ] Review's changes (`ascribe/review/setBase` and `ascribe/review/changes`; `crates/ascribe-lsp/src/review.rs`).
+- [ ] Review's changes (`ascribe/review/setBase`, `ascribe/review/changes`, and `ascribe/review/baseFile`; `crates/ascribe-lsp/src/review.rs`).
 - [ ] What's at a position (`ascribe/context`; `crates/ascribe-lsp/src/context.rs`): a new block or inline construct is a node kind, and a new token is a token kind.
 - [ ] What actions can point at (`ascribe/targets`; `crates/ascribe-lsp/src/targets.rs`): a new kind of content model entry is a kind of target.
 - [ ] The project's inventory (`ascribe/inventory`; `crates/ascribe-lsp/src/inventory.rs`): a new kind of content model entry is a kind of entry.

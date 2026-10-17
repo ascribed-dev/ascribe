@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import type { PromptRequest } from "@ascribed/review/github";
 import type { Prompts } from "../actions/promptAgent.js";
 import type { ProjectServer } from "../client.js";
-import { samePath } from "../projects.js";
+import { comparable, samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import { choices, lineDescription, type ChosenBuilds } from "../ui/chosenBuild.js";
 import { shellHtml } from "./html.js";
@@ -70,6 +70,8 @@ export interface PreviewApi {
   renders(): readonly RenderRecord[];
   /** The ids of the headings the preview was told to scroll to (a link to one), in order. */
   reveals(): readonly string[];
+  /** The threads the preview was told to go to, by id, in order. */
+  threadsOpened(): readonly string[];
   /** The blocks the preview scrolled to for the editor: the line asked for and the block's anchor. */
   lineReveals(): readonly { line: number; source: string }[];
   /** Waits until a render that has been drawn satisfies `predicate`. */
@@ -150,7 +152,10 @@ export class PreviewController implements vscode.Disposable {
   private firstChangeOf: string | undefined;
   /** The thread to go to once its page is drawn: one opened from another page's list. */
   private threadToGo: { file: string; threadId: string } | undefined;
+  /** The project whose submit dialog to open once its page is drawn, by comparable folder. */
+  private submitFor: string | undefined;
   private threadsLog: ThreadsReport[] = [];
+  private threadsOpenedLog: string[] = [];
   private captureExternal = false;
   private externalLog: string[] = [];
   private siteMessages: string[] = [];
@@ -189,6 +194,8 @@ export class PreviewController implements vscode.Disposable {
           if (this.panel) this.schedule(0);
         },
         showPage: (uri) => this.showPage(uri),
+        submitReview: (server, page) => this.submitReview(server, page),
+        openThread: (uri, threadId) => this.openThread(uri, threadId),
       },
       context.workspaceState,
     );
@@ -301,6 +308,7 @@ export class PreviewController implements vscode.Disposable {
       localResourceRoots: () => [...this.roots],
       renders: () => this.log,
       reveals: () => this.revealLog,
+      threadsOpened: () => this.threadsOpenedLog,
       lineReveals: () => this.lineRevealLog,
       whenDrawn: (description, predicate, timeout = 30_000) =>
         this.waitForDrawn(description, predicate, timeout),
@@ -576,8 +584,13 @@ export class PreviewController implements vscode.Disposable {
       };
       if (server) {
         const goTo = this.threadToGo?.file === document.uri.fsPath ? this.threadToGo : undefined;
-        if (goTo) this.threadToGo = undefined;
-        review.threads = this.review.threads.view(server, goTo?.threadId ?? null);
+        if (goTo) {
+          this.threadToGo = undefined;
+          this.threadsOpenedLog.push(goTo.threadId);
+        }
+        const submit = this.submitFor === comparable(server.project.folder);
+        if (submit) this.submitFor = undefined;
+        review.threads = this.review.threads.view(server, goTo?.threadId ?? null, submit);
       }
     }
     const message: Extract<ToWebview, { type: "render" }> = {
@@ -759,14 +772,7 @@ export class PreviewController implements vscode.Disposable {
         return;
       case "openThread": {
         const file = this.inContentRoot(message.path);
-        if (!file) return;
-        const uri = vscode.Uri.file(file);
-        if (this.document && uri.fsPath === this.document.uri.fsPath) {
-          this.post({ type: "goToThread", threadId: message.threadId });
-          return;
-        }
-        this.threadToGo = { file: uri.fsPath, threadId: message.threadId };
-        await this.showPage(uri, false);
+        if (file) await this.openThread(vscode.Uri.file(file), message.threadId);
         return;
       }
       case "notify":
@@ -1028,6 +1034,39 @@ export class PreviewController implements vscode.Disposable {
       ...(viewColumn === undefined ? {} : { viewColumn }),
       preview: false,
     });
+  }
+
+  /**
+   * Opens the submit dialog for a project's review: on the page the preview
+   * shows, when it's the project's, else on `page`, opened first.
+   */
+  private async submitReview(server: ProjectServer, page: vscode.Uri | undefined): Promise<void> {
+    this.submitFor = comparable(server.project.folder);
+    const shown = this.panel && this.document && this.projects.serverFor(this.document.uri);
+    if (this.panel && shown === server) {
+      this.panel.reveal(undefined, false);
+      this.schedule(0);
+    } else if (page) {
+      await this.showPage(page, false);
+    } else {
+      // No page to open the dialog on: every changed page was removed.
+      this.submitFor = undefined;
+      void vscode.window.showInformationMessage(
+        "Ascribe: open a page of the project to submit its review. Every page this branch changes was removed.",
+      );
+    }
+  }
+
+  /** Goes to a thread in the preview of a page: at once when the preview shows it, else once it's drawn. */
+  private async openThread(uri: vscode.Uri, threadId: string): Promise<void> {
+    if (this.panel && this.document && uri.fsPath === this.document.uri.fsPath) {
+      if (!this.panel.visible) this.panel.reveal(undefined, false);
+      this.threadsOpenedLog.push(threadId);
+      this.post({ type: "goToThread", threadId });
+      return;
+    }
+    this.threadToGo = { file: uri.fsPath, threadId };
+    await this.showPage(uri, false);
   }
 
   /** Opens a changed page and its preview, and (with `firstChange`) goes to its first change once it's drawn. */

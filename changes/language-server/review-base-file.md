@@ -1,0 +1,1 @@
+- **`ascribe/review/baseFile` answers a source file's text at the review base.** An editor's diff of a review's source changes reads its base side from it where it can't ask git itself. See [the language server's README](crates/ascribe-lsp/README.md).
