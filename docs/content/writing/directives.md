@@ -213,6 +213,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 - Block quotes work the same way, with `>` in place of indentation.
 
 ## Built-in directives
+@memo: The built-ins are in SPEC §4's order, here, in the table, and in the contents, so each section's link to the SPEC counts up. A new built-in goes where the SPEC puts it, in all three.
 
 ([SPEC §4]({repo}/blob/main/SPEC.md#4-built-in-directives))
 

@@ -14,6 +14,7 @@ It's for someone new to Ascribe who knows Markdown and a terminal. By the end, y
 You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later (2.39 for 0.1.1 and earlier), which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
 
 ## Install the command
+@memo: This section and the next are the two installs the landing page and the README show beside their link here (decision 86 in project-docs/decisions.md). Keep them first; scripts/docs-site/facts.test.ts fails when the copies differ.
 
 In your project's directory:
 

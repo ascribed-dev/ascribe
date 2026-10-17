@@ -69,6 +69,7 @@ A pull request's changes are read the way readers will see them: in the site's o
 [Why Ascribe](why.md) says which problems these answer, from what teams that keep docs as code report, and what Ascribe doesn't do.
 
 ## Start
+@memo: Getting started's first two sections install these two (decision 86 in project-docs/decisions.md), and scripts/docs-site/facts.test.ts fails when the commands here differ from theirs.
 
 Install the command in your project's directory:
 
