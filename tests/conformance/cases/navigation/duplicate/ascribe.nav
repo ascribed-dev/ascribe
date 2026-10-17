@@ -1,0 +1,9 @@
+version = 1
+
+[[sections]]
+folder = "Guides/"
+pages = ["Upgrade.md", "Install.md", "Upgrade.md"]
+
+[[sections]]
+folder = "Guides/"
+label = "How-to"

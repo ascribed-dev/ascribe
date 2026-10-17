@@ -1,0 +1,9 @@
+description: >-
+  A folder listed twice is an error at the second, and so is a page named
+  twice in one `pages`.
+spec: ["7.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-duplicate, file: ascribe.nav, line: 5}
+  - {slug: nav-duplicate, file: ascribe.nav, line: 8}

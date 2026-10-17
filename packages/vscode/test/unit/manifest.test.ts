@@ -19,6 +19,7 @@ interface Manifest {
     configuration: {
       properties: Record<string, { default: unknown; enum?: string[]; scope?: string }>;
     };
+    languages: { id: string; filenames?: string[] }[];
     grammars: { path: string; injectTo: string[]; scopeName: string }[];
     semanticTokenTypes: { id: string }[];
     semanticTokenModifiers: { id: string }[];
@@ -289,5 +290,25 @@ describe("semantic tokens and the server's legend", () => {
     const problems = declared.find((t) => t.name === "ascribe_editor_problems");
     expect(problems?.modelDescription).toContain("editor's build only");
     expect(problems?.modelDescription).toContain("ascribe_check");
+  });
+});
+
+describe("languages", () => {
+  // The names are the model crate's: one home per fact, and this compares.
+  const declared = (file: string, constant: string) => {
+    const match = new RegExp(`pub const ${constant}: &str = "([^"]+)";`).exec(
+      read(`../../../../crates/ascribe-model/src/${file}`),
+    );
+    if (!match?.[1]) throw new Error(`no ${constant} in ${file}`);
+    return match[1];
+  };
+
+  it("gives Ascribe's TOML files without a .toml extension to TOML", () => {
+    const toml = manifest.contributes.languages.find((language) => language.id === "toml");
+    expect(toml?.filenames).toEqual([
+      declared("nav.rs", "NAV_FILE"),
+      declared("permalinks.rs", "PERMALINKS_FILE"),
+      declared("lock.rs", "LOCK_FILE"),
+    ]);
   });
 });

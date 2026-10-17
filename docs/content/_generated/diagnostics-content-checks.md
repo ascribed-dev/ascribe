@@ -167,11 +167,11 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 Advice · page level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
-**When:** No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported.
+**When:** No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported. The message says what reaches the page: only the sidebar, or, for a page that's `unlisted`, nothing but its address.
 
-**Message:** no other page links to this page or includes it, so readers reach it only through the site's own navigation or search, if those list it
+**Message:** no other page links to this page or includes it, so readers reach it only through the sidebar
 
-**Fix:** Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](../content-model/checks.md#19-checks) (`page-orphan = "off"`) when your navigation lists every page.
+**Fix:** Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](../content-model/checks.md#19-checks) (`page-orphan = "off"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar.
 
 **Read more:** [Links](../writing/directives.md#links) in the directive reference.
 
@@ -369,6 +369,32 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** A memo is read by whoever is about to change the page, so it says why in as few words as it can. Cut what the page itself says, and split a memo about several things into one about each. The limit is 2,000 characters; set another in `ascribe.toml`, such as `[checks.memo-long] limit = 4000`.
 
 **Read more:** [Write a memo file](../writing/memo-files.md#write-a-memo-file) in the memo files reference.
+
+### ASC235 `nav-page-unplaced`
+@id {permalink=true}: ASC235
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page.
+
+**Message:** `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title
+
+**Fix:** Add the page's file name to the section's `pages` in `ascribe.nav`, where it should come. The fix appends the section's pages that aren't named, in the order they come in now, so the navigation is the same after it; move the names to where you want them.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
+### ASC236 `nav-section-unplaced`
+@id {permalink=true}: ASC236
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** `ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported.
+
+**Message:** ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order
+
+**Fix:** Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them. A file that writes `sections = [...]` inline gets no fix: add each section to its list.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
 
 ## Outputs
 

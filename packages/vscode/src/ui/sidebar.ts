@@ -121,7 +121,7 @@ export function pagesLook(node: PagesNode): ItemLook {
         "Orphans",
         node.pages.length,
         "warning",
-        "Pages no other page links to or includes. Without a navigation file a reader may still reach them, so this is a hint, not an error.",
+        "Pages no other page links to or includes. Only the sidebar reaches them, or, for an unlisted page, nothing but its address.",
       );
     case "page":
       return {

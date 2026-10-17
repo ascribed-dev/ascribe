@@ -2903,9 +2903,10 @@ place = "page"
 area = "project"
 spec = "5.2"
 reference = "writing/directives.md#links"
-when = "No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported"
-message = "no other page links to this page or includes it, so readers reach it only through the site's own navigation or search, if those list it"
-fix = "Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model/checks.md#19-checks) (`page-orphan = \"off\"`) when your navigation lists every page."
+when = "No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported. The message says what reaches the page: only the sidebar, or, for a page that's `unlisted`, nothing but its address"
+message = "no other page links to this page or includes it, so readers reach it only through the sidebar"
+messages.unlisted = "no other page links to this page or includes it, and it's `unlisted`, so it's left out of the sidebar too and nothing reaches it but its address"
+fix = "Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model/checks.md#19-checks) (`page-orphan = \"off\"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar."
 
 [[diagnostic]]
 code = "ASC155"
@@ -4241,3 +4242,92 @@ reference = "navigation/index.md#the-file"
 row = "Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it"
 message = "ascribe.nav can't be read: {detail}"
 fix = "Correct the file to the shape the reference gives it: `version = 1`, and a `[[sections]]` table for each section listed, with `folder`, a path from the content root ending in `/`, or `\"\"` for the root, and optionally `pages`, a list of file names in that folder, and `label`. Until it reads, every sidebar has the default order, as if the project had no file."
+
+[[diagnostic]]
+code = "ASC231"
+slug = "nav-page-unknown"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = ["allowed-values"]
+spec = "7.8"
+reference = "navigation/index.md#the-file"
+row = "Navigation | A `pages` entry in `ascribe.nav` that isn't a page in its section's folder, or that names the section's own `index.md`"
+message = "`{name}` isn't a page in `{folder}`; its pages are: {values}"
+messages.suggestion = "`{name}` isn't a page in `{folder}`; did you mean `{suggestion}`?"
+messages.slash = "`{name}` has a `/`, and `pages` names files in `{folder}` itself; list a nested folder's pages in its own section"
+messages.own = "`index.md` is the section's own page, which always comes first, so `pages` doesn't name it"
+messages.none = "`{name}` isn't a page in `{folder}`, which has no pages of its own"
+fix = "Write the file name of a page in the section's folder, as it is on disk, case included, or remove the entry. A page in a nested folder is listed in that folder's own section, and a section's `index.md` comes first without being listed. The fix offered renames the entry to the closest page's name; check it's the one you meant. Until the name matches a page, the entry is passed over, and the pages the list leaves out come after the ones it names."
+
+[[diagnostic]]
+code = "ASC232"
+slug = "nav-folder-unknown"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.8"
+reference = "navigation/index.md#the-file"
+row = "Navigation | A `folder` in `ascribe.nav` that isn't a section"
+message = "`{folder}` isn't a section: no page is in it or in a folder under it"
+messages.suggestion = "`{folder}` isn't a section; did you mean `{suggestion}`?"
+fix = "Write the path of a folder with a page in it or under it, from the content root, ending in `/`, as it is on disk, case included, or remove the section's table. A folder whose name starts with `_` holds fragments, and isn't a section. The fix offered changes the folder to the closest section's; check it's the one you meant. Until the folder matches a section, its table is passed over."
+
+[[diagnostic]]
+code = "ASC233"
+slug = "nav-duplicate"
+severity = "error"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.8"
+reference = "navigation/index.md#the-file"
+row = "Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice"
+message = "the section `{folder}` is listed already, earlier in the file; its first table is the one that counts"
+messages.page = "`{name}` is in `{folder}`'s `pages` already, earlier in the list; its first place is the one that counts"
+fix = "Remove the second, keeping what you need from it in the first: a section's table, `pages`, and `label` are read from its first table only, and a page takes its first place in the list. The fix removes the second table, or the second entry in `pages`."
+
+[[diagnostic]]
+code = "ASC234"
+slug = "section-page-both"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.8"
+reference = "navigation/index.md#sections-and-pages"
+row = "Navigation | A folder with an `index.md` and a page beside it with the folder's name"
+message = "`{folder}` has this `index.md` and `{page}` beside it, and a section has one own page; keep one of them"
+fix = "A section's own page is its `index.md` or the page beside its folder with its name, not both. Keep the one you want first in the section: move the other's content into it and delete it, or rename the other so it's a page of its own. Until then, the `index.md` is the section's own page, and the page beside the folder is one of its parent's pages."
+
+[[diagnostic]]
+code = "ASC235"
+slug = "nav-page-unplaced"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.8"
+reference = "navigation/index.md#the-file"
+configurable = true
+area = "project"
+when = "`ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page"
+message = "`{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title"
+fix = "Add the page's file name to the section's `pages` in `ascribe.nav`, where it should come. The fix appends the section's pages that aren't named, in the order they come in now, so the navigation is the same after it; move the names to where you want them."
+
+[[diagnostic]]
+code = "ASC236"
+slug = "nav-section-unplaced"
+severity = "advice"
+level = "file"
+next = "fix"
+evidence = []
+spec = "7.8"
+reference = "navigation/index.md#the-file"
+configurable = true
+area = "project"
+when = "`ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported"
+message = "ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order"
+messages.root = "ascribe.nav lists other sections at the content root and not `{folder}`, so it comes after them, in path order"
+fix = "Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them. A file that writes `sections = [...]` inline gets no fix: add each section to its list."

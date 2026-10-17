@@ -354,7 +354,7 @@ impl<'p> PageChecker<'p> {
 
     /// The diagnostics of the checks that hold for every build
     /// (`fragment-unused`, the unused entries of the content model, the
-    /// permalinks list's, the glossary's links, and, when `images` is set,
+    /// permalinks list's, the glossary's links, the navigation's, and, when `images` is set,
     /// the image checks), by file, over this checker's index.
     pub(crate) fn for_every_build(
         &self,
@@ -370,7 +370,8 @@ impl<'p> PageChecker<'p> {
         );
         let permalinks = crate::permalinks::check(self.project, &self.indexed.index, &file);
         let glossary = crate::glossary::check(self.project, &self.indexed.index);
-        for (id, found) in permalinks.into_iter().chain(glossary) {
+        let nav = crate::nav::check(self.project, &self.indexed.index, &file, self.errors_only);
+        for (id, found) in permalinks.into_iter().chain(glossary).chain(nav) {
             let list = out.entry(id).or_default();
             list.extend(found);
             list.sort_by_key(|d| d.location.span);

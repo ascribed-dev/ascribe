@@ -1,0 +1,11 @@
+description: >-
+  A section the file leaves out, where it lists one of its siblings, is
+  advice on the section's first page: its own, else its first in order. A
+  nested section none of whose siblings the file lists isn't, nor is the
+  content root, which the file lists here.
+spec: ["7.8"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-section-unplaced, file: Reference/Defaults.md, line: 2, severity: advice}
+  - {slug: nav-section-unplaced, file: Tutorials/index.md, line: 2, severity: advice}

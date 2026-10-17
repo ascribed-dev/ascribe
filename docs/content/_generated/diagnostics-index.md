@@ -227,3 +227,9 @@
 | [ASC228](../checks/diagnostics/content-checks.md#ASC228) | `memo-long` | Advice | File | write |
 | [ASC229](../checks/diagnostics/content-checks.md#ASC229) | `template-section-empty` | Advice | File | write |
 | [ASC230](../checks/diagnostics/pages.md#ASC230) | `nav-invalid` | Error | File | write |
+| [ASC231](../checks/diagnostics/pages.md#ASC231) | `nav-page-unknown` | Error | File | choose |
+| [ASC232](../checks/diagnostics/pages.md#ASC232) | `nav-folder-unknown` | Error | File | choose |
+| [ASC233](../checks/diagnostics/pages.md#ASC233) | `nav-duplicate` | Error | File | fix |
+| [ASC234](../checks/diagnostics/pages.md#ASC234) | `section-page-both` | Error | File | choose |
+| [ASC235](../checks/diagnostics/content-checks.md#ASC235) | `nav-page-unplaced` | Advice | File | fix |
+| [ASC236](../checks/diagnostics/content-checks.md#ASC236) | `nav-section-unplaced` | Advice | File | fix |

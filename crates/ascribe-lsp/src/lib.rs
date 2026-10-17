@@ -29,6 +29,7 @@ mod log;
 mod memos;
 mod model_file;
 mod nav;
+mod nav_file;
 mod page;
 mod page_rows;
 mod position;

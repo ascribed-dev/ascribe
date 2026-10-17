@@ -1007,13 +1007,15 @@ pages = ["install.md", "configure.md"]
 ```
 
 - A **section** is the content root, or a folder under it with a page at any depth. Fragments (§2.2) are no section's pages, so a folder whose name begins with `_` isn't a section. A page is in its folder's section, and in no other.
-- A section's **own page** is its `index.md`, or else the page beside the folder with the folder's name: `checks/diagnostics.md` for `checks/diagnostics/`. A page beside its folder is also one of the parent section's pages. The content root's own page is its `index.md`, the home page.
+- A section's **own page** is its `index.md`, or else the page beside the folder with the folder's name: `checks/diagnostics.md` for `checks/diagnostics/`. A page beside its folder is also one of the parent section's pages. The content root's own page is its `index.md`, the home page. A folder MUST NOT have both an `index.md` and a page beside it with its name; until it doesn't, its `index.md` is its own page.
 - `version` is `1`. Each `[[sections]]` table lists one section: `folder`, its path from the content root ending in `/`, or `""` for the content root; optionally `pages`, the file names of pages in that folder, in order, which may name the page beside a nested folder but not the section's own page; and optionally `label`, one line. Nothing else may be written. The tables' order is the sections' order.
-- **The default order:** sections in path order, the content root first. In each, its own page first, then its pages by their content type, in the order the content model declares types (§7.2), then by title. A nested section whose own page is beside its folder sits right after that page among its parent's pages; one with an `index.md` comes after the parent's pages.
+- **The default order:** sections in path order, the content root first. In each, its own page first, then its pages by their content type, in the order the content model declares types (§7.2), then by title. A nested section whose own page is beside its folder sits right after that page among its parent's pages; any other comes after the parent's pages, in path order.
 - **The file's order over it:** the sections the file lists come first, in its order, among their siblings, and the rest after, in path order. In a section that lists `pages`, those pages come first, in its order, and the rest after, by title; a nested section whose own page is named moves with it. A section with no `pages` has the default order.
 - A section's **label** is its `label`, else its own page's title, else its folder's name with its first letter capitalized. The content root's is "Start" unless `label` says otherwise.
 - **One navigation for a project.** A build's navigation is its share: the pages it publishes and offers (§2.1), so a page that's `unlisted` isn't in it, and the sections left with one.
 - A file that can't be read as above is an error, and the project has the default order, as if it had no file.
+- A file that reads is an error where it names what the project doesn't have, and what it names wrongly is passed over: a `folder` that isn't a section; a `pages` entry that isn't a page in its folder, or that names the section's `index.md`; and a folder listed a second time, or a page named a second time in one section's `pages`, the second counting for nothing.
+- A processor SHOULD advise where the file leaves out what it could order: a page of a section that lists `pages`, and a section whose siblings the file lists. Each comes after what's listed, as above.
 
 ---
 
@@ -1099,6 +1101,10 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root | Error |
 | Memo files | A memo file's `about` that names nothing in the project | Warning |
 | Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it | Error |
+| Navigation | A `pages` entry in `ascribe.nav` that isn't a page in its section's folder, or that names the section's own `index.md` | Error |
+| Navigation | A `folder` in `ascribe.nav` that isn't a section | Error |
+| Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice | Error |
+| Navigation | A folder with an `index.md` and a page beside it with the folder's name | Error |
 | Glossary | A term's `link` that names a heading its page doesn't have | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |

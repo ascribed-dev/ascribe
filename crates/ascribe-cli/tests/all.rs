@@ -39,6 +39,8 @@ mod lsp_parity;
 mod lsp_project_log;
 #[path = "all/mcp.rs"]
 mod mcp;
+#[path = "all/navigation.rs"]
+mod navigation;
 #[path = "all/network.rs"]
 mod network;
 #[path = "all/observe.rs"]

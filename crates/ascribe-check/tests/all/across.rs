@@ -156,6 +156,38 @@ fn an_orphan_is_reported_once_naming_the_builds_it_is_an_orphan_in() {
 }
 
 #[test]
+fn an_orphan_says_what_reaches_it() {
+    let p = project(&[
+        ("index.md", "---\ntitle: Home\n---\n\nText.\n"),
+        ("lonely.md", LONELY),
+        (
+            "hidden.md",
+            "---\ntitle: Hidden\nlisting: unlisted\n---\n\nText.\n",
+        ),
+    ]);
+    let all = check_all_builds(&p);
+    let message = |path: &str| {
+        all.iter()
+            .find(|d| {
+                d.slug.as_str() == "page-orphan"
+                    && p.display_path(d.location.file).as_deref() == Some(path)
+            })
+            .map(|d| d.message.clone())
+            .unwrap_or_else(|| panic!("an orphan at {path}"))
+    };
+    // A page in the navigation is in the sidebar; an unlisted one is in no
+    // navigation, so only its address reaches it.
+    assert_eq!(
+        message("docs/lonely.md"),
+        "no other page links to this page or includes it, so readers reach it only through the sidebar"
+    );
+    assert_eq!(
+        message("docs/hidden.md"),
+        "no other page links to this page or includes it, and it's `unlisted`, so it's left out of the sidebar too and nothing reaches it but its address"
+    );
+}
+
+#[test]
 fn a_page_another_page_includes_is_not_an_orphan() {
     let p = project(&[
         ("index.md", "---\ntitle: Home\n---\n\n@include: shared.md\n"),

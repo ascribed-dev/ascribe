@@ -113,6 +113,9 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 @available: ascribe 0.3.2
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
+@available: next
+- In the [navigation file](../navigation/index.md), `ascribe.nav`: its keys, a `folder` from the project's sections it doesn't list yet, and in `pages` the section's pages it doesn't name yet. The file's [problems](../navigation/index.md#problems) appear as you type, where each is, with their fixes, and a page its section leaves out offers **Add `name.md` to `folder/`'s pages in ascribe.nav**, which edits the file.
+
 ### Hover
 
 - A link, image, or include: its target's path, title, and the first paragraph, with phrases filled in. A fragment, a missing file or id, a link written as a URL, and a name whose case doesn't match are called out.
@@ -162,6 +165,9 @@ When another extension is VS Code's formatter for Markdown, such as Prettier thr
 ### Highlighting
 
 Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon as a file opens. Once the server is running, it adds what depends on the content model: declared and undeclared phrases, project widgets, and **title lines**, shown distinctly so a paragraph that accidentally became a title stands out.
+
+@available: next
+The extension gives `ascribe.nav`, `ascribe.permalinks`, and `ascribe.lock` to VS Code's TOML language, like `ascribe.toml`. VS Code has no TOML coloring of its own, so they're colored only with a TOML extension installed, such as Even Better TOML.
 
 @available: next
 A [memo](../writing/directives.md#memo)'s text is colored as a comment, in either form, and nothing in it is colored as a link, a phrase, or a heading. A container memo folds to its first line, beside the folding of headings, lists, and code blocks.
@@ -279,7 +285,7 @@ About's other rows say whether the page is published, listed, due, and finished.
 
 A fragment has no builds, listing, or size of its own: it's published only where it's included.
 
-- **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
+- **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). An orphan is still in the sidebar, which is all that reaches it, unless it's `unlisted`, when nothing reaches it but its address: it's a hint, not an error.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
 
 Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.

@@ -1,7 +1,6 @@
 description: >-
-  A file with the shape the grammar gives it reports nothing, labels and
-  pages included, and so does a folder or a page it names that the project
-  doesn't have.
+  A file with the shape the grammar gives it, naming sections and pages the
+  project has, reports nothing, labels and pages included.
 spec: ["7.8", "8.2"]
 tags: [check]
 

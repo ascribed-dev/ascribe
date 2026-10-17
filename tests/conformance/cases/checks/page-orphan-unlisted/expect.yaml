@@ -1,0 +1,12 @@
+description: >-
+  A page nothing links to or includes is an orphan whether the navigation
+  has it or not: one in the navigation, which only the sidebar reaches, and
+  one that's `unlisted`, which nothing reaches but its address.
+spec: ["5.2", "7.8"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: page-orphan, file: hidden.md, line: 3}
+      - {slug: page-orphan, file: sidebar.md, line: 3}

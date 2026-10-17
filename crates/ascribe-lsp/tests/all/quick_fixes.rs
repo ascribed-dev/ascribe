@@ -1100,6 +1100,14 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         // Its fix writes `ascribe.permalinks`, not the page: `across.rs`
         // applies it and sees the warning go.
         .filter(|e| e.slug.as_str() != "permalinks-list-behind")
+        // Theirs edit `ascribe.nav`, from the file or from a page:
+        // `nav_file.rs` applies them and sees the problem go.
+        .filter(|e| {
+            !matches!(
+                e.slug.as_str(),
+                "nav-duplicate" | "nav-page-unplaced" | "nav-section-unplaced"
+            )
+        })
         .map(|e| e.slug.as_str())
         .collect();
     let sampled: Vec<&str> = samples.iter().map(|(slug, _, _)| *slug).collect();

@@ -717,6 +717,24 @@ pub const TEMPLATE_SECTION_EMPTY: DiagnosticSlug = DiagnosticSlug("template-sect
 /// `ASC230`, error, file level: SPEC §8.2, "Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it".
 pub const NAV_INVALID: DiagnosticSlug = DiagnosticSlug("nav-invalid");
 
+/// `ASC231`, error, file level: SPEC §8.2, "Navigation | A `pages` entry in `ascribe.nav` that isn't a page in its section's folder, or that names the section's own `index.md`".
+pub const NAV_PAGE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("nav-page-unknown");
+
+/// `ASC232`, error, file level: SPEC §8.2, "Navigation | A `folder` in `ascribe.nav` that isn't a section".
+pub const NAV_FOLDER_UNKNOWN: DiagnosticSlug = DiagnosticSlug("nav-folder-unknown");
+
+/// `ASC233`, error, file level: SPEC §8.2, "Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice".
+pub const NAV_DUPLICATE: DiagnosticSlug = DiagnosticSlug("nav-duplicate");
+
+/// `ASC234`, error, file level: SPEC §8.2, "Navigation | A folder with an `index.md` and a page beside it with the folder's name".
+pub const SECTION_PAGE_BOTH: DiagnosticSlug = DiagnosticSlug("section-page-both");
+
+/// `ASC235`, advice, file level: a content check (area `project`).
+pub const NAV_PAGE_UNPLACED: DiagnosticSlug = DiagnosticSlug("nav-page-unplaced");
+
+/// `ASC236`, advice, file level: a content check (area `project`).
+pub const NAV_SECTION_UNPLACED: DiagnosticSlug = DiagnosticSlug("nav-section-unplaced");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -945,6 +963,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     MEMO_LONG,
     TEMPLATE_SECTION_EMPTY,
     NAV_INVALID,
+    NAV_PAGE_UNKNOWN,
+    NAV_FOLDER_UNKNOWN,
+    NAV_DUPLICATE,
+    SECTION_PAGE_BOTH,
+    NAV_PAGE_UNPLACED,
+    NAV_SECTION_UNPLACED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -994,6 +1018,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     MEMO_OUTDATED,
     MEMO_LONG,
     TEMPLATE_SECTION_EMPTY,
+    NAV_PAGE_UNPLACED,
+    NAV_SECTION_UNPLACED,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

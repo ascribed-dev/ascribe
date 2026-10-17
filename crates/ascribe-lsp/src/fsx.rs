@@ -92,12 +92,13 @@ impl FileSystem for BufferFs {
 /// snapshot is dropped by the currency check before it's published, so a
 /// probe that sees a newer state than its snapshot can't reach the editor.
 ///
-/// It also holds the open memo files' buffers (SPEC §7.7), which aren't
-/// sources: a memo store reads a memo through it as the editor has it.
+/// It also holds the buffers of the open files that aren't sources but are
+/// read as the editor has them: memo files (SPEC §7.7), which a memo store
+/// reads through it, and `ascribe.nav` (SPEC §7.8), which the checks do.
 pub(crate) struct LayerFs {
     disk: DiskFs,
     layers: RwLock<Layers>,
-    memos: RwLock<BTreeMap<RelPath, String>>,
+    buffers: RwLock<BTreeMap<RelPath, String>>,
 }
 
 #[derive(Default)]
@@ -111,17 +112,18 @@ impl LayerFs {
         LayerFs {
             disk,
             layers: RwLock::new(Layers::default()),
-            memos: RwLock::new(BTreeMap::new()),
+            buffers: RwLock::new(BTreeMap::new()),
         }
     }
 
-    /// An open memo file's text, at a path relative to the project root, or
-    /// `None` once it's closed and the disk has it again.
-    pub(crate) fn set_memo(&self, project_path: &RelPath, text: Option<String>) {
-        let mut memos = self.memos.write().unwrap_or_else(PoisonError::into_inner);
+    /// An open memo file's or `ascribe.nav`'s text, at a path relative to
+    /// the project root, or `None` once it's closed and the disk has it
+    /// again.
+    pub(crate) fn set_buffer(&self, project_path: &RelPath, text: Option<String>) {
+        let mut buffers = self.buffers.write().unwrap_or_else(PoisonError::into_inner);
         match text {
-            Some(text) => memos.insert(project_path.clone(), text),
-            None => memos.remove(project_path),
+            Some(text) => buffers.insert(project_path.clone(), text),
+            None => buffers.remove(project_path),
         };
     }
 
@@ -149,8 +151,8 @@ impl FileSystem for LayerFs {
     }
 
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
-        let memos = self.memos.read().unwrap_or_else(PoisonError::into_inner);
-        match memos.get(project_path) {
+        let buffers = self.buffers.read().unwrap_or_else(PoisonError::into_inner);
+        match buffers.get(project_path) {
             Some(text) => Ok(text.clone().into_bytes()),
             None => self.disk.read_file(project_path),
         }
@@ -160,11 +162,11 @@ impl FileSystem for LayerFs {
         self.disk.real_path(project_path)
     }
 
-    /// The disk's files, and an open memo file that isn't saved yet.
+    /// The disk's files, and an open file that isn't saved yet.
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
         let mut files = self.disk.files_in(project_dir);
-        let memos = self.memos.read().unwrap_or_else(PoisonError::into_inner);
-        for path in memos.keys() {
+        let buffers = self.buffers.read().unwrap_or_else(PoisonError::into_inner);
+        for path in buffers.keys() {
             if path.starts_with(project_dir) && path != project_dir && !files.contains(path) {
                 files.push(path.clone());
             }

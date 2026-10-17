@@ -22,12 +22,12 @@
 //! the two to the same diagnostics.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::{
-    Acknowledgements, Diagnostic, PERMALINKS_FILE_ID, PageChecker, Project, ReadFailure, Registry,
-    Severity, SourceFile, apply_levels, check_file,
+    Acknowledgements, Diagnostic, NAV_FILE_ID, PERMALINKS_FILE_ID, PageChecker, Project,
+    ReadFailure, Registry, Severity, SourceFile, apply_levels, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
@@ -78,6 +78,8 @@ pub(crate) struct Across {
     pub model: (String, Vec<Diagnostic>),
     /// The permalinks list's, `ascribe.permalinks`, which isn't a source.
     pub list: Vec<lsp_types::Diagnostic>,
+    /// The navigation file's, `ascribe.nav`, which isn't a source either.
+    pub nav: Vec<lsp_types::Diagnostic>,
     /// Each memo file's, committed and personal (SPEC §7.7), by its path
     /// from the project root, levels applied: every memo file the checks
     /// read, with nothing for one that has no problem.
@@ -178,6 +180,7 @@ impl Core {
         // didn't compute is computed again, and `ascribe.toml` is published.
         let mut model_changed = false;
         let mut list_changed = false;
+        let mut nav_changed = false;
         let mut memos_changed: Vec<(RelPath, Vec<lsp_types::Diagnostic>)> = Vec::new();
         if let Some(across) = across
             && across != *loaded.across
@@ -196,6 +199,7 @@ impl Core {
             }
             model_changed = across.model != loaded.across.model;
             list_changed = across.list != loaded.across.list;
+            nav_changed = across.nav != loaded.across.nav;
             // A memo file that's gone is published empty, once.
             for path in loaded.across.memos.keys() {
                 if !across.memos.contains_key(path) {
@@ -235,6 +239,11 @@ impl Core {
         if list_changed && let Some(loaded) = self.loaded.as_ref() {
             let path = loaded.root.join(ascribe_model::PERMALINKS_FILE);
             let found = loaded.across.list.clone();
+            self.publish(&path, found);
+        }
+        if nav_changed && let Some(loaded) = self.loaded.as_ref() {
+            let path = loaded.root.join(ascribe_model::NAV_FILE);
+            let found = loaded.across.nav.clone();
             self.publish(&path, found);
         }
     }
@@ -497,15 +506,20 @@ fn run_across(
         ),
         ..Across::default()
     };
-    // The permalinks list's own, at the levels `[checks]` sets (none of them
-    // is configurable, so as they are).
-    let list = by_file.remove(&PERMALINKS_FILE_ID).unwrap_or_default();
-    if let Some(entry) = project.file(PERMALINKS_FILE_ID) {
-        let index = LineIndex::new(entry.text);
-        found.list = list
-            .iter()
-            .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
-            .collect();
+    // The permalinks list's own, and the navigation file's, at the levels
+    // `[checks]` sets (none of them is configurable, so as they are).
+    for (id, out) in [
+        (PERMALINKS_FILE_ID, &mut found.list),
+        (NAV_FILE_ID, &mut found.nav),
+    ] {
+        let list = by_file.remove(&id).unwrap_or_default();
+        if let Some(entry) = project.file(id) {
+            let index = LineIndex::new(entry.text);
+            *out = list
+                .iter()
+                .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
+                .collect();
+        }
     }
     // Every memo file gets an entry, so one whose problems are fixed is
     // published empty.
@@ -558,7 +572,11 @@ fn run_across(
         };
         let lsp = diagnostics
             .iter()
-            .map(|d| to_lsp(d, &index, job.encoding, &related))
+            .map(|d| {
+                let mut lsp = to_lsp(d, &index, job.encoding, &related);
+                fixes_elsewhere(&mut lsp, d, project, &job.root, job.encoding);
+                lsp
+            })
             .collect();
         found
             .sources
@@ -635,6 +653,43 @@ pub(crate) fn checked_project(
         sources,
         fs.clone(),
     )
+}
+
+/// Adds to `lsp`'s data the fixes of `d` that edit another file the project
+/// has, as `elsewhere`: each with that file's URI, and its edits in that
+/// file's positions. A page's `nav-page-unplaced` is fixed in `ascribe.nav`.
+fn fixes_elsewhere(
+    lsp: &mut lsp_types::Diagnostic,
+    d: &Diagnostic,
+    project: &Project,
+    root: &Path,
+    encoding: Encoding,
+) {
+    let elsewhere: Vec<serde_json::Value> = d
+        .fixes
+        .iter()
+        .filter(|fix| fix.file != d.location.file)
+        .filter_map(|fix| {
+            let entry = project.file(fix.file)?;
+            let uri = path_to_uri(&normalize(&root.join(&entry.display_path)))?;
+            let index = LineIndex::new(entry.text);
+            Some(serde_json::json!({
+                "title": fix.title,
+                "applicability": fix.applicability.as_str(),
+                "uri": uri.as_str(),
+                "edits": fix.edits.iter().map(|edit| serde_json::json!({
+                    "range": encoding.range(&index, edit.span),
+                    "newText": edit.new_text,
+                })).collect::<Vec<_>>(),
+            }))
+        })
+        .collect();
+    if elsewhere.is_empty() {
+        return;
+    }
+    if let Some(map) = lsp.data.as_mut().and_then(serde_json::Value::as_object_mut) {
+        map.insert("elsewhere".to_owned(), elsewhere.into());
+    }
 }
 
 /// A diagnostic as the protocol has it, positions in `encoding` over `index`

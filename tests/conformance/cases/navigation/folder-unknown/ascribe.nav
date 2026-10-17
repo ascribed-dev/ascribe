@@ -1,0 +1,13 @@
+version = 1
+
+[[sections]]
+folder = "Refrence/"
+
+[[sections]]
+folder = "_parts/"
+
+[[sections]]
+folder = "reference/"
+
+[[sections]]
+folder = "Reference/"
