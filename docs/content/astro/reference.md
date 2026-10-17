@@ -246,6 +246,27 @@ The build fails when the navigation names a page the collection has no entry for
 
 A site that passed its list first, `sidebar(nav, entries, options)`, passes it as an option: `sidebar(entries, { ...options, nav })`.
 
+A page's label is its [`nav-label`](../navigation/index.md#a-page-s-label) when it has one, and its title otherwise.
+
+### Previous and next
+@id: neighbors
+@available: next
+
+`neighbors(entry, entries, options)`, from `@ascribed/astro/content`, gives a page's previous and next: the pages before and after it in the navigation's [reading order](../navigation/index.md#sections-and-pages), depth first, so a nested section's pages follow its own page. `entry` is the page's collection entry and `entries` the collection; the options are `name` and `nav`, as `sidebar()` takes them. With a [versioned build](index.md#versions), both are in the line `entry` is on.
+
+```astro
+---
+import { getCollection } from "astro:content";
+import { neighbors } from "@ascribed/astro/content";
+
+const { previous, next } = neighbors(entry, await getCollection("docs"));
+---
+{previous && <a rel="prev" href={previous.href}>{previous.label}</a>}
+{next && <a rel="next" href={next.href}>{next.label}</a>}
+```
+
+It returns `{ previous?, next? }`, each `{ entry, href, label, formatted? }`, as a page of a sidebar group is. The first page has no `previous`, and the last no `next`; a page the navigation leaves out, such as one that's `unlisted`, has neither. With a site's own list, `nav`, they're the pages before and after it in the list's groups, in order.
+
 ## Review in the site preview
 @id {permalink=true}: review-in-the-site-preview
 @available: ascribe 0.2.0

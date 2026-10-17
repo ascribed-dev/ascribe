@@ -211,7 +211,7 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
 
 @snippet: code:examples/astro-site/ascribe.toml#agents
 
-- **`llms.txt`** at the base path: every page, by folder, as its title, a link to its Markdown, and its description (the field its type marks `role = "description"`). Past 50,000 characters it's split into one `llms.txt` per folder, which the root file links to.
+- **`llms.txt`** at the base path: every page, in the sections and order of the project's [navigation](../navigation/index.md), as its title, a link to its Markdown, and its description (the field its type marks `role = "description"`). Past 50,000 characters it's split into one `llms.txt` per top section, which the root file links to.
 - **Each page's Markdown** at its URL with `.md`: `/docs/guides/setup` is also `/docs/guides/setup.md`.
 - **A pointer** at the top of each page to both, which the elements' stylesheet hides from sight but not from an agent reading the page.
 
