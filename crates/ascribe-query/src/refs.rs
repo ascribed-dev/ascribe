@@ -82,6 +82,10 @@ pub struct Place {
     /// `term`, `variant`, `note`, `widget`, or `memo`, a memo file about it.
     #[serde(rename = "use")]
     pub use_kind: &'static str,
+    /// Whether it's a memo file kept on this machine only, in
+    /// `.ascribe/memos/`, rather than the project's `memos/`; `false` for
+    /// every place that isn't a memo.
+    pub personal: bool,
 }
 
 /// What `refs` asks about: a target as `ascribe refs` and a memo's `about`
@@ -138,6 +142,7 @@ pub fn refs(
                 line,
                 column,
                 use_kind: use_name(place.kind),
+                personal: false,
             }
         })
         .collect();
@@ -152,6 +157,7 @@ pub fn refs(
             line,
             column,
             use_kind: "memo",
+            personal: memo.personal(),
         }
     }));
     Refs {

@@ -5,8 +5,9 @@
 //! A [`MemoStore`] gives a project's memo files, each parsed on its own
 //! ([`MemoFile::parse`]): frontmatter with `about` and `quote`, then a body
 //! kept as text, with nothing in it resolved. [`Committed`] is the store of
-//! the committed folder, `memos/` beside `ascribe.toml`, read through the
-//! project's [`FileSystem`]. [`place`] works out where a memo is against the
+//! the committed folder, `memos/` beside `ascribe.toml`, and [`Personal`] the
+//! store of the memos kept on one machine, `.ascribe/memos/`, both read
+//! through the project's [`FileSystem`] in the same format. [`place`] works out where a memo is against the
 //! source index, every time: nothing is cached, and nothing is written back.
 
 use ascribe_core::schema::{Builtin, builtin_schemas};
@@ -22,6 +23,10 @@ use crate::uses::Usable;
 
 /// The committed memos' folder, beside `ascribe.toml`.
 pub const MEMOS_FOLDER: &str = "memos";
+
+/// The personal memos' folder, in the project's own folder, which the
+/// project doesn't commit.
+pub const PERSONAL_MEMOS_FOLDER: &str = ".ascribe/memos";
 
 /// The frontmatter keys a memo file has.
 pub const MEMO_KEYS: &[&str] = &["about", "quote"];
@@ -211,6 +216,12 @@ impl MemoFile {
         }
     }
 
+    /// Whether it's a personal memo, kept in `.ascribe/memos/` on one
+    /// machine, rather than one of the project's `memos/`.
+    pub fn personal(&self) -> bool {
+        RelPath::parse(PERSONAL_MEMOS_FOLDER).is_ok_and(|folder| self.path.starts_with(&folder))
+    }
+
     /// The body's text.
     pub fn body_text(&self) -> &str {
         self.text.get(self.body.range()).unwrap_or("")
@@ -268,33 +279,85 @@ impl MemoStore for Committed<'_> {
         if folder_in_content(self.layout).is_some() {
             return Vec::new();
         }
-        let folder = RelPath::parse(MEMOS_FOLDER).unwrap_or_default();
-        let mut paths: Vec<RelPath> = self
-            .fs
-            .files_in(&folder)
-            .into_iter()
-            .filter(|p| p.extension() == Some("md"))
-            .filter(|p| {
-                !p.segments()
+        read_folder(self.fs, MEMOS_FOLDER)
+    }
+}
+
+/// The personal folder, `.ascribe/memos/` beside `ascribe.toml`: the memos
+/// kept on one machine, in the committed folder's format, and read the same
+/// way. `ascribe check` doesn't read them, so what it reports is the same on
+/// every machine.
+pub struct Personal<'a> {
+    fs: &'a dyn FileSystem,
+}
+
+impl<'a> Personal<'a> {
+    /// The personal memos of the project `fs` reads.
+    pub fn new(fs: &'a dyn FileSystem) -> Personal<'a> {
+        Personal { fs }
+    }
+}
+
+impl MemoStore for Personal<'_> {
+    fn memos(&self) -> Vec<MemoFile> {
+        read_folder(self.fs, PERSONAL_MEMOS_FOLDER)
+    }
+}
+
+/// Every `.md` file in `folder`, from the project root, and its subfolders,
+/// in path order, skipping any whose name, or a folder's on the way to it
+/// from `folder`, starts with `.`.
+fn read_folder(fs: &dyn FileSystem, folder: &str) -> Vec<MemoFile> {
+    let Ok(folder) = RelPath::parse(folder) else {
+        return Vec::new();
+    };
+    let mut paths: Vec<RelPath> = fs
+        .files_in(&folder)
+        .into_iter()
+        .filter(|p| p.extension() == Some("md"))
+        .filter(|p| {
+            !p.segments()
+                .skip(folder.segments().count())
+                .any(|s| s.starts_with('.'))
+        })
+        .collect();
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| match fs.read_file(&path) {
+            Ok(bytes) => match String::from_utf8(bytes) {
+                Ok(text) => MemoFile::parse(path, text),
+                Err(_) => MemoFile::unreadable(path, "it isn't UTF-8".to_owned()),
+            },
+            Err(err) => {
+                let reason = err.to_string();
+                MemoFile::unreadable(path, reason)
+            }
+        })
+        .collect()
+}
+
+/// Whether `path`, from the project root, is a memo file either store
+/// reads: a `.md` file in `memos/`, when that folder isn't in the content
+/// root, or in `.ascribe/memos/`, with no name on the way from the folder
+/// starting with `.`.
+pub fn is_memo_path(path: &RelPath, layout: &Layout) -> bool {
+    if path.extension() != Some("md") {
+        return false;
+    }
+    let committed = folder_in_content(layout).is_none().then_some(MEMOS_FOLDER);
+    [committed, Some(PERSONAL_MEMOS_FOLDER)]
+        .into_iter()
+        .flatten()
+        .filter_map(|folder| RelPath::parse(folder).ok())
+        .any(|folder| {
+            path.starts_with(&folder)
+                && *path != folder
+                && !path
+                    .segments()
                     .skip(folder.segments().count())
                     .any(|s| s.starts_with('.'))
-            })
-            .collect();
-        paths.sort();
-        paths
-            .into_iter()
-            .map(|path| match self.fs.read_file(&path) {
-                Ok(bytes) => match String::from_utf8(bytes) {
-                    Ok(text) => MemoFile::parse(path, text),
-                    Err(_) => MemoFile::unreadable(path, "it isn't UTF-8".to_owned()),
-                },
-                Err(err) => {
-                    let reason = err.to_string();
-                    MemoFile::unreadable(path, reason)
-                }
-            })
-            .collect()
-    }
+        })
 }
 
 /// The committed memos' folder as a content path, when it's inside the

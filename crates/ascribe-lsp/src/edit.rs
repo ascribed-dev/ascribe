@@ -142,11 +142,17 @@ pub enum EditAction {
     /// Selects the next place on the page its template left to fill in,
     /// changing nothing.
     NextPlaceholder,
+    /// Creates a memo file in `memos/` about the section at the cursor,
+    /// quoting the selection or the block there.
+    AddMemo,
+    /// Creates a personal memo file, in `.ascribe/memos/`, as `addMemo`
+    /// does.
+    AddPersonalMemo,
 }
 
 impl EditAction {
     /// Every action, in the order the README documents them.
-    pub const ALL: [EditAction; 34] = [
+    pub const ALL: [EditAction; 36] = [
         EditAction::WrapNote,
         EditAction::SetNoteType,
         EditAction::UnwrapNote,
@@ -181,6 +187,8 @@ impl EditAction {
         EditAction::PromoteFeature,
         EditAction::NewPage,
         EditAction::NextPlaceholder,
+        EditAction::AddMemo,
+        EditAction::AddPersonalMemo,
     ];
 }
 
@@ -259,6 +267,10 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
     if params.action == EditAction::NextPlaceholder {
         return start::next_placeholder(ctx, &file.source, end);
     }
+    if let EditAction::AddMemo | EditAction::AddPersonalMemo = params.action {
+        let personal = params.action == EditAction::AddPersonalMemo;
+        return crate::memos::add(ctx, file, start, end, personal);
+    }
     let mut found = found_at(ctx, file, &index, start);
     found.reverse();
     let page = Page {
@@ -310,7 +322,10 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         EditAction::AddGlossaryTerm => model::add_glossary_term(&page),
         EditAction::PromoteFeature => model::promote_feature(&page),
         // Answered above, without a plan.
-        EditAction::NewPage | EditAction::NextPlaceholder => {
+        EditAction::NewPage
+        | EditAction::NextPlaceholder
+        | EditAction::AddMemo
+        | EditAction::AddPersonalMemo => {
             return Err("The action has no edit to plan here.".to_owned());
         }
     }?;

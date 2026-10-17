@@ -56,7 +56,7 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<O
         loaded.index(),
         &path,
         build,
-        project.memos(),
+        project.all_memos(),
     )?)
 }
 
@@ -131,7 +131,12 @@ fn write_memos(out: &mut dyn Write, memos: &[OutlineMemo]) -> io::Result<()> {
             OutlineMemoState::Placed => "",
             OutlineMemoState::Outdated => " (outdated)",
         };
-        writeln!(out, "   memo{state}  {}  {}", memo.file, memo.first_line)?;
+        let kind = if memo.personal {
+            "personal memo"
+        } else {
+            "memo"
+        };
+        writeln!(out, "   {kind}{state}  {}  {}", memo.file, memo.first_line)?;
     }
     Ok(())
 }

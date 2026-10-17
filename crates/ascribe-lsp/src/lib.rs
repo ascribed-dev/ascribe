@@ -26,6 +26,7 @@ mod intended;
 mod inventory;
 mod links;
 mod log;
+mod memos;
 mod model_file;
 mod nav;
 mod page;
@@ -68,7 +69,9 @@ pub use inventory::{
     InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
     METHOD as INVENTORY_METHOD, ModelKind,
 };
-pub use page::{METHOD as PAGE_METHOD, PageAbout, PageHeading, PageParams, PagePlace, PageResult};
+pub use page::{
+    METHOD as PAGE_METHOD, PageAbout, PageHeading, PageMemo, PageParams, PagePlace, PageResult,
+};
 pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,

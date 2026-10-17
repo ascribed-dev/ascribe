@@ -103,7 +103,7 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<R
         &asked,
         &args.target,
         limit,
-        loaded.project.memos(),
+        loaded.project.all_memos(),
     );
     if refs.truncated {
         // The same command, with the limit that lists them all, each word
@@ -147,9 +147,10 @@ pub fn write_text(out: &mut dyn Write, r: &Refs) -> io::Result<()> {
         return writeln!(out, "{} doesn't exist.", r.target);
     }
     for place in &r.places {
+        let personal = if place.personal { ", personal" } else { "" };
         writeln!(
             out,
-            "{}:{}:{}: {}",
+            "{}:{}:{}: {}{personal}",
             place.file, place.line, place.column, place.use_kind
         )?;
     }

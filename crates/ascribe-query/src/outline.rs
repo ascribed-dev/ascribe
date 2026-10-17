@@ -128,7 +128,7 @@ fn listed(placed: &[(Usable, &MemoFile, MemoState)], target: &Usable) -> Vec<Out
             },
             quote: memo.quote.as_ref().map(|q| q.value.clone()),
             first_line: memo.first_line().to_owned(),
-            personal: false,
+            personal: memo.personal(),
         })
         .collect()
 }

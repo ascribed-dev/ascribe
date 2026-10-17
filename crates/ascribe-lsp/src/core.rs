@@ -103,6 +103,9 @@ impl Loaded {
         {
             return None;
         }
+        if ascribe_resolve::is_memo_path(&project_rel, &self.layout) {
+            return Some(Kind::Memo(project_rel));
+        }
         let content = normalize(&self.root.join(self.layout.content_root.as_str()));
         // A file in a nested project's folder is no source of this one, open
         // or not, as a file in a hidden directory isn't.
@@ -121,6 +124,8 @@ pub(crate) enum Kind {
     Model,
     /// A source file: its content path and its project path.
     Source(RelPath, RelPath),
+    /// A memo file (SPEC §7.7), committed or personal: its project path.
+    Memo(RelPath),
     /// Any other file: its project path.
     Asset(RelPath),
 }
@@ -325,7 +330,8 @@ impl Core {
     }
 
     /// Asks the client for every lens again, when it can be asked: after a
-    /// code file a page shows, or what the pages show, changed on disk.
+    /// code file a page shows, or what the pages show, changed on disk, and
+    /// after a memo file changed, and with it the lenses on what it's about.
     fn refresh_lenses(&mut self) {
         if !self.lens_refresh {
             return;
@@ -449,6 +455,15 @@ impl Core {
             layout.clone(),
             BufferFs::new(disk.clone(), buffers),
         );
+        let fs = Arc::new(LayerFs::new(disk));
+        // The open memo files, as the editor has them.
+        for (path, doc) in &self.docs {
+            if let Some(project) = relative_path(&root, path)
+                && ascribe_resolve::is_memo_path(&project, &layout)
+            {
+                fs.set_memo(&project, Some(doc.text.clone()));
+            }
+        }
         let snapshot = inc.snapshot();
         let mut dirty: BTreeSet<RelPath> = snapshot.files().map(|f| f.path.clone()).collect();
         dirty.extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
@@ -460,7 +475,7 @@ impl Core {
             inc,
             model,
             model_text: text,
-            fs: Arc::new(LayerFs::new(disk)),
+            fs,
             dirty,
             cache: Arc::new(Mutex::new(ResolvedCache::new())),
             pending: Vec::new(),
@@ -620,6 +635,14 @@ impl Core {
             self.sync_model();
             return;
         }
+        if let Some(loaded) = self.loaded.as_mut()
+            && let Some(Kind::Memo(project)) = loaded.classify(&path)
+        {
+            loaded.fs.set_memo(&project, None);
+            loaded.across_dirty = true;
+            self.refresh_lenses();
+            return;
+        }
         self.refresh_from_disk(&path);
     }
 
@@ -648,9 +671,17 @@ impl Core {
         if self.publish_config(path, &text) {
             return;
         }
-        let Some(loaded) = self.loaded.as_ref() else {
+        let Some(loaded) = self.loaded.as_mut() else {
             return;
         };
+        // A memo file isn't a source: the checks across the project, which
+        // place each memo and check it, run again with its text.
+        if let Some(Kind::Memo(project)) = loaded.classify(path) {
+            loaded.fs.set_memo(&project, Some(text));
+            loaded.across_dirty = true;
+            self.refresh_lenses();
+            return;
+        }
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
             self.apply(
                 vec![Change::Edited {
@@ -668,6 +699,7 @@ impl Core {
     /// changed, or deleted by anything else.
     pub(crate) fn did_change_watched(&mut self, events: Vec<FileEvent>) {
         let mut sync_model = false;
+        let mut memos = false;
         let mut changes: Vec<Change> = Vec::new();
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
         let mut visited = Visited::default();
@@ -709,6 +741,17 @@ impl Core {
                 loaded.across_dirty = true;
                 continue;
             }
+            memos |= self.loaded.as_ref().is_some_and(|loaded| {
+                relative_path(&loaded.root, &path).is_some_and(|project| {
+                    [
+                        ascribe_resolve::MEMOS_FOLDER,
+                        ascribe_resolve::PERSONAL_MEMOS_FOLDER,
+                    ]
+                    .into_iter()
+                    .filter_map(|folder| RelPath::parse(folder).ok())
+                    .any(|folder| project.starts_with(&folder))
+                })
+            });
             if event.typ == FileChangeType::DELETED {
                 self.collect_deleted(&path, &mut changes, &mut mirror);
             } else {
@@ -749,6 +792,9 @@ impl Core {
                 );
                 loaded.dirty.extend(showing);
             }
+        }
+        if memos {
+            self.refresh_lenses();
         }
         if sync_model {
             self.sync_model();
@@ -824,7 +870,7 @@ impl Core {
                     }
                 }
             }
-            Some(Kind::Asset(project)) => {
+            Some(Kind::Asset(project) | Kind::Memo(project)) => {
                 changes.push(Change::AssetCreated {
                     path: project.clone(),
                 });
@@ -852,7 +898,7 @@ impl Core {
                     mirror.push((project, false));
                 }
             }
-            Some(Kind::Asset(project)) => {
+            Some(Kind::Asset(project) | Kind::Memo(project)) => {
                 changes.push(Change::AssetDeleted {
                     path: project.clone(),
                 });
@@ -1158,7 +1204,7 @@ impl Core {
                 snapshot.file(&content)?;
                 Some((snapshot, content, loaded.model.clone()))
             }
-            Kind::Model | Kind::Asset(_) => None,
+            Kind::Model | Kind::Asset(_) | Kind::Memo(_) => None,
         }
     }
 
@@ -1205,7 +1251,7 @@ impl Core {
         let content = match loaded.classify(&path)? {
             Kind::Source(content, _) => content,
             Kind::Model => RelPath::parse(Ctx::PROJECT).ok()?,
-            Kind::Asset(project_rel) => {
+            Kind::Asset(project_rel) | Kind::Memo(project_rel) => {
                 let content_dir = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
                 // A file in a nested project's folder is that project's.
                 let nested = relative_path(&content_dir, &path).is_some_and(|content| {
@@ -1219,6 +1265,22 @@ impl Core {
             }
         };
         self.ctx(loaded, loaded.inc.snapshot(), content, &path)
+    }
+
+    /// What a request about a memo file works from: the project's context,
+    /// and the memo as the editor has it. `None` for any other document.
+    pub(crate) fn memo_target(&self, uri: &Uri) -> Option<(Ctx, ascribe_resolve::MemoFile)> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let Kind::Memo(project) = loaded.classify(&path)? else {
+            return None;
+        };
+        let text = match self.docs.get(&path) {
+            Some(doc) => doc.text.clone(),
+            None => String::from_utf8(loaded.fs.read_file(&project).ok()?).ok()?,
+        };
+        let ctx = self.project_target(uri)?;
+        Some((ctx, ascribe_resolve::MemoFile::parse(project, text)))
     }
 
     fn ctx(

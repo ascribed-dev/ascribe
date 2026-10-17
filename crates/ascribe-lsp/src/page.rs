@@ -1,6 +1,8 @@
 //! The `ascribe/page` request: what's known about a page, and what links to
 //! and includes the heading at the cursor, for the editor's This page view.
 //!
+//! It also lists the memo files about the heading or the page.
+//!
 //! One request answers what Used by asked two for (`ascribe/context`, then
 //! `textDocument/references`): the heading whose section holds the cursor is
 //! found here, and its links and includes come from the same search Find All
@@ -55,6 +57,10 @@ pub struct PageResult {
     /// The `@include`s of the file, or of the heading's section, in the
     /// same order.
     pub included_by: Vec<PagePlace>,
+    /// The memo files about the heading, or about the file when there's no
+    /// heading, or about a block in it (SPEC §7.7): the committed ones, then
+    /// the personal ones, each in path order. A detached memo isn't listed.
+    pub memos: Vec<PageMemo>,
 }
 
 /// What a page or fragment is.
@@ -94,6 +100,28 @@ pub struct PageHeading {
     /// The heading line, in the negotiated position encoding.
     #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
     pub range: Range,
+}
+
+/// A memo This page lists.
+#[derive(Clone, Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct PageMemo {
+    /// The memo file's `file:` URI.
+    pub uri: String,
+    /// Its path from the project root.
+    pub path: String,
+    /// The first line of its text that isn't blank.
+    pub first_line: String,
+    /// `placed`, or `outdated` when no block holds its quote.
+    pub state: String,
+    /// Whether it's a personal memo, kept in `.ascribe/memos/` on this
+    /// machine only.
+    pub personal: bool,
+    /// Where its text starts, in the memo file, in the negotiated position
+    /// encoding.
+    #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
+    pub body: Range,
 }
 
 /// A link or an `@include`.
@@ -197,6 +225,7 @@ pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResu
             text: h.text.clone(),
             range: ctx.encoding.range(&kept.index, h.span),
         }),
+        memos: crate::memos::about(ctx, &target),
         linked_from,
         included_by,
     }

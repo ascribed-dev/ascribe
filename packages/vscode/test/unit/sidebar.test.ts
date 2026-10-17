@@ -160,6 +160,7 @@ describe("the This page view", () => {
       place("b.md", 9, "Again: [a](keys.md#rotate-keys)."),
     ],
     includedBy: [],
+    memos: [],
   };
 
   /** Every item as `label (description)`, depth first. */
@@ -188,9 +189,11 @@ describe("the This page view", () => {
       "      See [rotate](keys.md#rotate-keys). (line 4)",
       "      Again: [a](keys.md#rotate-keys). (line 10)",
       "  Included by (0)",
+      "Memos (none)",
     ]);
     const roots = thisPageRoots(page);
-    expect(roots.map((n) => thisPageLook(n).expanded)).toEqual([true, true]);
+    expect(roots.map((n) => thisPageLook(n).expanded)).toEqual([true, true, true]);
+    expect(thisPageLook(nth(roots, 2))).toMatchObject({ dimmed: true, expandable: false });
     const included = nth(thisPageChildren(nth(roots, 1)), 1);
     expect(thisPageLook(included)).toMatchObject({ dimmed: true, expandable: false });
   });
@@ -214,7 +217,36 @@ describe("the This page view", () => {
       "  Included by (1)",
       "    guide.md (guide.md)",
       "      @include: keys.md (line 3)",
+      "Memos (none)",
     ]);
+  });
+
+  it("lists the memos about the heading, personal and outdated ones marked", () => {
+    const memo = (path: string, firstLine: string, state: string, personal: boolean) => ({
+      uri: `file:///work/${path}`,
+      path,
+      firstLine,
+      state,
+      personal,
+      body: range(4),
+    });
+    const roots = thisPageRoots({
+      ...page,
+      memos: [
+        memo("memos/why.md", "Why keys rotate.", "placed", false),
+        memo("memos/old.md", "", "outdated", false),
+        memo(".ascribe/memos/mine.md", "Ask Sam.", "placed", true),
+      ],
+    });
+    const memos = nth(roots, 2);
+    expect(flat([memos])).toEqual([
+      "Memos (about “Rotate keys”)",
+      "  Why keys rotate. (memos/why.md)",
+      "  old.md (memos/old.md · outdated)",
+      "  Ask Sam. (.ascribe/memos/mine.md · personal)",
+    ]);
+    expect(thisPageLook(memos)).toMatchObject({ dimmed: false, expandable: true });
+    expect(thisPageLook(nth(thisPageChildren(memos), 2)).icon).toBe("lock");
   });
 
   it("says a fragment is published only where it's included", () => {
@@ -279,6 +311,7 @@ describe("the This page view", () => {
         "Connections (to “Rotate keys”)",
         "  Linked from (0)",
         "  Included by (0)",
+        "Memos (none)",
       ]);
       const reviewNode = nth(roots, 1);
       expect(thisPageLook(reviewNode).expanded).toBe(true);
@@ -308,8 +341,8 @@ describe("the This page view", () => {
   });
 
   it("has nothing to show for a file that isn't a page", () => {
-    expect(thisPageRoots({ about: null, heading: null, linkedFrom: [], includedBy: [] })).toEqual(
-      [],
-    );
+    expect(
+      thisPageRoots({ about: null, heading: null, linkedFrom: [], includedBy: [], memos: [] }),
+    ).toEqual([]);
   });
 });

@@ -78,6 +78,10 @@ pub(crate) struct Across {
     pub model: (String, Vec<Diagnostic>),
     /// The permalinks list's, `ascribe.permalinks`, which isn't a source.
     pub list: Vec<lsp_types::Diagnostic>,
+    /// Each memo file's, committed and personal (SPEC §7.7), by its path
+    /// from the project root, levels applied: every memo file the checks
+    /// read, with nothing for one that has no problem.
+    pub memos: BTreeMap<RelPath, Vec<lsp_types::Diagnostic>>,
 }
 
 impl Across {
@@ -174,6 +178,7 @@ impl Core {
         // didn't compute is computed again, and `ascribe.toml` is published.
         let mut model_changed = false;
         let mut list_changed = false;
+        let mut memos_changed: Vec<(RelPath, Vec<lsp_types::Diagnostic>)> = Vec::new();
         if let Some(across) = across
             && across != *loaded.across
         {
@@ -191,6 +196,17 @@ impl Core {
             }
             model_changed = across.model != loaded.across.model;
             list_changed = across.list != loaded.across.list;
+            // A memo file that's gone is published empty, once.
+            for path in loaded.across.memos.keys() {
+                if !across.memos.contains_key(path) {
+                    memos_changed.push((path.clone(), Vec::new()));
+                }
+            }
+            for (path, found) in &across.memos {
+                if loaded.across.memos.get(path) != Some(found) {
+                    memos_changed.push((path.clone(), found.clone()));
+                }
+            }
             loaded.across = Arc::new(across);
         }
         let mut ready = Vec::new();
@@ -209,6 +225,12 @@ impl Core {
         }
         if model_changed {
             self.publish_model_diagnostics();
+        }
+        if let Some(loaded) = self.loaded.as_ref() {
+            let root = loaded.root.clone();
+            for (path, found) in memos_changed {
+                self.publish(&normalize(&root.join(path.as_str())), found);
+            }
         }
         if list_changed && let Some(loaded) = self.loaded.as_ref() {
             let path = loaded.root.join(ascribe_model::PERMALINKS_FILE);
@@ -485,6 +507,23 @@ fn run_across(
             .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
             .collect();
     }
+    // Every memo file gets an entry, so one whose problems are fixed is
+    // published empty.
+    for id in project.memo_ids() {
+        let Some(entry) = project.file(id) else {
+            continue;
+        };
+        let Ok(path) = RelPath::parse(&entry.display_path) else {
+            continue;
+        };
+        let diagnostics = apply_levels(&job.model.checks, by_file.remove(&id).unwrap_or_default());
+        let index = LineIndex::new(entry.text);
+        let lsp = diagnostics
+            .iter()
+            .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
+            .collect();
+        found.memos.insert(path, lsp);
+    }
     for (id, diagnostics) in by_file {
         let Some(entry) = project.file(id) else {
             continue;
@@ -540,6 +579,8 @@ fn check_project_of(job: &Job) -> Project {
         &[],
     )
     .with_today(job.today)
+    // The editor reports a personal memo's problems as a team memo's.
+    .with_personal_memos()
     // The snapshot's index is of the same files, with the same ids.
     .with_link_index(job.snapshot.shared_project())
 }

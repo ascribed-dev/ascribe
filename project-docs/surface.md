@@ -339,7 +339,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-73 commands, 35 of them actions.
+75 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -423,6 +423,8 @@ Actions, which the actions bar and the lightbulb offer where each applies:
 | Change a feature's availability | Set where a feature in `[features]` is available, such as its state or version. | Anywhere in a page |
 | Rename this phrase everywhere | Change a phrase's key in `[phrases]` and every `{key}` that uses it: the one at the cursor, or one you choose. | Anywhere in a page; a phrase at the cursor is the one renamed |
 | Rename a dimension value everywhere | Change a value in `[dimensions]` and everywhere it's used: `@variant` attributes, `variant:`, availability, and builds. | Anywhere in a page; a `@variant` attribute's value at the cursor is the one renamed |
+| Add a memo | Make a file in `memos/` about the section at the cursor, quoting the selection or the block, and open it. | Anywhere in a page |
+| Add a personal memo | Make a memo in `.ascribe/memos/`, kept on this machine only, about the section at the cursor, and open it. | Anywhere in a page |
 
 Settings:
 
@@ -470,7 +472,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 73 |
+| `commandPalette` | 75 |
 | `editor/title` | 5 |
 | `view/title` | 7 |
 | `view/item/context` | 3 |
@@ -478,7 +480,7 @@ Menus the commands are placed in:
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |
 | `editor/context` | 1 |
-| `ascribe.actions` | 36 |
+| `ascribe.actions` | 38 |
 
 ## The language server
 
@@ -862,10 +864,11 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.ascribe/cache/` | `ascribe report links`, which keeps the answers it reuses in `.ascribe/cache/links/`. | No |
 | `.ascribe/history/` | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported. | No |
 | `.ascribe/dev.json` | `astro dev` with `@ascribed/astro`, for the editor's site preview. It's removed when `astro dev` stops. | No |
+| `.ascribe/memos/` | You do: personal memos, memo files kept on your machine only. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a personal memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. | No |
 | `ascribe.lock` | `ascribe sources fetch` and `ascribe sources update`: the commit each source in another repository is pinned to. | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
-| `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them and never writes them, and they're in no output. | Yes |
+| `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. They're in no output. | Yes |
 | `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
 | `templates/` | `ascribe templates eject`, once for each template: the template, its guide, and Ascribe's notes on the type, in `templates/` or the folder `--to` names, and `templates.lock` beside them, which records what each was copied from. From then on the templates are yours, and Ascribe doesn't write them again. | Yes |
 | `AGENTS.md` | `ascribe agents sync`, between its markers, beside `ascribe.toml`, and at the repository's root when that's another folder. The rest of the file is yours. | Yes |

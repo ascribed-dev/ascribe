@@ -12,7 +12,8 @@ use ascribe_model::{
     ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList, SourceBound,
 };
 use ascribe_resolve::{
-    CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, SourceSet,
+    CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
+    SourceSet,
 };
 
 use crate::Diagnostic;
@@ -34,7 +35,7 @@ pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
 pub const IMAGE_FILE_IDS: u32 = 0x4000_0000;
 
 /// The id of the first memo file (SPEC §7.7), for locations in memo files:
-/// [`Project::memos`] lists them in path order, and numbers them from here.
+/// [`Project::checked_memos`] lists them, and numbers them from here.
 pub const MEMO_FILE_IDS: u32 = 0x2000_0000;
 
 /// One source file: a Markdown file under the content root.
@@ -256,6 +257,12 @@ pub struct Project {
     templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>,
     /// The committed memo files, read the first time they're asked for.
     memos: Arc<OnceLock<Vec<MemoFile>>>,
+    /// The committed memo files and then the personal ones, read the first
+    /// time they're asked for.
+    all_memos: Arc<OnceLock<Vec<MemoFile>>>,
+    /// Whether the checks read the personal memos too: the editor's do, and
+    /// `ascribe check`'s don't ([`Project::with_personal_memos`]).
+    personal_memos: bool,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -567,6 +574,8 @@ impl Project {
             today: None,
             templates: Arc::default(),
             memos: Arc::default(),
+            all_memos: Arc::default(),
+            personal_memos: false,
         }
     }
 
@@ -717,7 +726,7 @@ impl Project {
         if let Some(i) = id.index().checked_sub(MEMO_FILE_IDS)
             && id.index() < IMAGE_FILE_IDS
         {
-            let memo = self.memos().get(i as usize)?;
+            let memo = self.checked_memos().get(i as usize)?;
             return Some(FileEntry {
                 id,
                 display_path: memo.path.to_string(),
@@ -821,22 +830,53 @@ impl Project {
         Project {
             templates: other.templates.clone(),
             memos: other.memos.clone(),
+            all_memos: other.all_memos.clone(),
             ..self
         }
     }
 
     /// The committed memo files (SPEC §7.7), in path order, read through the
     /// project's [`FileSystem`] the first time they're asked for. None when
-    /// `memos/` is inside the content root, where its files are pages. The
-    /// memo at position `i` has the id `MEMO_FILE_IDS + i`.
+    /// `memos/` is inside the content root, where its files are pages.
     pub fn memos(&self) -> &[MemoFile] {
         self.memos
             .get_or_init(|| Committed::new(self.file_system(), &self.layout).memos())
     }
 
-    /// The ids of the memo files.
+    /// The committed memo files, then the personal ones in `.ascribe/memos/`,
+    /// each in path order: what `ascribe outline` and `ascribe refs` list.
+    pub fn all_memos(&self) -> &[MemoFile] {
+        self.all_memos.get_or_init(|| {
+            let mut all = self.memos().to_vec();
+            all.extend(Personal::new(self.file_system()).memos());
+            all
+        })
+    }
+
+    /// This project, with the checks reading the personal memos as well as
+    /// the committed ones: the editor's, which reports a personal memo's
+    /// problems as it reports a team memo's.
+    pub fn with_personal_memos(self) -> Project {
+        Project {
+            personal_memos: true,
+            ..self
+        }
+    }
+
+    /// The memo files the checks read: the committed ones, and the personal
+    /// ones after them when [`Project::with_personal_memos`] says so. The
+    /// memo at position `i` has the id `MEMO_FILE_IDS + i`.
+    pub fn checked_memos(&self) -> &[MemoFile] {
+        if self.personal_memos {
+            self.all_memos()
+        } else {
+            self.memos()
+        }
+    }
+
+    /// The ids of the memo files the checks read.
     pub fn memo_ids(&self) -> impl Iterator<Item = FileId> + '_ {
-        (0..self.memos().len()).map(memo_id)
+        (0..self.checked_memos().len()).map(memo_id)
     }
 
     /// The template content type `name` names, read through the project's
@@ -940,7 +980,7 @@ impl SourceSet for Project {
     }
 }
 
-/// The id of the memo file at position `i` of [`Project::memos`].
+/// The id of the memo file at position `i` of [`Project::checked_memos`].
 pub(crate) fn memo_id(i: usize) -> FileId {
     // A project has far fewer memo files than the ids from MEMO_FILE_IDS to
     // the images'.

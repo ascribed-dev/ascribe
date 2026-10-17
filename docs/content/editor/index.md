@@ -146,8 +146,8 @@ The lens is placed from the saved file, as a build reads it: the editor doesn't 
 
 ### Refactoring
 
-- **Rename or move a file** in the Explorer, and the links and includes that point to it are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it.
-- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` among them, or a phrase key to update its uses and its declaration.
+- **Rename or move a file** in the Explorer, and the links and includes that point to it are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it, and the `about` of each [memo file](index.md#memo-files) about it or a heading in it.
+- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` among them, and the memo files about it, or a phrase key to update its uses and its declaration.
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
@@ -205,7 +205,7 @@ Every action is in four places:
 
 #### The actions bar
 
-Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, **Media**, and **Content model**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
+Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, **Media**, **Content model**, and **Memos**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
 
 The bar holds only what applies to the cursor or selection, so it never lists every action as the Command Palette does, and it has no searches or commands of its own.
 
@@ -226,6 +226,18 @@ These change `ascribe.toml` in place, keeping its comments, blank lines, and ord
 
 A type with no template makes a page with its frontmatter: its `type`, the title, and each other field the type requires, empty.
 
+### Memo files
+@available: next
+
+A [memo file](../writing/memo-files.md) says why a section or a block is written the way it is. The editor shows them where they apply, and writes them for you.
+
+- A **CodeLens** above a heading or a block that has memos counts them: "1 memo", "2 memos", or "3 memos, 1 outdated" when one's quote isn't found any more. A lens at the top of the page counts the memos about the whole page. Click it to open the memo, or, with several, to pick one; each opens at its text.
+- **Ascribe: Add a memo** makes a file in `memos/` about the section the cursor is in, by its id, or about the page when the cursor is above its first heading with an id. Its `quote` is the selected text, or the first line of the block at the cursor; on a heading it has none, and it's about the heading's section. The file is named from the quote's first words, or the heading's id, and never made over a file that's there. It's saved and opened at its text, so you start writing why. It's in the actions bar's **Memos** group, the Command Palette, and the editor's **Ascribe** submenu.
+- **Ascribe: Add a personal memo** does the same in `.ascribe/memos/`, which stays on your machine: see [Personal memos](../writing/memo-files.md#personal-memos).
+- In a memo file, completion after `about:` offers the project's pages, their headings with ids as `page.md#id`, and its phrases, features, glossary terms, and the rest by `prefix:name`, as [`ascribe refs`](../command/questions.md#cli-refs) takes them. `about` is a link to what it names, and the file shows the problems `ascribe check` would report in it as you type, a personal memo's too.
+
+**This page**'s **Memos** section lists the memos about the heading at the cursor, or the page: see [This page, Pages, and Content model](index.md#this-page-pages-and-content-model).
+
 ### The Ascribe sidebar
 @available: ascribe 0.3.0
 
@@ -243,7 +255,7 @@ The **Projects** view lists every project in the workspace, started or not, by n
 The other three views show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
 
 @available: next
-**This page** says what's known about the active page, in two sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Connections** lists what links to the page, grouped by file, under **Linked from**, and what includes it under **Included by**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading. Each item opens the link or include. Unsaved edits count.
+**This page** says what's known about the active page, in three sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Connections** lists what links to the page, grouped by file, under **Linked from**, and what includes it under **Included by**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading. **Memos** lists the [memo files](index.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
 
 - **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.

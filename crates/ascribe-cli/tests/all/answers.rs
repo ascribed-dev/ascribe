@@ -548,6 +548,57 @@ fn refs_lists_no_use_from_inside_a_memo() {
 }
 
 #[test]
+fn a_personal_memo_is_listed_and_not_checked() {
+    let dir = project();
+    let site = dir.path().join("site");
+    write(
+        &site.join("memos/team.md"),
+        "---\nabout: install.md#configure\n---\n\nThe team's reason.\n",
+    );
+    write(
+        &site.join(".ascribe/memos/mine.md"),
+        "---\nabout: install.md#configure\n---\n\nMy reason.\n",
+    );
+    let outline = json(dir.path(), &["outline", "site/docs/install.md"], 0);
+    let configure = outline["headings"]
+        .as_array()
+        .and_then(|h| h.iter().find(|h| h["id"] == "configure"))
+        .expect("the heading");
+    let memos: Vec<(&str, bool)> = configure["memos"]
+        .as_array()
+        .expect("memos")
+        .iter()
+        .map(|m| {
+            (
+                m["file"].as_str().unwrap(),
+                m["personal"].as_bool().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        memos,
+        [("memos/team.md", false), (".ascribe/memos/mine.md", true)]
+    );
+    let refs = json(dir.path(), &["refs", "site/docs/install.md#configure"], 0);
+    let personal: Vec<bool> = refs["places"]
+        .as_array()
+        .expect("places")
+        .iter()
+        .filter(|p| p["use"] == "memo")
+        .map(|p| p["personal"].as_bool().unwrap())
+        .collect();
+    assert_eq!(personal, [false, true], "{refs}");
+    // A personal memo about nothing is the editor's to report, not the
+    // check's, whose report is the same on every machine.
+    write(
+        &site.join(".ascribe/memos/gone.md"),
+        "---\nabout: nowhere.md\n---\n\nLost.\n",
+    );
+    let check = stdout(&run(&site, &["check", "--format", "json"], 0));
+    assert!(!check.contains("memo-detached"), "{check}");
+}
+
+#[test]
 fn refs_to_nothing_is_exit_code_1() {
     let dir = project();
     let value = json(dir.path(), &["refs", "phrase:nope", "--config", "site"], 1);

@@ -134,6 +134,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "    install-agent.md (install-agent.md)",
       linkToRotate,
       "  Included by (0)",
+      "Memos (none)",
     ]);
     assert.deepEqual(await showing("This page under Rotate keys", exactly(rotate)), rotate);
     assert.ok(
@@ -148,6 +149,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "Connections (to “Create a key”)",
       "  Linked from (0)",
       "  Included by (0)",
+      "Memos (none)",
     ]);
     assert.deepEqual(await showing("This page under Create a key", exactly(create)), create);
     assert.equal(api.ui.thisPage.asked(), asked + 1);

@@ -428,6 +428,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             Completion::METHOD if let Some(items) = config_completion(shared, &request) => {
                 to_json(&request, items)
             }
+            Completion::METHOD if let Some(items) = memo_completion(shared, &request) => {
+                to_json(&request, items)
+            }
+            DocumentLinkRequest::METHOD if let Some(links) = memo_links(shared, &request) => {
+                to_json(&request, links)
+            }
             Completion::METHOD => navigation(shared, &request, |p: lsp_types::CompletionParams| {
                 let at = p.text_document_position;
                 (at.text_document.uri, move |ctx: &Ctx| {
@@ -673,9 +679,29 @@ fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types
         .config_completion(&at.text_document.uri, at.position)
 }
 
-/// Lenses: on a page's `@include`s, and in a code file a `@snippet` shows,
-/// how many pages show it (`shown.rs`). A file that's neither has no answer
-/// (`null`).
+/// Completion in a memo file, which isn't a page; `None` for any other
+/// document.
+fn memo_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::CompletionItem>> {
+    let params: lsp_types::CompletionParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position;
+    let (ctx, memo) = shared.lock().memo_target(&at.text_document.uri)?;
+    let offset = crate::memos::offset(&ctx, &memo.text, at.position);
+    Some(crate::memos::complete(&ctx, &memo.text, offset).unwrap_or_default())
+}
+
+/// The link from a memo file's `about` to what it names; `None` for any
+/// other document.
+fn memo_links(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::DocumentLink>> {
+    let params: lsp_types::DocumentLinkParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let (ctx, memo) = shared.lock().memo_target(&params.text_document.uri)?;
+    Some(crate::memos::links(&ctx, &memo))
+}
+
+/// Lenses: on a page's `@include`s and on what memo files are about
+/// (`memos.rs`), and in a code file a `@snippet` shows, how many pages show
+/// it (`shown.rs`). A file that's neither has no answer (`null`).
 fn code_lens_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: lsp_types::CodeLensParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
@@ -691,6 +717,10 @@ fn code_lens_request(shared: &Shared, request: &Request) -> Result<serde_json::V
         .as_ref()
         .map(crate::links::code_lenses)
         .unwrap_or_default();
+    if let Some(ctx) = &page {
+        lenses.extend(crate::memos::code_lenses(ctx));
+        lenses.sort_by_key(|l| (l.range.start.line, l.range.start.character));
+    }
     if let Some((ctx, path)) = &code {
         lenses.extend(crate::shown::lenses(ctx, path));
     }

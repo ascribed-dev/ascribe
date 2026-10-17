@@ -28,7 +28,11 @@ doesn't mention the agent.
 
 The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no author, no date, and nothing to finish: a reason, kept for as long as it holds.
 
-`memos/` is outside the content root, so its files aren't pages. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there.
+`memos/` is outside the content root, so its files aren't pages. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there. A [personal memo](memo-files.md#personal-memos) doesn't need that.
+
+### Personal memos
+
+A memo that's only for you goes in `.ascribe/memos/` instead, in the same format. It's a **personal memo**: `.ascribe/` is the folder the project doesn't commit ([project files](../command/project-files.md)), so it stays on your machine. The editor, `ascribe outline`, and `ascribe refs` read both folders, and mark a personal memo as one. `ascribe check` reads `memos/` only, so what it reports is the same on every machine; the editor reports a personal memo's problems as it reports a team memo's.
 
 A memo is read by someone about to change the page, so it's short: over 2,000 characters, `ascribe check` reports it as advice, [`memo-long`](../checks/diagnostics/content-checks.md#ASC228). `[checks.memo-long] limit` sets another limit, in characters.
 
@@ -38,7 +42,9 @@ Where a memo is is worked out each time it's read, from the pages as they are, a
 
 - **Placed.** With no `quote`, it's on what `about` names. With one, it's on the first block of that page or section, in the order they're written, whose source holds the quote. Line breaks and runs of spaces count as one space, and case counts. A quote is found in one block: words that run across two paragraphs aren't.
 - **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/content-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
-- **Detached.** `about` names nothing: the page was renamed or deleted, or the heading's id changed. It's a warning, [`memo-detached`](../checks/diagnostics/pages.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
+- **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/pages.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
+
+A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and in the editor, `F2` on a heading's `@id` or text and moving a file in the Explorer, rewrite the `about` of each memo that names the heading or the page, in both folders, keeping its `#id` when the page moves. Its `quote` and its text are left as they are.
 
 A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/pages.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
 
@@ -50,7 +56,9 @@ In `examples/quill`, the memo above is about the section of `install-agent.md` t
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-memo.txt
 
-- **`ascribe outline`** lists the memos about a page under it, and those about a section or a block in it under its heading, with each one's first line. An outdated memo says so; a detached one isn't listed. With `--format json`, the page and each heading have `memos` ([`ascribe outline`](../command/questions.md#cli-outline)). The MCP tool `ascribe_outline` returns the same.
-- **`ascribe refs`** lists each memo file about its target as a place, with the use `memo`, at the memo's `about` line. A detached memo is listed under the target it names, so `ascribe refs` finds the memos about a page or heading that's gone.
+- **`ascribe outline`** lists the memos about a page under it, and those about a section or a block in it under its heading, with each one's first line. An outdated memo says so, a personal one is listed as a personal memo, and a detached one isn't listed. With `--format json`, the page and each heading have `memos`, each with `personal` ([`ascribe outline`](../command/questions.md#cli-outline)). The MCP tool `ascribe_outline` returns the same.
+- **`ascribe refs`** lists each memo file about its target as a place, with the use `memo`, at the memo's `about` line, and `personal` true for a personal memo. A detached memo is listed under the target it names, so `ascribe refs` finds the memos about a page or heading that's gone.
+
+- **In VS Code**, a CodeLens above a heading or a block counts its memos and opens them, **This page** lists the memos about the heading at the cursor, and **Ascribe: Add a memo** writes one from the cursor, with `about` and `quote` filled in ([Memo files in the editor](../editor/index.md#memo-files)).
 
 No build, preview, report, or `ascribe diff` reads a memo file.

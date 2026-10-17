@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{
-    Committed, Invalid, Layout, MemoFile, MemoState, MemoStore, MemoryFs, Project, Usable,
-    folder_in_content, place,
+    Committed, Invalid, Layout, MemoFile, MemoState, MemoStore, MemoryFs, Personal, Project,
+    Usable, folder_in_content, is_memo_path, place,
 };
 
 const MODEL: &str = r#"
@@ -84,6 +84,47 @@ fn the_committed_store_reads_every_md_file_in_memos_and_its_subfolders() {
     let paths: Vec<&str> = memos.iter().map(|m| m.path.as_str()).collect();
     assert_eq!(paths, ["memos/b.md", "memos/team/a.md"]);
     assert_eq!(memos[1].first_line(), "A.");
+}
+
+#[test]
+fn the_personal_store_reads_ascribe_memos_in_the_same_format() {
+    let fs = fs(&[
+        ("memos/team.md", "---\nabout: guide.md\n---\nTeam.\n"),
+        (
+            ".ascribe/memos/mine.md",
+            "---\nabout: guide.md#install\n---\nMine.\n",
+        ),
+        (
+            ".ascribe/memos/sub/more.md",
+            "---\nabout: guide.md\n---\nMore.\n",
+        ),
+        (
+            ".ascribe/build/index.md",
+            "---\nabout: guide.md\n---\nBuilt.\n",
+        ),
+    ]);
+    let layout = layout();
+    let personal = Personal::new(&fs).memos();
+    let paths: Vec<&str> = personal.iter().map(|m| m.path.as_str()).collect();
+    assert_eq!(
+        paths,
+        [".ascribe/memos/mine.md", ".ascribe/memos/sub/more.md"]
+    );
+    assert!(personal.iter().all(MemoFile::personal));
+    assert!(personal[0].problems.is_empty());
+    let committed = Committed::new(&fs, &layout).memos();
+    assert_eq!(committed.len(), 1);
+    assert!(!committed[0].personal());
+    for (file, memo) in [
+        ("memos/team.md", true),
+        (".ascribe/memos/sub/more.md", true),
+        ("memos/.drafts/a.md", false),
+        ("memos/notes.txt", false),
+        (".ascribe/build/index.md", false),
+        ("docs/guide.md", false),
+    ] {
+        assert_eq!(is_memo_path(&path(file), &layout), memo, "{file}");
+    }
 }
 
 #[test]

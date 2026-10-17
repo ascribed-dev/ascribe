@@ -9,6 +9,7 @@ import type {
   InventoryPage,
   InventoryResult,
   ModelKind,
+  PageMemo,
   PagePlace,
   PageResult,
 } from "../shapes.js";
@@ -232,6 +233,8 @@ export type ThisPageNode =
       included: number;
       groups: readonly ThisPageNode[];
     }
+  | { kind: "memos"; heading: string | undefined; memos: readonly PageMemo[] }
+  | { kind: "memo"; memo: PageMemo }
   | { kind: "group"; group: "links" | "includes"; files: readonly PlacesInFile[] }
   | { kind: "file"; file: PlacesInFile }
   | { kind: "place"; place: Place }
@@ -276,7 +279,7 @@ interface PlacesInFile {
 
 /**
  * The This page view's top level: About, then Review while review is on,
- * then Connections; nothing for a file that isn't a page.
+ * then Connections, then Memos; nothing for a file that isn't a page.
  */
 export function thisPageRoots(page: PageResult, review?: ThisPageReview): ThisPageNode[] {
   const { about } = page;
@@ -330,6 +333,7 @@ export function thisPageRoots(page: PageResult, review?: ThisPageReview): ThisPa
         { kind: "group", group: "includes", files: includes },
       ],
     },
+    { kind: "memos", heading: page.heading?.text, memos: page.memos },
   ];
 }
 
@@ -355,6 +359,8 @@ export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
       return node.threads.map((thread) => ({ kind: "thread", thread }));
     case "connections":
       return [...node.groups];
+    case "memos":
+      return node.memos.map((memo) => ({ kind: "memo", memo }));
     case "group":
       return node.files.map((file) => ({ kind: "file", file }));
     case "file":
@@ -362,6 +368,7 @@ export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
     case "place":
     case "row":
     case "thread":
+    case "memo":
       return [];
   }
 }
@@ -440,6 +447,38 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
           `${count(node.linked, "link", "links")} and ${count(node.included, "include", "includes")} ${to}`,
         ),
         expanded: true,
+      };
+    }
+    case "memos": {
+      const about = node.heading === undefined ? "about the page" : `about “${node.heading}”`;
+      const size = node.memos.length;
+      return {
+        ...section(
+          "Memos",
+          size === 0 ? "none" : about,
+          "note",
+          `${count(size, "memo", "memos")} ${about}: why it's written the way it is`,
+        ),
+        dimmed: size === 0,
+        expandable: size > 0,
+        expanded: true,
+      };
+    }
+    case "memo": {
+      const { memo } = node;
+      const notes = [memo.personal ? "personal" : "", memo.state === "outdated" ? "outdated" : ""]
+        .filter((note) => note !== "")
+        .join(", ");
+      return {
+        label: memo.firstLine || basename(memo.path),
+        description: notes === "" ? memo.path : `${memo.path} · ${notes}`,
+        tooltip:
+          memo.state === "outdated"
+            ? `${memo.path}\nIts quote isn't on the page any more: read it against the page`
+            : memo.path,
+        icon: memo.personal ? "lock" : "note",
+        dimmed: false,
+        expandable: false,
       };
     }
     case "group": {

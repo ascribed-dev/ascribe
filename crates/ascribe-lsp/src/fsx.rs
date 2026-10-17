@@ -91,9 +91,13 @@ impl FileSystem for BufferFs {
 /// It's shared and updated as changes arrive; a result computed from an older
 /// snapshot is dropped by the currency check before it's published, so a
 /// probe that sees a newer state than its snapshot can't reach the editor.
+///
+/// It also holds the open memo files' buffers (SPEC §7.7), which aren't
+/// sources: a memo store reads a memo through it as the editor has it.
 pub(crate) struct LayerFs {
     disk: DiskFs,
     layers: RwLock<Layers>,
+    memos: RwLock<BTreeMap<RelPath, String>>,
 }
 
 #[derive(Default)]
@@ -107,7 +111,18 @@ impl LayerFs {
         LayerFs {
             disk,
             layers: RwLock::new(Layers::default()),
+            memos: RwLock::new(BTreeMap::new()),
         }
+    }
+
+    /// An open memo file's text, at a path relative to the project root, or
+    /// `None` once it's closed and the disk has it again.
+    pub(crate) fn set_memo(&self, project_path: &RelPath, text: Option<String>) {
+        let mut memos = self.memos.write().unwrap_or_else(PoisonError::into_inner);
+        match text {
+            Some(text) => memos.insert(project_path.clone(), text),
+            None => memos.remove(project_path),
+        };
     }
 
     /// A file appeared (`present`) or disappeared, at a path relative to the
@@ -134,15 +149,28 @@ impl FileSystem for LayerFs {
     }
 
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
-        self.disk.read_file(project_path)
+        let memos = self.memos.read().unwrap_or_else(PoisonError::into_inner);
+        match memos.get(project_path) {
+            Some(text) => Ok(text.clone().into_bytes()),
+            None => self.disk.read_file(project_path),
+        }
     }
 
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
         self.disk.real_path(project_path)
     }
 
+    /// The disk's files, and an open memo file that isn't saved yet.
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
-        self.disk.files_in(project_dir)
+        let mut files = self.disk.files_in(project_dir);
+        let memos = self.memos.read().unwrap_or_else(PoisonError::into_inner);
+        for path in memos.keys() {
+            if path.starts_with(project_dir) && path != project_dir && !files.contains(path) {
+                files.push(path.clone());
+            }
+        }
+        files.sort();
+        files
     }
 
     /// Exact names win; among names that differ only in case, files added here

@@ -201,3 +201,71 @@ fn each_target_is_renamed_from_the_folder_above_with_config() {
         "error: `nothing.md` doesn't exist: there's no page or fragment at `nothing.md` from the current directory, or at `site/docs/nothing.md` in the content root.\n"
     );
 }
+
+fn copy_dir(from: &Path, to: &Path) {
+    fs::create_dir_all(to).unwrap();
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), &target).unwrap();
+        }
+    }
+}
+
+#[test]
+fn a_memos_about_follows_its_heading_and_its_page_in_both_folders() {
+    let dir = tempfile::tempdir().unwrap();
+    let quill = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+    copy_dir(&quill, dir.path());
+    // A personal memo, its `about` in quotes, which stay.
+    let mine = "---\nabout: \"install-agent.md#install-agent\"\n---\n\nMine.\n";
+    write(dir.path(), ".ascribe/memos/mine.md", mine);
+    let team = read(dir.path(), "memos/agent-first.md");
+
+    let output = ascribe(
+        dir.path(),
+        &["rename", "install-agent.md#install-agent", "install"],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let said = stdout(&output);
+    for file in [".ascribe/memos/mine.md", "memos/agent-first.md"] {
+        assert!(
+            said.contains(&format!("changed {file} (1 place)\n")),
+            "{said}"
+        );
+    }
+    assert_eq!(
+        read(dir.path(), "memos/agent-first.md"),
+        team.replace("#install-agent\n", "#install\n")
+    );
+    assert_eq!(
+        read(dir.path(), ".ascribe/memos/mine.md"),
+        mine.replace("#install-agent\"", "#install\"")
+    );
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+
+    let output = ascribe(
+        dir.path(),
+        &["rename", "install-agent.md", "guides/agent.md"],
+    );
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(
+        read(dir.path(), "memos/agent-first.md").contains("\nabout: guides/agent.md#install\n")
+    );
+    assert!(
+        read(dir.path(), ".ascribe/memos/mine.md")
+            .contains("\nabout: \"guides/agent.md#install\"\n")
+    );
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+    let outline = ascribe(dir.path(), &["outline", "guides/agent.md"]);
+    assert!(
+        stdout(&outline).contains("memos/agent-first.md"),
+        "{}",
+        stdout(&outline)
+    );
+}

@@ -17,6 +17,10 @@
           "minimum": 0,
           "type": "integer"
         },
+        "personal": {
+          "description": "Whether it's a memo file kept on this machine only, in\n`.ascribe/memos/`, rather than the project's `memos/`; `false` for\nevery place that isn't a memo.",
+          "type": "boolean"
+        },
         "use": {
           "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, `widget`, or `memo`, a memo file about it.",
           "type": "string"
@@ -26,7 +30,8 @@
         "file",
         "line",
         "column",
-        "use"
+        "use",
+        "personal"
       ],
       "type": "object"
     },

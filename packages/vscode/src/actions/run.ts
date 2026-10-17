@@ -23,6 +23,8 @@ export interface RunRecord {
   previewed?: boolean;
   /** For a rename: the files it changes, relative to the workspace, sorted. */
   files?: string[];
+  /** For an edit that makes a file: the file, relative to the workspace. */
+  file?: string;
 }
 
 /** What a run needs from the extension. */
@@ -157,6 +159,10 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
         return record;
       }
       record.done = true;
+      if (action.does.opens) {
+        await openMade(result.edit, result.select, document.uri, record);
+        return record;
+      }
       const shown = vscode.window.activeTextEditor;
       if (result.select && shown?.document === document) {
         shown.selection = new vscode.Selection(result.select.start, result.select.end);
@@ -167,6 +173,28 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
   } catch (error) {
     if (!isCancellation(error)) server.reportFeatureError(`"${action.title}"`, error);
     return record;
+  }
+}
+
+/**
+ * Saves and shows the file an edit made, the first it changes other than the
+ * page, with the edit's selection there: a memo, at its text.
+ */
+async function openMade(
+  edit: vscode.WorkspaceEdit,
+  select: vscode.Range | undefined,
+  page: vscode.Uri,
+  record: RunRecord,
+): Promise<void> {
+  const made = edit.entries().find(([uri]) => uri.toString() !== page.toString())?.[0];
+  if (!made) return;
+  const document = await vscode.workspace.openTextDocument(made);
+  if (document.isDirty) await document.save();
+  const editor = await vscode.window.showTextDocument(document);
+  record.file = vscode.workspace.asRelativePath(made, false);
+  if (select) {
+    editor.selection = new vscode.Selection(select.start, select.end);
+    editor.revealRange(select);
   }
 }
 

@@ -176,7 +176,10 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
             }
         }
     }
-    let mut result = workspace_edit(ctx, edits);
+    let mut result = with_memo_edits(
+        workspace_edit(ctx, edits),
+        crate::memos::move_edits(ctx, |path| remap(path, &mappings)),
+    );
     let mut model_edits: Vec<TextEdit> = phrase_edits.into_values().collect();
     model_edits.extend(model_path_edits(ctx, &mappings)?);
     if !model_edits.is_empty() {
@@ -315,7 +318,12 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
             &mut edits,
             &mut phrase_edits,
         )?;
-        return workspace_edit_with_config(ctx, workspace_edit(ctx, edits), phrase_edits);
+        let memo_edits = crate::memos::id_edits(ctx, &ctx.path, old, &params.new_name);
+        return workspace_edit_with_config(
+            ctx,
+            with_memo_edits(workspace_edit(ctx, edits), memo_edits),
+            phrase_edits,
+        );
     }
     if let Some(value) = values::in_page(file, offset) {
         return values::rename(ctx, &value, &params.new_name);
@@ -644,6 +652,7 @@ fn with_id_changes(
             return None;
         }
     }
+    let mut memo_edits = Vec::new();
     for (old_id, new_id) in id_changes {
         add_id_reference_edits(
             ctx,
@@ -653,8 +662,13 @@ fn with_id_changes(
             &mut edits,
             &mut phrase_edits,
         )?;
+        memo_edits.extend(crate::memos::id_edits(ctx, &ctx.path, &old_id, &new_id));
     }
-    workspace_edit_with_config(ctx, workspace_edit(ctx, edits), phrase_edits)
+    workspace_edit_with_config(
+        ctx,
+        with_memo_edits(workspace_edit(ctx, edits), memo_edits),
+        phrase_edits,
+    )
 }
 
 fn add_id_reference_edits(
@@ -790,6 +804,20 @@ fn replace_phrase_fragment(value: &str, old_id: &str, new_id: &str) -> Option<St
     }
     let hash = value.find('#')?;
     Some(format!("{}#{}", &value[..hash], encode_destination(new_id)))
+}
+
+/// `result` with the edits to memo files (SPEC §7.7) that keep their
+/// `about` following the rename, each under the memo file's URI.
+#[allow(clippy::mutable_key_type)]
+fn with_memo_edits(mut result: WorkspaceEdit, memo_edits: Vec<(Uri, TextEdit)>) -> WorkspaceEdit {
+    if memo_edits.is_empty() {
+        return result;
+    }
+    let changes = result.changes.get_or_insert_with(HashMap::new);
+    for (uri, edit) in memo_edits {
+        changes.entry(uri).or_default().push(edit);
+    }
+    result
 }
 
 #[allow(clippy::mutable_key_type)]

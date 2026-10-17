@@ -192,6 +192,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
     "insertImage",
     "insertInclude",
     "insertSnippet",
@@ -203,6 +205,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
   ],
   "the frontmatter": [
     "setPageVariant",
@@ -210,6 +214,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
   ],
   "a paragraph": [
     "wrapNote",
@@ -220,6 +226,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
     "insertLink",
     "insertPhrase",
   ],
@@ -232,6 +240,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
     "linkSelection",
     "makePhrase",
     "addGlossaryTerm",
@@ -245,6 +255,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
   ],
   "a mixed selection": [
     "markAvailable",
@@ -253,6 +265,8 @@ const EXPECTED: Record<string, string[]> = {
     "promoteFeature",
     "renamePhrase",
     "renameDimensionValue",
+    "addMemo",
+    "addPersonalMemo",
   ],
 };
 
