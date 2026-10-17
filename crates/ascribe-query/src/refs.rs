@@ -3,10 +3,11 @@
 //! References and its inventory use ([`Project::uses`]). Unlike a text
 //! search, it finds a phrase only where it's a phrase, a heading through
 //! the pages that include its fragment, and a fragment wherever it's
-//! included.
+//! included. A memo file about the target is a place too (SPEC §7.7), at
+//! its `about` line, whether or not the target exists.
 
-use ascribe_core::RelPath;
-use ascribe_resolve::{FileKind, Project, Usable, UseKind};
+use ascribe_core::{LineIndex, WideEncoding};
+use ascribe_resolve::{BadTarget, EntryKind, FileKind, MemoFile, Project, Usable, UseKind, place};
 use serde::Serialize;
 
 use crate::lines::{Lines, project_path};
@@ -25,10 +26,12 @@ pub struct Refs {
     pub target: String,
     /// What the target is.
     pub kind: TargetKind,
-    /// Whether the target exists. When it doesn't, there are no places.
+    /// Whether the target exists. When it doesn't, the only places are the
+    /// memo files that name it.
     pub exists: bool,
     /// The places that use it, file by file in path order and in document
-    /// order within a file; at most `shown` of them.
+    /// order within a file, then the memo files about it, in path order; at
+    /// most `shown` of them.
     pub places: Vec<Place>,
     /// How many places use it.
     pub total: usize,
@@ -76,104 +79,56 @@ pub struct Place {
     /// The column, from 1, in Unicode characters.
     pub column: u32,
     /// How it uses the target: `link`, `include`, `phrase`, `availability`,
-    /// `term`, `variant`, `note`, or `widget`.
+    /// `term`, `variant`, `note`, `widget`, or `memo`, a memo file about it.
     #[serde(rename = "use")]
     pub use_kind: &'static str,
 }
 
-/// What `refs` asks about.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Asked {
-    /// A source file, by content path, or a heading on it.
-    Path {
-        /// The file.
-        path: RelPath,
-        /// The heading's id, after `#`.
-        id: Option<String>,
-    },
-    /// A content model entry.
-    Entry {
-        /// Which kind.
-        kind: TargetKind,
-        /// Its key, id, or name.
-        name: String,
-    },
-}
+/// What `refs` asks about: a target as `ascribe refs` and a memo's `about`
+/// read one.
+pub use ascribe_resolve::Named as Asked;
 
-/// The prefixes that name a content model entry, and the kind each names.
-pub const PREFIXES: &[(&str, TargetKind)] = &[
-    ("phrase", TargetKind::Phrase),
-    ("feature", TargetKind::Feature),
-    ("term", TargetKind::Term),
-    ("dimension", TargetKind::Dimension),
-    ("note", TargetKind::Note),
-    ("widget", TargetKind::Widget),
-];
+/// The prefixes that name a content model entry.
+pub use ascribe_resolve::PREFIXES;
 
-impl Asked {
-    /// A content model entry, when `given` starts with one of [`PREFIXES`]
-    /// and a colon: `phrase:product`.
-    ///
-    /// # Errors
-    ///
-    /// Nothing follows the colon.
-    pub fn entry(given: &str) -> Option<Result<Asked, QueryError>> {
-        let (prefix, name) = given.split_once(':')?;
-        let (_, kind) = PREFIXES.iter().find(|(p, _)| *p == prefix)?;
-        let name = name.trim();
-        // `phrase:{product}` names `phrase:product`.
-        let name = name
-            .strip_prefix('{')
-            .and_then(|n| n.strip_suffix('}'))
-            .unwrap_or(name);
-        if name.is_empty() {
-            return Some(Err(QueryError::BadTarget {
-                given: given.to_owned(),
-                reason: format!("give a name after `{prefix}:`"),
-            }));
+impl From<BadTarget> for QueryError {
+    fn from(bad: BadTarget) -> QueryError {
+        QueryError::BadTarget {
+            given: bad.given,
+            reason: bad.reason,
         }
-        Some(Ok(Asked::Entry {
-            kind: *kind,
-            name: name.to_owned(),
-        }))
-    }
-
-    /// A file and an optional heading, from a content path with an optional
-    /// `#id`.
-    ///
-    /// # Errors
-    ///
-    /// `given` isn't a content path.
-    pub fn path(given: &str) -> Result<Asked, QueryError> {
-        let (path, id) = match given.split_once('#') {
-            Some((path, id)) => (path, Some(id).filter(|id| !id.is_empty())),
-            None => (given, None),
-        };
-        let bad = |reason: &str| QueryError::BadTarget {
-            given: given.to_owned(),
-            reason: reason.to_owned(),
-        };
-        let path = RelPath::parse(path.trim_start_matches("./")).map_err(|_| {
-            bad("it isn't a path in the project, or an entry such as `phrase:product`")
-        })?;
-        Ok(Asked::Path {
-            path,
-            id: id.map(str::to_owned),
-        })
     }
 }
 
-/// The places that use `asked`, at most `limit` of them; `given` is the
-/// target as the person wrote it.
-pub fn refs(project: &Project, asked: &Asked, given: &str, limit: usize) -> Refs {
+/// The places that use `asked`, and the memo files of `memos` about it, at
+/// most `limit` of them; `given` is the target as the person wrote it.
+pub fn refs(
+    project: &Project,
+    asked: &Asked,
+    given: &str,
+    limit: usize,
+    memos: &[MemoFile],
+) -> Refs {
     let (kind, usable) = usable(project, asked);
     let places = usable
         .as_ref()
         .map(|target| project.uses(target))
         .unwrap_or_default();
+    // A placed memo is about what the target is, however each names it; a
+    // detached one, about what it names as written.
+    let about: Vec<&MemoFile> = memos
+        .iter()
+        .filter(|memo| {
+            place(memo, project).is_some_and(|p| match (&p.target, &usable) {
+                (Some(target), Some(usable)) => target == usable,
+                (None, None) => p.named == *asked,
+                _ => false,
+            })
+        })
+        .collect();
     let mut lines = Lines::new(project);
-    let total = places.len();
-    let listed: Vec<Place> = places
+    let total = places.len() + about.len();
+    let mut listed: Vec<Place> = places
         .iter()
         .take(limit)
         .map(|place| {
@@ -186,6 +141,19 @@ pub fn refs(project: &Project, asked: &Asked, given: &str, limit: usize) -> Refs
             }
         })
         .collect();
+    let room = limit.saturating_sub(listed.len());
+    listed.extend(about.iter().take(room).map(|memo| {
+        let at = memo.about.as_ref().map_or(0, |a| a.line.start());
+        let (line, column) = LineIndex::new(&memo.text)
+            .wide_line_col(WideEncoding::Utf32, at)
+            .map_or((1, 1), |p| (p.line + 1, p.col + 1));
+        Place {
+            file: memo.path.to_string(),
+            line,
+            column,
+            use_kind: "memo",
+        }
+    }));
     Refs {
         schema_version: SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
@@ -202,46 +170,22 @@ pub fn refs(project: &Project, asked: &Asked, given: &str, limit: usize) -> Refs
 
 /// What `asked` is, and the thing the search looks for, when it exists.
 fn usable(project: &Project, asked: &Asked) -> (TargetKind, Option<Usable>) {
-    let model = project.model();
-    match asked {
-        Asked::Path { path, id: None } => {
-            let kind = match project.file(path).map(|f| f.kind) {
-                Some(FileKind::Fragment) => TargetKind::Fragment,
-                _ => TargetKind::Page,
-            };
-            let exists = project.file(path).is_some();
-            (kind, exists.then(|| Usable::File(path.clone())))
-        }
-        Asked::Path { path, id: Some(id) } => {
-            // A page's heading can be written in a fragment it includes:
-            // that heading, where it's written.
-            let found = project
-                .page_heading(path, id)
-                .map(|(file, h)| Usable::Heading {
-                    file,
-                    id: h.source_id.clone(),
-                });
-            (TargetKind::Heading, found)
-        }
-        Asked::Entry { kind, name } => {
-            let name = name.clone();
-            let found = match kind {
-                TargetKind::Phrase => model.has_phrase(&name).then_some(Usable::Phrase(name)),
-                TargetKind::Feature => model.feature(&name).map(|_| Usable::Feature(name)),
-                TargetKind::Term => model
-                    .glossary
-                    .terms
-                    .iter()
-                    .any(|t| t.id == name)
-                    .then_some(Usable::Term(name)),
-                TargetKind::Dimension => model.dimension(&name).map(|_| Usable::Dimension(name)),
-                TargetKind::Note => model.note_type(&name).map(|_| Usable::Note(name)),
-                TargetKind::Widget => model.widget(&name).map(|_| Usable::Widget(name)),
-                TargetKind::Page | TargetKind::Fragment | TargetKind::Heading => None,
-            };
-            (*kind, found)
-        }
-    }
+    let kind = match asked {
+        Asked::Path { path, id: None } => match project.file(path).map(|f| f.kind) {
+            Some(FileKind::Fragment) => TargetKind::Fragment,
+            _ => TargetKind::Page,
+        },
+        Asked::Path { id: Some(_), .. } => TargetKind::Heading,
+        Asked::Entry { kind, .. } => match kind {
+            EntryKind::Phrase => TargetKind::Phrase,
+            EntryKind::Feature => TargetKind::Feature,
+            EntryKind::Term => TargetKind::Term,
+            EntryKind::Dimension => TargetKind::Dimension,
+            EntryKind::Note => TargetKind::Note,
+            EntryKind::Widget => TargetKind::Widget,
+        },
+    };
+    (kind, asked.find(project))
 }
 
 fn use_name(kind: UseKind) -> &'static str {

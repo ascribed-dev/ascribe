@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-220 in all. By severity: 39 advice, 157 error, 24 warning. By level: 195 file, 25 page. By kind of next step: 50 choose, 14 fix, 7 outside, 12 review, 137 write.
+224 in all. By severity: 41 advice, 158 error, 25 warning. By level: 199 file, 25 page. By kind of next step: 51 choose, 14 fix, 7 outside, 12 review, 140 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -329,6 +329,10 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC222` | `listing-loosened-in-line` | error | write | this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there |
 | `ASC223` | `html-comment` | advice | review | an HTML comment is in the published page's source; a memo isn't |
 | `ASC224` | `memo-empty` | advice | fix | this memo is empty |
+| `ASC225` | `memo-invalid` | error | write | this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---` |
+| `ASC226` | `memo-detached` | warning | choose | `{about}` isn't a page or fragment of the project, so this memo is about nothing |
+| `ASC227` | `memo-outdated` | advice | write | no block of `{about}` has the words this memo quotes, so it's on the {place} and no block |
+| `ASC228` | `memo-long` | advice | write | this memo is {length} characters, over the {limit} limit |
 
 ## The VS Code extension
 
@@ -801,6 +805,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `versions/index.md` | Versions | how-to |
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
+| `writing/memo-files.md` | Memo files | reference |
 | `writing/variants.md` | Content that varies | tutorial |
 
 READMEs published with a package, a crate, or the repository:
@@ -848,6 +853,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `ascribe.lock` | `ascribe sources fetch` and `ascribe sources update`: the commit each source in another repository is pinned to. | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
+| `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them and never writes them, and they're in no output. | Yes |
 | `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
 | `templates/` | `ascribe templates eject`, once for each template: the template, its guide, and Ascribe's notes on the type, in `templates/` or the folder `--to` names, and `templates.lock` beside them, which records what each was copied from. From then on the templates are yours, and Ascribe doesn't write them again. | Yes |
 | `AGENTS.md` | `ascribe agents sync`, between its markers, beside `ascribe.toml`, and at the repository's root when that's another folder. The rest of the file is yours. | Yes |

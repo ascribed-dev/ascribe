@@ -84,6 +84,8 @@ mod index;
 mod layout;
 mod links;
 pub mod llms;
+pub mod memos;
+mod named;
 pub mod pages;
 mod project;
 pub mod references;
@@ -119,6 +121,11 @@ pub use index::{
 };
 pub use layout::Layout;
 pub use links::{encode_destination, link_path, named_headings};
+pub use memos::{
+    Committed, Invalid, Key, MEMOS_FOLDER, MemoFile, MemoProblem, MemoState, MemoStore, Placement,
+    folder_in_content, place,
+};
+pub use named::{BadTarget, EntryKind, Named, PREFIXES};
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };

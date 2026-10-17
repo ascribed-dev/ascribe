@@ -1,0 +1,17 @@
+description: >-
+  A memo file that isn't one is an error on the file: no frontmatter,
+  frontmatter that isn't YAML, no `about`, an `about` that isn't a target
+  or isn't text, a key other than `about` and `quote`, and a `quote` about
+  a content model entry, which has no text. A file that isn't `.md` isn't
+  a memo file.
+spec: ["7.7", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-invalid, file: memos/about-missing.md, line: 1}
+  - {slug: memo-invalid, file: memos/about-not-text.md, line: 2}
+  - {slug: memo-invalid, file: memos/about-target.md, line: 2}
+  - {slug: memo-invalid, file: memos/key.md, line: 3}
+  - {slug: memo-invalid, file: memos/no-frontmatter.md, line: 1}
+  - {slug: memo-invalid, file: memos/quote-entry.md, line: 3}
+  - {slug: memo-invalid, file: memos/yaml.md, line: 1}

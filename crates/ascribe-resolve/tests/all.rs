@@ -34,6 +34,8 @@ mod includes;
 mod incremental;
 #[path = "all/incremental_differential.rs"]
 mod incremental_differential;
+#[path = "all/memos.rs"]
+mod memos;
 #[path = "all/references.rs"]
 mod references;
 #[path = "all/snippets.rs"]

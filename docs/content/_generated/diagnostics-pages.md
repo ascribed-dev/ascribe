@@ -708,3 +708,31 @@ Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.m
 **Fix:** Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included.
 
 **Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
+
+## Memo files
+
+### ASC225 `memo-invalid`
+@id {permalink=true}: ASC225
+
+Error · file level · next step: write · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
+
+**When:** A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root.
+
+**Message:** this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---`
+
+**Fix:** A memo file starts with frontmatter: `about`, which names what the memo is about the way `ascribe refs` names a target (`page.md`, `page.md#id`, or an entry such as `phrase:product`), and `quote`, which you can leave out, with words of the block it's about. Nothing else goes in the frontmatter. The folder `memos/` is beside `ascribe.toml`, outside the content root.
+
+**Read more:** [Write a memo file](../writing/memo-files.md#write-a-memo-file) in the memo files reference.
+
+### ASC226 `memo-detached`
+@id {permalink=true}: ASC226
+
+Warning · file level · next step: choose · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
+
+**When:** A memo file's `about` that names nothing in the project.
+
+**Message:** `{about}` isn't a page or fragment of the project, so this memo is about nothing
+
+**Fix:** Point `about` at what the memo is about now. Renaming a page or changing a heading's id leaves the memos about it detached, so give them the new name. If what it was about is gone, the memo is too: delete the file.
+
+**Read more:** [Placed, outdated, and detached](../writing/memo-files.md#placed-outdated-and-detached) in the memo files reference.

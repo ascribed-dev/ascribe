@@ -699,6 +699,18 @@ pub const HTML_COMMENT: DiagnosticSlug = DiagnosticSlug("html-comment");
 /// `ASC224`, advice, file level: a content check (area `pages`).
 pub const MEMO_EMPTY: DiagnosticSlug = DiagnosticSlug("memo-empty");
 
+/// `ASC225`, error, file level: SPEC §8.2, "Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root".
+pub const MEMO_INVALID: DiagnosticSlug = DiagnosticSlug("memo-invalid");
+
+/// `ASC226`, warning, file level: SPEC §8.2, "Memo files | A memo file's `about` that names nothing in the project".
+pub const MEMO_DETACHED: DiagnosticSlug = DiagnosticSlug("memo-detached");
+
+/// `ASC227`, advice, file level: a content check (area `project`).
+pub const MEMO_OUTDATED: DiagnosticSlug = DiagnosticSlug("memo-outdated");
+
+/// `ASC228`, advice, file level: a content check (area `project`).
+pub const MEMO_LONG: DiagnosticSlug = DiagnosticSlug("memo-long");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -921,6 +933,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     LISTING_LOOSENED_IN_LINE,
     HTML_COMMENT,
     MEMO_EMPTY,
+    MEMO_INVALID,
+    MEMO_DETACHED,
+    MEMO_OUTDATED,
+    MEMO_LONG,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -967,6 +983,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     LINK_FRAGMENT_DROPPED,
     HTML_COMMENT,
     MEMO_EMPTY,
+    MEMO_OUTDATED,
+    MEMO_LONG,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

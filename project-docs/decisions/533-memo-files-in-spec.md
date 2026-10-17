@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**Memo files are part of the language: SPEC §7.7 says what one is, and `memo-invalid` and `memo-detached` are rows of §8.2.** The section states the memos plan's decisions 11 to 13 and 24 as rules: the folder, the two keys, the grammar `about` shares with `ascribe refs`, and how a memo is placed, outdated, or detached. `memo-outdated` and `memo-long` are content checks, configurable, with no row. The grammar of a target moves from `ascribe-query` to `ascribe-resolve` (`Named`), so the checks and `ascribe refs` read it the same way, and `ascribe refs` lists a detached memo under the target it names even when that target doesn't exist. _Why:_ the registry holds that an error or warning no project can turn off is a §8.2 row, and the plan's decision 23 makes `memo-invalid` an error and `memo-detached` a warning, so the format they're about needs its rules in the specification. _From:_ the implementor of [#533](https://github.com/ascribed-dev/ascribe/issues/533), 17 October 2026, from the memos plan's decisions 11 to 16 and 23 to 26, for the maintainer's review.

@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use ascribe_query::Outline;
+use ascribe_query::{Outline, OutlineMemo, OutlineMemoState};
 use clap::Args as ClapArgs;
 
 use crate::answer::{self, Format, FromDisk, Projects, Stop};
@@ -52,7 +52,12 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<O
     let project = &loaded.project;
     let path = answer::source_path(project, &args.page)?;
     let build = answer::build(project.model(), args.build.as_deref())?;
-    Ok(ascribe_query::outline(loaded.index(), &path, build)?)
+    Ok(ascribe_query::outline(
+        loaded.index(),
+        &path,
+        build,
+        project.memos(),
+    )?)
 }
 
 fn outline(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
@@ -93,6 +98,7 @@ fn write_text(out: &mut dyn Write, o: &Outline) -> io::Result<()> {
         .as_ref()
         .map_or(String::new(), |b| format!(", as build {b} publishes it"));
     writeln!(out, "{}, {what}{build}", o.file)?;
+    write_memos(out, &o.memos)?;
     if o.headings.is_empty() {
         writeln!(out)?;
         return writeln!(out, "No headings a link can name.");
@@ -112,7 +118,20 @@ fn write_text(out: &mut dyn Write, o: &Outline) -> io::Result<()> {
             h.text,
             h.id
         )?;
+        write_memos(out, &h.memos)?;
     }
     writeln!(out)?;
     writeln!(out, "Link to a heading as `{}#<id>`.", o.page)
+}
+
+/// A line for each memo, under the page or heading it's about.
+fn write_memos(out: &mut dyn Write, memos: &[OutlineMemo]) -> io::Result<()> {
+    for memo in memos {
+        let state = match memo.state {
+            OutlineMemoState::Placed => "",
+            OutlineMemoState::Outdated => " (outdated)",
+        };
+        writeln!(out, "   memo{state}  {}  {}", memo.file, memo.first_line)?;
+    }
+    Ok(())
 }

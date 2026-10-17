@@ -24,7 +24,7 @@ limit = 40_000
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](../checks/diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
 
-Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Two have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, `"500 KB"` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Three have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, `"500 KB"` unless set; and for `memo-long`, a whole number of characters above 0, `2_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
 For example, a site whose sidebar lists every page doesn't need to hear about pages nothing links to, and a team that wants smaller images can lower the limit:
 
@@ -41,10 +41,11 @@ limit = "200 KB"
 |---|---|---|---|---|
 | `limit` | `page-size` | integer | `50_000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. Above 0. |
 | `limit` | `image-large` | size | `"500 KB"` | The size over which an image is reported: a number of bytes, or a string with `B`, `KB`, or `MB`, such as `"1.5 MB"`. A kilobyte is 1,000 bytes. |
+| `limit` {available=next} | `memo-long` | integer | `2_000` | The length, in characters of a [memo file](../writing/memo-files.md)'s text, over which the memo is reported. Above 0. |
 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
 
-**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
+**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s and `memo-long`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### `[[intended]]`: acknowledgements
 @id: intended-acknowledgements

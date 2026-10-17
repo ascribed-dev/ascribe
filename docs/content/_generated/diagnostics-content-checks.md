@@ -331,6 +331,32 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 
+### ASC227 `memo-outdated`
+@id {permalink=true}: ASC227
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
+
+**When:** No block of what a memo file's `about` names holds its `quote`.
+
+**Message:** no block of `{about}` has the words this memo quotes, so it's on the \{place} and no block
+
+**Fix:** The words were changed since the memo was written. Read the memo against the page as it is: if it still holds, quote the words it's about now; if it doesn't, change it or delete it. A quote is found in one block, with any run of spaces and line breaks read as one space.
+
+**Read more:** [Placed, outdated, and detached](../writing/memo-files.md#placed-outdated-and-detached) in the memo files reference.
+
+### ASC228 `memo-long`
+@id {permalink=true}: ASC228
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
+
+**When:** A memo file's body is longer than the limit: 2,000 characters, or `[checks.memo-long] limit`.
+
+**Message:** this memo is \{length} characters, over the \{limit} limit
+
+**Fix:** A memo is read by whoever is about to change the page, so it says why in as few words as it can. Cut what the page itself says, and split a memo about several things into one about each. The limit is 2,000 characters; set another in `ascribe.toml`, such as `[checks.memo-long] limit = 4000`.
+
+**Read more:** [Write a memo file](../writing/memo-files.md#write-a-memo-file) in the memo files reference.
+
 ## Outputs
 
 ### ASC163 `description-too-long`

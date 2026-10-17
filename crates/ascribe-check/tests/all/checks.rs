@@ -918,3 +918,62 @@ fn an_empty_memo_s_fix_removes_it() {
     );
     assert_eq!(empty_memo_removed("- @memo:\n  @end\n  The block."), None);
 }
+
+/// The messages of each problem the memo files in `memos` have, beside a
+/// page `a.md` with one heading, `#setup`.
+fn memo_messages(memos: &[(&str, &str)]) -> Vec<String> {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    fs::create_dir_all(dir.path().join("memos")).expect("memos/");
+    for (name, text) in memos {
+        fs::write(dir.path().join("memos").join(name), text).expect("a memo file");
+    }
+    let text = page("## Setup\n@id: setup\n\nRun it.");
+    let p = project_in(dir.path().to_owned(), &[("a.md", &text)]);
+    check_files(&p)
+        .iter()
+        .map(|d| {
+            let file = p.file(d.location.file).expect("a known file");
+            assert!(file.display_path.starts_with("memos/"), "{d:?}");
+            d.message.clone()
+        })
+        .collect()
+}
+
+/// A detached memo names the heading's page's ids, or the closest page.
+#[test]
+fn a_detached_memo_says_what_it_could_be_about() {
+    assert_eq!(
+        memo_messages(&[
+            ("heading.md", "---\nabout: a.md#install\n---\nWhy.\n"),
+            ("page.md", "---\nabout: b.md\n---\nWhy.\n"),
+            ("phrase.md", "---\nabout: phrase:prodcut\n---\nWhy.\n"),
+        ]),
+        [
+            "`a.md` has no heading `#install`, so this memo is about nothing; its ids are: `setup`",
+            "`b.md` isn't a page or fragment of the project, so this memo is about nothing; did you mean `a.md`?",
+            "`phrase:prodcut` isn't declared in ascribe.toml, so this memo is about nothing; did you mean `phrase:product`?",
+        ]
+    );
+}
+
+/// A memo that's placed, quoting words of the section it's about, is no
+/// problem; one whose words are gone is outdated, on its section.
+#[test]
+fn a_memo_is_outdated_when_its_words_are_gone() {
+    assert!(
+        memo_messages(&[(
+            "ok.md",
+            "---\nabout: a.md#setup\nquote: Run it\n---\nWhy.\n"
+        )])
+        .is_empty()
+    );
+    assert_eq!(
+        memo_messages(&[(
+            "old.md",
+            "---\nabout: a.md#setup\nquote: Run them\n---\nWhy.\n"
+        )]),
+        [
+            "no block of `a.md#setup` has the words this memo quotes, so it's on the section `#setup` and no block"
+        ]
+    );
+}

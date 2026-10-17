@@ -2,13 +2,14 @@
 //! ids and lines, so a `page.md#id` link is right the first time. The
 //! headings are the ones the editor's completion offers after `page.md#`
 //! ([`Project::link_headings`]): the page's own and those that arrive
-//! through the fragments it includes.
+//! through the fragments it includes. The page and each heading list the
+//! memo files about them (SPEC §7.7), placed or outdated.
 
 use std::collections::HashSet;
 
 use ascribe_core::RelPath;
 use ascribe_model::Build;
-use ascribe_resolve::{AstroRouter, FileKind, Project};
+use ascribe_resolve::{AstroRouter, FileKind, MemoFile, MemoState, Project, Usable, place};
 use serde::Serialize;
 
 use crate::lines::{Lines, project_path};
@@ -39,6 +40,9 @@ pub struct Outline {
     /// Why that build doesn't publish the page, when it doesn't; there are
     /// no headings then.
     pub not_published: Option<String>,
+    /// The memo files about the page as a whole, in path order. A detached
+    /// memo isn't listed.
+    pub memos: Vec<OutlineMemo>,
     /// The headings a link to the page can name, in document order, each id
     /// once.
     pub headings: Vec<OutlineHeading>,
@@ -64,10 +68,73 @@ pub struct OutlineHeading {
     /// The fragment it comes from, as a path from the content root; `null`
     /// for the page's own.
     pub fragment: Option<String>,
+    /// The memo files about its section, or a block in it, in path order.
+    pub memos: Vec<OutlineMemo>,
 }
 
-/// The outline of a source file, at content path `path`; with `build`, only
-/// the headings that build publishes.
+/// A memo file about a page or a heading.
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct OutlineMemo {
+    /// The memo file, from the project root.
+    pub file: String,
+    /// `placed`, on what its `about` names or the block it quotes, or
+    /// `outdated`, when no block holds its quote.
+    pub state: OutlineMemoState,
+    /// Its `quote`; `null` when it has none.
+    pub quote: Option<String>,
+    /// The first line of its text that isn't blank.
+    pub first_line: String,
+    /// Whether it's one of the memos kept on this machine only, rather than
+    /// the project's `memos/`.
+    pub personal: bool,
+}
+
+/// Where a listed memo is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "lowercase")]
+pub enum OutlineMemoState {
+    /// On its page or section, or the block its quote is in.
+    Placed,
+    /// Its quote isn't found: it's on its page or section, and no block.
+    Outdated,
+}
+
+/// Each memo of `memos` that's placed or outdated, with what it's about.
+pub(crate) fn placed_memos<'m>(
+    project: &Project,
+    memos: &'m [MemoFile],
+) -> Vec<(Usable, &'m MemoFile, MemoState)> {
+    memos
+        .iter()
+        .filter_map(|memo| {
+            let placement = place(memo, project)?;
+            Some((placement.target?, memo, placement.state))
+        })
+        .collect()
+}
+
+/// The memos of `placed` about `target`, as the outline lists them.
+fn listed(placed: &[(Usable, &MemoFile, MemoState)], target: &Usable) -> Vec<OutlineMemo> {
+    placed
+        .iter()
+        .filter(|(about, _, _)| about == target)
+        .map(|(_, memo, state)| OutlineMemo {
+            file: memo.path.to_string(),
+            state: match state {
+                MemoState::Outdated => OutlineMemoState::Outdated,
+                MemoState::Placed | MemoState::Detached => OutlineMemoState::Placed,
+            },
+            quote: memo.quote.as_ref().map(|q| q.value.clone()),
+            first_line: memo.first_line().to_owned(),
+            personal: false,
+        })
+        .collect()
+}
+
+/// The outline of a source file, at content path `path`, with the memos of
+/// `memos` about it; with `build`, only the headings that build publishes.
 ///
 /// # Errors
 ///
@@ -76,6 +143,7 @@ pub fn outline(
     project: &Project,
     path: &RelPath,
     build: Option<&Build>,
+    memos: &[MemoFile],
 ) -> Result<Outline, QueryError> {
     let file = project.file(path).ok_or_else(|| QueryError::NotASource {
         path: path.to_string(),
@@ -91,8 +159,11 @@ pub fn outline(
         content_type: file.content_type(project.model()).map(|t| t.name.clone()),
         build: build.map(|b| b.name.clone()),
         not_published: None,
+        memos: Vec::new(),
         headings: Vec::new(),
     };
+    let placed = placed_memos(project, memos);
+    answer.memos = listed(&placed, &Usable::File(path.clone()));
     // With a build, the headings it keeps, by where they're written.
     let kept: Option<HashSet<(RelPath, usize)>> = match build {
         Some(build) if !fragment => {
@@ -134,6 +205,13 @@ pub fn outline(
             file: project_path(project, &written_in),
             line,
             fragment: (written_in != *path).then(|| written_in.to_string()),
+            memos: listed(
+                &placed,
+                &Usable::Heading {
+                    file: written_in.clone(),
+                    id: heading.source_id.clone(),
+                },
+            ),
         });
     }
     Ok(answer)

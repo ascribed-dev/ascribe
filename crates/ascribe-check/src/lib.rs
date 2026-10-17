@@ -43,6 +43,7 @@ mod glossary;
 pub mod intended;
 mod levels;
 pub mod links;
+mod memos;
 pub mod page;
 mod permalinks;
 mod project;
@@ -72,8 +73,8 @@ pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
 };
 pub use project::{
-    FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile,
-    PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
+    FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MEMO_FILE_IDS, MODEL_FILE,
+    ModelFile, PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};
@@ -99,6 +100,7 @@ pub(crate) fn check_files_with(
     let mut across = match checker {
         Some(checker) => checker.for_every_build(true),
         None if across::any_file_level(&project.model().checks)
+            || memos::any(project)
             || project.permalinks().is_some()
             || !project.model().permalinks.is_empty() =>
         {

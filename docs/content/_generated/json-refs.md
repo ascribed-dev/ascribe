@@ -22,7 +22,7 @@
           "type": "integer"
         },
         "use": {
-          "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, or `widget`.",
+          "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, `widget`, or `memo`, a memo file about it.",
           "type": "string"
         }
       },
@@ -93,7 +93,7 @@
       "type": "string"
     },
     "exists": {
-      "description": "Whether the target exists. When it doesn't, there are no places.",
+      "description": "Whether the target exists. When it doesn't, the only places are the\nmemo files that name it.",
       "type": "boolean"
     },
     "kind": {
@@ -108,7 +108,7 @@
       ]
     },
     "places": {
-      "description": "The places that use it, file by file in path order and in document\norder within a file; at most `shown` of them.",
+      "description": "The places that use it, file by file in path order and in document\norder within a file, then the memo files about it, in path order; at\nmost `shown` of them.",
       "items": {
         "$ref": "#/$defs/Place"
       },

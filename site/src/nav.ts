@@ -16,7 +16,10 @@ export interface NavGroup {
 
 export const nav: NavGroup[] = [
   { label: "Start", pages: ["index.md", "getting-started.md"] },
-  { label: "Writing pages", pages: ["writing/directives.md", "writing/variants.md"] },
+  {
+    label: "Writing pages",
+    pages: ["writing/directives.md", "writing/memo-files.md", "writing/variants.md"],
+  },
   {
     label: "The content model",
     pages: [

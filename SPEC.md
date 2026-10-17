@@ -967,6 +967,26 @@ cli-settings = "settings"
 
 Bringing a retired permalink back is deleting its entry and declaring the name again.
 
+### 7.7 Memo files
+
+A project MAY keep memos longer than a line or two in files of their own: a **memo file** says why a page, a section, a block, or a content model entry is the way it is, for the people and agents who maintain it. It's never published, and nothing in it is resolved. The team's memo files are the `.md` files in the folder `memos/`, beside `ascribe.toml`, and in its subfolders; a file or folder whose name begins with `.` is skipped. A file's name and its subfolder mean nothing.
+
+```markdown
+---
+about: install-agent.md#install-agent
+quote: Install the agent package
+---
+
+The agent goes first because its installer writes the config file that
+`quill init` reads.
+```
+
+- The frontmatter has two keys. `about`, required, names what the memo is about, as a target of `ascribe refs` is written: a page or a fragment by its content path, a heading as the content path, `#`, and its id, or a content model entry as `phrase:<key>`, `feature:<key>`, `term:<id>`, `dimension:<name>`, `note:<type>`, or `widget:<name>`. A heading in a fragment is named in the fragment. `quote`, optional, narrows the memo to the block whose source holds it; a content model entry has no text to quote. A memo is about one thing.
+- The body is CommonMark, shown as written. Nothing in it is a phrase, a link a processor checks, an include, or a heading with an id.
+- A memo's place is worked out each time it's read, and nothing is written back to the file. With no `quote`, it's **placed** on what `about` names. With one, the blocks of what `about` names (a page's or fragment's, or a heading's section) are searched in source order, each block's source as written, whitespace runs read as one space and case kept; the first that holds the quote is the memo's block, and the memo is placed there. A quote across two blocks isn't found. A quote that no block holds makes the memo **outdated**: it stays on the page or section. An `about` that names nothing in the project makes the memo **detached**.
+- `memos/` MUST NOT be inside the content root, where its files would be pages; it is when the content root is the project's folder, or above it.
+- Memo files are no part of any output, and a change to one is no change to a page.
+
 ---
 
 ## 8. Validation
@@ -1048,6 +1068,8 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
 | Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
 | Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
+| Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root | Error |
+| Memo files | A memo file's `about` that names nothing in the project | Warning |
 | Glossary | A term's `link` that names a heading its page doesn't have | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |

@@ -151,7 +151,8 @@ pub const TOOLS: &[Spec] = &[
         title: "Outline a page",
         command: "ascribe outline",
         description: "List a page's title, type, and headings with their ids, to write a link \
-            to one of them. Example: {\"page\": \"docs/keys.md\"} returns `headings` such as \
+            to one of them, and the memo files about the page and each heading, to read before \
+            changing it. Example: {\"page\": \"docs/keys.md\"} returns `headings` such as \
             `{\"text\": \"Rotate keys\", \"id\": \"rotate-keys\", \"line\": 11}`.",
         input: || {
             json!({

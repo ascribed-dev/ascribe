@@ -33,6 +33,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "memos": {
+          "description": "The memo files about its section, or a block in it, in path order.",
+          "items": {
+            "$ref": "#/$defs/OutlineMemo"
+          },
+          "type": "array"
+        },
         "text": {
           "description": "Its text, phrases replaced by their values.",
           "type": "string"
@@ -45,9 +52,61 @@
         "explicit_id",
         "file",
         "line",
-        "fragment"
+        "fragment",
+        "memos"
       ],
       "type": "object"
+    },
+    "OutlineMemo": {
+      "description": "A memo file about a page or a heading.",
+      "properties": {
+        "file": {
+          "description": "The memo file, from the project root.",
+          "type": "string"
+        },
+        "first_line": {
+          "description": "The first line of its text that isn't blank.",
+          "type": "string"
+        },
+        "personal": {
+          "description": "Whether it's one of the memos kept on this machine only, rather than\nthe project's `memos/`.",
+          "type": "boolean"
+        },
+        "quote": {
+          "description": "Its `quote`; `null` when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "$ref": "#/$defs/OutlineMemoState",
+          "description": "`placed`, on what its `about` names or the block it quotes, or\n`outdated`, when no block holds its quote."
+        }
+      },
+      "required": [
+        "file",
+        "state",
+        "quote",
+        "first_line",
+        "personal"
+      ],
+      "type": "object"
+    },
+    "OutlineMemoState": {
+      "description": "Where a listed memo is.",
+      "oneOf": [
+        {
+          "const": "placed",
+          "description": "On its page or section, or the block its quote is in.",
+          "type": "string"
+        },
+        {
+          "const": "outdated",
+          "description": "Its quote isn't found: it's on its page or section, and no block.",
+          "type": "string"
+        }
+      ]
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -76,6 +135,13 @@
       "description": "The headings a link to the page can name, in document order, each id\nonce.",
       "items": {
         "$ref": "#/$defs/OutlineHeading"
+      },
+      "type": "array"
+    },
+    "memos": {
+      "description": "The memo files about the page as a whole, in path order. A detached\nmemo isn't listed.",
+      "items": {
+        "$ref": "#/$defs/OutlineMemo"
       },
       "type": "array"
     },
@@ -120,6 +186,7 @@
     "type",
     "build",
     "not_published",
+    "memos",
     "headings"
   ],
   "title": "OutlineReport",

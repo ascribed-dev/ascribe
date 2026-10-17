@@ -1,0 +1,11 @@
+Install the Quill agent
+docs/install-agent.md, type page
+
+docs/install-agent.md:14: ## Prerequisites  #prerequisites
+docs/install-agent.md:19: ## Install the agent  #install-agent
+   memo  memos/agent-first.md  The agent goes first because its installer writes the config file that
+docs/install-agent.md:58: ## Connect to Quill  #connect
+docs/install-agent.md:78: ## Streaming sync  #streaming-sync
+docs/install-agent.md:88: ## Troubleshooting  #troubleshooting
+
+Link to a heading as `install-agent.md#<id>`.

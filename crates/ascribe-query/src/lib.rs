@@ -43,7 +43,7 @@ pub use explain::{
 };
 pub use link::{LinkAnswer, LinkKind, LinkLine, LinkSuggestion, link};
 pub use model::{ModelReport, Section, model, summary};
-pub use outline::{Outline, OutlineHeading, outline};
+pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 pub use refs::{Asked, Place, Refs, TargetKind, refs};
 pub use render::{Rendered, render};
