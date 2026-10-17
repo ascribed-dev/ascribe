@@ -36,6 +36,8 @@ mod lines;
 mod memos;
 #[path = "all/model_edits.rs"]
 mod model_edits;
+#[path = "all/nav_file.rs"]
+mod nav_file;
 #[path = "all/navigation.rs"]
 mod navigation;
 #[path = "all/new_page.rs"]

@@ -438,6 +438,8 @@ function clientOptions(
       { scheme: "file", pattern: `${folder}/ascribe.toml` },
       // For the quick fix on a removed permalink, which edits ascribe.toml.
       { scheme: "file", pattern: `${folder}/ascribe.permalinks` },
+      // The navigation file, checked and completed as it's typed.
+      { scheme: "file", pattern: `${folder}/ascribe.nav` },
       // A source's examples config, checked and completed as it's edited.
       { scheme: "file", pattern: `${folder}/**/ascribe.examples.toml` },
     ],

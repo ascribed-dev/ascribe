@@ -92,6 +92,11 @@ impl Loaded {
     }
 
     /// What a path on disk is to this project.
+    /// `ascribe.nav`'s path from the project root, when `abs` is it.
+    pub(crate) fn nav_file(&self, abs: &Path) -> Option<RelPath> {
+        relative_path(&self.root, abs).filter(|p| p.as_str() == ascribe_model::NAV_FILE)
+    }
+
     pub(crate) fn classify(&self, abs: &Path) -> Option<Kind> {
         let project_rel = relative_path(&self.root, abs)?;
         if project_rel.as_str() == MODEL_FILE {
@@ -456,12 +461,13 @@ impl Core {
             BufferFs::new(disk.clone(), buffers),
         );
         let fs = Arc::new(LayerFs::new(disk));
-        // The open memo files, as the editor has them.
+        // The open memo files and `ascribe.nav`, as the editor has them.
         for (path, doc) in &self.docs {
             if let Some(project) = relative_path(&root, path)
-                && ascribe_resolve::is_memo_path(&project, &layout)
+                && (ascribe_resolve::is_memo_path(&project, &layout)
+                    || project.as_str() == ascribe_model::NAV_FILE)
             {
-                fs.set_memo(&project, Some(doc.text.clone()));
+                fs.set_buffer(&project, Some(doc.text.clone()));
             }
         }
         let snapshot = inc.snapshot();
@@ -569,6 +575,32 @@ impl Core {
         Some(crate::examples::complete_config(text, offset))
     }
 
+    /// What can be written at `position` of an open `ascribe.nav`: its keys,
+    /// the project's sections, and a section's pages (`nav_file.rs`).
+    /// `None` for any other document.
+    pub(crate) fn nav_completion(
+        &self,
+        uri: &Uri,
+        position: lsp_types::Position,
+    ) -> Option<Vec<lsp_types::CompletionItem>> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        loaded.nav_file(&path)?;
+        let text = &self.docs.get(&path)?.text;
+        let index = ascribe_core::LineIndex::new(text);
+        let offset = self.encoding.offset_lenient(&index, text, position);
+        let snapshot = loaded.inc.snapshot();
+        let navigation = ascribe_resolve::Navigation::of(snapshot.project(), None);
+        let sections = crate::nav_file::sections(&navigation);
+        let range = |start: usize, end: usize| {
+            Some(lsp_types::Range {
+                start: self.encoding.position(&index, start)?,
+                end: self.encoding.position(&index, end)?,
+            })
+        };
+        Some(crate::nav_file::complete(text, offset, &sections, &range))
+    }
+
     // -- Documents ----------------------------------------------------------
 
     fn doc_path(uri: &Uri) -> Option<PathBuf> {
@@ -638,9 +670,16 @@ impl Core {
         if let Some(loaded) = self.loaded.as_mut()
             && let Some(Kind::Memo(project)) = loaded.classify(&path)
         {
-            loaded.fs.set_memo(&project, None);
+            loaded.fs.set_buffer(&project, None);
             loaded.across_dirty = true;
             self.refresh_lenses();
+            return;
+        }
+        if let Some(loaded) = self.loaded.as_mut()
+            && let Some(project) = loaded.nav_file(&path)
+        {
+            loaded.fs.set_buffer(&project, None);
+            loaded.across_dirty = true;
             return;
         }
         self.refresh_from_disk(&path);
@@ -677,9 +716,16 @@ impl Core {
         // A memo file isn't a source: the checks across the project, which
         // place each memo and check it, run again with its text.
         if let Some(Kind::Memo(project)) = loaded.classify(path) {
-            loaded.fs.set_memo(&project, Some(text));
+            loaded.fs.set_buffer(&project, Some(text));
             loaded.across_dirty = true;
             self.refresh_lenses();
+            return;
+        }
+        // Nor is `ascribe.nav`: the checks across the project hold it to the
+        // project as it's typed.
+        if let Some(project) = loaded.nav_file(path) {
+            loaded.fs.set_buffer(&project, Some(text));
+            loaded.across_dirty = true;
             return;
         }
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
@@ -736,10 +782,12 @@ impl Core {
                 continue;
             }
             if let Some(loaded) = self.loaded.as_mut()
-                && path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+                && (path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+                    || loaded.nav_file(&path).is_some())
             {
-                // The permalinks list isn't a source: the checks across the
-                // project compare it with the content.
+                // The permalinks list and the navigation file aren't
+                // sources: the checks across the project compare them with
+                // the content. An open buffer of `ascribe.nav` wins.
                 loaded.across_dirty = true;
                 continue;
             }
@@ -1234,8 +1282,11 @@ impl Core {
                 return self.project_target(uri);
             }
             // `ascribe.permalinks`, beside it: its fixes edit `ascribe.toml`.
+            // And `ascribe.nav`, whose fixes edit itself.
             let loaded = self.loaded.as_ref()?;
-            if path == loaded.root.join(ascribe_model::PERMALINKS_FILE) {
+            if path == loaded.root.join(ascribe_model::PERMALINKS_FILE)
+                || loaded.nav_file(&path).is_some()
+            {
                 let content = RelPath::parse(Ctx::PROJECT).ok()?;
                 return self.ctx(loaded, loaded.inc.snapshot(), content, &path);
             }

@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
-use ascribe_model::{Current, PERMALINKS_FILE, PermalinkList, RETIRED_PLACEHOLDER};
+use ascribe_model::{Current, NAV_FILE, PERMALINKS_FILE, PermalinkList, RETIRED_PLACEHOLDER};
 use ascribe_resolve::{DeclaredPermalink, FileSystem};
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, Diagnostic, TextEdit,
@@ -69,6 +69,7 @@ pub(crate) fn actions(
                 }
             }
         }
+        actions.extend(fixes_elsewhere(&diagnostic));
 
         let at = ctx
             .encoding
@@ -458,6 +459,16 @@ fn retire_permalink(ctx: &Ctx, diagnostic: Diagnostic) -> Option<CodeActionOrCom
 fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
     let model_index = LineIndex::new(&ctx.model_text);
     let mut actions = Vec::new();
+    // `ascribe.nav`'s problems carry their fixes, which edit the file.
+    if crate::uri::uri_to_path(&params.text_document.uri)
+        .is_some_and(|p| ascribe_core::path::normalize(&p) == ctx.config.with_file_name(NAV_FILE))
+    {
+        let uri = params.text_document.uri;
+        for diagnostic in params.context.diagnostics {
+            actions.extend(fixes_in(&diagnostic, "fixes", |_| Some(uri.clone())));
+        }
+        return actions;
+    }
     for diagnostic in params.context.diagnostics {
         let data = diagnostic.data.as_ref();
         let field = |key: &str| {
@@ -498,6 +509,66 @@ fn model_actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand
                 new_text: edit.new_text,
             }),
         ));
+    }
+    actions
+}
+
+/// The fixes of a diagnostic that edit another file, as its data's
+/// `elsewhere` carries them: a page's `nav-page-unplaced` is fixed in
+/// `ascribe.nav`.
+fn fixes_elsewhere(diagnostic: &Diagnostic) -> Vec<CodeActionOrCommand> {
+    fixes_in(diagnostic, "elsewhere", |fix| {
+        fix.get("uri")
+            .and_then(serde_json::Value::as_str)
+            .and_then(|uri| uri.parse().ok())
+    })
+}
+
+/// A quick fix for each fix in a diagnostic's data under `key`, each editing
+/// the file `uri` gives for it, safe ones preferred.
+#[allow(clippy::mutable_key_type)]
+fn fixes_in(
+    diagnostic: &Diagnostic,
+    key: &str,
+    uri: impl Fn(&serde_json::Value) -> Option<lsp_types::Uri>,
+) -> Vec<CodeActionOrCommand> {
+    let fixes = diagnostic
+        .data
+        .as_ref()
+        .and_then(|data| data.get(key))
+        .and_then(serde_json::Value::as_array);
+    let mut actions = Vec::new();
+    for fix in fixes.into_iter().flatten() {
+        let (Some(title), Some(uri)) = (
+            fix.get("title").and_then(serde_json::Value::as_str),
+            uri(fix),
+        ) else {
+            continue;
+        };
+        let edits: Vec<TextEdit> = fix
+            .get("edits")
+            .and_then(serde_json::Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|edit| serde_json::from_value(edit.clone()).ok())
+            .collect();
+        if edits.is_empty() {
+            continue;
+        }
+        let safe = fix.get("applicability").and_then(serde_json::Value::as_str) == Some("safe");
+        actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+            title: title.to_owned(),
+            kind: Some(CodeActionKind::QUICKFIX),
+            diagnostics: Some(vec![diagnostic.clone()]),
+            edit: Some(WorkspaceEdit {
+                changes: Some(HashMap::from([(uri, edits)])),
+                ..WorkspaceEdit::default()
+            }),
+            command: None,
+            is_preferred: Some(safe),
+            disabled: None,
+            data: None,
+        }));
     }
     actions
 }

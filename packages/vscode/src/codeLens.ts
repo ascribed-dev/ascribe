@@ -11,8 +11,16 @@
 import * as path from "node:path";
 import { ownedElsewhere, type Project } from "./projects.js";
 
-/** Ascribe's own files that aren't pages: the model, the permalinks list, a source's examples config. */
-const ASCRIBE_FILES = ["ascribe.toml", "ascribe.permalinks", "ascribe.examples.toml"];
+/**
+ * Ascribe's own files that aren't pages: the model, the permalinks list, the
+ * navigation file, a source's examples config.
+ */
+const ASCRIBE_FILES = [
+  "ascribe.toml",
+  "ascribe.permalinks",
+  "ascribe.nav",
+  "ascribe.examples.toml",
+];
 
 /** Whether a file is a code file: not a page (Markdown) and not one of Ascribe's own files. */
 export function isCodeFile(file: string, languageId: string): boolean {

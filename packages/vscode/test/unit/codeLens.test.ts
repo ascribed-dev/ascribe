@@ -55,6 +55,7 @@ describe("isCodeFile", () => {
     expect(isCodeFile("/w/notes.txt", "plaintext")).toBe(true);
     expect(isCodeFile("/w/a.md", "markdown")).toBe(false);
     expect(isCodeFile("/w/ascribe.toml", "toml")).toBe(false);
+    expect(isCodeFile("/w/ascribe.nav", "toml")).toBe(false);
   });
 });
 

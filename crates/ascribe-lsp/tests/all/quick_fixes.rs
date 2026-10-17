@@ -1101,7 +1101,7 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         // applies it and sees the warning go.
         .filter(|e| e.slug.as_str() != "permalinks-list-behind")
         // Theirs edit `ascribe.nav`, from the file or from a page:
-        // `navigation.rs` applies them and sees the problem go.
+        // `nav_file.rs` applies them and sees the problem go.
         .filter(|e| {
             !matches!(
                 e.slug.as_str(),

@@ -1,5 +1,6 @@
-//! The navigation file, `ascribe.nav` (SPEC §7.8), against what the project
-//! has, once it reads:
+//! The navigation file, `ascribe.nav` (SPEC §7.8): the problems reading it
+//! (`nav-invalid`), and, once it reads, what it says against what the
+//! project has:
 //!
 //! - In the file, at the value each is about: a `folder` that isn't a
 //!   section (`nav-folder-unknown`), a `pages` entry that isn't a page in
@@ -50,6 +51,9 @@ pub(crate) fn check(
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
     let mut issues: Vec<Issue> = Vec::new();
     both(index, file, &mut issues);
+    if let Some(Err(problems)) = project.nav() {
+        issues.extend(problems.iter().cloned());
+    }
     if let (Some(Ok(nav)), Some(entry)) = (project.nav(), project.file(NAV_FILE_ID)) {
         let checks = &project.model().checks;
         let runs = |slug| runs(checks, slug, errors_only);

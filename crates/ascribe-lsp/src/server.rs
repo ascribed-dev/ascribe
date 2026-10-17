@@ -431,6 +431,9 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             Completion::METHOD if let Some(items) = memo_completion(shared, &request) => {
                 to_json(&request, items)
             }
+            Completion::METHOD if let Some(items) = nav_completion(shared, &request) => {
+                to_json(&request, items)
+            }
             DocumentLinkRequest::METHOD if let Some(links) = memo_links(shared, &request) => {
                 to_json(&request, links)
             }
@@ -688,6 +691,17 @@ fn memo_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::
     let (ctx, memo) = shared.lock().memo_target(&at.text_document.uri)?;
     let offset = crate::memos::offset(&ctx, &memo.text, at.position);
     Some(crate::memos::complete(&ctx, &memo.text, offset).unwrap_or_default())
+}
+
+/// Completion in `ascribe.nav`, which isn't a page; `None` for any other
+/// document.
+fn nav_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::CompletionItem>> {
+    let params: lsp_types::CompletionParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position;
+    shared
+        .lock()
+        .nav_completion(&at.text_document.uri, at.position)
 }
 
 /// The link from a memo file's `about` to what it names; `None` for any
