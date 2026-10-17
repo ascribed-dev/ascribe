@@ -85,13 +85,15 @@ export class SourceChanges implements vscode.Disposable {
     }
     const commit = base.merge_base ?? base.commit;
     const git = await this.git();
-    const resources: [vscode.Uri, vscode.Uri | undefined, vscode.Uri | undefined][] = files.map(
-      (file) => {
-        const uri = vscode.Uri.file(file.path);
-        const original = file.before ? baseUri(uri, commit, git) : undefined;
-        return [uri, original, file.after ? uri : undefined];
-      },
-    );
+    // A file the page changed through may be one the branch deleted: it has no working side.
+    const resources: [vscode.Uri, vscode.Uri | undefined, vscode.Uri | undefined][] =
+      await Promise.all(
+        files.map(async (file) => {
+          const uri = vscode.Uri.file(file.path);
+          const original = file.before ? baseUri(uri, commit, git) : undefined;
+          return [uri, original, file.after && (await exists(uri)) ? uri : undefined];
+        }),
+      );
     const title = diffTitle(baseName, files.length);
     this.log.push({
       title,
@@ -168,6 +170,16 @@ export class SourceChanges implements vscode.Disposable {
 function baseUri(file: vscode.Uri, commit: string, git: GitApi | undefined): vscode.Uri {
   if (git?.getRepository(file)) return git.toGitUri(file, commit);
   return file.with({ scheme: BASE_SCHEME, query: commit });
+}
+
+/** Whether a file is there in the working tree. */
+async function exists(uri: vscode.Uri): Promise<boolean> {
+  try {
+    await vscode.workspace.fs.stat(uri);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** The file an `ascribe-base:` URI is of. */

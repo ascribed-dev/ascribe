@@ -1048,6 +1048,12 @@ export class PreviewController implements vscode.Disposable {
       this.schedule(0);
     } else if (page) {
       await this.showPage(page, false);
+    } else {
+      // No page to open the dialog on: every changed page was removed.
+      this.submitFor = undefined;
+      void vscode.window.showInformationMessage(
+        "Ascribe: open a page of the project to submit its review. Every page this branch changes was removed.",
+      );
     }
   }
 
