@@ -2746,8 +2746,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/584"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Navigation: every reader follows the navigation"
     },
     {
@@ -2765,8 +2768,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/583"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Navigation: the Pages view is the navigation, in order by dragging"
     },
     {
@@ -3055,8 +3061,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/578"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBeXdo",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/581"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The agents' hook settles nav-page-unplaced after an agent adds a page"
     },
     {
@@ -3072,9 +3081,40 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/580"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The agents' hook tests time out on a slow Windows runner"
+    },
+    {
+      "content": {
+        "body": "Split out of #540 (phase N5, `project-docs/navigation/phase-5-editor.md`).\n\nThe phase's goal has **Rename Label…** on a section or a page, editing `label` or `nav-label`. #540's pull request ships it for sections, which write `label` in `ascribe.nav`. A page's label is its `nav-label` frontmatter, which N4 (#539) adds, and that isn't on `main` yet.\n\nWhat's left, once #539 merges:\n\n- An `ascribe/edit` operation that sets or removes a page's `nav-label` in its frontmatter, keeping the rest of it.\n- **Rename Label…** in a page's menu in the Pages view, with the page's current label offered.\n- The inventory's pages carry the label the navigation shows, so Pages draws a page by its `nav-label` when it has one.\n- The editor page's Pages section says it.",
+        "number": 582,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Rename Label… on a page in the Pages view sets its nav-label",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/582"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBfPmI",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Rename Label… on a page in the Pages view sets its nav-label"
+    },
+    {
+      "content": {
+        "body": "A folder with no `label` in `ascribe.nav` and no own page gets a name from two functions that differ. `ascribe_resolve::llms::folder_heading` turns `-` and `_` into spaces, and `ascribe_resolve::navigation::folder_label` doesn't. So `getting-started/` is \"Getting started\" in `llms.txt` and \"Getting-started\" in `nav.json`, the sidebar, and an archive.\n\nMake them one function, and decide which name wins. This is an output change for any project with such a folder, so it should be accepted file by file under a recorded decision.\n\nFound in review of #584 (https://github.com/ascribed-dev/ascribe/pull/584#discussion_r4303697074). That PR kept main's behavior so its `llms.txt` diff stays limited to order and **Start**.",
+        "number": 585,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Name a folder with no label the same way in llms.txt and the navigation",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/585"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBfh8I",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Name a folder with no label the same way in llms.txt and the navigation"
     }
   ]
 }
