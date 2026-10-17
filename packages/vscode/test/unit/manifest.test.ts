@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
 import { MCP_LABEL } from "../../src/agents/mcpServer.js";
+import { PAGES_CONTEXT } from "../../src/ui/sidebar.js";
 
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");
 
@@ -15,6 +16,7 @@ interface Manifest {
     menus: {
       commandPalette: { command: string; when: string }[];
       "editor/title": { command: string; when: string }[];
+      "view/item/context": { command: string; when: string }[];
     };
     configuration: {
       properties: Record<string, { default: unknown; enum?: string[]; scope?: string }>;
@@ -40,6 +42,18 @@ interface Manifest {
 const manifest = JSON.parse(read("../../package.json")) as Manifest;
 
 describe("package.json", () => {
+  it("shows the Pages view's item commands by the context values the view gives", () => {
+    const shownOn = (command: string) =>
+      manifest.contributes.menus["view/item/context"].find((entry) => entry.command === command)
+        ?.when;
+    expect(shownOn("ascribe.pages.placeHere")).toBe(
+      `view == ascribe.pages && viewItem == ${PAGES_CONTEXT.unplaced}`,
+    );
+    expect(shownOn("ascribe.pages.renameLabel")).toBe(
+      `view == ascribe.pages && viewItem == ${PAGES_CONTEXT.section}`,
+    );
+  });
+
   it("is private, so nothing can be published by accident", () => {
     expect(manifest.private).toBe(true);
   });
