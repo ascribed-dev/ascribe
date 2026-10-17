@@ -1,5 +1,5 @@
 //! `template-placeholder-left`: what a page of a type with a template still
-//! has of the template's placeholders and instructions, never filled in.
+//! has of the template's placeholders, never filled in.
 //!
 //! The template and the page are each read as text, block by block: a
 //! paragraph, a heading, or a table's cell is one piece of text, with
@@ -12,10 +12,10 @@
 //! with its closing brace. A page has a placeholder when it has each of its
 //! pieces, in order, exactly, and its opening brace is escaped there too:
 //! a phrase of the same name, or the placeholder quoted in code, is the
-//! page's own text. An instruction is a paragraph inside one of
-//! the template's block quotes, and a page has it when one of its paragraphs
-//! is the same text. A frontmatter field is left when its value is the
-//! template's.
+//! page's own text. A frontmatter field is left when its value is the
+//! template's. A template's instructions to the writer are memos, which
+//! aren't blocks with text, so a page that keeps them isn't reported: what
+//! to do with a memo is the writer's to decide.
 //!
 //! The template is read once a project, through its [`FileSystem`]
 //! (`Project::template`), and a template that can't be read is the content
@@ -31,8 +31,7 @@ use serde_yaml_ng::Value;
 use super::Ctx;
 use crate::yaml::YamlIndex;
 
-/// The most words of a placeholder, an instruction, or a value a message
-/// quotes.
+/// The most words of a placeholder or a value a message quotes.
 const OPENING_WORDS: usize = 8;
 
 /// A template, as the check compares a page with it.
@@ -44,8 +43,6 @@ pub(crate) struct Template {
     /// Each distinct placeholder, as its pieces, in the order they're first
     /// found.
     placeholders: Vec<Vec<String>>,
-    /// Each distinct instruction's text, in order.
-    instructions: Vec<String>,
 }
 
 impl Template {
@@ -73,9 +70,9 @@ impl Template {
             }
         }
         let mut units = Vec::new();
-        collect(text, &doc.blocks, false, &mut units);
+        collect(text, &doc.blocks, &mut units);
         let mut open: Option<Vec<String>> = None;
-        for unit in units.iter().filter(|u| !u.quoted) {
+        for unit in &units {
             let mut at = 0;
             loop {
                 if let Some(pieces) = &mut open {
@@ -110,12 +107,6 @@ impl Template {
         if let Some(pieces) = open {
             template.add_placeholder(pieces);
         }
-        for unit in units.iter().filter(|u| u.quoted && u.paragraph) {
-            let text = unit.slice(0, unit.len());
-            if !text.is_empty() && !template.instructions.contains(&text) {
-                template.instructions.push(text);
-            }
-        }
         template
     }
 
@@ -133,10 +124,6 @@ struct Unit {
     chars: Vec<char>,
     offsets: Vec<usize>,
     escaped: Vec<bool>,
-    /// Inside a block quote.
-    quoted: bool,
-    /// A paragraph, rather than a heading or a table's cell.
-    paragraph: bool,
 }
 
 impl Unit {
@@ -172,12 +159,8 @@ impl Unit {
 
     /// Ends the unit: white space trimmed at both ends, and each run of it
     /// inside made one space.
-    fn finish(raw: Vec<(char, usize, bool)>, quoted: bool, paragraph: bool) -> Unit {
-        let mut unit = Unit {
-            quoted,
-            paragraph,
-            ..Unit::default()
-        };
+    fn finish(raw: Vec<(char, usize, bool)>) -> Unit {
+        let mut unit = Unit::default();
         let mut space: Option<usize> = None;
         for (c, offset, escaped) in raw {
             if c.is_whitespace() {
@@ -200,32 +183,28 @@ impl Unit {
 }
 
 /// Every block's text under `blocks`, in source order.
-fn collect(source: &str, blocks: &[Block], quoted: bool, out: &mut Vec<Unit>) {
+fn collect(source: &str, blocks: &[Block], out: &mut Vec<Unit>) {
     for block in blocks {
         match &block.kind {
-            BlockKind::Heading(h) => {
-                out.push(Unit::finish(chars(source, &h.inlines), quoted, false));
-            }
-            BlockKind::Paragraph(p) => {
-                out.push(Unit::finish(chars(source, &p.inlines), quoted, true));
-            }
-            BlockKind::BlockQuote(q) => collect(source, &q.children, true, out),
+            BlockKind::Heading(h) => out.push(Unit::finish(chars(source, &h.inlines))),
+            BlockKind::Paragraph(p) => out.push(Unit::finish(chars(source, &p.inlines))),
+            BlockKind::BlockQuote(q) => collect(source, &q.children, out),
             BlockKind::List(l) => {
                 for item in &l.items {
-                    collect(source, &item.children, quoted, out);
+                    collect(source, &item.children, out);
                 }
             }
             BlockKind::Table(t) => {
                 for row in &t.rows {
                     for cell in &row.cells {
-                        out.push(Unit::finish(chars(source, &cell.inlines), quoted, false));
+                        out.push(Unit::finish(chars(source, &cell.inlines)));
                     }
                 }
             }
-            BlockKind::Container(c) => collect(source, &c.children, quoted, out),
+            BlockKind::Container(c) => collect(source, &c.children, out),
             BlockKind::Group(g) => {
                 for arm in &g.arms {
-                    collect(source, &arm.children, quoted, out);
+                    collect(source, &arm.children, out);
                 }
             }
             BlockKind::CodeBlock(_)
@@ -365,15 +344,14 @@ impl Ctx<'_> {
         }
     }
 
-    /// The template's placeholders and instructions the page's body still
-    /// has.
+    /// The template's placeholders the page's body still has.
     pub(super) fn check_template_body(&mut self, blocks: &[Block]) {
         let Some(template) = self.page_template() else {
             return;
         };
         let source = self.file.text.clone();
         let mut units = Vec::new();
-        collect(&source, blocks, false, &mut units);
+        collect(&source, blocks, &mut units);
         for pieces in &template.placeholders {
             let pieces: Vec<Vec<char>> = pieces.iter().map(|p| p.chars().collect()).collect();
             for Occurrence { unit, start, .. } in occurrences(&units, &pieces) {
@@ -388,19 +366,6 @@ impl Ctx<'_> {
                 self.report(issue);
             }
         }
-        for instruction in &template.instructions {
-            for unit in units.iter().filter(|u| u.paragraph) {
-                if unit.len() > 0 && unit.slice(0, unit.len()) == *instruction {
-                    let issue = Issue::new(
-                        diagnostics::TEMPLATE_PLACEHOLDER_LEFT,
-                        self.location(unit.span(0, unit.len(), &source)),
-                    )
-                    .with_variant("instruction")
-                    .with_arg("instruction", opening(instruction));
-                    self.report(issue);
-                }
-            }
-        }
     }
 }
 
@@ -409,8 +374,7 @@ impl Ctx<'_> {
 /// field whose value is the template's, inside its quotes when it has them,
 /// and each placeholder of the body, from its first piece to its last, so
 /// one that runs across blocks is one place. They're found as the check
-/// finds them; an instruction isn't among them, since it's read, not filled
-/// in.
+/// finds them; a memo isn't among them, since it's read, not filled in.
 pub(crate) fn places(template: &Template, text: &str, model: &ContentModel) -> Vec<Span> {
     let options = ParseOptions::new(model.directive_schemas())
         .with_note_types(model.notes.iter().map(|n| n.name.clone()).collect());
@@ -435,7 +399,7 @@ pub(crate) fn places(template: &Template, text: &str, model: &ContentModel) -> V
         }
     }
     let mut units = Vec::new();
-    collect(text, &doc.blocks, false, &mut units);
+    collect(text, &doc.blocks, &mut units);
     for pieces in &template.placeholders {
         let pieces: Vec<Vec<char>> = pieces.iter().map(|p| p.chars().collect()).collect();
         let Some(last) = pieces.last() else {

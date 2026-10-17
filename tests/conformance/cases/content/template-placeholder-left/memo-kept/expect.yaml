@@ -1,0 +1,8 @@
+description: >-
+  A template's instructions to the writer are memos. A page that keeps one,
+  with the template's words, has nothing reported for it: the memo is never
+  published, and what to do with it is the writer's to decide.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

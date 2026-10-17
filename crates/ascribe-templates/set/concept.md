@@ -12,12 +12,8 @@ Typical wording to use is:
 
 * This article explains the basics of \{concept} and how it works in \{the tool or context}.
 
-\{Then include a paragraph with a definition of the concept you are explaining.
-If more definitions are needed, include those definitions here as a bulleted list.}
-
-\{This section usually doesn't have a separate heading that explicitly says
-Definition; it can precede all the rest.}
-
+@memo: Then include a paragraph with a definition of the concept you are explaining. If more definitions are needed, include those definitions here as a bulleted list.
+@memo: This section usually doesn't have a separate heading that explicitly says Definition; it can precede all the rest.
 Typical wordings to use are:
 
 * \{X} is;
@@ -40,8 +36,7 @@ Typical wordings to use are:
 
 * To use \{X}, you create \{Y}
 
-\{Add visual aid to complement your explanations visually.}
-
+@memo: Add visual aid to complement your explanations visually.
 \{Image goes here.}
 
 (Optional) Image/Figure: \{Image title, which concisely explains the image or
@@ -49,8 +44,7 @@ figure. It can be represented by annotations on the image.}
 
 ## (Optional) Background
 
-\{Use this section to provide a reader with a context, prehistory, or background information.}
-
+@memo: Use this section to provide a reader with a context, prehistory, or background information.
 Typical wordings to use are:
 
 * The reason \{X} is designed that way is because historically, ...
@@ -67,22 +61,20 @@ Typical wordings to use are:
     the way ...
 
 ## Use cases
-
-\{Use this section to provide use cases and explain how a reader can
-benefit from a concept.}
+@memo: Use this section to provide use cases and explain how a reader can benefit from a concept.
 
 ## (Optional) Comparison of \{thing being compared}
 
-\{Use this section to compare options or alternatives.}
-
+@memo: Use this section to compare options or alternatives.
 Table: \{Table title which concisely explains the comparison.}
 
 ## (Optional) Related resources
 
-\{Use this section to provide links to documentation related to the concept that the user can read for more information.
+@memo:
+Use this section to provide links to documentation related to the concept that the user can read for more information.
 If you can name this section manually (it is not generated automatically or has a heading pre-agreed within a team),
-we recommend to use "Related concepts" or "Additional information" as more descriptive ones.}
-
+we recommend to use "Related concepts" or "Additional information" as more descriptive ones.
+@end
 If you would like to dive deeper or start implementing \{concept},
 check out the following resources:
 

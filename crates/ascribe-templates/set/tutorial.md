@@ -20,8 +20,7 @@ By the end of this tutorial, you'll be able to:
 
 ## Background
 
-\{This section is optional. Feel free to use some of the text below to help you get started.}
-
+@memo: This section is optional. Feel free to use some of the text below to help you get started.
 * \{product} is a \{product type} that you can use to \{common use case}...
 * \{product} provides many of the same features as \{competitors}, but with \{feature}, you can...
 * Using \{feature} enables you to \{pain point}...
@@ -63,8 +62,7 @@ To get started, \{the first thing your user should do}.
 
 ## Summary
 
-\{Use this section to summarize what the user learned in the tutorial.}
-
+@memo: Use this section to summarize what the user learned in the tutorial.
 In this tutorial, you learned how to:
 
 * Summary point 1
@@ -73,8 +71,7 @@ In this tutorial, you learned how to:
 
 ## Next steps
 
-\{Use this section to share links to related tutorials, videos, or other documentation}.
-
+@memo: Use this section to share links to related tutorials, videos, or other documentation.
 Consider completing some other common tasks using \{feature}:
 
 * Task 1

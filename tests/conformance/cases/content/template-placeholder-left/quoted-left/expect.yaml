@@ -1,6 +1,6 @@
 description: >-
-  A paragraph the template quotes is an instruction, and one a page still
-  has whole is reported, with a message saying it's an instruction.
+  A placeholder in a block quote of the template is a placeholder like any
+  other, and one a page still has is reported.
 spec: ["7.2"]
 tags: [check]
 

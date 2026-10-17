@@ -74,11 +74,11 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped; a paragraph the template quotes as an instruction; or a frontmatter field with the template's value. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
+**When:** A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
 **Message:** this page still has its template's placeholder `{placeholder}`; write what it asks for in its place
 
-**Fix:** Write the page's own text where the template's placeholder is, the text in braces, and remove each instruction the template quotes once you've followed it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it.
+**Fix:** Write the page's own text where the template's placeholder is, the text in braces. The template's instructions are memos, which are never published: follow each, then delete it or keep it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 

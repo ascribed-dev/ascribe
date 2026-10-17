@@ -45,6 +45,7 @@ export interface Pin {
 export interface Rules {
   description: string;
   about: string[];
+  memos: string[];
   directives: { directive: string; before: string }[];
 }
 
@@ -74,6 +75,7 @@ export function readRules(
         {
           description: table.description,
           about: table.about ?? [],
+          memos: table.memos ?? [],
           directives: table.directives ?? [],
         },
       ];
@@ -171,8 +173,13 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     before.set(at, [...(before.get(at) ?? []), indent + rule.directive]);
   }
 
+  const memos = placeMemos(name, body, code, rules.memos);
   const escaped = escapeBraces(body, code);
-  const out = escaped.flatMap((line, i) => [...(before.get(i) ?? []), line]);
+  const out = escaped.flatMap((line, i) => [
+    ...(before.get(i) ?? []),
+    ...(memos.removed.has(i) ? [] : (memos.at.get(i) ?? [line])),
+    ...(memos.after.get(i) ?? []),
+  ]);
   return [
     "---",
     `type: ${name}`,
@@ -183,6 +190,104 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     ...out,
     "",
   ].join("\n");
+}
+
+/** The longest memo written as a line when their paragraph has more than one line. */
+const LINE_MEMO_LIMIT = 160;
+
+const headingLine = /^ {0,3}#{1,6}(?:[ \t]|$)/;
+
+function indentOf(line: string): number {
+  return /^\s*/.exec(line)?.[0].length ?? 0;
+}
+
+/** Where the memos go: lines removed, a line replaced, and lines added after one. */
+interface Memos {
+  removed: Set<number>;
+  at: Map<number, string[]>;
+  after: Map<number, string[]>;
+}
+
+/**
+ * Each paragraph a rule says is an instruction to the writer, as a memo: a
+ * line with their words, the paragraph's lines joined and its braces gone, or
+ * a container holding their lines when that line would be too long to read.
+ * A memo is about the block it touches, and binding a heading is an error
+ * (SPEC §3.8), so where it goes depends on what follows the paragraph in its
+ * container: a block, which the memo touches in the paragraph's place; the
+ * next heading or the end, when the memo goes to the top of the section,
+ * under its heading and `@id`; or the end of a container with no heading,
+ * such as a list item, where it can't go, and the conversion stops.
+ */
+function placeMemos(name: string, body: string[], code: boolean[], texts: string[]): Memos {
+  const memos: Memos = { removed: new Set(), at: new Map(), after: new Map() };
+  // Each paragraph: its first line, and the line after its last.
+  const paragraphs: [number, number][] = [];
+  for (let i = 0; i < body.length; i++) {
+    if (code[i] || blank(body[i] ?? "") || (i > 0 && !blank(body[i - 1] ?? "") && !code[i - 1]))
+      continue;
+    let to = i;
+    while (to < body.length && !code[to] && !blank(body[to] ?? "")) to++;
+    paragraphs.push([i, to]);
+  }
+  const textOf = ([from, to]: [number, number]) =>
+    body
+      .slice(from, to)
+      .map((line) => line.trim())
+      .join(" ");
+
+  for (const text of texts) {
+    const found = paragraphs.filter((p) => textOf(p) === text);
+    if (found.length !== 1)
+      throw new ConversionError(
+        `${name}: the rule \`memos\` found ${found.length} paragraphs \`${text}\`, not one`,
+      );
+    const [from, to] = found[0] ?? [0, 0];
+    const close = text.lastIndexOf("}");
+    if (!text.startsWith("{") || close === -1)
+      throw new ConversionError(`${name}: the memo \`${text}\` isn't a paragraph in braces`);
+    const indent = /^\s*/.exec(body[from] ?? "")?.[0] ?? "";
+    const words = text.slice(1, close) + text.slice(close + 1);
+    let memo: string[];
+    if (to - from > 1 && words.length > LINE_MEMO_LIMIT) {
+      const lines = body.slice(from, to).map((line) => line.trim());
+      const last = lines.length - 1;
+      lines[0] = (lines[0] ?? "").slice(1);
+      const end = (lines[last] ?? "").lastIndexOf("}");
+      lines[last] = (lines[last] ?? "").slice(0, end) + (lines[last] ?? "").slice(end + 1);
+      memo = [`${indent}@memo:`, ...lines.map((line) => indent + line), `${indent}@end`];
+    } else {
+      memo = [`${indent}@memo: ${words}`];
+    }
+
+    let next = to;
+    while (next < body.length && blank(body[next] ?? "")) next++;
+    const ends =
+      next === body.length ||
+      (!code[next] && headingLine.test(body[next] ?? "")) ||
+      indentOf(body[next] ?? "") < indent.length;
+    if (!ends) {
+      // A block follows: the memo takes the paragraph's place, touching it.
+      memos.at.set(from, memo);
+      for (let i = from + 1; i < next; i++) memos.removed.add(i);
+      continue;
+    }
+    // The last block of its section: the memo goes to the top of the section.
+    let heading = from - 1;
+    while (heading >= 0 && (code[heading] || !headingLine.test(body[heading] ?? ""))) heading--;
+    if (indent.length > 0 || heading < 0)
+      throw new ConversionError(
+        `${name}: the memo \`${text}\` is the last block of a container with no heading, so it has nothing to be about`,
+      );
+    let top = heading;
+    while ((body[top + 1] ?? "").startsWith("@id:")) top++;
+    memos.after.set(top, [...(memos.after.get(top) ?? []), ...memo]);
+    // At the end, the blank lines before it go too.
+    let start = from;
+    if (next === body.length) while (start > 0 && blank(body[start - 1] ?? "")) start--;
+    for (let i = start; i < next; i++) memos.removed.add(i);
+  }
+  return memos;
 }
 
 /** Which lines are a fenced code block's, its fences included. */

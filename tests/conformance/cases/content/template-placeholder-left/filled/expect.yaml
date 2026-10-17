@@ -1,7 +1,6 @@
 description: >-
-  A page with every placeholder written over, and no instruction of its
-  template's left, has nothing to report. A block quote of the writer's own
-  isn't an instruction.
+  A page with every placeholder written over has nothing to report, and a
+  block quote of the writer's own is the page's text.
 spec: ["7.2"]
 tags: [check]
 

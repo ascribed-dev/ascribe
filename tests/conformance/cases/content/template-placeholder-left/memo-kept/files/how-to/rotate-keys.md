@@ -5,10 +5,9 @@ description: "Replace a project's signing keys without downtime."
 ---
 
 ## Overview
+@memo: Write this section for someone who has never done the task.
 
 This guide explains how to replace the keys a project signs releases with.
-
-> Write this section for someone who has never done the task.
 
 ## Rotate the keys
 

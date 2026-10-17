@@ -14,11 +14,30 @@
 # - `about`: paragraphs of theirs that are about the template, not the page,
 #   each named by its first line and removed whole (decision 22), for what a
 #   template says about itself outside the block quotes that open and close it.
+# - `memos`: paragraphs of theirs that are instructions to the writer, each
+#   named by its text, its lines joined with a space, and written as a memo
+#   with their words and without the braces (https://github.com/ascribed-dev/ascribe/blob/main/project-docs/memos/README.md,
+#   decisions 10 and 22). A memo is about the block it touches, so one that
+#   ends its section goes to the top of the section, and one that ends a
+#   container with no heading, such as a list item, stops the script. Which
+#   paragraphs are instructions is a reading of their words: one that tells
+#   the writer what to do, or whether a part is needed, is; one that names
+#   what goes in its place, such as `{Optional: Explanatory text}`, is a
+#   placeholder, and stays one.
 # - `directives`: a directive line put before a line of theirs, at that line's
 #   indentation, such as `@steps` before a numbered procedure's first step.
 
 [how-to]
 description = "{One sentence that says what a reader can do once they've followed this page.}"
+
+# Their instructions to the writer.
+memos = [
+  "{Optional: Specify when and why your user might want to perform the task.}",
+  "{This section is optional}",
+  "{Optional: Provide a concise description of the purpose of this task. Only include this if the purpose is not clear from the task title.}",
+  "{You can use this format to describe your steps:}",
+  "{This section is optional. Include a sub-task only if the task is big and complex.}",
+]
 
 # Their procedure: the numbered steps under "{Task name }".
 [[how-to.directives]]
@@ -28,8 +47,26 @@ before = "1. {Write the step here. Use a verb to start.}"
 [concept]
 description = "{One sentence that says what the concept is and why a reader needs it.}"
 
+# Their instructions to the writer.
+memos = [
+  "{Then include a paragraph with a definition of the concept you are explaining. If more definitions are needed, include those definitions here as a bulleted list.}",
+  "{This section usually doesn't have a separate heading that explicitly says Definition; it can precede all the rest.}",
+  "{Add visual aid to complement your explanations visually.}",
+  "{Use this section to provide a reader with a context, prehistory, or background information.}",
+  "{Use this section to provide use cases and explain how a reader can benefit from a concept.}",
+  "{Use this section to compare options or alternatives.}",
+  "{Use this section to provide links to documentation related to the concept that the user can read for more information. If you can name this section manually (it is not generated automatically or has a heading pre-agreed within a team), we recommend to use \"Related concepts\" or \"Additional information\" as more descriptive ones.}",
+]
+
 [tutorial]
 description = "{One sentence that says what a reader will have learned by the end of this tutorial.}"
+
+# Their instructions to the writer.
+memos = [
+  "{This section is optional. Feel free to use some of the text below to help you get started.}",
+  "{Use this section to summarize what the user learned in the tutorial.}",
+  "{Use this section to share links to related tutorials, videos, or other documentation}.",
+]
 
 # Their procedure: the numbered steps under "{Task name}".
 [[tutorial.directives]]
@@ -39,8 +76,26 @@ before = "1. {Write the step here. Use a verb to start.}"
 [reference]
 description = "{One sentence that says what this page lists and what a reader looks up in it.}"
 
+# Their instructions to the writer.
+memos = [
+  "{This section provides a structured list of settings, field descriptions, and other reference details. This document can serve as a standalone reference or complement other types of documentation, typically at the end of a procedural document, to provide additional context. Define the scope of this reference and how it relates to other documents if applicable.}",
+  "{Choose this reference format if you want to organize the data for clarity and usability. Use tables for structured information, lists for quick references, or other structured formats that align with the reference material. Ensure consistency in formatting throughout the document.}",
+  "{Choose this reference format if you want to present the command information clearly and consistently. Use tables for structured command details, lists for quick references, or code blocks for readability. Ensure formatting aligns with the reference material and maintains consistency throughout the document.}",
+]
+
 [troubleshooting]
 description = "{One sentence that says which problems this page helps a reader solve.}"
+
+# Their instructions to the writer.
+memos = [
+  "{Describe the symptom here. For example, give the text of the error message or describe the performance issue the user might experience.}",
+  "{If there is only one cause, explain the cause here. If there are multiple causes, list one cause at a time.}",
+  "{If there is only one cause, explain the cause here.}",
+  "{If there is only one cause, explain it here. If there are multiple causes, list one cause at a time.}",
+  "{Explain what a successful result to the issue look like.}",
+  "{Explain the result of the issue when solved.}",
+  "{Add links to other sources could also aid the user in solving the issue they have with your product, task, or feature}",
+]
 
 [release-notes]
 description = "{One sentence that says what's new in this release.}"
