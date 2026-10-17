@@ -10,7 +10,7 @@ Every live line has it.
 Every live line has it, deprecated.
 
 @available: self-managed (preview 3.2, ga 3.4.1)
-Every live line has it, from inside the oldest.
+Inside the oldest line, after its start, which that line's output shows.
 
 @available: self-managed (ga 3.0, removed 3.2)
 No live or planned line has it.
@@ -26,3 +26,6 @@ The cloud build publishes it, and shows the version.
 
 @available: old
 Marked with a feature, which is reported in ascribe.toml.
+
+@available: self-managed 3.4.2
+In the oldest line from a patch version, which that line's output shows.

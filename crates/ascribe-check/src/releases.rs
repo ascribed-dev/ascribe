@@ -6,7 +6,9 @@
 
 use std::cmp::Ordering;
 
-use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Version};
+use ascribe_core::availability::{
+    AvailabilitySpec, Detail, Entry, Version, entry_text, without_versions_through,
+};
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{AvailabilityMode, ContentModel, Placement, Releases, in_line};
 
@@ -135,17 +137,20 @@ pub(crate) fn inert_issues(
             }
             continue;
         }
-        let at_or_before = |v: &Version| in_line(oldest, v) || v.compare(oldest) == Ordering::Less;
+        // What a line's output shows of the entry, so the two can't disagree.
+        let alone = AvailabilitySpec {
+            entries: vec![entry.clone()],
+            span: entry.span,
+        };
+        let simpler = without_versions_through(&alone, target, oldest)
+            .and_then(|spec| spec.entries.into_iter().next())
+            .filter(|e| entry_versions(e).is_empty());
         let last = steps.last().map_or("ga", |(_, state)| state);
         if same
-            && versions.into_iter().all(at_or_before)
+            && let Some(simpler) = simpler
             && model.state_is_available(last) == Some(true)
         {
-            let simpler = if last == "ga" {
-                target.to_owned()
-            } else {
-                format!("{target} {last}")
-            };
+            let simpler = entry_text(&simpler);
             let mut issue = issue(diagnostics::AVAILABLE_SAME_IN_EVERY_LINE)
                 .with_arg("simpler", simpler.clone());
             if fixes {
@@ -224,31 +229,6 @@ fn in_line_of(model: &ContentModel, steps: &[(Option<&Version>, &str)], line: &V
             .any(|(v, state)| v.is_some_and(|v| in_line(line, v)) && available(state))
 }
 
-/// An entry as a spec writes it: `self-managed preview 3.4`, or
-/// `self-managed (preview 3.3, ga 3.5)`.
-fn entry_text(entry: &Entry) -> String {
-    let target = &entry.target.text;
-    match &entry.detail {
-        Detail::None => target.clone(),
-        Detail::Version(v) => format!("{target} {}", v.text),
-        Detail::State {
-            state,
-            version: None,
-        } => format!("{target} {}", state.text),
-        Detail::State {
-            state,
-            version: Some(v),
-        } => format!("{target} {} {}", state.text, v.text),
-        Detail::History(steps) => {
-            let steps: Vec<String> = steps
-                .iter()
-                .map(|s| format!("{} {}", s.state.text, s.version.text))
-                .collect();
-            format!("{target} ({})", steps.join(", "))
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     #![allow(clippy::expect_used)]
@@ -280,9 +260,26 @@ mod tests {
             assert_eq!(fix.applicability, Applicability::Safe);
             assert_eq!(apply_edits(text, &fix.edits).expect("edits apply"), fixed);
         }
-        let spec = parse_availability("self-managed preview 3.4.1", 0).expect("a spec");
-        assert_eq!(inert_issues(&model, &spec, &at, true).len(), 1);
-        let spec = parse_availability("self-managed 3.5", 0).expect("a spec");
-        assert!(inert_issues(&model, &spec, &at, true).is_empty());
+        for text in ["self-managed 3.4", "self-managed preview 3.4"] {
+            let spec = parse_availability(text, 0).expect("a spec");
+            assert_eq!(inert_issues(&model, &spec, &at, true).len(), 1, "{text}");
+        }
+    }
+
+    /// A version inside the oldest line but after its start is one the
+    /// line's output shows, so the mark isn't reported.
+    #[test]
+    fn a_version_inside_the_oldest_line_is_not_offered() {
+        let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads");
+        let at = |span: Span| Location::new(FileId::new(1), span);
+        for text in [
+            "self-managed 3.4.1",
+            "self-managed preview 3.4.2",
+            "self-managed (preview 3.2, ga 3.4.1)",
+            "self-managed 3.5",
+        ] {
+            let spec = parse_availability(text, 0).expect("a spec");
+            assert!(inert_issues(&model, &spec, &at, true).is_empty(), "{text}");
+        }
     }
 }
