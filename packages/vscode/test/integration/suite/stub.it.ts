@@ -1,8 +1,8 @@
 import * as assert from "node:assert/strict";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { activated, diagnosticsOf, uriOf, waitFor, workspace } from "./helpers.js";
+import { activated, diagnosticsOf, EXTENSION_ID, uriOf, waitFor, workspace } from "./helpers.js";
 
 const stubDiagnostics = (diagnostics: vscode.Diagnostic[]) =>
   diagnostics.filter((diagnostic) => diagnostic.source === "ascribe-stub");
@@ -82,6 +82,47 @@ describe("with ascribe.toml and the stub server", () => {
     await vscode.commands.executeCommand("ascribe.restartServer");
     await api.whenSettled();
     assert.equal(api.state(), "running");
+  });
+
+  it("ships chat the skill, byte for byte the one `@ascribed/cli` ships", () => {
+    const extension = vscode.extensions.getExtension(EXTENSION_ID);
+    assert.ok(extension);
+    const shipped = path.join(extension.extensionPath, "dist", "skills", "ascribe");
+    const home = path.join(extension.extensionPath, "..", "cli", "skills", "ascribe");
+    const files = (root: string) =>
+      readdirSync(root, { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => path.relative(root, path.join(entry.parentPath, entry.name)))
+        .sort();
+    assert.deepEqual(files(shipped), files(home));
+    assert.ok(files(home).includes("SKILL.md"));
+    for (const file of files(home)) {
+      assert.ok(
+        readFileSync(path.join(shipped, file)).equals(readFileSync(path.join(home, file))),
+        `dist/skills/ascribe/${file} differs from packages/cli/skills/ascribe/${file}`,
+      );
+    }
+  });
+
+  it("tells chat whether the workspace has a synced copy of the skill", async () => {
+    const api = await activated();
+    // The run made `.agents/skills/ascribe/` before VS Code started, empty: a
+    // folder made while the watcher runs can go unreported on Linux.
+    const copy = path.join(workspace(), ".agents", "skills", "ascribe", "SKILL.md");
+    await api.agents.skill.whenSettled();
+    assert.equal(api.agents.skill.synced(), false);
+
+    writeFileSync(copy, "---\nname: ascribe\n---\n");
+    await waitFor("the synced copy to be seen", async () => {
+      await api.agents.skill.whenSettled();
+      return api.agents.skill.synced();
+    });
+
+    rmSync(copy);
+    await waitFor("the synced copy to be gone", async () => {
+      await api.agents.skill.whenSettled();
+      return !api.agents.skill.synced();
+    });
   });
 
   it("reports an ascribe.path that isn't a working binary, and recovers", async () => {

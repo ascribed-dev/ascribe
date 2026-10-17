@@ -7,7 +7,8 @@
 //
 // Suites (each opens its own copy of a fixture workspace):
 //   activation  a workspace without ascribe.toml: the extension stays inactive
-//   stub        a workspace with ascribe.toml, against test/stub-server
+//   stub        a workspace with ascribe.toml, against test/stub-server, and
+//               the skill chat gets
 //   quill       a copy of examples/quill with a broken page added, against the
 //               real `ascribe lsp`. Needs ASCRIBE_BIN, the path to a built
 //               `ascribe`; skipped without it.
@@ -135,7 +136,12 @@ const suites: Suite[] = [
   {
     name: "stub",
     fixture: path.join(packageRoot, "test/fixtures/stub-project"),
-    prepare: () => ({ "ascribe.path": stubServer, "ascribe.maxCrashes": 2, ...startAll }),
+    prepare: (workspace) => {
+      // Where the suite writes a synced copy of the skill, made before VS
+      // Code starts so its watcher reports what's written in it.
+      mkdirSync(path.join(workspace, ".agents/skills/ascribe"), { recursive: true });
+      return { "ascribe.path": stubServer, "ascribe.maxCrashes": 2, ...startAll };
+    },
   },
   {
     name: "quill",

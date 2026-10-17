@@ -9,6 +9,7 @@ import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
 import { McpRegistration, type McpApi } from "./agents/mcp.js";
 import { TerminalPath, type TerminalsApi } from "./agents/terminals.js";
 import { AgentTools, type ToolsApi } from "./agents/tools.js";
+import { SyncedSkillKey, type SkillApi } from "./agents/skill.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
 import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
@@ -48,8 +49,11 @@ export interface AscribeApi {
   newPage: NewPageApi;
   /** Prompt agent, for tests. */
   promptAgent: PromptAgentApi;
-  /** What agents in VS Code get: the MCP server, the tools, and the terminals' path, for tests. */
-  agents: { mcp: McpApi; tools: ToolsApi; terminals: TerminalsApi };
+  /**
+   * What agents in VS Code get: the MCP server, the tools, the terminals'
+   * path, and whether chat has a synced skill, for tests.
+   */
+  agents: { mcp: McpApi; tools: ToolsApi; terminals: TerminalsApi; skill: SkillApi };
   /** The status bar item and the sidebar's views, for tests. */
   ui: {
     statusBar: StatusBarApi;
@@ -95,6 +99,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const tools = new AgentTools(projects, preview.review);
   tools.register();
   const terminals = new TerminalPath(context, projects);
+  const skill = new SyncedSkillKey();
+  skill.register();
 
   const lenses = new BuildLenses();
   const checks = new EveryBuildChecks(projects);
@@ -159,6 +165,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     mcp,
     tools,
     terminals,
+    skill,
     actions,
     newPage,
     formatter,
@@ -256,7 +263,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     actions: actions.api,
     newPage: newPage.api,
     promptAgent: promptAgent.api,
-    agents: { mcp: mcp.api, tools: tools.api, terminals: terminals.api },
+    agents: { mcp: mcp.api, tools: tools.api, terminals: terminals.api, skill: skill.api },
     ui: {
       statusBar: statusBar.api,
       switchProject: switchProject.api,

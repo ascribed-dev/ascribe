@@ -27,7 +27,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
 import {
@@ -35,6 +35,7 @@ import {
   extension,
   npmPackages,
   root,
+  skill,
   targets,
   type PackageManifest,
   type Target,
@@ -231,6 +232,17 @@ function checkVsix(file: string, target: Target): void {
     "extension/dist/webview/elements.js",
   ]) {
     if (!listing.includes(needed)) fail(`${where} has no ${needed}`);
+  }
+  // The skill chat gets, byte for byte the one `@ascribed/cli` ships.
+  const skillHome = join(root, dirname(skill));
+  for (const source of listFiles(skillHome)) {
+    const name = relative(skillHome, source).split("\\").join("/");
+    const packed = `extension/dist/skills/ascribe/${name}`;
+    if (!listing.includes(packed)) fail(`${where} has no ${packed}`);
+    const shipped = execFileSync("unzip", ["-p", file, packed]);
+    if (!shipped.equals(readFileSync(source))) {
+      fail(`${where} dist/skills/ascribe/${name} differs from ${dirname(skill)}/${name}`);
+    }
   }
   const bins = listing.split("\n").filter((l) => l.includes("extension/bin/") && !l.endsWith("/"));
   if (bins.length !== 1) fail(`${where} has ${bins.length} binaries; it should have one`);

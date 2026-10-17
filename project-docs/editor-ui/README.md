@@ -135,3 +135,4 @@ Each phase's result is something a person can open or run. None builds a layer f
 
 - The webview question in decision 4.
 - A drop handler that asks for alt text, if phase 7's check finds VS Code's drop doesn't pass `ascribe check`.
+- Phase 7's drop and paste check, by hand, isn't run yet: it needs VS Code with its Markdown extension, and its steps are in the pull request that shipped the skill (#544). Its result says whether the editor's page gets `markdown.copyFiles.destination`, or the drop handler above is due.

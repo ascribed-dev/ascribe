@@ -1,0 +1,1 @@
+- **VS Code's chat has Ascribe's skill in a project that never ran `ascribe agents sync`.** The extension ships the skill, and offers it to chat while no workspace folder has a synced copy in `.agents/skills/`, `.claude/skills/`, or `.github/skills/`; once one does, chat lists only the project's. See [Agents](docs/content/agents/index.md#vs-code).
