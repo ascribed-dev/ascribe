@@ -286,6 +286,7 @@ interface Manifest {
       >;
     };
     languageModelTools: { name: string; displayName: string; userDescription: string }[];
+    chatSkills: { path: string; when?: string }[];
     mcpServerDefinitionProviders: { id: string; label: string }[];
     menus: Record<string, unknown[]>;
   };
@@ -442,6 +443,14 @@ function agentTools(manifest: Manifest): Section {
         contributes.mcpServerDefinitionProviders.map((provider) => [
           code(provider.id),
           provider.label,
+        ]),
+      ),
+      "The skill, offered to VS Code's chat:",
+      table(
+        ["File", "When"],
+        contributes.chatSkills.map((skill) => [
+          code(skill.path),
+          skill.when === undefined ? "Always" : code(skill.when),
         ]),
       ),
     ].join("\n\n"),

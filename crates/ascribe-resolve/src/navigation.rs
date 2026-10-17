@@ -76,9 +76,10 @@ impl Section {
     }
 
     /// Its label as the source has it, whatever a build publishes: its
-    /// `label` from the file, else its own page's title, else its folder's
-    /// name with `-` and `_` as spaces and its first letter capitalized, and
-    /// "Start" for the root.
+    /// `label` from the file, else its own page's title, as plain text when
+    /// its type's `title` sets `inline`, else its folder's name with `-` and
+    /// `_` as spaces and its first letter capitalized, and "Start" for the
+    /// root.
     pub fn label(&self, project: &Project) -> String {
         if let Some(label) = &self.label {
             return label.clone();
@@ -88,7 +89,10 @@ impl Section {
         }
         self.page
             .as_ref()
-            .and_then(|own| project.file(own)?.title.clone())
+            .and_then(|own| {
+                let file = project.file(own)?;
+                Some(as_title(file, project.model(), file.title.as_deref()?))
+            })
             .unwrap_or_else(|| folder_label(&self.folder))
     }
 }
@@ -463,27 +467,32 @@ impl<'a> Sharer<'a> {
     }
 }
 
-/// A page's label as the source has it, before a build: its `nav-label` as
-/// plain text, else its title, else its file name without `.md`.
+/// A page's label as the source has it, before a build: its `nav-label`,
+/// else its title, else its file name without `.md`, read by [`as_title`].
 pub fn file_label(file: &FileIndex, model: &ContentModel) -> String {
     let own = file
         .frontmatter
         .as_ref()
         .and_then(|f| f.get(NAV_LABEL))
         .and_then(|l| l.as_str());
+    match own.or(file.title.as_deref()) {
+        Some(text) => as_title(file, model, text),
+        None => stem(&file.path).to_owned(),
+    }
+}
+
+/// `text` read as `file`'s title is before a build: as plain text when its
+/// type's `title` sets `inline`, as the navigation has it (decision #594),
+/// else as written.
+fn as_title(file: &FileIndex, model: &ContentModel, text: &str) -> String {
     let inline = file
         .content_type(model)
         .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"))
         .is_some_and(|f| f.inline.is_some());
-    match own {
-        Some(own) if inline => {
-            ascribe_model::inline::plain_text(&ascribe_model::inline::parse(own, &|_| None))
-        }
-        Some(own) => own.to_owned(),
-        None => file
-            .title
-            .clone()
-            .unwrap_or_else(|| stem(&file.path).to_owned()),
+    if inline {
+        ascribe_model::inline::plain_text(&ascribe_model::inline::parse(text, &|_| None))
+    } else {
+        text.to_owned()
     }
 }
 

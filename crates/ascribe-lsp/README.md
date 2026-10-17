@@ -487,7 +487,7 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 
 - Paths are content paths, relative to `contentUri`, the content root.
 - A page's `label` is its name where it's an entry in a list, as the
-  navigation shows it: its `nav-label` as plain text, else its title, else its
+  navigation shows it: as plain text, its `nav-label`, else its title, else its
   file name without `.md`. `navLabel` is the `nav-label` as written, or `null`.
 - `incoming` is how many links from other files, and includes, name the page.
 - `orphans` are the pages whose `incoming` is 0, other than index pages
@@ -717,9 +717,11 @@ its nested sections', follows it.
 
 Find All References answers in `ascribe.toml` too: on a content model entry's
 declaration (a phrase's key, or the table header of a feature, dimension,
-note type, or widget), the places that use that entry, as on a use of it in a
-page. A glossary term is declared by its heading on its glossary page, not in
-`ascribe.toml`. Elsewhere in the file it answers `null`.
+note type, widget, or page content type), the places that use that entry, as
+on a use of it in a page. A content type's uses are the `type` values of the
+pages that name it; one declared only through its nested tables is asked about
+at the first of them. A glossary term is declared by its heading on its
+glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
 
 ## How it works
 

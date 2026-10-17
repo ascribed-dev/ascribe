@@ -2,6 +2,7 @@
 // MCP server it offers, the diagnostics it keeps with their versions, and the
 // tools' answers in `ascribe check`'s and review's shapes.
 import { readFileSync } from "node:fs";
+import * as path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { changesReport, MAX_PAGES } from "../../src/agents/changes.js";
 import { mcpServerSpec } from "../../src/agents/mcpServer.js";
@@ -14,6 +15,7 @@ import {
   type ProblemsInput,
 } from "../../src/agents/problems.js";
 import { PublishedDiagnostics, type ProtocolDiagnostic } from "../../src/agents/published.js";
+import { anySynced, syncedSkillPaths, WATCHED } from "../../src/agents/synced.js";
 import type { ResolvedBinary } from "../../src/binary.js";
 import type { ChangedPage, ChangesResult } from "../../src/shapes.js";
 
@@ -473,5 +475,41 @@ describe("an agent beside the editor", () => {
       program: "C:/w/node_modules/.bin/ascribe.cmd",
       directory: "C:\\w\\node_modules\\.bin",
     });
+  });
+});
+
+describe("a synced copy of the skill", () => {
+  const at = (...files: string[]) => {
+    const present = new Set(files.map((file) => path.normalize(file)));
+    return (file: string) => Promise.resolve(present.has(path.normalize(file)));
+  };
+
+  it("is looked for in each folder chat loads skills from", () => {
+    expect(syncedSkillPaths("/w").map((p) => p.split(path.sep).join("/"))).toEqual([
+      "/w/.github/skills/ascribe/SKILL.md",
+      "/w/.claude/skills/ascribe/SKILL.md",
+      "/w/.agents/skills/ascribe/SKILL.md",
+    ]);
+  });
+
+  it("counts in any workspace folder, and only at a workspace folder's top", async () => {
+    expect(await anySynced(["/w"], at())).toBe(false);
+    expect(await anySynced(["/w"], at("/w/.agents/skills/ascribe/SKILL.md"))).toBe(true);
+    expect(await anySynced(["/w"], at("/w/.claude/skills/ascribe/SKILL.md"))).toBe(true);
+    expect(await anySynced(["/w"], at("/w/.github/skills/ascribe/SKILL.md"))).toBe(true);
+    expect(await anySynced(["/a", "/b"], at("/b/.agents/skills/ascribe/SKILL.md"))).toBe(true);
+    // `sync` writes at the repository's root; a workspace opened below it reads none.
+    expect(await anySynced(["/r/docs"], at("/r/.agents/skills/ascribe/SKILL.md"))).toBe(false);
+    // Another skill, or the folder without its SKILL.md, isn't a copy.
+    expect(await anySynced(["/w"], at("/w/.agents/skills/other/SKILL.md"))).toBe(false);
+    expect(await anySynced([], at())).toBe(false);
+  });
+
+  it("is watched by its file and every folder above it", () => {
+    expect(WATCHED).toBe(
+      "{.github,.github/skills,.github/skills/ascribe,.github/skills/ascribe/SKILL.md," +
+        ".claude,.claude/skills,.claude/skills/ascribe,.claude/skills/ascribe/SKILL.md," +
+        ".agents,.agents/skills,.agents/skills/ascribe,.agents/skills/ascribe/SKILL.md}",
+    );
   });
 });

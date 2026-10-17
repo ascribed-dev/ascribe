@@ -1,5 +1,5 @@
 # The extension package holds only what runs: the bundle, the webview files,
-# the grammars, the icon, and the one binary its target needs (release
+# the skill, the grammars, the icon, and the one binary its target needs (release
 # packaging stages it under bin/). Everything else is excluded.
 **
 !package.json
@@ -9,6 +9,7 @@
 !THIRD-PARTY-NOTICES
 !dist/extension.cjs
 !dist/webview/**
+!dist/skills/**
 !syntaxes/**
 !media/**
 !bin/**

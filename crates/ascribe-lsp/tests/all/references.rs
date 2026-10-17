@@ -337,6 +337,91 @@ fn an_entry_is_found_from_its_declaration_in_the_model() {
     );
 }
 
+#[test]
+fn a_page_type_is_found_where_pages_name_it() {
+    // `guide` has its own table; `page` is declared only through its
+    // frontmatter's.
+    let model = format!(
+        "{MODEL}\n[types.guide]\npurpose = \"Teach a task\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\n\n[types.page.frontmatter]\ntitle = \"string\"\n"
+    );
+    let guide = "---\ntitle: Guide\ntype: guide\n---\n\n# Guide\n";
+    let f = Fixture::new(
+        &model,
+        &[
+            // With a comment after a tab.
+            (
+                "docs/index.md",
+                "---\ntitle: Home\ntype: page\t# the default\n---\n\n# Home\n",
+            ),
+            ("docs/guide.md", guide),
+            // Written on Windows, with a comment after the value.
+            (
+                "docs/other.md",
+                "---\r\ntitle: Other\r\ntype: guide # how-to\r\n---\r\n\r\n# Other\r\n",
+            ),
+            ("docs/_setup.md", "---\ntype: guide\n---\n\n## Setup\n"),
+            (
+                "docs/glossary.md",
+                "---\ntitle: Glossary\n---\n\n## API key\n@term\n\nA secret.\n",
+            ),
+        ],
+    );
+    let mut client = started(&f);
+    // At the header of its table, with its declaration first.
+    let guides = references_in(
+        &mut client,
+        &f,
+        "ascribe.toml",
+        at(&model, "[types.guide]", 3),
+        true,
+    );
+    assert_eq!(
+        guides,
+        pairs(&[
+            ("../ascribe.toml", "[types.guide]"),
+            ("guide.md", "guide"),
+            ("other.md", "guide"),
+        ])
+    );
+    // At the first of its nested tables, when it has no table of its own.
+    assert_eq!(
+        references_in(
+            &mut client,
+            &f,
+            "ascribe.toml",
+            at(&model, "[types.page.frontmatter]", 8),
+            true,
+        ),
+        pairs(&[
+            ("../ascribe.toml", "[types.page.frontmatter]"),
+            ("index.md", "page"),
+        ])
+    );
+    // A page's `type` value asks about the type it names.
+    assert_eq!(
+        references(
+            &mut client,
+            &f,
+            "guide.md",
+            at(guide, "type: guide", 7),
+            false
+        ),
+        pairs(&[("guide.md", "guide"), ("other.md", "guide")])
+    );
+    // The Content model view counts as many pages as it finds.
+    let r = inventory(&mut client, &f.path("docs/index.md"));
+    let counted = |key: &str| {
+        r["model"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["kind"] == "type" && e["key"] == key)
+            .map(|e| e["uses"].clone())
+    };
+    assert_eq!(counted("guide"), Some(json!(2)));
+    assert_eq!(counted("page"), Some(json!(1)));
+}
+
 fn inventory(client: &mut Client, path: &Path) -> Value {
     client
         .request(
