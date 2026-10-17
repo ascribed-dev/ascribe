@@ -9,7 +9,8 @@ use std::sync::{Arc, OnceLock};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
-    ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList, SourceBound,
+    ContentModel, LOCK_FILE, Lock, LockedSource, NAV_FILE, NavFile, PERMALINKS_FILE, PermalinkList,
+    SourceBound,
 };
 use ascribe_resolve::{
     CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
@@ -28,6 +29,10 @@ pub const LOCK_FILE_ID: FileId = FileId::new(0x7FFF_FFFF);
 /// The id of `ascribe.permalinks` (SPEC §7.5), for locations in it: just
 /// before the lock's.
 pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
+
+/// The id of `ascribe.nav` (SPEC §7.8), for locations in it: just before
+/// the permalinks list's.
+pub const NAV_FILE_ID: FileId = FileId::new(0x7FFF_FFFD);
 
 /// The id of the first image file under the content root, for locations
 /// in image files: the image checks list them in path order, and number them
@@ -72,8 +77,8 @@ pub struct FileEntry<'a> {
     /// The text.
     pub text: &'a str,
     /// The path relative to the content root, for a source file or an image
-    /// file under it; `None` for the content model, the lock, and the
-    /// permalinks list.
+    /// file under it; `None` for the content model, the lock, the
+    /// permalinks list, and the navigation file.
     pub content_path: Option<&'a RelPath>,
 }
 
@@ -242,6 +247,10 @@ pub struct Project {
     permalinks_text: Option<String>,
     /// `ascribe.permalinks` read, or its problems, when there's one.
     permalinks: Option<Result<PermalinkList, Vec<Issue>>>,
+    /// The text of `ascribe.nav`, when there is one.
+    nav_text: Option<String>,
+    /// `ascribe.nav` read, or its problems, when there's one.
+    nav: Option<Result<NavFile, Vec<Issue>>>,
     /// The image files under the content root, by path from the project
     /// root and from the content root, once the image checks have listed
     /// them.
@@ -555,6 +564,13 @@ impl Project {
         let permalinks = permalinks_text
             .as_deref()
             .map(|text| PermalinkList::parse(text, PERMALINKS_FILE_ID));
+        let nav_text = RelPath::parse(NAV_FILE)
+            .ok()
+            .and_then(|path| fs.read_file(&path).ok())
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+        let nav = nav_text
+            .as_deref()
+            .map(|text| NavFile::parse(text, NAV_FILE_ID));
         Project {
             root,
             layout,
@@ -569,6 +585,8 @@ impl Project {
             lock,
             permalinks_text,
             permalinks,
+            nav_text,
+            nav,
             images: OnceLock::new(),
             link_index: OnceLock::new(),
             today: None,
@@ -694,6 +712,11 @@ impl Project {
         self.permalinks.as_ref()
     }
 
+    /// `ascribe.nav` read, or its problems, when the project has one.
+    pub fn nav(&self) -> Option<&Result<NavFile, Vec<Issue>>> {
+        self.nav.as_ref()
+    }
+
     /// The pin of the source `name` in another repository, when
     /// `ascribe.lock` can be read and pins it to the repository the content
     /// model names.
@@ -735,7 +758,7 @@ impl Project {
             });
         }
         if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
-            && id.index() < PERMALINKS_FILE_ID.index()
+            && id.index() < NAV_FILE_ID.index()
         {
             let (path, content) = self.images.get()?.get(i as usize)?;
             return Some(FileEntry {
@@ -757,6 +780,14 @@ impl Project {
             return self.lock_text.as_deref().map(|text| FileEntry {
                 id,
                 display_path: LOCK_FILE.to_owned(),
+                text,
+                content_path: None,
+            });
+        }
+        if id == NAV_FILE_ID {
+            return self.nav_text.as_deref().map(|text| FileEntry {
+                id,
+                display_path: NAV_FILE.to_owned(),
                 text,
                 content_path: None,
             });
@@ -783,7 +814,7 @@ impl Project {
     }
 
     /// The path a report shows for a file id: [`FileEntry::display_path`] for
-    /// the content model, the lock, the permalinks list, and a source file, and the code file's
+    /// the content model, the lock, the permalinks list, the navigation file, and a source file, and the code file's
     /// path for a code file a snippet read.
     pub fn display_path(&self, id: FileId) -> Option<String> {
         match self.file(id) {
@@ -991,7 +1022,7 @@ pub(crate) fn memo_id(i: usize) -> FileId {
 /// The id of the image at position `i` of [`Project::images`].
 pub(crate) fn image_id(i: usize) -> FileId {
     // A project has far fewer images than the ids from IMAGE_FILE_IDS to the
-    // permalinks list's.
+    // navigation file's.
     #[allow(clippy::cast_possible_truncation)]
     FileId::new(IMAGE_FILE_IDS + i as u32)
 }

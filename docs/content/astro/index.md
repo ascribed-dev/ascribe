@@ -83,7 +83,7 @@ Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`. The route 
 A layout loads the element library, and shows the sidebar, the page's availability, and its table of contents:
 
 @available: ascribe 0.2.0
-@snippet {title=src/layouts/Docs.astro}: code:examples/astro-site/src/layouts/Docs.astro
+@snippet {title=src/layouts/Docs.astro}: code:packages/astro/starter/src/layouts/Docs.astro
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: style it, and replace any part of it with your own components; the table of contents is `headings` from `render`.
 
@@ -110,11 +110,14 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 #### The sidebar
 @available: ascribe 0.3.0
 
-Ascribe's content model doesn't order or group pages yet, so the site lists them, by their source files under the content root, in groups:
+`init` writes the site a list of its pages, by their source files under the content root, in groups:
 
-@snippet {title=src/nav.ts}: code:examples/astro-site/src/nav.ts
+@snippet {title=src/nav.ts}: code:packages/astro/starter/src/nav.ts
 
-`init` writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(nav, await getCollection("docs"), { entry })`, from `@ascribed/astro/content`, gives each page its entry and its address, the one Ascribe's links use, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(nav, entries, { name: "docs" })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions) the sidebar shows that page's line, and the list is checked against every line's pages.
+It writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(await getCollection("docs"), { nav, entry })`, from `@ascribed/astro/content`, gives each page its entry, its address, the one Ascribe's links use, and its label, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(entries, { nav, name: "docs" })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions) the sidebar shows that page's line, and the list is checked against every line's pages.
+
+@available: next
+Leave `nav` out, and delete `src/nav.ts`, and the sidebar is the project's [navigation](../navigation/index.md) instead: its sections and pages in the order `ascribe.nav` gives, or the default order, with no list for the site to keep. `sidebar(await getCollection("docs"), { entry })` is what `examples/astro-site` calls. Each group is a section, with its nested sections in `sections`, and each page's `label` is its title, with `formatted.label` its HTML when the title has code ([`sidebar()`](reference.md#sidebar)).
 
 ### 5. Build
 

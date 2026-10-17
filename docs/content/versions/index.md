@@ -173,7 +173,7 @@ The lines show wherever a build does, and a page that's the same in every line s
 
 The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them; `Versions.astro`'s are `label`, `missing`, and `archived`.
 
-The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(nav, entries, { entry })`. `npx @ascribed/astro init` writes all three into the layout.
+The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(entries, { entry })`, its navigation or, with a site's own list, `sidebar(entries, { nav, entry })`. `npx @ascribed/astro init` writes all three into the layout.
 
 `astro build` and `astro dev` build every line, and `astro dev` rebuilds them all on a change. With `[consumer] agents = true`, each line's `llms.txt` and Markdown are published at its base path, `/docs/3.4/llms.txt`, with the response headers each line's pages need. A permalink forwards to the current line, whichever lines have the page: it's the address a product prints, and it should land on the newest docs.
 

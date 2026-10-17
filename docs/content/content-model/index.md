@@ -94,7 +94,7 @@ A page says whether readers that aren't people are offered it with `listing` ([S
 |---|---|
 | `listed` | The default, when a page doesn't set it. Search engines may list it, and agents are offered it in `llms.txt`. |
 | `unquoted` | Listed, and asks not to be quoted (`nosnippet`): a search result, or an AI answer inside a search product, shows no text from it. It's in `llms.txt` and the sitemap. |
-| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt` and the sitemap. It's still built, at its address, with its Markdown version. |
+| `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt`, the sitemap, and the [navigation](../navigation/index.md#what-a-build-shows), so no sidebar drawn from it shows the page. It's still built, at its address, with its Markdown version. |
 
 ```yaml
 ---

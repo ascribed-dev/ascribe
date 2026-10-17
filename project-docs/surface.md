@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-225 in all. By severity: 42 advice, 158 error, 25 warning. By level: 200 file, 25 page. By kind of next step: 51 choose, 14 fix, 7 outside, 12 review, 141 write.
+226 in all. By severity: 42 advice, 159 error, 25 warning. By level: 201 file, 25 page. By kind of next step: 51 choose, 14 fix, 7 outside, 12 review, 142 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -334,6 +334,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC227` | `memo-outdated` | advice | write | no block of `{about}` has the words this memo quotes, so it's on the {place} and no block |
 | `ASC228` | `memo-long` | advice | write | this memo is {length} characters, over the {limit} limit |
 | `ASC229` | `template-section-empty` | advice | write | the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it |
+| `ASC230` | `nav-invalid` | error | write | ascribe.nav can't be read: {detail} |
 
 ## The VS Code extension
 
@@ -799,6 +800,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
 | `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
 | `contracts/json-reports/versions.md` | JSON reports: `ascribe versions` | reference |
+| `contracts/navigation.md` | The navigation contract | reference |
 | `contracts/output-layout.md` | Output-layout contract | reference |
 | `contracts/permalinks-list.md` | The permalinks list | reference |
 | `contracts/site-render.md` | Site-render contract | reference |
@@ -810,6 +812,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `index.md` | Ascribe documentation | index |
+| `navigation/index.md` | Navigation | reference |
 | `permalinks/index.md` | Permalinks | how-to |
 | `review/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
 | `review/index.md` | Review | how-to |
@@ -869,6 +872,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `ascribe.lock` | `ascribe sources fetch` and `ascribe sources update`: the commit each source in another repository is pinned to. | Yes |
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
+| `ascribe.nav` | You do: the order of the project's sections and pages, and their labels, beside `ascribe.toml`. Ascribe reads it; with none, a project has the default order. | Yes |
 | `memos/` | You do: memo files, which say why a page is written the way it is. Ascribe reads them, and writes one only when you ask: the editor's **Ascribe: Add a memo** creates one, and a rename (`ascribe rename`, `F2`, or moving a file in the editor) rewrites the `about` of each that names what it renames. They're in no output. | Yes |
 | `.vale.ini` and `.vale/` | `ascribe vale eject`, once. From then on they're yours, and Ascribe doesn't write them again. | Yes |
 | `templates/` | `ascribe templates eject`, once for each template: the template, its guide, and Ascribe's notes on the type, in `templates/` or the folder `--to` names, and `templates.lock` beside them, which records what each was copied from. From then on the templates are yours, and Ascribe doesn't write them again. | Yes |

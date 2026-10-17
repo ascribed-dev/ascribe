@@ -33,6 +33,7 @@ const COPIED: &[&str] = &[
     "docs",
     ".github/workflows",
     "crates/ascribe-cli/tests/output",
+    "packages/astro/starter",
     // What the source's examples were tested with.
     "ascribe.examples.toml",
     "examples.observations",

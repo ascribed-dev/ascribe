@@ -23,9 +23,9 @@
 //   import Head from "@ascribed/astro/Head.astro";                   // <Head entry={entry} /> in <head>
 //   import Versions from "@ascribed/astro/Versions.astro";           // the lines that have the page
 //
-//   // the sidebar: src/nav.ts's list, checked against the collection
+//   // the sidebar: the project's navigation, joined to the collection
 //   import { sidebar } from "@ascribed/astro/content";
-//   const groups = sidebar(nav, await getCollection("docs"));
+//   const groups = sidebar(await getCollection("docs"));
 //
 //   // src/pages/404.astro
 //   import MissingPermalink from "@ascribed/astro/MissingPermalink.astro"; // a permalink that isn't here

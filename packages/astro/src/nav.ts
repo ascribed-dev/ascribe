@@ -1,8 +1,7 @@
-// A site's sidebar: its list of pages, which the starter writes as the site's
+// A site's sidebar: the project's navigation, `_ascribe/nav.json` in a
+// build's site output (the navigation contract), joined to the collection;
+// or a site's own list of pages, which the starter writes as the site's
 // `src/nav.ts` (`npx @ascribed/astro init`), checked against the collection.
-// Ascribe's content model has no page order or grouping yet, so the site keeps
-// the list, and the check keeps it complete: `ascribe.toml` giving a site its
-// navigation is the surface audit's finding 28, which has no design yet.
 import { slug } from "github-slugger";
 
 /** A group of the sidebar: a label, and its pages' source files, in order. */
@@ -12,16 +11,66 @@ export interface NavGroup {
   pages: string[];
 }
 
-/** A page of the sidebar: its collection entry, and its address. */
+/** A label in the site output's formatted form: HTML, with code spans as `<code>`. */
+export interface Formatted {
+  label: string;
+}
+
+/** A page of the sidebar: its collection entry, its address, and its label. */
 export interface SidebarPage<E> {
   entry: E;
   href: string;
+  /** Its label as plain text: its title. */
+  label: string;
+  /** Its label as HTML, when the title is read with inline markup. */
+  formatted?: Formatted;
 }
 
-/** A group of the sidebar, each of its pages with its entry. */
+/**
+ * A group of the sidebar: a section of the navigation, or a group of a
+ * site's own list. `pages` starts with the section's own page when that's
+ * its `index.md`; an own page beside the folder (`checks/diagnostics.md`
+ * for `checks/diagnostics/`) is among the parent's pages instead, and the
+ * nested group sits right after it.
+ */
 export interface SidebarGroup<E> {
   label: string;
+  /** Its label as HTML, when it's its own page's title, read with inline markup. */
+  formatted?: Formatted;
+  /** The folder, from the content root, ending in `/`; absent for a group of a site's own list. */
+  folder?: string;
+  /** Its own page, when the build offers one. */
+  page?: SidebarPage<E>;
   pages: SidebarPage<E>[];
+  /** Its nested sections, in order; empty for a group of a site's own list. */
+  sections: SidebarGroup<E>[];
+}
+
+/** A page in `_ascribe/nav.json`. */
+export interface NavPage {
+  /** Its path from the content root, as its record's `source`. */
+  source: string;
+  label: string;
+  formatted?: Formatted;
+  /** Its content type. */
+  type?: string;
+}
+
+/** A section in `_ascribe/nav.json`. */
+export interface NavSection {
+  /** From the content root, ending in `/`; `""` for the root. */
+  folder: string;
+  label: string;
+  formatted?: Formatted;
+  page?: NavPage;
+  pages: NavPage[];
+  sections: NavSection[];
+}
+
+/** `_ascribe/nav.json`. */
+export interface Navigation {
+  version: number;
+  root: NavSection;
 }
 
 /** What the check needs of a collection entry: its id, and the file it was loaded from. */
@@ -55,6 +104,66 @@ export function pageRoute(id: string, basePath: string, trailingSlash: "always" 
 }
 
 /**
+ * The sidebar's groups from the project's navigation: the root's own page
+ * and pages under its label, "Start" unless `ascribe.nav` gives another,
+ * when it has any, then each top section, each page with its entry and
+ * address. `source` gives an entry's page's source path, which the
+ * navigation names it by. Throws, naming each, when the navigation names a
+ * page the collection has no entry for.
+ */
+export function navigationGroups<E extends NavEntry>(
+  navigation: Navigation,
+  entries: readonly E[],
+  route: (entry: E) => string,
+  source: (entry: E) => string,
+): SidebarGroup<E>[] {
+  const bySource = new Map(entries.map((entry) => [source(entry), entry]));
+  const missing: string[] = [];
+  const page = (nav: NavPage): SidebarPage<E>[] => {
+    const entry = bySource.get(nav.source);
+    if (entry === undefined) {
+      missing.push(nav.source);
+      return [];
+    }
+    return [
+      {
+        entry,
+        href: route(entry),
+        label: nav.label,
+        ...(nav.formatted === undefined ? {} : { formatted: nav.formatted }),
+      },
+    ];
+  };
+  const group = (section: NavSection, parent: NavSection | undefined): SidebarGroup<E> => {
+    const own = section.page === undefined ? [] : page(section.page);
+    // An own page beside the folder is one of the parent's pages.
+    const beside =
+      section.page !== undefined &&
+      parent?.pages.some((other) => other.source === section.page?.source) === true;
+    return {
+      label: section.label,
+      ...(section.formatted === undefined ? {} : { formatted: section.formatted }),
+      folder: section.folder,
+      ...(own[0] === undefined ? {} : { page: own[0] }),
+      pages: [...(beside ? [] : own), ...section.pages.flatMap(page)],
+      sections: section.sections.map((nested) => group(nested, section)),
+    };
+  };
+  const { root } = navigation;
+  const top = { ...group(root, undefined), sections: [] };
+  const groups = [
+    ...(top.pages.length === 0 ? [] : [top]),
+    ...root.sections.map((section) => group(section, root)),
+  ];
+  if (missing.length > 0) {
+    throw new Error(
+      `@ascribed/astro: the project's navigation (_ascribe/nav.json) names pages the collection has no entry for:\n${[...new Set(missing)].map((file) => `- ${file}`).join("\n")}\nBuild the project again (\`ascribe build\`), so the navigation and the pages are from one build.`,
+    );
+  }
+  return groups;
+}
+
+/**
  * The ways the list and the collection disagree, as sentences: a page the
  * list leaves out, a file it names that isn't a page, and a page it names twice.
  * `source` names an entry for a person, by its source file where it can.
@@ -82,9 +191,10 @@ export function navProblems(
 }
 
 /**
- * The sidebar's groups, each page with its entry and address. Throws, naming
- * each, when the list leaves out a page of the collection, names a file that
- * isn't one, or names a page twice, so the list stays complete.
+ * The sidebar's groups from a site's own list, each page with its entry, its
+ * address, and its label, which `label` gives, or else its entry id. Throws,
+ * naming each, when the list leaves out a page of the collection, names a
+ * file that isn't one, or names a page twice, so the list stays complete.
  *
  * A versioned build's collection has every line's pages, and the list is
  * checked against them all: `id` gives an entry's id within its line, and
@@ -100,6 +210,7 @@ export function sidebarGroups<E extends NavEntry>(
     id: (entry) => entry.id,
     shown: () => true,
   },
+  label?: (entry: E) => string | undefined,
 ): SidebarGroup<E>[] {
   // A page in several lines is one page of the list, and one problem.
   const checked = new Map<NavEntry, E>(
@@ -122,8 +233,11 @@ export function sidebarGroups<E extends NavEntry>(
     label: group.label,
     pages: group.pages.flatMap((file) => {
       const entry = byId.get(entryId(file));
-      return entry === undefined ? [] : [{ entry, href: route(entry.id) }];
+      return entry === undefined
+        ? []
+        : [{ entry, href: route(entry.id), label: label?.(entry) ?? entry.id }];
     }),
+    sections: [],
   }));
 }
 

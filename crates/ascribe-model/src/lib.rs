@@ -14,6 +14,7 @@
 //! | [`pattern`] | [`Pattern`]: the glob syntax of `files` and fragment patterns |
 //! | [`examples`] | [`ExamplesConfig`] and [`Observation`]: a source's `ascribe.examples.toml`, and what `ascribe observe` writes beside it |
 //! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
+//! | [`nav`] | [`NavFile`]: `ascribe.nav`, the order of the project's sections and pages |
 //! | [`permalinks`] | [`PermalinkList`]: `ascribe.permalinks`, the project's permalinks and where each is declared |
 //! | [`vale`] | [`vale::Preset`]: the Vale configurations `[checks.vale] preset` names |
 //! | `crawlers` | [`known_crawlers`]: the crawlers Ascribe knows, by purpose, from `data/crawlers.toml` |
@@ -45,6 +46,7 @@ mod loader;
 pub mod lock;
 pub mod model;
 mod names;
+pub mod nav;
 pub mod pattern;
 mod permalink_names;
 pub mod permalinks;
@@ -65,6 +67,7 @@ pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;
 pub use names::{KEY_RULE, NAME_WORD_RULE, edit_distance, is_key, is_name_word, suggest};
+pub use nav::{NAV_FILE, NAV_VERSION, NavFile, NavSection};
 pub use pattern::{Pattern, PatternError};
 pub use permalinks::{
     Current, ListedAlias, ListedPermalink, ListedRetired, PERMALINKS_FILE, PERMALINKS_VERSION,

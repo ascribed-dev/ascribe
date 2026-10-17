@@ -19,4 +19,4 @@
   # (../ascribe.examples.toml and its observations), or the changelog, which the site renders with
   # the entries in ../changes not yet gathered into it, changed. A build hook's
   # build (the canary's) is never skipped.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/ascribe-cli/tests/output ../ascribe.examples.toml ../examples.observations ../CHANGELOG.md ../changes ../scripts/release/changes.ts"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/ascribe-cli/tests/output ../packages/astro/starter ../ascribe.examples.toml ../examples.observations ../CHANGELOG.md ../changes ../scripts/release/changes.ts"

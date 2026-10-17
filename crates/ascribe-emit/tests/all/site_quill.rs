@@ -43,6 +43,7 @@ fn each_build_lists_its_pages_assets_and_schema() {
         let files: Vec<String> = output(build).into_keys().collect();
         let mut expected = vec![
             "_ascribe/headers.json",
+            "_ascribe/nav.json",
             "_ascribe/pages.json",
             "_ascribe/permalinks.json",
             "_ascribe/schema.ts",

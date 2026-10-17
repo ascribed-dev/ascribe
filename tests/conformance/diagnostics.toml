@@ -4228,3 +4228,16 @@ area = "pages"
 when = "A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at"
 message = "the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it"
 fix = "Write the section's text under its heading. The template gives it only memos, its instructions to the writer, which are never published, so left as it is the section builds as a heading with nothing under it. Follow each memo, then delete it or keep it. If the page doesn't need the section, remove its heading and its memos."
+
+[[diagnostic]]
+code = "ASC230"
+slug = "nav-invalid"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.8"
+reference = "navigation/index.md#the-file"
+row = "Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it"
+message = "ascribe.nav can't be read: {detail}"
+fix = "Correct the file to the shape the reference gives it: `version = 1`, and a `[[sections]]` table for each section listed, with `folder`, a path from the content root ending in `/`, or `\"\"` for the root, and optionally `pages`, a list of file names in that folder, and `label`. Until it reads, every sidebar has the default order, as if the project had no file."

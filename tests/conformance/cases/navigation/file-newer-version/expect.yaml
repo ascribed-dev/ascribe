@@ -1,0 +1,8 @@
+description: >-
+  A file of a version this processor doesn't read is invalid, and the
+  project has the default order.
+spec: ["7.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-invalid, file: ascribe.nav, line: 1}

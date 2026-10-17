@@ -616,10 +616,11 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
 /// The reference pages a diagnostic's entry can send its reader on to, and
 /// what the entry calls each: a page, from the content root, and its parts,
 /// as `content-model/checks.md`.
-const REFERENCES: [(&str, &str); 3] = [
+const REFERENCES: [(&str, &str); 4] = [
     ("writing/directives.md", "directive reference"),
     ("writing/memo-files.md", "memo files reference"),
     ("content-model/index.md", "`ascribe.toml` reference"),
+    ("navigation/index.md", "navigation reference"),
 ];
 
 /// The files of the reference pages, relative to `docs/content/`, each with

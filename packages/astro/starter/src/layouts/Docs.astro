@@ -39,7 +39,7 @@ const { available } = page(entry);
 // The sidebar: src/nav.ts's groups, each page with its address. The build
 // fails when the list leaves out a page, or names one that doesn't exist.
 // With a versioned build, it shows the pages of the line this page is in.
-const groups = sidebar(nav, await getCollection("docs"), { entry });
+const groups = sidebar(await getCollection("docs"), { nav, entry });
 ---
 
 <!doctype html>

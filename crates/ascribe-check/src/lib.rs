@@ -75,7 +75,7 @@ pub use page::{
 };
 pub use project::{
     FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MEMO_FILE_IDS, MODEL_FILE,
-    ModelFile, PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
+    ModelFile, NAV_FILE_ID, PERMALINKS_FILE_ID, Project, ReadFailure, SourceFile,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};
@@ -117,11 +117,15 @@ pub(crate) fn check_files_with(
         out.extend(across.remove(&file.id).unwrap_or_default());
     }
     // The lock and the copies come next to the content model, then the
-    // permalinks list, then the unused entries of the content model; whether
-    // a copy is used is known once every file's snippets have been read.
+    // permalinks list and the navigation file, then the unused entries of the
+    // content model; whether a copy is used is known once every file's
+    // snippets have been read.
     let mut sources = check_sources(project);
     sources.extend(check_examples(project));
     sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
+    if let Some(Err(problems)) = project.nav() {
+        sources.extend(problems.iter().map(Diagnostic::from_issue));
+    }
     sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
     // The image files' come last, in path order.

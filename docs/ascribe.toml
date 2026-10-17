@@ -195,6 +195,7 @@ include = [                               # what's readable; everything else isn
   ".github/workflows/**",
   "crates/ascribe-cli/tests/output/**",
   "examples/**",
+  "packages/astro/starter/**",
   "site/demo/**",
 ]
 ignore = ["**/node_modules/**"]

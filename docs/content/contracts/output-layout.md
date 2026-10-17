@@ -48,7 +48,7 @@ Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section wh
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
-**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), and the headers its files need (`_ascribe/headers.json`, §1.4).
+**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), the headers its files need (`_ascribe/headers.json`, §1.4), and its navigation (`_ascribe/nav.json`, §1.6).
 
 ### 1.2 The permalinks list
 @available: ascribe 0.3.0
@@ -231,6 +231,11 @@ A project with `[releases]` (content-model.md §7.1) has `<output-dir>/_ascribe/
 | `pages.<path>.replaced-by` | The page that says it replaces this one, when that page is in `pages` too; the first by path when more than one does. Absent otherwise. A site lists a page's lines together with those of the pages these lead to, so a page's old and new addresses link to each other. |
 
 A later version adds keys and changes none of these.
+
+### 1.6 The navigation
+@available: next
+
+The site output holds `_ascribe/nav.json`: the build's share of the project's navigation (SPEC §7.8), the sections and pages in order with their labels, for a site to draw its sidebar from, joined to the page records (§1.3) on `source`. It's `generated` in the manifest, and written for every build, with an empty root section when the build has no pages. Its fields, and how a reader places a nested section, are the [navigation contract](navigation.md). A versioned build's lines each have their own, in their own roots.
 
 ## 2. What Ascribe owns
 
