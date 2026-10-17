@@ -120,7 +120,7 @@ pub(crate) fn content_folder(ctx: &Ctx, uri: &str) -> Result<RelPath, String> {
 
 /// The project as a page starts in it: its content model and its files,
 /// with no sources, which a page's start doesn't read.
-fn project(ctx: &Ctx) -> ascribe_check::Project {
+pub(crate) fn project(ctx: &Ctx) -> ascribe_check::Project {
     let root = ctx
         .config
         .parent()

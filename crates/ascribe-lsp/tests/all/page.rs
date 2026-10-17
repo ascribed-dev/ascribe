@@ -103,6 +103,20 @@ fn a_page_outside_any_heading_says_what_it_is_and_what_links_to_it() {
             "type": "page",
             "address": "/guide/",
             "markdownAddress": null,
+            "description": null,
+            "review": null,
+            "availability": null,
+            "builds": [{ "name": "site", "leftOut": null }],
+            "listing": {
+                "build": "site",
+                "listing": "listed",
+                "from": "default",
+                "rule": null,
+                "uri": null,
+                "range": null,
+            },
+            "permalinks": [],
+            "template": null,
         })
     );
     assert_eq!(answer["heading"], Value::Null);
@@ -162,6 +176,13 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
             "type": null,
             "address": null,
             "markdownAddress": null,
+            "description": null,
+            "review": null,
+            "availability": null,
+            "builds": [],
+            "listing": null,
+            "permalinks": [],
+            "template": null,
         })
     );
     // The innermost section: "Install", inside "Setup".
@@ -195,8 +216,15 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
 fn a_file_that_isnt_a_page_gets_an_empty_answer() {
     let f = project(MODEL);
     let mut client = started(&f);
-    let empty =
-        json!({ "about": null, "heading": null, "linkedFrom": [], "includedBy": [], "memos": [] });
+    let empty = json!({
+        "about": null,
+        "heading": null,
+        "linkedFrom": [],
+        "includedBy": [],
+        "memos": [],
+        "health": { "size": null, "examples": [] },
+        "includes": [],
+    });
     assert_eq!(
         page(
             &mut client,

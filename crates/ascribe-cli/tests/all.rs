@@ -45,6 +45,8 @@ mod network;
 mod observe;
 #[path = "all/output.rs"]
 mod output;
+#[path = "all/page_parity.rs"]
+mod page_parity;
 #[path = "all/permalinks.rs"]
 mod permalinks;
 #[path = "../../ascribe-diff/tests/planted/mod.rs"]

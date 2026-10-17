@@ -274,9 +274,9 @@ fn the_inventory_lists_pages_fragments_orphans_and_the_model() {
     assert_eq!(
         r["pages"],
         json!([
-            { "path": "guide.md", "title": "Guide", "type": "page", "incoming": 2 },
-            { "path": "index.md", "title": "Home", "type": "page", "incoming": 0 },
-            { "path": "other.md", "title": "Other", "type": "page", "incoming": 0 },
+            { "path": "guide.md", "title": "Guide", "type": "page", "incoming": 2, "builds": ["site"] },
+            { "path": "index.md", "title": "Home", "type": "page", "incoming": 0, "builds": ["site"] },
+            { "path": "other.md", "title": "Other", "type": "page", "incoming": 0, "builds": ["site"] },
         ])
     );
     assert_eq!(

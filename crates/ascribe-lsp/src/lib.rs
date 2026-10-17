@@ -30,6 +30,7 @@ mod memos;
 mod model_file;
 mod nav;
 mod page;
+mod page_rows;
 mod position;
 mod preview;
 mod prose;
@@ -71,6 +72,10 @@ pub use inventory::{
 };
 pub use page::{
     METHOD as PAGE_METHOD, PageAbout, PageHeading, PageMemo, PageParams, PagePlace, PageResult,
+};
+pub use page_rows::{
+    ExampleState, IncludeKind, LeftOut, PageBuild, PageDescription, PageExample, PageHealth,
+    PageInclude, PageListing, PagePermalink, PageReview, PageSize, PageTemplate,
 };
 pub use position::Encoding;
 pub use preview::{

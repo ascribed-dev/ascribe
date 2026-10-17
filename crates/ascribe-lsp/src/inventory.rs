@@ -69,6 +69,9 @@ pub struct InventoryPage {
     pub content_type: Option<String>,
     /// How many links from other files, and includes, name it.
     pub incoming: usize,
+    /// The builds that publish it, in declaration order: the ones This
+    /// page's Builds row says publish it.
+    pub builds: Vec<String>,
 }
 
 /// A fragment.
@@ -140,6 +143,11 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
             title: file.title.clone(),
             content_type: file.content_type(&ctx.model).map(|t| t.name.clone()),
             incoming: count(Usable::File(file.path.clone())),
+            builds: crate::page_rows::builds(ctx, file)
+                .into_iter()
+                .filter(|b| b.left_out.is_none())
+                .map(|b| b.name)
+                .collect(),
         })
         .collect();
     pages.sort_by(|a, b| a.path.cmp(&b.path));

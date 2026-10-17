@@ -12,6 +12,11 @@
 //! for the file until the snapshot changes ([`PageCache`]), so a cursor move
 //! only picks the heading's share. Every answer is from the current
 //! snapshot, unsaved edits included.
+//!
+//! The rest of About, Health, and what the file includes are kept with it
+//! ([`crate::page_rows`]): found again when the snapshot changes, when a
+//! file outside the sources changes on disk (a source's observations, a
+//! template), and on a new day.
 
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 
@@ -21,6 +26,10 @@ use lsp_types::{Position, Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
 
 use crate::nav::{Ctx, Lines};
+use crate::page_rows::{
+    PageBuild, PageDescription, PageHealth, PageInclude, PageListing, PagePermalink, PageReview,
+    PageTemplate, Rows,
+};
 
 /// The request's method name.
 pub const METHOD: &str = "ascribe/page";
@@ -61,6 +70,11 @@ pub struct PageResult {
     /// heading, or about a block in it (SPEC §7.7): the committed ones, then
     /// the personal ones, each in path order. A detached memo isn't listed.
     pub memos: Vec<PageMemo>,
+    /// How the page stands: its size and its tested examples. Empty when
+    /// the document isn't a page or a fragment.
+    pub health: PageHealth,
+    /// The file's `@include`s and `@snippet`s, in document order.
+    pub includes: Vec<PageInclude>,
 }
 
 /// What a page or fragment is.
@@ -85,6 +99,25 @@ pub struct PageAbout {
     /// project publishes one (`[consumer] agents = true`); `null` otherwise,
     /// and for a fragment.
     pub markdown_address: Option<String>,
+    /// Its description, when its type gives a field the description role;
+    /// `null` for a fragment.
+    pub description: Option<PageDescription>,
+    /// When it's due for review, when its type gives a field the
+    /// review-date role and the page has a date in it.
+    pub review: Option<PageReview>,
+    /// Its own `available`, as shown; `null` when it has none.
+    pub availability: Option<String>,
+    /// Whether each build publishes it, in declaration order; empty for a
+    /// fragment, which is published only where it's included.
+    pub builds: Vec<PageBuild>,
+    /// Whether it's listed, and what sets that; `null` for a fragment and
+    /// for a page no build publishes.
+    pub listing: Option<PageListing>,
+    /// The permalinks the file declares, in document order.
+    pub permalinks: Vec<PagePermalink>,
+    /// What its type's template still leaves to fill in; `null` when its
+    /// type has no template or nothing of it is left.
+    pub template: Option<PageTemplate>,
 }
 
 /// A heading of the page.
@@ -148,14 +181,22 @@ pub(crate) struct PageCache {
     entry: Arc<Mutex<Option<KeptFor>>>,
 }
 
-/// The project and the file what's kept was found for, and what's kept.
-type KeptFor = (Weak<Project>, RelPath, Arc<Kept>);
+/// The project, the file, and the day what's kept was found for, and
+/// what's kept.
+type KeptFor = (
+    Weak<Project>,
+    RelPath,
+    Option<ascribe_core::Date>,
+    Arc<Kept>,
+);
 
-/// What's kept for a file: its line index, and every place that uses it or
-/// one of its headings, with what each uses.
+/// What's kept for a file: its line index, every place that uses it or one
+/// of its headings, with what each uses, and the rows that don't depend on
+/// the cursor.
 struct Kept {
     index: LineIndex,
     uses: Vec<(Usable, UseKind, PagePlace)>,
+    rows: Rows,
 }
 
 impl PageCache {
@@ -165,8 +206,9 @@ impl PageCache {
     fn kept(&self, ctx: &Ctx, file: &FileIndex) -> Arc<Kept> {
         let project = ctx.snapshot.shared_project();
         let mut entry = self.entry.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some((kept_from, path, kept)) = entry.as_ref()
+        if let Some((kept_from, path, day, kept)) = entry.as_ref()
             && *path == ctx.path
+            && *day == ctx.today
             && kept_from
                 .upgrade()
                 .is_some_and(|kept_from| Arc::ptr_eq(&kept_from, &project))
@@ -179,12 +221,22 @@ impl PageCache {
             .into_iter()
             .filter_map(|(used, at)| Some((used, at.kind, place(ctx, &mut lines, &at)?)))
             .collect();
-        let kept = Arc::new(Kept {
-            index: LineIndex::new(&file.source),
-            uses,
-        });
-        *entry = Some((Arc::downgrade(&project), ctx.path.clone(), kept.clone()));
+        let index = LineIndex::new(&file.source);
+        let rows = crate::page_rows::rows(ctx, file, &index);
+        let kept = Arc::new(Kept { index, uses, rows });
+        *entry = Some((
+            Arc::downgrade(&project),
+            ctx.path.clone(),
+            ctx.today,
+            kept.clone(),
+        ));
         kept
+    }
+
+    /// Forgets what's kept: a file the snapshot doesn't hold changed, such
+    /// as a source's observations or a template, which the rows read.
+    pub(crate) fn forget(&self) {
+        *self.entry.lock().unwrap_or_else(PoisonError::into_inner) = None;
     }
 }
 
@@ -219,7 +271,7 @@ pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResu
         }
     }
     PageResult {
-        about: Some(about(ctx, file)),
+        about: Some(about(ctx, file, &kept.rows)),
         heading: heading.map(|h| PageHeading {
             id: h.source_id.clone(),
             text: h.text.clone(),
@@ -228,10 +280,13 @@ pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResu
         memos: crate::memos::about(ctx, &target),
         linked_from,
         included_by,
+        health: kept.rows.health.clone(),
+        includes: kept.rows.includes.clone(),
     }
 }
 
-fn about(ctx: &Ctx, file: &FileIndex) -> PageAbout {
+fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows) -> PageAbout {
+    let rows = &rows.about;
     let fragment = file.kind == FileKind::Fragment;
     let router = (!fragment).then(|| AstroRouter::from_consumer(&ctx.model.consumer));
     PageAbout {
@@ -244,6 +299,13 @@ fn about(ctx: &Ctx, file: &FileIndex) -> PageAbout {
             .as_ref()
             .filter(|_| ctx.model.consumer.agents)
             .map(|r| r.markdown_url(&file.path)),
+        description: rows.description.clone(),
+        review: rows.review.clone(),
+        availability: rows.availability.clone(),
+        builds: rows.builds.clone(),
+        listing: rows.listing.clone(),
+        permalinks: rows.permalinks.clone(),
+        template: rows.template.clone(),
     }
 }
 

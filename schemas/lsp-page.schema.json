@@ -1,5 +1,55 @@
 {
   "$defs": {
+    "ExampleState": {
+      "description": "A tested example's state.",
+      "oneOf": [
+        {
+          "const": "tested",
+          "description": "An observation lists it as it is now.",
+          "type": "string"
+        },
+        {
+          "const": "stale",
+          "description": "It changed after the observation that lists it (`example-stale`).",
+          "type": "string"
+        },
+        {
+          "const": "untested",
+          "description": "No observation lists it (`example-unobserved`).",
+          "type": "string"
+        }
+      ]
+    },
+    "IncludeKind": {
+      "description": "What kind of directive includes it.",
+      "oneOf": [
+        {
+          "const": "include",
+          "description": "`@include`.",
+          "type": "string"
+        },
+        {
+          "const": "snippet",
+          "description": "`@snippet`.",
+          "type": "string"
+        }
+      ]
+    },
+    "LeftOut": {
+      "description": "Why a build leaves a page out (SPEC §9.3).",
+      "oneOf": [
+        {
+          "const": "variant",
+          "description": "The page's `variant` names none of the values the build selects.",
+          "type": "string"
+        },
+        {
+          "const": "availability",
+          "description": "The page's `available` makes it unavailable for the build.",
+          "type": "string"
+        }
+      ]
+    },
     "LspPosition": {
       "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
       "properties": {
@@ -48,9 +98,45 @@
             "null"
           ]
         },
+        "availability": {
+          "description": "Its own `available`, as shown; `null` when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "builds": {
+          "description": "Whether each build publishes it, in declaration order; empty for a\nfragment, which is published only where it's included.",
+          "items": {
+            "$ref": "#/$defs/PageBuild"
+          },
+          "type": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageDescription"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its description, when its type gives a field the description role;\n`null` for a fragment."
+        },
         "fragment": {
           "description": "Whether it's a fragment, which is published only where it's included.",
           "type": "boolean"
+        },
+        "listing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageListing"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Whether it's listed, and what sets that; `null` for a fragment and\nfor a page no build publishes."
         },
         "markdownAddress": {
           "description": "Its Markdown version's address, from the host's root, when the\nproject publishes one (`[consumer] agents = true`); `null` otherwise,\nand for a fragment.",
@@ -62,6 +148,35 @@
         "path": {
           "description": "Its content path.",
           "type": "string"
+        },
+        "permalinks": {
+          "description": "The permalinks the file declares, in document order.",
+          "items": {
+            "$ref": "#/$defs/PagePermalink"
+          },
+          "type": "array"
+        },
+        "review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageReview"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "When it's due for review, when its type gives a field the\nreview-date role and the page has a date in it."
+        },
+        "template": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageTemplate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What its type's template still leaves to fill in; `null` when its\ntype has no template or nothing of it is left."
         },
         "title": {
           "description": "Its title (frontmatter `title`).",
@@ -84,7 +199,106 @@
         "title",
         "type",
         "address",
-        "markdownAddress"
+        "markdownAddress",
+        "description",
+        "review",
+        "availability",
+        "builds",
+        "listing",
+        "permalinks",
+        "template"
+      ],
+      "type": "object"
+    },
+    "PageBuild": {
+      "description": "Whether a build publishes the page.",
+      "properties": {
+        "leftOut": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LeftOut"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Why the build leaves the page out; `null` when it publishes it."
+        },
+        "name": {
+          "description": "The build's name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "leftOut"
+      ],
+      "type": "object"
+    },
+    "PageDescription": {
+      "description": "A page's description, measured against its line in `llms.txt`.",
+      "properties": {
+        "field": {
+          "description": "The frontmatter field the page's type gives the description role.",
+          "type": "string"
+        },
+        "length": {
+          "description": "Its length in characters, as plain text on one line, as\n`description-too-long` measures it; `null` when the page has none.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "limit": {
+          "description": "The most characters it has before `description-too-long` reports it;\n`null` when the project publishes no `llms.txt`\n(`[consumer] agents`), which is the only place it's too long for.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The field's line, or the page's first line when it has none, in the\nnegotiated position encoding."
+        }
+      },
+      "required": [
+        "field",
+        "length",
+        "limit",
+        "range"
+      ],
+      "type": "object"
+    },
+    "PageExample": {
+      "description": "A tested example a `@snippet` of the file shows.",
+      "properties": {
+        "address": {
+          "description": "The `@snippet`'s address, as written.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The `@snippet` line, in the negotiated position encoding."
+        },
+        "state": {
+          "$ref": "#/$defs/ExampleState",
+          "description": "Whether it's tested as it is now."
+        },
+        "tested": {
+          "description": "What it was tested with, when it's tested.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "address",
+        "state",
+        "tested",
+        "range"
       ],
       "type": "object"
     },
@@ -107,6 +321,124 @@
       "required": [
         "id",
         "text",
+        "range"
+      ],
+      "type": "object"
+    },
+    "PageHealth": {
+      "description": "How a page stands: its size, and its tested examples.",
+      "properties": {
+        "examples": {
+          "description": "Each `@snippet` of the file that shows a tested example, in\ndocument order.",
+          "items": {
+            "$ref": "#/$defs/PageExample"
+          },
+          "type": "array"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSize"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its plain Markdown's size in the build where it's largest; `null`\nfor a fragment, and for a page no build publishes."
+        }
+      },
+      "required": [
+        "size",
+        "examples"
+      ],
+      "type": "object"
+    },
+    "PageInclude": {
+      "description": "What a file includes: a fragment, or a snippet of a code file.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/IncludeKind",
+          "description": "`include` for an `@include`, `snippet` for a `@snippet`."
+        },
+        "path": {
+          "description": "The file it shows: a fragment's content path, or a code file's path\nfrom the project root; `null` when the address names no file.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The directive line, in the negotiated position encoding."
+        },
+        "uri": {
+          "description": "That file's `file:` URI.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "written": {
+          "description": "What it names, as written.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "written",
+        "path",
+        "uri",
+        "range"
+      ],
+      "type": "object"
+    },
+    "PageListing": {
+      "description": "Whether search engines list a page, and what sets that.",
+      "properties": {
+        "build": {
+          "description": "The build it's read from: the editor's build when it publishes the\npage, and otherwise the first that does.",
+          "type": "string"
+        },
+        "from": {
+          "description": "What sets it, as `pages.json`'s `listing_from.level` says: `default`,\n`page`, `site`, `older-lines`, `folder`, or `type`.",
+          "type": "string"
+        },
+        "listing": {
+          "description": "`listed`, `unquoted`, or `unlisted`: `pages.json`'s `listing`.",
+          "type": "string"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where in that file, in the negotiated position encoding."
+        },
+        "rule": {
+          "description": "The rule of `[listing]` that sets it, as written; `null` otherwise.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uri": {
+          "description": "The `file:` URI of the file that sets it: the page for its own\n`listing`, `ascribe.toml` for a rule; `null` when nothing does.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "build",
+        "listing",
+        "from",
+        "rule",
+        "uri",
         "range"
       ],
       "type": "object"
@@ -149,6 +481,32 @@
       ],
       "type": "object"
     },
+    "PagePermalink": {
+      "description": "A permalink declared in the file (SPEC §7.5).",
+      "properties": {
+        "heading": {
+          "description": "The text of the heading it leads to; `null` for the page's own.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The page's `permalink` line, or the heading's `@id` line, in the\nnegotiated position encoding."
+        }
+      },
+      "required": [
+        "name",
+        "heading",
+        "range"
+      ],
+      "type": "object"
+    },
     "PagePlace": {
       "description": "A link or an `@include`.",
       "properties": {
@@ -174,6 +532,89 @@
         "path",
         "range",
         "text"
+      ],
+      "type": "object"
+    },
+    "PageReview": {
+      "description": "When a page is due for review.",
+      "properties": {
+        "date": {
+          "description": "The date it holds, `YYYY-MM-DD`.",
+          "type": "string"
+        },
+        "days": {
+          "description": "The days from today to the date: negative once it's passed. `null`\nwhen the server has no day to count from.",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "field": {
+          "description": "The frontmatter field with the review-date role.",
+          "type": "string"
+        },
+        "overdue": {
+          "description": "Whether the date has passed, so `review-overdue` reports the page.",
+          "type": "boolean"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The field's line, in the negotiated position encoding."
+        }
+      },
+      "required": [
+        "field",
+        "date",
+        "days",
+        "overdue",
+        "range"
+      ],
+      "type": "object"
+    },
+    "PageSize": {
+      "description": "A page's size, as `page-size` measures it.",
+      "properties": {
+        "build": {
+          "description": "The build it's that size in: the first of the largest.",
+          "type": "string"
+        },
+        "characters": {
+          "description": "Characters of plain Markdown.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "limit": {
+          "description": "The size `page-size` reports it at; `null` when the check is off.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "characters",
+        "build",
+        "limit"
+      ],
+      "type": "object"
+    },
+    "PageTemplate": {
+      "description": "What a page's template still leaves to fill in.",
+      "properties": {
+        "left": {
+          "description": "How many placeholders and template values are left, as\n`template-placeholder-left` finds them.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "description": "The content type whose template it is.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "left"
       ],
       "type": "object"
     }
@@ -203,10 +644,21 @@
       ],
       "description": "The heading whose section holds the cursor, the innermost one with an\nid; `null` when the cursor is in none, and the lists are then about\nthe whole file."
     },
+    "health": {
+      "$ref": "#/$defs/PageHealth",
+      "description": "How the page stands: its size and its tested examples. Empty when\nthe document isn't a page or a fragment."
+    },
     "includedBy": {
       "description": "The `@include`s of the file, or of the heading's section, in the\nsame order.",
       "items": {
         "$ref": "#/$defs/PagePlace"
+      },
+      "type": "array"
+    },
+    "includes": {
+      "description": "The file's `@include`s and `@snippet`s, in document order.",
+      "items": {
+        "$ref": "#/$defs/PageInclude"
       },
       "type": "array"
     },
@@ -230,7 +682,9 @@
     "heading",
     "linkedFrom",
     "includedBy",
-    "memos"
+    "memos",
+    "health",
+    "includes"
   ],
   "title": "PageResult",
   "type": "object"
