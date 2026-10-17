@@ -1,6 +1,8 @@
 import * as assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import type { RunRecord } from "../../../src/actions/run.js";
 import type { Scripted } from "../../../src/actions/steps.js";
@@ -16,7 +18,38 @@ describe("the editor's actions", () => {
     api = await activated();
     await api.whenSettled();
     await waitFor("the server", () => api.state() === "running");
+    await saveParticipantsIn();
   });
+
+  /**
+   * Waits for VS Code's save participants, editor.codeActionsOnSave's among
+   * them. The workbench adds them all at once when it's idle after starting,
+   * which on a busy machine can be after the first tests, and a save before
+   * then doesn't apply the page's safe fixes (#571). A plain text file outside
+   * the workspace has a final newline inserted on save once they're in
+   * (run.ts sets files.insertFinalNewline for plain text).
+   */
+  async function saveParticipantsIn(): Promise<void> {
+    const folder = mkdtempSync(path.join(tmpdir(), "participants-"));
+    try {
+      const file = path.join(folder, "probe.txt");
+      writeFileSync(file, "probe");
+      const document = await vscode.workspace.openTextDocument(file);
+      await waitFor(
+        "VS Code's save participants",
+        async () => {
+          const edit = new vscode.WorkspaceEdit();
+          edit.insert(document.uri, document.positionAt(document.getText().length), ".");
+          assert.ok(await vscode.workspace.applyEdit(edit));
+          assert.ok(await document.save());
+          return document.getText().endsWith("\n");
+        },
+        45_000,
+      );
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  }
 
   afterEach(async () => {
     // Back to the text on disk, and nothing left open.

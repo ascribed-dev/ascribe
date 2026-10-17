@@ -48,6 +48,7 @@ import { execFileSync } from "node:child_process";
 import {
   appendFileSync,
   cpSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -81,6 +82,17 @@ interface Suite {
   traceLogs?: boolean;
   /** Open the workspace through a symlink to it (not on Windows), as macOS's /var is. */
   throughLink?: boolean;
+  /**
+   * When the suite fails, its VS Code logs (the language servers' traces
+   * among them) are copied to out/integration-logs/<suite>, which CI keeps.
+   */
+  keepLogs?: boolean;
+  /**
+   * Built-in extensions to turn off. The suite then runs without
+   * --disable-extensions, which would override the list; its extensions
+   * folder is empty either way.
+   */
+  disableBuiltIn?: string[];
 }
 
 const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
@@ -203,14 +215,32 @@ const suites: Suite[] = [
   {
     name: "actions",
     fixture: path.join(repositoryRoot, "examples/quill"),
+    // Its rarer failures depend on what VS Code and the server said when (#571).
+    launchArgs: ["--log=trace"],
+    // VS Code cancels a request for code actions, and resets the editor's (a
+    // Source Action waiting on its answer among them), when a code action
+    // provider registers. These two register theirs for Markdown once they
+    // start, which on a busy machine is during the tests (#571), and the
+    // suite tests none of theirs.
+    disableBuiltIn: ["vscode.markdown-language-features", "vscode.extension-editing"],
+    traceLogs: true,
+    keepLogs: true,
     prepare: () => ({
       "ascribe.path": realServer,
       ...startAll,
+      "ascribe.trace.server": "verbose",
       // Set before VS Code starts, not by the test that saves with it: writing
       // a setting opens settings.json, which starts the JSON extensions, and
       // when one registers its code actions during the save, VS Code cancels
       // the save's code actions and the save with them (#565).
       "[markdown]": { "editor.codeActionsOnSave": { "source.fixAll.ascribe": "explicit" } },
+      // The snippets' code actions register for every file when the workbench
+      // is idle, which can be during the tests too (#571).
+      "editor.snippets.codeActions.enabled": false,
+      // For the suite's check that VS Code's save participants are in: they
+      // are added when the workbench is idle, and can come after the first
+      // tests (#571).
+      "[plaintext]": { "files.insertFinalNewline": true },
     }),
   },
   {
@@ -377,7 +407,9 @@ async function main(): Promise<void> {
         extensionTestsEnv: { ASCRIBE_SUITE: suite.name },
         launchArgs: [
           opened,
-          "--disable-extensions",
+          ...(suite.disableBuiltIn
+            ? suite.disableBuiltIn.map((id) => `--disable-extension=${id}`)
+            : ["--disable-extensions"]),
           "--disable-workspace-trust",
           "--disable-gpu",
           "--disable-updates",
@@ -392,9 +424,16 @@ async function main(): Promise<void> {
       if (suite.traceLogs) console.log(output.testResults());
       ran += 1;
     } catch (error) {
+      const logs = path.join(scratch, "user-data", "logs");
       if (suite.traceLogs) {
         process.stdout.write(output.text());
-        printWatcherLogs(path.join(scratch, "user-data", "logs"));
+        printWatcherLogs(logs);
+      }
+      if (suite.keepLogs && existsSync(logs)) {
+        const kept = path.join(packageRoot, "out/integration-logs", suite.name);
+        rmSync(kept, { recursive: true, force: true });
+        cpSync(logs, kept, { recursive: true });
+        console.error(`VS Code's logs are in ${kept}.`);
       }
       console.error(`Suite ${suite.name} failed:`, error);
       failed = true;
