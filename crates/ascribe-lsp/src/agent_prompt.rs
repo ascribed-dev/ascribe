@@ -15,6 +15,8 @@
 //! A prompt about changes compares the snapshot with the review base the
 //! server holds (`review.rs`), as `ascribe/review/changes` does, and is built
 //! by `ascribe_diff::prompt`, as `ascribe diff --format prompt` builds it.
+//! Each names the memo files about its page, or about what changed, the
+//! committed ones and those kept on this machine.
 
 use std::sync::Arc;
 
@@ -28,6 +30,7 @@ use lsp_types::{Diagnostic, NumberOrString, TextDocumentIdentifier, Uri};
 use serde::{Deserialize, Serialize};
 
 use crate::compute::checked_project;
+use crate::memos;
 use crate::nav::Ctx;
 use crate::review::ReviewBase;
 use crate::uri::uri_to_path;
@@ -207,9 +210,11 @@ fn change_prompt(
         project: ctx.snapshot.project(),
         model_text: &ctx.model_text,
     };
+    let memos = ascribe_check::prompt::MemoPlace::all(ctx.snapshot.project(), &memos::read(ctx));
     let shown = Review {
         base: &review.info,
         content_root: &ctx.snapshot.project().layout().content_root,
+        memos: &memos,
     };
     let prompt = if params.kind == PromptKind::FragmentReach {
         let fragment = RelPath::parse(params.fragment.as_deref()?).ok()?;

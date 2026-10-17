@@ -13,7 +13,7 @@ use crate::html::{
 use crate::prompt::{self, Review};
 use crate::{Anchor, BuildDiff, PageDiff};
 use crate::{Base, DiffError, DriftReport, Report, Repository, Side, compare_builds};
-use ascribe_check::prompt::{Builds, Context};
+use ascribe_check::prompt::{Builds, Context, MemoPlace};
 
 /// What [`diff_project`] compares.
 #[derive(Clone, Copy, Debug, Default)]
@@ -38,6 +38,9 @@ pub struct ProjectDiff {
     /// The base revision and its source index, when the project exists there.
     before: BaseProject,
     now: Project,
+    /// The memo files about the working tree's files, committed and
+    /// personal, placed against it.
+    memos: Vec<MemoPlace>,
     root: std::path::PathBuf,
     /// The folder the prompts are for: where the command was run; the
     /// repository's root when `None`.
@@ -101,6 +104,7 @@ impl ProjectDiff {
         Review {
             base: &self.report.base,
             content_root: &self.now.layout().content_root,
+            memos: &self.memos,
         }
     }
 
@@ -204,10 +208,12 @@ pub fn diff_project(
     })?;
     let mut report = Report::new(&repo, &base, diffs);
     report.working_tree_errors = errors;
+    let memos = MemoPlace::all(&now, project.all_memos());
     Ok(ProjectDiff {
         report,
         repo,
         before,
+        memos,
         now,
         root: project.root().to_owned(),
         here: None,

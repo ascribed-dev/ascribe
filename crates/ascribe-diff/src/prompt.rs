@@ -13,9 +13,12 @@
 //! not edits: a reviewer hands a change to their agent to read it as readers
 //! will. A prompt points rather than dumps: it names the page, each change's
 //! lines, and the commands that show the rest (`ascribe render`, `ascribe
-//! diff`).
+//! diff`). Each names the memo files about what changed (SPEC §7.7): one on
+//! the page, on a changed block, or on the section a change is in.
 
-use ascribe_check::prompt::{Context, MAX_LISTED, assemble, code_list, shell_word};
+use ascribe_check::prompt::{
+    Ask, Context, MAX_LISTED, MemoPlace, about_lines, assemble, code_list, memo_lines, shell_word,
+};
 use ascribe_core::{RelPath, percent_decode};
 
 use crate::{Anchor, BaseInfo, BuildDiff, Change, ChangeKind, PageDiff, PageStatus};
@@ -28,6 +31,8 @@ pub struct Review<'a> {
     /// The content root, relative to the project root; empty when it is the
     /// project root. Content paths are shown under it.
     pub content_root: &'a RelPath,
+    /// The memo files about the working tree's files, placed against it.
+    pub memos: &'a [MemoPlace],
 }
 
 impl Review<'_> {
@@ -77,6 +82,27 @@ impl Review<'_> {
             }
             None => self.shown(context, &percent_decode(source)),
         }
+    }
+
+    /// The lines that name the memos about `changes` in the file at content
+    /// path `in_file`, or in any file; `outline` is as for [`memo_lines`].
+    fn memo_lines<'c>(
+        &self,
+        context: &Context,
+        changes: impl IntoIterator<Item = &'c Change>,
+        in_file: Option<&str>,
+        outline: Option<&str>,
+    ) -> Vec<String> {
+        if self.memos.is_empty() {
+            return Vec::new();
+        }
+        let found = changes
+            .into_iter()
+            .filter_map(changed_lines)
+            .filter(|(file, _, _)| in_file.is_none_or(|f| file.as_str() == f))
+            .flat_map(|(file, lines, removed)| about_lines(self.memos, &file, lines, removed))
+            .collect();
+        memo_lines(context, found, Ask::Change, outline)
     }
 
     /// The base: `Base: `main`, from where this branch left it (1a2b3c4)`.
@@ -182,6 +208,7 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
             ));
         }
     }
+    known.extend(review.memo_lines(context, &page.changes, None, Some(&path)));
 
     assemble(
         &format!(
@@ -206,6 +233,37 @@ fn change_line(context: &Context, review: &Review<'_>, change: &Change) -> Strin
         (kind, None, Some(was)) => format!("- {}: {was} in the base", kind_word(kind)),
         (kind, None, None) => format!("- {}", kind_word(kind)),
     }
+}
+
+/// Where a change is in the working tree: the file, by content path, the
+/// lines from 1, and whether the change took its own lines out. A removed
+/// block is placed at the end of the block it came after, else the start of
+/// the one it was inside; with neither, at no line of its file, so only a
+/// memo on the whole file is about it.
+fn changed_lines(change: &Change) -> Option<(RelPath, (u32, u32), bool)> {
+    let removed = change.kind == ChangeKind::Removed;
+    let (path, lines) = if let Some(now) = &change.now {
+        let (path, first, last) = anchor_lines(now)?;
+        (path, (first, last))
+    } else if let Some(after) = &change.after {
+        let (path, _, last) = anchor_lines(after)?;
+        (path, (last, last))
+    } else if let Some(parent) = &change.parent {
+        let (path, first, _) = anchor_lines(parent)?;
+        (path, (first, first))
+    } else {
+        let (path, _, _) = anchor_lines(change.was.as_ref()?)?;
+        (path, (0, 0))
+    };
+    Some((path, lines, removed))
+}
+
+/// An anchor's file, by content path, and its first and last lines.
+fn anchor_lines(anchor: &Anchor) -> Option<(RelPath, u32, u32)> {
+    let (path, lines) = anchor.source.rsplit_once(':')?;
+    let path = RelPath::parse(&percent_decode(path)).ok()?;
+    let (first, last) = lines.split_once('-').unwrap_or((lines, lines));
+    Some((path, first.parse().ok()?, last.parse().ok()?))
 }
 
 fn kind_word(kind: ChangeKind) -> &'static str {
@@ -295,6 +353,12 @@ pub fn fragment_reach(
     if pages.len() > MAX_LISTED {
         known.push(format!("and {} more: `{refs}`", pages.len() - MAX_LISTED));
     }
+    known.extend(review.memo_lines(
+        context,
+        pages.iter().flat_map(|p| &p.changes),
+        Some(fragment.as_str()),
+        Some(&path),
+    ));
     let (count, fits) = if pages.len() == 1 {
         ("1 page shows it".to_owned(), "it")
     } else {
@@ -362,6 +426,15 @@ pub fn pages(context: &Context, review: &Review<'_>, builds: &[BuildDiff]) -> Op
     if total > listed {
         known.push(format!("and {} more: `{rest}`", total - listed));
     }
+    let changes = changed
+        .iter()
+        .flat_map(|b| &b.pages)
+        .flat_map(|p| &p.changes);
+    let outline = match distinct.as_slice() {
+        [one] => Some(review.shown(context, one)),
+        _ => None,
+    };
+    known.extend(review.memo_lines(context, changes, None, outline.as_deref()));
     let task = if distinct.len() == 1 {
         "Review what this change does to the page it changes.".to_owned()
     } else {

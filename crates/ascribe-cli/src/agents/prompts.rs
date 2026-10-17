@@ -6,7 +6,8 @@
 //!   read first, and the type's template with the title set, or, for a type
 //!   with none, the frontmatter it requires;
 //! - `fix`: fix what `ascribe check` reports: its prompt about the problems
-//!   when there are any, else the loop of checking and fixing;
+//!   when there are any, else the loop of checking and fixing, with the
+//!   memos about the page it names;
 //! - `review`: review what the branch does to its pages, as readers see
 //!   them: the prompt `ascribe diff --format prompt` writes.
 
@@ -406,10 +407,18 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
             .filter(ascribe_core::RelPath::is_inside)
             .filter(|rel| !rel.is_root())
     });
-    let targets: Vec<String> = match in_project {
+    let targets: Vec<String> = match &in_project {
         Some(rel) => vec![context.shown(rel.as_str())],
         None => context.folder.iter().cloned().collect(),
     };
+    // The memos about the page the path names, when it names one.
+    let page = in_project.as_ref().and_then(|rel| {
+        let content = rel.relative_to(loaded.project.content_root())?;
+        loaded.project.source_at(&content)
+    });
+    let memos = page.map_or_else(Vec::new, |file| {
+        prompt::page_memos(&loaded.project, &context, &[file.id])
+    });
     let concise = {
         let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
         words.extend(targets.iter().map(|t| prompt::shell_word(t)));
@@ -426,7 +435,10 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
              diagnostic, with an example. If the same errors remain after three rounds, stop \
              and say what's left."
                 .to_owned(),
-        ],
+        ]
+        .into_iter()
+        .chain(memos)
+        .collect::<Vec<_>>(),
         "",
         &targets,
     ))

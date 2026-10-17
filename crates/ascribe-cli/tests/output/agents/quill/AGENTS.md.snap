@@ -7,6 +7,8 @@ Programmatic check: after editing a page, run `ascribe check <file> --format con
 
 Read a block's `@memo` before changing the block, and keep the two together: a memo says why the page is written the way it is, and is never published.
 
+`ascribe outline <page>` lists the memo files about a page and each of its headings: read a memo before changing the block it's about, and keep it.
+
 ### Page types
 
 A page says what type it is with `type:` in its frontmatter, first, and its other fields are its type's. A file or folder whose name starts with `_` is a fragment, which pages `@include`, not a page, and names no type.
