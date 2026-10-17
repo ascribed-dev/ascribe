@@ -243,7 +243,7 @@
           "type": "string"
         },
         "length": {
-          "description": "Its length in characters, as plain text on one line, as\n`description-too-long` measures it; `null` when the page has none.",
+          "description": "Its length in characters, as plain text on one line, as\n`description-too-long` measures it: the page's own, or its field's\ndefault when it leaves the field out. `null` when it has none, which\nis where `page-description-missing` reports it.",
           "minimum": 0,
           "type": [
             "integer",
@@ -554,12 +554,16 @@
           "type": "string"
         },
         "overdue": {
-          "description": "Whether the date has passed, so `review-overdue` reports the page.",
+          "description": "Whether the date has passed.",
           "type": "boolean"
         },
         "range": {
           "$ref": "#/$defs/LspRange",
           "description": "The field's line, in the negotiated position encoding."
+        },
+        "reported": {
+          "description": "Whether `review-overdue` reports the page: the date has passed, and\nthe project hasn't turned the check off.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -567,6 +571,7 @@
         "date",
         "days",
         "overdue",
+        "reported",
         "range"
       ],
       "type": "object"

@@ -1026,7 +1026,9 @@ export interface PageDescription {
   field: string;
   /**
    * Its length in characters, as plain text on one line, as
-   * `description-too-long` measures it; `null` when the page has none.
+   * `description-too-long` measures it: the page's own, or its field's
+   * default when it leaves the field out. `null` when it has none, which
+   * is where `page-description-missing` reports it.
    */
   length: number | null;
   /**
@@ -1262,8 +1264,13 @@ export interface PageReview {
    * when the server has no day to count from.
    */
   days: number | null;
-  /** Whether the date has passed, so `review-overdue` reports the page. */
+  /** Whether the date has passed. */
   overdue: boolean;
+  /**
+   * Whether `review-overdue` reports the page: the date has passed, and
+   * the project hasn't turned the check off.
+   */
+  reported: boolean;
   /** The field's line, in the negotiated position encoding. */
   range: LspRange;
 }

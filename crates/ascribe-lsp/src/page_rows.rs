@@ -4,8 +4,9 @@
 //!
 //! Each row is taken from the code that decides the same thing for a check
 //! or an output, never from a second reading of the model: the description
-//! is measured as `description-too-long` measures it, the review date is
-//! compared as `review-overdue` compares it, the builds are the builds'
+//! is measured as `description-too-long` measures it, and is missing where
+//! `page-description-missing` says so, the review date is overdue where
+//! `review-overdue` says so ([`ascribe_check::roles`]), the builds are the builds'
 //! own drops ([`ascribe_resolve::Project::dropped`]), the listing is what
 //! the page's record in `pages.json` says ([`ascribe_resolve::pages::records`]),
 //! the size is `page-size`'s measure ([`ascribe_check::page::markdown_size`]),
@@ -15,6 +16,7 @@
 //! None of it depends on the cursor, so [`crate::page::PageCache`] keeps it
 //! for the page with the rest of what it keeps.
 
+use ascribe_check::roles;
 use ascribe_core::{LineIndex, Span};
 use ascribe_model::{Build, FieldRole, ListingFrom};
 use ascribe_resolve::{
@@ -35,7 +37,9 @@ pub struct PageDescription {
     /// The frontmatter field the page's type gives the description role.
     pub field: String,
     /// Its length in characters, as plain text on one line, as
-    /// `description-too-long` measures it; `null` when the page has none.
+    /// `description-too-long` measures it: the page's own, or its field's
+    /// default when it leaves the field out. `null` when it has none, which
+    /// is where `page-description-missing` reports it.
     pub length: Option<usize>,
     /// The most characters it has before `description-too-long` reports it;
     /// `null` when the project publishes no `llms.txt`
@@ -59,8 +63,11 @@ pub struct PageReview {
     /// The days from today to the date: negative once it's passed. `null`
     /// when the server has no day to count from.
     pub days: Option<i64>,
-    /// Whether the date has passed, so `review-overdue` reports the page.
+    /// Whether the date has passed.
     pub overdue: bool,
+    /// Whether `review-overdue` reports the page: the date has passed, and
+    /// the project hasn't turned the check off.
+    pub reported: bool,
     /// The field's line, in the negotiated position encoding.
     #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
     pub range: Range,
@@ -301,6 +308,9 @@ fn published<'m>(ctx: &'m Ctx, builds: &[PageBuild]) -> Vec<&'m Build> {
         .collect()
 }
 
+/// The description row: the page's own description, or its field's
+/// default, measured; or "missing" where `page-description-missing` reports
+/// the page. A page that has neither has no row.
 fn description(
     ctx: &Ctx,
     file: &FileIndex,
@@ -310,17 +320,18 @@ fn description(
         .content_type(&ctx.model)?
         .frontmatter
         .field_with_role(FieldRole::Description)?;
-    let raw = file
-        .frontmatter
-        .as_ref()
-        .and_then(|f| f.get(field.name.as_str()))
-        .and_then(Value::as_str);
+    let empty = Value::Mapping(Default::default());
+    let value = file.frontmatter.as_ref().unwrap_or(&empty);
+    let length = roles::description(field, value)
+        .and_then(|raw| llms::description_text(&ctx.model, raw))
+        .map(|text| text.chars().count());
+    if length.is_none() && !roles::description_missing(&ctx.model.checks, field, value) {
+        return None;
+    }
     let at = frontmatter_line(file, &field.name).unwrap_or_else(|| first_line(file));
     Some(PageDescription {
         field: field.name.clone(),
-        length: raw
-            .and_then(|raw| llms::description_text(&ctx.model, raw))
-            .map(|text| text.chars().count()),
+        length,
         limit: ctx.model.consumer.agents.then_some(llms::DESCRIPTION_LIMIT),
         range: range(at),
     })
@@ -331,17 +342,14 @@ fn review(ctx: &Ctx, file: &FileIndex, range: &dyn Fn(Span) -> Range) -> Option<
         .content_type(&ctx.model)?
         .frontmatter
         .field_with_role(FieldRole::ReviewDate)?;
-    let Some(Value::String(text)) = file.frontmatter.as_ref()?.get(field.name.as_str()) else {
-        return None;
-    };
-    let due = ascribe_core::Date::parse(text)?;
+    let due = roles::review_date(field, file.frontmatter.as_ref()?)?;
     let at = frontmatter_line(file, &field.name).unwrap_or_else(|| first_line(file));
     Some(PageReview {
         field: field.name.clone(),
         date: due.to_string(),
         days: ctx.today.map(|today| due.days_since(today)),
-        // As `review-overdue` decides it.
         overdue: ctx.today.is_some_and(|today| due < today),
+        reported: roles::review_overdue(&ctx.model.checks, ctx.today, due),
         range: range(at),
     })
 }

@@ -417,7 +417,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       label: "Review",
       value: reviewText(review.date, review.days, review.overdue),
       tooltip: `\`${review.field}\`: ${review.date}`,
-      warn: review.overdue,
+      warn: review.reported,
       opens: at(review.range),
     });
   }
