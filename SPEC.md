@@ -984,7 +984,7 @@ The agent goes first because its installer writes the config file that
 - The frontmatter has two keys. `about`, required, names what the memo is about, as a target of `ascribe refs` is written: a page or a fragment by its content path, a heading as the content path, `#`, and its id, or a content model entry as `phrase:<key>`, `feature:<key>`, `term:<id>`, `dimension:<name>`, `note:<type>`, or `widget:<name>`. A heading in a fragment is named in the fragment. `quote`, optional, narrows the memo to the block whose source holds it; a content model entry has no text to quote. A memo is about one thing.
 - The body is CommonMark, shown as written. Nothing in it is a phrase, a link a processor checks, an include, or a heading with an id.
 - A memo's place is worked out each time it's read, and nothing is written back to the file. With no `quote`, it's **placed** on what `about` names. With one, the blocks of what `about` names (a page's or fragment's, or a heading's section) are searched in source order, each block's source as written, whitespace runs read as one space and case kept; the first that holds the quote is the memo's block, and the memo is placed there. A quote across two blocks isn't found. A quote that no block holds makes the memo **outdated**: it stays on the page or section. An `about` that names nothing in the project makes the memo **detached**.
-- `memos/` MUST NOT be inside the content root, where its files would be pages; it is when the content root is the project's folder, or above it.
+- `memos/` MUST NOT be inside the content root, where its files would be pages; it is when the content root is the project's folder.
 - Memo files are no part of any output, and a change to one is no change to a page.
 
 ---

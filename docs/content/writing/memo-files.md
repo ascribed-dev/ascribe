@@ -23,7 +23,7 @@ doesn't mention the agent.
 ```
 
 - **`about`**, required, names what the memo is about, the way [`ascribe refs`](../command/questions.md#cli-refs) names a target: a page or fragment by its path from the content root (`install-agent.md`), a heading as the path, `#`, and its id (`install-agent.md#install-agent`), or an entry of `ascribe.toml` as `phrase:product`, `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`. A heading in a fragment is named in the fragment.
-- **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a list item's paragraph, a code block, or a table. An entry of `ascribe.toml` has no words to quote.
+- **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a heading, a list item's paragraph, a code block, or a table, for instance. An entry of `ascribe.toml` has no words to quote.
 - **The text** after the frontmatter is the memo, as you write it. Nothing in it is read: a link isn't checked, and a `{key}` isn't a phrase.
 
 The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no author, no date, and nothing to finish: a reason, kept for as long as it holds.
