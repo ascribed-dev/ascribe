@@ -19,6 +19,7 @@ describe("the editor's actions", () => {
     await api.whenSettled();
     await waitFor("the server", () => api.state() === "running");
     await saveParticipantsIn();
+    await promptFeaturesIn();
   });
 
   /**
@@ -44,6 +45,37 @@ describe("the editor's actions", () => {
           assert.ok(await document.save());
           return document.getText().endsWith("\n");
         },
+        45_000,
+      );
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  }
+
+  /**
+   * Waits for VS Code's features for prompt files. The workbench registers
+   * them, a code action provider among them, last of all, when it's idle
+   * after starting, which can be during the tests, and any provider that
+   * registers cancels the requests for code actions in flight, in every
+   * file: a Source Action's, a save's, or the actions bar's (#571). They
+   * register together, so their semantic tokens for a prompt file mean their
+   * code actions are in too. Nothing to wait for where VS Code has no prompt
+   * files.
+   */
+  async function promptFeaturesIn(): Promise<void> {
+    const folder = mkdtempSync(path.join(tmpdir(), "prompt-"));
+    try {
+      const file = path.join(folder, "probe.prompt.md");
+      writeFileSync(file, "---\ndescription: A probe.\n---\nSay hello.\n");
+      const document = await vscode.workspace.openTextDocument(file);
+      if (document.languageId !== "prompt") return;
+      await waitFor(
+        "VS Code's features for prompt files",
+        async () =>
+          (await vscode.commands.executeCommand(
+            "vscode.provideDocumentSemanticTokensLegend",
+            document.uri,
+          )) !== undefined,
         45_000,
       );
     } finally {
