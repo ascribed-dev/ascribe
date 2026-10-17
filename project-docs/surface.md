@@ -847,6 +847,7 @@ READMEs published with a package, a crate, or the repository:
 | `packages/vscode/README.md` |
 | `packages/vscode/test/fixtures/monorepo/code/README.md` |
 | `packages/vscode/test/fixtures/monorepo/docs/README.md` |
+| `packages/vscode/test/fixtures/shared-sources/README.md` |
 | `plugins/ascribe/README.md` |
 
 ## Files Ascribe puts in a project
