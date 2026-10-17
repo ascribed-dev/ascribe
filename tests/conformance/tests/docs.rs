@@ -737,7 +737,7 @@ fn headings(page: &str) -> Vec<(String, String)> {
 fn place_words(place: &str) -> Option<&'static str> {
     match place {
         "page" => Some("in the page's `intended` frontmatter"),
-        "block" => Some("with `@intended` above the block"),
+        "block" => Some("with `@intended` above the block, or under the heading for a heading"),
         "entry" => Some("in `[[intended]]`"),
         _ => None,
     }

@@ -689,7 +689,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 
 - **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
   - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
-  - **A heading:** `@intended` at the top of its section, among the directives under the heading. The acknowledgement covers that check's problems located at the heading, and nothing else in the section:
+  - **A heading:** `@intended` at the top of its section, among the directives under the heading. The acknowledgement covers that check's problems located at the heading, and, when no blank line comes between, those in the block directly under the `@intended` line, past the directives stacked with it, so a section's first block is acknowledged as any other block is. It covers nothing else in the section:
 
     ```
     ## Workspace

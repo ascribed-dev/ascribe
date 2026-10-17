@@ -525,7 +525,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 - **Only review checks.** A check whose next step is *review* reports something that may be fine as it is, such as a page nothing links to. Only those can be acknowledged; a problem that's always wrong, such as a link to a page that doesn't exist, is fixed instead. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged.
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
-  - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and nothing else in the section. An unused glossary term is acknowledged this way:
+  - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and, when no blank line comes between, in the block directly under the `@intended` line, so a section's first block is acknowledged as any other block is. It covers nothing else in the section. An unused glossary term is acknowledged this way:
 
     ```markdown
     ## Workspace

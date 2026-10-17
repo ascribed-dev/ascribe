@@ -2709,7 +2709,7 @@ messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
 messages.missing = "an acknowledgement names the check it's for: add `{example}`"
 messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
 messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}"
-fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
+fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block (a heading's under the heading), and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
 
 [[diagnostic]]
 code = "ASC144"

@@ -124,7 +124,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 ### ASC223 `html-comment`
 @id {permalink=true}: ASC223
 
-Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo)
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo)
 
 **When:** A page or a fragment has an HTML comment, as a block or inside a paragraph. A comment in a code block or a memo isn't one, and Vale's own comments, such as `<!-- vale off -->`, aren't reported.
 
@@ -243,7 +243,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 ### ASC158 `glossary-term-unused`
 @id {permalink=true}: ASC158
 
-Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
 **When:** The term, and each of its aliases, appears in no other page's prose, and no link names its heading.
 
@@ -501,7 +501,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 ### ASC168 `link-external-broken`
 @id {permalink=true}: ASC168
 
-Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block, or under the heading for a heading · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** `ascribe report links`: the link checker found that an external link answers with an error, doesn't answer in time, or can't be reached. A host `[checks.links] ignore` names isn't checked.
 

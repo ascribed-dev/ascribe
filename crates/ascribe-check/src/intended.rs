@@ -16,7 +16,7 @@ use ascribe_core::{
 };
 use ascribe_model::{CheckLevel, ContentModel};
 use ascribe_syntax::{
-    Block, BlockKind, ParseOptions, PrimaryValue, bound_block, bound_heading, parse,
+    Block, BlockKind, Bound, ParseOptions, PrimaryValue, bound_block, bound_heading, parse,
 };
 use serde_yaml_ng::Value;
 
@@ -47,10 +47,13 @@ pub struct Acknowledgement {
 pub enum Covers {
     /// A page or fragment: problems located in the file.
     Page(FileId),
-    /// A block, or a heading: problems located in its span, or with a
-    /// related place there (a problem in an included fragment is located at
-    /// the include).
+    /// A block: problems located in its span, or with a related place there
+    /// (a problem in an included fragment is located at the include).
     Block(Location),
+    /// A heading, from `@intended` at the top of its section, and the block
+    /// under that line when no blank line parts them: problems located in
+    /// either, as for [`Covers::Block`].
+    Heading(Location, Option<Location>),
     /// A content model entry or an image: problems that name it, as
     /// [`entry_arg`](ascribe_core::intended::entry_arg) writes it.
     Entry(String),
@@ -206,9 +209,9 @@ impl Acknowledgement {
         }
         match &self.covers {
             Covers::Page(file) => d.location.file == *file,
-            Covers::Block(block) => {
-                let inside = |at: &Location| at.file == block.file && contains(block.span, at.span);
-                inside(&d.location) || d.related.iter().any(|r| inside(&r.location))
+            Covers::Block(block) => covers_at(block, d),
+            Covers::Heading(heading, block) => {
+                covers_at(heading, d) || block.as_ref().is_some_and(|b| covers_at(b, d))
             }
             Covers::Entry(entry) => d.subject.as_deref() == Some(entry.as_str()),
         }
@@ -230,6 +233,33 @@ impl Acknowledgement {
         }
         Diagnostic::from_issue(&issue)
     }
+}
+
+/// The block under the heading-bound `@intended` at `list[index]`, past the
+/// directives stacked with it, when no blank line comes between: where a
+/// block-bound one would have been written for the section's first block.
+fn under<'a>(text: &str, list: &'a [Block], index: usize) -> Option<&'a Block> {
+    let mut k = (index + 1..list.len()).find(|&k| list[k].binding() != Some(Bound::Heading))?;
+    if list[k].binding() == Some(Bound::FollowingBlock) {
+        k = bound_block(list, k)?;
+    }
+    let block = list.get(k)?;
+    let content = !matches!(
+        block.kind,
+        BlockKind::Heading(_) | BlockKind::Directive(_) | BlockKind::End(_) | BlockKind::Title(_)
+    );
+    let touching = list[index..=k].windows(2).all(|pair| {
+        text.get(pair[0].span.end()..pair[1].span.start())
+            .is_some_and(|gap| gap.matches('\n').count() <= 1)
+    });
+    (content && touching).then_some(block)
+}
+
+/// Whether a problem is located in `block`'s span, or has a related place
+/// there.
+fn covers_at(block: &Location, d: &Diagnostic) -> bool {
+    let inside = |at: &Location| at.file == block.file && contains(block.span, at.span);
+    inside(&d.location) || d.related.iter().any(|r| inside(&r.location))
 }
 
 /// Whether `outer` holds `inner`.
@@ -407,17 +437,24 @@ fn blocks(
                     _ => "",
                 };
                 let slug = check.and_then(|c| check_named(c, Place::Block, review).ok());
-                // At the top of a section, the heading; elsewhere, the block
+                let at = |b: &Block| Location::new(file.id, b.span);
+                // At the top of a section, the heading, and the block under
+                // the line when nothing parts them; elsewhere, the block
                 // below.
-                let bound = bound_block(list, i)
-                    .or_else(|| bound_heading(list, i))
-                    .and_then(|k| list.get(k));
-                if let (Some(slug), Some(bound), false) = (slug, bound, reason.is_empty()) {
+                let covers = match bound_block(list, i).and_then(|k| list.get(k)) {
+                    Some(bound) => Some(Covers::Block(at(bound))),
+                    None => bound_heading(list, i)
+                        .and_then(|k| list.get(k))
+                        .map(|heading| {
+                            Covers::Heading(at(heading), under(&file.text, list, i).map(at))
+                        }),
+                };
+                if let (Some(slug), Some(covers), false) = (slug, covers, reason.is_empty()) {
                     out.push(Acknowledgement {
                         check: slug,
                         reason: reason.to_owned(),
                         at: Location::new(file.id, line.span),
-                        covers: Covers::Block(Location::new(file.id, bound.span)),
+                        covers,
                         removal: line_removal(&file.text, line.span),
                     });
                 }
