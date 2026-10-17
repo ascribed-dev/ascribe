@@ -716,8 +716,10 @@ its nested sections', follows it.
 
 Find All References answers in `ascribe.toml` too: on a content model entry's
 declaration (a phrase's key, or the table header of a feature, glossary term,
-dimension, note type, or widget), the places that use that entry, as on a use
-of it in a page. Elsewhere in the file it answers `null`.
+dimension, note type, widget, or page content type), the places that use that
+entry, as on a use of it in a page. A content type's uses are the `type`
+values of the pages that name it; one declared only through its nested tables
+is asked about at the first of them. Elsewhere in the file it answers `null`.
 
 ## How it works
 
