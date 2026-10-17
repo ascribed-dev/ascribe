@@ -64,7 +64,7 @@ ascribe = "0.3.2+dev (8b66d38e1640)"
 "templates/concept.guide.md" = "sha256:f8dbbc7d22767132398444bedd913a83f6cd0cbefa289669f9fb92b6172a008b"
 
 [template.ascribe-files]
-"templates/concept.ascribe.md" = "sha256:9da7fc5e4d0d20b09d2a5125c817636bbc43404de742c7e5ab7b68c9a5155fd0"
+"templates/concept.ascribe.md" = "sha256:ad6f04ff6560666a628588300e1e713accd006ba572a6067e69e4292a427538c"
 
 [[template]]
 name = "troubleshooting"

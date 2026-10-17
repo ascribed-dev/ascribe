@@ -126,24 +126,8 @@ release = { line = "self-managed" }
 [glossary]
 match = "first"
 case-sensitive = false
-
-[glossary.terms.api-key]
-term = "API key"
-aliases = ["API keys"]
-definition = "A secret token that authenticates the Quill agent to Quill Cloud."
-link = "/reference/glossary.md#api-key"
+pages = ["reference/glossary.md"]
 # :snippet-end:
-
-[glossary.terms.quill-server]
-term = "Quill Server"
-definition = "The self-managed Quill server."
-case-sensitive = true
-
-# An ordinary word too: linked only where an author links it.
-[glossary.terms.agent]
-term = "agent"
-definition = "The Quill process that syncs a machine's files."
-match = "marked"
 
 # Declaration order is canonical attribute order.
 # :snippet-start: images

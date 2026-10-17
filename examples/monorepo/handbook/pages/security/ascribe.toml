@@ -30,16 +30,8 @@ team = "Security"
 channel = "#security"
 report = "security@lantern.example"
 
-# Severity names are case-sensitive, so "sev1" in a URL isn't linked.
+# Severity names are case-sensitive, so "sev1" in a URL isn't linked. Each
+# level is a heading marked `@term` on the glossary page.
 [glossary]
 case-sensitive = true
-
-[glossary.terms.sev1]
-term = "SEV1"
-definition = "An incident with customer data exposed or the service down for everyone."
-link = "/incident-response.md#severity-levels"
-
-[glossary.terms.sev2]
-term = "SEV2"
-definition = "An incident that degrades the service for some customers, with no data exposed."
-link = "/incident-response.md#severity-levels"
+pages = ["glossary.md"]

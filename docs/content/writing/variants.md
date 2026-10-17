@@ -89,6 +89,6 @@ You declared a dimension, the platform, and wrote a page with a variant group fo
 
 - **A whole page that differs.** When most of a page is different, write a page for each value, with `variant` in its frontmatter. A build that selects another value leaves the page out. See [whole-page variants](directives.md#whole-page-variants).
 - **Alternatives that aren't a dimension.** For a one-off choice, such as two ways to do the same thing, give each arm a title instead of a value. See [`@variant`](directives.md#variant).
-- **A word that differs.** `@variant` varies whole blocks. For a name or a version in a sentence, use a [phrase](directives.md#phrases).
+- **A word that differs.** `@variant` varies whole blocks. For a name or a version in a sentence, use a [phrase](../glossary.md#phrase).
 - **Versions and lifecycle.** Availability can say when content arrived and what state it's in, such as `self-managed preview 3.4`, and a feature can be named once in `[features]` so going GA is one edit. See [availability specs](directives.md#availability-specs), [`[lifecycle.<state>]`](../content-model/content.md#8-lifecyclestate), and [`[features.<key>]`](../content-model/content.md#9-featureskey).
 - **A table row.** A row takes `{available=...}` at the end of its first cell. See [table rows](directives.md#table-rows).

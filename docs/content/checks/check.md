@@ -176,7 +176,7 @@ Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/bui
 | Output | What it is | For |
 |---|---|---|
 | `site` | Markdown with web components (`<ascribe-note>`, `<ascribe-tabs>`, and the rest), heading ids and image attributes as markers the Astro integration applies, and the generated Zod schema in `_ascribe/schema.ts` | An Astro site, through `@ascribed/astro` ([Astro](../astro/index.md)) |
-| `plain` | Fully resolved CommonMark with no HTML: notes as quotes, [variants](../writing/directives.md#variant) as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
+| `plain` | Fully resolved CommonMark with no HTML: notes as quotes, [variants](../glossary.md#variant) as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
 | `json` | The resolved tree of each page | Your own tools |
 
 Without `[consumer] site` in `ascribe.toml`, plain-Markdown links are root-relative instead of absolute, and the build says so.

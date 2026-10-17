@@ -46,26 +46,10 @@ version = "2.5.0"
 api = "https://api.lantern.example/v2/"
 
 # Terms are linked to the glossary page wherever they first appear on a page.
+# Each is a heading marked `@term` there.
 [glossary]
 match = "first"
-
-[glossary.terms.flag]
-term = "feature flag"
-aliases = ["feature flags"]
-definition = "A named switch that turns a behavior on or off without a deploy."
-link = "/reference/glossary.md#feature-flag"
-
-[glossary.terms.rollout]
-term = "rollout"
-aliases = ["rollouts"]
-definition = "A plan for turning a flag on for a growing share of users."
-link = "/reference/glossary.md#rollout"
-
-[glossary.terms.segment]
-term = "segment"
-aliases = ["segments"]
-definition = "A saved group of users, matched by their attributes."
-link = "/reference/glossary.md#segment"
+pages = ["reference/glossary.md"]
 
 [images.attributes]
 width = "number?"

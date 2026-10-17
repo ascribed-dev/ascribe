@@ -27,6 +27,7 @@ Write the phrase (`{team}`), not the text it stands for.
 - `@note {type=<type>}: <text>`, or `@note:` … `@end` around several blocks: a callout. Here: types `note`, `tip`, `important`, `warning`, `caution`, `policy`
 - `@steps` on the line above an ordered list: the list is a procedure
 - `.<Title>` on its own line, then `@details:` … `@end`: collapsible content; the title is required
+- `@term` on the line under a heading of a glossary page, with `{aliases="<a>|<b>"}` for other forms: the heading is a glossary term, defined by the paragraph under it
 
 ### Links
 
