@@ -1,0 +1,10 @@
+description: >-
+  Pages that leave their description to the field's default, by leaving the
+  field out or empty, share it by design, so they aren't duplicates of each
+  other.
+spec: ["9.4", "7.2"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics: []

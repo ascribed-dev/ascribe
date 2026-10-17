@@ -120,7 +120,7 @@ fn about_says_whether_the_page_is_described_due_published_listed_and_unfinished(
     let about = page(&mut client, &f.path("docs/internal/rotate.md"))["about"].clone();
     assert_eq!(
         about["description"],
-        json!({ "field": "description", "length": 15, "limit": 300, "range": line(3, 0, 30) })
+        json!({ "field": "description", "length": 15, "limit": 300, "reported": false, "range": line(3, 0, 30) })
     );
     assert_eq!(
         about["review"],

@@ -1,0 +1,9 @@
+description: >-
+  A description field's default is the description of every page that
+  leaves the field out or empty, so one too long for a line of llms.txt is
+  advice once, at the default in ascribe.toml, and not on those pages.
+spec: ["7.2", "9.4"]
+tags: [check]
+
+diagnostics:
+  - {slug: description-too-long, file: ascribe.toml, line: 13}

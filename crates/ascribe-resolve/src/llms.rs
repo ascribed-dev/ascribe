@@ -27,6 +27,7 @@
 use ascribe_core::RelPath;
 use ascribe_model::{Build, ContentModel, Field, FieldRole};
 use ascribe_syntax::{BlockKind, ParseOptions};
+use serde_yaml_ng::Value;
 
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
@@ -402,15 +403,41 @@ fn link_text(text: &str) -> String {
 }
 
 /// A page's description, as its line in an index shows it
-/// ([`description_text`]). `None` when it has none.
+/// ([`description_text`]): its own, or its field's default
+/// ([`written_description`]). `None` when it has none.
 pub fn description(model: &ContentModel, page: &ResolvedPage) -> Option<String> {
     let field = description_field(model, page.frontmatter.as_ref())?;
-    let raw = page
-        .frontmatter
-        .as_ref()?
-        .get(field.name.as_str())?
-        .as_str()?;
-    description_text(model, raw)
+    let empty = Value::Mapping(Default::default());
+    let value = page.frontmatter.as_ref().unwrap_or(&empty);
+    description_text(model, written_description(field, value)?)
+}
+
+/// The description a page with the frontmatter `value` has in its field
+/// `field`, as written: its own string, or the field's default when it
+/// leaves the field out or leaves it empty (decision #573). A field without
+/// a default keeps an empty own string. `None` when there's neither, or the
+/// value isn't a string. `ascribe_check::roles::description` is this.
+pub fn written_description<'v>(field: &'v Field, value: &'v Value) -> Option<&'v str> {
+    let own = value.get(field.name.as_str());
+    if let Some(text) = own.and_then(own_description) {
+        return Some(text);
+    }
+    match own {
+        None | Some(Value::Null | Value::String(_)) => field
+            .default
+            .as_ref()
+            .and_then(Value::as_str)
+            .or_else(|| own?.as_str()),
+        // Another type is `frontmatter-type-mismatch`.
+        Some(_) => None,
+    }
+}
+
+/// A page's own value for its description field, when it's a string with
+/// something in it: the description the page writes itself, rather than
+/// leaving to the field's default.
+pub fn own_description(own: &Value) -> Option<&str> {
+    own.as_str().filter(|s| !s.trim().is_empty())
 }
 
 /// A description as its line in an index shows it: on one line, with any

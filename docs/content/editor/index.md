@@ -261,7 +261,7 @@ About's other rows say whether the page is published, listed, due, and finished.
 
 | Row | Says | Opens |
 |---|---|---|
-| **Description** | Its length, or its field's default's when the page leaves the field out, against the 300 characters its line in `llms.txt` reads best under when the project publishes one ([`description-too-long`](../checks/diagnostics/content-checks.md#ASC163)), or "missing" | The field in the frontmatter |
+| **Description** | Its length, or its field's default's when the page leaves the field out or empty, against the 300 characters its line in `llms.txt` reads best under when the project publishes one, with a warning only where [`description-too-long`](../checks/diagnostics/content-checks.md#ASC163) reports it, or "missing" | The field in the frontmatter |
 | **Review** | "overdue since 3 October" or "due in 12 days", from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page | The field |
 | **Availability** | The page's own `available` | Nothing |
 | **Builds** | "Published by site, agents; left out by cloud": the builds that publish the page and the ones that leave it out, with why in its tooltip | **Switch Build**, to see the page as a build publishes it; **Dim What the Build Leaves Out** shows what that build leaves out of it |

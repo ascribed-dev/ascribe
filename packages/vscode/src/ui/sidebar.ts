@@ -393,7 +393,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   const { description, review, listing, template } = about;
   if (description) {
     const { length, limit } = description;
-    const long = length !== null && limit !== null && length > limit;
+    const long = description.reported;
     rows.push({
       label: "Description",
       value:

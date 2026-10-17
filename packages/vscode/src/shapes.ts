@@ -1027,8 +1027,8 @@ export interface PageDescription {
   /**
    * Its length in characters, as plain text on one line, as
    * `description-too-long` measures it: the page's own, or its field's
-   * default when it leaves the field out. `null` when it has none, which
-   * is where `page-description-missing` reports it.
+   * default when it leaves the field out or empty. `null` when it has
+   * none, which is where `page-description-missing` reports it.
    */
   length: number | null;
   /**
@@ -1037,6 +1037,12 @@ export interface PageDescription {
    * (`[consumer] agents`), which is the only place it's too long for.
    */
   limit: number | null;
+  /**
+   * Whether `description-too-long` reports it: it's over `limit`, and the
+   * project hasn't turned the check off. A default is reported where
+   * `ascribe.toml` writes it.
+   */
+  reported: boolean;
   /**
    * The field's line, or the page's first line when it has none, in the
    * negotiated position encoding.

@@ -21,6 +21,7 @@ use serde_yaml_ng::Value;
 
 use super::Ctx;
 use super::text::{quoted_and, suggest};
+use crate::roles;
 use crate::yaml::{Node, YamlIndex};
 
 impl Ctx<'_> {
@@ -167,28 +168,31 @@ impl Ctx<'_> {
         self.report(issue);
     }
 
-    /// A description longer than its line in `llms.txt` should be, when the
-    /// project publishes one (`[consumer] agents = true`).
+    /// A description the page writes that's longer than its line in
+    /// `llms.txt` should be, when the project publishes one (`[consumer]
+    /// agents = true`). A field's default is reported once, where it's
+    /// written ([`crate::descriptions`]), not on each page that leaves the
+    /// field to it.
     fn check_description_length(
         &mut self,
         schema: &FrontmatterSchema,
         value: &Value,
         index: &YamlIndex,
     ) {
-        if !self.model.consumer.agents {
-            return;
-        }
         let Some(field) = schema.field_with_role(FieldRole::Description) else {
             return;
         };
-        let Some(raw) = value.get(field.name.as_str()).and_then(Value::as_str) else {
+        let Some(raw) = value
+            .get(field.name.as_str())
+            .and_then(llms::own_description)
+        else {
             return;
         };
         let Some(text) = llms::description_text(self.model, raw) else {
             return;
         };
         let length = text.chars().count();
-        if length <= llms::DESCRIPTION_LIMIT {
+        if !roles::description_too_long(self.model, length) {
             return;
         }
         let Some(node) = index.get(&field.name) else {
