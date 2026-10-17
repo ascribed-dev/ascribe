@@ -9,6 +9,10 @@
       {
         "href": "/docs/getting-started/",
         "label": "Getting started"
+      },
+      {
+        "href": "/docs/glossary/",
+        "label": "Glossary"
       }
     ]
   },

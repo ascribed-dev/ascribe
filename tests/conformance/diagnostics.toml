@@ -1592,7 +1592,8 @@ group = "file"
 message = "unknown key `{key}` in `[{table}]`"
 messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
 messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
-fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages."
+messages.glossary-terms = "`{key}` isn't a key of `[{table}]`: a term is a heading marked `@term` on a page that `[glossary] pages` lists"
+fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`."
 
 [[diagnostic]]
 code = "ASC062"
@@ -2057,33 +2058,6 @@ reference = "content-model/content.md#phrases"
 group = "phrases"
 message = "phrase `{key}` must be a quoted string, but it's {found}; write {key} = \"{value}\""
 fix = "Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = \"self-managed\" }`."
-
-[[diagnostic]]
-code = "ASC098"
-slug = "model-glossary-duplicate-term"
-severity = "error"
-level = "file"
-next = "write"
-evidence = []
-spec = "5.4"
-reference = "content-model/content.md#122-terms"
-group = "phrases"
-message = "\"{text}\" is declared by both glossary terms `{a}` and `{b}`"
-fix = "Remove the text from one of the terms, or make the terms distinct."
-
-[[diagnostic]]
-code = "ASC099"
-slug = "model-glossary-link"
-severity = "error"
-level = "file"
-next = "choose"
-evidence = []
-spec = "5.4"
-reference = "content-model/content.md#122-terms"
-group = "phrases"
-message = "glossary term `{id}` links to {path}, which doesn't exist"
-messages.fragment = "glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it"
-fix = "Fix the link, or link to a page that includes the fragment."
 
 [[diagnostic]]
 code = "ASC100"
@@ -2968,9 +2942,9 @@ place = "entry"
 area = "project"
 spec = "5.4"
 reference = "content-model/content.md#122-terms"
-when = "The term, and each of its aliases, appears in no file's prose. A term with `match = \"marked\"` isn't reported"
-message = "the glossary term `{term}` appears in no file's prose, so it's never linked"
-fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements)."
+when = "The term, and each of its aliases, appears in no other page's prose, and no link names its heading"
+message = "the glossary term `{term}` appears in no other file's prose, and no link names its heading, so it's never linked"
+fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements)."
 
 [[diagnostic]]
 code = "ASC159"
@@ -3788,19 +3762,6 @@ message = "`{observation}` lists `{path}`, which isn't in `{folder}`; run `{comm
 fix = "The example was usually deleted or renamed without a second test run. Run the command named, in the folder named, and commit the observation it writes, which lists the examples as they are. When nothing writes the observation any more, delete its file."
 
 [[diagnostic]]
-code = "ASC203"
-slug = "glossary-link-target-missing"
-severity = "error"
-level = "file"
-next = "choose"
-evidence = []
-spec = "5.4"
-reference = "content-model/content.md#122-terms"
-row = "Glossary | A term's `link` that names a heading its page doesn't have"
-message = "glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}`"
-fix = "Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included."
-
-[[diagnostic]]
 code = "ASC204"
 slug = "model-releases-target"
 severity = "error"
@@ -4346,3 +4307,31 @@ area = "pages"
 when = "A page's `nav-label` is longer than its `title`, each counted in characters as a reader sees it"
 message = "this `nav-label` is {length} characters, longer than the {title}-character title it stands for in the sidebar"
 fix = "A `nav-label` is a page's short name in a list, a sidebar or previous and next, where the title is too long to read at a glance. Shorten it, or remove it, and the title is the page's name there too."
+
+[[diagnostic]]
+code = "ASC238"
+slug = "model-glossary-page"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.2"
+reference = "content-model/content.md#12-glossary"
+group = "phrases"
+message = "`{path}` in `[glossary] pages` doesn't exist"
+messages.fragment = "`{path}` in `[glossary] pages` is a fragment; list the page that includes it"
+messages.case = "`{path}` in `[glossary] pages` doesn't exist; `{actual}` differs from it only in case"
+fix = "Each path in `pages` is a page, from the content root, with its name's case as it is on disk: fix the path, or, for a fragment, list a page that includes it."
+
+[[diagnostic]]
+code = "ASC239"
+slug = "glossary-term-duplicate"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "5.4"
+reference = "content-model/content.md#12-glossary"
+row = "Glossary | Two terms, or a term and an alias, with the same text"
+message = "\"{text}\" is already the glossary term `{first}`, on {page}"
+fix = "Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive."

@@ -27,9 +27,8 @@ available = "cloud"
 values = ["cloud", "self-managed"]
 versionless = ["cloud"]
 
-[glossary.terms.api-key]
-term = "API key"
-definition = "A secret."
+[glossary]
+pages = ["glossary.md"]
 
 [notes.security]
 label = "Security"
@@ -43,6 +42,7 @@ const INDEX: &str = "---\ntitle: Home\n---\n\n# Home\n\nSee [setup](guide.md#set
 const GUIDE: &str =
     "---\ntitle: Guide\n---\n\n# Guide\n\n@include: _setup.md\n\nJump to [install](#install).\n";
 const SETUP: &str = "## Setup\n\n### Install\n\nRun it with {product}.\n";
+const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\n## API key\n@term\n\nA secret.\n";
 const OTHER: &str = "---\ntitle: Other\n---\n\n@include: _setup.md#install\n\n@available: sso\nSSO only.\n\n@note {type=security}: Careful.\n";
 
 fn project() -> Fixture {
@@ -53,6 +53,7 @@ fn project() -> Fixture {
             ("docs/guide.md", GUIDE),
             ("docs/_setup.md", SETUP),
             ("docs/other.md", OTHER),
+            ("docs/glossary.md", GLOSSARY),
         ],
     )
 }
@@ -287,7 +288,7 @@ fn an_entry_is_found_from_its_declaration_in_the_model() {
             ("index.md", "{product}"),
         ])
     );
-    // A table's header: a feature, a glossary term, a note type.
+    // A table's header: a feature, a note type.
     assert_eq!(
         references_in(
             &mut client,
@@ -297,16 +298,6 @@ fn an_entry_is_found_from_its_declaration_in_the_model() {
             false
         ),
         pairs(&[("other.md", "sso")])
-    );
-    assert_eq!(
-        references_in(
-            &mut client,
-            &f,
-            "ascribe.toml",
-            at(MODEL, "api-key]", 0),
-            false
-        ),
-        pairs(&[("index.md", "API key")])
     );
     assert_eq!(
         references_in(
@@ -369,6 +360,10 @@ fn a_page_type_is_found_where_pages_name_it() {
                 "---\r\ntitle: Other\r\ntype: guide # how-to\r\n---\r\n\r\n# Other\r\n",
             ),
             ("docs/_setup.md", "---\ntype: guide\n---\n\n## Setup\n"),
+            (
+                "docs/glossary.md",
+                "---\ntitle: Glossary\n---\n\n## API key\n@term\n\nA secret.\n",
+            ),
         ],
     );
     let mut client = started(&f);
@@ -445,6 +440,7 @@ fn the_inventory_lists_pages_fragments_orphans_and_the_model() {
     assert_eq!(
         r["pages"],
         json!([
+            { "path": "glossary.md", "title": "Glossary", "label": "Glossary", "navLabel": null, "type": "page", "incoming": 0, "builds": ["site"] },
             { "path": "guide.md", "title": "Guide", "label": "Guide", "navLabel": null, "type": "page", "incoming": 2, "builds": ["site"] },
             { "path": "index.md", "title": "Home", "label": "Home", "navLabel": null, "type": "page", "incoming": 0, "builds": ["site"] },
             { "path": "other.md", "title": "Other", "label": "Other", "navLabel": null, "type": "page", "incoming": 0, "builds": ["site"] },
@@ -462,7 +458,7 @@ fn the_inventory_lists_pages_fragments_orphans_and_the_model() {
         r["contentUri"]
     );
     // An index page is never an orphan.
-    assert_eq!(r["orphans"], json!(["other.md"]));
+    assert_eq!(r["orphans"], json!(["glossary.md", "other.md"]));
     let uses = |kind: &str, key: &str| {
         r["model"]
             .as_array()
@@ -512,7 +508,7 @@ fn the_inventory_lists_pages_fragments_orphans_and_the_model() {
     let page_type = r["model"].as_array().unwrap().last().unwrap();
     assert_eq!(
         page_type,
-        &json!({ "kind": "type", "key": "page", "label": null, "uses": 3, "declaration": null })
+        &json!({ "kind": "type", "key": "page", "label": null, "uses": 4, "declaration": null, "page": null })
     );
 }
 
@@ -526,6 +522,10 @@ fn a_declared_content_type_counts_its_pages_and_opens_its_table() {
         &[
             ("docs/a.md", "---\ntitle: A\ntype: guide\n---\n\n# A\n"),
             ("docs/b.md", "---\ntitle: B\ntype: guide\n---\n\n# B\n"),
+            (
+                "docs/glossary.md",
+                "---\ntitle: Glossary\ntype: reference\n---\n\n## API key\n@term\n\nA secret.\n",
+            ),
         ],
     );
     let mut client = started(&f);
@@ -541,7 +541,7 @@ fn a_declared_content_type_counts_its_pages_and_opens_its_table() {
     assert_eq!(types[0]["label"], "Teach a task");
     assert_eq!(types[0]["uses"], 2);
     assert_eq!(types[1]["key"], "reference");
-    assert_eq!(types[1]["uses"], 0);
+    assert_eq!(types[1]["uses"], 1);
     let line = model.lines().position(|l| l == "[types.guide]").unwrap();
     assert_eq!(
         types[0]["declaration"],
@@ -561,7 +561,8 @@ fn counts_include_unsaved_edits() {
     );
     client.settle();
     let r = inventory(&mut client, &other);
-    assert_eq!(r["pages"][0]["incoming"], 3);
+    assert_eq!(r["pages"][1]["path"], "guide.md");
+    assert_eq!(r["pages"][1]["incoming"], 3);
     assert_eq!(r["model"][0]["uses"], 3);
     assert_eq!(
         references(
@@ -585,7 +586,7 @@ fn any_file_of_the_project_asks_for_the_inventory_and_the_targets() {
     let mut client = started(&f);
     for file in ["ascribe.toml", "README.md"] {
         let r = inventory(&mut client, &f.path(file));
-        assert_eq!(r["pages"].as_array().map(Vec::len), Some(3), "{file}");
+        assert_eq!(r["pages"].as_array().map(Vec::len), Some(4), "{file}");
         let targets = client
             .request(
                 "ascribe/targets",

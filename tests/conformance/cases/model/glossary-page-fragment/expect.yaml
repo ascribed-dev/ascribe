@@ -1,0 +1,8 @@
+description: >-
+  A fragment isn't a glossary page: `[glossary] pages` lists the page that
+  includes it.
+spec: ["5.4", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-glossary-page, file: ascribe.toml, line: 4}

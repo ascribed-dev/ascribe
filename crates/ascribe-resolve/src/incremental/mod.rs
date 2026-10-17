@@ -1083,25 +1083,30 @@ impl IncrementalProject {
             }
             // Others see a change in what a file is: pages that link to it or
             // to a page that includes it, and whatever those pages hold.
+            // A glossary page shows the terms every page links, so a change to
+            // what one shows re-resolves every page. A fragment one includes
+            // can hold a term's definition, which its signature doesn't see,
+            // so any change to it does too.
             let glossary_targets = glossary_targets(&model);
             let mut all_pages = false;
             for path in &touched {
-                let new_sig = self.sigs.get(path).copied();
-                if old_sigs.get(path).copied().flatten() == new_sig {
-                    continue;
-                }
                 let mut reached: BTreeSet<RelPath> = self
                     .include_rev
                     .dependents(path)
                     .into_iter()
                     .filter(&is_page)
                     .collect();
+                if reached.iter().any(|p| glossary_targets.contains(p)) {
+                    all_pages = true;
+                }
+                let new_sig = self.sigs.get(path).copied();
+                if old_sigs.get(path).copied().flatten() == new_sig {
+                    continue;
+                }
                 if is_page(path) {
                     reached.insert(path.clone());
                 }
-                if glossary_targets.contains(path)
-                    || reached.iter().any(|p| glossary_targets.contains(p))
-                {
+                if glossary_targets.contains(path) {
                     all_pages = true;
                 }
                 for page in &reached {

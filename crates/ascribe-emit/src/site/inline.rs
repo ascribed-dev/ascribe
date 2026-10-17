@@ -144,7 +144,12 @@ fn link_inline(
     };
     let destination = match resolved.map(|l| &l.target) {
         Some(LinkTarget::External) => markdown_destination(&link.destination),
-        Some(LinkTarget::Page { url, .. }) => markdown_destination(url),
+        // A link an author wrote to a term's heading is a use of the term
+        // (SPEC §5.4), and carries its definition and marker too.
+        Some(LinkTarget::Page { url, .. }) => {
+            term = r.glossary_term(block, link, url);
+            markdown_destination(url)
+        }
         Some(LinkTarget::Asset { path, fragment }) => {
             asset_destination(r, path, fragment.as_deref(), AssetUse::Link)
         }
@@ -158,7 +163,7 @@ fn link_inline(
         // with its definition as the title and a marker naming the term
         // (element contract §7).
         None => {
-            term = r.glossary_term(block, link);
+            term = r.glossary_term(block, link, &link.destination);
             markdown_destination(&link.destination)
         }
     };

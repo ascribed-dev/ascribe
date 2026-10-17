@@ -451,14 +451,14 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[phrases]\nversion = 3.4 #!\n",
         ),
         case(
-            "model-glossary-duplicate-term",
-            None,
-            "spec = \"0.1\"\n[glossary.terms.a]\nterm = \"API key\"\ndefinition = \"x\"\n[glossary.terms.b] #!\nterm = \"api key\"\ndefinition = \"y\"\n",
+            "model-glossary-page",
+            Some("fragment"),
+            "spec = \"0.1\"\n[glossary]\npages = [\"_shared/terms.md\"] #!\n",
         ),
         case(
-            "model-glossary-link",
-            Some("fragment"),
-            "spec = \"0.1\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nlink = \"/_shared/a.md\" #!\n",
+            "model-unknown-key",
+            Some("glossary-terms"),
+            "spec = \"0.1\"\n[glossary]\nterms = { a = { term = \"A\" } } #!\n",
         ),
         // 22.6 Widgets
         case(
@@ -919,7 +919,6 @@ fn every_registered_rule_is_covered() {
     covered.extend(
         [
             "model-content-root-missing",
-            "model-glossary-link",
             "model-source-path-missing",
             "model-source-outside-repository",
             // Checked with the project's files, where they're read:

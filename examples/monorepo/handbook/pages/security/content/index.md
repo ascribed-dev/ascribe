@@ -20,4 +20,4 @@ The {team} team keeps Lantern and its customers' data safe. This handbook is for
 ## Incidents
 @id: incidents
 
-[](incident-response.md) says what happens after a report, and who does what.
+[](incident-response.md) says what happens after a report, and who does what. [](glossary.md) defines the severity levels.

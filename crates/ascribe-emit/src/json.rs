@@ -423,6 +423,7 @@ struct GlossaryJson {
     term: String,
     text: String,
     url: String,
+    definition: String,
 }
 
 #[derive(Serialize)]
@@ -965,6 +966,7 @@ fn glossary(g: &GlossaryUse) -> GlossaryJson {
         term: g.term.clone(),
         text: g.text.clone(),
         url: g.url.clone(),
+        definition: g.definition.clone(),
     }
 }
 

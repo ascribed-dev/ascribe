@@ -18,7 +18,6 @@ import {
   availabilitySpec,
   availabilitySteps,
   destinationStep,
-  glossaryLinkStep,
   includePath,
   includeSteps,
   KEY_RULE,
@@ -1040,47 +1039,22 @@ describe("the content model's actions", () => {
     ).toEqual({ args: { key: "agent", everywhere: false } });
   });
 
-  it("adds a glossary term, linked to a page or heading from the content root, or not", async () => {
-    expect(values(glossaryLinkStep(targets))).toEqual([
-      "",
-      "/keys.md",
-      "/guides/my%20page.md",
-      "/keys.md#rotate-keys",
-      "/install.md#install",
-      "/guides/my%20page.md#set-up",
-    ]);
+  it("adds a glossary term to the glossary page, with its aliases and definition", async () => {
     const steps = action("addGlossaryTerm").ask?.(proseSelected, targets).steps({}) ?? [];
-    expect(steps.map((step) => step.key)).toEqual(["term", "id", "aliases", "definition", "link"]);
+    expect(steps.map((step) => step.key)).toEqual(["term", "aliases", "definition"]);
     expect(steps[0]?.kind === "text" && steps[0].value).toBe("the agent");
     expect(
       await askWith("addGlossaryTerm", proseSelected, targets, [
         "Agent",
-        "agent",
         " daemon, Quill agent ,",
         "The process that syncs.",
-        "/keys.md#rotate-keys",
       ]),
     ).toEqual({
       args: {
-        id: "agent",
         term: "Agent",
         aliases: ["daemon", "Quill agent"],
         definition: "The process that syncs.",
-        link: "/keys.md#rotate-keys",
       },
-    });
-    const unlinked = await askWith("addGlossaryTerm", proseSelected, targets, [
-      "Agent",
-      "agent",
-      "",
-      "The process that syncs.",
-      "",
-    ]);
-    expect(unlinked && "args" in unlinked && unlinked.args).toEqual({
-      id: "agent",
-      term: "Agent",
-      aliases: [],
-      definition: "The process that syncs.",
     });
   });
 

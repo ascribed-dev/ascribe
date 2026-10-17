@@ -28,20 +28,16 @@ versionless = ["cloud", "self-managed"]
 name = "Single sign-on"
 available = "cloud"
 
-[glossary.terms.agent]
-term = "agent"
-definition = "The process that ships logs."
-
-[glossary.terms.relay]
-term = "relay"
-definition = "Nothing writes this."
+[glossary]
+pages = ["glossary.md"]
 
 [checks]
 page-orphan = "warning"
 phrase-unused = "error"
 "#;
 
-const INDEX: &str = "---\ntitle: Home\n---\n\nSee [Alpha](a.md) and [the other Alpha](c.md).\n";
+const INDEX: &str = "---\ntitle: Home\n---\n\nSee [Alpha](a.md) and [the other Alpha](c.md), and [the glossary](glossary.md).\n";
+const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\n## agent\n@term\n\nThe process that ships logs.\n\n## relay\n@term\n\nNothing writes this.\n";
 const A: &str = "---\ntitle: Alpha\n---\n\nUse {product} with the agent.\n\n@include: _used.md\n";
 const B: &str = "---\ntitle: Beta\n---\n\nNothing links here.\n";
 const C: &str = "---\ntitle: Alpha\n---\n\nThe same title.\n";
@@ -54,6 +50,7 @@ fn project() -> Fixture {
             ("docs/a.md", A),
             ("docs/b.md", B),
             ("docs/c.md", C),
+            ("docs/glossary.md", GLOSSARY),
             ("docs/_used.md", "Included.\n"),
             ("docs/_spare.md", "Nobody includes this.\n"),
         ],
@@ -98,9 +95,12 @@ fn the_checks_are_published_on_load_at_their_levels() {
         found(&client, &f.path("ascribe.toml")),
         [
             ("feature-unused".to_owned(), info),
-            ("glossary-term-unused".to_owned(), info),
             ("phrase-unused".to_owned(), DiagnosticSeverity::ERROR),
         ]
+    );
+    assert_eq!(
+        found(&client, &f.path("docs/glossary.md")),
+        [("glossary-term-unused".to_owned(), info)]
     );
 }
 
@@ -147,10 +147,7 @@ fn a_model_change_runs_them_again() {
     let without = MODEL.replace("spare = \"Nothing\"\n", "");
     client.replace(&config, 2, &without);
     client.settle();
-    assert_eq!(
-        client.codes(&config),
-        ["feature-unused", "glossary-term-unused"]
-    );
+    assert_eq!(client.codes(&config), ["feature-unused"]);
 }
 
 #[test]
@@ -165,28 +162,35 @@ fn what_is_unused_is_what_the_inventory_counts_no_use_of() {
         )
         .response_result
         .expect("an inventory");
-    let unused_entries: Vec<String> = inventory["model"]
-        .as_array()
-        .expect("entries")
-        .iter()
-        .filter(|e| ["phrase", "feature", "term"].contains(&e["kind"].as_str().unwrap()))
-        .filter(|e| e["uses"] == json!(0))
-        .map(|e| e["key"].as_str().unwrap().to_owned())
-        .collect();
-    let reported: Vec<String> = client
-        .diagnostics(&f.path("ascribe.toml"))
-        .iter()
-        .map(|d| {
-            let start = d.range.start.line as usize;
-            MODEL.lines().nth(start).unwrap().to_owned()
-        })
-        .collect();
-    assert_eq!(unused_entries.len(), reported.len(), "{reported:?}");
-    for key in &unused_entries {
-        assert!(
-            reported.iter().any(|line| line.contains(key.as_str())),
-            "`{key}` is unused, and reported: {reported:?}"
-        );
+    // Phrases and features are reported in `ascribe.toml`, terms at their
+    // headings on the glossary page.
+    for (kinds, file, text) in [
+        (&["phrase", "feature"][..], "ascribe.toml", MODEL),
+        (&["term"][..], "docs/glossary.md", GLOSSARY),
+    ] {
+        let unused_entries: Vec<String> = inventory["model"]
+            .as_array()
+            .expect("entries")
+            .iter()
+            .filter(|e| kinds.contains(&e["kind"].as_str().unwrap()))
+            .filter(|e| e["uses"] == json!(0))
+            .map(|e| e["key"].as_str().unwrap().to_owned())
+            .collect();
+        let reported: Vec<String> = client
+            .diagnostics(&f.path(file))
+            .iter()
+            .map(|d| {
+                let start = d.range.start.line as usize;
+                text.lines().nth(start).unwrap().to_owned()
+            })
+            .collect();
+        assert_eq!(unused_entries.len(), reported.len(), "{reported:?}");
+        for key in &unused_entries {
+            assert!(
+                reported.iter().any(|line| line.contains(key.as_str())),
+                "`{key}` is unused, and reported: {reported:?}"
+            );
+        }
     }
     let unused_fragments: Vec<&str> = inventory["fragments"]
         .as_array()

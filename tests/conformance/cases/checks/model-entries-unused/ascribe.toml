@@ -23,16 +23,5 @@ product = "Quill"
 in-title = "Quill"
 unused = "Nothing uses this"
 
-[glossary.terms.agent]
-term = "agent"
-aliases = ["agents"]
-definition = "The process that ships logs."
-
-[glossary.terms.relay]
-term = "relay"
-definition = "No page writes this word."
-
-[glossary.terms.build]
-term = "build"
-definition = "Linked only where an author links it."
-match = "marked"
+[glossary]
+pages = ["glossary.md"]

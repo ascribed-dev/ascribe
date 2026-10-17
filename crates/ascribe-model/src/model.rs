@@ -1093,41 +1093,33 @@ pub enum GlossaryMatch {
     Marked,
 }
 
-/// `[glossary]`.
+/// `[glossary]` (SPEC §5.4). The terms are headings marked `@term` on its
+/// pages; the project's source index reads them.
 #[derive(Clone, Debug)]
 pub struct Glossary {
     /// The default for terms that don't set `match` (`First` or `Every`).
     pub match_mode: GlossaryMatch,
     /// The default for terms that don't set `case-sensitive`.
     pub case_sensitive: bool,
-    /// The terms, in declaration order.
-    pub terms: Vec<GlossaryTerm>,
+    /// The glossary's pages, in the order `pages` lists them.
+    pub pages: Vec<GlossaryPage>,
 }
 
-/// A glossary term.
+impl Glossary {
+    /// Whether the glossary lists this page, by its path from the content
+    /// root.
+    pub fn has_page(&self, path: &str) -> bool {
+        self.pages.iter().any(|p| p.path == path)
+    }
+}
+
+/// A page in `[glossary] pages`.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GlossaryTerm {
-    /// The term id.
-    pub id: String,
-    /// The term as it appears in prose.
-    pub term: String,
-    /// Other forms that count as occurrences.
-    pub aliases: Vec<String>,
-    /// A short plain-text definition.
-    pub definition: String,
-    /// The page (relative to the content root, no leading `/`) and optional id
-    /// the term links to, as `(path, fragment)`.
-    pub link: Option<(String, Option<String>)>,
-    /// Whether matching is case-sensitive for this term (the term's setting,
-    /// else the glossary's).
-    pub case_sensitive: bool,
-    /// Which occurrences of this term are linked (the term's setting, else
-    /// the glossary's).
-    pub match_mode: GlossaryMatch,
-    /// The term id's key in `ascribe.toml`.
+pub struct GlossaryPage {
+    /// The page's path from the content root, with no leading `/`.
+    pub path: String,
+    /// The path's value in `ascribe.toml`.
     pub span: Span,
-    /// The `link` value in `ascribe.toml`, when it has one.
-    pub link_span: Option<Span>,
 }
 
 /// A project widget.

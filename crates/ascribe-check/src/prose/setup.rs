@@ -35,10 +35,11 @@ pub const VOCABULARY: &str = "Ascribe";
 pub fn prepare(
     root: &Path,
     model: &ContentModel,
+    terms: &[String],
     settings: &ValeSettings,
 ) -> Result<Vec<PathBuf>, String> {
     let written = |e: io::Error| format!("can't write its configuration under {FOLDER}: {e}");
-    let words = vocabulary(model);
+    let words = vocabulary(model, terms);
     let base = root.join(FOLDER);
     match &settings.source {
         ValeSource::Preset(name) => {
@@ -124,16 +125,14 @@ pub fn with_settings(ini: &str, global: &[String], off: &[String]) -> String {
 }
 
 /// The project's own words, one to a line, as Vale vocabulary entries:
-/// phrase values, glossary terms and their aliases, and the labels of
-/// dimensions, their values, and features. Each is a regular expression to
-/// Vale, so its special characters are escaped.
-pub fn vocabulary(model: &ContentModel) -> String {
+/// phrase values, glossary terms and their aliases (`terms`, as
+/// [`glossary_words`] gives them), and the labels of dimensions, their
+/// values, and features. Each is a regular expression to Vale, so its
+/// special characters are escaped.
+pub fn vocabulary(model: &ContentModel, terms: &[String]) -> String {
     let mut words: Vec<&str> = Vec::new();
     words.extend(model.phrases.iter().map(|p| p.value.as_str()));
-    for term in &model.glossary.terms {
-        words.push(&term.term);
-        words.extend(term.aliases.iter().map(String::as_str));
-    }
+    words.extend(terms.iter().map(String::as_str));
     for dimension in &model.dimensions {
         words.push(&dimension.label);
         words.extend(dimension.values.iter().map(|v| v.label.as_str()));
@@ -150,6 +149,16 @@ pub fn vocabulary(model: &ContentModel) -> String {
         out.push('\n');
     }
     out
+}
+
+/// The glossary's terms and their aliases, in the glossary's order: the
+/// words of it that go in the vocabulary.
+pub fn glossary_words(glossary: &ascribe_resolve::Glossary) -> Vec<String> {
+    glossary
+        .terms
+        .iter()
+        .flat_map(|t| t.texts().map(str::to_owned))
+        .collect()
 }
 
 fn escape_regex(word: &str) -> String {
@@ -220,8 +229,8 @@ mod tests {
             ascribe_core::FileId::new(0),
         )
         .unwrap();
-        let words = vocabulary(&model);
-        assert_eq!(words, "Acme Cloud\nC\\+\\+\nPlatform\nlinux\n");
+        let words = vocabulary(&model, &["API key".to_owned()]);
+        assert_eq!(words, "Acme Cloud\nC\\+\\+\nAPI key\nPlatform\nlinux\n");
     }
 
     #[test]
@@ -240,7 +249,7 @@ mod tests {
             off: Vec::new(),
             span: ascribe_core::Span::empty(0),
         };
-        let configs = prepare(dir.path(), &model, &settings).unwrap();
+        let configs = prepare(dir.path(), &model, &[], &settings).unwrap();
         let ini = dir.path().join(".ascribe/vale/quiet/.vale.ini");
         assert_eq!(configs, std::slice::from_ref(&ini));
         assert!(
@@ -258,11 +267,11 @@ mod tests {
             ..settings
         };
         assert_eq!(
-            prepare(dir.path(), &model, &own).unwrap_err(),
+            prepare(dir.path(), &model, &[], &own).unwrap_err(),
             "its configuration `.vale.ini` isn't there"
         );
         std::fs::write(dir.path().join(".vale.ini"), "").unwrap();
-        let configs = prepare(dir.path(), &model, &own).unwrap();
+        let configs = prepare(dir.path(), &model, &[], &own).unwrap();
         assert_eq!(
             configs,
             [
@@ -292,7 +301,7 @@ mod tests {
             off: Vec::new(),
             span: ascribe_core::Span::empty(0),
         };
-        let error = prepare(dir.path(), &model, &settings).unwrap_err();
+        let error = prepare(dir.path(), &model, &[], &settings).unwrap_err();
         assert!(error.contains("is a link"), "{error}");
         assert_eq!(std::fs::read_dir(outside.path()).unwrap().count(), 0);
     }

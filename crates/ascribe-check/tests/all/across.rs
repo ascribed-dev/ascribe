@@ -43,18 +43,8 @@ available = "self-managed"
 product = "Quill"
 unused = "Nothing"
 
-[glossary.terms.agent]
-term = "agent"
-definition = "The process that ships logs."
-
-[glossary.terms.relay]
-term = "relay"
-definition = "Nothing writes this."
-
-[glossary.terms.build]
-term = "build"
-definition = "Linked only where an author links it."
-match = "marked"
+[glossary]
+pages = ["glossary.md"]
 
 [builds.site]
 variants = "switch"
@@ -114,6 +104,9 @@ const HOME: &str = "---\ntitle: Home\n---\n\n[Install](install.md)\n\n@available
 const INSTALL: &str = "---\ntitle: Install\n---\n\nUse {product}.\n\n@include: _steps.md\n";
 const UPGRADE: &str = "---\ntitle: Upgrade\n---\n\nText.\n";
 const LONELY: &str = "---\ntitle: Lonely\n---\n\nText.\n";
+/// The glossary page: `relay` is used nowhere, and `build` is marked, so only
+/// a link to it is a use.
+const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\n## agent\n@term\n\nThe process that ships logs.\n\n## relay\n@term\n\nNothing writes this.\n\n## build\n@term {match=marked}\n\nLinked only where an author links it.\n";
 
 #[test]
 fn an_orphan_is_reported_once_naming_the_builds_it_is_an_orphan_in() {
@@ -240,8 +233,9 @@ fn unused_fragments_phrases_features_and_terms_are_reported_where_they_are_decla
         ("install.md", INSTALL),
         (
             "upgrade.md",
-            "---\ntitle: Upgrade\navailable: sso\n---\n\nThe agent upgrades.\n",
+            "---\ntitle: Upgrade\navailable: sso\n---\n\nThe agent upgrades the [build](glossary.md#build).\n",
         ),
+        ("glossary.md", GLOSSARY),
         ("_steps.md", "Steps.\n"),
         ("_unused.md", "Nobody includes this.\n"),
     ]);
@@ -258,10 +252,10 @@ fn unused_fragments_phrases_features_and_terms_are_reported_where_they_are_decla
         found(&p, &all, "feature-unused"),
         [("ascribe.toml: audit".to_owned(), vec![])]
     );
-    // `build` is marked, so its uses are links, and it isn't reported.
+    // `build` is marked, and a link to its heading is its use.
     assert_eq!(
         found(&p, &all, "glossary-term-unused"),
-        [("ascribe.toml: relay".to_owned(), vec![])]
+        [("docs/glossary.md: ## relay".to_owned(), vec![])]
     );
 }
 
@@ -274,6 +268,7 @@ fn what_is_unused_is_what_the_search_counts_no_use_of() {
         ("index.md", HOME),
         ("install.md", INSTALL),
         ("upgrade.md", UPGRADE),
+        ("glossary.md", GLOSSARY),
         ("_steps.md", "The agent.\n"),
         ("_unused.md", "Text.\n"),
     ]);
@@ -307,13 +302,13 @@ fn what_is_unused_is_what_the_search_counts_no_use_of() {
         .map(|f| f.key.clone())
         .collect();
     assert_eq!(reported("feature-unused"), features);
-    let terms: Vec<String> = model
-        .glossary
+    let terms: Vec<String> = p
+        .held_index()
+        .glossary()
         .terms
         .iter()
-        .filter(|t| t.match_mode != ascribe_model::GlossaryMatch::Marked)
         .filter(|t| unused(ascribe_resolve::Usable::Term(t.id.clone())))
-        .map(|t| t.id.clone())
+        .map(|t| format!("## {}", t.term))
         .collect();
     assert_eq!(reported("glossary-term-unused"), terms);
 }

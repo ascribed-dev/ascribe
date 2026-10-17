@@ -101,6 +101,8 @@ pub(crate) struct Job {
     root: PathBuf,
     model: Arc<ContentModel>,
     model_text: String,
+    /// The glossary's words, for Vale's vocabulary.
+    terms: Vec<String>,
     config: PathBuf,
     path: PathBuf,
     /// Its path from the project root, `/`-separated.
@@ -128,7 +130,14 @@ impl Job {
             Some(refused) => refused,
             None => linter,
         };
-        let found = prose::lint_pages(&self.root, &self.model, &[page], linter, FILE_TIMEOUT);
+        let found = prose::lint_pages(
+            &self.root,
+            &self.model,
+            &self.terms,
+            &[page],
+            linter,
+            FILE_TIMEOUT,
+        );
         let page_index = LineIndex::new(&self.text);
         let model_index = LineIndex::new(&self.model_text);
         let mut on_page = Vec::new();
@@ -198,17 +207,16 @@ impl Core {
             let Some(crate::core::Kind::Source(content, project)) = loaded.classify(&path) else {
                 continue;
             };
-            let id = loaded
-                .inc
-                .snapshot()
-                .file(&content)
-                .map_or(FileId::new(1), |f| f.file);
+            let snapshot = loaded.inc.snapshot();
+            let id = snapshot.file(&content).map_or(FileId::new(1), |f| f.file);
+            let terms = prose::glossary_words(&snapshot.glossary());
             self.prose.running = true;
             return Some(Job {
                 epoch: loaded.epoch,
                 root: loaded.root.clone(),
                 model: loaded.model.clone(),
                 model_text: loaded.model_text.clone(),
+                terms,
                 config: config.clone(),
                 path,
                 display: project.as_str().to_owned(),

@@ -2,7 +2,6 @@
 //! and editor.
 
 use std::cmp::Ordering;
-use std::collections::HashMap;
 
 use ascribe_core::availability::Version;
 use ascribe_core::{
@@ -311,22 +310,33 @@ impl Loader<'_> {
 
     // ---- glossary ---------------------------------------------------------------
 
-    pub fn glossary(
-        &mut self,
-        v: Option<&V<'_>>,
-        project: &crate::loader::ProjectInfo,
-        fragments: &Fragments,
-    ) -> Glossary {
+    pub fn glossary(&mut self, v: Option<&V<'_>>, fragments: &Fragments) -> Glossary {
         let mut out = Glossary {
             match_mode: GlossaryMatch::First,
             case_sensitive: false,
-            terms: Vec::new(),
+            pages: Vec::new(),
         };
         let Some(v) = v else { return out };
         let Some(t) = self.as_table("glossary", v) else {
             return out;
         };
-        self.check_keys("glossary", t, &["match", "case-sensitive", "terms"]);
+        // A term is a heading marked `@term` on a glossary page (SPEC §5.4),
+        // so the table of terms is gone: say where a term is written now.
+        for (key, span, _) in entries(t) {
+            if key == "terms" {
+                self.push(
+                    self.issue(diagnostics::MODEL_UNKNOWN_KEY, span)
+                        .with_variant("glossary-terms")
+                        .with_arg("key", key)
+                        .with_arg("table", "glossary"),
+                );
+            }
+        }
+        self.check_keys(
+            "glossary",
+            t,
+            &["match", "case-sensitive", "pages", "terms"],
+        );
         if let Some(m) = t.get("match")
             && let Some(s) = self.choice("glossary.match", m, &["first", "every"])
         {
@@ -339,143 +349,36 @@ impl Loader<'_> {
         if let Some(c) = t.get("case-sensitive") {
             out.case_sensitive = self.boolean("glossary.case-sensitive", c).unwrap_or(false);
         }
-        let Some(terms) = t.get("terms") else {
-            return out;
-        };
-        let Some(tt) = self.as_table("glossary.terms", terms) else {
-            return out;
-        };
-        let mut spans: Vec<(String, Span)> = Vec::new();
-        for (id, id_span, item) in entries(tt) {
-            let path = join("glossary.terms", id);
-            self.name_ok(id, id_span, "glossary term", NameRule::Key);
-            let Some(term_t) = self.as_table(&path, item) else {
-                continue;
-            };
-            self.check_keys(
-                &path,
-                term_t,
-                &[
-                    "term",
-                    "aliases",
-                    "definition",
-                    "link",
-                    "case-sensitive",
-                    "match",
-                ],
-            );
-            let term = self
-                .require(&path, term_t, sp(item), "term")
-                .and_then(|x| self.string(&format!("{path}.term"), x, true));
-            let definition = self
-                .require(&path, term_t, sp(item), "definition")
-                .and_then(|x| self.string(&format!("{path}.definition"), x, true));
-            let aliases = term_t
-                .get("aliases")
-                .and_then(|a| self.strings(&format!("{path}.aliases"), a))
-                .unwrap_or_default();
-            let case_sensitive = term_t
-                .get("case-sensitive")
-                .and_then(|c| self.boolean(&format!("{path}.case-sensitive"), c))
-                .unwrap_or(out.case_sensitive);
-            let match_mode = term_t
-                .get("match")
-                .and_then(|m| {
-                    self.choice(&format!("{path}.match"), m, &["first", "every", "marked"])
-                })
-                .map_or(out.match_mode, |s| match s.as_str() {
-                    "every" => GlossaryMatch::Every,
-                    "marked" => GlossaryMatch::Marked,
-                    _ => GlossaryMatch::First,
-                });
-            let link_span = term_t.get("link").map(sp);
-            let link = term_t.get("link").and_then(|l| {
-                let text = self.string(&format!("{path}.link"), l, true)?;
-                self.glossary_link(id, &text, sp(l), project, fragments)
-            });
-            let (Some(term), Some(definition)) = (term, definition) else {
-                continue;
-            };
-            spans.push((term.clone(), id_span));
-            out.terms.push(GlossaryTerm {
-                id: id.to_owned(),
-                term,
-                aliases: aliases.iter().map(|(a, _)| a.clone()).collect(),
-                definition,
-                link,
-                case_sensitive,
-                match_mode,
-                span: id_span,
-                link_span,
-            });
+        if let Some(pages) = t
+            .get("pages")
+            .and_then(|p| self.strings("glossary.pages", p))
+        {
+            for (text, span) in pages {
+                if let Some(path) = self.glossary_page(&text, span, fragments)
+                    && !out.has_page(&path)
+                {
+                    out.pages.push(GlossaryPage { path, span });
+                }
+            }
         }
-        self.glossary_duplicates(&out, tt);
         out
     }
 
-    fn glossary_link(
-        &mut self,
-        id: &str,
-        text: &str,
-        span: Span,
-        project: &crate::loader::ProjectInfo,
-        fragments: &Fragments,
-    ) -> Option<(String, Option<String>)> {
-        let (path_part, anchor) = match text.split_once('#') {
-            Some((p, a)) => (p, Some(a.to_owned())),
-            None => (text, None),
-        };
-        let rel = path_part.trim_start_matches('/');
+    /// A path in `[glossary] pages`, from the content root, when it names a
+    /// page.
+    fn glossary_page(&mut self, text: &str, span: Span, fragments: &Fragments) -> Option<String> {
+        let rel = text.trim_start_matches('/');
         let is_fragment = rel.split('/').any(|s| s.starts_with('_'))
             || fragments.patterns.iter().any(|p| p.matches(rel));
         if is_fragment {
             self.push(
-                self.issue(diagnostics::MODEL_GLOSSARY_LINK, span)
+                self.issue(diagnostics::MODEL_GLOSSARY_PAGE, span)
                     .with_variant("fragment")
-                    .with_arg("id", id)
-                    .with_arg("path", path_part),
+                    .with_arg("path", text),
             );
             return None;
         }
-        if let Some(dir) = self.project_dir {
-            // Outside FileSystem: the content model is checked before there's a
-            // project. This asks only whether a glossary link's page is there.
-            let file = dir.join(&project.value.content_root).join(rel);
-            if !file.is_file() {
-                self.push(
-                    self.issue(diagnostics::MODEL_GLOSSARY_LINK, span)
-                        .with_arg("id", id)
-                        .with_arg("path", path_part),
-                );
-                return None;
-            }
-        }
-        Some((rel.to_owned(), anchor))
-    }
-
-    fn glossary_duplicates(&mut self, g: &Glossary, terms: &toml::de::DeTable<'_>) {
-        let mut seen: HashMap<String, Vec<(&GlossaryTerm, String)>> = HashMap::new();
-        for t in &g.terms {
-            let texts = std::iter::once(&t.term).chain(t.aliases.iter());
-            for text in texts {
-                let bucket = seen.entry(text.to_lowercase()).or_default();
-                if let Some((other, _)) = bucket.iter().find(|(o, ot)| {
-                    o.id != t.id && (ot == text || !o.case_sensitive || !t.case_sensitive)
-                }) {
-                    let span = terms
-                        .get_key_value(t.id.as_str())
-                        .map_or(Span::empty(0), |(k, _)| sp(k));
-                    let issue = self
-                        .issue(diagnostics::MODEL_GLOSSARY_DUPLICATE_TERM, span)
-                        .with_arg("text", text.as_str())
-                        .with_arg("a", other.id.as_str())
-                        .with_arg("b", t.id.as_str());
-                    self.push(issue);
-                    continue;
-                }
-                bucket.push((t, text.clone()));
-            }
-        }
+        Some(rel.to_owned())
     }
 
     // ---- images and widgets --------------------------------------------------------

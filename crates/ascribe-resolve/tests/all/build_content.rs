@@ -8,7 +8,7 @@ use crate::build_support;
 use ascribe_model::Segment;
 use ascribe_resolve::{LinkTarget, RefKind, ResolvedBlock, ResolvedKind, ResolvedPage};
 use ascribe_syntax::{BlockKind, InlineKind};
-use build_support::{MODEL, path, plain, project, project_with, resolve, summary};
+use build_support::{GLOSSARY, MODEL, path, plain, project, project_with, resolve, summary};
 
 const PAGE: &str = "---\ntype: page\ntitle: Test\n---\n\n";
 
@@ -625,13 +625,7 @@ fn an_asset_in_an_included_fragment_keeps_where_it_is_written() {
 // -- Glossary ---------------------------------------------------------------
 
 fn glossary_project(body: &str) -> ascribe_resolve::Project {
-    project(&[
-        ("index.md", &page(body)),
-        (
-            "glossary.md",
-            "---\ntype: page\ntitle: Glossary\n---\n\n## API key\n\n## API\n\n## Go\n\n## Build\n\n## Mode\n",
-        ),
-    ])
+    project(&[("index.md", &page(body)), ("glossary.md", GLOSSARY)])
 }
 
 fn glossed(page: &ResolvedPage) -> Vec<(String, String)> {
@@ -685,14 +679,16 @@ fn a_term_can_set_its_own_match() {
         "Every build has a mode. Builds differ by mode. Rotate the API key, then the API key.\n\nSee [a build](glossary.md#build).\n",
     );
     let resolved = resolve(&p, "index.md", "site");
-    // `build` is `marked`: never linked automatically, only by the author's
-    // link. `mode` is `every`; `API key` keeps the glossary's `first`.
+    // `build` is `marked`: never linked automatically, and the author's link
+    // to its heading is its use. `mode` is `every`; `API key` keeps the
+    // glossary's `first`.
     assert_eq!(
         glossed(&resolved),
         [
             ("mode".to_owned(), "mode".to_owned()),
             ("mode".to_owned(), "mode".to_owned()),
-            ("api-key".to_owned(), "API key".to_owned())
+            ("api-key".to_owned(), "API key".to_owned()),
+            ("build".to_owned(), "a build".to_owned())
         ]
     );
     let ResolvedKind::Leaf(leaf) = &resolved.blocks[1].kind else {
@@ -721,7 +717,7 @@ fn glossary_terms_are_linked_in_prose_only() {
 }
 
 #[test]
-fn a_term_without_a_link_or_on_its_own_page_isnt_linked() {
+fn a_term_isnt_linked_on_its_own_glossary_page() {
     let p = glossary_project("An orphan and the API key.\n");
     assert_eq!(
         glossed(&resolve(&p, "index.md", "site")),
@@ -729,6 +725,71 @@ fn a_term_without_a_link_or_on_its_own_page_isnt_linked() {
     );
     // The glossary page doesn't link to itself.
     assert!(glossed(&resolve(&p, "glossary.md", "site")).is_empty());
+}
+
+fn definitions(page: &ResolvedPage) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    page.visit(&mut |b| {
+        out.extend(
+            b.glossary
+                .iter()
+                .map(|g| (g.term.clone(), g.definition.clone())),
+        );
+    });
+    out
+}
+
+#[test]
+fn a_definition_is_its_paragraph_as_plain_text_for_each_build() {
+    // Markup reduced to its text and a phrase substituted; a paragraph a
+    // fragment brings in; the paragraph of the variant the build keeps; and a
+    // section that opens with a list, which has none.
+    let glossary = "---\ntype: page\ntitle: Glossary\n---\n\n\
+## Agent\n@term\n\n\
+The *{product}* agent, see [docs](index.md), `code`, ![the logo](a.png) and <b>bold</b>\n   text.\n\n\
+## Relay\n@term\n\n@include: _relay.md\n\n\
+## Workspace\n@term\n\n\
+@variant {deployment=cloud}:\nA hosted workspace.\n@end\n\
+@variant {deployment=self-managed}:\nA workspace on your servers.\n@end\n\n\
+## Mirror\n@term\n\n- One.\n- Two.\n";
+    let p = project(&[
+        (
+            "index.md",
+            &page("The agent and the relay share a workspace and a mirror.\n"),
+        ),
+        ("glossary.md", glossary),
+        ("_relay.md", "Passes *messages* on.\n"),
+    ]);
+    let in_build = |build: &str| definitions(&resolve(&p, "index.md", build));
+    let shared = |workspace: &str| {
+        vec![
+            (
+                "agent".to_owned(),
+                "The Quill agent, see docs, code, the logo and bold text.".to_owned(),
+            ),
+            ("relay".to_owned(), "Passes messages on.".to_owned()),
+            ("workspace".to_owned(), workspace.to_owned()),
+            ("mirror".to_owned(), String::new()),
+        ]
+    };
+    assert_eq!(in_build("cloud"), shared("A hosted workspace."));
+    assert_eq!(
+        in_build("sm-npm-pnpm"),
+        shared("A workspace on your servers.")
+    );
+}
+
+#[test]
+fn an_authors_link_to_a_term_is_its_first_occurrence() {
+    let p = glossary_project(
+        "See [the key](glossary.md#api-key) first.\n\nLater the API key rotates.\n",
+    );
+    // With `match = "first"`, the author's link is the page's link to the
+    // term, so the later occurrence stays text.
+    assert_eq!(
+        glossed(&resolve(&p, "index.md", "site")),
+        [("api-key".to_owned(), "the key".to_owned())]
+    );
 }
 
 #[test]

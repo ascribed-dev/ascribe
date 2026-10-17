@@ -694,21 +694,6 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
 
-## Glossary
-
-### ASC203 `glossary-link-target-missing`
-@id {permalink=true}: ASC203
-
-Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
-
-**When:** A term's `link` that names a heading its page doesn't have.
-
-**Message:** glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}`
-
-**Fix:** Change the id after `#` in the term's `link` to a heading's id on the page, as `ascribe outline` lists them, or leave `#` and the id out to link to the page. A heading's id renamed with `ascribe rename`, or `F2` in the editor, changes the links that name it, `link` included.
-
-**Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
-
 ## Memo files
 
 ### ASC225 `memo-invalid`
@@ -803,3 +788,18 @@ Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.m
 **Fix:** A section's own page is its `index.md` or the page beside its folder with its name, not both. Keep the one you want first in the section: move the other's content into it and delete it, or rename the other so it's a page of its own. Until then, the `index.md` is the section's own page, and the page beside the folder is one of its parent's pages.
 
 **Read more:** [Sections and pages](../navigation/index.md#sections-and-pages) in the navigation reference.
+
+## Glossary
+
+### ASC239 `glossary-term-duplicate`
+@id {permalink=true}: ASC239
+
+Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+
+**When:** Two terms, or a term and an alias, with the same text.
+
+**Message:** "\{text}" is already the glossary term `{first}`, on \{page}
+
+**Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive.
+
+**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.

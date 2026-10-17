@@ -380,6 +380,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@snippet` | line | identifier (address) | self | Take a code example from a file |
 | `@intended` | line | line (reason) | following block | Acknowledge a check's problem as intended |
 | `@memo` | line, container (raw) | line (text), in line form | top of section, else following block, in either form | Keep a note for the people who maintain the page, never published |
+| `@term` | line | none | top of section | Make a glossary page's heading a term |
 
 ### 4.1 `@id`
 
@@ -696,7 +697,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
         reason: Linked from the site's sidebar, which the content model can't see.
     ```
 
-  - **A content model entry or an image:** `[[intended]]` in the content model (§7.2), with a `check`, a `reason`, and exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root):
+  - **A content model entry or an image:** `[[intended]]` in the content model (§7.2), with a `check`, a `reason`, and exactly one of `phrase`, `feature`, `term` (a glossary term's id, §5.4), or `image` (a path under the content root):
 
     ```toml
     [[intended]]
@@ -732,6 +733,30 @@ Revoke the old key once every agent uses the new one.
 - **Nothing reads a memo.** Its text isn't inline content: a `{key}` in it isn't a phrase, a link isn't checked and isn't a use of its target, an `@include` isn't followed, a `#` line isn't a heading and gets no id, and a processor that checks prose doesn't check it.
 - **Never in an output.** A memo changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. A memo in a fragment is part of the fragment, and no page that includes the fragment publishes it.
 - **Never a change.** Comparing two versions of a page compares what they publish, so a page whose only change is to a memo hasn't changed.
+
+### 4.11 `@term`
+
+Makes a heading of a glossary page a glossary term (§5.4): the heading's text is the term, and the paragraph under it is its definition.
+
+```
+## Rollout
+@id: rollout
+@term {aliases=rollouts}
+
+A plan for turning a flag on for a growing share of users.
+```
+
+- **Form:** line. **Binding:** preceding heading (at the top of the section, §3.8). **Primary:** none.
+- **Attributes:**
+
+  | Key | Type | Default | Meaning |
+  |---|---|---|---|
+  | `aliases` | string | none | Other forms of the term that are linked as it is, separated by `\|`, such as `"API keys\|keys"` |
+  | `match` | `first`, `every`, or `marked` | the glossary's | Which occurrences are linked: the first on each page, every one, or none, for a word that also has an ordinary sense, whose author links the occurrences that mean the term |
+  | `case-sensitive` | boolean | the glossary's | Whether an occurrence must match the term's case |
+
+- `@term` makes a term only on a page the glossary lists (§7.2), or in a fragment such a page includes. Elsewhere, it isn't a term.
+- **Never in an output.** `@term` renders nothing: the heading and its section are published as they'd be without it.
 
 ---
 
@@ -799,11 +824,18 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 
 ### 5.4 Glossary terms
 
-The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source, except for a term whose settings turn automatic linking off: processors don't link that term, and authors link the occurrences that mean it with an ordinary link (§5.2), for words that also have ordinary senses.
+A glossary is one or more pages, which the content model lists (§7.2). Each heading on a glossary page marked `@term` (§4.11), written on the page or in a fragment it includes, is a **glossary term**:
 
-A term's definition is where its `link` leads: a page, and optionally `#` and a heading's id, written as a link from the content root is. The id MUST be a heading's source id (§5.5) on that page, written in it or in a fragment it includes.
+- **Its text** is the heading's text (§5.5), and its aliases are its `@term`'s. **Its id** is the heading's source id.
+- **Its definition** is the first block of its section's own content, when that's a paragraph, as plain text: phrases substituted for the build, emphasis and code reduced to their text, a link to its text, an image to its alt text, inline HTML dropped, and whitespace runs one space. A paragraph a fragment brings in counts. The definition is resolved for each build.
+- **It's linked** to its heading on the first of its glossary pages the build publishes. A heading that two glossary pages show, through a fragment, is one term.
+- Two terms, or a term and an alias, with the same text, compared ignoring case unless both terms are case-sensitive, are an error at the second, which isn't a term (§8.2).
 
-Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on the page it links to, and a term whose target page or heading a build doesn't publish isn't linked in that build.
+Processors link occurrences of glossary terms to their definitions according to each term's settings, else the glossary's. Authors don't mark glossary terms where they're used, except for a term whose settings turn automatic linking off (`match = "marked"`): processors don't link that term, and authors link the occurrences that mean it to its heading with an ordinary link (§5.2), for words that also have ordinary senses.
+
+**A link an author writes to a term's heading is a use of the term,** as a linked occurrence is, and outputs show it as one. Exactly a link whose destination is the term's heading by its id is; a link to the glossary page, or to another heading in the term's section, is an ordinary link. Where a term is linked only at its first occurrence, such a link counts as that occurrence, so a processor doesn't also link a later one on the page.
+
+Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish isn't linked in that build.
 
 ### 5.5 Heading ids
 
@@ -866,7 +898,7 @@ A content model declares the following.
 | Features registry | Feature keys, each with a name and an availability spec | §4.4 |
 | Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
 | Phrases registry | Phrase keys and values. A value is text, or a versioned target whose release line it is: the line a line's output is for, and the current line elsewhere | §5.1 |
-| Glossary | Terms, definitions, and matching settings | §5.4 |
+| Glossary | The glossary's pages, and its matching settings | §5.4 |
 | Image attributes | Accepted image attribute keys and types | §5.3 |
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
 | Builds | Named builds and their modes | §9.3 |
@@ -1114,7 +1146,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Navigation | A `folder` in `ascribe.nav` that isn't a section | Error |
 | Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice | Error |
 | Navigation | A folder with an `index.md` and a page beside it with the folder's name | Error |
-| Glossary | A term's `link` that names a heading its page doesn't have | Error |
+| Glossary | Two terms, or a term and an alias, with the same text | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

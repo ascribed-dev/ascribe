@@ -177,10 +177,11 @@ fn detached(index: &ascribe_resolve::Project, named: &Named, about: &str, at: Lo
         },
         Named::Entry { kind, name } => {
             let model = index.model();
+            let glossary = index.glossary();
             let names: Vec<&str> = match kind {
                 EntryKind::Phrase => model.phrases.iter().map(|p| p.key.as_str()).collect(),
                 EntryKind::Feature => model.features.iter().map(|f| f.key.as_str()).collect(),
-                EntryKind::Term => model.glossary.terms.iter().map(|t| t.id.as_str()).collect(),
+                EntryKind::Term => glossary.terms.iter().map(|t| t.id.as_str()).collect(),
                 EntryKind::Dimension => model.dimensions.iter().map(|d| d.name.as_str()).collect(),
                 EntryKind::Note => model.notes.iter().map(|n| n.name.as_str()).collect(),
                 EntryKind::Widget => model

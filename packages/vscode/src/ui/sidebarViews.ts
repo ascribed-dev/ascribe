@@ -287,12 +287,12 @@ export class SidebarViews implements vscode.Disposable {
     modelChildren,
     modelLook,
     (node) => {
-      const model = this.inventory?.modelUri;
+      const uri = this.declarationUri(node);
       const declaration = modelDeclaration(node);
-      if (!model || !declaration) return undefined;
+      if (!uri || !declaration) return undefined;
       const { start, end } = declaration;
       return {
-        uri: vscode.Uri.parse(model),
+        uri,
         selection: new vscode.Range(start.line, start.character, end.line, end.character),
       };
     },
@@ -748,6 +748,20 @@ export class SidebarViews implements vscode.Disposable {
     record.done = true;
   }
 
+  /**
+   * The file an item of Content model is declared in: a glossary term's page,
+   * or `ascribe.toml` for the rest.
+   */
+  private declarationUri(node: ModelNode): vscode.Uri | undefined {
+    const page = node.kind === "entry" ? node.entry.page : null;
+    if (page !== null) {
+      const content = this.inventory?.contentUri;
+      return content ? contentFile(content, page) : undefined;
+    }
+    const model = this.inventory?.modelUri;
+    return model ? vscode.Uri.parse(model) : undefined;
+  }
+
   /** Runs a command of an item of Content model. */
   private async modelCommand(
     command: ItemCommand,
@@ -757,15 +771,12 @@ export class SidebarViews implements vscode.Disposable {
     const record: ItemRecord = { messages: [], done: false };
     const model = this.inventory?.modelUri;
     const declaration = modelDeclaration(node);
+    const declared = this.declarationUri(node);
     switch (command) {
       case "findReferences":
-        if (model && declaration) {
+        if (declared && declaration) {
           const { line, character } = declaration.start;
-          await this.findReferences(
-            vscode.Uri.parse(model),
-            new vscode.Position(line, character),
-            record,
-          );
+          await this.findReferences(declared, new vscode.Position(line, character), record);
         }
         break;
       case "rename":

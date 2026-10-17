@@ -1,0 +1,9 @@
+description: >-
+  Each path in `[glossary] pages` is a page, from the content root, named
+  with its case on disk. One that isn't there is an error at the path.
+spec: ["5.4", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-glossary-page, file: ascribe.toml, line: 9}
+  - {slug: model-glossary-page, file: ascribe.toml, line: 10}

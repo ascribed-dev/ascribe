@@ -304,13 +304,6 @@ pub const MODEL_FEATURE_NESTED: DiagnosticSlug = DiagnosticSlug("model-feature-n
 /// `ASC097`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PHRASE_VALUE_TYPE: DiagnosticSlug = DiagnosticSlug("model-phrase-value-type");
 
-/// `ASC098`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_GLOSSARY_DUPLICATE_TERM: DiagnosticSlug =
-    DiagnosticSlug("model-glossary-duplicate-term");
-
-/// `ASC099`, error, file level: a rule for loading `ascribe.toml`.
-pub const MODEL_GLOSSARY_LINK: DiagnosticSlug = DiagnosticSlug("model-glossary-link");
-
 /// `ASC100`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_RESERVED_NAME: DiagnosticSlug = DiagnosticSlug("model-widget-reserved-name");
 
@@ -631,10 +624,6 @@ pub const EXAMPLES_CONFIG_INVALID: DiagnosticSlug = DiagnosticSlug("examples-con
 /// `ASC202`, advice, file level: a content check (area `examples`).
 pub const OBSERVATION_FILE_MISSING: DiagnosticSlug = DiagnosticSlug("observation-file-missing");
 
-/// `ASC203`, error, file level: SPEC §8.2, "Glossary | A term's `link` that names a heading its page doesn't have".
-pub const GLOSSARY_LINK_TARGET_MISSING: DiagnosticSlug =
-    DiagnosticSlug("glossary-link-target-missing");
-
 /// `ASC204`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_RELEASES_TARGET: DiagnosticSlug = DiagnosticSlug("model-releases-target");
 
@@ -738,6 +727,12 @@ pub const NAV_SECTION_UNPLACED: DiagnosticSlug = DiagnosticSlug("nav-section-unp
 /// `ASC237`, advice, file level: a content check (area `pages`).
 pub const NAV_LABEL_LONG: DiagnosticSlug = DiagnosticSlug("nav-label-long");
 
+/// `ASC238`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("model-glossary-page");
+
+/// `ASC239`, error, file level: SPEC §8.2, "Glossary | Two terms, or a term and an alias, with the same text".
+pub const GLOSSARY_TERM_DUPLICATE: DiagnosticSlug = DiagnosticSlug("glossary-term-duplicate");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -833,8 +828,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_AVAILABILITY_HISTORY_ORDER,
     MODEL_FEATURE_NESTED,
     MODEL_PHRASE_VALUE_TYPE,
-    MODEL_GLOSSARY_DUPLICATE_TERM,
-    MODEL_GLOSSARY_LINK,
     MODEL_WIDGET_RESERVED_NAME,
     MODEL_WIDGET_FORMS,
     MODEL_WIDGET_BINDING,
@@ -938,7 +931,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLE_UNOBSERVED,
     EXAMPLES_CONFIG_INVALID,
     OBSERVATION_FILE_MISSING,
-    GLOSSARY_LINK_TARGET_MISSING,
     MODEL_RELEASES_TARGET,
     MODEL_RELEASES_LINE,
     MODEL_BUILD_VERSIONS,
@@ -973,6 +965,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     NAV_PAGE_UNPLACED,
     NAV_SECTION_UNPLACED,
     NAV_LABEL_LONG,
+    MODEL_GLOSSARY_PAGE,
+    GLOSSARY_TERM_DUPLICATE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

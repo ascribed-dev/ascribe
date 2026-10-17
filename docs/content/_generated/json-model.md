@@ -496,7 +496,7 @@
       "type": "object"
     },
     "ModelTerm": {
-      "description": "A glossary term.",
+      "description": "A glossary term: a heading marked `@term` on a glossary page. Its\ndefinition is the paragraph under the heading, which differs by build:\nthe JSON output of a build has it.",
       "properties": {
         "aliases": {
           "description": "Other ways it's written.",
@@ -505,20 +505,29 @@
           },
           "type": "array"
         },
-        "definition": {
-          "description": "Its definition.",
-          "type": "string"
+        "case_sensitive": {
+          "description": "Whether an occurrence must match its case.",
+          "type": "boolean"
         },
         "id": {
-          "description": "Its id.",
+          "description": "Its id: its heading's id.",
           "type": "string"
+        },
+        "line": {
+          "description": "The heading's line in that file, from 1.",
+          "minimum": 0,
+          "type": "integer"
         },
         "match": {
           "description": "Which occurrences are linked: `first` on each page, `every` one, or\nonly those an author links (`marked`).",
           "type": "string"
         },
+        "page": {
+          "description": "The file its heading is written in, from the content root: its\nglossary page, or a fragment the page includes.",
+          "type": "string"
+        },
         "term": {
-          "description": "The term.",
+          "description": "The term: its heading's text.",
           "type": "string"
         }
       },
@@ -526,8 +535,10 @@
         "id",
         "term",
         "aliases",
-        "definition",
-        "match"
+        "match",
+        "case_sensitive",
+        "page",
+        "line"
       ],
       "type": "object"
     },
@@ -651,7 +662,7 @@
       ]
     },
     "glossary": {
-      "description": "Glossary terms, in declaration order.",
+      "description": "Glossary terms, in the order of `[glossary] pages`, and on each page\nin document order.",
       "items": {
         "$ref": "#/$defs/ModelTerm"
       },

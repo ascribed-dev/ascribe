@@ -1379,3 +1379,29 @@ fn listing_completes_its_values_and_names_its_rule() {
     let toml = uri(&f.path("ascribe.toml")).as_str().to_owned();
     assert_eq!(location(&got), (toml, line as u64, 0));
 }
+
+#[test]
+fn hovering_a_glossary_term_shows_its_definition_as_the_glossary_page_says_it() {
+    let model = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[glossary]\npages = [\"glossary.md\"]\n";
+    let glossary = "---\ntitle: Glossary\n---\n\n## API key\n@term\n\nA secret.\n";
+    let index = "---\ntitle: Home\n---\n\nCopy your API key.\n";
+    let f = Fixture::new(
+        model,
+        &[("docs/glossary.md", glossary), ("docs/index.md", index)],
+    );
+    let page = f.path("docs/index.md");
+    let mut client = Client::start(&f.root());
+    let value = hover_text(&mut client, &page, at(index, "API key", 2));
+    assert_eq!(value, "**API key**\n\nA secret.");
+    // Rewording the definition, unsaved, changes the hover on another page.
+    let glossary_page = f.path("docs/glossary.md");
+    client.open(&glossary_page, 1, glossary);
+    client.replace(
+        &glossary_page,
+        2,
+        &glossary.replace("A secret.", "A secret *token*."),
+    );
+    client.settle();
+    let value = hover_text(&mut client, &page, at(index, "API key", 2));
+    assert_eq!(value, "**API key**\n\nA secret token.");
+}

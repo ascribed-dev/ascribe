@@ -1,0 +1,9 @@
+description: >-
+  A link to another heading in a term's section, even one under the term's
+  heading, is an ordinary link, not a use of the term: the `marked` term is
+  unused, reported at its heading.
+spec: ["5.4"]
+tags: [check]
+
+diagnostics:
+  - {slug: glossary-term-unused, file: glossary.md, line: 5}

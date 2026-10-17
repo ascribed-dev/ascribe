@@ -1,6 +1,16 @@
 //! Glossary terms (SPEC §5.4, §9.2 step 7): linking the occurrences of the
-//! content model's glossary terms in prose, as the glossary's settings say.
+//! project's glossary terms in prose, as the glossary's settings say, and
+//! each term's definition for the build.
 //!
+//! - A term is a heading marked `@term` on a glossary page
+//!   ([`crate::Glossary`]). It's linked to its heading on the first of its
+//!   glossary pages the build publishes; a term whose pages the build doesn't
+//!   publish, or whose heading it removes, isn't linked.
+//! - Its **definition** is the first block of its section's own content,
+//!   when that's a paragraph, as plain text: phrases substituted for the
+//!   build, emphasis and code reduced to their text, a link to its text, an
+//!   image to its alt text, inline HTML dropped, and whitespace runs one
+//!   space. A section that opens with anything else has an empty definition.
 //! - Occurrences match **whole words**, and where terms overlap the
 //!   **longest** match wins (`API key` over `API`).
 //! - Matching applies to **prose** only: paragraphs, table cells, and a
@@ -9,93 +19,149 @@
 //! - `match = "first"` links the first occurrence of each term on the page
 //!   (the resolved page, after includes and build modes); `"every"` links all.
 //!   A term with `match = "marked"` is never linked here: authors link the
-//!   occurrences that mean it, and the term is left out of matching like a
-//!   term with no link.
-//! - A term with no `link` isn't linked. Neither is one whose page the build
-//!   doesn't publish, whose id the build removes, or that is the page itself.
+//!   occurrences that mean it.
+//! - A term isn't linked on a glossary page that shows it.
+//! - A link an author writes to a term's heading is a use of the term, as a
+//!   linked occurrence is, except on a glossary page that shows it. Under
+//!   `match = "first"` it's the page's linked occurrence, so no other is.
 //!
-//! A linked occurrence becomes an ordinary link, and is listed in
-//! [`ResolvedBlock::glossary`].
-
-// What the content model leaves open (emphasis, a term's
-// own page, a term whose page the build doesn't publish, and where the text is
-// matched) is settled as the list above says.
+//! A linked occurrence becomes an ordinary link, and each use is listed in
+//! [`ResolvedBlock::glossary`] with the term's definition.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use ascribe_core::RelPath;
-use ascribe_model::{ContentModel, GlossaryMatch, GlossaryTerm};
-use ascribe_syntax::{Inline, InlineKind, Link, LinkForm};
+use ascribe_model::{ContentModel, GlossaryMatch};
+use ascribe_syntax::{BlockKind, Bound, Inline, InlineKind, Link, LinkForm};
 
 use super::BuildResolver;
-use super::inlines::prose_lists_mut;
-use super::tree::{GlossaryUse, ResolvedBlock, ResolvedPage};
+use super::inlines::{inline_text, prose_lists_mut};
+use super::tree::{GlossaryUse, LinkTarget, ResolvedBlock, ResolvedKind, ResolvedPage};
+use crate::glossary::Term;
 
-/// Links glossary terms in a page's prose.
+/// A term as one build links it.
+#[derive(Clone, Debug)]
+pub(crate) struct BuildTerm {
+    /// The term.
+    pub(crate) term: Term,
+    /// The URL of its heading on the first of its pages the build publishes.
+    pub(crate) url: String,
+    /// Its definition in this build.
+    pub(crate) definition: String,
+}
+
+/// The terms a build links, with their URLs and definitions.
+pub(crate) fn build_terms(resolver: &BuildResolver<'_>) -> Vec<BuildTerm> {
+    let mut out = Vec::new();
+    for term in resolver.project().glossary().terms {
+        let Some(page) = term.pages.iter().find(|p| resolver.is_published(p)) else {
+            continue;
+        };
+        let Some(page_id) = resolver.page_id_of(page, term.file, term.heading) else {
+            continue;
+        };
+        let url = resolver.router().link(page, Some(&page_id));
+        let definition = resolver
+            .stage(page)
+            .and_then(|staged| definition(&staged.blocks, &term))
+            .unwrap_or_default();
+        out.push(BuildTerm {
+            term,
+            url,
+            definition,
+        });
+    }
+    out
+}
+
+/// Links glossary terms in a page's prose, and marks the links an author
+/// wrote to a term's heading as its uses.
 pub(crate) fn link_terms(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) {
-    let glossary = &resolver.project().model().glossary;
-    if glossary.terms.is_empty() {
+    let all = resolver.terms();
+    if all.is_empty() {
         return;
     }
-    let mut urls: BTreeMap<&str, String> = BTreeMap::new();
-    let linked_terms = glossary.terms.iter().filter(|term| {
-        if term.match_mode == GlossaryMatch::Marked {
-            return false;
-        }
-        let Some(url) = term_url(resolver, page, term) else {
-            return false;
-        };
-        urls.insert(term.id.as_str(), url);
-        true
-    });
-    let terms = Terms::new(linked_terms.collect::<Vec<_>>());
+    let here: Vec<&BuildTerm> = all
+        .iter()
+        .filter(|t| !t.term.pages.contains(&page.path))
+        .collect();
+    let mut by_id: BTreeMap<&str, &BuildTerm> = BTreeMap::new();
+    for t in &here {
+        by_id.entry(t.term.id.as_str()).or_insert(t);
+    }
+    let terms = Terms::new(
+        here.iter()
+            .map(|t| &t.term)
+            .filter(|t| t.match_mode != GlossaryMatch::Marked),
+    );
     let mut linker = Linker {
+        resolver,
         terms,
-        urls,
+        by_id,
+        here: &here,
         linked: BTreeSet::new(),
     };
     linker.blocks(&mut page.blocks);
 }
 
-/// The pages the glossary's terms link to: a change to what others see of
-/// one can change every page that uses a term.
+/// The pages `[glossary] pages` lists: a change to what one shows can change
+/// every page that uses a term.
 pub fn glossary_targets(model: &ContentModel) -> BTreeSet<RelPath> {
     model
         .glossary
-        .terms
+        .pages
         .iter()
-        .filter_map(|t| t.link.as_ref())
-        .filter_map(|(path, _)| glossary_target(path))
+        .filter_map(|p| RelPath::parse(&p.path).ok())
         .collect()
 }
 
-/// The page a term's link names, as a content path.
-fn glossary_target(path: &str) -> Option<RelPath> {
-    RelPath::parse(path.trim_start_matches('/')).ok()
+/// A term's definition in a list of blocks: the paragraph that opens its
+/// heading's section, as plain text. `None` when the heading isn't there.
+pub(crate) fn definition(blocks: &[ResolvedBlock], term: &Term) -> Option<String> {
+    let at = blocks
+        .iter()
+        .position(|b| b.heading.is_some() && term.is_heading(b.file, b.span));
+    let Some(at) = at else {
+        return blocks
+            .iter()
+            .flat_map(|b| child_lists(b))
+            .find_map(|list| definition(list, term));
+    };
+    // The heading's own directives (`@id`, `@term`, a section's
+    // `@available`) come before its content.
+    let first = blocks[at + 1..].iter().find(|b| !binds_heading(b));
+    Some(match first.map(|b| &b.kind) {
+        Some(ResolvedKind::Leaf(block)) => match &block.kind {
+            BlockKind::Paragraph(p) => collapse(&inline_text(&p.inlines)),
+            _ => String::new(),
+        },
+        _ => String::new(),
+    })
 }
 
-/// The URL a term links to on this page, if it links anywhere.
-fn term_url(
-    resolver: &BuildResolver<'_>,
-    page: &ResolvedPage,
-    term: &GlossaryTerm,
-) -> Option<String> {
-    let (path, id) = term.link.as_ref()?;
-    let target = glossary_target(path)?;
-    if target == page.path || !resolver.is_published(&target) {
-        return None;
-    }
-    let router = resolver.router();
-    match id {
-        None => Some(router.link(&target, None)),
-        Some(id) => {
-            let project = resolver.project();
-            let (written_in, heading) = project.page_heading(&target, id)?;
-            let file = project.file(&written_in)?;
-            let page_id = resolver.page_id_of(&target, file.file, heading.span)?;
-            Some(router.link(&target, Some(&page_id)))
+/// The lists of blocks directly inside a block.
+fn child_lists(block: &ResolvedBlock) -> Vec<&Vec<ResolvedBlock>> {
+    match &block.kind {
+        ResolvedKind::Leaf(_) => Vec::new(),
+        ResolvedKind::BlockQuote { children } | ResolvedKind::Container { children, .. } => {
+            vec![children]
         }
+        ResolvedKind::List { items, .. } => items.iter().map(|i| &i.children).collect(),
+        ResolvedKind::Group { arms, .. } => arms.iter().map(|a| &a.children).collect(),
     }
+}
+
+/// Whether a block is a directive line that binds the heading above it.
+fn binds_heading(block: &ResolvedBlock) -> bool {
+    matches!(
+        &block.kind,
+        ResolvedKind::Leaf(b) if matches!(&b.kind, BlockKind::Directive(line) if line.binding == Some(Bound::Heading))
+    )
+}
+
+/// Text with every run of whitespace one space, and none at either end.
+fn collapse(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// The glossary's terms and aliases, ready to be found in text.
@@ -115,12 +181,12 @@ pub(crate) struct Candidate {
 
 impl Terms {
     /// The terms' texts and aliases, matched as each term's settings say.
-    pub(crate) fn new<'a>(terms: impl IntoIterator<Item = &'a GlossaryTerm>) -> Terms {
+    pub(crate) fn new<'a>(terms: impl IntoIterator<Item = &'a Term>) -> Terms {
         let mut candidates: Vec<Candidate> = Vec::new();
         for term in terms {
-            for text in std::iter::once(&term.term).chain(&term.aliases) {
+            for text in term.texts() {
                 candidates.push(Candidate {
-                    text: text.clone(),
+                    text: text.to_owned(),
                     term: term.id.clone(),
                     case_sensitive: term.case_sensitive,
                     first_only: term.match_mode == GlossaryMatch::First,
@@ -162,16 +228,20 @@ impl Terms {
     }
 }
 
-struct Linker<'a> {
+struct Linker<'a, 'p> {
+    resolver: &'a BuildResolver<'p>,
     terms: Terms,
-    urls: BTreeMap<&'a str, String>,
+    /// The terms this page links, by id.
+    by_id: BTreeMap<&'a str, &'a BuildTerm>,
+    /// The terms this page may use: those it doesn't show.
+    here: &'a [&'a BuildTerm],
     linked: BTreeSet<String>,
 }
 
-impl Linker<'_> {
+impl Linker<'_, '_> {
     fn blocks(&mut self, blocks: &mut [ResolvedBlock]) {
         for block in blocks {
-            let mut used = Vec::new();
+            let mut used = self.written(block);
             for list in prose_lists_mut(block) {
                 self.list(list, &mut used);
             }
@@ -180,6 +250,44 @@ impl Linker<'_> {
                 self.blocks(children);
             }
         }
+    }
+
+    /// The links in a block that an author wrote to a term's heading: each a
+    /// use of the term (SPEC §5.4).
+    fn written(&mut self, block: &ResolvedBlock) -> Vec<GlossaryUse> {
+        let mut used = Vec::new();
+        for link in &block.links {
+            let LinkTarget::Page {
+                page,
+                id: Some(id),
+                url,
+                ..
+            } = &link.target
+            else {
+                continue;
+            };
+            let Some(t) = self.here.iter().find(|t| {
+                t.term.pages.contains(page)
+                    && self
+                        .resolver
+                        .page_id_of(page, t.term.file, t.term.heading)
+                        .as_ref()
+                        == Some(id)
+            }) else {
+                continue;
+            };
+            let Some(text) = link_text(block, link.span) else {
+                continue;
+            };
+            used.push(GlossaryUse {
+                term: t.term.id.clone(),
+                text,
+                url: url.clone(),
+                definition: t.definition.clone(),
+            });
+            self.linked.insert(t.term.id.clone());
+        }
+        used
     }
 
     /// Links occurrences in the text nodes of one list of inlines, and in
@@ -231,9 +339,10 @@ impl Linker<'_> {
             if candidate.first_only && self.linked.contains(&term) {
                 continue;
             }
-            let Some(url) = self.urls.get(term.as_str()).cloned() else {
+            let Some(linked) = self.by_id.get(term.as_str()) else {
                 continue;
             };
+            let url = linked.url.clone();
             if plain_from < start {
                 out.push(Inline {
                     span,
@@ -259,6 +368,7 @@ impl Linker<'_> {
                 term: term.clone(),
                 text: matched,
                 url,
+                definition: linked.definition.clone(),
             });
             self.linked.insert(term);
             plain_from = end;
@@ -270,6 +380,23 @@ impl Linker<'_> {
             });
         }
     }
+}
+
+/// The text of the link written at `span` in a block's own inline content,
+/// as the outputs show it.
+fn link_text(block: &ResolvedBlock, span: ascribe_core::Span) -> Option<String> {
+    let mut found = None;
+    for list in super::inlines::own_lists(block) {
+        crate::index::walk::walk_inlines(list, &mut |inline| {
+            if found.is_none()
+                && inline.span == span
+                && let InlineKind::Link(link) = &inline.kind
+            {
+                found = Some(inline_text(&link.children));
+            }
+        });
+    }
+    found
 }
 
 fn is_word(c: char) -> bool {

@@ -38,6 +38,7 @@ const phrase: InventoryEntry = {
   label: "Quill",
   uses: 3,
   declaration: r(4),
+  page: null,
 };
 const widget: InventoryEntry = {
   kind: "widget",
@@ -45,6 +46,7 @@ const widget: InventoryEntry = {
   label: null,
   uses: 0,
   declaration: r(9),
+  page: null,
 };
 const editor: LastEditor = { uri: "file:///quill/docs/keys.md", selection: r(2) };
 

@@ -230,7 +230,7 @@ A wrapping widget follows §0's layout for elements that wrap markdown; an empty
 
 ## 7. Glossary terms
 
-There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/content/contracts/content-model.md §12) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-term` attribute holding the term's id:
+There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/content/contracts/content-model.md §12), and a link an author writes to a term's heading, is an ordinary markdown link to the term's heading on its glossary page, as a route, with the term's definition as the link title, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-term` attribute holding the term's id:
 
 ```markdown
 [API key](/docs/reference/glossary/#api-key "A secret token that authenticates the Quill agent.")<ascribe-attributes data-ascribe-term="api-key"></ascribe-attributes>
@@ -239,8 +239,6 @@ There's no element for glossary terms. In the site output, an occurrence the glo
 ```html
 <a href="/docs/reference/glossary/#api-key" title="A secret token that authenticates the Quill agent." data-ascribe-term="api-key">API key</a>
 ```
-
-Terms without a `link` stay plain text (content-model.md Q7).
 
 **Rendering:** a link, which the library's CSS underlines with dots (`a[data-ascribe-term]`). A site restyles it, or shows the definition as a popover, by selecting on the attribute.
 

@@ -1,6 +1,6 @@
-//! Hover (SPEC §10): what a link or include points at, a phrase's value, the
-//! availability a spec resolves to, the rule of `[listing]` a page is
-//! under, and what a directive is.
+//! Hover (SPEC §10): what a link or include points at, a phrase's value, a
+//! glossary term's definition, the availability a spec resolves to, the rule
+//! of `[listing]` a page is under, and what a directive is.
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Version, parse_availability};
 use ascribe_core::schema::{
@@ -10,17 +10,54 @@ use ascribe_core::schema::{
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_emit::labels::{availability_display, availability_display_of_text};
 use ascribe_model::{ContentModel, LineStatus, Placement};
-use ascribe_resolve::{Resolution, Snapshot};
+use ascribe_resolve::{DefaultRouter, Resolution, Snapshot, Usable};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position};
 
 use crate::nav::{Ctx, Hit, Lines, first_paragraph, hit_at};
+
+/// On an occurrence of a glossary term in prose, the term and its
+/// definition in the editor's build (SPEC §5.4).
+fn term_hover(ctx: &Ctx, offset: usize) -> Option<Hover> {
+    let (id, span) = ctx
+        .snapshot
+        .uses_in(&ctx.path)
+        .into_iter()
+        .find_map(|(used, place)| match used {
+            Usable::Term(id) if place.span.start() <= offset && offset <= place.span.end() => {
+                Some((id, place.span))
+            }
+            _ => None,
+        })?;
+    let project = ctx.snapshot.project();
+    let term = project.glossary().term(&id)?.term.clone();
+    let router = DefaultRouter::from_consumer(&ctx.model.consumer);
+    let definition = project
+        .resolver(ctx.model.editor_default_build(), &router)
+        .term_definition(&id)
+        .filter(|d| !d.is_empty());
+    let text = match definition {
+        Some(definition) => format!("**{term}**\n\n{definition}"),
+        None => format!("**{term}**\n\nThe editor's build doesn't link this glossary term."),
+    };
+    let range = Lines::new(ctx).range(&ctx.path, span)?;
+    Some(Hover {
+        contents: HoverContents::Markup(MarkupContent {
+            kind: MarkupKind::Markdown,
+            value: text,
+        }),
+        range: Some(range),
+    })
+}
 
 /// The hover at a position of the requested file.
 pub(crate) fn hover(ctx: &Ctx, position: Position) -> Option<Hover> {
     let file = ctx.file()?;
     let index = LineIndex::new(&file.source);
     let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
-    let (span, text) = match hit_at(file, offset)? {
+    let Some(hit) = hit_at(file, offset) else {
+        return term_hover(ctx, offset);
+    };
+    let (span, text) = match hit {
         Hit::Phrase(use_) => {
             let key = &use_.phrase.key;
             let text = match ctx.model.phrase(key) {

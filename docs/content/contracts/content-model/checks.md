@@ -51,7 +51,7 @@ Acknowledges a review check's problem with a content model entry or an image as 
 | `reason` | string | required | Why the problem is intended. Not empty. |
 | `phrase` | string | | A phrase's key, declared in `[phrases]`. |
 | `feature` | string | | A feature's key, declared in `[features]`. |
-| `term` | string | | A glossary term's id, declared in `[glossary]`. |
+| `term` | string | | A glossary term's id: the id of its heading on a glossary page. |
 | `image` | string | | An image's path under the content root. |
 
 Exactly one of `phrase`, `feature`, `term`, and `image`. The acknowledgement covers the check's problems that name that entry, in every build. One that covers nothing when every build is checked is advice (`intended-unused`), reported at its `[[intended]]` header with a fix that removes the table.

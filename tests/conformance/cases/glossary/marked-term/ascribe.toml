@@ -5,10 +5,4 @@ content-root = "files"
 
 [glossary]
 match = "first"
-
-[glossary.terms.build]
-term = "build"
-aliases = ["builds"]
-definition = "A named set of output choices."
-link = "/glossary.md#build"
-match = "marked"
+pages = ["glossary.md"]

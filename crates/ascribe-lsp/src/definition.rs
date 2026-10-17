@@ -115,8 +115,6 @@ pub(crate) enum Entry<'a> {
     Phrase(&'a str),
     /// A feature, by key.
     Feature(&'a str),
-    /// A glossary term, by id.
-    Term(&'a str),
     /// A dimension, by name.
     Dimension(&'a str),
     /// A declared note type.
@@ -153,7 +151,6 @@ impl Entry<'_> {
     fn table(&self) -> Option<String> {
         match self {
             Entry::Feature(key) => Some(format!("features.{key}")),
-            Entry::Term(id) => Some(format!("glossary.terms.{id}")),
             Entry::Dimension(name) => Some(format!("dimensions.{name}")),
             Entry::Note(name) => Some(format!("notes.{name}")),
             Entry::Widget(name) => Some(format!("widgets.{name}")),
@@ -165,10 +162,10 @@ impl Entry<'_> {
 }
 
 /// The span of an entry in the model's text: a phrase's key, the header of
-/// the table that declares a feature, glossary term, dimension, note type,
-/// widget, build, or content type, or a dimension value's text inside its
-/// quotes. The model keeps no spans, so this reads the text; it finds entries
-/// written as tables and keys, which is how `ascribe.toml` declares them.
+/// the table that declares a feature, dimension, note type, widget, build,
+/// or content type, or a dimension value's text inside its quotes. The model
+/// keeps no spans, so this reads the text; it finds entries written as tables
+/// and keys, which is how `ascribe.toml` declares them.
 pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
     let own_table = entry.table();
     // A content type declared only through its nested tables,
@@ -293,12 +290,8 @@ mod tests {
 
     #[test]
     fn tables_are_found_by_their_header() {
-        let text = "[glossary.terms.api-key]\nterm = \"API key\"\n\n[widgets.quill-lab]\nforms = [\"line\"]\n\n[widgets.quill-lab.attributes]\nlab = \"string\"\n\n[builds.\"self-managed-3.3\"]\nvariants = \"switch\"\n\n[notes.security]\n[dimensions.pm]\n";
+        let text = "[widgets.quill-lab]\nforms = [\"line\"]\n\n[widgets.quill-lab.attributes]\nlab = \"string\"\n\n[builds.\"self-managed-3.3\"]\nvariants = \"switch\"\n\n[notes.security]\n[dimensions.pm]\n";
         let find = |entry| find_entry(text, &entry).map(|span| &text[span.range()]);
-        assert_eq!(
-            find(Entry::Term("api-key")),
-            Some("[glossary.terms.api-key]")
-        );
         assert_eq!(
             find(Entry::Widget("quill-lab")),
             Some("[widgets.quill-lab]")

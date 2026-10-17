@@ -1,6 +1,7 @@
 //! The content model's actions: `ascribe/edit`'s `makePhrase`,
-//! `addGlossaryTerm`, and `promoteFeature`. Each edits `ascribe.toml` in
-//! place, keeping its comments and order, and the edits, applied, leave the
+//! `addGlossaryTerm`, and `promoteFeature`. Each edits `ascribe.toml`, or the
+//! glossary page, in place, keeping its comments and order, and the edits,
+//! applied, leave the
 //! project with no diagnostic it didn't have, in the fixtures and the example
 //! projects.
 
@@ -34,9 +35,8 @@ product = "Quill" # the name
 name = "Single sign-on"
 available = "cloud beta" # for now
 
-[glossary.terms.api]
-term = "API"
-definition = "An interface."
+[glossary]
+pages = ["glossary.md"]
 
 [editor]
 build = "site"
@@ -54,9 +54,12 @@ fn fixture() -> Fixture {
                 "docs/other.md",
                 "---\ntitle: Other\n---\n# Other\n\nSign in to Quill Cloud.\n",
             ),
+            ("docs/glossary.md", GLOSSARY),
         ],
     )
 }
+
+const GLOSSARY: &str = "---\ntitle: Glossary\n---\n# Glossary\n\n## API\n@term\n\nAn interface.\n";
 
 /// The text without its markers (`‸` or `«…»`), and the range they mark.
 fn unmark(marked: &str) -> (String, usize, usize) {
@@ -325,7 +328,10 @@ fn a_phrase_can_replace_every_occurrence_in_prose() {
 #[test]
 fn a_phrase_leaves_link_labels_and_urls_alone() {
     let page_text = "---\ntitle: Links\n---\n# Links\n\nQuill is here. See [Quill] and [Quill][] and [the Quill docs][ref], <https://quill.dev/Quill>, and https://example.org/Quill/x.\n\n[quill]: https://quill.dev/\n[ref]: https://quill.dev/docs\n";
-    let f = Fixture::new(MODEL, &[("docs/links.md", page_text)]);
+    let f = Fixture::new(
+        MODEL,
+        &[("docs/links.md", page_text), ("docs/glossary.md", GLOSSARY)],
+    );
     let mut client = Client::start(&f.root());
     let page = f.path("docs/links.md");
     let marked = page_text.replacen("Quill is", "«Quill» is", 1);
@@ -373,7 +379,7 @@ fn a_phrase_needs_a_good_key_and_plain_text() {
 }
 
 #[test]
-fn a_glossary_term_is_a_table_after_the_last_one() {
+fn a_glossary_term_is_a_section_at_the_end_of_the_glossary_page() {
     let f = fixture();
     let mut client = Client::start(&f.root());
     let page = f.path("docs/other.md");
@@ -385,20 +391,22 @@ fn a_glossary_term_is_a_table_after_the_last_one() {
         &marked,
         "addGlossaryTerm",
         json!({
-            "id": "cloud",
             "term": "Quill Cloud",
-            "aliases": ["the cloud"],
+            "aliases": ["the cloud", "QC"],
             "definition": "The hosted service.",
-            "link": "index.md#setup",
         }),
     )
     .unwrap();
     assert!(!done.changed(&page), "the page stays as it is");
+    assert!(
+        !done.changed(&f.path("ascribe.toml")),
+        "and so does the model: {}",
+        done.after(&f.path("ascribe.toml"))
+    );
     assert_eq!(
-        done.after(&f.path("ascribe.toml")),
-        MODEL.replace(
-            "definition = \"An interface.\"\n",
-            "definition = \"An interface.\"\n\n[glossary.terms.cloud]\nterm = \"Quill Cloud\"\naliases = [\"the cloud\"]\ndefinition = \"The hosted service.\"\nlink = \"index.md#setup\"\n"
+        done.after(&f.path("docs/glossary.md")),
+        format!(
+            "{GLOSSARY}\n## Quill Cloud\n@term {{aliases=\"the cloud|QC\"}}\n\nThe hosted service.\n"
         )
     );
     let mut error = |args: Value| match run(
@@ -410,22 +418,16 @@ fn a_glossary_term_is_a_table_after_the_last_one() {
     ) {
         Ok(done) => panic!(
             "{args} is accepted: {}",
-            done.after(&f.path("ascribe.toml"))
+            done.after(&f.path("docs/glossary.md"))
         ),
         Err(e) => e,
     };
-    let e = error(json!({ "id": "api", "term": "Interface", "definition": "x" }));
-    assert!(e.contains("already has a term"), "{e}");
-    let e = error(json!({ "id": "app", "term": "api", "definition": "x" }));
-    assert!(
-        e.contains("ascribe.toml"),
-        "a duplicate term is the model's problem: {e}"
-    );
-    let e = error(json!({ "id": "app", "term": "App", "definition": "x", "link": "missing.md" }));
-    assert!(e.contains("ascribe.toml"), "{e}");
-    let e =
-        error(json!({ "id": "app", "term": "App", "definition": "x", "link": "index.md#nowhere" }));
-    assert!(e.contains("no heading with the id `nowhere`"), "{e}");
+    let e = error(json!({ "term": "api", "definition": "x" }));
+    assert!(e.contains("already the glossary term `api`"), "{e}");
+    let e = error(json!({ "term": "App", "aliases": ["API"], "definition": "x" }));
+    assert!(e.contains("already the glossary term `api`"), "{e}");
+    let e = error(json!({ "term": "App", "aliases": ["a|b"], "definition": "x" }));
+    assert!(e.contains("Each alias"), "{e}");
 }
 
 #[test]
@@ -621,13 +623,6 @@ fn content_model_actions_on_quill_add_no_diagnostics() {
     );
     let page = support::real_path(&root).join("docs/install-agent.md");
     assert_eq!(done.after(&page).matches("{api-key}").count(), 2);
-    on_example(
-        &root,
-        "docs/quickstart.md",
-        "agent",
-        "addGlossaryTerm",
-        json!({ "id": "agent", "term": "agent", "aliases": ["agents"], "definition": "The program that syncs.", "link": "/install-agent.md" }),
-    );
 }
 
 #[test]
@@ -645,7 +640,7 @@ fn content_model_actions_on_the_monorepo_docs_add_no_diagnostics() {
         "content/getting-started.md",
         "",
         "addGlossaryTerm",
-        json!({ "id": "sdk", "term": "SDK", "definition": "A library for an app.", "link": "/reference/glossary.md" }),
+        json!({ "term": "SDK", "definition": "A library for an app." }),
     );
     let done = on_example(
         &root,

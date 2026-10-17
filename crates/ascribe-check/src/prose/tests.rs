@@ -80,7 +80,7 @@ fn lint_text(model: &ContentModel, text: &str, linter: &dyn Linter) -> Vec<Diagn
         path: "docs/page.md",
         text,
     };
-    lint_pages(dir.path(), model, &[page], linter, FILE_TIMEOUT)
+    lint_pages(dir.path(), model, &[], &[page], linter, FILE_TIMEOUT)
 }
 
 /// The source text each diagnostic is at.
@@ -259,7 +259,14 @@ fn a_linter_that_refuses_runs_nothing_writes_nothing_and_says_why() {
         who: "the hook",
     };
     let in_the_project = model("command = \"tools/vale\"\n");
-    let found = lint_pages(dir.path(), &in_the_project, &[page], &on_path, FILE_TIMEOUT);
+    let found = lint_pages(
+        dir.path(),
+        &in_the_project,
+        &[],
+        &[page],
+        &on_path,
+        FILE_TIMEOUT,
+    );
     assert_eq!(found.len(), 1);
     assert_eq!(found[0].slug, diagnostics::PROSE_NOT_CHECKED);
     assert_eq!(
@@ -276,12 +283,19 @@ fn a_linter_that_refuses_runs_nothing_writes_nothing_and_says_why() {
 
     // A name on the `PATH` runs.
     let on_the_path = model("");
-    let found = lint_pages(dir.path(), &on_the_path, &[page], &on_path, FILE_TIMEOUT);
+    let found = lint_pages(
+        dir.path(),
+        &on_the_path,
+        &[],
+        &[page],
+        &on_path,
+        FILE_TIMEOUT,
+    );
     assert_eq!(fake.seen.lock().unwrap().len(), 1);
     assert!(found.iter().all(|d| d.slug == diagnostics::PROSE));
 
     let never = NotStarted("nobody starts it".to_owned());
-    let found = lint_pages(dir.path(), &on_the_path, &[page], &never, FILE_TIMEOUT);
+    let found = lint_pages(dir.path(), &on_the_path, &[], &[page], &never, FILE_TIMEOUT);
     assert_eq!(
         found[0].message,
         "the prose wasn't checked: nobody starts it. `ascribe check --vale` checks it"

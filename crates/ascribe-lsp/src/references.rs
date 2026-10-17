@@ -14,10 +14,10 @@
 //! - at the start of the file, or on its frontmatter or title, the file.
 //!
 //! In `ascribe.toml`, the cursor on an entry's declaration (a phrase's key,
-//! or the header of a feature's, glossary term's, dimension's, note type's,
-//! widget's, or page content type's table) asks about that entry, as the
-//! Content model view does. A content type declared only through its nested
-//! tables is asked about at the first of them.
+//! or the header of a feature's, dimension's, note type's, widget's, or page
+//! content type's table) asks about that entry, as the Content model view
+//! does. A content type declared only through its nested tables is asked
+//! about at the first of them.
 
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_resolve::Usable;
@@ -91,13 +91,6 @@ fn model_target_at(ctx: &Ctx, offset: usize) -> Option<Usable> {
                 .features
                 .iter()
                 .map(|f| (Entry::Feature(&f.key), Usable::Feature(f.key.clone()))),
-        )
-        .chain(
-            model
-                .glossary
-                .terms
-                .iter()
-                .map(|t| (Entry::Term(&t.id), Usable::Term(t.id.clone()))),
         )
         .chain(
             model
@@ -201,8 +194,8 @@ pub(crate) fn target_at(ctx: &Ctx, offset: usize) -> Option<Usable> {
     (in_frontmatter || in_title).then(|| Usable::File(ctx.path.clone()))
 }
 
-/// Where `target` is declared: the file's start, the heading, or the
-/// entry in `ascribe.toml`.
+/// Where `target` is declared: the file's start, the heading (a glossary
+/// term's own included), or the entry in `ascribe.toml`.
 fn declaration(ctx: &Ctx, lines: &mut Lines<'_>, target: &Usable) -> Option<Location> {
     let entry = match target {
         Usable::File(path) => return file_start(ctx, path),
@@ -210,9 +203,17 @@ fn declaration(ctx: &Ctx, lines: &mut Lines<'_>, target: &Usable) -> Option<Loca
             let heading = ctx.snapshot.heading(file, id)?;
             return lines.location(file, Some(heading));
         }
+        Usable::Term(id) => {
+            let glossary = ctx.snapshot.glossary();
+            let term = glossary.term(id)?;
+            let heading = ctx
+                .snapshot
+                .file(&term.written_in)?
+                .heading_at(term.heading)?;
+            return lines.location(&term.written_in, Some(heading));
+        }
         Usable::Phrase(key) => Entry::Phrase(key),
         Usable::Feature(key) => Entry::Feature(key),
-        Usable::Term(id) => Entry::Term(id),
         Usable::Dimension(name) => Entry::Dimension(name),
         Usable::Note(name) => Entry::Note(name),
         Usable::Widget(name) => Entry::Widget(name),

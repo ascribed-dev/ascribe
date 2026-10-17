@@ -9,7 +9,8 @@
 //! What it records:
 //!
 //! - the parsed tree and the frontmatter, and the file's **title**;
-//! - the **headings**, with their sections and **source ids** (SPEC §5.5);
+//! - the **headings**, with their sections, **source ids** (SPEC §5.5), and
+//!   `@term` marks (SPEC §4.11);
 //! - the **includes**, each with the path it names, resolved (SPEC §4.2);
 //! - the **references**: links and images, each resolved from this file,
 //!   and so each **asset reference** among them;
@@ -36,7 +37,7 @@ use ascribe_syntax::{
 use crate::snippet::SnippetUse;
 
 pub(crate) use frontmatter::key_line as frontmatter_key;
-pub use headings::{ExplicitId, Heading, plain_text as heading_text};
+pub use headings::{ExplicitId, Heading, TermMark, plain_text as heading_text};
 pub use refs::{Local, RefKind, Reference, Target};
 pub(crate) use refs::{substitute_with, target_of};
 

@@ -125,58 +125,7 @@ repo = "https://github.com/ascribed-dev/ascribe"
 
 [glossary]
 match = "first"
-
-[glossary.terms.build]
-term = "build"
-aliases = ["builds"]
-definition = "A named set of choices, in ascribe.toml, for which variants and which availability a page's output keeps."
-link = "content-model/output.md#16-buildsname"
-# Also an ordinary word: link the occurrences that mean the term.
-match = "marked"
-
-[glossary.terms.variant]
-term = "variant"
-aliases = ["variants"]
-definition = "Alternative content for a value of a dimension, written with @variant."
-link = "writing/directives.md#variant"
-# Also an ordinary word: link the occurrences that mean the term.
-match = "marked"
-
-[glossary.terms.dimension]
-term = "dimension"
-aliases = ["dimensions"]
-definition = "An axis content varies along, such as a package manager or a deployment, declared in ascribe.toml."
-link = "content-model/content.md#dimensions"
-
-[glossary.terms.fragment]
-term = "fragment"
-aliases = ["fragments"]
-definition = "A source file that exists only to be included in other files: any file with a path segment starting with _."
-link = "writing/directives.md#files"
-
-[glossary.terms.phrase]
-term = "phrase"
-aliases = ["phrases"]
-definition = "A reusable string declared in ascribe.toml and written {key} in a page."
-link = "writing/directives.md#phrases"
-# Also an ordinary word: link the occurrences that mean the term.
-match = "marked"
-
-[glossary.terms.content-model]
-term = "content model"
-aliases = ["content models"]
-definition = "A project's schema, ascribe.toml: its content types, dimensions, phrases, and builds."
-link = "content-model/index.md"
-
-[glossary.terms.page-preview]
-term = "page preview"
-definition = "The editor's preview of the active page, rendered as the site shows it."
-link = "editor/index.md#preview"
-
-[glossary.terms.site-preview]
-term = "site preview"
-definition = "The active page on the project's own dev server, in the browser or the preview panel."
-link = "editor/index.md#site-preview"
+pages = ["glossary.md"]
 
 # Where the pages' code examples come from: files in this repository that are
 # built, tested, or run, taken with `@snippet`. Netlify builds from a clone of
@@ -256,4 +205,3 @@ example-stale = "error"
 
 [checks.vale]
 preset = "quiet"
-

@@ -88,7 +88,7 @@ pub const MODEL_FILE: &str = "ascribe.toml";
 /// Issues are located in file `FileId::new(0)`; use [`load_with_file`] when
 /// the caller owns a file table. The filesystem rules run relative to the
 /// file's directory (the project root): the content root must exist, and
-/// glossary links must name existing files.
+/// the glossary's pages must exist.
 ///
 /// An unreadable file is reported as `model-toml-syntax` at offset 0.
 pub fn load(path: impl AsRef<Path>) -> Result<ContentModel, Vec<Issue>> {
@@ -129,7 +129,7 @@ pub fn load_with_file(path: impl AsRef<Path>, file: FileId) -> Result<ContentMod
 
 /// Validates model text without touching the file system: the filesystem
 /// rules (`model-content-root-missing`, and the existence half of
-/// `model-glossary-link`) are skipped. For unsaved editor buffers and tests.
+/// `model-glossary-page`) are skipped. For unsaved editor buffers and tests.
 pub fn load_str(text: &str, file: FileId) -> Result<ContentModel, Vec<Issue>> {
     loader::load(text, file, None)
 }

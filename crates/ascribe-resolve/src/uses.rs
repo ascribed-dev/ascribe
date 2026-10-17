@@ -15,9 +15,11 @@
 //!   `@available`, a table row's `available`, or a page's frontmatter;
 //! - a **glossary term** by each occurrence of its text or an alias in prose,
 //!   matched as the build matches it (whole words, the term's case rule),
-//!   whether it links them first or every time. A term with
-//!   `match = "marked"` has none: its occurrences are ordinary words until
-//!   an author links one, and that link is a use of the page it names;
+//!   whether it links them first or every time, and by each link to its
+//!   heading (SPEC §5.4). A term with `match = "marked"` has only the links:
+//!   its occurrences are ordinary words until an author links one. Neither
+//!   counts on a glossary page that shows the term, or in the file it's
+//!   written in;
 //! - a **dimension** by each `@variant` attribute and frontmatter `variant`
 //!   key that names it, and each availability spec entry that names it or
 //!   one of its values;
@@ -35,6 +37,7 @@ use ascribe_model::{ContentModel, GlossaryMatch, TYPE_KEY};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind};
 
 use crate::build::{Terms, prose_lists};
+use crate::glossary::Term;
 use crate::index::walk::walk_blocks;
 use crate::index::{FileIndex, FileKind, RefKind, frontmatter_key};
 use crate::project::{Project, Resolution};
@@ -232,15 +235,8 @@ fn visit(
 ) {
     let wants = Wants::of(target);
     let model = project.model();
-    let terms = (wants.terms && !model.glossary.terms.is_empty()).then(|| {
-        Terms::new(
-            model
-                .glossary
-                .terms
-                .iter()
-                .filter(|term| term.match_mode != GlossaryMatch::Marked),
-        )
-    });
+    let glossary = wants.terms.then(|| project.glossary());
+    let glossary = glossary.filter(|g| !g.terms.is_empty());
     let default_note = default_note();
     let files: Box<dyn Iterator<Item = &FileIndex>> = match only {
         Some(path) => Box::new(project.file(path).into_iter()),
@@ -270,10 +266,30 @@ fn visit(
                 f(used, place(span, UseKind::Availability));
             });
         }
-        if let Some(terms) = &terms {
-            term_uses(terms, file, &mut |id, span| {
-                f(&Usable::Term(id.to_owned()), place(span, UseKind::Term));
+        if let Some(glossary) = &glossary {
+            // A term isn't used where it's defined.
+            let away: Vec<&Term> = glossary
+                .terms
+                .iter()
+                .filter(|t| t.written_in != file.path && !t.pages.contains(&file.path))
+                .collect();
+            let terms = Terms::new(
+                away.iter()
+                    .copied()
+                    .filter(|t| t.match_mode != GlossaryMatch::Marked),
+            );
+            // The occurrences and the links, in the order they're written.
+            let mut found = Vec::new();
+            term_uses(&terms, file, &mut |id, span| {
+                found.push((span, id.to_owned(), UseKind::Term));
             });
+            term_links(project, &away, file, &mut |id, span| {
+                found.push((span, id.to_owned(), UseKind::Link));
+            });
+            found.sort_by_key(|(span, ..)| span.start());
+            for (span, id, kind) in found {
+                f(&Usable::Term(id), place(span, kind));
+            }
         }
         if wants.directives {
             directive_uses(model, &default_note, file, &mut |used, span, kind| {
@@ -380,6 +396,33 @@ fn availability_uses(model: &ContentModel, file: &FileIndex, f: &mut dyn FnMut(&
         && let Some(at) = frontmatter_key(file, "available")
     {
         spec(&parsed, at);
+    }
+}
+
+/// The links in `file` to a term's heading, on a glossary page that shows
+/// it.
+fn term_links(project: &Project, terms: &[&Term], file: &FileIndex, f: &mut dyn FnMut(&str, Span)) {
+    let resolutions = project.resolutions(&file.path);
+    for (reference, resolution) in file.references.iter().zip(resolutions) {
+        let Resolution::Source {
+            target,
+            id: Some(id),
+            ..
+        } = resolution
+        else {
+            continue;
+        };
+        if reference.kind != RefKind::Link {
+            continue;
+        }
+        let Some((written_in, heading)) = project.page_heading(target, id) else {
+            continue;
+        };
+        if let Some(term) = terms.iter().find(|t| {
+            t.pages.contains(target) && t.written_in == written_in && t.heading == heading.span
+        }) {
+            f(&term.id, reference.span);
+        }
     }
 }
 

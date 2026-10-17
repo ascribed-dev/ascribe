@@ -8,7 +8,6 @@
 use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::{LineIndex, RelPath};
-use ascribe_model::GlossaryMatch;
 use ascribe_resolve::{Project, Section, Usable};
 use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
@@ -149,18 +148,21 @@ pub struct InventoryEntry {
     pub key: String,
     /// Its label, name, or term, where it has one besides its key.
     pub label: Option<String>,
-    /// How many places use it; `null` for a build, which pages don't name,
-    /// and for a glossary term with `match = "marked"`, whose uses are links
-    /// to its page. For a content type, how many pages have it.
+    /// How many places use it; `null` for a build, which pages don't name.
+    /// For a content type, how many pages have it.
     pub uses: Option<usize>,
-    /// Where `ascribe.toml` declares it; `null` for a built-in note type,
-    /// the implicit `page` type and `site` build, and an entry that can't be
-    /// found there.
+    /// Where it's declared: in `ascribe.toml`, or, for a glossary term, in
+    /// `page`. `null` for a built-in note type, the implicit `page` type and
+    /// `site` build, and an entry that can't be found there.
     #[cfg_attr(
         feature = "json-schema",
         schemars(with = "Option<crate::schema::LspRange>")
     )]
     pub declaration: Option<Range>,
+    /// For a glossary term, the content path of the file its heading is
+    /// written in, which `declaration` is a range in: its glossary page, or
+    /// a fragment the page includes. `null` for an entry of `ascribe.toml`.
+    pub page: Option<String>,
     /// A dimension's values, in declaration order; left out for every other
     /// kind.
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -323,6 +325,7 @@ fn model_entries(
                 uses: used.map(|used| counts.get(&used).copied().unwrap_or(0)),
                 declaration: find_entry(&ctx.model_text, &declared)
                     .map(|span| ctx.encoding.range(&lines, span)),
+                page: None,
                 values: Vec::new(),
             }
         };
@@ -345,16 +348,20 @@ fn model_entries(
             Entry::Feature(&f.key),
         ));
     }
-    for t in &model.glossary.terms {
-        out.push(entry(
-            ModelKind::Term,
-            &t.id,
-            Some(&t.term),
-            // A marked term's occurrences are only words until an author
-            // links one, and that link is a use of the page it names.
-            (t.match_mode != GlossaryMatch::Marked).then(|| Usable::Term(t.id.clone())),
-            Entry::Term(&t.id),
-        ));
+    for t in ctx.snapshot.glossary().terms {
+        let declaration = ctx
+            .snapshot
+            .file(&t.written_in)
+            .map(|file| ctx.encoding.range(&LineIndex::new(&file.source), t.heading));
+        out.push(InventoryEntry {
+            kind: ModelKind::Term,
+            key: t.id.clone(),
+            label: Some(t.term.clone()),
+            uses: Some(counts.get(&Usable::Term(t.id)).copied().unwrap_or(0)),
+            declaration,
+            page: Some(t.written_in.to_string()),
+            values: Vec::new(),
+        });
     }
     for d in &model.dimensions {
         let mut dimension = entry(

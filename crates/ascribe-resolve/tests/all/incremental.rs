@@ -65,6 +65,33 @@ fn editing_a_fragment_re_resolves_the_pages_that_include_it_and_no_others() {
 }
 
 #[test]
+fn a_change_to_a_glossary_terms_definition_reaches_every_page_and_other_text_doesnt() {
+    let glossary =
+        "---\ntitle: Glossary\n---\n\n## API key\n@term\n\nA secret.\n\n## More\n\nOther text.\n";
+    let (mut inc, _) = load(
+        &ModelSpec::base(),
+        &[
+            ("glossary.md", glossary),
+            ("a.md", "---\ntitle: A\n---\n\nThe API key is here.\n"),
+            ("c.md", "---\ntitle: C\n---\n\nNothing shared.\n"),
+        ],
+    );
+    // Text on the glossary page that's no term's definition reaches no other
+    // page.
+    let reworded = glossary.replace("Other text.", "Different text.");
+    let affected = inc.apply([edited("glossary.md", &reworded)]).unwrap();
+    assert_eq!(affected.re_resolve, set(&["glossary.md"]));
+    // A definition is the title of every link to its term, on any page.
+    let redefined = reworded.replace("A secret.", "A secret token.");
+    let affected = inc.apply([edited("glossary.md", &redefined)]).unwrap();
+    assert_eq!(affected.re_resolve, set(&["a.md", "c.md", "glossary.md"]));
+    // So is a term added, or its heading renamed.
+    let renamed = redefined.replace("## More\n", "## More\n@term\n");
+    let affected = inc.apply([edited("glossary.md", &renamed)]).unwrap();
+    assert_eq!(affected.re_resolve, set(&["a.md", "c.md", "glossary.md"]));
+}
+
+#[test]
 fn a_change_to_what_a_link_can_see_reaches_the_pages_that_link_to_it() {
     let (mut inc, _) = load(
         &ModelSpec::base(),

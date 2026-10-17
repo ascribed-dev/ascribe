@@ -362,7 +362,7 @@ fn glossary_terms_are_linked() {
             ("index.md", &page("Rotate your API key.\n")),
             (
                 "reference/glossary.md",
-                "---\ntitle: Glossary\n---\n\n## API key\n@id: api-key\n\nSecret.\n",
+                "---\ntitle: Glossary\n---\n\n## API key\n@term {aliases=\"API keys\"}\n\nA secret token that authenticates the Quill agent to Quill Cloud.\n",
             ),
         ],
     );

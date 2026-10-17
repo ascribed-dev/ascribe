@@ -135,7 +135,7 @@ pub enum EditAction {
     SetImageAlt,
     /// Declares the selected text a phrase and puts the phrase in its place.
     MakePhrase,
-    /// Declares a glossary term.
+    /// Adds a glossary term to the glossary's page.
     AddGlossaryTerm,
     /// Changes a feature's availability.
     PromoteFeature,

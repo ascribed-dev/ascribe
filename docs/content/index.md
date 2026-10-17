@@ -31,6 +31,7 @@ permalink: docs
   [Page templates](templates/index.md): starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it.
 - [Command reference](command/index.md): every `ascribe` command, its options, outputs, and exit codes.
 - [Files Ascribe writes](command/project-files.md): every file Ascribe puts in a project, and which to commit.
+- [Glossary](glossary.md): the terms these docs use.
 
 ## For implementers
 

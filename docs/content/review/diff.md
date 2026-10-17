@@ -9,7 +9,7 @@ The commands that compare a project with another revision of itself, and report 
 ## `ascribe diff`
 @id {permalink=true}: cli-diff
 
-Shows what changed between a git revision and the working tree, as readers will see it: which pages of each [build](../content-model/output.md#16-buildsname) changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, [phrase](../writing/directives.md#phrases), or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
+Shows what changed between a git revision and the working tree, as readers will see it: which pages of each [build](../glossary.md#build) changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, [phrase](../glossary.md#phrase), or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
 @include: ../_generated/cli-diff-options.md
 

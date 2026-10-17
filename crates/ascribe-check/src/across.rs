@@ -34,8 +34,8 @@ use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{Date, DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{
-    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, GlossaryMatch, Listing,
-    Permission, Purpose, in_line,
+    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, Listing, Permission, Purpose,
+    in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
@@ -150,14 +150,17 @@ pub(crate) fn for_every_build(
             }
         }
         if on(diagnostics::GLOSSARY_TERM_UNUSED) {
-            // A marked term's uses are links to its page, which the search
-            // counts as the page's.
-            for t in &model.glossary.terms {
-                if t.match_mode != GlossaryMatch::Marked && unused(Usable::Term(t.id.clone())) {
+            // A term is reported at its heading, on its glossary page, and
+            // acknowledged in `[[intended]]` by its id.
+            for t in index.glossary().terms {
+                if unused(Usable::Term(t.id.clone())) {
                     issues.push(
-                        Issue::new(diagnostics::GLOSSARY_TERM_UNUSED, at(t.span))
-                            .with_arg("term", t.term.clone())
-                            .with_arg(ENTRY_ARG, entry_arg(EntryKind::Term, &t.id)),
+                        Issue::new(
+                            diagnostics::GLOSSARY_TERM_UNUSED,
+                            Location::new(file(t.file), t.heading),
+                        )
+                        .with_arg("term", t.term.clone())
+                        .with_arg(ENTRY_ARG, entry_arg(EntryKind::Term, &t.id)),
                     );
                 }
             }

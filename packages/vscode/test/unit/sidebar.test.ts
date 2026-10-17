@@ -97,10 +97,18 @@ const inventory: InventoryResult = {
   orphans: ["old.md"],
   navigation: null,
   model: [
-    { kind: "phrase", key: "product", label: "Quill", uses: 14, declaration: range(4) },
-    { kind: "phrase", key: "old", label: "Old", uses: 0, declaration: range(5) },
-    { kind: "note", key: "note", label: "Note", uses: 2, declaration: null },
-    { kind: "build", key: "site", label: null, uses: null, declaration: range(9) },
+    { kind: "phrase", key: "product", label: "Quill", uses: 14, declaration: range(4), page: null },
+    { kind: "phrase", key: "old", label: "Old", uses: 0, declaration: range(5), page: null },
+    { kind: "note", key: "note", label: "Note", uses: 2, declaration: null, page: null },
+    { kind: "build", key: "site", label: null, uses: null, declaration: range(9), page: null },
+    {
+      kind: "term",
+      key: "api-key",
+      label: "API key",
+      uses: 3,
+      declaration: range(6),
+      page: "ref/api.md",
+    },
   ],
 };
 
@@ -505,20 +513,28 @@ const modeled: InventoryResult = {
   ...inventory,
   model: [
     ...inventory.model,
-    { kind: "widget", key: "quill-lab", label: null, uses: 1, declaration: range(12) },
+    { kind: "widget", key: "quill-lab", label: null, uses: 1, declaration: range(12), page: null },
     {
       kind: "dimension",
       key: "deployment",
       label: null,
       uses: 4,
       declaration: range(14),
+      page: null,
       values: [
         { value: "cloud", label: "Quill Cloud", declaration: range(15) },
         { value: "self-managed", label: null, declaration: null },
       ],
     },
-    { kind: "type", key: "guide", label: "Teach a task", uses: 2, declaration: range(20) },
-    { kind: "type", key: "reference", label: null, uses: 0, declaration: range(24) },
+    {
+      kind: "type",
+      key: "guide",
+      label: "Teach a task",
+      uses: 2,
+      declaration: range(20),
+      page: null,
+    },
+    { kind: "type", key: "reference", label: null, uses: 0, declaration: range(24), page: null },
   ],
 };
 
@@ -577,6 +593,7 @@ describe("the Content model view", () => {
       label: null,
       uses: 3,
       declaration: null,
+      page: null,
     } as const;
     expect(modelLook({ kind: "entry", entry: implicit }).context).toBe("ascribe.model.type");
   });
@@ -592,6 +609,7 @@ describe("the Content model view", () => {
     const roots = modelRoots(inventory);
     expect(roots.map((n) => [modelLook(n).label, modelLook(n).description])).toEqual([
       ["Phrases", "2"],
+      ["Glossary", "1"],
       ["Note types", "1"],
       ["Builds", "1"],
     ]);
@@ -601,8 +619,9 @@ describe("the Content model view", () => {
   it("shows each entry's uses, and marks one nothing uses", () => {
     const roots = modelRoots(inventory);
     const phrases = nth(roots, 0);
-    const notes = nth(roots, 1);
-    const builds = nth(roots, 2);
+    const glossary = nth(roots, 1);
+    const notes = nth(roots, 2);
+    const builds = nth(roots, 3);
     const entries = modelChildren(phrases);
     const product = nth(entries, 0);
     const old = nth(entries, 1);
@@ -614,6 +633,8 @@ describe("the Content model view", () => {
     });
     expect(modelLook(old)).toMatchObject({ description: "unused", dimmed: true });
     expect(modelLook(nth(modelChildren(notes), 0)).tooltip).toContain("Built in");
+    // A glossary term says which page it's on.
+    expect(modelLook(nth(modelChildren(glossary), 0)).tooltip).toContain("On ref/api.md");
     // Pages don't name builds: no count.
     expect(modelLook(nth(modelChildren(builds), 0))).toMatchObject({
       description: "",

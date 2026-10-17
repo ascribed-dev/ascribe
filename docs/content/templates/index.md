@@ -93,7 +93,7 @@ The docs didn't change a page that already did its job to match its template hea
 
 ## Ascribe's notes
 
-Their guide says what belongs in a page of each kind, and it's written for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../writing/directives.md#variant) group, and a step's command taken from tested code with [`@snippet`](../writing/directives.md#snippet). They're the only words in the set that are Ascribe's, and `templates.lock` records them apart from their files.
+Their guide says what belongs in a page of each kind, and it's written for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../glossary.md#variant) group, and a step's command taken from tested code with [`@snippet`](../writing/directives.md#snippet). They're the only words in the set that are Ascribe's, and `templates.lock` records them apart from their files.
 
 ## Start a page
 

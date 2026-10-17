@@ -1,7 +1,9 @@
 description: >-
-  A model may declare a glossary; authors mark nothing in source, so a page
-  that uses a term and a page that defines it are both valid.
-spec: ["5.4", "7.2"]
+  A glossary is a page `[glossary] pages` lists, and each of its headings
+  marked `@term` is a term, defined by the paragraph under it. Authors mark
+  nothing where a term is used, so a page that uses one and the page that
+  defines it are both valid.
+spec: ["4.11", "5.4", "7.2"]
 tags: [check]
 
 diagnostics: []

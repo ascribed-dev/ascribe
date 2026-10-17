@@ -88,14 +88,30 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-/// The content model `args` names, and the project's files, which say what
-/// its sources' tested examples are. Only the content model is checked: a
-/// project whose pages have errors still has one to show.
-fn load(global: &Global, args: &Args) -> Result<(ContentModel, DiskFs), Failure> {
+/// The content model `args` names, the project's files, which say what its
+/// sources' tested examples are, and its glossary's terms, read from its
+/// pages. Only the content model is checked: a project whose pages have
+/// errors still has one to show.
+fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
     let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
     let file = Project::load_model(&config).map_err(Failure::Load)?;
     let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
-    Ok((file.model, fs))
+    let project = Project::load(&config).map_err(Failure::Load)?;
+    let index = project.index();
+    Ok(Loaded {
+        model: file.model,
+        fs,
+        terms: ascribe_query::terms(&index),
+        index,
+    })
+}
+
+/// What [`load`] reads.
+struct Loaded {
+    model: ContentModel,
+    fs: DiskFs,
+    terms: Vec<ascribe_query::ModelTerm>,
+    index: ascribe_resolve::Project,
 }
 
 /// What `--format json` writes: without `--section`, with the project's
@@ -105,13 +121,11 @@ fn load(global: &Global, args: &Args) -> Result<(ContentModel, DiskFs), Failure>
 ///
 /// No content model, or one with errors.
 pub fn answer(global: &Global, args: &Args) -> Result<ModelReport, Stop> {
-    let (model, fs) = load(global, args)?;
+    let loaded = load(global, args)?;
     let section = args.section.map(Section::query);
-    let mut report = ascribe_query::model(&model, section, Some(&fs));
+    let mut report = ascribe_query::model(&loaded.model, loaded.terms, section, Some(&loaded.fs));
     if section.is_none() {
-        let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
-        let project = Project::load(&config).map_err(Failure::Load)?;
-        report.navigation = Some(ascribe_query::navigation(&project.index()));
+        report.navigation = Some(ascribe_query::navigation(&loaded.index));
     }
     Ok(report)
 }
@@ -124,13 +138,20 @@ fn model(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
             Err(stop) => return stop.report(err),
         },
         Format::Text => {
-            let (model, fs) = match load(global, args) {
+            let loaded = match load(global, args) {
                 Ok(loaded) => loaded,
                 Err(failure) => return answer::report_failure(err, &failure),
             };
             let section = args.section.map(Section::query);
             out.write_all(
-                ascribe_query::summary(&model, section, SUMMARY_BUDGET, Some(&fs)).as_bytes(),
+                ascribe_query::summary(
+                    &loaded.model,
+                    loaded.terms,
+                    section,
+                    SUMMARY_BUDGET,
+                    Some(&loaded.fs),
+                )
+                .as_bytes(),
             )
         }
     };

@@ -1,0 +1,10 @@
+description: >-
+  Two terms, or a term and an alias, with the same text are an error at the
+  second, which isn't a term. Text is compared ignoring case unless both
+  terms are case-sensitive.
+spec: ["5.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: glossary-term-duplicate, file: glossary.md, line: 10}
+  - {slug: glossary-term-duplicate, file: glossary.md, line: 16}

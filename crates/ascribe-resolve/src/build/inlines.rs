@@ -31,6 +31,63 @@ pub(crate) fn own_lists_mut(block: &mut ResolvedBlock) -> Vec<&mut Vec<Inline>> 
     }
 }
 
+/// [`own_lists_mut`], read only.
+pub(crate) fn own_lists(block: &ResolvedBlock) -> Vec<&Vec<Inline>> {
+    fn line_lists(line: &DirectiveLine) -> Vec<&Vec<Inline>> {
+        let mut out: Vec<&Vec<Inline>> = line.title.iter().map(|t| &t.inlines).collect();
+        if let Some(PrimaryValue::Text(text)) = &line.primary {
+            out.push(&text.inlines);
+        }
+        out
+    }
+    match &block.kind {
+        ResolvedKind::Leaf(b) => match &b.kind {
+            BlockKind::Heading(h) => vec![&h.inlines],
+            BlockKind::Paragraph(p) => vec![&p.inlines],
+            BlockKind::Table(t) => t
+                .rows
+                .iter()
+                .flat_map(|r| r.cells.iter().map(|c| &c.inlines))
+                .collect(),
+            BlockKind::Directive(line) => line_lists(line),
+            _ => Vec::new(),
+        },
+        ResolvedKind::Container { opener, .. } => opener.title.iter().map(|t| &t.inlines).collect(),
+        ResolvedKind::Group { arms, .. } => arms
+            .iter()
+            .flat_map(|a| a.opener.title.iter().map(|t| &t.inlines))
+            .collect(),
+        ResolvedKind::BlockQuote { .. } | ResolvedKind::List { .. } => Vec::new(),
+    }
+}
+
+/// Inline content as the plain text a reader reads: the text of everything,
+/// an image's alt text, and no markup. Inline HTML is dropped, and a line
+/// break is a space.
+pub(crate) fn inline_text(inlines: &[Inline]) -> String {
+    let mut out = String::new();
+    push_text(inlines, &mut out);
+    out
+}
+
+fn push_text(inlines: &[Inline], out: &mut String) {
+    for inline in inlines {
+        match &inline.kind {
+            InlineKind::Text(t) | InlineKind::Code(t) => out.push_str(t),
+            InlineKind::SoftBreak | InlineKind::HardBreak => out.push(' '),
+            InlineKind::Html(_) => {}
+            InlineKind::Emphasis(c) | InlineKind::Strong(c) => push_text(c, out),
+            InlineKind::Link(l) => push_text(&l.children, out),
+            InlineKind::Image(i) => push_text(&i.children, out),
+            InlineKind::Phrase(p) => {
+                out.push('{');
+                out.push_str(&p.key);
+                out.push('}');
+            }
+        }
+    }
+}
+
 /// The lists of inlines that are prose (SPEC §5.4) in a block of `kind`:
 /// paragraphs, table cells, and the text primary of a directive. Not headings
 /// or titles. Written once for [`prose_lists`] and [`prose_lists_mut`]; pass

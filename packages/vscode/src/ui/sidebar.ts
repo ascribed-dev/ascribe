@@ -728,9 +728,7 @@ export function modelLook(node: ModelNode): ItemLook {
           : `${uses} in pages`,
     );
   }
-  if (entry.uses === null && entry.kind === "term") {
-    tooltip.push("Marked: the links to its page are its uses");
-  }
+  if (entry.page !== null) tooltip.push(`On ${entry.page}`);
   if (entry.declaration === null) {
     tooltip.push(
       entry.kind === "note"

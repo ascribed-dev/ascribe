@@ -1,4 +1,4 @@
-The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): terms, their definitions, and how occurrences are matched. Authors don't mark terms in source; processors link them ([SPEC §9.2]({repo}/blob/main/SPEC.md#92-resolution) step 7).
+The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): the pages that hold its terms, and how occurrences are matched. A term is a heading on a glossary page, marked [`@term`](../../writing/directives.md#term), and its definition is the paragraph under it. Authors don't mark terms where they're used; processors link them ([SPEC §9.2]({repo}/blob/main/SPEC.md#92-resolution) step 7).
 
 @snippet: code:examples/content-models/full.toml#glossary
 
@@ -6,17 +6,32 @@ The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): terms, 
 
 | Key | Type | Default | Description |
 |---|---|---|---|
+| `pages` | array of strings (paths) | `[]` | The glossary pages, each a path from the content root, written as in a link ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links); a leading `/` is allowed and means the same). Each MUST be a page, not a fragment. A term is linked to the first of its pages that a build publishes. |
 | `match` | string | `"first"` | Which occurrences are linked: `"first"`, the first occurrence of each term on each page, or `"every"`, every occurrence. "Page" means the resolved page for a build, after includes and build modes. A term can override it. |
 | `case-sensitive` | boolean | `false` | Whether occurrences must match a term's case exactly. When `false`, matching ignores case. A term can override it. |
-| `terms` | table of terms | `{}` | The terms, keyed by term id (`key` rule). |
+
+There's no `terms` table: a project that has one gets an error saying to write each term on a glossary page.
 
 ### 12.2 Terms
 
-| Key | Type | Default | Description |
+Each heading on a glossary page with `@term` directly under it, written on the page or in a fragment it includes, is a term:
+
+```markdown
+## Rollout
+@id: rollout
+@term {aliases=rollouts}
+
+A plan for turning a flag on for a growing share of users: by percentage, by segment, or on a schedule.
+```
+
+- **The term** is the heading's text, and **its id** is the heading's id, which the site output's `data-ascribe-term` and `[[intended]] term` name. An `@id` keeps the id when the heading's text changes.
+- **The definition** is the paragraph that opens the section, as plain text, with the build's phrases. The site output shows it as the link's title, and the editor on hover; the JSON output lists it with each use.
+- `@term`'s attributes override the glossary's settings for the term:
+
+| Attribute | Type | Default | Description |
 |---|---|---|---|
-| `term` | string | **required** | The term as it appears in prose. Non-empty. |
-| `aliases` | array of strings | `[]` | Other forms that count as occurrences, such as plurals. |
-| `definition` | string | **required** | A short plain-text definition, shown on hover in the editor and included in the JSON output. |
-| `link` | string (path) | none | Where the full definition lives: a source file path relative to the content root, with an optional `#id`, written as in a link ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links); a leading `/` is allowed and means the same). It MUST name a page, not a fragment. Occurrences are linked here. |
-| `case-sensitive` | boolean | the `[glossary]` setting | Overrides `case-sensitive` for this term, for terms like `Go` that collide with ordinary words. |
-| `match` | string | the `[glossary]` setting | Overrides `match` for this term: `"first"`, `"every"`, or `"marked"`. A `"marked"` term isn't linked automatically at all, for words like `build` that also have ordinary senses: link the occurrences that mean the term with an ordinary link to its page. `"marked"` is a term setting only; `[glossary]` doesn't accept it. |
+| `aliases` | string | none | Other forms that count as occurrences, such as plurals, separated by `\|`: `aliases="API keys\|keys"`. |
+| `case-sensitive` | boolean | the `[glossary]` setting | For terms like `Go` that collide with ordinary words. |
+| `match` | `first`, `every`, or `marked` | the `[glossary]` setting | A `marked` term isn't linked automatically at all, for words like `build` that also have ordinary senses: link the occurrences that mean the term to its heading, as `[build](glossary.md#build)`. `marked` is a term setting only; `[glossary]` doesn't accept it. |
+
+**A link to a term's heading is a use of the term,** wherever it's written: it gets the term's marker and its definition as its title, as an automatic link does, and it counts as a use. For a term with `match = "first"`, it's the page's first link to the term, so no later occurrence is linked. A link to the glossary page, or to another heading in the term's section, is an ordinary link.

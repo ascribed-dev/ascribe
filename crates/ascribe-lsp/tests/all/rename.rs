@@ -183,14 +183,12 @@ fn a_permalink_is_refused_since_links_from_outside_use_it() {
 
 #[test]
 fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
-    // A glossary term's `link` and a retired permalink's `to`, each written
-    // with or without the `/`, keep their `#id`; one naming another page,
-    // and the file's comments, stay as they are.
+    // A glossary page and a retired permalink's `to`, each written with or
+    // without the `/`, follow the page, keeping their `#id`; one naming
+    // another page, and the file's comments, stay as they are.
     let model = format!(
-        "{MODEL}\n[glossary.terms.key]\nterm = \"key\"\ndefinition = \"A secret.\"\nlink = \"/keys.md#create-key\" # the first\n\n\
-         [glossary.terms.install]\nterm = \"install\"\ndefinition = \"Setting it up.\"\nlink = \"install.md\"\n\n\
-         [glossary.terms.setup]\nterm = \"setup\"\ndefinition = \"Getting ready.\"\nlink = \"keys.md#set-up\"\n\n\
-         [permalinks.retired]\nold-keys = {{ to = \"keys.md\", reason = \"Merged\" }}\n"
+        "{MODEL}\n[glossary]\npages = [\"/keys.md\", # the first\n  \"install.md\"]\n\n\
+         [permalinks.retired]\nold-keys = {{ to = \"keys.md\", reason = \"Merged\" }}\nold-setup = {{ to = \"keys.md#set-up\", reason = \"Merged\" }}\n"
     );
     let f = Fixture::new(
         &model,
@@ -212,7 +210,7 @@ fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
     assert_eq!(
         toml.text,
         model
-            .replace("\"/keys.md#", "\"/reference/keys.md#")
+            .replace("\"/keys.md\"", "\"/reference/keys.md\"")
             .replace("\"keys.md#", "\"reference/keys.md#")
             .replace("\"keys.md\"", "\"reference/keys.md\"")
     );
@@ -221,14 +219,14 @@ fn a_page_that_moves_takes_what_ascribe_toml_names_it_by_along() {
 
 #[test]
 fn a_heading_whose_id_changes_takes_what_ascribe_toml_names_it_by_along() {
-    // A glossary term's `link` and a retired permalink's `to` that name the
-    // heading change with its id, and with the numbering after it; one
-    // naming the same id on another page stays as it is.
+    // A retired permalink's `to` that names the heading changes with its
+    // id, and with the numbering after it; one naming the same id on another
+    // page stays as it is.
     let model = format!(
-        "{MODEL}\n[glossary.terms.setup]\nterm = \"setup\"\ndefinition = \"Getting ready.\"\nlink = \"/keys.md#set-up\" # the first\n\n\
-         [glossary.terms.again]\nterm = \"again\"\ndefinition = \"Once more.\"\nlink = \"keys.md#set-up-1\"\n\n\
-         [glossary.terms.install]\nterm = \"install\"\ndefinition = \"Setting it up.\"\nlink = \"install.md#set-up\"\n\n\
-         [permalinks.retired]\nold-setup = {{ to = \"keys.md#set-up\", reason = \"Merged\" }}\n"
+        "{MODEL}\n[permalinks.retired]\nold-setup = {{ to = \"/keys.md#set-up\", reason = \"Merged\" }} # the first\n\
+         again = {{ to = \"keys.md#set-up-1\", reason = \"Merged\" }}\n\
+         install = {{ to = \"install.md#set-up\", reason = \"Merged\" }}\n\
+         plain = {{ to = \"keys.md#set-up\", reason = \"Merged\" }}\n"
     );
     let f = Fixture::new(
         &model,
