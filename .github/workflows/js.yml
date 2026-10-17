@@ -83,6 +83,14 @@ jobs:
       - run: xvfb-run -a pnpm --filter ascribe-vscode test:integration
         env:
           ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
+      # A suite that keeps its VS Code logs leaves them here when it fails
+      # (test/integration/run.ts), the language server's trace among them.
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vscode-integration-logs
+          path: packages/vscode/out/integration-logs
+          if-no-files-found: ignore
 
   # The multi-project suite on Windows and macOS, where paths differ from
   # Linux: drive letters, backslashes, and case-insensitive file systems in
