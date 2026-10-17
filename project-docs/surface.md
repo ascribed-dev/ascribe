@@ -380,9 +380,9 @@ Commands that aren't actions:
 | Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
 | Ascribe: Show Server Output | `ascribe.showOutput` |
 | Ascribe: Restart Language Server | `ascribe.restartServer` |
-| Ascribe: Refresh | `ascribe.projects.refresh` |
-| Ascribe: Show Output | `ascribe.projects.showOutput` |
-| Ascribe: Restart Server | `ascribe.projects.restart` |
+| Ascribe: Switch Project | `ascribe.switchProject` |
+| Ascribe: Show the Sidebar Project's Output | `ascribe.sidebar.showOutput` |
+| Ascribe: Restart the Sidebar Project's Server | `ascribe.sidebar.restart` |
 | Ascribe: Place Here | `ascribe.pages.placeHere` |
 | Ascribe: Rename Label… | `ascribe.pages.renameLabel` |
 | Ascribe: Open Preview to the Side | `ascribe.pages.openPreview` |
@@ -469,7 +469,6 @@ Views:
 | View | Id |
 |---|---|
 | Review | `ascribe.review` |
-| Projects | `ascribe.projects` |
 | This page | `ascribe.thisPage` |
 | Pages | `ascribe.pages` |
 | Content model | `ascribe.model` |
@@ -487,7 +486,7 @@ The walkthrough:
 | 1 | Open a project | Get Started with Ascribe |
 | 2 | Preview a page | Get Started with Ascribe |
 | 3 | Write with the actions bar | Get Started with Ascribe |
-| 4 | See your projects | Get Started with Ascribe |
+| 4 | See your project | Get Started with Ascribe |
 | 5 | See what a build leaves out | Get Started with Ascribe |
 | 6 | Check in CI | Get Started with Ascribe |
 
@@ -497,8 +496,8 @@ Menus the commands are placed in:
 |---|---|
 | `commandPalette` | 90 |
 | `editor/title` | 5 |
-| `view/title` | 11 |
-| `view/item/context` | 15 |
+| `view/title` | 12 |
+| `view/item/context` | 13 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |

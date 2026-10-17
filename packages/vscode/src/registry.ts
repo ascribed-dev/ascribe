@@ -268,7 +268,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     if (all.length > MAX_PROJECTS && !this.warnedOfCap) {
       this.warnedOfCap = true;
       this.servers[0]?.log(
-        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server. To leave out folders whose ascribe.toml isn't a project, such as test fixtures, add them to ascribe.projects.exclude.`,
+        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server, and Ascribe: Switch Project lists only those. To leave out folders whose ascribe.toml isn't a project, such as test fixtures, add them to ascribe.projects.exclude.`,
       );
     }
 

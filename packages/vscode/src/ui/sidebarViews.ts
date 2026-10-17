@@ -30,6 +30,7 @@ import {
   pagesDraggable,
   pagesDrop,
   contentPathOf,
+  followedProject,
   pagesFind,
   pagesLook,
   pagesParent,
@@ -237,8 +238,9 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
 
 /**
  * The This page, Pages, and Content model views in the Ascribe sidebar, for the
- * active file's project. They ask only a server that is already running, and
- * never start one: a page being active means its project's server runs.
+ * active file's project, or the one Switch Project chose. They ask only a
+ * server that is already running, and start one only when Switch Project
+ * chooses its project: a page being active means its project's server runs.
  * Pages and Content model refresh when a file of the project is saved, when a
  * page is created or deleted, and when the active project changes; This page
  * follows the active editor and its cursor, while it's showing.
@@ -479,7 +481,7 @@ export class SidebarViews implements vscode.Disposable {
       this.thisPage,
       this.pages,
       this.model,
-      vscode.window.onDidChangeActiveTextEditor(() => this.follow()),
+      vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
         if (textEditor === vscode.window.activeTextEditor) this.soon("thisPage");
       }),
@@ -502,6 +504,9 @@ export class SidebarViews implements vscode.Disposable {
         if (server === this.server) this.follow(true);
       }),
       this.projects.onDidChangeProjects(() => this.follow(true)),
+      // The links of the views' welcome while their project's server has failed.
+      vscode.commands.registerCommand(SHOW_OUTPUT, () => this.server?.showOutput()),
+      vscode.commands.registerCommand(RESTART, () => this.server?.restart()),
       vscode.commands.registerCommand(PLACE_HERE, (node?: PagesNode) =>
         node ? this.placeHere(node).then((said) => said && this.say(said)) : undefined,
       ),
@@ -899,17 +904,36 @@ export class SidebarViews implements vscode.Disposable {
   private showMessages(): void {
     const server = this.server;
     const result = this.inventory;
+    // A server that failed to start: the views' welcome says so, with its links.
+    if (server?.state === "failed") {
+      for (const tree of [this.pages, this.model]) {
+        if (tree.view) {
+          tree.view.message = "";
+          tree.view.description = this.projects.name(server.project);
+        }
+      }
+      return;
+    }
+    // A server Switch Project started, until it answers: the views name its project.
+    const starting = server?.state === "starting" && !result;
+    if (starting) {
+      for (const tree of [this.pages, this.model]) {
+        if (tree.view) tree.view.description = this.projects.name(server.project);
+      }
+    }
     if (this.pages.view) {
-      this.pages.view.message =
-        server && !result
+      this.pages.view.message = starting
+        ? STARTING
+        : server && !result
           ? "Open a page of the project to list its pages."
           : result && this.orphansOnly && this.pagesRoots().length === 0
             ? "No orphans: something links to or includes every page and fragment."
             : "";
     }
     if (this.model.view) {
-      this.model.view.message =
-        server && !result
+      this.model.view.message = starting
+        ? STARTING
+        : server && !result
           ? "Open a page of the project to list its content model."
           : result && this.unusedOnly && modelRoots(result, true).length === 0
             ? "Nothing unused: every entry is used."
@@ -1001,17 +1025,36 @@ export class SidebarViews implements vscode.Disposable {
       .then(undefined, () => undefined);
   }
 
+  /** The project the views show, which Switch Project marks. */
+  get project(): ProjectServer | undefined {
+    return this.server;
+  }
+
   /**
-   * Follows the active editor: a file of another project switches the views
-   * to it, and a file of no project leaves them on the last one.
+   * Shows a project chosen with Switch Project, starting its server if it
+   * hasn't started. It's a jump, not a pin: the views stay on it until a
+   * file of another project becomes active.
    */
-  private follow(force = false): void {
+  choose(server: ProjectServer): void {
+    this.server = server;
+    this.follow(true);
+    if (server.state === "stopped") void server.start();
+  }
+
+  /**
+   * Follows the active editor: when it changes to a file of another project,
+   * the views switch to it, and a file of no project leaves them on the last
+   * one. Drawing them again otherwise keeps the project Switch Project chose.
+   */
+  private follow(force = false, editorChanged = false): void {
     const uri = vscode.window.activeTextEditor?.document.uri;
-    const server = uri?.scheme === "file" ? this.projects.serverFor(uri) : undefined;
-    if (server && server !== this.server) {
+    const active = uri?.scheme === "file" ? this.projects.serverFor(uri) : undefined;
+    const server = followedProject(this.server, active, editorChanged, this.projects.servers);
+    if (server !== this.server) {
       this.server = server;
       force = true;
     }
+    void vscode.commands.executeCommand("setContext", FAILED, this.server?.state === "failed");
     if (force) {
       if (this.server?.state !== "running" || !this.projects.servers.includes(this.server)) {
         this.inventory = undefined;
@@ -1087,6 +1130,13 @@ export class SidebarViews implements vscode.Disposable {
     const server = document && this.projects.serverFor(document.uri);
     if (!editor || !document || document.languageId !== "markdown" || !server) {
       this.showThisPage(undefined, NO_PAGE);
+      return;
+    }
+    if (server.state === "failed") {
+      this.showThisPage(
+        undefined,
+        `${this.projects.name(server.project)}: the language server failed to start.`,
+      );
       return;
     }
     if (server.state !== "running") {
@@ -1197,6 +1247,16 @@ function isNavFile(uri: vscode.Uri): boolean {
 
 /** The command a thread in This page's Review section runs. */
 const OPEN_THREAD = "ascribe.review.openThread";
+
+/** The context key set while the views' project's server has failed, for their welcome. */
+const FAILED = "ascribe.sidebar.failed";
+
+/** The commands of the views' welcome while their project's server has failed. */
+const SHOW_OUTPUT = "ascribe.sidebar.showOutput";
+const RESTART = "ascribe.sidebar.restart";
+
+/** What Pages and Content model say while their project's server starts. */
+const STARTING = "Starting the project's language server.";
 
 /** What This page says when the active file isn't a page of a project. */
 const NO_PAGE = "Open a page to see what's known about it.";

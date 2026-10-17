@@ -1,13 +1,13 @@
-// What the status bar item and the Projects view say about a project, worked
+// What the status bar item and Switch Project say about a project, worked
 // out from plain values so the unit tests can check it without VS Code.
 
 import * as path from "node:path";
 import type { ResolvedBinary } from "../binary.js";
-import { owningProject, within, type Project } from "../projects.js";
+import { owningProject, samePath, within, type Project } from "../projects.js";
 import type { ServerState } from "../serverState.js";
 import { formatVersion } from "../version.js";
 
-/** A project as the status bar and the Projects view see it. */
+/** A project as the status bar and Switch Project see it. */
 export interface ProjectInfo extends Project {
   /** Its name for people (`ProjectRegistry.name`). */
   name: string;
@@ -28,6 +28,16 @@ export interface ProjectInfo extends Project {
   everyBuild: boolean;
 }
 
+/**
+ * The context keys about the workspace's projects, from how many the
+ * registry has (those `ascribe.projects.exclude` leaves out and those past
+ * the cap aren't among them): `ascribe.active` with one or more, and
+ * `ascribe.multipleProjects`, which shows Switch Project, with two or more.
+ */
+export function projectKeys(count: number): { active: boolean; multipleProjects: boolean } {
+  return { active: count > 0, multipleProjects: count >= 2 };
+}
+
 /** A server's state in words. */
 export const STATE_NAMES: Record<ServerState, string> = {
   stopped: "not started",
@@ -36,7 +46,7 @@ export const STATE_NAMES: Record<ServerState, string> = {
   failed: "failed",
 };
 
-/** The codicon for a server's state, as the status bar and the Projects view show it. */
+/** The codicon for a server's state, as the status bar shows it. */
 const STATE_ICONS: Record<ServerState, string> = {
   stopped: "book",
   starting: "sync~spin",
@@ -173,87 +183,78 @@ function binaryText(binary: ResolvedBinary): string {
   return `${binary.path} (${binary.source}, ${formatVersion(binary.version)})`;
 }
 
-/** An item of the Projects view. */
-export type ProjectNode =
-  | { kind: "project"; project: ProjectInfo }
-  | { kind: "model"; project: ProjectInfo }
-  | { kind: "build"; project: ProjectInfo; build: string }
-  | { kind: "binary"; project: ProjectInfo; binary: ResolvedBinary };
-
-/** How an item of the Projects view looks. */
-export interface NodeLook {
+/** A project as Switch Project lists it. */
+export interface SwitchItem {
+  /** The project's `ascribe.toml`, which names it. */
+  config: string;
+  folder: string;
+  /** Its name, after a check for the sidebar's project. */
   label: string;
+  /** Its folder. */
   description: string;
-  tooltip: string;
-  /** A codicon, or `undefined` for the file's own icon. */
-  icon: string | undefined;
-  /** Whether it has children. */
-  expandable: boolean;
-  /** What the view's menus match on (`viewItem`). */
-  contextValue: string;
+  /** Its server's state, and its binary once one has been found. */
+  detail: string;
+  /** Whether it's the sidebar's project. */
+  current: boolean;
+  /** Its item buttons: Restart only on a server that is running or has failed. */
+  buttons: SwitchButton[];
 }
 
-/** The Projects view's top level: every project, started or not, in path order. */
-export function projectNodes(projects: readonly ProjectInfo[]): ProjectNode[] {
-  return projects.map((project) => ({ kind: "project", project }));
-}
-
-/** A project's children: its `ascribe.toml`, and while it's running its editor build and binary. */
-export function childNodes(node: ProjectNode): ProjectNode[] {
-  if (node.kind !== "project") return [];
-  const { project } = node;
-  const children: ProjectNode[] = [{ kind: "model", project }];
-  if (project.state !== "running") return children;
-  const editor = project.builds.find((b) => b.editor)?.name;
-  if (editor !== undefined) children.push({ kind: "build", project, build: editor });
-  if (project.binary) children.push({ kind: "binary", project, binary: project.binary });
-  return children;
-}
+/** A button on one of Switch Project's items. */
+export type SwitchButton = "showOutput" | "restart";
 
 /**
- * How an item looks. A project's `contextValue` names its state,
- * `ascribe.project.<state>`, so Restart is offered only for a running or
- * failed server.
+ * Switch Project's items: every project, the sidebar's first and marked,
+ * then the rest in path order, each with its folder (as `show` writes it)
+ * and its server's state.
  */
-export function nodeLook(node: ProjectNode, show: (folder: string) => string): NodeLook {
-  switch (node.kind) {
-    case "project":
-      return {
-        label: node.project.name,
-        description: show(node.project.folder),
-        tooltip: tooltipLines(node.project).join("\n"),
-        icon: STATE_ICONS[node.project.state],
-        expandable: true,
-        contextValue: `ascribe.project.${node.project.state}`,
-      };
-    case "model":
-      return {
-        label: path.basename(node.project.config),
-        description: "content model",
-        tooltip: node.project.config,
-        icon: undefined,
-        expandable: false,
-        contextValue: "ascribe.model",
-      };
-    case "build":
-      return {
-        label: node.build,
-        description: "editor build",
-        tooltip: `The editor build, [editor] build in ascribe.toml, which decides the diagnostics`,
-        icon: "package",
-        expandable: false,
-        contextValue: "ascribe.build",
-      };
-    case "binary":
-      return {
-        label: `ascribe ${formatVersion(node.binary.version)}`,
-        description: node.binary.source,
-        tooltip: binaryText(node.binary),
-        icon: "terminal",
-        expandable: false,
-        contextValue: "ascribe.binary",
-      };
+export function switchItems(
+  projects: readonly ProjectInfo[],
+  current: string | undefined,
+  show: (folder: string) => string,
+): SwitchItem[] {
+  const isCurrent = (project: ProjectInfo) =>
+    current !== undefined && samePath(project.config, current);
+  const ordered = [...projects.filter(isCurrent), ...projects.filter((p) => !isCurrent(p))];
+  return ordered.map((project) => {
+    const here = isCurrent(project);
+    const detail = [switchState(project)];
+    if (project.binary) detail.push(binaryText(project.binary));
+    return {
+      config: project.config,
+      folder: project.folder,
+      label: `${here ? "$(check)" : "$(blank)"} ${project.name}`,
+      description: show(project.folder),
+      detail: detail.join(" · "),
+      current: here,
+      buttons:
+        project.state === "running" || project.state === "failed"
+          ? ["showOutput", "restart"]
+          : ["showOutput"],
+    };
+  });
+}
+
+/** A server's state as Switch Project says it: running with its build, or why it isn't. */
+function switchState(project: ProjectInfo): string {
+  switch (project.state) {
+    case "running":
+      return project.build ? `running, ${project.build} build` : "running";
+    case "starting":
+      return "starting";
+    case "stopped":
+      return "not checked yet";
+    case "failed":
+      return "failed";
   }
+}
+
+/** The item of the project in `folder`, compared as the platform compares paths. */
+export function switchItemAt<T extends { folder: string }>(
+  items: readonly T[],
+  folder: string,
+): T | undefined {
+  return items.find((item) => samePath(item.folder, folder));
 }
 
 /** A folder with the home directory written `~`. */

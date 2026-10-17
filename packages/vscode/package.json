@@ -379,22 +379,20 @@
         "category": "Ascribe"
       },
       {
-        "command": "ascribe.projects.refresh",
-        "title": "Refresh",
+        "command": "ascribe.switchProject",
+        "title": "Switch Project",
         "category": "Ascribe",
-        "icon": "$(refresh)"
+        "icon": "$(arrow-swap)"
       },
       {
-        "command": "ascribe.projects.showOutput",
-        "title": "Show Output",
-        "category": "Ascribe",
-        "icon": "$(output)"
+        "command": "ascribe.sidebar.showOutput",
+        "title": "Show the Sidebar Project's Output",
+        "category": "Ascribe"
       },
       {
-        "command": "ascribe.projects.restart",
-        "title": "Restart Server",
-        "category": "Ascribe",
-        "icon": "$(debug-restart)"
+        "command": "ascribe.sidebar.restart",
+        "title": "Restart the Sidebar Project's Server",
+        "category": "Ascribe"
       },
       {
         "command": "ascribe.pages.placeHere",
@@ -536,11 +534,6 @@
           "when": "ascribe.active && ascribe.reviewOn"
         },
         {
-          "id": "ascribe.projects",
-          "name": "Projects",
-          "contextualTitle": "Ascribe"
-        },
-        {
           "id": "ascribe.thisPage",
           "name": "This page",
           "contextualTitle": "Ascribe",
@@ -549,8 +542,7 @@
         {
           "id": "ascribe.pages",
           "name": "Pages",
-          "contextualTitle": "Ascribe",
-          "when": "ascribe.active"
+          "contextualTitle": "Ascribe"
         },
         {
           "id": "ascribe.model",
@@ -562,14 +554,24 @@
     },
     "viewsWelcome": [
       {
-        "view": "ascribe.projects",
+        "view": "ascribe.pages",
         "contents": "This folder is in Restricted Mode, so Ascribe doesn't run or check its projects.\n[Manage Workspace Trust](command:workbench.trust.manage)",
         "when": "!isWorkspaceTrusted"
       },
       {
-        "view": "ascribe.projects",
-        "when": "isWorkspaceTrusted",
+        "view": "ascribe.pages",
+        "when": "isWorkspaceTrusted && !ascribe.active",
         "contents": "This workspace has no Ascribe project yet. A project is a folder with an ascribe.toml, which describes its pages and builds.\n[Get started with Ascribe](https://ascribed-dev.com/go/getting-started/)"
+      },
+      {
+        "view": "ascribe.pages",
+        "when": "ascribe.active && ascribe.sidebar.failed",
+        "contents": "The language server failed to start.\n[Show Output](command:ascribe.sidebar.showOutput)\n[Restart](command:ascribe.sidebar.restart)"
+      },
+      {
+        "view": "ascribe.model",
+        "when": "ascribe.active && ascribe.sidebar.failed",
+        "contents": "The language server failed to start.\n[Show Output](command:ascribe.sidebar.showOutput)\n[Restart](command:ascribe.sidebar.restart)"
       }
     ],
     "walkthroughs": [
@@ -615,13 +617,13 @@
           },
           {
             "id": "sidebar",
-            "title": "See your projects",
-            "description": "The Ascribe sidebar lists the workspace's projects, the pages of the one you're in, what links to the page you're on, and how much each entry of the content model is used.\n[Open the Ascribe Sidebar](command:workbench.view.extension.ascribe)",
+            "title": "See your project",
+            "description": "The Ascribe sidebar shows what Ascribe knows about the page you're on, the pages of its project, and how much each entry of the content model is used. In a workspace with several projects, Switch Project in its title bar shows another.\n[Open the Ascribe Sidebar](command:workbench.view.extension.ascribe)",
             "media": {
               "markdown": "media/walkthrough/sidebar.md"
             },
             "completionEvents": [
-              "onView:ascribe.projects"
+              "onView:ascribe.pages"
             ]
           },
           {
@@ -1222,15 +1224,15 @@
           "when": "ascribe.active"
         },
         {
-          "command": "ascribe.projects.refresh",
+          "command": "ascribe.switchProject",
+          "when": "ascribe.active && ascribe.multipleProjects"
+        },
+        {
+          "command": "ascribe.sidebar.showOutput",
           "when": "false"
         },
         {
-          "command": "ascribe.projects.showOutput",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.projects.restart",
+          "command": "ascribe.sidebar.restart",
           "when": "false"
         },
         {
@@ -1405,9 +1407,14 @@
           "group": "navigation"
         },
         {
-          "command": "ascribe.projects.refresh",
-          "when": "view == ascribe.projects",
-          "group": "navigation"
+          "command": "ascribe.switchProject",
+          "when": "view == ascribe.pages && ascribe.multipleProjects",
+          "group": "navigation@0"
+        },
+        {
+          "command": "ascribe.switchProject",
+          "when": "view == ascribe.model && ascribe.multipleProjects",
+          "group": "navigation@0"
         }
       ],
       "view/item/context": [
@@ -1415,16 +1422,6 @@
           "command": "ascribe.review.pageSourceChanges",
           "when": "view == ascribe.review && viewItem == ascribe.review.page",
           "group": "inline@1"
-        },
-        {
-          "command": "ascribe.projects.showOutput",
-          "when": "view == ascribe.projects && viewItem =~ /^ascribe\\.project\\./",
-          "group": "inline@1"
-        },
-        {
-          "command": "ascribe.projects.restart",
-          "when": "view == ascribe.projects && viewItem =~ /^ascribe\\.project\\.(running|failed)$/",
-          "group": "inline@2"
         },
         {
           "command": "ascribe.pages.placeHere",

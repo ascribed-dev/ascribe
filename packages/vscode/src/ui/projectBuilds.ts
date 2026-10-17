@@ -13,7 +13,7 @@ const MODEL_DEBOUNCE_MS = 300;
 
 /**
  * Each running project's builds, from `ascribe/targets`, for the status bar
- * and the Projects view. It asks only a server that is already running, and
+ * and Switch Project. It asks only a server that is already running, and
  * never starts one: a view that lists projects mustn't start their servers.
  */
 export class ProjectBuilds implements vscode.Disposable {
@@ -72,7 +72,7 @@ export class ProjectBuilds implements vscode.Disposable {
     }
   }
 
-  /** What the status bar and the Projects view say about a project. */
+  /** What the status bar and Switch Project say about a project. */
   info(server: ProjectServer): ProjectInfo {
     const builds = this.known.get(server) ?? [];
     return {
