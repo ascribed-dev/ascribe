@@ -7,14 +7,17 @@
 //! - on a link or an `@include`, what it names: the heading after `#`, or
 //!   else the file;
 //! - on a `{key}`, a feature key in an availability spec, a glossary term in
-//!   prose, a `@note` or its type, a widget, or a `@variant` or its
-//!   attribute, that phrase, feature, term, note type, widget, or dimension;
+//!   prose, a `@note` or its type, a widget, a `@variant` or its attribute,
+//!   or the frontmatter's `type` value, that phrase, feature, term, note
+//!   type, widget, dimension, or content type;
 //! - on a heading, or the primary of its `@id`, that heading;
 //! - at the start of the file, or on its frontmatter or title, the file.
 //!
 //! In `ascribe.toml`, the cursor on an entry's declaration (a phrase's key,
 //! or the header of a feature's, glossary term's, dimension's, note type's,
-//! or widget's table) asks about that entry, as the Content model view does.
+//! widget's, or page content type's table) asks about that entry, as the
+//! Content model view does. A content type declared only through its nested
+//! tables is asked about at the first of them.
 
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_resolve::Usable;
@@ -113,7 +116,14 @@ fn model_target_at(ctx: &Ctx, offset: usize) -> Option<Usable> {
                 Entry::Widget(&w.schema.name),
                 Usable::Widget(w.schema.name.clone()),
             )
-        }));
+        }))
+        .chain(
+            model
+                .types
+                .iter()
+                .filter(|t| !t.implicit)
+                .map(|t| (Entry::Type(&t.name), Usable::Type(t.name.clone()))),
+        );
     for (entry, used) in entries {
         if find_entry(&ctx.model_text, &entry)
             .is_some_and(|span| span.start() <= offset && offset <= span.end())
@@ -206,6 +216,7 @@ fn declaration(ctx: &Ctx, lines: &mut Lines<'_>, target: &Usable) -> Option<Loca
         Usable::Dimension(name) => Entry::Dimension(name),
         Usable::Note(name) => Entry::Note(name),
         Usable::Widget(name) => Entry::Widget(name),
+        Usable::Type(name) => Entry::Type(name),
     };
     let span = find_entry(&ctx.model_text, &entry)?;
     Some(Location {

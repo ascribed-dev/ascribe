@@ -646,7 +646,15 @@ const MODEL_CONTEXT = {
 } as const;
 
 /** The kinds pages use, whose uses Find All References lists. */
-const USED: readonly ModelKind[] = ["phrase", "feature", "term", "dimension", "note", "widget"];
+const USED: readonly ModelKind[] = [
+  "phrase",
+  "feature",
+  "term",
+  "dimension",
+  "note",
+  "widget",
+  "type",
+];
 
 function modelContext(node: ModelNode): string | undefined {
   if (node.kind === "kind") return undefined;
