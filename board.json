@@ -2750,7 +2750,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/584"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Navigation: every reader follows the navigation"
     },
     {
@@ -2791,7 +2791,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Navigation: Ascribe's site and every new site have no list of their own"
     },
     {
@@ -2810,7 +2810,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The editor's views: menus and filters in Pages and Content model"
     },
     {
@@ -3113,7 +3113,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBfh8I",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Name a folder with no label the same way in llms.txt and the navigation"
     }
   ]
