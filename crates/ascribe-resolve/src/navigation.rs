@@ -377,18 +377,7 @@ impl<'a> Sharer<'a> {
                 return (title, None);
             }
         }
-        let name = section
-            .folder
-            .trim_end_matches('/')
-            .rsplit('/')
-            .next()
-            .unwrap_or_default();
-        let mut chars = name.chars();
-        let label = match chars.next() {
-            Some(first) => first.to_uppercase().chain(chars).collect(),
-            None => String::new(),
-        };
-        (label, None)
+        (folder_label(&section.folder), None)
     }
 
     /// The page at `path`, when the build publishes and offers it.
@@ -409,6 +398,29 @@ impl<'a> Sharer<'a> {
                 .map(|t| t.name.as_str()),
         })
     }
+}
+
+/// A section's label when neither `ascribe.nav` nor its own page gives it
+/// one: its folder's name with its first letter capitalized.
+pub fn folder_label(folder: &str) -> String {
+    let name = folder
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or_default();
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
+    }
+}
+
+/// A page's label as the source has it, before a build: its title, or
+/// its file name without `.md`.
+pub fn file_label(file: &FileIndex) -> String {
+    file.title
+        .clone()
+        .unwrap_or_else(|| stem(&file.path).to_owned())
 }
 
 /// The folder a path is in, ending in `/`, or `""` at the content root.

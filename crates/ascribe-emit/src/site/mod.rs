@@ -36,7 +36,7 @@ mod element;
 pub(crate) mod frontmatter;
 mod headers;
 mod inline;
-mod nav;
+pub(crate) mod nav;
 mod pages;
 mod permalinks;
 mod profile;
@@ -186,7 +186,9 @@ impl Emitter for SiteEmitter {
             generated(HEADERS_PATH, headers::list(cx.model, build))?,
             generated(
                 NAV_PATH,
-                nav::list(cx.project(), &cx.project().navigation(), build),
+                nav::list(cx.project(), &cx.project().navigation(), build, &|s| {
+                    serde_json::Value::String(frontmatter::html(s))
+                }),
             )?,
             generated(PAGES_PATH, pages::list(cx.model, build))?,
             generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,

@@ -289,3 +289,63 @@ fn a_folder_with_both_own_pages_is_an_error_on_its_index() {
         )]
     );
 }
+
+#[test]
+fn ascribe_model_reports_the_navigation_with_each_section_s_listed() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[builds.site]\n",
+    );
+    write(
+        &dir.path().join("ascribe.nav"),
+        "version = 1\n\n[[sections]]\nfolder = \"reference/\"\nlabel = \"Look it up\"\n",
+    );
+    let docs = dir.path().join("docs");
+    write(&docs.join("index.md"), "---\ntitle: Home\n---\n");
+    write(&docs.join("guides/sync.md"), "---\ntitle: Sync\n---\n");
+    write(
+        &docs.join("guides/drafts.md"),
+        "---\ntitle: Drafts\nlisting: unlisted\n---\n",
+    );
+    write(
+        &docs.join("reference/options.md"),
+        "---\ntitle: Options\n---\n",
+    );
+    let output = ascribe(dir.path(), &["model", "--format", "json"]);
+    assert!(output.status.success(), "{output:?}");
+    let report: serde_json::Value = serde_json::from_str(&stdout(&output)).expect("JSON");
+    assert_eq!(
+        report["navigation"],
+        serde_json::json!({
+            "folder": "",
+            "label": "Start",
+            "page": { "source": "index.md", "label": "Home" , "type": "page" },
+            "pages": [],
+            "sections": [
+                {
+                    "folder": "reference/",
+                    "label": "Look it up",
+                    "pages": [{ "source": "reference/options.md", "label": "Options" , "type": "page" }],
+                    "sections": [],
+                    "listed": true,
+                },
+                {
+                    "folder": "guides/",
+                    "label": "Guides",
+                    "pages": [{ "source": "guides/sync.md", "label": "Sync" , "type": "page" }],
+                    "sections": [],
+                    "listed": false,
+                },
+            ],
+            "listed": false,
+        })
+    );
+    // A section asked for alone has no navigation.
+    let output = ascribe(
+        dir.path(),
+        &["model", "--format", "json", "--section", "builds"],
+    );
+    let report: serde_json::Value = serde_json::from_str(&stdout(&output)).expect("JSON");
+    assert!(report.get("navigation").is_none(), "{report}");
+}

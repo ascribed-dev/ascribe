@@ -1,8 +1,9 @@
 //! The JSON output (SPEC §9.4): the resolved tree, for custom consumers.
 //!
-//! One document per page, at the page's path with `.json` in place of `.md`.
-//! The schema is versioned by `schemaVersion` and documented in the crate's
-//! README.
+//! One document per page, at the page's path with `.json` in place of `.md`,
+//! and the build's navigation at `_ascribe/nav.json`, as the site output has
+//! it, with each formatted label in pieces. The schema is versioned by
+//! `schemaVersion` and documented in the crate's README.
 
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{AssetUse, FileId, Location, RelPath, Span};
@@ -14,10 +15,12 @@ use ascribe_resolve::{
 use ascribe_syntax::{BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
 use serde::Serialize;
 
-use crate::emitter::{Emitter, PageContext};
+use crate::emitter::{EmitContext, Emitter, PageContext};
 use crate::error::EmitError;
 use crate::labels::{attribute_values, availability_display, dimensional_label, plain_text};
 use crate::site::blocks::availability_target;
+use crate::site::{NAV_PATH, nav};
+use crate::store::{Contents, EmittedFile, FileKind};
 
 // SPEC §9.4 fixes only "the resolved tree, for custom consumers"; the shape
 // below is Ascribe's own, versioned by `JSON_SCHEMA_VERSION`.
@@ -39,6 +42,25 @@ impl Emitter for JsonEmitter {
         let text = page.as_str();
         let stem = text.strip_suffix(".md").unwrap_or(text);
         RelPath::parse(&format!("{stem}.json")).unwrap_or_else(|_| page.clone())
+    }
+
+    fn generated(
+        &self,
+        cx: &EmitContext<'_>,
+        build: &ascribe_resolve::ResolvedBuild,
+    ) -> Result<Vec<EmittedFile>, EmitError> {
+        let text = nav::list(cx.project(), &cx.project().navigation(), build, &|s| {
+            formatted_value(s)
+        });
+        Ok(vec![EmittedFile {
+            path: RelPath::parse(NAV_PATH).map_err(|e| EmitError::Invalid {
+                message: format!("bad path for a generated file: {e}"),
+            })?,
+            kind: FileKind::Generated,
+            source: None,
+            url: None,
+            contents: Contents::Text(text),
+        }])
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {

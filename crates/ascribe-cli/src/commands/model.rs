@@ -98,31 +98,41 @@ fn load(global: &Global, args: &Args) -> Result<(ContentModel, DiskFs), Failure>
     Ok((file.model, fs))
 }
 
-/// What `--format json` writes.
+/// What `--format json` writes: without `--section`, with the project's
+/// navigation, which reads its pages.
 ///
 /// # Errors
 ///
 /// No content model, or one with errors.
 pub fn answer(global: &Global, args: &Args) -> Result<ModelReport, Stop> {
     let (model, fs) = load(global, args)?;
-    Ok(ascribe_query::model(
-        &model,
-        args.section.map(Section::query),
-        Some(&fs),
-    ))
+    let section = args.section.map(Section::query);
+    let mut report = ascribe_query::model(&model, section, Some(&fs));
+    if section.is_none() {
+        let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
+        let project = Project::load(&config).map_err(Failure::Load)?;
+        report.navigation = Some(ascribe_query::navigation(&project.index()));
+    }
+    Ok(report)
 }
 
 fn model(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let (model, fs) = match load(global, args) {
-        Ok(loaded) => loaded,
-        Err(failure) => return answer::report_failure(err, &failure),
-    };
-    let section = args.section.map(Section::query);
     let result = match args.format {
-        Format::Json => answer::write_json(out, &ascribe_query::model(&model, section, Some(&fs))),
-        Format::Text => out.write_all(
-            ascribe_query::summary(&model, section, SUMMARY_BUDGET, Some(&fs)).as_bytes(),
-        ),
+        Format::Json => match answer(global, args) {
+            Ok(report) => answer::write_json(out, &report),
+            Err(Stop::Load(failure)) => return answer::report_failure(err, &failure),
+            Err(stop) => return stop.report(err),
+        },
+        Format::Text => {
+            let (model, fs) = match load(global, args) {
+                Ok(loaded) => loaded,
+                Err(failure) => return answer::report_failure(err, &failure),
+            };
+            let section = args.section.map(Section::query);
+            out.write_all(
+                ascribe_query::summary(&model, section, SUMMARY_BUDGET, Some(&fs)).as_bytes(),
+            )
+        }
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }

@@ -42,7 +42,7 @@ pub use explain::{
     DiagnosticList, ExampleText, Explanation, ListedDiagnostic, code_of, explain, list,
 };
 pub use link::{LinkAnswer, LinkKind, LinkLine, LinkSuggestion, link};
-pub use model::{ModelReport, Section, model, summary};
+pub use model::{ModelNavPage, ModelNavSection, ModelReport, Section, model, navigation, summary};
 pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 pub use refs::{Asked, Place, Refs, TargetKind, refs};
