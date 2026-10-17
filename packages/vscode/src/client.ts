@@ -345,7 +345,9 @@ export class ProjectServer implements vscode.Disposable {
  * server's only command; the extension registers it in `extension.ts`. A
  * command the server adds needs the same treatment. `ascribe.copyCommand`
  * (`COPY_COMMAND` in crates/ascribe-lsp/src/examples.rs), which a quick fix
- * carries, is the extension's own, and never reaches the server.
+ * carries, is the extension's own, and never reaches the server; so is
+ * `ascribe.showMemos` (`SHOW_MEMOS` in crates/ascribe-lsp/src/memos.rs), which
+ * a lens on several memos carries.
  */
 class ProjectClient extends LanguageClient {
   override registerFeature(feature: Parameters<LanguageClient["registerFeature"]>[0]): void {

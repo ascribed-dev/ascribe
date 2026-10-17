@@ -193,6 +193,13 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|w| w.did_change_watched_files.as_ref())
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
+    core.can_refresh_lenses = params
+        .capabilities
+        .workspace
+        .as_ref()
+        .and_then(|w| w.code_lens.as_ref())
+        .and_then(|c| c.refresh_support)
+        .unwrap_or(false);
     core.folders = workspace_folders(&params);
     core.prose.can_ask = params
         .capabilities
@@ -403,6 +410,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             Completion::METHOD if let Some(items) = config_completion(shared, &request) => {
                 to_json(&request, items)
             }
+            Completion::METHOD if let Some(items) = memo_completion(shared, &request) => {
+                to_json(&request, items)
+            }
+            DocumentLinkRequest::METHOD if let Some(links) = memo_links(shared, &request) => {
+                to_json(&request, links)
+            }
             Completion::METHOD => navigation(shared, &request, |p: lsp_types::CompletionParams| {
                 let at = p.text_document_position;
                 (at.text_document.uri, move |ctx: &Ctx| {
@@ -440,7 +453,10 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             CodeLensRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::CodeLensParams| {
                     (p.text_document.uri, |ctx: &Ctx| {
-                        Some(crate::links::code_lenses(ctx))
+                        let mut lenses = crate::links::code_lenses(ctx);
+                        lenses.extend(crate::memos::code_lenses(ctx));
+                        lenses.sort_by_key(|l| (l.range.start.line, l.range.start.character));
+                        Some(lenses)
                     })
                 })
             }
@@ -652,6 +668,26 @@ fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types
     shared
         .lock()
         .config_completion(&at.text_document.uri, at.position)
+}
+
+/// Completion in a memo file, which isn't a page; `None` for any other
+/// document.
+fn memo_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::CompletionItem>> {
+    let params: lsp_types::CompletionParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let at = params.text_document_position;
+    let (ctx, memo) = shared.lock().memo_target(&at.text_document.uri)?;
+    let offset = crate::memos::offset(&ctx, &memo.text, at.position);
+    Some(crate::memos::complete(&ctx, &memo.text, offset).unwrap_or_default())
+}
+
+/// The link from a memo file's `about` to what it names; `None` for any
+/// other document.
+fn memo_links(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::DocumentLink>> {
+    let params: lsp_types::DocumentLinkParams =
+        serde_json::from_value(request.params.clone()).ok()?;
+    let (ctx, memo) = shared.lock().memo_target(&params.text_document.uri)?;
+    Some(crate::memos::links(&ctx, &memo))
 }
 
 /// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`

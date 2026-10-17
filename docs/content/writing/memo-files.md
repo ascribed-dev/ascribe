@@ -57,4 +57,6 @@ In `examples/quill`, the memo above is about the section of `install-agent.md` t
 - **`ascribe outline`** lists the memos about a page under it, and those about a section or a block in it under its heading, with each one's first line. An outdated memo says so, a personal one is listed as a personal memo, and a detached one isn't listed. With `--format json`, the page and each heading have `memos`, each with `personal` ([`ascribe outline`](../command/questions.md#cli-outline)). The MCP tool `ascribe_outline` returns the same.
 - **`ascribe refs`** lists each memo file about its target as a place, with the use `memo`, at the memo's `about` line, and `personal` true for a personal memo. A detached memo is listed under the target it names, so `ascribe refs` finds the memos about a page or heading that's gone.
 
+- **In VS Code**, a CodeLens above a heading or a block counts its memos and opens them, **This page** lists the memos about the heading at the cursor, and **Ascribe: Add a memo** writes one from the cursor, with `about` and `quote` filled in ([Memo files in the editor](../editor/index.md#memo-files)).
+
 No build, preview, report, or `ascribe diff` reads a memo file.

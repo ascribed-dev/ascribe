@@ -337,6 +337,29 @@ fn read_folder(fs: &dyn FileSystem, folder: &str) -> Vec<MemoFile> {
         .collect()
 }
 
+/// Whether `path`, from the project root, is a memo file either store
+/// reads: a `.md` file in `memos/`, when that folder isn't in the content
+/// root, or in `.ascribe/memos/`, with no name on the way from the folder
+/// starting with `.`.
+pub fn is_memo_path(path: &RelPath, layout: &Layout) -> bool {
+    if path.extension() != Some("md") {
+        return false;
+    }
+    let committed = folder_in_content(layout).is_none().then_some(MEMOS_FOLDER);
+    [committed, Some(PERSONAL_MEMOS_FOLDER)]
+        .into_iter()
+        .flatten()
+        .filter_map(|folder| RelPath::parse(folder).ok())
+        .any(|folder| {
+            path.starts_with(&folder)
+                && *path != folder
+                && !path
+                    .segments()
+                    .skip(folder.segments().count())
+                    .any(|s| s.starts_with('.'))
+        })
+}
+
 /// The committed memos' folder as a content path, when it's inside the
 /// content root, as it is when the content root is the project root: its
 /// files are read as pages then, and none as a memo.

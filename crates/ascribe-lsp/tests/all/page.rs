@@ -195,7 +195,8 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
 fn a_file_that_isnt_a_page_gets_an_empty_answer() {
     let f = project(MODEL);
     let mut client = started(&f);
-    let empty = json!({ "about": null, "heading": null, "linkedFrom": [], "includedBy": [] });
+    let empty =
+        json!({ "about": null, "heading": null, "linkedFrom": [], "includedBy": [], "memos": [] });
     assert_eq!(
         page(
             &mut client,

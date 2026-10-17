@@ -63,6 +63,9 @@ describe("the actions bar", () => {
       "Change a feature's availability",
       "Rename this phrase everywhere",
       "Rename a dimension value everywhere",
+      "-- Memos",
+      "Add a memo",
+      "Add a personal memo",
     ]);
   });
 
@@ -82,6 +85,9 @@ describe("the actions bar", () => {
       "Change a feature's availability",
       "Rename this phrase everywhere",
       "Rename a dimension value everywhere",
+      "-- Memos",
+      "Add a memo",
+      "Add a personal memo",
     ]);
   });
 
@@ -188,6 +194,9 @@ describe("the actions bar", () => {
       "Change a feature's availability",
       "Rename this phrase everywhere",
       "Rename a dimension value everywhere",
+      "-- Memos",
+      "Add a memo",
+      "Add a personal memo",
     ]);
   });
 });

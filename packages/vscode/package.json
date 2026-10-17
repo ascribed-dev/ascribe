@@ -272,6 +272,16 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.action.addMemo",
+        "title": "Add a memo",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.addPersonalMemo",
+        "title": "Add a personal memo",
+        "category": "Ascribe"
+      },
+      {
         "command": "ascribe.switchBuild",
         "title": "Switch Build",
         "category": "Ascribe",
@@ -1046,6 +1056,14 @@
           "when": "ascribe.inProject && editorLangId == markdown"
         },
         {
+          "command": "ascribe.action.addMemo",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.addPersonalMemo",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
           "command": "ascribe.switchBuild",
           "when": "ascribe.active && ascribe.inProject"
         },
@@ -1461,6 +1479,16 @@
           "command": "ascribe.action.renameDimensionValue",
           "when": "ascribe.inPage",
           "group": "6_model@5"
+        },
+        {
+          "command": "ascribe.action.addMemo",
+          "when": "ascribe.inPage",
+          "group": "7_memo@1"
+        },
+        {
+          "command": "ascribe.action.addPersonalMemo",
+          "when": "ascribe.inPage",
+          "group": "7_memo@2"
         }
       ]
     },

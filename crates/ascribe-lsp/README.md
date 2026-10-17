@@ -402,6 +402,8 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
 | `newPage` | Any of the project's files: `textDocument` names the project, and `range` is unused | `type`, `title`, `folder?` (a folder in the content root, as a `file:` URI) | A new page, made by `ascribe_templates::start`: the type's template with its `title` set, or its frontmatter when it has none, with `type:` first in its frontmatter, in `folder` or the content root, named for the title. Never over a file. `select` is the first thing the template left to fill in |
 | `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
+| `addMemo` | Anywhere in a page | | A new memo file in `memos/`, its `documentChanges` creating it and giving it its text: `about` is the innermost section with an id at the cursor, as `page.md#id`, or the page above the first heading; `quote` is the selection, its whitespace runs as one space, or the first line of the block at the cursor, left out on a heading or when the memo wouldn't find it. Named from the quote's first words, or the heading's id, never over a file. `select` is the empty line for the memo's text. Refused when `memos/` is in the content root |
+| `addPersonalMemo` | Anywhere in a page | | As `addMemo`, in `.ascribe/memos/` |
 
 What a template left to fill in is found as `template-placeholder-left`
 finds it (`ascribe_check::Project::template_places`): a frontmatter field
@@ -517,7 +519,10 @@ Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
   "heading": { "id": "rotate-keys", "text": "Rotate keys", "range": { "start": …, "end": … } },
   "linkedFrom": [{ "uri": "file:///…/docs/install-agent.md", "path": "install-agent.md",
                    "range": { "start": …, "end": … }, "text": "See [](keys.md#rotate-keys)." }],
-  "includedBy": []
+  "includedBy": [],
+  "memos": [{ "uri": "file:///…/memos/rotation.md", "path": "memos/rotation.md",
+              "firstLine": "Keys rotate every 90 days because…", "state": "placed",
+              "personal": false, "body": { "start": …, "end": … } }]
 }
 ```
 
@@ -529,8 +534,13 @@ Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 - `address` is the page's route, from the host's root, as the site output's
   links write it, and `markdownAddress` its Markdown version's, when the
   project publishes one (`[consumer] agents = true`). A fragment has neither.
+- `memos` are the memo files about the heading, or the file when there's no
+  heading, or a block in it ([Memo files](#memo-files)): committed, then
+  personal, each in path order, with `state` `placed` or `outdated`; a
+  detached memo isn't listed. `body` is where the memo's text starts, to
+  open it at.
 - A document that isn't a page or a fragment of the project gets
-  `{ "about": null, "heading": null, "linkedFrom": [], "includedBy": [] }`.
+  `{ "about": null, "heading": null, "linkedFrom": [], "includedBy": [], "memos": [] }`.
 
 The links to and includes of the file and of each of its headings are found
 in one search (`ascribe_resolve::Project::uses_of_file`), with their line
@@ -752,6 +762,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `definition.rs` | Go to definition |
 | `references.rs` | Find all references |
 | `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
+| `memos.rs` | Memo files: their CodeLens, This page's memos, `addMemo`, and completion and a link in a memo file |
 | `folding.rs` | Folding ranges |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
@@ -811,6 +822,29 @@ clickable, with `#L<line>` for a heading. **CodeLens** puts
 language client wires from the capability): it answers by sending
 `window/showDocument`, so **no client code is needed**. **Inlay hints**
 show the resolved title inside the `[` of an empty-text link.
+
+### Memo files
+
+Memo files (SPEC §7.7), committed in `memos/` and personal in
+`.ascribe/memos/`, are read each time they're asked for, through the file
+system that holds an open memo file's text, and placed against the current
+snapshot (`src/memos.rs`). A memo file isn't a source: an edit to one, open
+or on disk, runs the checks across the project again, which place and check
+every memo, the personal ones too, and its diagnostics are published on the
+memo file. `ascribe check` reads the committed ones only.
+
+- **CodeLens** on a page: "1 memo" or "3 memos, 1 outdated" above each
+  heading and block memos are about, and above the first line for those
+  about the whole file. One memo's lens carries `ascribe.openFile`, which
+  opens it at its text; several's carries `ascribe.showMemos`, a client
+  command, with the list (each `uri`, `path`, `firstLine`, `outdated`,
+  `personal`, and `body`) to pick one from.
+- **In a memo file:** completion of `about`'s value, every page and fragment,
+  each heading with an id as `page.md#id`, and each content model entry as
+  `phrase:<key>` and the like, as `ascribe refs` takes them; and a document
+  link from `about` to the page, the heading, or the entry in `ascribe.toml`.
+- **This page** lists them (`ascribe/page`'s `memos`), and `addMemo` and
+  `addPersonalMemo` (`ascribe/edit`) create one.
 
 ## Performance
 

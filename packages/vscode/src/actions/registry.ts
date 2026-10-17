@@ -71,7 +71,7 @@ export interface Action {
   where: string;
   /** What to say when it's run where it doesn't apply. */
   hint: string;
-  group: "fix" | "write" | "structure" | "link" | "media" | "model";
+  group: "fix" | "write" | "structure" | "link" | "media" | "model" | "memo";
   /** Whether it applies to the context, from `ascribe/context`. */
   applies(context: ContextResult): boolean;
   /**
@@ -92,7 +92,14 @@ export interface Action {
   ask?(context: ContextResult, targets: TargetsResult): Wizard;
   /** What it does: an `ascribe/edit` operation, or the extension's own function. */
   does:
-    | { operation: string }
+    | {
+        operation: string;
+        /**
+         * The edit makes a file: it's saved and opened, with the edit's
+         * selection there, rather than in the page.
+         */
+        opens?: true;
+      }
     | {
         /** Resolves to whether it did what it's for. */
         run(
@@ -1070,6 +1077,31 @@ export const ACTIONS: Action[] = [
       };
     },
     does: { run: renameDimensionValue },
+  },
+  // Memo files (SPEC §7.7).
+  {
+    id: "addMemo",
+    title: "Add a memo",
+    description:
+      "Make a file in `memos/` about the section at the cursor, quoting the selection or the block, and open it",
+    where: "Anywhere in a page",
+    hint: "Open a page of the project to add a memo about it.",
+    group: "memo",
+    applies: inPage,
+    when: "ascribe.inPage",
+    does: { operation: "addMemo", opens: true },
+  },
+  {
+    id: "addPersonalMemo",
+    title: "Add a personal memo",
+    description:
+      "Make a memo in `.ascribe/memos/`, kept on this machine only, about the section at the cursor, and open it",
+    where: "Anywhere in a page",
+    hint: "Open a page of the project to add a memo about it.",
+    group: "memo",
+    applies: inPage,
+    when: "ascribe.inPage",
+    does: { operation: "addPersonalMemo", opens: true },
   },
 ];
 

@@ -36,3 +36,5 @@
 | **Change a feature's availability** | Set where a feature in `[features]` is available, such as its state or version. | Anywhere in a page |
 | **Rename this phrase everywhere** | Change a phrase's key in `[phrases]` and every `{key}` that uses it: the one at the cursor, or one you choose. | Anywhere in a page; a phrase at the cursor is the one renamed |
 | **Rename a dimension value everywhere** | Change a value in `[dimensions]` and everywhere it's used: `@variant` attributes, `variant:`, availability, and builds. | Anywhere in a page; a `@variant` attribute's value at the cursor is the one renamed |
+| **Add a memo** | Make a file in `memos/` about the section at the cursor, quoting the selection or the block, and open it. | Anywhere in a page |
+| **Add a personal memo** | Make a memo in `.ascribe/memos/`, kept on this machine only, about the section at the cursor, and open it. | Anywhere in a page |

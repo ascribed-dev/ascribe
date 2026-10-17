@@ -9,7 +9,7 @@ use std::sync::Arc;
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{
     Committed, Invalid, Layout, MemoFile, MemoState, MemoStore, MemoryFs, Personal, Project,
-    Usable, folder_in_content, place,
+    Usable, folder_in_content, is_memo_path, place,
 };
 
 const MODEL: &str = r#"
@@ -115,6 +115,16 @@ fn the_personal_store_reads_ascribe_memos_in_the_same_format() {
     let committed = Committed::new(&fs, &layout).memos();
     assert_eq!(committed.len(), 1);
     assert!(!committed[0].personal());
+    for (file, memo) in [
+        ("memos/team.md", true),
+        (".ascribe/memos/sub/more.md", true),
+        ("memos/.drafts/a.md", false),
+        ("memos/notes.txt", false),
+        (".ascribe/build/index.md", false),
+        ("docs/guide.md", false),
+    ] {
+        assert_eq!(is_memo_path(&path(file), &layout), memo, "{file}");
+    }
 }
 
 #[test]

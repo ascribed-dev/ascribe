@@ -1019,6 +1019,28 @@ export interface PageHeading {
   range: LspRange;
 }
 
+/** A memo This page lists. */
+export interface PageMemo {
+  /** The memo file's `file:` URI. */
+  uri: string;
+  /** Its path from the project root. */
+  path: string;
+  /** The first line of its text that isn't blank. */
+  firstLine: string;
+  /** `placed`, or `outdated` when no block holds its quote. */
+  state: string;
+  /**
+   * Whether it's a personal memo, kept in `.ascribe/memos/` on this
+   * machine only.
+   */
+  personal: boolean;
+  /**
+   * Where its text starts, in the memo file, in the negotiated position
+   * encoding.
+   */
+  body: LspRange;
+}
+
 /** A link or an `@include`. */
 export interface PagePlace {
   /** The `file:` URI of the file it's written in. */
@@ -1060,6 +1082,12 @@ export interface PageResult {
    * same order.
    */
   includedBy: PagePlace[];
+  /**
+   * The memo files about the heading, or about the file when there's no
+   * heading, or about a block in it (SPEC §7.7): the committed ones, then
+   * the personal ones, each in path order. A detached memo isn't listed.
+   */
+  memos: PageMemo[];
 }
 
 /** Whether a page is new, gone, or different. */

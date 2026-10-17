@@ -111,6 +111,44 @@
       ],
       "type": "object"
     },
+    "PageMemo": {
+      "description": "A memo This page lists.",
+      "properties": {
+        "body": {
+          "$ref": "#/$defs/LspRange",
+          "description": "Where its text starts, in the memo file, in the negotiated position\nencoding."
+        },
+        "firstLine": {
+          "description": "The first line of its text that isn't blank.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its path from the project root.",
+          "type": "string"
+        },
+        "personal": {
+          "description": "Whether it's a personal memo, kept in `.ascribe/memos/` on this\nmachine only.",
+          "type": "boolean"
+        },
+        "state": {
+          "description": "`placed`, or `outdated` when no block holds its quote.",
+          "type": "string"
+        },
+        "uri": {
+          "description": "The memo file's `file:` URI.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "path",
+        "firstLine",
+        "state",
+        "personal",
+        "body"
+      ],
+      "type": "object"
+    },
     "PagePlace": {
       "description": "A link or an `@include`.",
       "properties": {
@@ -178,13 +216,21 @@
         "$ref": "#/$defs/PagePlace"
       },
       "type": "array"
+    },
+    "memos": {
+      "description": "The memo files about the heading, or about the file when there's no\nheading, or about a block in it (SPEC §7.7): the committed ones, then\nthe personal ones, each in path order. A detached memo isn't listed.",
+      "items": {
+        "$ref": "#/$defs/PageMemo"
+      },
+      "type": "array"
     }
   },
   "required": [
     "about",
     "heading",
     "linkedFrom",
-    "includedBy"
+    "includedBy",
+    "memos"
   ],
   "title": "PageResult",
   "type": "object"

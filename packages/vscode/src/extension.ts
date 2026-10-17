@@ -20,6 +20,7 @@ import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 import { Walkthrough } from "./ui/walkthrough.js";
+import { showMemos } from "./ui/memos.js";
 import { FormatterOffer } from "./ui/formatter.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
@@ -202,6 +203,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         `Ascribe: copied \`${line}\`. Run it in a terminal.`,
       );
     }),
+    // A lens on several memos lists them to open one (crates/ascribe-lsp/src/memos.rs).
+    vscode.commands.registerCommand("ascribe.showMemos", (memos: unknown) => showMemos(memos)),
     vscode.commands.registerCommand("ascribe.showOutput", async () => {
       const active = vscode.window.activeTextEditor?.document.uri;
       const server = (active && projects.serverFor(active)) ?? (await pickServer(projects));

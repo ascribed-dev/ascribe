@@ -1,9 +1,11 @@
 import * as assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { rmSync } from "node:fs";
 import * as vscode from "vscode";
 import type { RunRecord } from "../../../src/actions/run.js";
 import type { Scripted } from "../../../src/actions/steps.js";
 import type { AscribeApi } from "../../../src/extension.js";
-import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
+import { activated, diagnosticsOf, uriOf, waitFor, workspace } from "./helpers.js";
 
 // The editor's actions, run through their commands with scripted answers to
 // their wizards, on a copy of examples/quill against the real `ascribe lsp`.
@@ -180,6 +182,9 @@ describe("the editor's actions", () => {
         "Change a feature's availability",
         "Rename this phrase everywhere",
         "Rename a dimension value everywhere",
+        "-- Memos",
+        "Add a memo",
+        "Add a personal memo",
       ]);
     });
 
@@ -200,6 +205,9 @@ describe("the editor's actions", () => {
         "Change a feature's availability",
         "Rename this phrase everywhere",
         "Rename a dimension value everywhere",
+        "-- Memos",
+        "Add a memo",
+        "Add a personal memo",
       ]);
     });
 
@@ -221,6 +229,9 @@ describe("the editor's actions", () => {
         "Change a feature's availability",
         "Rename this phrase everywhere",
         "Rename a dimension value everywhere",
+        "-- Memos",
+        "Add a memo",
+        "Add a personal memo",
       ]);
     });
 
@@ -245,6 +256,9 @@ describe("the editor's actions", () => {
         "Change a feature's availability",
         "Rename this phrase everywhere",
         "Rename a dimension value everywhere",
+        "-- Memos",
+        "Add a memo",
+        "Add a personal memo",
       ]);
     });
 
@@ -394,5 +408,91 @@ describe("the editor's actions", () => {
       return ours.length > 0 && ours.map((a) => a.title).sort();
     });
     assert.deepEqual(titles, ["Wrap in a note", "Wrap in collapsible details"]);
+  });
+
+  describe("memo files", () => {
+    const made: string[] = [];
+    afterEach(() => {
+      for (const file of made.splice(0)) rmSync(uriOf(file).fsPath, { force: true });
+    });
+
+    /** The lens on a line of a page with `title`, once the server shows it. */
+    async function lensAt(uri: vscode.Uri, line: number, title: string): Promise<vscode.CodeLens> {
+      return waitFor(`a lens "${title}" on line ${line + 1}`, async () => {
+        const lenses = await vscode.commands.executeCommand<vscode.CodeLens[]>(
+          "vscode.executeCodeLensProvider",
+          uri,
+        );
+        return lenses.find(
+          (lens) => lens.range.start.line === line && lens.command?.title === title,
+        );
+      });
+    }
+
+    /** Runs a lens's command, and the file it shows. */
+    async function follow(lens: vscode.CodeLens): Promise<string> {
+      const command = lens.command;
+      assert.ok(command);
+      await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
+      return waitFor("the memo", () => {
+        const shown = vscode.window.activeTextEditor?.document.uri;
+        return shown?.path.includes("/memos/") && vscode.workspace.asRelativePath(shown, false);
+      });
+    }
+
+    /** The memos `ascribe outline` lists on a page's heading. */
+    function outlined(page: string, id: string): { file: string; state: string }[] {
+      const binary = api.binary()?.path;
+      assert.ok(binary);
+      const json = execFileSync(binary, ["outline", "--format", "json", page], {
+        cwd: workspace(),
+        encoding: "utf8",
+      });
+      const outline = JSON.parse(json) as {
+        headings: { id: string; memos: { file: string; state: string }[] }[];
+      };
+      return outline.headings.find((h) => h.id === id)?.memos ?? [];
+    }
+
+    it("counts the memos on a block in a lens that opens them", async () => {
+      // memos/agent-first.md quotes "Install the agent package", in step 1.
+      const editor = await open("install-agent.md", 0, 0);
+      const lens = await lensAt(editor.document.uri, 22, "1 memo");
+      assert.equal(await follow(lens), "memos/agent-first.md");
+    });
+
+    it("adds a memo from a paragraph, about its section, that outline lists as placed there", async () => {
+      // "The command prints the installed version, {version}." in step 2.
+      await open("install-agent.md", 44, 10);
+      const record = await run("addMemo");
+      assert.ok(record.file, JSON.stringify(record));
+      made.push(record.file);
+      assert.equal(record.file, "memos/the-command-prints-the-installed.md");
+      const editor = vscode.window.activeTextEditor;
+      assert.equal(editor?.document.isDirty, false);
+      assert.equal(
+        editor?.document.getText(),
+        '---\nabout: install-agent.md#install-agent\nquote: "The command prints the installed version, {version}."\n---\n\n',
+      );
+      // At its text, to write it.
+      assert.equal(editor?.selection.active.line, 5);
+      assert.deepEqual(
+        outlined("install-agent.md", "install-agent").map((m) => [m.file, m.state]),
+        [
+          ["memos/agent-first.md", "placed"],
+          ["memos/the-command-prints-the-installed.md", "placed"],
+        ],
+      );
+    });
+
+    it("adds a memo about a heading's section, which its lens then opens", async () => {
+      // "## Connect to {product}".
+      const page = await open("install-agent.md", 57, 4);
+      const record = await run("addPersonalMemo");
+      assert.equal(record.file, ".ascribe/memos/connect.md");
+      made.push(".ascribe/memos/connect.md");
+      const lens = await lensAt(page.document.uri, 57, "1 memo");
+      assert.equal(await follow(lens), ".ascribe/memos/connect.md");
+    });
   });
 });

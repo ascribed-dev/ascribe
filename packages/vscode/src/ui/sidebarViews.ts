@@ -196,6 +196,13 @@ export class SidebarViews implements vscode.Disposable {
     thisPageChildren,
     thisPageLook,
     (node) => {
+      if (node.kind === "memo") {
+        const { start, end } = node.memo.body;
+        return {
+          uri: vscode.Uri.parse(node.memo.uri),
+          selection: new vscode.Range(start.line, start.character, end.line, end.character),
+        };
+      }
       if (node.kind !== "place") return undefined;
       const { start, end } = node.place.range;
       return {
