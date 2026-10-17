@@ -538,7 +538,9 @@ fn llms_sizes(
         return Vec::new();
     }
     let mut found = Vec::new();
-    for file in llms::llms_files(&model, build, &pages::records(&model, pages)) {
+    let navigation = index.navigation();
+    let share = navigation.share_of(index, pages);
+    for file in llms::llms_files(&model, build, &pages::records(&model, pages), &share) {
         let size = file.chars();
         if size <= llms::LLMS_TXT_LIMIT {
             continue;

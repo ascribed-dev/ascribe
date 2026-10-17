@@ -46,7 +46,9 @@ fn index(model: &str, folder: Option<&str>, limit: usize) -> CompactIndex {
     let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(build, &router);
     let records = pages::records(project.model(), &resolved.pages);
-    compact_index(project.model(), build, &records, folder, limit)
+    let navigation = project.navigation();
+    let share = navigation.share(&project, &resolved);
+    compact_index(project.model(), build, &records, &share, folder, limit)
 }
 
 fn paths(pages: &[ascribe_core::RelPath]) -> Vec<&str> {
@@ -60,7 +62,7 @@ fn it_lists_every_offered_page_grouped_as_llms_txt_is() {
     assert_eq!(
         index.text,
         "## Quill\n\n> Everything about Quill.\n\n\
-         ### Pages\n\n\
+         ### Start\n\n\
          - [Quill](https://docs.example.com/docs/index.md): Everything about Quill.\n\
          - [FAQ](https://docs.example.com/docs/faq.md): Questions people ask.\n\n\
          ### Guides\n\n\
@@ -135,7 +137,9 @@ fn long_index(model: &str, folder: Option<&str>, limit: usize) -> CompactIndex {
     let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(build, &router);
     let records = pages::records(project.model(), &resolved.pages);
-    compact_index(project.model(), build, &records, folder, limit)
+    let navigation = project.navigation();
+    let share = navigation.share(&project, &resolved);
+    compact_index(project.model(), build, &records, &share, folder, limit)
 }
 
 #[test]

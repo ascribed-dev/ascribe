@@ -159,21 +159,28 @@ impl Emitter for PlainEmitter {
         if self.agents.is_none() {
             return Ok(Vec::new());
         }
-        llms::llms_files(cx.model, cx.build, &pages::records(cx.model, &build.pages))
-            .into_iter()
-            .map(|file| {
-                let path = RelPath::parse(&file.path).map_err(|e| EmitError::Invalid {
-                    message: format!("bad llms.txt path {}: {e}", file.path),
-                })?;
-                Ok(EmittedFile {
-                    path,
-                    kind: FileKind::Generated,
-                    source: None,
-                    url: None,
-                    contents: Contents::Text(file.text),
-                })
+        let navigation = cx.project().navigation();
+        let share = navigation.share(cx.project(), build);
+        llms::llms_files(
+            cx.model,
+            cx.build,
+            &pages::records(cx.model, &build.pages),
+            &share,
+        )
+        .into_iter()
+        .map(|file| {
+            let path = RelPath::parse(&file.path).map_err(|e| EmitError::Invalid {
+                message: format!("bad llms.txt path {}: {e}", file.path),
+            })?;
+            Ok(EmittedFile {
+                path,
+                kind: FileKind::Generated,
+                source: None,
+                url: None,
+                contents: Contents::Text(file.text),
             })
-            .collect()
+        })
+        .collect()
     }
 
     fn warnings(&self, cx: &EmitContext<'_>) -> Vec<String> {

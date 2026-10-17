@@ -86,6 +86,8 @@ pub struct BuildNavigation<'a> {
 /// A section as one build has it.
 #[derive(Clone, Debug)]
 pub struct SharedSection<'a> {
+    /// The section of the project's navigation it's the share of.
+    pub section: &'a Section,
     /// The folder, from the content root, ending in `/`; `""` for the root.
     pub folder: &'a str,
     /// Its label as plain text.
@@ -99,6 +101,44 @@ pub struct SharedSection<'a> {
     pub pages: Vec<NavPage<'a>>,
     /// Its nested sections that keep a page, in order.
     pub sections: Vec<SharedSection<'a>>,
+}
+
+impl<'a> SharedSection<'a> {
+    /// Its pages in reading order, depth first: its own page, then its
+    /// pages, each nested section whose own page is beside its folder right
+    /// after that page, with its pages and nested sections, and the other
+    /// nested sections after them, each from its own page.
+    pub fn reading_order(&self) -> Vec<&NavPage<'a>> {
+        let mut out = Vec::new();
+        self.read(true, &mut out);
+        out
+    }
+
+    fn read<'s>(&'s self, own: bool, out: &mut Vec<&'s NavPage<'a>>) {
+        if own && let Some(page) = &self.page {
+            out.push(page);
+        }
+        let mut read = vec![false; self.sections.len()];
+        for page in &self.pages {
+            out.push(page);
+            for (at, nested) in self.sections.iter().enumerate() {
+                if !read[at]
+                    && nested
+                        .page
+                        .as_ref()
+                        .is_some_and(|p| p.page.path == page.page.path)
+                {
+                    read[at] = true;
+                    nested.read(false, out);
+                }
+            }
+        }
+        for (nested, read) in self.sections.iter().zip(read) {
+            if !read {
+                nested.read(true, out);
+            }
+        }
+    }
 }
 
 /// A page as a build's navigation has it.
@@ -156,13 +196,23 @@ impl Navigation {
         project: &'a Project,
         build: &'a ResolvedBuild,
     ) -> BuildNavigation<'a> {
+        self.share_of(project, &build.pages)
+    }
+
+    /// [`Navigation::share`] of a build that publishes `pages`.
+    pub fn share_of<'a>(
+        &'a self,
+        project: &'a Project,
+        pages: &'a [ResolvedPage],
+    ) -> BuildNavigation<'a> {
         let published: BTreeMap<&RelPath, &ResolvedPage> =
-            build.pages.iter().map(|p| (&p.path, p)).collect();
+            pages.iter().map(|p| (&p.path, p)).collect();
         let sharer = Sharer { project, published };
         BuildNavigation {
             root: sharer
                 .section(&self.root, true)
                 .unwrap_or_else(|| SharedSection {
+                    section: &self.root,
                     folder: "",
                     label: self
                         .root
@@ -304,6 +354,7 @@ impl<'a> Sharer<'a> {
             (None, false) => self.section_label(section),
         };
         Some(SharedSection {
+            section,
             folder: &section.folder,
             label,
             formatted,

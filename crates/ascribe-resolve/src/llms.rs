@@ -7,13 +7,15 @@
 //! publishes and offers (not one that's `unlisted`), from the build's page
 //! records ([`crate::pages`]), each linking to the page's Markdown version
 //! ([`AstroRouter::markdown_url`]). The name and the summary are the title
-//! and description of the page at the base path; pages in a folder are a
-//! section named after the folder (the title of its index page, when it has
-//! one), and the pages outside every folder come first, under "Pages".
+//! and description of the page at the base path. The sections are the
+//! navigation's ([`crate::navigation`]): the root's pages first, under its
+//! label, "Start" unless `ascribe.nav` gives another, then each top section
+//! in order, its nested sections' pages folded into it in reading order. A
+//! page keeps its title here, not its `nav-label`.
 //!
 //! An index longer than [`LLMS_TXT_LIMIT`] characters is split: the root
-//! `llms.txt` keeps the pages outside every folder and links to one
-//! `<folder>/llms.txt` per section, each a whole index of its own. A file
+//! `llms.txt` keeps the root's pages and links to one `<folder>/llms.txt`
+//! per top section, each a whole index of its own. A file
 //! still longer than the limit is reported by `ascribe check`
 //! (`llms-section-large`); it is written all the same.
 //!
@@ -29,9 +31,12 @@ use ascribe_model::{Build, ContentModel, Field, FieldRole};
 use ascribe_syntax::{BlockKind, ParseOptions};
 use serde_yaml_ng::Value;
 
+use std::collections::BTreeMap;
+
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
 use crate::index::heading_text;
+use crate::navigation::BuildNavigation;
 use crate::pages::{PageRecord, PageRecords, current_line_router};
 
 /// The version of the delivery spec the outputs for agents follow. Its
@@ -45,9 +50,6 @@ pub const LLMS_TXT_LIMIT: usize = 50_000;
 /// The most characters a page's description has before its line in
 /// `llms.txt` is too long (`description-too-long`).
 pub const DESCRIPTION_LIMIT: usize = 300;
-
-/// The heading of the section of pages outside every folder.
-const TOP_SECTION: &str = "Pages";
 
 /// One `llms.txt` file of a build.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -81,29 +83,37 @@ struct Entry<'a> {
     description: Option<String>,
 }
 
-/// A section of an index: the pages in one folder, or outside every folder.
+/// A section of an index: a top section of the navigation, or the root's
+/// pages.
 struct Section<'a> {
     /// The folder's slug, the first segment of its pages' entry ids; `None`
-    /// for the pages outside every folder.
+    /// for the root's pages.
     key: Option<String>,
     heading: String,
+    /// Whether the first entry is the section's own page.
+    own: bool,
     entries: Vec<Entry<'a>>,
 }
 
 impl Section<'_> {
-    /// The section's index page: the page whose entry id is the folder's.
+    /// The section's own page, when it's offered.
     fn index(&self) -> Option<&Entry<'_>> {
-        let key = self.key.as_deref()?;
-        self.entries.iter().find(|e| e.id == key)
+        self.entries.first().filter(|_| self.own)
     }
 }
 
-/// The `llms.txt` files of `build`, from its page records ([`crate::pages::records`]),
-/// in their order: the root file first, then a file per section when the
+/// The `llms.txt` files of `build`, from its page records ([`crate::pages::records`])
+/// in the sections of its navigation ([`crate::Navigation::share`]), in
+/// their order: the root file first, then a file per section when the
 /// index is split. A page that isn't offered, being `unlisted`, isn't in
 /// any. `model` is the one the build's pages are routed with
 /// ([`ContentModel::for_build`]).
-pub fn llms_files(model: &ContentModel, build: &Build, records: &PageRecords) -> Vec<LlmsFile> {
+pub fn llms_files(
+    model: &ContentModel,
+    build: &Build,
+    records: &PageRecords,
+    navigation: &BuildNavigation<'_>,
+) -> Vec<LlmsFile> {
     let router = AstroRouter::from_consumer(&model.consumer);
     let absolute = |path: &str| absolute_url(model, &router.url_of(path));
     let line = line_header(model, build);
@@ -113,7 +123,7 @@ pub fn llms_files(model: &ContentModel, build: &Build, records: &PageRecords) ->
     let root = entries.iter().find(|e| e.id == "index");
     let (name, summary) = name_and_summary(model, root);
     let root_page = root.map(|e| e.page.clone());
-    let sections = sections(entries);
+    let sections = sections(entries, navigation);
     let first_page = sections
         .iter()
         .flat_map(|s| s.entries.first())
@@ -130,8 +140,8 @@ pub fn llms_files(model: &ContentModel, build: &Build, records: &PageRecords) ->
         }];
     }
 
-    // Split: the pages outside every folder stay in the root file, which
-    // links to a file per folder.
+    // Split: the root's pages stay in the root file, which links to a file
+    // per top section.
     let mut files = Vec::new();
     let mut top: Vec<&Section<'_>> = Vec::new();
     let mut listing = Vec::new();
@@ -233,61 +243,89 @@ fn name_and_summary(model: &ContentModel, root: Option<&Entry<'_>>) -> (String, 
     (name, summary)
 }
 
-/// The entries in sections, in the order their first pages come: the pages
-/// outside every folder, then each folder's. A folder's index page comes
-/// first in its section, as the root page does in the first.
-fn sections(entries: Vec<Entry<'_>>) -> Vec<Section<'_>> {
-    let folder_of = |e: &Entry<'_>| -> Option<String> {
-        (e.page.segments().count() > 1)
-            .then(|| e.id.split('/').next().map(str::to_owned))
-            .flatten()
+/// The entries in the navigation's sections ([`crate::navigation`]): the
+/// root's own page and its pages first, under the root's label, then a
+/// section for each top section, in order, with the pages of the sections
+/// nested in it folded in, in reading order. A top section's own page comes
+/// first in it, and its heading is its label from `ascribe.nav`, else that
+/// page's title, else its folder's name. A section with no page offered is
+/// left out, and an offered page the navigation doesn't place comes last in
+/// the first section.
+fn sections<'a>(entries: Vec<Entry<'a>>, navigation: &BuildNavigation<'_>) -> Vec<Section<'a>> {
+    let order: Vec<RelPath> = entries.iter().map(|e| e.page.clone()).collect();
+    let mut by_page: BTreeMap<RelPath, Entry<'a>> =
+        entries.into_iter().map(|e| (e.page.clone(), e)).collect();
+    let root = &navigation.root;
+    // A top section's own page beside its folder is that section's.
+    let beside: Vec<&RelPath> = root
+        .sections
+        .iter()
+        .filter_map(|s| s.page.as_ref())
+        .map(|p| &p.page.path)
+        .collect();
+    let mut start = Section {
+        key: None,
+        heading: root.label.clone(),
+        own: false,
+        entries: Vec::new(),
     };
-    let folders: Vec<String> = entries.iter().filter_map(folder_of).collect();
-    let mut sections: Vec<Section<'_>> = Vec::new();
-    for entry in entries {
-        // A page beside a folder with its name (`guides.md` and `guides/`)
-        // is that folder's index page.
-        let key =
-            folder_of(&entry).or_else(|| folders.contains(&entry.id).then(|| entry.id.clone()));
-        let at = match sections.iter().position(|s| s.key == key) {
-            Some(at) => at,
-            None => {
-                sections.push(Section {
-                    heading: match &key {
-                        Some(_) => folder_heading(entry.page),
-                        None => TOP_SECTION.to_owned(),
-                    },
-                    key: key.clone(),
-                    entries: Vec::new(),
-                });
-                sections.len() - 1
-            }
-        };
-        sections[at].entries.push(entry);
+    for page in root.page.iter().chain(&root.pages) {
+        if beside.contains(&&page.page.path) {
+            continue;
+        }
+        start.entries.extend(by_page.remove(&page.page.path));
     }
-    // The pages outside every folder come first.
-    sections.sort_by_key(|s| s.key.is_some());
-    for section in &mut sections {
-        let first = match section.key.as_deref() {
-            Some(key) => section.entries.iter().position(|e| e.id == key),
-            None => section.entries.iter().position(|e| e.id == "index"),
+    let mut sections = vec![start];
+    for nested in &root.sections {
+        let entries: Vec<Entry<'a>> = nested
+            .reading_order()
+            .into_iter()
+            .filter_map(|p| by_page.remove(&p.page.path))
+            .collect();
+        let Some(first) = entries.first() else {
+            continue;
         };
-        if let Some(at) = first {
-            let entry = section.entries.remove(at);
-            if section.key.is_some() {
-                section.heading = entry.title.clone();
-            }
-            section.entries.insert(0, entry);
+        let own = nested
+            .page
+            .as_ref()
+            .is_some_and(|p| p.page.path == *first.page);
+        // The folder's slug: the first segment of a page's entry id in it.
+        let key = entries
+            .iter()
+            .find(|e| e.page.segments().count() > 1)
+            .unwrap_or(first)
+            .id
+            .split('/')
+            .next()
+            .unwrap_or_default()
+            .to_owned();
+        let heading = match (&nested.section.label, own) {
+            (Some(label), _) => label.clone(),
+            (None, true) => first.title.clone(),
+            (None, false) => folder_heading(nested.folder),
+        };
+        sections.push(Section {
+            key: Some(key),
+            heading,
+            own,
+            entries,
+        });
+    }
+    for page in &order {
+        if let Some(entry) = by_page.remove(page) {
+            sections[0].entries.push(entry);
         }
     }
+    sections.retain(|s| !s.entries.is_empty());
     sections
 }
 
-/// A folder's name as a heading: its first segment as written, with `-` and
+/// A folder's name as a heading: its last segment as written, with `-` and
 /// `_` as spaces and the first letter capitalized.
-fn folder_heading(page: &RelPath) -> String {
-    let folder = page
-        .segments()
+fn folder_heading(folder: &str) -> String {
+    let folder = folder
+        .trim_end_matches('/')
+        .rsplit('/')
         .next()
         .unwrap_or_default()
         .replace(['-', '_'], " ");
@@ -512,6 +550,7 @@ pub fn compact_index(
     model: &ContentModel,
     build: &Build,
     records: &PageRecords,
+    navigation: &BuildNavigation<'_>,
     folder: Option<&str>,
     limit: usize,
 ) -> CompactIndex {
@@ -529,7 +568,7 @@ pub fn compact_index(
     });
     let root = entries.iter().find(|e| e.id == "index");
     let (name, summary) = name_and_summary(model, root);
-    let sections = sections(entries);
+    let sections = sections(entries, navigation);
     let everywhere = match folder {
         Some(folder) => Some(format!("`{}`", folder_path(folder, ""))),
         None => model.consumer.agents.then(|| {
@@ -719,11 +758,7 @@ mod tests {
 
     #[test]
     fn a_folder_heading_is_its_name_capitalized() {
-        let page = |p: &str| RelPath::parse(p).expect("a path");
-        assert_eq!(folder_heading(&page("Guides/a.md")), "Guides");
-        assert_eq!(
-            folder_heading(&page("getting-started/a.md")),
-            "Getting started"
-        );
+        assert_eq!(folder_heading("Guides/"), "Guides");
+        assert_eq!(folder_heading("getting-started/"), "Getting started");
     }
 }
