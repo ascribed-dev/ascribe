@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import type { LspRange } from "../shapes.js";
 
 /** A memo as the lens lists it. */
-export interface ListedMemo {
+interface ListedMemo {
   /** The memo file's `file:` URI. */
   uri: string;
   /** Its path from the project root. */
@@ -23,7 +23,7 @@ export interface ListedMemo {
 }
 
 /** How a memo is shown in the list: its first line, then its file and what it is. */
-export function memoItem(memo: ListedMemo): { label: string; description: string } {
+function memoItem(memo: ListedMemo): { label: string; description: string } {
   const notes = [memo.personal ? "personal" : "", memo.outdated ? "outdated" : ""].filter(
     (note) => note !== "",
   );
