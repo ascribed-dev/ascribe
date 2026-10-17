@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**The site output has the build's navigation in `_ascribe/nav.json`, beside the page records, joined to them on `source`.** The file is `{ version, root }`, the root section, and each section `{ folder, label, formatted?, page?, pages, sections }` and each page `{ source, label, formatted?, type? }`, where `formatted.label` is the label as HTML when it's a title read with inline markup, as a page's `formatted.title` is. A page beside a nested folder is in its parent's `pages` and is the nested section's `page`, and the nested section sits right after it; the nested sections that aren't placed so come after the parent's pages, in `sections` order. Routes aren't repeated: a page's route is its record's. A build with no pages has an empty root. _Why:_ a tree is a file of its own, and a site that wants a page's details joins on `source`, as it does with the records. _From:_ the maintainer, on the navigation plan ([phase 1](../navigation/phase-1-decisions.md), decision 1), 16 October 2026; recorded with [#537](https://github.com/ascribed-dev/ascribe/issues/537), where the placement of a page beside a nested folder is said exactly.

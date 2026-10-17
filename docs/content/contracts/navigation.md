@@ -1,0 +1,75 @@
+---
+type: reference
+title: The navigation contract
+description: What _ascribe/nav.json in a build's site output holds, the project's sections and pages in order with their labels, and how a site draws a sidebar from it.
+available: next
+---
+
+Each build's site output has its share of the project's [navigation](../navigation/index.md) (SPEC §7.8) as `_ascribe/nav.json`, beside the page records (output-layout contract §1.6). `@ascribed/astro`'s `sidebar()` reads it; a site built another way can too. This contract says what the file holds and what a reader can rely on.
+
+| Who | Uses this contract to |
+|---|---|
+| `ascribe build` | Write the file, for every build |
+| `sidebar()` in `@ascribed/astro`, or a site of your own | Draw a sidebar, joining each page to its collection entry or record |
+
+## 1. The file
+
+```json
+{
+  "version": 1,
+  "root": {
+    "folder": "",
+    "label": "Start",
+    "page": { "source": "index.md", "label": "Loom documentation", "type": "page" },
+    "pages": [],
+    "sections": [
+      {
+        "folder": "checks/",
+        "label": "Checks",
+        "page": { "source": "checks/index.md", "label": "Checks", "type": "concept" },
+        "pages": [
+          { "source": "checks/diagnostics.md", "label": "Diagnostics", "type": "reference" },
+          {
+            "source": "checks/vale.md",
+            "label": "Checking prose with Vale",
+            "formatted": { "label": "Checking prose with <code>vale</code>" },
+            "type": "how-to"
+          }
+        ],
+        "sections": [
+          {
+            "folder": "checks/diagnostics/",
+            "label": "Diagnostics",
+            "page": { "source": "checks/diagnostics.md", "label": "Diagnostics", "type": "reference" },
+            "pages": [{ "source": "checks/diagnostics/pages.md", "label": "Pages", "type": "reference" }],
+            "sections": []
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
+| `root` | The content root's section. A build with no pages has it with no `page`, and empty `pages` and `sections`. |
+| `folder` | A section's folder, from the content root, ending in `/`; `""` for the root. |
+| `label` | A section's label as plain text: its `label` in `ascribe.nav`, else its own page's title, else its folder's name with its first letter capitalized; the root's is `Start` unless the file gives it another. |
+| `formatted.label` | The label as HTML, with code spans as `<code>`, when it's a title read with inline markup (`inline = "code"`), as a page's `formatted.title` is in the site output. Absent otherwise. |
+| `page` | A section's own page, when the build publishes and offers it: its `index.md`, or the page beside the folder with its name. Absent otherwise. |
+| `pages` | A section's pages in order, its own page never among them. |
+| `sections` | A section's nested sections that keep a page in the build, in order. |
+| `source` | A page's path from the content root, with `/`: the key its record has in `_ascribe/pages.json` (§1.3), and its path in the site output, so a collection entry's file joins to it. Routes aren't repeated here: a page's route is its record's. |
+| `type` | A page's content type. Absent for a page whose type isn't declared, which `ascribe check` reports. |
+
+## 2. Placing a nested section
+
+A nested section whose own page is beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, has that page as its `page`, and the page is also in the parent's `pages`. A reader places the nested section right after that page. A nested section whose `page` isn't in the parent's `pages`, one with an `index.md` or none, comes after the parent's pages. `sections` lists the ones placed by a page first, in their pages' order, then the rest, so a reader that draws `pages` and then `sections` keeps the order, and one that interleaves them places each where its page is.
+
+## 3. What a reader can rely on
+
+- Every `source` is a page the build publishes, that isn't `unlisted`, and has a record in `pages.json`. A page is in the file once, but for the page beside a nested folder, which is in its parent's `pages` and is the nested section's `page`.
+- The file is the same text for the same project and build on every platform.
+- A later version may add keys, such as a page's short label; it doesn't change these.

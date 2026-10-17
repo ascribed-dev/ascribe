@@ -51,6 +51,11 @@ impl<'a> EmitContext<'a> {
         }
     }
 
+    /// The project's source index.
+    pub fn project(&self) -> &'a Project {
+        self.project
+    }
+
     /// The content path of a source file.
     pub fn file_path(&self, file: FileId) -> Option<&RelPath> {
         self.project.path_of(file)
