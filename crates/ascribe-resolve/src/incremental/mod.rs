@@ -24,6 +24,7 @@
 //! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is. |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
 //! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
+//! | **`ascribe.nav`** ([`Change::Nav`]) | Nothing a file holds: the project's [`Project::navigation`] follows it. A new version when the file reads differently. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, slugger, or sources re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
 //! "What others see of a file" is [`structure_signature`]'s hash: the kind
@@ -90,7 +91,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ascribe_core::{RelPath, Slugger};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, NavFile};
 
 pub use cache::ResolvedCache;
 pub use ids::FileIds;
@@ -176,6 +177,9 @@ pub enum Change {
     /// the content root or the output directory can't be applied in place
     /// ([`ApplyError::LayoutChanged`]).
     Model(Arc<ContentModel>),
+    /// `ascribe.nav` changed: this is what it says now, `None` when it's gone
+    /// or doesn't read ([`Project::nav_file`]).
+    Nav(Option<Arc<NavFile>>),
 }
 
 /// Why a batch of changes wasn't applied. Nothing changed.
@@ -669,6 +673,7 @@ impl IncrementalProject {
         // read. Any other change to the path clears it.
         let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
+        let mut new_nav: Option<Option<Arc<NavFile>>> = None;
         for change in changes {
             match change {
                 Change::Unreadable { path, reason } => {
@@ -733,8 +738,10 @@ impl IncrementalProject {
                     }
                     new_model = Some(model);
                 }
+                Change::Nav(nav) => new_nav = Some(nav),
             }
         }
+        let new_nav = new_nav.filter(|nav| nav.as_deref() != self.project.nav_file());
 
         // A nested project's `ascribe.toml` arrives as any other file that isn't
         // a source does. One appearing where there is no nested project, or
@@ -826,6 +833,7 @@ impl IncrementalProject {
             && file_changes.is_empty()
             && impact.is_none()
             && !unreadable_changed
+            && new_nav.is_none()
         {
             return Ok(Affected {
                 version: self.version,
@@ -953,6 +961,10 @@ impl IncrementalProject {
                 self.fs.remove(path);
             }
         }
+        let nav_changed = new_nav.is_some();
+        if let Some(nav) = new_nav {
+            project.set_nav(nav);
+        }
         if let Some((model, fingerprints)) = new_model {
             project.set_model(model);
             self.fingerprints = fingerprints;
@@ -1007,6 +1019,7 @@ impl IncrementalProject {
             && impact.is_none()
             && res_changed.is_empty()
             && !unreadable_changed
+            && !nav_changed
         {
             return Ok(Affected {
                 version: previous,

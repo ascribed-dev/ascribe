@@ -1,13 +1,16 @@
 // What the This page, Pages, and Content model views show, worked out from
 // plain values so the unit tests can check it without VS Code.
 
+import * as path from "node:path";
 import { pageDetail } from "../preview/reviewText.js";
+import { comparable, within } from "../projects.js";
 import type {
   ChangedPage,
   InventoryEntry,
   InventoryFragment,
   InventoryPage,
   InventoryResult,
+  InventorySection,
   LspRange,
   ModelKind,
   PageAbout,
@@ -32,69 +35,160 @@ export interface ItemLook {
   expandable: boolean;
   /** Whether it starts expanded, when it has children. */
   expanded?: boolean;
+  /** Its context value, which its menu's commands are shown by. */
+  context?: string | undefined;
 }
 
 // Pages.
 
-/** An item of the Pages view. */
+/** An item of the Pages view: the navigation's sections, then the fragments by folder. */
 export type PagesNode =
-  | { kind: "type"; type: string; pages: readonly InventoryPage[] }
-  | { kind: "fragments"; fragments: readonly InventoryFragment[] }
-  | { kind: "orphans"; pages: readonly InventoryPage[] }
-  | { kind: "page"; page: InventoryPage }
-  | { kind: "fragment"; fragment: InventoryFragment }
-  | { kind: "includer"; path: string };
+  | {
+      kind: "section";
+      section: InventorySection;
+      /** The section it's nested in; `undefined` for the root. */
+      within: InventorySection | undefined;
+      /** Whether it sits among its parent's pages, where its page beside the folder sits. */
+      placed: boolean;
+      parent: PagesNode | undefined;
+      children: PagesNode[];
+    }
+  | {
+      kind: "page";
+      path: string;
+      page: InventoryPage | undefined;
+      /** The section it's a page of. */
+      section: InventorySection;
+      /** Whether it has its place in `ascribe.nav`: one that isn't is marked. */
+      placed: boolean;
+      /** Whether it's its section's own page, which is first and doesn't move. */
+      own: boolean;
+      parent: PagesNode;
+      children: PagesNode[];
+    }
+  | { kind: "fragments"; parent: undefined; children: PagesNode[] }
+  | { kind: "folder"; folder: string; parent: PagesNode; children: PagesNode[] }
+  | { kind: "fragment"; fragment: InventoryFragment; parent: PagesNode; children: PagesNode[] }
+  | { kind: "includer"; path: string; parent: PagesNode; children: PagesNode[] };
 
-/** The name of the group of pages with no one content type. */
-const NO_TYPE = "no type";
-
-/** The Pages view's top level: a group per content type, then fragments, then orphans. */
+/**
+ * The Pages view's top level: the root section, Start, with its own page
+ * and its pages; each section in it, in the navigation's order; then the
+ * fragments by folder. Every node knows its parent and its children.
+ */
 export function pagesRoots(inventory: InventoryResult): PagesNode[] {
-  const byType = new Map<string, InventoryPage[]>();
-  for (const page of inventory.pages) {
-    const type = page.type ?? NO_TYPE;
-    const list = byType.get(type) ?? [];
-    list.push(page);
-    byType.set(type, list);
+  const pages = new Map(inventory.pages.map((page) => [page.path, page]));
+  const roots: PagesNode[] = [];
+  const root = inventory.navigation;
+  if (root) {
+    const start = sectionNode(root, undefined, false, undefined, pages);
+    roots.push(start);
+    // The root's sections that don't sit among its pages come after it.
+    const among = new Set(root.pages.map((page) => page.path));
+    for (const nested of root.sections) {
+      if (nested.page === null || !among.has(nested.page)) {
+        roots.push(sectionNode(nested, root, false, undefined, pages));
+      }
+    }
   }
-  const types = [...byType.keys()].sort((a, b) =>
-    a === NO_TYPE ? 1 : b === NO_TYPE ? -1 : a.localeCompare(b),
-  );
-  const nodes: PagesNode[] = types.map((type) => ({
-    kind: "type",
-    type,
-    pages: byType.get(type) ?? [],
-  }));
   if (inventory.fragments.length > 0) {
-    nodes.push({ kind: "fragments", fragments: inventory.fragments });
+    const fragments: PagesNode = { kind: "fragments", parent: undefined, children: [] };
+    const byFolder = new Map<string, InventoryFragment[]>();
+    for (const fragment of inventory.fragments) {
+      const folder = fragment.path.slice(0, fragment.path.lastIndexOf("/") + 1);
+      byFolder.set(folder, [...(byFolder.get(folder) ?? []), fragment]);
+    }
+    for (const [folder, list] of byFolder) {
+      const node: PagesNode = { kind: "folder", folder, parent: fragments, children: [] };
+      for (const fragment of list) {
+        const item: PagesNode = { kind: "fragment", fragment, parent: node, children: [] };
+        item.children = fragment.includedBy.map((path) => ({
+          kind: "includer",
+          path,
+          parent: item,
+          children: [],
+        }));
+        node.children.push(item);
+      }
+      fragments.children.push(node);
+    }
+    roots.push(fragments);
   }
-  const orphaned = new Set(inventory.orphans);
-  const orphans = inventory.pages.filter((p) => orphaned.has(p.path));
-  if (orphans.length > 0) nodes.push({ kind: "orphans", pages: orphans });
-  return nodes;
+  return roots;
+}
+
+function sectionNode(
+  section: InventorySection,
+  within: InventorySection | undefined,
+  placed: boolean,
+  parent: PagesNode | undefined,
+  pages: ReadonlyMap<string, InventoryPage>,
+): PagesNode {
+  const node: PagesNode = { kind: "section", section, within, placed, parent, children: [] };
+  const page = (path: string, isPlaced: boolean, own: boolean): PagesNode => ({
+    kind: "page",
+    path,
+    page: pages.get(path),
+    section,
+    placed: isPlaced,
+    own,
+    parent: node,
+    children: [],
+  });
+  if (section.page !== null) node.children.push(page(section.page, true, true));
+  const sits = new Map<string, InventorySection>();
+  for (const nested of section.sections) {
+    if (nested.page !== null) sits.set(nested.page, nested);
+  }
+  const among = new Set<InventorySection>();
+  for (const entry of section.pages) {
+    const nested = sits.get(entry.path);
+    if (nested) {
+      among.add(nested);
+      node.children.push(sectionNode(nested, section, true, node, pages));
+    } else {
+      node.children.push(page(entry.path, entry.placed, false));
+    }
+  }
+  // The root's other sections are on the view's top level.
+  if (within !== undefined || parent !== undefined) {
+    for (const nested of section.sections) {
+      if (!among.has(nested)) node.children.push(sectionNode(nested, section, false, node, pages));
+    }
+  }
+  return node;
 }
 
 /** An item's children in the Pages view. */
 export function pagesChildren(node: PagesNode): PagesNode[] {
-  switch (node.kind) {
-    case "type":
-    case "orphans":
-      return node.pages.map((page) => ({ kind: "page", page }));
-    case "fragments":
-      return node.fragments.map((fragment) => ({ kind: "fragment", fragment }));
-    case "fragment":
-      return node.fragment.includedBy.map((path) => ({ kind: "includer", path }));
-    case "page":
-    case "includer":
-      return [];
+  return node.children;
+}
+
+/** An item's parent in the Pages view, which revealing a page walks up. */
+export function pagesParent(node: PagesNode): PagesNode | undefined {
+  return node.parent;
+}
+
+/** The node of a page or a fragment, by its content path: where it's first in the view. */
+export function pagesFind(roots: readonly PagesNode[], path: string): PagesNode | undefined {
+  for (const node of roots) {
+    if (
+      (node.kind === "page" && node.path === path) ||
+      (node.kind === "fragment" && node.fragment.path === path)
+    ) {
+      return node;
+    }
+    const found = pagesFind(node.children, path);
+    if (found) return found;
   }
+  return undefined;
 }
 
 /** The content path of the file an item opens, if it opens one. */
 export function pagesPath(node: PagesNode): string | undefined {
   switch (node.kind) {
     case "page":
-      return node.page.path;
+      return node.path;
     case "fragment":
       return node.fragment.path;
     case "includer":
@@ -104,37 +198,91 @@ export function pagesPath(node: PagesNode): string | undefined {
   }
 }
 
-/** How an item of the Pages view looks: a page by its title, with its path. */
+/**
+ * The content path of `file`, a file system path, in the content root
+ * `root`, or `undefined` outside it. Windows paths compare without case, as
+ * the server writes the drive in upper case and VS Code in lower; the path
+ * keeps the file's own case.
+ */
+export function contentPathOf(file: string, root: string): string | undefined {
+  if (!within(file, root) || comparable(file) === comparable(root)) return undefined;
+  // `comparable` folds a Windows path's case, so the path is cut from the
+  // file's own, normalised the same way but in its case.
+  const normal = /^[a-zA-Z]:|^\\\\/.test(file)
+    ? path.win32.normalize(file).replace(/\\/g, "/")
+    : path.posix.normalize(file);
+  return normal.slice(comparable(root).length + 1);
+}
+
+/** The context value of an item, which its menu's commands are shown by. */
+export const PAGES_CONTEXT = {
+  section: "ascribe.pages.section",
+  page: "ascribe.pages.page",
+  unplaced: "ascribe.pages.unplaced",
+} as const;
+
+/** How an item of the Pages view looks: a section by its label and folder, a page by its title. */
 export function pagesLook(node: PagesNode): ItemLook {
   switch (node.kind) {
-    case "type":
-      return group(node.type, node.pages.length, "file", `Pages of type ${node.type}`);
+    case "section": {
+      const { section } = node;
+      const root = section.folder === "";
+      return {
+        label: section.label,
+        description: root ? "" : section.folder,
+        tooltip: [
+          root ? "The content root's section" : `The section of ${section.folder}`,
+          section.listed
+            ? "Listed in ascribe.nav"
+            : "In its default place: ascribe.nav doesn't list it",
+          ...(section.listsPages ? [] : ["Its pages are in the default order"]),
+        ].join("\n"),
+        icon: root ? "home" : "folder",
+        dimmed: false,
+        expandable: node.children.length > 0,
+        expanded: !node.placed,
+        context: PAGES_CONTEXT.section,
+      };
+    }
     case "fragments":
       return group(
         "Fragments",
-        node.fragments.length,
+        node.children.reduce((n, folder) => n + folder.children.length, 0),
         "file-symlink-file",
         "Files that exist to be included",
       );
-    case "orphans":
+    case "folder":
       return group(
-        "Orphans",
-        node.pages.length,
-        "warning",
-        "Pages no other page links to or includes. Only the sidebar reaches them, or, for an unlisted page, nothing but its address.",
+        node.folder === "" ? "the content root" : node.folder,
+        node.children.length,
+        "folder",
+        `The fragments in ${node.folder === "" ? "the content root" : node.folder}`,
       );
-    case "page":
+    case "page": {
+      const { path } = node;
+      const incoming = node.page?.incoming ?? 0;
       return {
-        label: node.page.title ?? basename(node.page.path),
-        description: node.page.path,
-        tooltip: `${node.page.path}\n${count(node.page.incoming, "link or include", "links and includes")} from other files`,
-        icon: "file",
+        label: node.page?.title ?? basename(path),
+        description: node.placed ? path : "not placed",
+        tooltip: [
+          path,
+          `${count(incoming, "link or include", "links and includes")} from other files`,
+          ...(node.own ? ["The section's own page, which comes first"] : []),
+          ...(node.placed
+            ? []
+            : [
+                `ascribe.nav lists ${node.section.folder || "the root"}'s pages and leaves it out, so it comes after them. Place Here appends it.`,
+              ]),
+        ].join("\n"),
+        icon: node.placed ? "file" : "warning",
         dimmed: false,
         expandable: false,
+        context: node.own ? undefined : node.placed ? PAGES_CONTEXT.page : PAGES_CONTEXT.unplaced,
       };
+    }
     case "fragment":
       return {
-        label: node.fragment.path,
+        label: basename(node.fragment.path),
         description:
           node.fragment.includedBy.length === 0
             ? "not included"
@@ -154,6 +302,106 @@ export function pagesLook(node: PagesNode): ItemLook {
         expandable: false,
       };
   }
+}
+
+/** Whether an item can be dragged: any section but the root, and any page but a section's own. */
+export function pagesDraggable(node: PagesNode): boolean {
+  if (node.kind === "section") return node.section.folder !== "";
+  return node.kind === "page" && !node.own;
+}
+
+/** What dropping a dragged item on another does. */
+export type PagesDrop =
+  /** An `ascribe/edit` operation on `ascribe.nav`. */
+  | { kind: "edit"; action: "moveSection" | "movePage"; args: Record<string, string | null> }
+  /** A page's file moving to another section's folder, which is asked first. */
+  | { kind: "move"; page: string; folder: string; label: string }
+  /** Nothing, and why when it's worth saying. */
+  | { kind: "none"; why?: string };
+
+/**
+ * What dropping `dragged` on `target` does. A section moves among the
+ * sections beside it, and a page among its section's pages: dropped on an
+ * item above, it goes before it, and on one below, after it. A page dropped
+ * on its own section goes first. A page dropped on another section, or on a
+ * page of one, moves its file there.
+ */
+export function pagesDrop(dragged: PagesNode, target: PagesNode): PagesDrop {
+  if (dragged === target) return { kind: "none" };
+  // A section beside its page sits among its parent's pages, as its page.
+  const asPage = (node: PagesNode): { path: string; section: InventorySection } | undefined => {
+    if (node.kind === "page" && !node.own) return { path: node.path, section: node.section };
+    if (node.kind === "section" && node.placed && node.within && node.section.page !== null) {
+      return { path: node.section.page, section: node.within };
+    }
+    return undefined;
+  };
+  const page = asPage(dragged);
+  if (page) {
+    const there = asPage(target);
+    if (there && there.section === page.section) {
+      const order = page.section.pages.map((p) => p.path);
+      return {
+        kind: "edit",
+        action: "movePage",
+        args: { page: page.path, before: placeAt(order, page.path, there.path) },
+      };
+    }
+    const into =
+      target.kind === "section" && !target.placed
+        ? target.section
+        : target.kind === "page"
+          ? target.section
+          : target.kind === "section" && target.placed
+            ? target.section
+            : undefined;
+    if (into === page.section) {
+      const first = page.section.pages.find((p) => p.path !== page.path);
+      return {
+        kind: "edit",
+        action: "movePage",
+        args: { page: page.path, before: first?.path ?? null },
+      };
+    }
+    if (into && dragged.kind === "page") {
+      return { kind: "move", page: page.path, folder: into.folder, label: into.label };
+    }
+    if (into) return { kind: "none", why: "A section moves to another folder with its files." };
+    return { kind: "none" };
+  }
+  if (dragged.kind === "section" && dragged.section.folder !== "") {
+    const within = dragged.within;
+    if (target.kind === "section" && !target.placed && target.within === within && within) {
+      const order = within.sections.filter((s) => !isPlaced(within, s)).map((s) => s.folder);
+      return {
+        kind: "edit",
+        action: "moveSection",
+        args: {
+          folder: dragged.section.folder,
+          before: placeAt(order, dragged.section.folder, target.section.folder),
+        },
+      };
+    }
+    return { kind: "none", why: "A section moves among the sections beside it." };
+  }
+  return { kind: "none" };
+}
+
+/** Whether a section sits among its parent's pages, where its page beside the folder sits. */
+function isPlaced(parent: InventorySection, section: InventorySection): boolean {
+  return section.page !== null && parent.pages.some((p) => p.path === section.page);
+}
+
+/**
+ * What `moved` goes before when it's dropped on `on`, in `order`: `on` when
+ * it's above, and what's after `on` when it's below; `null` for the end.
+ */
+function placeAt(order: readonly string[], moved: string, on: string): string | null {
+  const from = order.indexOf(moved);
+  const at = order.indexOf(on);
+  if (from > at) return on;
+  const rest = order.filter((item) => item !== moved);
+  return rest[rest.indexOf(on) + 1] ?? null;
 }
 
 // Content model.

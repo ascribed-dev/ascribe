@@ -102,6 +102,7 @@ if (process.argv.includes("--tests")) {
       "suite/activation.it": "test/integration/suite/activation.it.ts",
       "suite/lens.it": "test/integration/suite/lens.it.ts",
       "suite/monorepo.it": "test/integration/suite/monorepo.it.ts",
+      "suite/navigation.it": "test/integration/suite/navigation.it.ts",
       "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
       "suite/review.it": "test/integration/suite/review.it.ts",

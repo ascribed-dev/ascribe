@@ -269,3 +269,29 @@ fn a_memos_about_follows_its_heading_and_its_page_in_both_folders() {
         stdout(&outline)
     );
 }
+
+#[test]
+fn a_listed_page_that_moves_keeps_ascribe_nav_right() {
+    let dir = project();
+    let nav = "version = 1\n\n[[sections]]\nfolder = \"\" # the root\npages = [\"keys.md\", \"install.md\"]\n";
+    write(dir.path(), "ascribe.nav", nav);
+    let output = ascribe(dir.path(), &["rename", "keys.md", "api-keys.md"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(
+        stdout(&output).contains("changed ascribe.nav (1 place)\n"),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(
+        read(dir.path(), "ascribe.nav"),
+        nav.replace("\"keys.md\"", "\"api-keys.md\"")
+    );
+    // Nothing to report in it, nor about where a page is.
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+    let report = stdout(&check);
+    assert!(
+        !report.contains("ascribe.nav") && !report.contains("unplaced"),
+        "{report}"
+    );
+}

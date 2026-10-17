@@ -74,6 +74,37 @@ impl Section {
             .as_ref()
             .is_some_and(|page| page.as_str() != format!("{}index.md", self.folder))
     }
+
+    /// Its label as the source has it, whatever a build publishes: its
+    /// `label` from the file, else its own page's title, else its folder's
+    /// name with its first letter capitalized, and "Start" for the root.
+    pub fn label(&self, project: &Project) -> String {
+        if let Some(label) = &self.label {
+            return label.clone();
+        }
+        if self.folder.is_empty() {
+            return ROOT_LABEL.to_owned();
+        }
+        self.page
+            .as_ref()
+            .and_then(|own| project.file(own)?.title.clone())
+            .unwrap_or_else(|| folder_label(&self.folder))
+    }
+}
+
+/// A folder's name with its first letter capitalized: a section's label
+/// when nothing else gives one.
+fn folder_label(folder: &str) -> String {
+    let name = folder
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or_default();
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
+    }
 }
 
 /// A build's share of the navigation.
@@ -426,21 +457,6 @@ impl<'a> Sharer<'a> {
                 .and_then(|f| f.content_type(model))
                 .map(|t| t.name.as_str()),
         })
-    }
-}
-
-/// A section's label when neither `ascribe.nav` nor its own page gives it
-/// one: its folder's name with its first letter capitalized.
-pub fn folder_label(folder: &str) -> String {
-    let name = folder
-        .trim_end_matches('/')
-        .rsplit('/')
-        .next()
-        .unwrap_or_default();
-    let mut chars = name.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().chain(chars).collect(),
-        None => String::new(),
     }
 }
 

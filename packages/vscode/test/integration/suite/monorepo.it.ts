@@ -292,7 +292,7 @@ describe("with several projects, one nested in another", () => {
       // the nested project's.
       assert.deepEqual(
         pages.map((group) => [group.label, group.children.map((page) => page.description)]),
-        [["page", ["index.md"]]],
+        [["Start", ["index.md"]]],
       );
       const phrases = api.ui.sidebar
         .items("model")
@@ -370,7 +370,7 @@ describe("with several projects, one nested in another", () => {
       });
       assert.deepEqual(
         pages.map((group) => [group.label, group.children.map((page) => page.description)]),
-        [["page", ["index.md"]]],
+        [["Start", ["index.md"]]],
       );
       const entries = (label: string) =>
         api.ui.sidebar

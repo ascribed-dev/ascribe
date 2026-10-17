@@ -752,6 +752,10 @@ impl Project {
         self.model = model;
     }
 
+    pub(crate) fn set_nav(&mut self, nav: Option<Arc<NavFile>>) {
+        self.nav = nav;
+    }
+
     pub(crate) fn set_unreadable(&mut self, unreadable: Vec<Unreadable>) {
         self.unreadable = unreadable;
     }

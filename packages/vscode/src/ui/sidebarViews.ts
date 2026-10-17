@@ -9,7 +9,12 @@ import {
   modelLook,
   modelRoots,
   pagesChildren,
+  pagesDraggable,
+  pagesDrop,
+  contentPathOf,
+  pagesFind,
   pagesLook,
+  pagesParent,
   pagesPath,
   pagesRoots,
   thisPageChildren,
@@ -49,6 +54,21 @@ export interface SidebarItem extends ItemLook {
 export interface SidebarApi {
   /** Every item of a view, with every node expanded. */
   items(view: "pages" | "model"): SidebarItem[];
+  /**
+   * Drops one item of Pages on another, as a drag does, each named by a
+   * page's content path or a section's folder (`""` for Start). `move`
+   * answers the dialog a move to another section asks first. Settles when
+   * the edit is applied, with what it says when it can't be.
+   */
+  drop(dragged: string, target: string, move?: boolean): Promise<string | undefined>;
+  /** Runs an item's command from its menu: Place Here or Rename Label…, with the label typed. */
+  command(
+    command: "placeHere" | "renameLabel",
+    item: string,
+    label?: string,
+  ): Promise<string | undefined>;
+  /** The content path of the page selected in Pages, if one is. */
+  selected(): string | undefined;
   /** The message above a view's items, if it shows one. */
   message(view: "pages" | "model"): string | undefined;
   /** The project the views are showing, by folder. */
@@ -73,6 +93,9 @@ export interface ThisPageApi {
 
 /** One of the three views: its tree, and how its items look and open. */
 class Tree<N> implements vscode.TreeDataProvider<N> {
+  /** An item's parent, which revealing an item walks up. */
+  parentOf: ((node: N) => N | undefined) | undefined;
+
   readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.changed.event;
   view: vscode.TreeView<N> | undefined;
@@ -98,6 +121,7 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
     );
     item.description = look.description;
     item.tooltip = look.tooltip;
+    if (look.context !== undefined) item.contextValue = look.context;
     item.iconPath = new vscode.ThemeIcon(
       look.icon,
       look.dimmed ? new vscode.ThemeColor("disabledForeground") : undefined,
@@ -118,6 +142,10 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
 
   getChildren(node?: N): N[] {
     return node === undefined ? this.roots() : this.children(node);
+  }
+
+  getParent(node: N): N | undefined {
+    return this.parentOf?.(node);
   }
 
   /** Every item, with every node expanded. */
@@ -170,8 +198,11 @@ export class SidebarViews implements vscode.Disposable {
   private readonly pending = new Set<Promise<void>>();
   private readonly disposables: vscode.Disposable[] = [];
 
+  /** Pages' items, made once for each inventory, so revealing one finds it. */
+  private pagesNodes: { from: InventoryResult; roots: PagesNode[] } | undefined;
+
   private readonly pages = new Tree<PagesNode>(
-    () => (this.inventory ? pagesRoots(this.inventory) : []),
+    () => this.pagesRoots(),
     pagesChildren,
     pagesLook,
     (node) => {
@@ -240,12 +271,52 @@ export class SidebarViews implements vscode.Disposable {
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly review: ReviewController,
-  ) {}
+  ) {
+    this.pages.parentOf = pagesParent;
+  }
+
+  private pagesRoots(): PagesNode[] {
+    const inventory = this.inventory;
+    if (!inventory) return [];
+    if (this.pagesNodes?.from !== inventory) {
+      this.pagesNodes = { from: inventory, roots: pagesRoots(inventory) };
+    }
+    return this.pagesNodes.roots;
+  }
+
+  /** An item of Pages by a page's content path, or a section's folder. */
+  private pagesItem(name: string): PagesNode | undefined {
+    const roots = this.pagesRoots();
+    const section = (nodes: readonly PagesNode[]): PagesNode | undefined => {
+      for (const node of nodes) {
+        if (node.kind === "section" && node.section.folder === name) return node;
+        const found = section(node.children);
+        if (found) return found;
+      }
+      return undefined;
+    };
+    return name.endsWith("/") || name === "" ? section(roots) : pagesFind(roots, name);
+  }
 
   get api(): SidebarApi {
     const tree = (view: "pages" | "model") => (view === "pages" ? this.pages : this.model);
+    const item = (name: string) => {
+      const node = this.pagesItem(name);
+      if (!node) throw new Error(`Pages has no item ${name}`);
+      return node;
+    };
     return {
       items: (view) => tree(view).items(),
+      drop: (dragged, target, move) =>
+        this.drop(item(dragged), item(target), async () => move ?? false),
+      command: (command, name, label) =>
+        command === "placeHere"
+          ? this.placeHere(item(name))
+          : this.renameLabel(item(name), async () => label),
+      selected: () => {
+        const node = this.pages.view?.selection[0];
+        return node && pagesPath(node);
+      },
       message: (view) => tree(view).view?.message || undefined,
       project: () => this.inventoryFrom?.project.folder,
       whenSettled: () => this.whenSettled(),
@@ -282,6 +353,7 @@ export class SidebarViews implements vscode.Disposable {
     this.pages.view = vscode.window.createTreeView("ascribe.pages", {
       treeDataProvider: this.pages,
       showCollapseAll: true,
+      dragAndDropController: this.pagesDrag(),
     });
     this.model.view = vscode.window.createTreeView("ascribe.model", {
       treeDataProvider: this.model,
@@ -314,6 +386,32 @@ export class SidebarViews implements vscode.Disposable {
         if (server === this.server) this.follow(true);
       }),
       this.projects.onDidChangeProjects(() => this.follow(true)),
+      vscode.commands.registerCommand(PLACE_HERE, (node?: PagesNode) =>
+        node ? this.placeHere(node).then((said) => said && this.say(said)) : undefined,
+      ),
+      vscode.commands.registerCommand(RENAME_LABEL, (node?: PagesNode) =>
+        node
+          ? this.renameLabel(node, (value) =>
+              Promise.resolve(
+                vscode.window.showInputBox({
+                  title: "Rename Label",
+                  prompt: "The section's label in every sidebar. Leave it empty for its default.",
+                  value,
+                }),
+              ),
+            ).then((said) => said && this.say(said))
+          : undefined,
+      ),
+      // Pages draws `ascribe.nav` as it's typed, and as a drag edits it.
+      vscode.workspace.onDidChangeTextDocument(({ document }) => {
+        if (
+          this.server &&
+          isNavFile(document.uri) &&
+          this.projects.serverFor(document.uri) === this.server
+        ) {
+          this.soon("inventory");
+        }
+      }),
       vscode.commands.registerCommand(OPEN_THREAD, (node?: ThisPageNode) =>
         node?.kind === "thread" ? this.openThread(node.thread.id) : undefined,
       ),
@@ -331,6 +429,127 @@ export class SidebarViews implements vscode.Disposable {
     for (const timer of this.timers.values()) clearTimeout(timer);
     this.timers.clear();
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
+  }
+
+  /** Drags in Pages: sections and pages, dropped on each other. */
+  private pagesDrag(): vscode.TreeDragAndDropController<PagesNode> {
+    const mime = "application/vnd.code.tree.ascribe.pages";
+    return {
+      dragMimeTypes: [],
+      dropMimeTypes: [mime],
+      handleDrag: (source, data) => {
+        const dragged = source.filter(pagesDraggable);
+        if (dragged.length === 1) data.set(mime, new vscode.DataTransferItem(dragged[0]));
+      },
+      handleDrop: async (target, data) => {
+        const dragged = data.get(mime)?.value as PagesNode | undefined;
+        if (!dragged || !target) return;
+        const said = await this.drop(dragged, target, (question) => this.confirm(question));
+        if (said) this.say(said);
+      },
+    };
+  }
+
+  /** Asks before a page's file moves. */
+  private async confirm(question: string): Promise<boolean> {
+    const move = "Move";
+    return (await vscode.window.showWarningMessage(question, { modal: true }, move)) === move;
+  }
+
+  private say(message: string): void {
+    void vscode.window.showInformationMessage(`Ascribe: ${message}`);
+  }
+
+  /**
+   * Does what dropping `dragged` on `target` does: an edit of
+   * `ascribe.nav`, applied as typing is, unsaved and undoable; or, asked
+   * first, a page's file moving to another section, which the server's
+   * rename follows with its links and `ascribe.nav`. What it says when it
+   * can't, for the caller to show.
+   */
+  private async drop(
+    dragged: PagesNode,
+    target: PagesNode,
+    ask: (question: string) => Promise<boolean>,
+  ): Promise<string | undefined> {
+    const plan = pagesDrop(dragged, target);
+    if (plan.kind === "none") return plan.why;
+    if (plan.kind === "edit") return this.editNav(plan.action, plan.args);
+    const content = this.inventory?.contentUri;
+    if (!content) return undefined;
+    const name = plan.page.slice(plan.page.lastIndexOf("/") + 1);
+    const from = contentFile(content, plan.page);
+    const to = contentFile(content, `${plan.folder}${name}`);
+    if (!(await ask(`Moving \`${name}\` to ${plan.label} changes its address.`))) return undefined;
+    try {
+      await vscode.workspace.fs.stat(to);
+      return `${plan.folder}${name} is there already.`;
+    } catch {
+      // Nothing's there: it can move.
+    }
+    const edit = new vscode.WorkspaceEdit();
+    edit.renameFile(from, to, { overwrite: false });
+    if (!(await vscode.workspace.applyEdit(edit))) return `${name} couldn't be moved.`;
+    this.soon("inventory");
+    return undefined;
+  }
+
+  /** Place Here, on a page `ascribe.nav` leaves out: it's appended to its section's pages. */
+  private placeHere(node: PagesNode): Promise<string | undefined> {
+    if (node.kind !== "page" || node.placed) return Promise.resolve(undefined);
+    return this.editNav("placePage", { page: node.path });
+  }
+
+  /** Rename Label…, on a section: its `label` in `ascribe.nav`, or none for its default. */
+  private async renameLabel(
+    node: PagesNode,
+    ask: (value: string) => Promise<string | undefined>,
+  ): Promise<string | undefined> {
+    if (node.kind !== "section") return undefined;
+    const label = await ask(node.section.labelSet ?? node.section.label);
+    if (label === undefined) return undefined;
+    return this.editNav("setSectionLabel", { folder: node.section.folder, label: label || null });
+  }
+
+  /** Asks the server for an edit of `ascribe.nav`, and applies it; what it says when it can't. */
+  private async editNav(
+    action: string,
+    args: Record<string, string | null>,
+  ): Promise<string | undefined> {
+    const server = this.server;
+    if (server?.state !== "running") return "the project's language server isn't running.";
+    const at = { line: 0, character: 0 };
+    try {
+      const result = await server.requestEdit("ascribe/edit", {
+        textDocument: { uri: vscode.Uri.file(server.project.config).toString() },
+        range: { start: at, end: at },
+        action,
+        args,
+      });
+      if ("error" in result) return result.error;
+      if (!(await vscode.workspace.applyEdit(result.edit)))
+        return "ascribe.nav couldn't be changed.";
+    } catch (error) {
+      server.reportFeatureError("Pages", error);
+      return undefined;
+    }
+    this.soon("inventory");
+    return undefined;
+  }
+
+  /** Shows the active page in Pages, its sections expanded, without taking focus. */
+  private reveal(): void {
+    const view = this.pages.view;
+    const uri = vscode.window.activeTextEditor?.document.uri;
+    const content = this.inventory?.contentUri;
+    if (!view?.visible || !uri || !content || this.inventoryFrom !== this.server) return;
+    const page = contentPathOf(uri.fsPath, vscode.Uri.parse(content).fsPath);
+    if (page === undefined) return;
+    const node = pagesFind(this.pagesRoots(), page);
+    if (!node || view.selection[0] === node) return;
+    view
+      .reveal(node, { select: true, focus: false, expand: true })
+      .then(undefined, () => undefined);
   }
 
   /**
@@ -353,6 +572,7 @@ export class SidebarViews implements vscode.Disposable {
       this.soon("inventory");
     }
     this.soon("thisPage");
+    this.reveal();
   }
 
   /** Pages created or deleted outside the editor change the lists too. */
@@ -414,6 +634,7 @@ export class SidebarViews implements vscode.Disposable {
     }
     this.pages.changed.fire();
     this.model.changed.fire();
+    this.reveal();
   }
 
   private async askThisPage(): Promise<void> {
@@ -486,6 +707,17 @@ export class SidebarViews implements vscode.Disposable {
     if (this.thisPage.view) this.thisPage.view.message = message ?? "";
     this.thisPage.changed.fire();
   }
+}
+
+/** Place Here, in the menu of a page `ascribe.nav` leaves out. */
+const PLACE_HERE = "ascribe.pages.placeHere";
+
+/** Rename Label…, in a section's menu. */
+const RENAME_LABEL = "ascribe.pages.renameLabel";
+
+/** Whether a file is a project's `ascribe.nav`. */
+function isNavFile(uri: vscode.Uri): boolean {
+  return uri.scheme === "file" && uri.path.endsWith("/ascribe.nav");
 }
 
 /** The command a thread in This page's Review section runs. */

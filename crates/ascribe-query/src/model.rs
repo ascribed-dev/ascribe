@@ -14,7 +14,7 @@ use ascribe_model::{
 };
 use ascribe_resolve::navigation::ROOT_LABEL;
 use ascribe_resolve::{
-    FileSystem, FolderExamples, Probe, Project, Section as NavSection, file_label, folder_label,
+    FileSystem, FolderExamples, Probe, Project, Section as NavSection, file_label,
 };
 use serde::Serialize;
 
@@ -209,19 +209,9 @@ fn nav_section(project: &Project, section: &NavSection, root: bool) -> Option<Mo
     if !root && page.is_none() && pages.is_empty() && sections.is_empty() {
         return None;
     }
-    let label = match (&section.label, root) {
-        (Some(label), _) => label.clone(),
-        (None, true) => ROOT_LABEL.to_owned(),
-        (None, false) => section
-            .page
-            .as_ref()
-            .and_then(|p| project.file(p))
-            .and_then(|f| f.title.clone())
-            .unwrap_or_else(|| folder_label(&section.folder)),
-    };
     Some(ModelNavSection {
         folder: section.folder.clone(),
-        label,
+        label: section.label(project),
         page,
         pages,
         sections,

@@ -10,6 +10,7 @@
 pub(crate) mod values;
 
 use std::collections::HashMap;
+use std::path::Path;
 use std::str::FromStr;
 
 use ascribe_core::path::{normalize, relative_path};
@@ -27,14 +28,22 @@ use crate::nav::{Ctx, Lines, directive_at, encode_destination, hit_at, identifie
 
 pub(crate) fn file_operation_capability() -> FileOperationRegistrationOptions {
     FileOperationRegistrationOptions {
-        filters: vec![FileOperationFilter {
+        // A folder too: what's in it moves with it, and `ascribe.nav` names
+        // it.
+        filters: [
+            FileOperationPatternKind::File,
+            FileOperationPatternKind::Folder,
+        ]
+        .into_iter()
+        .map(|kind| FileOperationFilter {
             scheme: Some("file".to_owned()),
             pattern: FileOperationPattern {
                 glob: "**/*".to_owned(),
-                matches: Some(FileOperationPatternKind::File),
+                matches: Some(kind),
                 options: None,
             },
-        }],
+        })
+        .collect(),
     }
 }
 
@@ -189,7 +198,41 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
             .get_or_insert_with(HashMap::new)
             .insert(uri, model_edits);
     }
+    add_nav_edit(ctx, root, &mappings, &mut result);
     Some(result)
+}
+
+/// Adds to `result` the edit to `ascribe.nav` that keeps what it names
+/// following the pages and folders that move (`edit/navigation.rs`), when it
+/// has one that reads and names any of them.
+#[allow(clippy::mutable_key_type)]
+fn add_nav_edit(
+    ctx: &Ctx,
+    root: &Path,
+    mappings: &[(RelPath, RelPath)],
+    result: &mut WorkspaceEdit,
+) {
+    let edit = || -> Option<(Uri, TextEdit)> {
+        let path = RelPath::parse(ascribe_model::NAV_FILE).ok()?;
+        let bytes = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &path).ok()?;
+        let text = String::from_utf8(bytes).ok()?;
+        let after = crate::edit::navigation::moved(&text, &|path| remap(path, mappings))?;
+        let edit = crate::edit::navigation::text_edit(&text, &after);
+        let uri = crate::uri::path_to_uri(&root.join(ascribe_model::NAV_FILE))?;
+        Some((
+            uri,
+            TextEdit {
+                range: ctx.encoding.range(&LineIndex::new(&text), edit.span),
+                new_text: edit.new_text,
+            },
+        ))
+    };
+    if let Some((uri, edit)) = edit() {
+        result
+            .changes
+            .get_or_insert_with(HashMap::new)
+            .insert(uri, vec![edit]);
+    }
 }
 
 /// The edits to `ascribe.toml` that keep what it names by path following

@@ -47,6 +47,7 @@ pub mod lock;
 pub mod model;
 mod names;
 pub mod nav;
+pub mod nav_text;
 pub mod pattern;
 mod permalink_names;
 pub mod permalinks;
