@@ -7,10 +7,14 @@ import type {
   PageResult,
 } from "../../src/shapes.js";
 import {
+  blocksMove,
   contentPathOf,
+  leftOut,
   modelChildren,
+  modelDeclaration,
   modelLook,
   modelRoots,
+  newPathProblem,
   NEXT_PLACEHOLDER,
   pagesChildren,
   pagesDrop,
@@ -18,6 +22,7 @@ import {
   pagesLook,
   pagesParent,
   pagesPath,
+  pagesResource,
   pagesRoots,
   SHOW_PROBLEMS,
   SWITCH_BUILD,
@@ -184,8 +189,8 @@ describe("the Pages view", () => {
     expect(pagesLook(old)).toMatchObject({ icon: "warning", context: "ascribe.pages.unplaced" });
     expect(pagesLook(old).tooltip).toContain("Place Here appends it");
     expect(pagesLook(pageOf(roots, "guides/install.md")).context).toBe("ascribe.pages.page");
-    // A section's own page doesn't move.
-    expect(pagesLook(pageOf(roots, "index.md")).context).toBeUndefined();
+    // A section's own page doesn't move, so it isn't offered Place Here.
+    expect(pagesLook(pageOf(roots, "index.md")).context).toBe("ascribe.pages.own");
     expect(pagesLook(sectionOf(roots, "guides/")).context).toBe("ascribe.pages.section");
     expect(pagesPath(pageOf(roots, "guides/install.md"))).toBe("guides/install.md");
   });
@@ -199,6 +204,66 @@ describe("the Pages view", () => {
     }
     expect(up).toEqual(["Deep", "Guides"]);
     expect(pagesParent(sectionOf(roots, "guides/"))).toBeUndefined();
+  });
+
+  it("is each page's and fragment's file, which VS Code colors by its problems, and nothing else's", () => {
+    const roots = pagesRoots(navigated);
+    expect(pagesResource(pageOf(roots, "guides/install.md"))).toBe("guides/install.md");
+    expect(pagesResource(pageOf(roots, "_setup.md"))).toBe("_setup.md");
+    expect(pagesLook(pageOf(roots, "_setup.md")).context).toBe("ascribe.pages.fragment");
+    expect(pagesResource(sectionOf(roots, "guides/"))).toBeUndefined();
+    // An includer opens the file that includes the fragment, but isn't it.
+    const includer = nth(pagesChildren(pageOf(roots, "_setup.md")), 0);
+    expect(includer.kind).toBe("includer");
+    expect(pagesResource(includer)).toBeUndefined();
+  });
+
+  it("dims a page the build the status bar shows leaves out, and says so", () => {
+    const roots = pagesRoots({
+      ...navigated,
+      pages: navigated.pages.map((p) =>
+        p.path === "guides/install.md" ? { ...p, builds: ["site", "cloud"] } : p,
+      ),
+    });
+    const install = pageOf(roots, "guides/install.md");
+    const api = pageOf(roots, "ref/api.md");
+    expect(pagesLook(api, "cloud")).toMatchObject({ dimmed: true, description: "Not in cloud" });
+    expect(pagesLook(api, "cloud").tooltip).toContain("The build cloud");
+    expect(pagesLook(install, "cloud")).toMatchObject({
+      dimmed: false,
+      description: "guides/install.md",
+    });
+    // No build known: nothing is dimmed.
+    expect(pagesLook(api)).toMatchObject({ dimmed: false });
+  });
+
+  it("dims by a line of a versioned build as by any build", () => {
+    const page = { path: "a.md", title: null, type: null, incoming: 0, builds: ["site@3.4"] };
+    expect(leftOut(page, "site@3.4")).toBe(false);
+    expect(leftOut(page, "site")).toBe(true);
+    expect(leftOut(page, "cloud")).toBe(true);
+    expect(leftOut(page, undefined)).toBe(false);
+    expect(leftOut(undefined, "cloud")).toBe(false);
+  });
+
+  it("lists only the pages and fragments nothing links to or includes, in their sections, with Orphans Only", () => {
+    const orphaned: InventoryResult = { ...navigated, orphans: ["guides/old.md", "ref/api.md"] };
+    const roots = pagesRoots(orphaned, true);
+    expect(outline(roots)).toEqual([
+      "Guides (guides/)",
+      "  Old (not placed)",
+      "Reference (ref/)",
+      "  API (ref/api.md)",
+      "Fragments (1)",
+      "  _parts/ (1)",
+      "    _unused.md (not included)",
+    ]);
+    // Each kept item's parent is the kept section, so revealing it works.
+    const old = pageOf(roots, "guides/old.md");
+    expect(pagesParent(old)).toBe(sectionOf(roots, "guides/"));
+    expect(pagesRoots({ ...orphaned, orphans: [], fragments: [] }, true)).toEqual([]);
+    // Without the filter, everything.
+    expect(outline(pagesRoots(orphaned))).toEqual(outline(pagesRoots(navigated)));
   });
 
   it("shows only fragments when there's no navigation", () => {
@@ -266,7 +331,103 @@ describe("dropping in the Pages view", () => {
   });
 });
 
+describe("Rename or Move… on a page", () => {
+  it("takes a new path from the content root, ending in .md", () => {
+    expect(newPathProblem("keys.md", "guides/keys.md")).toBeUndefined();
+    expect(newPathProblem("keys.md", "keys.md")).toMatch(/its path now/);
+    expect(newPathProblem("keys.md", "keys.txt")).toMatch(/ends in \.md/);
+    expect(newPathProblem("keys.md", "/keys2.md")).toMatch(/from the content root/);
+    expect(newPathProblem("keys.md", "../keys2.md")).toMatch(/from the content root/);
+    expect(newPathProblem("keys.md", "guides//keys.md")).toMatch(/from the content root/);
+    expect(newPathProblem("keys.md", "guides\\keys.md")).toMatch(/from the content root/);
+    expect(newPathProblem("keys.md", "Keys.md")).toBeUndefined();
+  });
+
+  it("lets a rename that changes only case past the file it finds there", () => {
+    expect(blocksMove("keys.md", "Keys.md")).toBe(false);
+    expect(blocksMove("guides/keys.md", "Guides/KEYS.md")).toBe(false);
+    expect(blocksMove("keys.md", "guides/keys.md")).toBe(true);
+    expect(blocksMove("keys.md", "keys2.md")).toBe(true);
+  });
+});
+
+const modeled: InventoryResult = {
+  ...inventory,
+  model: [
+    ...inventory.model,
+    { kind: "widget", key: "quill-lab", label: null, uses: 1, declaration: range(12) },
+    {
+      kind: "dimension",
+      key: "deployment",
+      label: null,
+      uses: 4,
+      declaration: range(14),
+      values: [
+        { value: "cloud", label: "Quill Cloud", declaration: range(15) },
+        { value: "self-managed", label: null, declaration: null },
+      ],
+    },
+    { kind: "type", key: "guide", label: "Teach a task", uses: 2, declaration: range(20) },
+    { kind: "type", key: "reference", label: null, uses: 0, declaration: range(24) },
+  ],
+};
+
 describe("the Content model view", () => {
+  it("lists the page types first, each with how many pages it has", () => {
+    const roots = modelRoots(modeled);
+    const types = nth(roots, 0);
+    expect(modelLook(types)).toMatchObject({ label: "Page types", description: "2" });
+    expect(modelLook(types).tooltip).toBe("2 types, 1 without pages");
+    const guide = nth(modelChildren(types), 0);
+    const reference = nth(modelChildren(types), 1);
+    expect(modelLook(guide)).toMatchObject({ label: "guide", description: "2 pages" });
+    expect(modelLook(reference)).toMatchObject({ description: "no pages", dimmed: true });
+    expect(modelDeclaration(guide)).toEqual(range(20));
+    // A type isn't renamed, inserted, or found in pages from here.
+    expect(modelLook(guide).context).toBe("ascribe.model.type");
+  });
+
+  it("lists a dimension's values, each renamed where it's declared", () => {
+    const dimensions = modelRoots(modeled).find((n) => modelLook(n).label === "Dimensions");
+    const dimension = nth(dimensions ? modelChildren(dimensions) : [], 0);
+    expect(modelLook(dimension)).toMatchObject({ label: "deployment", expandable: true });
+    expect(modelLook(dimension).context).toBe("ascribe.model.dimension references");
+    const cloud = nth(modelChildren(dimension), 0);
+    const selfManaged = nth(modelChildren(dimension), 1);
+    expect(modelLook(cloud)).toMatchObject({
+      label: "cloud",
+      description: "Quill Cloud",
+      context: "ascribe.model.value rename",
+    });
+    expect(modelDeclaration(cloud)).toEqual(range(15));
+    expect(modelLook(selfManaged).context).toBe("ascribe.model.value");
+  });
+
+  it("offers Find All References, Rename…, and Insert at the Cursor where each applies", () => {
+    const context = (kind: string, key: string) => {
+      for (const root of modelRoots(modeled)) {
+        for (const entry of modelChildren(root)) {
+          if (entry.kind === "entry" && entry.entry.kind === kind && entry.entry.key === key) {
+            return modelLook(entry).context;
+          }
+        }
+      }
+      throw new Error(`no ${kind} ${key}`);
+    };
+    expect(context("phrase", "product")).toBe("ascribe.model.phrase references rename insert");
+    expect(context("widget", "quill-lab")).toBe("ascribe.model.widget references insert");
+    // A built-in note type has no declaration to ask at; a build isn't used by pages.
+    expect(context("note", "note")).toBe("ascribe.model.note");
+    expect(context("build", "site")).toBe("ascribe.model.build");
+  });
+
+  it("lists only the entries nothing uses with Unused Only", () => {
+    const roots = modelRoots(modeled, true);
+    expect(roots.map((n) => modelLook(n).label)).toEqual(["Page types", "Phrases"]);
+    expect(modelChildren(nth(roots, 1)).map((n) => modelLook(n).label)).toEqual(["old"]);
+    expect(modelRoots({ ...modeled, model: [] }, true)).toEqual([]);
+  });
+
   it("has a node per kind with a count, in a fixed order", () => {
     const roots = modelRoots(inventory);
     expect(roots.map((n) => [modelLook(n).label, modelLook(n).description])).toEqual([

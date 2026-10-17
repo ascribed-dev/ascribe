@@ -11,6 +11,7 @@ import type {
   InventoryPage,
   InventoryResult,
   InventorySection,
+  InventoryValue,
   LspRange,
   ModelKind,
   PageAbout,
@@ -74,9 +75,51 @@ export type PagesNode =
 /**
  * The Pages view's top level: the root section, Start, with its own page
  * and its pages; each section in it, in the navigation's order; then the
- * fragments by folder. Every node knows its parent and its children.
+ * fragments by folder. Every node knows its parent and its children. With
+ * `orphansOnly`, only the pages nothing links to or includes, and the
+ * fragments nothing includes, in the sections and folders they're in.
  */
-export function pagesRoots(inventory: InventoryResult): PagesNode[] {
+export function pagesRoots(inventory: InventoryResult, orphansOnly = false): PagesNode[] {
+  const roots = allPages(inventory);
+  if (!orphansOnly) return roots;
+  const orphans = new Set(inventory.orphans);
+  return roots.flatMap((node) => {
+    const kept = keptOf(node, undefined, orphans);
+    return kept ? [kept] : [];
+  });
+}
+
+/**
+ * A copy of `node` with only its orphans under it, under `parent`; nothing
+ * when none is. A section's own page is an index page, or a page beside its
+ * folder, which an orphan can be.
+ */
+function keptOf(
+  node: PagesNode,
+  parent: PagesNode | undefined,
+  orphans: ReadonlySet<string>,
+): PagesNode | undefined {
+  switch (node.kind) {
+    case "page":
+      return orphans.has(node.path) && parent ? { ...node, parent, children: [] } : undefined;
+    case "fragment":
+      return node.fragment.includedBy.length === 0 && parent
+        ? { ...node, parent, children: [] }
+        : undefined;
+    case "includer":
+      return undefined;
+    default: {
+      const copy = { ...node, parent, children: [] } as PagesNode;
+      copy.children = node.children.flatMap((child) => {
+        const kept = keptOf(child, copy, orphans);
+        return kept ? [kept] : [];
+      });
+      return copy.children.length > 0 ? copy : undefined;
+    }
+  }
+}
+
+function allPages(inventory: InventoryResult): PagesNode[] {
   const pages = new Map(inventory.pages.map((page) => [page.path, page]));
   const roots: PagesNode[] = [];
   const root = inventory.navigation;
@@ -184,6 +227,17 @@ export function pagesFind(roots: readonly PagesNode[], path: string): PagesNode 
   return undefined;
 }
 
+/**
+ * The content path of the page or fragment an item is, which VS Code
+ * decorates as the Explorer does: its problems' color, for one. An item
+ * that only opens a file, as an includer does, isn't that file.
+ */
+export function pagesResource(node: PagesNode): string | undefined {
+  if (node.kind === "page") return node.path;
+  if (node.kind === "fragment") return node.fragment.path;
+  return undefined;
+}
+
 /** The content path of the file an item opens, if it opens one. */
 export function pagesPath(node: PagesNode): string | undefined {
   switch (node.kind) {
@@ -218,11 +272,27 @@ export function contentPathOf(file: string, root: string): string | undefined {
 export const PAGES_CONTEXT = {
   section: "ascribe.pages.section",
   page: "ascribe.pages.page",
+  /** A section's own page, which doesn't move among its pages. */
+  own: "ascribe.pages.own",
   unplaced: "ascribe.pages.unplaced",
+  fragment: "ascribe.pages.fragment",
 } as const;
 
-/** How an item of the Pages view looks: a section by its label and folder, a page by its title. */
-export function pagesLook(node: PagesNode): ItemLook {
+/**
+ * Whether a page is left out of the build the status bar shows: its
+ * `builds`, which list a versioned build's lines (`site@3.4`) too, don't
+ * have it. Nothing is left out while no build is known.
+ */
+export function leftOut(page: InventoryPage | undefined, build: string | undefined): boolean {
+  return page !== undefined && build !== undefined && !page.builds.includes(build);
+}
+
+/**
+ * How an item of the Pages view looks: a section by its label and folder, a
+ * page by its title. A page the build the status bar shows, `build`, leaves
+ * out is dimmed, and says so.
+ */
+export function pagesLook(node: PagesNode, build?: string): ItemLook {
   switch (node.kind) {
     case "section": {
       const { section } = node;
@@ -261,9 +331,10 @@ export function pagesLook(node: PagesNode): ItemLook {
     case "page": {
       const { path } = node;
       const incoming = node.page?.incoming ?? 0;
+      const out = leftOut(node.page, build);
       return {
         label: node.page?.title ?? basename(path),
-        description: node.placed ? path : "not placed",
+        description: out ? `Not in ${build}` : node.placed ? path : "not placed",
         tooltip: [
           path,
           `${count(incoming, "link or include", "links and includes")} from other files`,
@@ -273,11 +344,16 @@ export function pagesLook(node: PagesNode): ItemLook {
             : [
                 `ascribe.nav lists ${node.section.folder || "the root"}'s pages and leaves it out, so it comes after them. Place Here appends it.`,
               ]),
+          ...(out ? [`The build ${build}, which the status bar shows, leaves it out`] : []),
         ].join("\n"),
         icon: node.placed ? "file" : "warning",
-        dimmed: false,
+        dimmed: out,
         expandable: false,
-        context: node.own ? undefined : node.placed ? PAGES_CONTEXT.page : PAGES_CONTEXT.unplaced,
+        context: node.own
+          ? PAGES_CONTEXT.own
+          : node.placed
+            ? PAGES_CONTEXT.page
+            : PAGES_CONTEXT.unplaced,
       };
     }
     case "fragment":
@@ -291,6 +367,7 @@ export function pagesLook(node: PagesNode): ItemLook {
         icon: "file-symlink-file",
         dimmed: node.fragment.includedBy.length === 0,
         expandable: node.fragment.includedBy.length > 0,
+        context: PAGES_CONTEXT.fragment,
       };
     case "includer":
       return {
@@ -302,6 +379,32 @@ export function pagesLook(node: PagesNode): ItemLook {
         expandable: false,
       };
   }
+}
+
+/** Why `to` can't be the new path of the file at `from`, or `undefined` when it can. */
+export function newPathProblem(from: string, to: string): string | undefined {
+  const path = to.trim();
+  if (path === from) return "That's its path now: enter a new one.";
+  if (!path.endsWith(".md")) return "A page's or fragment's path ends in .md.";
+  if (
+    path.startsWith("/") ||
+    path.includes("\\") ||
+    path.split("/").some((part) => part === "" || part === ".." || part === ".")
+  ) {
+    return "Enter a path from the content root, such as guides/install.md.";
+  }
+  return undefined;
+}
+
+/**
+ * Whether a file already at `to` keeps the one at `from` from moving there.
+ * It doesn't when the two paths differ only in case: on a case-insensitive
+ * file system the file found at `to` is the one being renamed, and on a
+ * case-sensitive one a different file there still stops the move, which
+ * doesn't overwrite.
+ */
+export function blocksMove(from: string, to: string): boolean {
+  return from.toLowerCase() !== to.toLowerCase();
 }
 
 /** Whether an item can be dragged: any section but the root, and any page but a section's own. */
@@ -409,10 +512,12 @@ function placeAt(order: readonly string[], moved: string, on: string): string | 
 /** An item of the Content model view. */
 export type ModelNode =
   | { kind: "kind"; modelKind: ModelKind; entries: readonly InventoryEntry[] }
-  | { kind: "entry"; entry: InventoryEntry };
+  | { kind: "entry"; entry: InventoryEntry }
+  | { kind: "value"; dimension: InventoryEntry; value: InventoryValue };
 
 /** Each kind's name, codicon, and order. */
 const KINDS: readonly { kind: ModelKind; name: string; icon: string }[] = [
+  { kind: "type", name: "Page types", icon: "symbol-file" },
   { kind: "phrase", name: "Phrases", icon: "symbol-string" },
   { kind: "feature", name: "Features", icon: "tag" },
   { kind: "term", name: "Glossary", icon: "symbol-key" },
@@ -422,17 +527,61 @@ const KINDS: readonly { kind: ModelKind; name: string; icon: string }[] = [
   { kind: "build", name: "Builds", icon: "package" },
 ];
 
-/** The Content model view's top level: a node per kind the model has, in a fixed order. */
-export function modelRoots(inventory: InventoryResult): ModelNode[] {
+/**
+ * The Content model view's top level: a node per kind the model has, in a
+ * fixed order. With `unusedOnly`, only the entries nothing uses, and the
+ * kinds that have one.
+ */
+export function modelRoots(inventory: InventoryResult, unusedOnly = false): ModelNode[] {
   return KINDS.flatMap(({ kind }) => {
-    const entries = inventory.model.filter((e) => e.kind === kind);
+    const entries = inventory.model.filter((e) => e.kind === kind && (!unusedOnly || e.uses === 0));
     return entries.length > 0 ? [{ kind: "kind" as const, modelKind: kind, entries }] : [];
   });
 }
 
-/** An item's children in the Content model view. */
+/** An item's children in the Content model view: a kind's entries, and a dimension's values. */
 export function modelChildren(node: ModelNode): ModelNode[] {
-  return node.kind === "kind" ? node.entries.map((entry) => ({ kind: "entry", entry })) : [];
+  if (node.kind === "kind") return node.entries.map((entry) => ({ kind: "entry", entry }));
+  if (node.kind === "entry") {
+    return (node.entry.values ?? []).map((value) => ({
+      kind: "value",
+      dimension: node.entry,
+      value,
+    }));
+  }
+  return [];
+}
+
+/**
+ * What an item of the Content model view offers in its menu, as words of
+ * its context value: `references` (Find All References) on an entry pages
+ * use, declared in `ascribe.toml`; `rename` (Rename…) on a phrase or a
+ * dimension's value declared there; `insert` (Insert at the Cursor) on a
+ * phrase or a widget.
+ */
+const MODEL_CONTEXT = {
+  references: "references",
+  rename: "rename",
+  insert: "insert",
+} as const;
+
+/** The kinds pages use, whose uses Find All References lists. */
+const USED: readonly ModelKind[] = ["phrase", "feature", "term", "dimension", "note", "widget"];
+
+function modelContext(node: ModelNode): string | undefined {
+  if (node.kind === "kind") return undefined;
+  if (node.kind === "value") {
+    return node.value.declaration === null
+      ? "ascribe.model.value"
+      : `ascribe.model.value ${MODEL_CONTEXT.rename}`;
+  }
+  const { entry } = node;
+  const words = [`ascribe.model.${entry.kind}`];
+  const declared = entry.declaration !== null;
+  if (declared && USED.includes(entry.kind)) words.push(MODEL_CONTEXT.references);
+  if (declared && entry.kind === "phrase") words.push(MODEL_CONTEXT.rename);
+  if (entry.kind === "phrase" || entry.kind === "widget") words.push(MODEL_CONTEXT.insert);
+  return words.join(" ");
 }
 
 /** How an item of the Content model view looks. An entry nothing uses is marked and dimmed. */
@@ -440,32 +589,83 @@ export function modelLook(node: ModelNode): ItemLook {
   if (node.kind === "kind") {
     const kind = KINDS.find((k) => k.kind === node.modelKind);
     const unused = node.entries.filter((e) => e.uses === 0).length;
+    const noun =
+      node.modelKind === "type"
+        ? count(node.entries.length, "type", "types")
+        : count(node.entries.length, "entry", "entries");
+    const none = node.modelKind === "type" ? "without pages" : "unused";
     return {
       ...group(kind?.name ?? node.modelKind, node.entries.length, kind?.icon ?? "symbol-misc", ""),
-      tooltip: `${count(node.entries.length, "entry", "entries")}${unused > 0 ? `, ${unused} unused` : ""}`,
+      tooltip: `${noun}${unused > 0 ? `, ${unused} ${none}` : ""}`,
+    };
+  }
+  if (node.kind === "value") {
+    const { value, dimension } = node;
+    return {
+      label: value.value,
+      description: value.label ?? "",
+      tooltip: [
+        `A value of ${dimension.key}`,
+        ...(value.label === null ? [] : [value.label]),
+        ...(value.declaration === null ? ["Not found in ascribe.toml"] : []),
+      ].join("\n"),
+      icon: "symbol-enum-member",
+      dimmed: false,
+      expandable: false,
+      context: modelContext(node),
     };
   }
   const { entry } = node;
   const icon = KINDS.find((k) => k.kind === entry.kind)?.icon ?? "symbol-misc";
   const unused = entry.uses === 0;
-  const uses = entry.uses === null ? undefined : count(entry.uses, "use", "uses");
+  const pageType = entry.kind === "type";
+  const uses =
+    entry.uses === null
+      ? undefined
+      : pageType
+        ? count(entry.uses, "page", "pages")
+        : count(entry.uses, "use", "uses");
   const tooltip = [entry.key];
   if (entry.label !== null) tooltip.push(entry.label);
-  if (uses !== undefined) tooltip.push(unused ? "Unused: nothing uses it" : `${uses} in pages`);
+  if (uses !== undefined) {
+    tooltip.push(
+      pageType
+        ? unused
+          ? "No page has it"
+          : `${uses} of this type`
+        : unused
+          ? "Unused: nothing uses it"
+          : `${uses} in pages`,
+    );
+  }
   if (entry.uses === null && entry.kind === "term") {
     tooltip.push("Marked: the links to its page are its uses");
   }
   if (entry.declaration === null) {
-    tooltip.push(entry.kind === "note" ? "Built in" : "Not found in ascribe.toml");
+    tooltip.push(
+      entry.kind === "note"
+        ? "Built in"
+        : pageType
+          ? "The type every page has while ascribe.toml declares none"
+          : "Not found in ascribe.toml",
+    );
   }
   return {
     label: entry.key,
-    description: unused ? "unused" : (uses ?? ""),
+    description: unused ? (pageType ? "no pages" : "unused") : (uses ?? ""),
     tooltip: tooltip.join("\n"),
     icon,
     dimmed: unused,
-    expandable: false,
+    expandable: (entry.values ?? []).length > 0,
+    context: modelContext(node),
   };
+}
+
+/** The place in `ascribe.toml` an item of Content model opens: its declaration. */
+export function modelDeclaration(node: ModelNode): LspRange | undefined {
+  if (node.kind === "entry") return node.entry.declaration ?? undefined;
+  if (node.kind === "value") return node.value.declaration ?? undefined;
+  return undefined;
 }
 
 // This page.

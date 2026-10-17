@@ -81,8 +81,12 @@ describe("package.json", () => {
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
       // So do the Projects view's buttons, which act on their project.
       else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
-      // And the Pages view's, which act on their section or page.
-      else if (entry.command.startsWith("ascribe.pages.")) expect(entry.when).toBe("false");
+      // And the Pages and Content model views', which act on their item or view.
+      else if (
+        entry.command.startsWith("ascribe.pages.") ||
+        entry.command.startsWith("ascribe.model.")
+      )
+        expect(entry.when).toBe("false");
       // So do the walkthrough's buttons, which bring back a page first.
       else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
       // Prompt agent on one problem is a code action on that problem.
@@ -178,6 +182,19 @@ describe("package.json", () => {
       "ascribe.projects.restart",
       "ascribe.pages.placeHere",
       "ascribe.pages.renameLabel",
+      "ascribe.pages.openPreview",
+      "ascribe.pages.copyLink",
+      "ascribe.pages.renameOrMove",
+      "ascribe.pages.findReferences",
+      "ascribe.pages.revealInExplorer",
+      "ascribe.pages.newPageHere",
+      "ascribe.pages.orphansOnly",
+      "ascribe.pages.showAll",
+      "ascribe.model.findReferences",
+      "ascribe.model.rename",
+      "ascribe.model.insert",
+      "ascribe.model.unusedOnly",
+      "ascribe.model.showAll",
       "ascribe.review.replyNow",
       "ascribe.review.addToReview",
       "ascribe.review.resolve",

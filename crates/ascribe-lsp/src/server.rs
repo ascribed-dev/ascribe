@@ -458,12 +458,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            References::METHOD => navigation(shared, &request, |p: lsp_types::ReferenceParams| {
-                let at = p.text_document_position;
-                (at.text_document.uri, move |ctx: &Ctx| {
-                    crate::references::references(ctx, at.position, p.context.include_declaration)
-                })
-            }),
+            References::METHOD => references_request(shared, &request),
             DocumentLinkRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::DocumentLinkParams| {
                     (p.text_document.uri, |ctx: &Ctx| {
@@ -766,6 +761,40 @@ fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json:
         request,
         crate::code_action::actions(&ctx, params, &published),
     )
+}
+
+/// Find All References: in a page, what's at the cursor; in `ascribe.toml`,
+/// the entry declared at the cursor.
+fn references_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::ReferenceParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let at = params.text_document_position;
+    let declaration = params.context.include_declaration;
+    let found = {
+        let core = shared.lock();
+        let is_model = core
+            .config
+            .as_ref()
+            .zip(crate::uri::uri_to_path(&at.text_document.uri))
+            .is_some_and(|(config, path)| normalize(config) == normalize(&path));
+        if is_model {
+            core.project_nav_target()
+                .and_then(|ctx| crate::references::model_references(&ctx, at.position, declaration))
+        } else {
+            core.nav_target(&at.text_document.uri)
+                .and_then(|ctx| crate::references::references(&ctx, at.position, declaration))
+        }
+    };
+    match found {
+        Some(places) => serde_json::to_value(places).map_err(|e| {
+            Response::new_err(
+                request.id.clone(),
+                ErrorCode::InternalError as i32,
+                e.to_string(),
+            )
+        }),
+        None => Ok(serde_json::Value::Null),
+    }
 }
 
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {

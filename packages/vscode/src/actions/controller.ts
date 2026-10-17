@@ -12,7 +12,13 @@ import { ActionsBar, type BarRecord } from "./barPick.js";
 import { ContextCache, isCancellation, type Where } from "./context.js";
 import { ACTIONS, commandId, contextKeys, lightbulbActions, type Action } from "./registry.js";
 import { runAction, whereOf, type RunRecord } from "./run.js";
-import { ScriptedPrompter, type Prompter, type Scripted } from "./steps.js";
+import {
+  PresetPrompter,
+  ScriptedPrompter,
+  type Answers,
+  type Prompter,
+  type Scripted,
+} from "./steps.js";
 
 /** The actions, for tests. */
 export interface ActionsApi {
@@ -110,6 +116,26 @@ export class ActionsController implements vscode.Disposable {
   dispose(): void {
     this.cache.dispose();
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
+  }
+
+  /**
+   * Runs an action in the active editor with some of its wizard's answers
+   * given, the rest asked by `prompter` (else as usual), as Content model's
+   * Insert at the Cursor does; what the run did.
+   */
+  async runWith(
+    action: Action,
+    preset: Answers,
+    prompter?: Prompter,
+  ): Promise<RunRecord | undefined> {
+    const before = this.runs.length;
+    await this.run(action, (usual) => new PresetPrompter(preset, prompter ?? usual));
+    return this.runs[before];
+  }
+
+  /** The context at an editor's selection, as an action asks for it. */
+  contextAt(editor: vscode.TextEditor): Promise<ContextResult> {
+    return this.contextFor(editor);
   }
 
   /** Runs an action, its wizard shown by the prompter `wrap` makes of the usual one. */

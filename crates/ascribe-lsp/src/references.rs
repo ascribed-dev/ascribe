@@ -11,6 +11,10 @@
 //!   attribute, that phrase, feature, term, note type, widget, or dimension;
 //! - on a heading, or the primary of its `@id`, that heading;
 //! - at the start of the file, or on its frontmatter or title, the file.
+//!
+//! In `ascribe.toml`, the cursor on an entry's declaration (a phrase's key,
+//! or the header of a feature's, glossary term's, dimension's, note type's,
+//! or widget's table) asks about that entry, as the Content model view does.
 
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_resolve::Usable;
@@ -43,6 +47,81 @@ pub(crate) fn references(
         });
     }
     Some(out)
+}
+
+/// The places that use the content model entry declared at `position` of
+/// `ascribe.toml`, and its declaration first when `include_declaration`.
+/// `None` when no entry that pages use is declared there.
+pub(crate) fn model_references(
+    ctx: &Ctx,
+    position: Position,
+    include_declaration: bool,
+) -> Option<Vec<Location>> {
+    let index = LineIndex::new(&ctx.model_text);
+    let offset = ctx
+        .encoding
+        .offset_lenient(&index, &ctx.model_text, position);
+    let target = model_target_at(ctx, offset)?;
+    let mut lines = Lines::new(ctx);
+    let mut out = Vec::new();
+    if include_declaration && let Some(declared) = declaration(ctx, &mut lines, &target) {
+        out.push(declared);
+    }
+    for place in ctx.snapshot.uses(&target) {
+        out.push(Location {
+            uri: ctx.uri_of(&place.file)?,
+            range: lines.range(&place.file, place.span)?,
+        });
+    }
+    Some(out)
+}
+
+/// The entry whose declaration in `ascribe.toml` is at `offset`.
+fn model_target_at(ctx: &Ctx, offset: usize) -> Option<Usable> {
+    let model = &ctx.model;
+    let entries = model
+        .phrases
+        .iter()
+        .map(|p| (Entry::Phrase(&p.key), Usable::Phrase(p.key.clone())))
+        .chain(
+            model
+                .features
+                .iter()
+                .map(|f| (Entry::Feature(&f.key), Usable::Feature(f.key.clone()))),
+        )
+        .chain(
+            model
+                .glossary
+                .terms
+                .iter()
+                .map(|t| (Entry::Term(&t.id), Usable::Term(t.id.clone()))),
+        )
+        .chain(
+            model
+                .dimensions
+                .iter()
+                .map(|d| (Entry::Dimension(&d.name), Usable::Dimension(d.name.clone()))),
+        )
+        .chain(
+            model
+                .notes
+                .iter()
+                .map(|n| (Entry::Note(&n.name), Usable::Note(n.name.clone()))),
+        )
+        .chain(model.widgets.iter().map(|w| {
+            (
+                Entry::Widget(&w.schema.name),
+                Usable::Widget(w.schema.name.clone()),
+            )
+        }));
+    for (entry, used) in entries {
+        if find_entry(&ctx.model_text, &entry)
+            .is_some_and(|span| span.start() <= offset && offset <= span.end())
+        {
+            return Some(used);
+        }
+    }
+    None
 }
 
 /// What the cursor at `offset` of the requested file asks about.

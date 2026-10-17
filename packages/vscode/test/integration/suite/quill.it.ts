@@ -5,7 +5,7 @@ import { shellWord } from "@ascribed/review/prompt";
 import * as vscode from "vscode";
 import { ascribeElsewhere } from "../../../src/agents/reach.js";
 import { nodePathEnvironment } from "../../../src/environment.js";
-import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
+import type { ItemRecord, SidebarItem } from "../../../src/ui/sidebarViews.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
 // The sidebar's views run first, while the project's pages are the example's own.
@@ -67,7 +67,8 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "  API keys (keys.md)",
       "  Broken (broken.md)",
       "  Configure the agent (configure.md)",
-      "  Configure the agent (3.4) (configure-legacy.md)",
+      // The editor's build, which the status bar shows, publishes 3.5.
+      "  Configure the agent (3.4) (Not in site)",
       "  Install the Quill agent (install-agent.md)",
       "  Try Quill in the browser (quickstart.md)",
       "  Upgrade the agent (upgrade.md)",
@@ -102,8 +103,16 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     assert.ok(model.includes("  api (1 use)"), model.join("\n"));
     assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
     assert.ok(model.includes("Builds (4)"), model.join("\n"));
-    const product = items[0]?.children.find((item) => item.label === "product");
+    const phrases = items.find((item) => item.label === "Phrases");
+    const product = phrases?.children.find((item) => item.label === "product");
     assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
+    // Page types come first: Quill's one, declared through its frontmatter's table.
+    assert.equal(model[0], "Page types (1)");
+    assert.match(model[1] ?? "", /^  page \(\d+ pages\)$/);
+    assert.match(items[0]?.children[0]?.opens ?? "", /ascribe\.toml:\d+$/);
+    // And each dimension's values, under it.
+    assert.ok(model.includes("    cloud (Quill Cloud)"), model.join("\n"));
+    assert.ok(model.includes("    self-managed"), model.join("\n"));
   });
 
   /** What This page shows for keys.md, with what links to `heading` (else the page). */
@@ -255,6 +264,287 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     }
   });
 });
+
+// Pages' and Content model's menus and filters, run through the views' test
+// API with scripted answers, against the real `ascribe lsp`.
+describe("the menus and filters of Pages and Content model on examples/quill", () => {
+  const keys = uriOf("docs", "keys.md");
+  const linking = uriOf("docs", "install-agent.md");
+
+  /** A view's items as `label (description)`, with their children, depth first. */
+  function flat(items: SidebarItem[], depth = 0): string[] {
+    return items.flatMap((item) => [
+      `${"  ".repeat(depth)}${item.label}${item.description ? ` (${item.description})` : ""}`,
+      ...flat(item.children, depth + 1),
+    ]);
+  }
+
+  /** Every item of a view, depth first. */
+  function all(items: SidebarItem[]): SidebarItem[] {
+    return items.flatMap((item) => [item, ...all(item.children)]);
+  }
+
+  /** Opens a page with the cursor at `line` and `character`. */
+  async function openAt(uri: vscode.Uri, line = 0, character = 0): Promise<vscode.TextEditor> {
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uri),
+    );
+    editor.selection = new vscode.Selection(line, character, line, character);
+    return editor;
+  }
+
+  /** Waits for a view's lines to pass `wanted`, and returns them. */
+  async function listed(
+    view: "pages" | "model",
+    what: string,
+    wanted: (lines: string[]) => boolean,
+  ) {
+    const api = await activated();
+    return waitFor(what, async () => {
+      await api.ui.sidebar.whenSettled();
+      const lines = flat(api.ui.sidebar.items(view));
+      return wanted(lines) ? lines : undefined;
+    }).catch(() => flat(api.ui.sidebar.items(view)));
+  }
+
+  before(async () => {
+    await openAt(keys);
+    await listed("pages", "the Pages view", (lines) => lines.includes("  API keys (keys.md)"));
+  });
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("gives each page its file, so its problems color it as in the Explorer", async () => {
+    const api = await activated();
+    const broken = uriOf("docs", "broken.md");
+    await diagnosticsOf(broken, (list) =>
+      list.some((d) => d.severity === vscode.DiagnosticSeverity.Error),
+    );
+    const items = all(api.ui.sidebar.items("pages"));
+    const item = items.find((i) => i.description === "broken.md");
+    assert.equal(item?.resource, broken.toString());
+    assert.equal(items.find((i) => i.description === "keys.md")?.resource, keys.toString());
+  });
+
+  it("dims the pages the status bar's build leaves out, and follows it", async () => {
+    const api = await activated();
+    await openAt(keys);
+    try {
+      api.ui.statusBar.answerNext("cloud");
+      await vscode.commands.executeCommand("ascribe.switchBuild");
+      const lines = await listed("pages", "the pages cloud leaves out dimmed", (l) =>
+        l.includes("  Upgrade the agent (Not in cloud)"),
+      );
+      assert.ok(lines.includes("  Upgrade the agent (Not in cloud)"), lines.join("\n"));
+      assert.ok(lines.includes("  Configure the agent (3.4) (Not in cloud)"), lines.join("\n"));
+      assert.ok(lines.includes("  API keys (keys.md)"), lines.join("\n"));
+      const upgrade = all(api.ui.sidebar.items("pages")).find(
+        (i) => i.description === "Not in cloud",
+      );
+      assert.equal(upgrade?.dimmed, true);
+    } finally {
+      api.ui.statusBar.answerNext("site");
+      await vscode.commands.executeCommand("ascribe.switchBuild");
+    }
+    const lines = await listed("pages", "nothing dimmed in site", (l) =>
+      l.every((line) => !line.includes("Not in")),
+    );
+    assert.ok(lines.includes("  Upgrade the agent (upgrade.md)"), lines.join("\n"));
+  });
+
+  it("lists the pages and fragments nothing links to or includes with Orphans Only", async () => {
+    const api = await activated();
+    const everything = flat(api.ui.sidebar.items("pages"));
+    await api.ui.sidebar.filter("pages", true);
+    try {
+      const lines = await listed(
+        "pages",
+        "the orphans",
+        (l) => !l.includes("  API keys (keys.md)"),
+      );
+      // The broken page the suite adds is linked from nowhere; keys.md is.
+      assert.ok(lines.includes("  Broken (broken.md)"), lines.join("\n"));
+      assert.ok(!lines.includes("  API keys (keys.md)"), lines.join("\n"));
+      for (const line of lines) assert.ok(everything.includes(line), line);
+    } finally {
+      await api.ui.sidebar.filter("pages", false);
+    }
+    assert.deepEqual(flat(api.ui.sidebar.items("pages")), everything);
+  });
+
+  it("copies a page's link, and finds its references at its start", async () => {
+    const api = await activated();
+    const copied = await api.ui.sidebar.act("copyLink", "keys.md");
+    assert.equal(copied.copied, "/keys.md");
+    const page = all(api.ui.sidebar.items("pages")).find((i) => i.description === "keys.md");
+    const incoming = Number(/(\d+) links? and includes?/.exec(page?.tooltip ?? "")?.[1]);
+    const found = await api.ui.sidebar.act("findReferences", "keys.md");
+    assert.equal(found.done, true, found.messages.join());
+    assert.equal(found.references?.length, incoming, found.references?.join("\n"));
+    assert.ok(found.references?.includes("docs/install-agent.md:" + lineOf(linking, "keys.md#")));
+    assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), keys.toString());
+  });
+
+  it("renames or moves a page, and the links to it follow", async () => {
+    const api = await activated();
+    const moved = uriOf("docs", "guides", "keys.md");
+    const originalKeys = readFileSync(keys.fsPath, "utf8");
+    const originalLinking = readFileSync(linking.fsPath, "utf8");
+    try {
+      await vscode.workspace.openTextDocument(linking);
+      const there = await api.ui.sidebar.act("renameOrMove", "keys.md", ["guides/keys.md"]);
+      assert.equal(there.done, true, there.messages.join());
+      assert.ok(
+        (await vscode.workspace.openTextDocument(linking))
+          .getText()
+          .includes("See [](guides/keys.md#rotate-keys)."),
+      );
+      await listed("pages", "the moved page", (l) =>
+        l.some((line) => line.includes("guides/keys.md")),
+      );
+      const back = await api.ui.sidebar.act("renameOrMove", "guides/keys.md", ["keys.md"]);
+      assert.equal(back.done, true, back.messages.join());
+      assert.equal((await vscode.workspace.openTextDocument(linking)).getText(), originalLinking);
+    } finally {
+      rmSync(moved.fsPath, { force: true });
+      writeFileSync(keys.fsPath, originalKeys);
+      writeFileSync(linking.fsPath, originalLinking);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    }
+  });
+
+  it("starts a page in a section's folder with New Page Here", async () => {
+    const api = await activated();
+    const made = uriOf("docs", "scratch-page.md");
+    try {
+      api.newPage.answerNext(["page", "Scratch page"]);
+      const before = api.newPage.runs.length;
+      const record = await api.ui.sidebar.act("newPageHere", "");
+      assert.equal(record.done, true);
+      const run = await waitFor("New Page", () => api.newPage.runs[before]);
+      assert.equal(run.file, "docs/scratch-page.md", run.messages.join());
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      rmSync(made.fsPath, { force: true });
+    }
+  });
+
+  it("finds an entry's references from its declaration, as many as its uses", async () => {
+    const api = await activated();
+    const product = all(api.ui.sidebar.items("model")).find((i) => i.label === "product");
+    const uses = Number(/^(\d+) uses?$/.exec(product?.description ?? "")?.[1]);
+    const found = await api.ui.sidebar.act("findReferences", "phrase:product");
+    assert.equal(found.done, true, found.messages.join());
+    // Its declaration, then each use.
+    assert.equal(found.references?.length, uses + 1, found.references?.join("\n"));
+    assert.match(found.references?.[0] ?? "", /^ascribe\.toml:\d+$/);
+  });
+
+  it("lists only what nothing uses with Unused Only", async () => {
+    const api = await activated();
+    await api.ui.sidebar.filter("model", true);
+    try {
+      const lines = await listed("model", "the unused entries", (l) => !l.includes("Builds (4)"));
+      for (const line of lines.filter((l) => /^  \S/.test(l))) {
+        assert.match(line, /\((unused|no pages)\)$/, lines.join("\n"));
+      }
+    } finally {
+      await api.ui.sidebar.filter("model", false);
+    }
+  });
+
+  /** Runs a command that renames, and discards its refactor preview once it lists the changes. */
+  async function discarding(run: () => Promise<ItemRecord>): Promise<ItemRecord> {
+    const running = run();
+    let done: ItemRecord | undefined;
+    void running.then((record) => (done = record));
+    await waitFor("the refactor preview", async () => {
+      await vscode.commands
+        .executeCommand("refactorPreview.discard")
+        .then(undefined, () => undefined);
+      return done;
+    });
+    return running;
+  }
+
+  it("renames a phrase as F2 on it in a page does, asking first", async () => {
+    const api = await activated();
+    // F2 on {cloud} in "Sign in to {cloud} and open …", as the action runs it.
+    await openAt(keys, 9, 13);
+    const before = api.actions.runs.length;
+    api.actions.answerNext(["hosted"]);
+    const f2 = await discarding(async () => {
+      await vscode.commands.executeCommand("ascribe.action.renamePhrase");
+      const run = api.actions.runs[before];
+      return { messages: run?.messages ?? [], done: run?.done ?? false, files: run?.files ?? [] };
+    });
+    const record = await discarding(() => api.ui.sidebar.act("rename", "phrase:cloud", ["hosted"]));
+    assert.equal(record.previewed, true, record.messages.join());
+    assert.deepEqual(record.files, f2.files);
+    assert.deepEqual(record.files, ["ascribe.toml", "docs/install-agent.md", "docs/keys.md"]);
+    for (const document of vscode.workspace.textDocuments) {
+      assert.equal(document.isDirty, false, document.uri.toString());
+    }
+  });
+
+  it("renames a dimension's value where it's declared", async () => {
+    const api = await activated();
+    const record = await discarding(() =>
+      api.ui.sidebar.act("rename", "value:deployment=cloud", ["hosted"]),
+    );
+    assert.equal(record.previewed, true, record.messages.join());
+    assert.ok(record.files?.includes("ascribe.toml"), record.files?.join());
+  });
+
+  it("inserts a phrase at the cursor of the last page, as Insert a phrase does", async () => {
+    const api = await activated();
+    // After "Sign in to " on line 10.
+    const editor = await openAt(keys, 9, "Sign in to ".length);
+    const line = editor.document.lineAt(9).text;
+    await vscode.commands.executeCommand("ascribe.model.focus");
+    const record = await api.ui.sidebar.act("insert", "phrase:product");
+    assert.equal(record.done, true, [...record.messages, ...(record.run?.messages ?? [])].join());
+    const inserted = editor.document.lineAt(9).text;
+    assert.equal(vscode.window.activeTextEditor?.document, editor.document);
+    await vscode.commands.executeCommand("undo");
+    assert.equal(editor.document.lineAt(9).text, line);
+    // The action, at the same place, writes the same.
+    editor.selection = new vscode.Selection(9, "Sign in to ".length, 9, "Sign in to ".length);
+    const before = api.actions.runs.length;
+    api.actions.answerNext(["product"]);
+    await vscode.commands.executeCommand("ascribe.action.insertPhrase");
+    const run = await waitFor("Insert a phrase", () => api.actions.runs[before]);
+    assert.equal(run.done, true, run.messages.join());
+    assert.equal(editor.document.lineAt(9).text, inserted);
+    assert.ok(inserted.includes("{product}"), inserted);
+    await vscode.commands.executeCommand("undo");
+    await editor.document.save();
+  });
+
+  it("shows the hint and changes nothing where the cursor can't take a phrase", async () => {
+    const api = await activated();
+    // A blank line between blocks.
+    const editor = await openAt(keys, 8, 0);
+    await vscode.commands.executeCommand("ascribe.model.focus");
+    const record = await api.ui.sidebar.act("insert", "phrase:product");
+    assert.equal(record.done, false);
+    assert.deepEqual(record.messages, [
+      "Put the cursor in a paragraph's text, with nothing selected, to insert a phrase.",
+    ]);
+    assert.equal(editor.document.isDirty, false);
+  });
+});
+
+/** The line, from 1, of the first line of a file that has `text`. */
+function lineOf(uri: vscode.Uri, text: string): number {
+  return (
+    readFileSync(uri.fsPath, "utf8")
+      .split("\n")
+      .findIndex((line) => line.includes(text)) + 1
+  );
+}
 
 // The real `ascribe lsp` on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).

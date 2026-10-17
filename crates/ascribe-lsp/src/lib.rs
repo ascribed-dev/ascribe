@@ -69,7 +69,7 @@ pub use edit::{EditAction, EditParams, EditResult, METHOD as EDIT_METHOD};
 pub use headless::{Problem, Watched};
 pub use inventory::{
     InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
-    METHOD as INVENTORY_METHOD, ModelKind,
+    InventoryValue, METHOD as INVENTORY_METHOD, ModelKind,
 };
 pub use page::{
     METHOD as PAGE_METHOD, PageAbout, PageHeading, PageMemo, PageParams, PagePlace, PageResult,

@@ -407,6 +407,76 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.pages.openPreview",
+        "title": "Open Preview to the Side",
+        "category": "Ascribe",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "ascribe.pages.copyLink",
+        "title": "Copy Link",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.pages.renameOrMove",
+        "title": "Rename or Move…",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.pages.findReferences",
+        "title": "Find All References",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.pages.revealInExplorer",
+        "title": "Reveal in Explorer",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.pages.newPageHere",
+        "title": "New Page Here",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.pages.orphansOnly",
+        "title": "Orphans Only",
+        "category": "Ascribe",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "ascribe.pages.showAll",
+        "title": "Show All Pages",
+        "category": "Ascribe",
+        "icon": "$(filter-filled)"
+      },
+      {
+        "command": "ascribe.model.findReferences",
+        "title": "Find All References",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.model.rename",
+        "title": "Rename…",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.model.insert",
+        "title": "Insert at the Cursor",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.model.unusedOnly",
+        "title": "Unused Only",
+        "category": "Ascribe",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "ascribe.model.showAll",
+        "title": "Show All Entries",
+        "category": "Ascribe",
+        "icon": "$(filter-filled)"
+      },
+      {
         "command": "ascribe.review.replyNow",
         "title": "Reply Now",
         "category": "Ascribe"
@@ -1172,6 +1242,58 @@
           "when": "false"
         },
         {
+          "command": "ascribe.pages.openPreview",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.copyLink",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.renameOrMove",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.findReferences",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.newPageHere",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.orphansOnly",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.showAll",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.model.findReferences",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.model.rename",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.model.insert",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.model.unusedOnly",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.model.showAll",
+          "when": "false"
+        },
+        {
           "command": "ascribe.review.replyNow",
           "when": "false"
         },
@@ -1263,6 +1385,26 @@
           "group": "navigation"
         },
         {
+          "command": "ascribe.pages.orphansOnly",
+          "when": "view == ascribe.pages && !ascribe.pages.orphansOnly",
+          "group": "navigation@2"
+        },
+        {
+          "command": "ascribe.pages.showAll",
+          "when": "view == ascribe.pages && ascribe.pages.orphansOnly",
+          "group": "navigation@2"
+        },
+        {
+          "command": "ascribe.model.unusedOnly",
+          "when": "view == ascribe.model && !ascribe.model.unusedOnly",
+          "group": "navigation"
+        },
+        {
+          "command": "ascribe.model.showAll",
+          "when": "view == ascribe.model && ascribe.model.unusedOnly",
+          "group": "navigation"
+        },
+        {
           "command": "ascribe.projects.refresh",
           "when": "view == ascribe.projects",
           "group": "navigation"
@@ -1293,6 +1435,56 @@
           "command": "ascribe.pages.renameLabel",
           "when": "view == ascribe.pages && viewItem == ascribe.pages.section",
           "group": "navigation@2"
+        },
+        {
+          "command": "ascribe.pages.openPreview",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(page|own|unplaced)$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "ascribe.pages.openPreview",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(page|own|unplaced)$/",
+          "group": "1_open@1"
+        },
+        {
+          "command": "ascribe.pages.copyLink",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(page|own|unplaced)$/",
+          "group": "1_open@2"
+        },
+        {
+          "command": "ascribe.pages.renameOrMove",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(page|own|unplaced|fragment)$/",
+          "group": "2_file@1"
+        },
+        {
+          "command": "ascribe.pages.findReferences",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(page|own|unplaced|fragment)$/",
+          "group": "3_find@1"
+        },
+        {
+          "command": "ascribe.pages.revealInExplorer",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(page|own|unplaced|fragment)$/",
+          "group": "3_find@2"
+        },
+        {
+          "command": "ascribe.pages.newPageHere",
+          "when": "view == ascribe.pages && viewItem == ascribe.pages.section",
+          "group": "navigation@1"
+        },
+        {
+          "command": "ascribe.model.findReferences",
+          "when": "view == ascribe.model && viewItem =~ /\\breferences\\b/",
+          "group": "1_find@1"
+        },
+        {
+          "command": "ascribe.model.rename",
+          "when": "view == ascribe.model && viewItem =~ /\\brename\\b/",
+          "group": "2_change@1"
+        },
+        {
+          "command": "ascribe.model.insert",
+          "when": "view == ascribe.model && viewItem =~ /\\binsert\\b/",
+          "group": "2_change@2"
         }
       ],
       "comments/commentThread/context": [
