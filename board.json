@@ -2611,7 +2611,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Memos: memo files in `memos/`"
     },
     {
