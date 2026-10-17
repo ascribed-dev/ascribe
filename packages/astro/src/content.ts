@@ -15,9 +15,11 @@
 //   };
 //
 // A layout's sidebar, from the project's navigation (`ascribe.nav`'s order,
-// or the default), or from a site's own list of pages as `nav`:
+// or the default), or from a site's own list of pages as `nav`, and a page's
+// previous and next:
 //
 //   const groups = sidebar(await getCollection("docs"), { entry });
+//   const { previous, next } = neighbors(entry, await getCollection("docs"));
 import { readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
@@ -35,12 +37,16 @@ import {
 } from "./versions.js";
 import {
   navigationGroups,
+  neighborsIn,
   pageRoute,
+  readingPages,
   sidebarGroups,
   type NavEntry,
   type NavGroup,
   type Navigation,
+  type Neighbors,
   type SidebarGroup,
+  type SidebarPage,
 } from "./nav.js";
 
 export type {
@@ -49,6 +55,7 @@ export type {
   NavPage,
   NavSection,
   Navigation,
+  Neighbors,
   SidebarGroup,
   SidebarPage,
 } from "./nav.js";
@@ -180,9 +187,87 @@ export function sidebar<E extends NavEntry>(
   entries: readonly E[],
   options: { name?: string; entry?: { data?: unknown }; nav?: readonly NavGroup[] } = {},
 ): SidebarGroup<E>[] {
+  const at = scope(entries, options, "sidebar");
+  if (options.nav !== undefined) {
+    if (at.lines === undefined)
+      return sidebarGroups(
+        options.nav,
+        entries,
+        at.route,
+        (e) => sourceFile(at.root, e),
+        undefined,
+        at.title,
+      );
+    return sidebarGroups(
+      options.nav,
+      entries,
+      at.route,
+      at.source,
+      { id: at.id, shown: (entry) => lineOf(entry) === at.shown },
+      at.title,
+    );
+  }
+  return navigationGroups<E>(
+    readNavigation(at.shownRoot),
+    at.own(),
+    (entry) => at.route(entry.id),
+    at.source,
+  );
+}
+
+/**
+ * A page's previous and next in the project's navigation, in reading order:
+ * a section's own page, then its pages, a nested section right after its
+ * own page beside the folder, depth first, as `sidebar` lists them. Each is
+ * the entry, its address, and its label, which is the page's `nav-label`
+ * when it has one; the first page has no `previous`, and the last no
+ * `next`. `entry` is the page's collection entry, `entries` the collection,
+ * and `name` as for `sidebar`. In a versioned build, they're in the line
+ * `entry` is on.
+ *
+ * With a site's own list, `nav`, they're the pages before and after it in
+ * the list's groups, in order. Neither, for a page the navigation leaves
+ * out, such as an `unlisted` one.
+ */
+export function neighbors<E extends NavEntry>(
+  entry: E,
+  entries: readonly E[],
+  options: { name?: string; nav?: readonly NavGroup[] } = {},
+): Neighbors<E> {
+  const same = (page: SidebarPage<E>) => page.entry === entry || page.entry.id === entry.id;
+  const on = entry as { data?: unknown };
+  if (options.nav !== undefined) {
+    const groups = sidebar(entries, { ...options, entry: on });
+    return neighborsIn(
+      groups.flatMap((group) => group.pages),
+      same,
+    );
+  }
+  const at = scope(entries, { ...options, entry: on }, "neighbors");
+  const pages = readingPages<E>(
+    readNavigation(at.shownRoot),
+    at.own(),
+    (page) => at.route(page.id),
+    at.source,
+  );
+  return neighborsIn(pages, same);
+}
+
+/**
+ * What `sidebar` and `neighbors` need to know about the collection: its
+ * site output, how a page is routed and named, and, in a versioned build,
+ * the line shown, the one `options.entry` is on, or the current line.
+ */
+function scope<E extends NavEntry>(
+  entries: readonly E[],
+  options: { name?: string; entry?: { data?: unknown } },
+  caller: "sidebar" | "neighbors",
+) {
   if (!Array.isArray(entries) || (entries.length > 0 && !("id" in (entries[0] as object)))) {
     throw new Error(
-      "@ascribed/astro: sidebar() takes the collection first, and a site's own list as an option: `sidebar(entries, { nav })`.",
+      caller === "sidebar"
+        ? "@ascribed/astro: sidebar() takes the collection first, and a site's own list as an option: `sidebar(entries, { nav })`."
+        : "@ascribed/astro: neighbors() takes the page's entry, then the collection: `neighbors(entry, entries)`.",
     );
   }
   const root = sidebarRoot(entries, options.name);
@@ -201,35 +286,11 @@ export function sidebar<E extends NavEntry>(
     if (line === undefined || line === current) return entry.id;
     return entry.id === line ? "index" : entry.id.slice(line.length + 1);
   };
-  const title = (entry: E) => recordFor(lineRoot(entry), sourceFile(lineRoot(entry), entry))?.title;
-  if (options.nav !== undefined) {
-    if (lines === undefined)
-      return sidebarGroups(
-        options.nav,
-        entries,
-        route,
-        (e) => sourceFile(root, e),
-        undefined,
-        title,
-      );
-    return sidebarGroups(
-      options.nav,
-      entries,
-      route,
-      (entry) => sourceFile(lineRoot(entry), entry),
-      { id, shown: (entry) => lineOf(entry) === shown },
-      title,
-    );
-  }
+  const source = (entry: NavEntry) => sourceFile(lineRoot(entry), entry);
+  const title = (entry: E) => recordFor(lineRoot(entry), source(entry))?.title;
   const shownRoot = lines?.find((line) => line.line === shown)?.siteRoot ?? root;
-  const navigation = readNavigation(shownRoot);
-  const own = entries.filter((entry) => lines === undefined || lineOf(entry) === shown);
-  return navigationGroups(
-    navigation,
-    own,
-    (entry) => route(entry.id),
-    (entry) => sourceFile(lineRoot(entry), entry),
-  );
+  const own = () => entries.filter((entry) => lines === undefined || lineOf(entry) === shown);
+  return { root, route, lines, shown, id, source, title, shownRoot, own };
 }
 
 /** The navigation's format version this reads. */
