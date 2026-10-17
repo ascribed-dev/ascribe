@@ -376,6 +376,44 @@ fn a_page_s_nav_label_is_its_label_formatted_as_its_title_is() {
 }
 
 #[test]
+fn a_page_with_no_nav_label_is_labeled_with_its_title_s_plain_text() {
+    let p = project(
+        &[
+            ("index.md", page("guide", "Home")),
+            ("Guides/index.md", page("guide", "The `loom` guides")),
+            ("Guides/keys.md", page("guide", "The `loom` keys")),
+            (
+                "Guides/options.md",
+                page("reference", "Every `loom` option"),
+            ),
+        ],
+        None,
+    );
+    let label = |path: &str| {
+        let file = p.file(&ascribe_core::RelPath::parse(path).expect("a path"));
+        ascribe_resolve::file_label(file.expect("the file"), p.model())
+    };
+    // The same label the navigation gives it (decision #594).
+    assert_eq!(label("Guides/keys.md"), "The loom keys");
+    let build = p.model().build("site").expect("a build");
+    let resolved = p.resolve_build(build, &DefaultRouter::new());
+    let navigation = p.navigation();
+    let share = navigation.share(&p, &resolved);
+    let guides = &share.root.sections[0];
+    // A section's label from its own page's title, likewise.
+    assert_eq!(guides.label, "The loom guides");
+    assert_eq!(navigation.root.sections[0].label(&p), guides.label);
+    let keys = guides
+        .pages
+        .iter()
+        .find(|n| n.page.path.as_str() == "Guides/keys.md")
+        .expect("the keys");
+    assert_eq!(keys.label, label("Guides/keys.md"));
+    // A title that isn't read with inline markup stays as written.
+    assert_eq!(label("Guides/options.md"), "Every `loom` option");
+}
+
+#[test]
 fn a_long_lived_project_follows_the_file_as_it_changes() {
     let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads");
     let layout = Layout::from_model(&model);

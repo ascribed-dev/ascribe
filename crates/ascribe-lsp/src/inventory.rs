@@ -70,7 +70,7 @@ pub struct InventoryPage {
     /// Its title (frontmatter `title`).
     pub title: Option<String>,
     /// Its label where it's an entry in a list, as the navigation shows it:
-    /// its `nav-label` as plain text, else its title, else its file name
+    /// as plain text, its `nav-label`, else its title, else its file name
     /// without `.md`.
     pub label: String,
     /// The `nav-label` its frontmatter gives it, as written, when it gives
@@ -93,8 +93,8 @@ pub struct InventoryPage {
 pub struct InventorySection {
     /// Its folder, from the content root, ending in `/`; `""` for the root.
     pub folder: String,
-    /// Its label: `label` from `ascribe.nav`, else its own page's title,
-    /// else its folder's name, and "Start" for the root.
+    /// Its label: `label` from `ascribe.nav`, else its own page's title as
+    /// plain text, else its folder's name, and "Start" for the root.
     pub label: String,
     /// The `label` `ascribe.nav` gives it, when it gives one.
     pub label_set: Option<String>,
