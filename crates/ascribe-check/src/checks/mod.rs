@@ -13,6 +13,7 @@
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
 //! | `content` | A page's description and review date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
+//! | `memo` | Container memos that say nothing |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 //! | `template` | What a page still has of its type's template, never filled in |
@@ -23,6 +24,7 @@ mod avail;
 mod comment;
 mod content;
 mod frontmatter;
+mod memo;
 mod refs;
 mod sources;
 pub(crate) mod template;
@@ -196,6 +198,7 @@ impl Ctx<'_> {
                 BlockKind::Directive(d) => self.directive(d),
                 BlockKind::Container(c) => {
                     self.directive(&c.opener);
+                    self.check_memo(block, c);
                     self.blocks(&c.children);
                 }
                 BlockKind::Group(g) => {

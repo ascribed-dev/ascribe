@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**An empty container memo is advice, `memo-empty`, with a safe fix that removes it, and the editor gets no completion that writes a memo's lines for it.** A `@memo:` whose lines are empty or blank is reported at its opening line, configurable in `[checks]` like the other content checks; an unclosed one is left to `container-unclosed`, and an empty `@note:` container is still not reported. The fix deletes the memo's lines, and a blank line after them when one is before them too; it's safe, since no output shows a memo and an empty one says nothing. A memo on its list item's first line gets no fix, since removing it would leave the marker behind. _Why:_ an empty memo is almost always a slip, and a check finds it in every editor and in CI, where a completion would only make one rarer in one editor. _From:_ triage, acting for the maintainer, on [#551](https://github.com/ascribed-dev/ascribe/issues/551), 16 October 2026; the fix's details from its implementor, for the maintainer's review.

@@ -1089,6 +1089,7 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             "listing: listed\n",
             "\n[listing]\ndefault = \"unquoted\"\n",
         ),
+        ("memo-empty", "\n@memo:\n@end\nText.\n", ""),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()

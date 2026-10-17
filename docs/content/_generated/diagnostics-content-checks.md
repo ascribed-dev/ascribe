@@ -134,6 +134,19 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Read more:** [`@memo`](../writing/directives.md#memo) in the directive reference.
 
+### ASC224 `memo-empty`
+@id {permalink=true}: ASC224
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo)
+
+**When:** A container memo has nothing between its opening line and its `@end`, or only blank lines.
+
+**Message:** this memo is empty
+
+**Fix:** A memo that says nothing is almost always a slip: write what it was meant to say between `@memo:` and `@end`, or remove it. The fix removes it, which changes no output, since no output shows a memo.
+
+**Read more:** [`@memo`](../writing/directives.md#memo) in the directive reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`

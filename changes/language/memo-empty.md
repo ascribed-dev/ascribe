@@ -1,0 +1,1 @@
+- **An empty container memo is advice, `memo-empty`, with a fix that removes it.** A `@memo:` with nothing before its `@end`, or only blank lines, says nothing and is almost always a slip, as a line `@memo` with no text is already an error. `ascribe check --fix` and the editor's quick fix remove it, which changes no output. See [`@memo`](docs/content/writing/directives.md#memo).

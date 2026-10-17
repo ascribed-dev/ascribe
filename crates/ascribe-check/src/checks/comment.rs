@@ -224,12 +224,12 @@ fn continuation(source: &str, offset: usize) -> String {
 }
 
 /// The start of the line `offset` is on.
-fn line_start(source: &str, offset: usize) -> usize {
+pub(super) fn line_start(source: &str, offset: usize) -> usize {
     source[..offset].rfind(['\n', '\r']).map_or(0, |i| i + 1)
 }
 
 /// The start of the line after the one a block ending at `offset` ends on.
-fn next_line_start(source: &str, offset: usize) -> usize {
+pub(super) fn next_line_start(source: &str, offset: usize) -> usize {
     if offset > 0 && source.as_bytes()[offset - 1] == b'\n' {
         return offset;
     }

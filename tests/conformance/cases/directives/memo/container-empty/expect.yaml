@@ -1,0 +1,12 @@
+description: >-
+  A closed container memo with nothing between its opening line and its
+  `@end`, or only blank lines, is advice at its opening line. A line memo
+  with no text is `directive-primary` instead, and a memo with text, or an
+  empty `@note:`, isn't reported.
+spec: ["4.10"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-empty, line: 5, column: 1, severity: advice}
+  - {slug: memo-empty, line: 9, column: 1}
+  - {slug: directive-primary, line: 14}

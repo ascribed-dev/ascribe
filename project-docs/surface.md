@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-219 in all. By severity: 38 advice, 157 error, 24 warning. By level: 194 file, 25 page. By kind of next step: 50 choose, 13 fix, 7 outside, 12 review, 137 write.
+220 in all. By severity: 39 advice, 157 error, 24 warning. By level: 195 file, 25 page. By kind of next step: 50 choose, 14 fix, 7 outside, 12 review, 137 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -328,6 +328,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC221` | `link-fragment-dropped` | advice | write | in `{build}`, this link leads to `{page}`, which has no heading `{id}`, so it goes to the top of the page |
 | `ASC222` | `listing-loosened-in-line` | error | write | this page is `{listing}`, and `{rule}` on line {line} of ascribe.toml makes every page of an older line at least `{strict}`, so it can't be `{listing}` there |
 | `ASC223` | `html-comment` | advice | review | an HTML comment is in the published page's source; a memo isn't |
+| `ASC224` | `memo-empty` | advice | fix | this memo is empty |
 
 ## The VS Code extension
 
