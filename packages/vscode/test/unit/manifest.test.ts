@@ -150,6 +150,7 @@ describe("package.json", () => {
       "ascribe.submitReview",
       "ascribe.openSourceChanges",
       "ascribe.review.openPage",
+      "ascribe.review.openThread",
       "ascribe.review.pageSourceChanges",
       "ascribe.review.showAdvice",
       "ascribe.review.hideAdvice",

@@ -273,6 +273,8 @@ The view's badge counts the comments you haven't submitted. Its title bar has **
 
 **Ascribe: Open Source Changes** opens VS Code's diff of every changed source file at once: each changed page's file, and the fragments, pages, and `ascribe.toml` they changed through, each at the base against the working tree. A snippet's code file isn't among them. The base side comes from VS Code's Git extension, or from Ascribe's language server where the Git extension is off. VS Code's diff may repeat file headers past 30 files, so on a large branch a page's own diff button is the better way through.
 
+While review is on, **This page** has a **Review** section between About and Connections: whether the branch changes the page, with its counts and what it changed through, or "this branch doesn't change it", and **Open threads**, the pull request's unresolved threads on the page or on a file it includes. Choosing a thread opens the page's preview at it.
+
 ### Comments in the preview
 @available: ascribe 0.2.0
 

@@ -29,6 +29,7 @@ import {
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
 import { ascribeElsewhere } from "../agents/reach.js";
+import type { PageThread } from "../ui/sidebar.js";
 import type { ProjectServer } from "../client.js";
 import { nodePathEnvironment } from "../environment.js";
 import { comparable, throughFolder } from "../projects.js";
@@ -365,6 +366,43 @@ export class ThreadsController implements vscode.Disposable {
         }
       }
       return counts;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * The open threads that show on the page at `path`: on its own file, or,
+   * when the branch changed it (`page`), on a file it changed through, as
+   * `pagesShowing` decides. `undefined` when review comments aren't on, or
+   * GitHub couldn't be read.
+   */
+  async threadsOn(
+    server: ProjectServer,
+    path: string,
+    page: ChangedPage | null,
+  ): Promise<PageThread[] | undefined> {
+    const session = this.session(server);
+    if (!session) return undefined;
+    try {
+      const pages = page ? [page] : [];
+      return (await session.allThreads())
+        .filter(
+          (thread) =>
+            !thread.resolved &&
+            (thread.path === path || pagesShowing(thread.path, pages).length > 0),
+        )
+        .map((thread) => {
+          const first = thread.comments[0];
+          return {
+            id: thread.id,
+            path: thread.path,
+            line: thread.lines?.first,
+            author: first?.author?.login,
+            excerpt: (first?.body ?? "").trim().split("\n")[0] ?? "",
+          };
+        })
+        .sort((a, b) => a.path.localeCompare(b.path) || (a.line ?? 0) - (b.line ?? 0));
     } catch {
       return undefined;
     }

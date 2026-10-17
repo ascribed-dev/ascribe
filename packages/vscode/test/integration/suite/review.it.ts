@@ -294,6 +294,7 @@ describe("the Review view, with a fake GitHub", () => {
   let api: AscribeApi;
   let github: StatefulGitHub;
   let seq = 2000;
+  let firstThread: string;
 
   const settled = async () => {
     await api.ui.review.whenSettled();
@@ -319,7 +320,7 @@ describe("the Review view, with a fake GitHub", () => {
       headOid: git("rev-parse", "HEAD"),
       files: ["docs/install-agent.md"],
     });
-    github.addThread("docs/install-agent.md", 8, "Which changes does it sync?");
+    firstThread = github.addThread("docs/install-agent.md", 8, "Which changes does it sync?").id;
     api.preview.review.threads.useTransport(() => github);
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
     await vscode.commands.executeCommand("ascribe.openPreview");
@@ -411,6 +412,41 @@ describe("the Review view, with a fake GitHub", () => {
     assert.deepEqual(badge, { value: 1, tooltip: "1 comment you haven't submitted" });
   });
 
+  it("shows the page's review in This page, and opens a thread in the preview", async () => {
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    const editor = await vscode.window.showTextDocument(install);
+    editor.selection = new vscode.Selection(0, 0, 0, 0);
+    const [page] = await api.preview.review.changedPages(workspace());
+    const review = await waitFor("This page's Review section", async () => {
+      await api.ui.thisPage.whenSettled();
+      return api.ui.thisPage.items().find((item) => item.label === "Review");
+    });
+    assert.equal(review.description, "against main");
+    assert.deepEqual(
+      review.children[0] && [review.children[0].label, review.children[0].description],
+      ["Changed", pageDetail(page as ChangedPage)],
+    );
+    const threads = review.children[1];
+    assert.equal(threads?.label, "Open threads");
+    assert.ok(
+      threads.children.some(
+        (t) =>
+          t.label === "Which changes does it sync?" && t.description === "ana · install-agent.md:8",
+      ),
+      JSON.stringify(threads),
+    );
+    // The Connections section still follows, so the view's other sections don't move.
+    assert.deepEqual(
+      api.ui.thisPage.items().map((item) => item.label),
+      ["About", "Review", "Connections"],
+    );
+
+    await api.ui.thisPage.openThread(firstThread);
+    await waitFor("the thread in the preview", () =>
+      api.preview.threadsOpened().includes(firstThread),
+    );
+  });
+
   it("lists the problems on the changed pages", async () => {
     const editor = await vscode.window.showTextDocument(install);
     const end = editor.document.lineCount;
@@ -429,6 +465,8 @@ describe("the Review view, with a fake GitHub", () => {
       );
       assert.ok(listed.children.every((c) => c.description.startsWith("install-agent.md:")));
     } finally {
+      // Undo acts on what has focus, which the preview can take as it goes to a thread.
+      await vscode.window.showTextDocument(install);
       await vscode.commands.executeCommand("undo");
     }
     await diagnosticsOf(install, (d) => !d.some((x) => x.message.includes("no-such-page")));
@@ -485,5 +523,10 @@ describe("the Review view, with a fake GitHub", () => {
     const view = await settled();
     assert.equal(view.project(), undefined);
     assert.deepEqual(view.items(), []);
+    await waitFor("This page without its Review section", async () => {
+      await api.ui.thisPage.whenSettled();
+      const labels = api.ui.thisPage.items().map((item) => item.label);
+      return labels.length > 0 && !labels.includes("Review");
+    });
   });
 });

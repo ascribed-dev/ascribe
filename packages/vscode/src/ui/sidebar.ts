@@ -1,7 +1,9 @@
 // What the This page, Pages, and Content model views show, worked out from
 // plain values so the unit tests can check it without VS Code.
 
+import { pageDetail } from "../preview/reviewText.js";
 import type {
+  ChangedPage,
   InventoryEntry,
   InventoryFragment,
   InventoryPage,
@@ -220,6 +222,9 @@ export type Place = PagePlace;
 /** An item of the This page view. */
 export type ThisPageNode =
   | { kind: "about"; rows: readonly AboutRow[] }
+  | { kind: "review"; review: ThisPageReview }
+  | { kind: "threads"; threads: readonly PageThread[] }
+  | { kind: "thread"; thread: PageThread }
   | {
       kind: "connections";
       heading: string | undefined;
@@ -239,6 +244,29 @@ interface AboutRow {
   tooltip: string;
 }
 
+/** What review says about the page, while review is on for its project. */
+export interface ThisPageReview {
+  /** The base's name, as the Review view says it. */
+  base: string;
+  /** The page as the branch changes it; `null` when the branch doesn't change it. */
+  page: Omit<ChangedPage, "changes"> | null;
+  /** Its open threads; `undefined` when the pull request's threads aren't known. */
+  threads: readonly PageThread[] | undefined;
+}
+
+/** An open thread that shows on the page: on its own file, or on a file it includes. */
+export interface PageThread {
+  id: string;
+  /** The content path of the file it's on. */
+  path: string;
+  /** Its first line, from 1; `undefined` for a thread on the whole file, or one that's detached. */
+  line: number | undefined;
+  /** Its first comment's author's login, when GitHub reports one. */
+  author: string | undefined;
+  /** Its first comment's first line. */
+  excerpt: string;
+}
+
 /** The places in one file. */
 interface PlacesInFile {
   uri: string;
@@ -246,8 +274,11 @@ interface PlacesInFile {
   places: readonly Place[];
 }
 
-/** The This page view's top level: About, then Connections; nothing for a file that isn't a page. */
-export function thisPageRoots(page: PageResult): ThisPageNode[] {
+/**
+ * The This page view's top level: About, then Review while review is on,
+ * then Connections; nothing for a file that isn't a page.
+ */
+export function thisPageRoots(page: PageResult, review?: ThisPageReview): ThisPageNode[] {
   const { about } = page;
   if (!about) return [];
   const rows: AboutRow[] = [
@@ -288,6 +319,7 @@ export function thisPageRoots(page: PageResult): ThisPageNode[] {
   const includes = byFile(page.includedBy);
   return [
     { kind: "about", rows },
+    ...(review ? [{ kind: "review" as const, review }] : []),
     {
       kind: "connections",
       heading: page.heading?.text,
@@ -317,6 +349,10 @@ export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
   switch (node.kind) {
     case "about":
       return node.rows.map((row) => ({ kind: "row", row }));
+    case "review":
+      return reviewRows(node.review);
+    case "threads":
+      return node.threads.map((thread) => ({ kind: "thread", thread }));
     case "connections":
       return [...node.groups];
     case "group":
@@ -325,8 +361,31 @@ export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
       return node.file.places.map((place) => ({ kind: "place", place }));
     case "place":
     case "row":
+    case "thread":
       return [];
   }
+}
+
+/** Review's rows: what the branch changed on the page, then its open threads when they're known. */
+function reviewRows({ page, threads }: ThisPageReview): ThisPageNode[] {
+  const rows: ThisPageNode[] = [
+    {
+      kind: "row",
+      row: page
+        ? {
+            label: page.status === "added" ? "Added" : "Changed",
+            value: pageDetail(page),
+            tooltip: "What this branch changes on the page",
+          }
+        : {
+            label: "Unchanged",
+            value: "this branch doesn't change it",
+            tooltip: "Neither the page nor a file it includes changed on this branch",
+          },
+    },
+  ];
+  if (threads) rows.push({ kind: "threads", threads });
+  return rows;
 }
 
 /** How an item of the This page view looks. */
@@ -334,6 +393,43 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
   switch (node.kind) {
     case "about":
       return { ...section("About", "", "info", "What the page is"), expanded: true };
+    case "review":
+      return {
+        ...section(
+          "Review",
+          `against ${node.review.base}`,
+          "git-pull-request",
+          `This branch's changes to the page, against ${node.review.base}, and its open threads`,
+        ),
+        expanded: true,
+      };
+    case "threads": {
+      const size = node.threads.length;
+      return {
+        ...group(
+          "Open threads",
+          size,
+          "comment-discussion",
+          `${count(size, "open thread", "open threads")} on the page, or on a file it includes`,
+        ),
+        dimmed: size === 0,
+        expandable: size > 0,
+        expanded: true,
+      };
+    }
+    case "thread": {
+      const { thread } = node;
+      const where = thread.line === undefined ? thread.path : `${thread.path}:${thread.line}`;
+      const by = thread.author === undefined ? "" : `${thread.author} · `;
+      return {
+        label: thread.excerpt,
+        description: `${by}${where}`,
+        tooltip: `${thread.excerpt}\n${by}${where}\nOpens the thread in the preview`,
+        icon: "comment",
+        dimmed: false,
+        expandable: false,
+      };
+    }
     case "connections": {
       const to = node.heading === undefined ? "to the page" : `to “${node.heading}”`;
       return {

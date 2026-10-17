@@ -70,6 +70,8 @@ export interface PreviewApi {
   renders(): readonly RenderRecord[];
   /** The ids of the headings the preview was told to scroll to (a link to one), in order. */
   reveals(): readonly string[];
+  /** The threads the preview was told to go to, by id, in order. */
+  threadsOpened(): readonly string[];
   /** The blocks the preview scrolled to for the editor: the line asked for and the block's anchor. */
   lineReveals(): readonly { line: number; source: string }[];
   /** Waits until a render that has been drawn satisfies `predicate`. */
@@ -153,6 +155,7 @@ export class PreviewController implements vscode.Disposable {
   /** The project whose submit dialog to open once its page is drawn, by comparable folder. */
   private submitFor: string | undefined;
   private threadsLog: ThreadsReport[] = [];
+  private threadsOpenedLog: string[] = [];
   private captureExternal = false;
   private externalLog: string[] = [];
   private siteMessages: string[] = [];
@@ -192,6 +195,7 @@ export class PreviewController implements vscode.Disposable {
         },
         showPage: (uri) => this.showPage(uri),
         submitReview: (server, page) => this.submitReview(server, page),
+        openThread: (uri, threadId) => this.openThread(uri, threadId),
       },
       context.workspaceState,
     );
@@ -304,6 +308,7 @@ export class PreviewController implements vscode.Disposable {
       localResourceRoots: () => [...this.roots],
       renders: () => this.log,
       reveals: () => this.revealLog,
+      threadsOpened: () => this.threadsOpenedLog,
       lineReveals: () => this.lineRevealLog,
       whenDrawn: (description, predicate, timeout = 30_000) =>
         this.waitForDrawn(description, predicate, timeout),
@@ -579,7 +584,10 @@ export class PreviewController implements vscode.Disposable {
       };
       if (server) {
         const goTo = this.threadToGo?.file === document.uri.fsPath ? this.threadToGo : undefined;
-        if (goTo) this.threadToGo = undefined;
+        if (goTo) {
+          this.threadToGo = undefined;
+          this.threadsOpenedLog.push(goTo.threadId);
+        }
         const submit = this.submitFor === comparable(server.project.folder);
         if (submit) this.submitFor = undefined;
         review.threads = this.review.threads.view(server, goTo?.threadId ?? null, submit);
@@ -764,14 +772,7 @@ export class PreviewController implements vscode.Disposable {
         return;
       case "openThread": {
         const file = this.inContentRoot(message.path);
-        if (!file) return;
-        const uri = vscode.Uri.file(file);
-        if (this.document && uri.fsPath === this.document.uri.fsPath) {
-          this.post({ type: "goToThread", threadId: message.threadId });
-          return;
-        }
-        this.threadToGo = { file: uri.fsPath, threadId: message.threadId };
-        await this.showPage(uri, false);
+        if (file) await this.openThread(vscode.Uri.file(file), message.threadId);
         return;
       }
       case "notify":
@@ -1048,6 +1049,18 @@ export class PreviewController implements vscode.Disposable {
     } else if (page) {
       await this.showPage(page, false);
     }
+  }
+
+  /** Goes to a thread in the preview of a page: at once when the preview shows it, else once it's drawn. */
+  private async openThread(uri: vscode.Uri, threadId: string): Promise<void> {
+    if (this.panel && this.document && uri.fsPath === this.document.uri.fsPath) {
+      if (!this.panel.visible) this.panel.reveal(undefined, false);
+      this.threadsOpenedLog.push(threadId);
+      this.post({ type: "goToThread", threadId });
+      return;
+    }
+    this.threadToGo = { file: uri.fsPath, threadId };
+    await this.showPage(uri, false);
   }
 
   /** Opens a changed page and its preview, and (with `firstChange`) goes to its first change once it's drawn. */

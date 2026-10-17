@@ -333,7 +333,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-72 commands, 35 of them actions.
+73 commands, 35 of them actions.
 
 Commands that aren't actions:
 
@@ -360,6 +360,7 @@ Commands that aren't actions:
 | Ascribe: Submit Review… | `ascribe.submitReview` |
 | Ascribe: Open Source Changes | `ascribe.openSourceChanges` |
 | Ascribe: Open Changed Page | `ascribe.review.openPage` |
+| Ascribe: Open Thread in the Preview | `ascribe.review.openThread` |
 | Ascribe: Open Page's Source Changes | `ascribe.review.pageSourceChanges` |
 | Ascribe: Show Advice | `ascribe.review.showAdvice` |
 | Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
@@ -463,7 +464,7 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 72 |
+| `commandPalette` | 73 |
 | `editor/title` | 5 |
 | `view/title` | 7 |
 | `view/item/context` | 3 |

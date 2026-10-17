@@ -336,6 +336,11 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.review.openThread",
+        "title": "Open Thread in the Preview",
+        "category": "Ascribe"
+      },
+      {
         "command": "ascribe.review.pageSourceChanges",
         "title": "Open Page's Source Changes",
         "category": "Ascribe",
@@ -1082,6 +1087,10 @@
         },
         {
           "command": "ascribe.review.openPage",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.openThread",
           "when": "false"
         },
         {

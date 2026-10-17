@@ -105,7 +105,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   projectsView.register();
   const reviewView = new ReviewView(preview.review, projects);
   reviewView.register();
-  const sidebar = new SidebarViews(projects);
+  const sidebar = new SidebarViews(projects, preview.review);
   sidebar.register();
 
   const actions = new ActionsController(projects);

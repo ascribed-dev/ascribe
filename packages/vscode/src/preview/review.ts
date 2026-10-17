@@ -35,6 +35,8 @@ export interface ReviewHost {
    * when that's the project's, else on `page`, opened first.
    */
   submitReview(server: ProjectServer, page: vscode.Uri | undefined): Promise<void>;
+  /** Opens a page in the editor and the preview, and goes to one of its threads. */
+  openThread(page: vscode.Uri, threadId: string): Promise<void>;
 }
 
 /** What the extension returns for tests. */
@@ -229,6 +231,11 @@ export class ReviewController implements vscode.Disposable {
   /** Opens the submit dialog for the project's review, in the preview. */
   submitReview(server: ProjectServer, page: vscode.Uri | undefined): Promise<void> {
     return this.host.submitReview(server, page);
+  }
+
+  /** Opens a page in the editor and the preview, at one of its threads. */
+  openThread(page: vscode.Uri, threadId: string): Promise<void> {
+    return this.host.openThread(page, threadId);
   }
 
   /** Shows the status bar item for the active Ascribe page's or the preview's project. */
