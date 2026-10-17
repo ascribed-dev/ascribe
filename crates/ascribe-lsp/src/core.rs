@@ -1257,6 +1257,18 @@ impl Core {
         Some((ctx, path))
     }
 
+    /// The diagnostics last published for a file without Vale's, and the
+    /// version of the document they're for, when it's open.
+    pub(crate) fn checked_with_version(
+        &self,
+        path: &Path,
+    ) -> (Vec<lsp_types::Diagnostic>, Option<i32>) {
+        (
+            self.checked(path).to_vec(),
+            self.published.get(path).and_then(|p| p.version),
+        )
+    }
+
     /// A project snapshot for workspace-level refactorings.
     pub(crate) fn project_nav_target(&self) -> Option<Ctx> {
         let loaded = self.loaded.as_ref()?;

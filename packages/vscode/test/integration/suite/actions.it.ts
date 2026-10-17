@@ -363,6 +363,86 @@ describe("the editor's actions", () => {
     });
   });
 
+  describe("the page's safe fixes", () => {
+    /** keys.md with two problems a safe fix fixes, and one only an unsafe one does. */
+    async function withProblems(): Promise<vscode.TextEditor> {
+      const editor = await open("keys.md", 9, 0);
+      const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+      assert.ok(
+        await editor.edit((e) =>
+          e.insert(
+            end,
+            "\nSee [Install](/install-agent/).\n\n@memo:\n@end\n\nSee [Gone](keyz.md).\n",
+          ),
+        ),
+      );
+      await diagnosticsOf(editor.document.uri, (all) => {
+        const has = (text: string) => all.some((d) => d.message.includes(text));
+        return has("`/install-agent.md`") && has("this memo is empty");
+      });
+      return editor;
+    }
+
+    function assertFixed(text: string): void {
+      assert.ok(text.includes("See [Install](/install-agent.md)."), text);
+      assert.ok(!text.includes("@memo"), text);
+      // An unsafe fix is left for the writer.
+      assert.ok(text.includes("See [Gone](keyz.md)."), text);
+    }
+
+    it("applies them with Source Action, and leaves the rest", async () => {
+      const editor = await withProblems();
+      await vscode.commands.executeCommand("editor.action.sourceAction", {
+        kind: "source.fixAll.ascribe",
+        apply: "first",
+      });
+      await waitFor("the fixes", () => editor.document.getText().includes("/install-agent.md"));
+      assertFixed(editor.document.getText());
+    });
+
+    it("applies them on save where editor.codeActionsOnSave asks", async () => {
+      const settings = vscode.workspace.getConfiguration("editor", { languageId: "markdown" });
+      await settings.update(
+        "codeActionsOnSave",
+        { "source.fixAll.ascribe": "explicit" },
+        vscode.ConfigurationTarget.Workspace,
+        true,
+      );
+      try {
+        const editor = await withProblems();
+        assert.ok(await editor.document.save());
+        assertFixed(editor.document.getText());
+      } finally {
+        await settings.update(
+          "codeActionsOnSave",
+          undefined,
+          vscode.ConfigurationTarget.Workspace,
+          true,
+        );
+        // Back to the page as it was, on disk too.
+        const document = await vscode.workspace.openTextDocument(uriOf("docs", "keys.md"));
+        const text = document.getText();
+        const at = text.indexOf("\nSee [Install]");
+        if (at >= 0) {
+          const edit = new vscode.WorkspaceEdit();
+          edit.delete(
+            document.uri,
+            new vscode.Range(document.positionAt(at), document.positionAt(text.length)),
+          );
+          await vscode.workspace.applyEdit(edit);
+          await document.save();
+        }
+      }
+    });
+
+    it("lists them first among the actions bar's fixes", async () => {
+      await withProblems();
+      const rows = await openBar();
+      assert.deepEqual(rows.slice(0, 2), ["-- Fix", "Apply the safe fixes in this page"]);
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+    });
+  });
+
   it("opens the bar on the last page from the walkthrough, where no text editor is active", async () => {
     await open("keys.md", 9, 0);
     await vscode.commands.executeCommand(

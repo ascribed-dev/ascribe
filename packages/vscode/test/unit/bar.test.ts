@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { entries, NOTHING, shown, type Entry, type Fix } from "../../src/actions/bar.js";
+import {
+  entries,
+  FIX_ALL_KIND,
+  NOTHING,
+  shown,
+  type Entry,
+  type Fix,
+} from "../../src/actions/bar.js";
 import type { ContextNode, ContextResult, LspRange } from "../../src/shapes.js";
 
 const r = (line: number): LspRange => ({
@@ -36,6 +43,7 @@ const fix = (title: string, more: Partial<Fix> = {}): Fix => ({
   problem: undefined,
   disabled: false,
   edits: true,
+  fixes: 1,
   ...more,
 });
 
@@ -100,6 +108,24 @@ describe("the actions bar", () => {
       label: "Declare phrase in ascribe.toml",
       detail: "The phrase {flush} isn't declared.",
     });
+  });
+
+  it("lists the page's safe fixes first among the fixes when there are two or more", () => {
+    const all = (fixes: number) =>
+      fix("Apply the safe fixes in this page", { kind: FIX_ALL_KIND, fixes });
+    const colon = fix("Remove the stray colon", { problem: "A stray colon." });
+    expect(rows(entries(context([paragraph, section]), [colon, all(2)])).slice(0, 4)).toEqual([
+      "-- Fix",
+      "Apply the safe fixes in this page",
+      "Remove the stray colon",
+      "-- Write",
+    ]);
+    // One safe fix is that problem's own fix.
+    expect(rows(entries(context([paragraph, section]), [all(1), colon])).slice(0, 3)).toEqual([
+      "-- Fix",
+      "Remove the stray colon",
+      "-- Write",
+    ]);
   });
 
   it("lists an action once when the lightbulb offers it as a quick fix too", () => {

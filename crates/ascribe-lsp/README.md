@@ -643,7 +643,11 @@ document links, CodeLens, inlay hints, code actions, document formatting, foldin
 ranges, rename (with `prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`, and `textDocument/codeLens` (below), which
-is then not advertised.
+is then not advertised. Code actions advertise their kinds: `quickfix`, and
+`source.fixAll.ascribe`, every safe fix of a source file's published problems
+in one edit, settled as `ascribe check --fix` settles them
+(`ascribe_check::fix::Settled`); it's offered only when what was published is
+for the document's version.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
 

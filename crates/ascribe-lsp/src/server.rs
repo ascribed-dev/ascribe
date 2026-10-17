@@ -20,14 +20,15 @@ use lsp_types::request::{
     SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
-    CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
-    DocumentLinkOptions, ExecuteCommandOptions, FoldingRangeProviderCapability,
-    GotoDefinitionResponse, HoverProviderCapability, InitializeParams, InitializeResult, OneOf,
-    RenameOptions, SemanticTokens, SemanticTokensFullOptions, SemanticTokensOptions,
-    SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensServerCapabilities,
-    ServerCapabilities, ServerInfo, ShowDocumentParams, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Uri,
-    WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
+    CodeActionKind, CodeActionOptions, CodeActionProviderCapability, CodeLensOptions,
+    CompletionOptions, DocumentFormattingParams, DocumentLinkOptions, ExecuteCommandOptions,
+    FoldingRangeProviderCapability, GotoDefinitionResponse, HoverProviderCapability,
+    InitializeParams, InitializeResult, OneOf, RenameOptions, SemanticTokens,
+    SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
+    SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
+    ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 
 use crate::compute::{Outcome, compute};
@@ -167,7 +168,13 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 resolve_provider: Some(false),
             }),
             inlay_hint_provider: Some(OneOf::Left(true)),
-            code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
+            code_action_provider: Some(CodeActionProviderCapability::Options(CodeActionOptions {
+                code_action_kinds: Some(vec![
+                    CodeActionKind::QUICKFIX,
+                    CodeActionKind::new(crate::code_action::FIX_ALL_KIND),
+                ]),
+                ..CodeActionOptions::default()
+            })),
             document_formatting_provider: Some(OneOf::Left(true)),
             folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
             rename_provider: Some(OneOf::Right(RenameOptions {
@@ -691,15 +698,29 @@ fn code_lens_request(shared: &Shared, request: &Request) -> Result<serde_json::V
 }
 
 /// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
-/// too, whose problems about an entry can be marked as intended.
+/// too, whose problems about an entry can be marked as intended. A source
+/// file's are worked out with the diagnostics last published for it, for
+/// the action that applies its safe fixes.
 fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: lsp_types::CodeActionParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
-    let target = shared.lock().code_action_target(&params.text_document.uri);
+    let (target, published) = {
+        let core = shared.lock();
+        let published = crate::uri::uri_to_path(&params.text_document.uri)
+            .map(|path| core.checked_with_version(&normalize(&path)))
+            .unwrap_or_default();
+        (
+            core.code_action_target(&params.text_document.uri),
+            published,
+        )
+    };
     let Some(ctx) = target else {
         return Ok(serde_json::Value::Null);
     };
-    to_json(request, crate::code_action::actions(&ctx, params))
+    to_json(
+        request,
+        crate::code_action::actions(&ctx, params, &published),
+    )
 }
 
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {

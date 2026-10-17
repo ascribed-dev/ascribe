@@ -1203,3 +1203,110 @@ fn a_comment_that_ends_a_list_item_gets_no_fix() {
         None
     );
 }
+
+/// The action that applies a page's safe fixes, asked for as VS Code asks
+/// on save, or `None` when the server offers none.
+fn fix_all(client: &mut Client, path: &Path) -> Option<Value> {
+    let actions = client
+        .request(
+            "textDocument/codeAction",
+            json!({
+                "textDocument": { "uri": uri(path).as_str() },
+                "range": { "start": { "line": 0, "character": 0 }, "end": { "line": 0, "character": 0 } },
+                "context": { "diagnostics": [], "only": ["source.fixAll"] }
+            }),
+        )
+        .response_result
+        .expect("actions");
+    let mut found = actions.as_array().cloned().unwrap_or_default();
+    assert!(found.len() <= 1, "{found:?}");
+    found.pop()
+}
+
+/// A page with an empty memo and two links to routes, each with a safe
+/// fix, and a misspelled link, whose fix isn't. (An acknowledgement that
+/// covers nothing takes every build to tell, so the editor doesn't report
+/// one, and has no fix for it.)
+const FIX_ME: &str = "---\ntitle: Fix me\n---\n\n@memo:\n@end\n\nSee 😀 [Install](/install-agent/), [Keys](/keys/), and [Gone](keyz.md).\n";
+
+#[test]
+fn fix_all_makes_the_edits_check_fix_makes() {
+    let f = quill();
+    write(&f, "docs/fix-me.md", FIX_ME);
+    let path = f.path("docs/fix-me.md");
+    let mut client = Client::start(&f.root());
+    client.open(&path, 1, FIX_ME);
+    client.settle();
+
+    let action = fix_all(&mut client, &path).expect("the action");
+    assert_eq!(action["title"], "Apply the safe fixes in this page");
+    assert_eq!(action["kind"], "source.fixAll.ascribe");
+    let codes: Vec<String> = client
+        .diagnostics(&path)
+        .iter()
+        .map(support::slug)
+        .collect();
+    assert_eq!(
+        action["diagnostics"].as_array().unwrap().len(),
+        3,
+        "{codes:?}"
+    );
+    let changes = action["edit"]["changes"].as_object().unwrap();
+    assert_eq!(changes.len(), 1);
+    let edits = changes[uri(&path).as_str()].as_array().unwrap();
+    let fixed = apply_edit(FIX_ME, edits);
+
+    // `ascribe check --editor-build --fix`, as the command takes them.
+    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).expect("a project");
+    let mut diagnostics = ascribe_check::diagnose_editor_build(&project, None).diagnostics;
+    diagnostics.sort_by_key(|d| d.severity == ascribe_check::Severity::Advice);
+    let files = ascribe_check::fix::safe_fixes(&project, &f.path("ascribe.toml"), &diagnostics);
+    let expected = files
+        .iter()
+        .find(|file| file.path.ends_with("fix-me.md"))
+        .expect("check --fix changes the page");
+    assert_eq!(fixed, expected.text);
+    assert_eq!(
+        fixed,
+        "---\ntitle: Fix me\n---\n\nSee 😀 [Install](/install-agent.md), [Keys](/keys.md), and [Gone](keyz.md).\n"
+    );
+    // Asked for again, it has nothing left to do.
+    client.replace(&path, 2, &fixed);
+    client.settle();
+    assert!(fix_all(&mut client, &path).is_none());
+}
+
+#[test]
+fn fix_all_is_offered_only_with_a_safe_fix_and_only_when_asked() {
+    let f = quill();
+    let path = f.path("docs/fix-me.md");
+    let only_unsafe = "---\ntitle: Fix me\n---\n\nSee [Gone](keyz.md).\n";
+    write(&f, "docs/fix-me.md", only_unsafe);
+    let mut client = Client::start(&f.root());
+    client.open(&path, 1, only_unsafe);
+    client.settle();
+    assert!(fix_all(&mut client, &path).is_none());
+
+    client.replace(&path, 2, FIX_ME);
+    client.settle();
+    assert!(fix_all(&mut client, &path).is_some());
+    // The lightbulb's quick fixes don't include it.
+    let quick = client
+        .request(
+            "textDocument/codeAction",
+            json!({
+                "textDocument": { "uri": uri(&path).as_str() },
+                "range": { "start": { "line": 0, "character": 0 }, "end": { "line": 0, "character": 0 } },
+                "context": { "diagnostics": [], "only": ["quickfix"] }
+            }),
+        )
+        .response_result
+        .expect("actions");
+    assert!(
+        !quick
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|a| a["kind"] == "source.fixAll.ascribe")
+    );
+}

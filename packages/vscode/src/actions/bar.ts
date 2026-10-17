@@ -17,7 +17,12 @@ export interface Fix {
   disabled: boolean;
   /** Whether it edits the text, rather than only running a command. */
   edits: boolean;
+  /** How many problems it fixes. */
+  fixes: number;
 }
+
+/** The kind of the server's action that applies a page's safe fixes (`FIX_ALL_KIND` in crates/ascribe-lsp/src/code_action.rs). */
+export const FIX_ALL_KIND = "source.fixAll.ascribe";
 
 /** One row of the bar. */
 export type Entry<F extends Fix = Fix> =
@@ -51,7 +56,9 @@ const listed = (fix: Fix): boolean => fix.edits && !fix.disabled && fix.kind !==
 /**
  * The bar's rows: the fixes, then each group of the registry's actions that
  * apply, each group under a separator. A row saying what to try when there's
- * nothing.
+ * nothing. The action that applies the page's safe fixes comes first among
+ * the fixes when it fixes two problems or more; for one, that problem's own
+ * fix is the same edit.
  */
 export function entries<F extends Fix>(
   context: ContextResult,
@@ -63,8 +70,12 @@ export function entries<F extends Fix>(
   for (const [group, label] of GROUPS) {
     const rows: Entry<F>[] = [];
     if (group === "fix") {
+      const all = fixes.filter((fix) => fix.kind === FIX_ALL_KIND);
+      for (const fix of all) {
+        if (listed(fix) && fix.fixes >= 2) rows.push({ kind: "fix", fix });
+      }
       for (const fix of fixes) {
-        if (listed(fix)) rows.push({ kind: "fix", fix });
+        if (listed(fix) && fix.kind !== FIX_ALL_KIND) rows.push({ kind: "fix", fix });
       }
     }
     for (const action of applying) {
