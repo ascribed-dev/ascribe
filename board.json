@@ -2702,8 +2702,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/575"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Navigation: an Astro site's sidebar comes from the project"
     },
     {
@@ -2722,7 +2725,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Navigation: a mistake in `ascribe.nav` is an error where it's written"
     },
     {
@@ -3016,7 +3019,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The editor's views: two rarer intermittent failures in the actions integration suite"
     },
     {
