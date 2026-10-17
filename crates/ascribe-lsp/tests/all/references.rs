@@ -82,11 +82,23 @@ fn references(
     position: Value,
     declaration: bool,
 ) -> Option<Vec<(String, String)>> {
+    references_in(client, f, &format!("docs/{file}"), position, declaration)
+}
+
+/// The references at `position` of `file`, a path from the project's folder,
+/// as [`references`] has them.
+fn references_in(
+    client: &mut Client,
+    f: &Fixture,
+    file: &str,
+    position: Value,
+    declaration: bool,
+) -> Option<Vec<(String, String)>> {
     let result = client
         .request(
             "textDocument/references",
             json!({
-                "textDocument": { "uri": support::uri(&f.path(&format!("docs/{file}"))).as_str() },
+                "textDocument": { "uri": support::uri(&f.path(file)).as_str() },
                 "position": position,
                 "context": { "includeDeclaration": declaration },
             }),
@@ -257,6 +269,74 @@ fn model_entries_are_found_where_pages_use_them() {
     );
 }
 
+#[test]
+fn an_entry_is_found_from_its_declaration_in_the_model() {
+    let f = project();
+    let mut client = started(&f);
+    // A phrase's key, with its declaration first.
+    assert_eq!(
+        references_in(
+            &mut client,
+            &f,
+            "ascribe.toml",
+            at(MODEL, "product", 2),
+            true
+        ),
+        pairs(&[
+            ("../ascribe.toml", "product"),
+            ("_setup.md", "{product}"),
+            ("index.md", "{product}"),
+        ])
+    );
+    // A table's header: a feature, a note type.
+    assert_eq!(
+        references_in(
+            &mut client,
+            &f,
+            "ascribe.toml",
+            at(MODEL, "[features.sso]", 0),
+            false
+        ),
+        pairs(&[("other.md", "sso")])
+    );
+    assert_eq!(
+        references_in(
+            &mut client,
+            &f,
+            "ascribe.toml",
+            at(MODEL, "[notes.security]", 1),
+            false
+        ),
+        pairs(&[("other.md", "security")])
+    );
+    // A phrase nothing uses has none; a build, which pages don't name, and a
+    // line that declares nothing, aren't asked about.
+    assert_eq!(
+        references_in(
+            &mut client,
+            &f,
+            "ascribe.toml",
+            at(MODEL, "unused", 0),
+            false
+        ),
+        Some(Vec::new())
+    );
+    assert_eq!(
+        references_in(
+            &mut client,
+            &f,
+            "ascribe.toml",
+            at(MODEL, "[builds.site]", 1),
+            false
+        ),
+        None
+    );
+    assert_eq!(
+        references_in(&mut client, &f, "ascribe.toml", at(MODEL, "spec", 0), false),
+        None
+    );
+}
+
 fn inventory(client: &mut Client, path: &Path) -> Value {
     client
         .request(
@@ -324,6 +404,64 @@ fn the_inventory_lists_pages_fragments_orphans_and_the_model() {
         .find(|e| e["kind"] == "note" && e["key"] == "note")
         .unwrap();
     assert_eq!(note["declaration"], Value::Null);
+    // A dimension lists its values, each where `values` has it.
+    let deployment = r["model"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["kind"] == "dimension" && e["key"] == "deployment")
+        .unwrap();
+    assert_eq!(
+        deployment["values"],
+        json!([
+            { "value": "cloud", "label": null, "declaration": { "start": { "line": 14, "character": 11 }, "end": { "line": 14, "character": 16 } } },
+            { "value": "self-managed", "label": null, "declaration": { "start": { "line": 14, "character": 20 }, "end": { "line": 14, "character": 32 } } },
+        ])
+    );
+    assert!(product.get("values").is_none(), "{product}");
+    // A content type counts its pages; the implicit one isn't declared.
+    let page_type = r["model"].as_array().unwrap().last().unwrap();
+    assert_eq!(
+        page_type,
+        &json!({ "kind": "type", "key": "page", "label": null, "uses": 4, "declaration": null, "page": null })
+    );
+}
+
+#[test]
+fn a_declared_content_type_counts_its_pages_and_opens_its_table() {
+    let model = format!(
+        "{MODEL}\n[types.guide]\npurpose = \"Teach a task\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\n\n[types.reference]\n\n[types.reference.frontmatter]\ntitle = \"string\"\n"
+    );
+    let f = Fixture::new(
+        &model,
+        &[
+            ("docs/a.md", "---\ntitle: A\ntype: guide\n---\n\n# A\n"),
+            ("docs/b.md", "---\ntitle: B\ntype: guide\n---\n\n# B\n"),
+            (
+                "docs/glossary.md",
+                "---\ntitle: Glossary\ntype: reference\n---\n\n## API key\n@term\n\nA secret.\n",
+            ),
+        ],
+    );
+    let mut client = started(&f);
+    let r = inventory(&mut client, &f.path("docs/a.md"));
+    let types: Vec<&Value> = r["model"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "type")
+        .collect();
+    assert_eq!(types.len(), 2, "{types:?}");
+    assert_eq!(types[0]["key"], "guide");
+    assert_eq!(types[0]["label"], "Teach a task");
+    assert_eq!(types[0]["uses"], 2);
+    assert_eq!(types[1]["key"], "reference");
+    assert_eq!(types[1]["uses"], 1);
+    let line = model.lines().position(|l| l == "[types.guide]").unwrap();
+    assert_eq!(
+        types[0]["declaration"],
+        json!({ "start": { "line": line, "character": 0 }, "end": { "line": line, "character": 13 } })
+    );
 }
 
 #[test]

@@ -135,7 +135,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 ### Navigation
 
 - **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a phrase or feature key, to its entry in `ascribe.toml`.
-- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses.
+- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses. In `ascribe.toml`, on a content model entry's key or table header, it lists the entry's uses, as the Content model view's **Find All References** does.
 - **Document links**: links, images, and includes are clickable. A link outside the docs is clickable when it's a web address (`http`, `https`) or an email address (`mailto`); one with any other scheme, such as `tel:` or `vscode:`, stays as it's written for the site's readers, and isn't a link in the editor.
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
@@ -207,6 +207,8 @@ Every action is in four places:
 - The editor's context menu, under **Ascribe**, which lists the actions that apply where the cursor is.
 - The lightbulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
 
+**Insert a phrase** and **Insert a widget** also run from the **Content model** view: **Insert at the Cursor** in a phrase's or a widget's menu runs them with it chosen, at the cursor of the page you last had open. See [This page, Pages, and Content model](index.md#this-page-pages-and-content-model).
+
 @include: ../_generated/editor-actions.md
 
 #### The actions bar
@@ -247,18 +249,21 @@ A [memo file](../writing/memo-files.md) says why a section or a block is written
 ### The Ascribe sidebar
 @available: ascribe 0.3.0
 
-The Ascribe icon in the activity bar opens the Ascribe sidebar, with four views: **Projects**, **This page**, **Pages**, and **Content model**.
+The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder.
 
 @available: next
 While review is on, a **Review** view comes first: see [The Review view](index.md#the-review-view).
 
-#### The Projects view
-
-The **Projects** view lists every project in the workspace, started or not, by name, with its folder and an icon for its server's state. Under each is its `ascribe.toml`, which opens it, and, while its server runs, its editor build and the `ascribe` binary in use. Each project's buttons show its server's output, and restart its server when it's running or failed. The view updates as projects come and go and servers start and stop, and opening it starts no server. In a workspace with no project, it says how to start one.
-
 #### This page, Pages, and Content model
 
-The other three views show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
+The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
+
+#### Switch Project
+@available: next
+
+In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in Pages' and Content model's title bars, and in the [status bar](index.md#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
+
+Choosing a project shows it in the sidebar and starts its server if it hasn't started. It's a jump, not a pin: the sidebar stays on it until a file of another project becomes active, and then follows that file as before.
 
 @available: next
 **This page** says what's known about the active page, in four sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](index.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
@@ -291,7 +296,16 @@ A fragment has no builds, listing, or size of its own: it's published only where
   - **Drag a page onto another section**, or a page of one, and it asks first, since the page's address changes. On **Move**, its file moves to that section's folder, and the links to it and `ascribe.nav` follow, as they do when you move a file in the Explorer.
   - A page `ascribe.nav` leaves out of a section that lists its pages is at the end of its section, marked **not placed**; **Place Here** in its menu adds it to the end of the section's `pages`.
   - **Rename Label…** in a section's menu sets its `label`; leave it empty for the default.
-- **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`, or a glossary term's heading on its page. The counts are what **Find All References** lists for the same entry.
+  - A page or fragment with a problem is colored as it is in the Explorer: red for an error, yellow for a warning.
+  - A page the build the status bar shows leaves out is dimmed, and says "Not in cloud" for the build `cloud`, as the [build lens](index.md#the-build-lens) dims text. It follows the build as you switch.
+  - A page's menu has **Open Preview to the Side**, also its button; **Copy Link**, which copies its path from the content root, such as `/guides/install.md`, the link a page writes to it (its published address is This page's **Address** row); **Rename or Move…**, which asks for its new path and moves it as the Explorer does, the links to it following; **Find All References**, the links and includes that reach it, in a peek at its start; and **Reveal in Explorer**. A fragment's menu has the last three.
+  - **New Page Here**, in a section's menu, starts a page in its folder ([Start a page](index.md#start-a-page)).
+  - **Orphans Only**, the filter button in the title bar, lists only the pages nothing links to or includes, apart from index pages, and the fragments nothing includes, each in its section or folder. Choose it again to list everything.
+- **Content model** lists the project's page types, phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name; a page type, with how many pages have it. An entry nothing uses is marked **unused**, a candidate to remove. Each dimension lists its values. Clicking an entry or a value opens its declaration in `ascribe.toml`, or a glossary term's heading on its page. The counts are what **Find All References** lists for the same entry.
+  - **Find All References**, in the menu of an entry pages use, lists those uses in a peek at its declaration.
+  - **Rename…**, on a phrase or a dimension's value, asks for the new name and makes the edits `F2` on it in a page makes, shown in the refactor preview first.
+  - **Insert at the Cursor**, on a phrase or a widget, runs **Insert a phrase** or **Insert a widget** with it chosen, at the cursor of the project's last Markdown editor, which comes to the front. Where the cursor is somewhere the action doesn't apply, it says where to put it and changes nothing.
+  - **Unused Only**, the filter button in the title bar, lists only the entries nothing uses.
 
 Pages and Content model update when you save a file of the project, when a page is added or deleted, Pages as you edit `ascribe.nav` too, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
 
@@ -302,7 +316,7 @@ While a page or an `ascribe.toml` is the active editor, the status bar names its
 
 In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The status bar shows **Ascribe: not checking**, and the Problems panel's "No problems" doesn't mean the project is clean. Click it to manage the folder's trust; once you trust it, Ascribe starts.
 
-Click it for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
+Click it for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Switch project** in a workspace with several projects, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
 
 Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](index.md#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
 

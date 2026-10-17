@@ -44,7 +44,9 @@ const commands: Record<string, string> = {
   "ascribe.checkEveryBuild":
     "Runs `ascribe check` over every build of the active file's project, and adds to the Problems panel the problems of builds other than the editor's, which the language server doesn't check. When no file of a project is active and the workspace has several projects, it asks which. See [The Problems panel](../editor/settings.md#the-problems-panel).",
   "ascribe.projectMenu":
-    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, restart its server, dim what the build leaves out, or open the preview.",
+    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, check every build, show the server's output, switch project, restart its server, dim what the build leaves out, or open the preview.",
+  "ascribe.switchProject":
+    "Lists the workspace's projects, the sidebar's first, each with its folder and its server's state, and shows the one you choose in the sidebar, starting its server, until a file of another project is active. Shown while the workspace has several projects. See [Switch Project](../editor/index.md#switch-project).",
   "ascribe.toggleBuildLens":
     "Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../editor/index.md#the-build-lens).",
   "ascribe.startReview":
@@ -111,6 +113,7 @@ const available: Record<string, string> = {
   "ascribe.projects.exclude": "ascribe 0.3.2",
   "ascribe.submitReview": "next",
   "ascribe.openSourceChanges": "next",
+  "ascribe.switchProject": "next",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

@@ -347,7 +347,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-77 commands, 37 of them actions.
+90 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -380,11 +380,24 @@ Commands that aren't actions:
 | Ascribe: Hide Advice | `ascribe.review.hideAdvice` |
 | Ascribe: Show Server Output | `ascribe.showOutput` |
 | Ascribe: Restart Language Server | `ascribe.restartServer` |
-| Ascribe: Refresh | `ascribe.projects.refresh` |
-| Ascribe: Show Output | `ascribe.projects.showOutput` |
-| Ascribe: Restart Server | `ascribe.projects.restart` |
+| Ascribe: Switch Project | `ascribe.switchProject` |
+| Ascribe: Show the Sidebar Project's Output | `ascribe.sidebar.showOutput` |
+| Ascribe: Restart the Sidebar Project's Server | `ascribe.sidebar.restart` |
 | Ascribe: Place Here | `ascribe.pages.placeHere` |
 | Ascribe: Rename Label… | `ascribe.pages.renameLabel` |
+| Ascribe: Open Preview to the Side | `ascribe.pages.openPreview` |
+| Ascribe: Copy Link | `ascribe.pages.copyLink` |
+| Ascribe: Rename or Move… | `ascribe.pages.renameOrMove` |
+| Ascribe: Find All References | `ascribe.pages.findReferences` |
+| Ascribe: Reveal in Explorer | `ascribe.pages.revealInExplorer` |
+| Ascribe: New Page Here | `ascribe.pages.newPageHere` |
+| Ascribe: Orphans Only | `ascribe.pages.orphansOnly` |
+| Ascribe: Show All Pages | `ascribe.pages.showAll` |
+| Ascribe: Find All References | `ascribe.model.findReferences` |
+| Ascribe: Rename… | `ascribe.model.rename` |
+| Ascribe: Insert at the Cursor | `ascribe.model.insert` |
+| Ascribe: Unused Only | `ascribe.model.unusedOnly` |
+| Ascribe: Show All Entries | `ascribe.model.showAll` |
 | Ascribe: Reply Now | `ascribe.review.replyNow` |
 | Ascribe: Add to Review | `ascribe.review.addToReview` |
 | Ascribe: Resolve | `ascribe.review.resolve` |
@@ -456,7 +469,6 @@ Views:
 | View | Id |
 |---|---|
 | Review | `ascribe.review` |
-| Projects | `ascribe.projects` |
 | This page | `ascribe.thisPage` |
 | Pages | `ascribe.pages` |
 | Content model | `ascribe.model` |
@@ -474,7 +486,7 @@ The walkthrough:
 | 1 | Open a project | Get Started with Ascribe |
 | 2 | Preview a page | Get Started with Ascribe |
 | 3 | Write with the actions bar | Get Started with Ascribe |
-| 4 | See your projects | Get Started with Ascribe |
+| 4 | See your project | Get Started with Ascribe |
 | 5 | See what a build leaves out | Get Started with Ascribe |
 | 6 | Check in CI | Get Started with Ascribe |
 
@@ -482,10 +494,10 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 77 |
+| `commandPalette` | 90 |
 | `editor/title` | 5 |
-| `view/title` | 7 |
-| `view/item/context` | 5 |
+| `view/title` | 12 |
+| `view/item/context` | 13 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |

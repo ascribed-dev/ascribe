@@ -498,16 +498,21 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
   whether it lists its pages. `null` only in an answer for a file outside
   the project.
 - `model` lists the phrases, features, glossary terms, dimensions, note types,
-  widgets, and builds, each kind in declaration order. `kind` is `phrase`,
-  `feature`, `term`, `dimension`, `note`, `widget`, or `build`; `label` is the
-  phrase's value, the feature's name, the term, the dimension's label (when it
-  isn't its name), the note type's label, or the widget's description.
-  `uses` is `null` for a build, which pages don't name.
-  `declaration` is the entry's table header in `ascribe.toml` (a phrase's
-  key), in `modelUri`, found as `ascribe/targets` finds ranges; it's `null`
-  for a built-in note type. A glossary term's is its heading, in `page`,
-  the content path of the file it's written in; `page` is `null` for every
-  other entry.
+  widgets, builds, and page content types, each kind in declaration order.
+  `kind` is `phrase`, `feature`, `term`, `dimension`, `note`, `widget`,
+  `build`, or `type`; `label` is the phrase's value, the feature's name, the
+  term, the dimension's label (when it isn't its name), the note type's label,
+  the widget's description, or the content type's `purpose`. `uses` is `null`
+  for a build, which pages don't name; for a content type it's how many pages
+  have it. `declaration` is the entry's table header in `ascribe.toml` (a
+  phrase's key), in `modelUri`, found as `ascribe/targets` finds ranges (a
+  content type declared only through its nested tables is at the first of
+  them); it's `null` for a built-in note type and the implicit `page` type. A
+  glossary term's is its heading, in `page`, the content path of the file it's
+  written in; `page` is `null` for every other entry. A dimension also has its
+  `values`, each with its `value`, its `label` when it isn't the value, and its
+  `declaration` inside the quotes of the dimension's `values`, where a rename
+  in `ascribe.toml` starts.
 
 Every count is the length of the list Find All References returns for the same
 thing ([Navigation](#navigation)): both come from
@@ -704,6 +709,12 @@ A file or a folder that moves also edits `ascribe.nav`
 (`edit::navigation::moved`): a page's entry in its section's `pages` follows
 it, or is taken out when it leaves the folder, and a folder's `folder`, with
 its nested sections', follows it.
+
+Find All References answers in `ascribe.toml` too: on a content model entry's
+declaration (a phrase's key, or the table header of a feature, dimension,
+note type, or widget), the places that use that entry, as on a use of it in a
+page. A glossary term is declared by its heading on its glossary page, not in
+`ascribe.toml`. Elsewhere in the file it answers `null`.
 
 ## How it works
 

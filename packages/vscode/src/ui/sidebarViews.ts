@@ -1,21 +1,42 @@
 import * as vscode from "vscode";
+import { QuickInputPrompter } from "../actions/ask.js";
+import type { Action } from "../actions/registry.js";
+import { newNameStep } from "../actions/registry.js";
+import { renameAt, type RunRecord } from "../actions/run.js";
+import {
+  runWizard,
+  ScriptedPrompter,
+  text,
+  validKey,
+  validValue,
+  type Answers,
+  type Prompter,
+  type Scripted,
+} from "../actions/steps.js";
 import type { ProjectServer } from "../client.js";
 import type { ChangedPage } from "../preview/protocol.js";
 import type { ReviewController } from "../preview/review.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { InventoryResult, LspRange, PageResult } from "../shapes.js";
+import type { ContextResult, InventoryResult, LspRange, PageResult } from "../shapes.js";
+import { insertPlan, LastEditors } from "./insertAt.js";
+import type { ProjectBuilds } from "./projectBuilds.js";
 import {
+  blocksMove,
   modelChildren,
+  modelDeclaration,
   modelLook,
   modelRoots,
   pagesChildren,
   pagesDraggable,
   pagesDrop,
   contentPathOf,
+  followedProject,
   pagesFind,
   pagesLook,
   pagesParent,
   pagesPath,
+  newPathProblem,
+  pagesResource,
   pagesRoots,
   thisPageChildren,
   thisPageLook,
@@ -45,9 +66,39 @@ const THIS_PAGE_DEBOUNCE_MS = 250;
 export interface SidebarItem extends ItemLook {
   /** The file and line it opens, if it opens one. */
   opens: string | undefined;
+  /** The file it is, which VS Code decorates: its problems' color, for one. */
+  resource?: string;
   /** The command it runs in place of opening a file, if it runs one. */
   runs?: string;
   children: SidebarItem[];
+}
+
+/** A command of an item's menu in Pages or Content model, as the tests name it. */
+export type ItemCommand =
+  | "openPreview"
+  | "copyLink"
+  | "renameOrMove"
+  | "findReferences"
+  | "revealInExplorer"
+  | "newPageHere"
+  | "rename"
+  | "insert";
+
+/** What a command of an item's menu did, for tests. */
+export interface ItemRecord {
+  /** What it told the writer. */
+  messages: string[];
+  /** What it copied. */
+  copied?: string;
+  /** The references it showed, each as a file relative to the workspace and a line from 1. */
+  references?: string[];
+  /** For a rename: whether it asked first, in the refactor preview, and the files it changes. */
+  previewed?: boolean;
+  files?: string[];
+  /** For Insert at the Cursor: what running the action did. */
+  run?: RunRecord;
+  /** Whether it did what it's for. */
+  done: boolean;
 }
 
 /** The Pages and Content model views, for tests. */
@@ -67,6 +118,15 @@ export interface SidebarApi {
     item: string,
     label?: string,
   ): Promise<string | undefined>;
+  /**
+   * Runs a command from an item's menu, `answers` answering what it asks.
+   * An item of Pages is named by a page's or fragment's content path, or a
+   * section's folder; one of Content model by its kind and key,
+   * `phrase:product`, or a dimension's value, `value:deployment=cloud`.
+   */
+  act(command: ItemCommand, item: string, answers?: Scripted[]): Promise<ItemRecord>;
+  /** Turns Orphans Only in Pages, or Unused Only in Content model, on or off. */
+  filter(view: "pages" | "model", on: boolean): Promise<void>;
   /** The content path of the page selected in Pages, if one is. */
   selected(): string | undefined;
   /** The message above a view's items, if it shows one. */
@@ -95,6 +155,8 @@ export interface ThisPageApi {
 class Tree<N> implements vscode.TreeDataProvider<N> {
   /** An item's parent, which revealing an item walks up. */
   parentOf: ((node: N) => N | undefined) | undefined;
+  /** The file an item is, which VS Code decorates as the Explorer does. */
+  resourceOf: ((node: N) => vscode.Uri | undefined) | undefined;
 
   readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.changed.event;
@@ -119,6 +181,8 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
           ? vscode.TreeItemCollapsibleState.Expanded
           : vscode.TreeItemCollapsibleState.Collapsed,
     );
+    const resource = this.resourceOf?.(node);
+    if (resource) item.resourceUri = resource;
     item.description = look.description;
     item.tooltip = look.tooltip;
     if (look.context !== undefined) item.contextValue = look.context;
@@ -153,8 +217,10 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
     return this.getChildren(node).map((child) => {
       const target = this.opens(child);
       const command = this.command(child);
+      const resource = this.resourceOf?.(child);
       return {
         ...this.look(child),
+        ...(resource ? { resource: resource.toString() } : {}),
         opens: target
           ? `${target.uri.toString()}${target.selection ? `:${target.selection.start.line + 1}` : ""}`
           : undefined,
@@ -172,8 +238,9 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
 
 /**
  * The This page, Pages, and Content model views in the Ascribe sidebar, for the
- * active file's project. They ask only a server that is already running, and
- * never start one: a page being active means its project's server runs.
+ * active file's project, or the one Switch Project chose. They ask only a
+ * server that is already running, and start one only when Switch Project
+ * chooses its project: a page being active means its project's server runs.
  * Pages and Content model refresh when a file of the project is saved, when a
  * page is created or deleted, and when the active project changes; This page
  * follows the active editor and its cursor, while it's showing.
@@ -199,12 +266,13 @@ export class SidebarViews implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
 
   /** Pages' items, made once for each inventory, so revealing one finds it. */
-  private pagesNodes: { from: InventoryResult; roots: PagesNode[] } | undefined;
+  private pagesNodes:
+    { from: InventoryResult; orphansOnly: boolean; roots: PagesNode[] } | undefined;
 
   private readonly pages = new Tree<PagesNode>(
     () => this.pagesRoots(),
     pagesChildren,
-    pagesLook,
+    (node) => pagesLook(node, this.shownBuild()),
     (node) => {
       const content = this.inventory?.contentUri;
       const file = pagesPath(node);
@@ -213,18 +281,14 @@ export class SidebarViews implements vscode.Disposable {
   );
 
   private readonly model = new Tree<ModelNode>(
-    () => (this.inventory ? modelRoots(this.inventory) : []),
+    () => (this.inventory ? modelRoots(this.inventory, this.unusedOnly) : []),
     modelChildren,
     modelLook,
     (node) => {
-      const model = this.inventory?.modelUri;
-      const content = this.inventory?.contentUri;
-      if (node.kind !== "entry" || !node.entry.declaration) return undefined;
-      // A glossary term is declared on its page; the rest in `ascribe.toml`.
-      const page = node.entry.page;
-      const uri = page ? content && contentFile(content, page) : model && vscode.Uri.parse(model);
-      if (!uri) return undefined;
-      const { start, end } = node.entry.declaration;
+      const uri = this.declarationUri(node);
+      const declaration = modelDeclaration(node);
+      if (!uri || !declaration) return undefined;
+      const { start, end } = declaration;
       return {
         uri,
         selection: new vscode.Range(start.line, start.character, end.line, end.character),
@@ -273,20 +337,43 @@ export class SidebarViews implements vscode.Disposable {
     },
   );
 
+  /** Whether Pages shows only the orphans, and Content model only the unused entries. */
+  private orphansOnly = false;
+  private unusedOnly = false;
+  /** The last Markdown editor of each project, which Insert at the Cursor writes into. */
+  private readonly lastEditors = new LastEditors();
+
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly review: ReviewController,
+    private readonly builds: ProjectBuilds,
+    private readonly actions: Inserter,
   ) {
     this.pages.parentOf = pagesParent;
+    this.pages.resourceOf = (node) => {
+      const content = this.inventory?.contentUri;
+      const file = pagesResource(node);
+      return content && file ? contentFile(content, file) : undefined;
+    };
   }
 
   private pagesRoots(): PagesNode[] {
     const inventory = this.inventory;
     if (!inventory) return [];
-    if (this.pagesNodes?.from !== inventory) {
-      this.pagesNodes = { from: inventory, roots: pagesRoots(inventory) };
+    if (this.pagesNodes?.from !== inventory || this.pagesNodes.orphansOnly !== this.orphansOnly) {
+      this.pagesNodes = {
+        from: inventory,
+        orphansOnly: this.orphansOnly,
+        roots: pagesRoots(inventory, this.orphansOnly),
+      };
     }
     return this.pagesNodes.roots;
+  }
+
+  /** The build the status bar shows for the views' project, which Pages dims the pages it leaves out of. */
+  private shownBuild(): string | undefined {
+    const server = this.inventoryFrom;
+    return server ? this.builds.info(server).build : undefined;
   }
 
   /** An item of Pages by a page's content path, or a section's folder. */
@@ -310,6 +397,25 @@ export class SidebarViews implements vscode.Disposable {
       if (!node) throw new Error(`Pages has no item ${name}`);
       return node;
     };
+    const modelItem = (name: string): ModelNode => {
+      const [kind = "", key = ""] = name.split(/:(.*)/s);
+      for (const root of this.model.getChildren()) {
+        for (const entry of modelChildren(root)) {
+          if (entry.kind !== "entry") continue;
+          if (entry.entry.kind === kind && entry.entry.key === key) return entry;
+          for (const value of modelChildren(entry)) {
+            if (
+              value.kind === "value" &&
+              kind === "value" &&
+              `${value.dimension.key}=${value.value.value}` === key
+            ) {
+              return value;
+            }
+          }
+        }
+      }
+      throw new Error(`Content model has no item ${name}`);
+    };
     return {
       items: (view) => tree(view).items(),
       drop: (dragged, target, move) =>
@@ -318,6 +424,13 @@ export class SidebarViews implements vscode.Disposable {
         command === "placeHere"
           ? this.placeHere(item(name))
           : this.renameLabel(item(name), async () => label),
+      act: (command, name, answers = []) => {
+        const prompter = new ScriptedPrompter([...answers]);
+        return /^[a-z]+:/.test(name)
+          ? this.modelCommand(command, modelItem(name), prompter)
+          : this.pagesCommand(command, item(name), prompter);
+      },
+      filter: (view, on) => this.filter(view, on),
       selected: () => {
         const node = this.pages.view?.selection[0];
         return node && pagesPath(node);
@@ -368,7 +481,7 @@ export class SidebarViews implements vscode.Disposable {
       this.thisPage,
       this.pages,
       this.model,
-      vscode.window.onDidChangeActiveTextEditor(() => this.follow()),
+      vscode.window.onDidChangeActiveTextEditor(() => this.follow(false, true)),
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
         if (textEditor === vscode.window.activeTextEditor) this.soon("thisPage");
       }),
@@ -391,6 +504,9 @@ export class SidebarViews implements vscode.Disposable {
         if (server === this.server) this.follow(true);
       }),
       this.projects.onDidChangeProjects(() => this.follow(true)),
+      // The links of the views' welcome while their project's server has failed.
+      vscode.commands.registerCommand(SHOW_OUTPUT, () => this.server?.showOutput()),
+      vscode.commands.registerCommand(RESTART, () => this.server?.restart()),
       vscode.commands.registerCommand(PLACE_HERE, (node?: PagesNode) =>
         node ? this.placeHere(node).then((said) => said && this.say(said)) : undefined,
       ),
@@ -417,6 +533,15 @@ export class SidebarViews implements vscode.Disposable {
           this.soon("inventory");
         }
       }),
+      ...this.registerItemCommands(),
+      // Insert at the Cursor writes into the project's last Markdown editor.
+      vscode.window.onDidChangeActiveTextEditor((editor) => editor && this.noteEditor(editor)),
+      vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => this.noteEditor(textEditor)),
+      vscode.workspace.onDidCloseTextDocument((document) =>
+        this.lastEditors.forget(document.uri.toString()),
+      ),
+      // Pages dims what the build the status bar shows leaves out.
+      this.builds.onDidChange(() => this.pages.changed.fire()),
       vscode.commands.registerCommand(OPEN_THREAD, (node?: ThisPageNode) =>
         node?.kind === "thread" ? this.openThread(node.thread.id) : undefined,
       ),
@@ -427,7 +552,332 @@ export class SidebarViews implements vscode.Disposable {
         if (on || this.pageReview) this.soon("thisPage");
       }),
     );
+    const editor = vscode.window.activeTextEditor;
+    if (editor) this.noteEditor(editor);
+    void this.setFilterKeys();
     this.follow(true);
+  }
+
+  /** The commands of Pages' and Content model's items and title bars. */
+  private registerItemCommands(): vscode.Disposable[] {
+    const prompter = new QuickInputPrompter();
+    const report = (record: ItemRecord) => {
+      for (const message of record.messages) this.say(message);
+    };
+    const pages = (id: string, command: ItemCommand) =>
+      vscode.commands.registerCommand(id, (node?: PagesNode) =>
+        node ? this.pagesCommand(command, node, prompter).then(report) : undefined,
+      );
+    const model = (id: string, command: ItemCommand) =>
+      vscode.commands.registerCommand(id, (node?: ModelNode) =>
+        node ? this.modelCommand(command, node, prompter).then(report) : undefined,
+      );
+    return [
+      pages(PAGES_COMMANDS.openPreview, "openPreview"),
+      pages(PAGES_COMMANDS.copyLink, "copyLink"),
+      pages(PAGES_COMMANDS.renameOrMove, "renameOrMove"),
+      pages(PAGES_COMMANDS.findReferences, "findReferences"),
+      pages(PAGES_COMMANDS.revealInExplorer, "revealInExplorer"),
+      pages(PAGES_COMMANDS.newPageHere, "newPageHere"),
+      model(MODEL_COMMANDS.findReferences, "findReferences"),
+      model(MODEL_COMMANDS.rename, "rename"),
+      model(MODEL_COMMANDS.insert, "insert"),
+      vscode.commands.registerCommand(PAGES_COMMANDS.orphansOnly, () => this.filter("pages", true)),
+      vscode.commands.registerCommand(PAGES_COMMANDS.showAll, () => this.filter("pages", false)),
+      vscode.commands.registerCommand(MODEL_COMMANDS.unusedOnly, () => this.filter("model", true)),
+      vscode.commands.registerCommand(MODEL_COMMANDS.showAll, () => this.filter("model", false)),
+    ];
+  }
+
+  /** Turns a view's filter on or off: Orphans Only in Pages, Unused Only in Content model. */
+  private async filter(view: "pages" | "model", on: boolean): Promise<void> {
+    if (view === "pages") this.orphansOnly = on;
+    else this.unusedOnly = on;
+    await this.setFilterKeys();
+    this.showMessages();
+    (view === "pages" ? this.pages : this.model).changed.fire();
+  }
+
+  /** The context keys the title bars' toggles are shown by. */
+  private async setFilterKeys(): Promise<void> {
+    await Promise.all([
+      vscode.commands.executeCommand("setContext", ORPHANS_ONLY, this.orphansOnly),
+      vscode.commands.executeCommand("setContext", UNUSED_ONLY, this.unusedOnly),
+    ]);
+  }
+
+  /** Notes a Markdown editor of a project as that project's last, with its cursor. */
+  private noteEditor(editor: vscode.TextEditor): void {
+    const { document, selection } = editor;
+    if (document.languageId !== "markdown" || document.uri.scheme !== "file") return;
+    const server = this.projects.serverFor(document.uri);
+    if (!server) return;
+    this.lastEditors.note(server.project.folder, {
+      uri: document.uri.toString(),
+      selection: {
+        start: { line: selection.start.line, character: selection.start.character },
+        end: { line: selection.end.line, character: selection.end.character },
+      },
+    });
+  }
+
+  /** Runs a command of an item of Pages. */
+  private async pagesCommand(
+    command: ItemCommand,
+    node: PagesNode,
+    prompter: Prompter,
+  ): Promise<ItemRecord> {
+    const record: ItemRecord = { messages: [], done: false };
+    const content = this.inventory?.contentUri;
+    if (!content) return record;
+    if (command === "newPageHere") {
+      if (node.kind !== "section") return record;
+      // The content root's section is the content root.
+      const folder = node.section.folder
+        ? contentFile(content, node.section.folder.replace(/\/$/, ""))
+        : vscode.Uri.parse(content);
+      await vscode.commands.executeCommand("ascribe.newPage", folder);
+      record.done = true;
+      return record;
+    }
+    const path = pagesResource(node);
+    if (path === undefined) return record;
+    const uri = contentFile(content, path);
+    switch (command) {
+      case "openPreview":
+        await vscode.window.showTextDocument(uri, { preview: true });
+        await vscode.commands.executeCommand("ascribe.openPreview");
+        record.done = true;
+        break;
+      case "copyLink": {
+        // What a link in a page writes, from the content root, as Copy a
+        // link to this section writes a heading's.
+        const link = `/${path}`;
+        await vscode.env.clipboard.writeText(link);
+        record.copied = link;
+        record.messages.push(`Copied ${link}`);
+        record.done = true;
+        break;
+      }
+      case "renameOrMove":
+        await this.renameOrMove(path, prompter, record);
+        break;
+      case "findReferences":
+        await this.findReferences(uri, new vscode.Position(0, 0), record);
+        break;
+      case "revealInExplorer":
+        await vscode.commands.executeCommand("revealInExplorer", uri);
+        record.done = true;
+        break;
+      default:
+        break;
+    }
+    return record;
+  }
+
+  /**
+   * Rename or Move…: asks for the new path, then renames the file as the
+   * Explorer does, and the server's edits for a moved file follow: its links,
+   * the links to it, and `ascribe.nav`.
+   */
+  private async renameOrMove(path: string, prompter: Prompter, record: ItemRecord): Promise<void> {
+    const content = this.inventory?.contentUri;
+    if (!content) return;
+    const asked = await runWizard(
+      "Rename or Move",
+      {
+        steps: () => [
+          {
+            kind: "text",
+            key: "path",
+            prompt: "Its new path, from the content root.",
+            value: path,
+            validate: (value) => newPathProblem(path, value),
+          },
+        ],
+        args: (answers) => ({ path: text(answers, "path")?.trim() }),
+      },
+      prompter,
+    );
+    if (!asked || "error" in asked || typeof asked.args.path !== "string") return;
+    const said = await this.moveFile(path, asked.args.path);
+    if (said) record.messages.push(said);
+    else record.done = true;
+  }
+
+  /** Moves a page's or fragment's file, as the Explorer does; what it says when it can't. */
+  private async moveFile(from: string, to: string): Promise<string | undefined> {
+    const content = this.inventory?.contentUri;
+    if (!content) return undefined;
+    const target = contentFile(content, to);
+    if (blocksMove(from, to)) {
+      try {
+        await vscode.workspace.fs.stat(target);
+        return `${to} is there already.`;
+      } catch {
+        // Nothing's there: it can move.
+      }
+    }
+    const edit = new vscode.WorkspaceEdit();
+    edit.renameFile(contentFile(content, from), target, { overwrite: false });
+    if (!(await vscode.workspace.applyEdit(edit))) return `${from} couldn't be moved.`;
+    this.soon("inventory");
+    return undefined;
+  }
+
+  /**
+   * Find All References at `position` of `uri`: the server's answer, shown in
+   * a peek there. A page's are at its start; an entry's, at its declaration.
+   */
+  private async findReferences(
+    uri: vscode.Uri,
+    position: vscode.Position,
+    record: ItemRecord,
+  ): Promise<void> {
+    await vscode.window.showTextDocument(uri, {
+      selection: new vscode.Range(position, position),
+      preview: true,
+    });
+    const places =
+      (await vscode.commands.executeCommand<vscode.Location[] | undefined>(
+        "vscode.executeReferenceProvider",
+        uri,
+        position,
+      )) ?? [];
+    record.references = places.map(
+      (place) =>
+        `${vscode.workspace.asRelativePath(place.uri, false)}:${place.range.start.line + 1}`,
+    );
+    await vscode.commands.executeCommand("editor.action.showReferences", uri, position, places);
+    record.done = true;
+  }
+
+  /**
+   * The file an item of Content model is declared in: a glossary term's page,
+   * or `ascribe.toml` for the rest.
+   */
+  private declarationUri(node: ModelNode): vscode.Uri | undefined {
+    const page = node.kind === "entry" ? node.entry.page : null;
+    if (page !== null) {
+      const content = this.inventory?.contentUri;
+      return content ? contentFile(content, page) : undefined;
+    }
+    const model = this.inventory?.modelUri;
+    return model ? vscode.Uri.parse(model) : undefined;
+  }
+
+  /** Runs a command of an item of Content model. */
+  private async modelCommand(
+    command: ItemCommand,
+    node: ModelNode,
+    prompter: Prompter,
+  ): Promise<ItemRecord> {
+    const record: ItemRecord = { messages: [], done: false };
+    const model = this.inventory?.modelUri;
+    const declaration = modelDeclaration(node);
+    const declared = this.declarationUri(node);
+    switch (command) {
+      case "findReferences":
+        if (declared && declaration) {
+          const { line, character } = declaration.start;
+          await this.findReferences(declared, new vscode.Position(line, character), record);
+        }
+        break;
+      case "rename":
+        if (model && declaration) await this.rename(node, model, declaration, prompter, record);
+        break;
+      case "insert":
+        if (node.kind === "entry") await this.insert(node, prompter, record);
+        break;
+      default:
+        break;
+    }
+    return record;
+  }
+
+  /**
+   * Rename…, on a phrase or a dimension's value: asks for the new name, then
+   * runs the server's rename at its declaration, which `F2` on it in a page
+   * runs too, and shows every change in the refactor preview.
+   */
+  private async rename(
+    node: ModelNode,
+    model: string,
+    declaration: LspRange,
+    prompter: Prompter,
+    record: ItemRecord,
+  ): Promise<void> {
+    const server = this.inventoryFrom;
+    if (server?.state !== "running") {
+      record.messages.push("The project's language server isn't running.");
+      return;
+    }
+    const entries = this.inventory?.model ?? [];
+    let current: string;
+    let validate: (value: string) => string | undefined;
+    if (node.kind === "entry" && node.entry.kind === "phrase") {
+      current = node.entry.key;
+      validate = validKey(entries.filter((e) => e.kind === "phrase").map((e) => e.key));
+    } else if (node.kind === "value") {
+      current = node.value.value;
+      validate = validValue((node.dimension.values ?? []).map((v) => v.value));
+    } else {
+      return;
+    }
+    const asked = await runWizard(
+      `Rename ${current}`,
+      {
+        steps: () => [newNameStep(current, validate)],
+        args: (answers) => ({ newName: text(answers, "newName")?.trim() }),
+      },
+      prompter,
+    );
+    if (!asked || "error" in asked || typeof asked.args.newName !== "string") return;
+    record.done = await renameAt(
+      server,
+      { uri: model, position: declaration.start, newName: asked.args.newName },
+      record,
+      (message) => record.messages.push(message),
+    );
+    if (record.done) this.soon("inventory");
+  }
+
+  /**
+   * Insert at the Cursor, on a phrase or a widget: runs Insert a phrase or
+   * Insert a widget with it chosen, in the project's last Markdown editor at
+   * its cursor, which is brought to the front. Where there's none, or the
+   * action doesn't apply at its cursor, it shows the action's hint and
+   * changes nothing.
+   */
+  private async insert(
+    node: Extract<ModelNode, { kind: "entry" }>,
+    prompter: Prompter,
+    record: ItemRecord,
+  ): Promise<void> {
+    const server = this.inventoryFrom;
+    const last = server && this.lastEditors.get(server.project.folder);
+    let context: ContextResult | undefined;
+    if (last) {
+      const editor = await vscode.window.showTextDocument(vscode.Uri.parse(last.uri), {
+        preview: false,
+      });
+      const { start, end } = last.selection;
+      editor.selection = new vscode.Selection(start.line, start.character, end.line, end.character);
+      try {
+        context = await this.actions.contextAt(editor);
+      } catch {
+        context = undefined;
+      }
+    }
+    const plan = insertPlan(node.entry, last, context);
+    if (!plan) return;
+    if (plan.kind === "hint") {
+      record.messages.push(plan.hint);
+      return;
+    }
+    const run = await this.actions.runWith(plan.action, plan.preset, prompter);
+    if (run) record.run = run;
+    record.done = run?.done ?? false;
   }
 
   dispose(): void {
@@ -461,6 +911,47 @@ export class SidebarViews implements vscode.Disposable {
     return (await vscode.window.showWarningMessage(question, { modal: true }, move)) === move;
   }
 
+  /** The message above each view: what it shows when there's nothing to list. */
+  private showMessages(): void {
+    const server = this.server;
+    const result = this.inventory;
+    // A server that failed to start: the views' welcome says so, with its links.
+    if (server?.state === "failed") {
+      for (const tree of [this.pages, this.model]) {
+        if (tree.view) {
+          tree.view.message = "";
+          tree.view.description = this.projects.name(server.project);
+        }
+      }
+      return;
+    }
+    // A server Switch Project started, until it answers: the views name its project.
+    const starting = server?.state === "starting" && !result;
+    if (starting) {
+      for (const tree of [this.pages, this.model]) {
+        if (tree.view) tree.view.description = this.projects.name(server.project);
+      }
+    }
+    if (this.pages.view) {
+      this.pages.view.message = starting
+        ? STARTING
+        : server && !result
+          ? "Open a page of the project to list its pages."
+          : result && this.orphansOnly && this.pagesRoots().length === 0
+            ? "No orphans: something links to or includes every page and fragment."
+            : "";
+    }
+    if (this.model.view) {
+      this.model.view.message = starting
+        ? STARTING
+        : server && !result
+          ? "Open a page of the project to list its content model."
+          : result && this.unusedOnly && modelRoots(result, true).length === 0
+            ? "Nothing unused: every entry is used."
+            : "";
+    }
+  }
+
   private say(message: string): void {
     void vscode.window.showInformationMessage(`Ascribe: ${message}`);
   }
@@ -483,20 +974,8 @@ export class SidebarViews implements vscode.Disposable {
     const content = this.inventory?.contentUri;
     if (!content) return undefined;
     const name = plan.page.slice(plan.page.lastIndexOf("/") + 1);
-    const from = contentFile(content, plan.page);
-    const to = contentFile(content, `${plan.folder}${name}`);
     if (!(await ask(`Moving \`${name}\` to ${plan.label} changes its address.`))) return undefined;
-    try {
-      await vscode.workspace.fs.stat(to);
-      return `${plan.folder}${name} is there already.`;
-    } catch {
-      // Nothing's there: it can move.
-    }
-    const edit = new vscode.WorkspaceEdit();
-    edit.renameFile(from, to, { overwrite: false });
-    if (!(await vscode.workspace.applyEdit(edit))) return `${name} couldn't be moved.`;
-    this.soon("inventory");
-    return undefined;
+    return this.moveFile(plan.page, `${plan.folder}${name}`);
   }
 
   /** Place Here, on a page `ascribe.nav` leaves out: it's appended to its section's pages. */
@@ -557,17 +1036,36 @@ export class SidebarViews implements vscode.Disposable {
       .then(undefined, () => undefined);
   }
 
+  /** The project the views show, which Switch Project marks. */
+  get project(): ProjectServer | undefined {
+    return this.server;
+  }
+
   /**
-   * Follows the active editor: a file of another project switches the views
-   * to it, and a file of no project leaves them on the last one.
+   * Shows a project chosen with Switch Project, starting its server if it
+   * hasn't started. It's a jump, not a pin: the views stay on it until a
+   * file of another project becomes active.
    */
-  private follow(force = false): void {
+  choose(server: ProjectServer): void {
+    this.server = server;
+    this.follow(true);
+    if (server.state === "stopped") void server.start();
+  }
+
+  /**
+   * Follows the active editor: when it changes to a file of another project,
+   * the views switch to it, and a file of no project leaves them on the last
+   * one. Drawing them again otherwise keeps the project Switch Project chose.
+   */
+  private follow(force = false, editorChanged = false): void {
     const uri = vscode.window.activeTextEditor?.document.uri;
-    const server = uri?.scheme === "file" ? this.projects.serverFor(uri) : undefined;
-    if (server && server !== this.server) {
+    const active = uri?.scheme === "file" ? this.projects.serverFor(uri) : undefined;
+    const server = followedProject(this.server, active, editorChanged, this.projects.servers);
+    if (server !== this.server) {
       this.server = server;
       force = true;
     }
+    void vscode.commands.executeCommand("setContext", FAILED, this.server?.state === "failed");
     if (force) {
       if (this.server?.state !== "running" || !this.projects.servers.includes(this.server)) {
         this.inventory = undefined;
@@ -629,14 +1127,7 @@ export class SidebarViews implements vscode.Disposable {
     for (const tree of [this.pages, this.model]) {
       if (tree.view) tree.view.description = name ?? "";
     }
-    if (this.pages.view) {
-      this.pages.view.message =
-        server && !result ? "Open a page of the project to list its pages." : "";
-    }
-    if (this.model.view) {
-      this.model.view.message =
-        server && !result ? "Open a page of the project to list its content model." : "";
-    }
+    this.showMessages();
     this.pages.changed.fire();
     this.model.changed.fire();
     this.reveal();
@@ -650,6 +1141,13 @@ export class SidebarViews implements vscode.Disposable {
     const server = document && this.projects.serverFor(document.uri);
     if (!editor || !document || document.languageId !== "markdown" || !server) {
       this.showThisPage(undefined, NO_PAGE);
+      return;
+    }
+    if (server.state === "failed") {
+      this.showThisPage(
+        undefined,
+        `${this.projects.name(server.project)}: the language server failed to start.`,
+      );
       return;
     }
     if (server.state !== "running") {
@@ -714,6 +1212,39 @@ export class SidebarViews implements vscode.Disposable {
   }
 }
 
+/** What Content model's Insert at the Cursor needs of the editor's actions. */
+export interface Inserter {
+  /** The context at an editor's selection, as an action asks for it. */
+  contextAt(editor: vscode.TextEditor): Promise<ContextResult>;
+  /** Runs an action in the active editor with some of its answers given, the rest asked by `prompter`'s. */
+  runWith(action: Action, preset: Answers, prompter?: Prompter): Promise<RunRecord | undefined>;
+}
+
+/** The commands of Pages' items and title bar. */
+const PAGES_COMMANDS = {
+  openPreview: "ascribe.pages.openPreview",
+  copyLink: "ascribe.pages.copyLink",
+  renameOrMove: "ascribe.pages.renameOrMove",
+  findReferences: "ascribe.pages.findReferences",
+  revealInExplorer: "ascribe.pages.revealInExplorer",
+  newPageHere: "ascribe.pages.newPageHere",
+  orphansOnly: "ascribe.pages.orphansOnly",
+  showAll: "ascribe.pages.showAll",
+} as const;
+
+/** The commands of Content model's items and title bar. */
+const MODEL_COMMANDS = {
+  findReferences: "ascribe.model.findReferences",
+  rename: "ascribe.model.rename",
+  insert: "ascribe.model.insert",
+  unusedOnly: "ascribe.model.unusedOnly",
+  showAll: "ascribe.model.showAll",
+} as const;
+
+/** The context keys the title bars' toggles are shown by. */
+const ORPHANS_ONLY = "ascribe.pages.orphansOnly";
+const UNUSED_ONLY = "ascribe.model.unusedOnly";
+
 /** Place Here, in the menu of a page `ascribe.nav` leaves out. */
 const PLACE_HERE = "ascribe.pages.placeHere";
 
@@ -727,6 +1258,16 @@ function isNavFile(uri: vscode.Uri): boolean {
 
 /** The command a thread in This page's Review section runs. */
 const OPEN_THREAD = "ascribe.review.openThread";
+
+/** The context key set while the views' project's server has failed, for their welcome. */
+const FAILED = "ascribe.sidebar.failed";
+
+/** The commands of the views' welcome while their project's server has failed. */
+const SHOW_OUTPUT = "ascribe.sidebar.showOutput";
+const RESTART = "ascribe.sidebar.restart";
+
+/** What Pages and Content model say while their project's server starts. */
+const STARTING = "Starting the project's language server.";
 
 /** What This page says when the active file isn't a page of a project. */
 const NO_PAGE = "Open a page to see what's known about it.";

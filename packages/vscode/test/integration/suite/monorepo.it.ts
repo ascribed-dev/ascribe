@@ -172,19 +172,26 @@ describe("with several projects, one nested in another", () => {
   const known = (folder: string): boolean =>
     api.projects().some((project) => samePath(project.folder, folder));
 
-  /** The Projects view's top level, by label: each project's state and its children's labels. */
-  async function viewed(): Promise<Map<string, { state: string; children: string[] }>> {
-    const items = await api.ui.projects.items();
+  /** Switch Project's items, by name: each project's state and its buttons. */
+  function listed(): Map<string, { detail: string; buttons: string[] }> {
     return new Map(
-      items.map((item) => [
-        item.label,
-        {
-          state: item.contextValue.replace("ascribe.project.", ""),
-          children: item.children.map((child) => `${child.label} (${child.description})`),
-        },
-      ]),
+      api.ui.switchProject
+        .items()
+        .map((item) => [
+          item.label.replace(/^\$\([\w-]+\) /, ""),
+          { detail: item.detail, buttons: item.buttons },
+        ]),
     );
   }
+
+  /** Waits until the sidebar's Pages view lists the pages of the project in `project`. */
+  const sidebarOn = (name: string, project: string) =>
+    waitFor(`the sidebar to show ${name}`, async () => {
+      await api.ui.sidebar.whenSettled();
+      return samePath(api.ui.sidebar.project() ?? "", project)
+        ? api.ui.sidebar.items("pages")
+        : undefined;
+    });
 
   /** The status bar item's text, once the item is shown and `check` accepts it. */
   const statusText = (description: string, check: (text: string) => boolean) =>
@@ -218,15 +225,15 @@ describe("with several projects, one nested in another", () => {
       );
     });
 
-    it("lists every project in the Projects view, and showing or refreshing it starts none", async () => {
+    it("lists every project in Switch Project, and showing the sidebar or refreshing starts none", async () => {
       const started: string[] = [];
       const listener = api.onDidStartServer((f) => started.push(f));
       try {
         await vscode.commands.executeCommand("workbench.view.extension.ascribe");
-        const shown = await viewed();
-        await api.ui.projects.refresh();
+        const shown = listed();
+        await api.ui.switchProject.refresh();
         await api.whenSettled();
-        assert.deepEqual(await viewed(), shown);
+        assert.deepEqual(listed(), shown);
         // This page, Pages, and Content model have no running project to show.
         await api.ui.sidebar.whenSettled();
         assert.deepEqual(api.ui.sidebar.items("pages"), []);
@@ -236,7 +243,7 @@ describe("with several projects, one nested in another", () => {
           new Map(
             ["docs", "handbook", "handbook/pages/nested"].map((name) => [
               name,
-              { state: "stopped", children: ["ascribe.toml (content model)"] },
+              { detail: "not checked yet", buttons: ["showOutput"] },
             ]),
           ),
         );
@@ -244,7 +251,7 @@ describe("with several projects, one nested in another", () => {
         listener.dispose();
         await vscode.commands.executeCommand("workbench.action.closeSidebar");
       }
-      // What the view caused: no server started while it was shown and refreshed.
+      // No server started while the sidebar was shown and Switch Project refreshed.
       assert.deepEqual(started, []);
     });
 
@@ -256,20 +263,17 @@ describe("with several projects, one nested in another", () => {
       assert.equal(api.binary(folder.handbook())?.source, "setting");
     });
 
-    it("shows the started project running in the Projects view, and in the status bar", async () => {
+    it("shows the started project running in Switch Project, and in the status bar", async () => {
       await api.ui.whenBuildsKnown();
-      const shown = await waitFor("the handbook's editor build in the view", async () => {
-        const view = await viewed();
-        return view.get("handbook")?.children.length === 3 ? view : undefined;
+      const shown = await waitFor("the handbook's build in Switch Project", () => {
+        const list = listed();
+        return list.get("handbook")?.detail.startsWith("running, site build") ? list : undefined;
       });
-      assert.deepEqual(shown.get("handbook")?.state, "running");
-      assert.deepEqual(shown.get("handbook")?.children.slice(0, 2), [
-        "ascribe.toml (content model)",
-        "site (editor build)",
-      ]);
-      assert.match(shown.get("handbook")?.children[2] ?? "", /^ascribe \S+ \(setting\)$/);
-      assert.equal(shown.get("docs")?.state, "stopped");
-      assert.equal(shown.get("handbook/pages/nested")?.state, "stopped");
+      // Its binary, which the status bar's tooltip shows too.
+      assert.match(shown.get("handbook")?.detail ?? "", / · \S+ \(setting, [^)]+\)$/);
+      assert.deepEqual(shown.get("handbook")?.buttons, ["showOutput", "restart"]);
+      assert.equal(shown.get("docs")?.detail, "not checked yet");
+      assert.equal(shown.get("handbook/pages/nested")?.detail, "not checked yet");
 
       await statusText(
         "the handbook",
@@ -338,11 +342,11 @@ describe("with several projects, one nested in another", () => {
       await diagnosticsOf(docsPage, () => codes(docsPage).join() === "ASC036");
     });
 
-    it("restarts one project's server from the Projects view", async () => {
+    it("restarts one project's server from Switch Project", async () => {
       const started: string[] = [];
       const listener = api.onDidStartServer((f) => started.push(comparable(f)));
       try {
-        await api.ui.projects.run("restart", folder.docs());
+        await api.ui.switchProject.run("restart", folder.docs());
         await api.whenSettled();
       } finally {
         listener.dispose();
@@ -350,6 +354,38 @@ describe("with several projects, one nested in another", () => {
       assert.deepEqual(started, [comparable(folder.docs())]);
       assertRunning([folder.docs(), folder.handbook()]);
       await diagnosticsOf(docsPage, () => codes(docsPage).join() === "ASC036");
+    });
+
+    it("switches the sidebar to a chosen project, starting its server, until another's file is active", async () => {
+      await open(docsPage);
+      await sidebarOn("docs", folder.docs());
+      const before = api.ui.switchProject.items();
+      assert.ok(before[0]?.current && samePath(before[0].folder, folder.docs()), before[0]?.label);
+      assert.equal(before[0]?.label, "$(check) docs");
+      assert.equal(before.filter((item) => item.current).length, 1);
+
+      // Chosen by its folder in another case on Windows, where paths ignore it.
+      const nested = process.platform === "win32" ? folder.nested().toUpperCase() : folder.nested();
+      api.ui.switchProject.answerNext(nested);
+      await vscode.commands.executeCommand("ascribe.switchProject");
+      // Its server wasn't running; choosing it starts it, and the views show it.
+      await waitFor("the nested project's server", () => api.state(folder.nested()) === "running");
+      const pages = await sidebarOn("the nested project", folder.nested());
+      assert.deepEqual(
+        pages.map((group) => [group.label, group.children.map((page) => page.description)]),
+        [["Start", ["index.md"]]],
+      );
+      const after = api.ui.switchProject.items();
+      assert.equal(after[0]?.label, "$(check) handbook/pages/nested");
+      // The docs page is still the active editor: the sidebar stays where it was sent.
+      await api.whenSettled();
+      await api.ui.sidebar.whenSettled();
+      assert.ok(samePath(api.ui.sidebar.project() ?? "", folder.nested()));
+
+      // A file of another project becoming active takes the sidebar with it.
+      await open(handbookPage);
+      await sidebarOn("the handbook", folder.handbook());
+      assert.equal(api.ui.switchProject.items()[0]?.label, "$(check) handbook");
     });
 
     it("diagnoses a nested project's file through the nested project alone", async () => {

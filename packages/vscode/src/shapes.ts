@@ -799,12 +799,15 @@ export interface InventoryEntry {
   key: string;
   /** Its label, name, or term, where it has one besides its key. */
   label: string | null;
-  /** How many places use it; `null` for a build, which pages don't name. */
+  /**
+   * How many places use it; `null` for a build, which pages don't name.
+   * For a content type, how many pages have it.
+   */
   uses: number | null;
   /**
    * Where it's declared: in `ascribe.toml`, or, for a glossary term, in
-   * `page`. `null` for a built-in note type, and for an entry that can't
-   * be found there.
+   * `page`. `null` for a built-in note type, the implicit `page` type and
+   * `site` build, and an entry that can't be found there.
    */
   declaration: LspRange | null;
   /**
@@ -813,6 +816,11 @@ export interface InventoryEntry {
    * a fragment the page includes. `null` for an entry of `ascribe.toml`.
    */
   page: string | null;
+  /**
+   * A dimension's values, in declaration order; left out for every other
+   * kind.
+   */
+  values?: InventoryValue[];
 }
 
 /** A fragment. */
@@ -875,8 +883,8 @@ export interface InventoryResult {
   navigation: InventorySection | null;
   /**
    * The content model's entries: phrases, features, glossary terms,
-   * dimensions, note types, widgets, then builds, each kind in
-   * declaration order.
+   * dimensions, note types, widgets, builds, then page content types,
+   * each kind in declaration order.
    */
   model: InventoryEntry[];
   /**
@@ -922,6 +930,19 @@ export interface InventorySection {
    * placed.
    */
   listsPages: boolean;
+}
+
+/** A value of a dimension. */
+export interface InventoryValue {
+  /** The value, as pages write it. */
+  value: string;
+  /** Its label, where it has one besides the value. */
+  label: string | null;
+  /**
+   * Where the dimension's `values` in `ascribe.toml` has it, inside its
+   * quotes; `null` when it can't be found there.
+   */
+  declaration: LspRange | null;
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
@@ -1009,7 +1030,8 @@ export interface LspWorkspaceEdit {
 }
 
 /** A kind of content model entry. */
-export type ModelKind = "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build";
+export type ModelKind =
+  "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build" | "type";
 
 /** What a page or fragment is. */
 export interface PageAbout {

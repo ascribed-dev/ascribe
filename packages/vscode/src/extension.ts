@@ -12,13 +12,13 @@ import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
 import { EveryBuildChecks, type EveryBuildApi } from "./ui/checkEveryBuild.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
-import { STATE_NAMES } from "./ui/describe.js";
+import { projectKeys, STATE_NAMES } from "./ui/describe.js";
 import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
-import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
 import { ReviewView, type ReviewViewApi } from "./ui/reviewView.js";
 import { SidebarViews, type SidebarApi, type ThisPageApi } from "./ui/sidebarViews.js";
 import { showRestricted, StatusBar, type StatusBarApi } from "./ui/statusBar.js";
+import { SwitchProject, type SwitchProjectApi } from "./ui/switchProject.js";
 import { Walkthrough } from "./ui/walkthrough.js";
 import { showMemos } from "./ui/memos.js";
 import { FormatterOffer } from "./ui/formatter.js";
@@ -53,7 +53,8 @@ export interface AscribeApi {
   /** The status bar item and the sidebar's views, for tests. */
   ui: {
     statusBar: StatusBarApi;
-    projects: ProjectsViewApi;
+    /** Switch Project. */
+    switchProject: SwitchProjectApi;
     lens: BuildLensApi;
     /** The Review view, and its Open Source Changes. */
     review: ReviewViewApi;
@@ -104,15 +105,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   statusBar.register();
   const lens = new BuildLens(projects, builds, chosen, lenses);
   lens.register();
-  const projectsView = new ProjectsView(projects, builds);
-  projectsView.register();
   const reviewView = new ReviewView(preview.review, projects);
   reviewView.register();
-  const sidebar = new SidebarViews(projects, preview.review);
-  sidebar.register();
-
   const actions = new ActionsController(projects);
   actions.register();
+  const sidebar = new SidebarViews(projects, preview.review, builds, actions);
+  const switchProject = new SwitchProject(projects, builds, sidebar);
+  switchProject.register();
+  sidebar.register();
+
   const newPage = new NewPage(projects);
   newPage.register();
   const walkthrough = new Walkthrough(projects);
@@ -168,7 +169,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     builds,
     statusBar,
     lens,
-    projectsView,
+    switchProject,
     reviewView,
     sidebar,
     walkthrough,
@@ -224,14 +225,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       const server = (active && projects.serverFor(active)) ?? (await pickServer(projects));
       server?.showOutput();
     }),
-    projects.onDidChangeProjects(() => void updateActive(projects)),
+    projects.onDidChangeProjects(() => void updateKeys(projects)),
   );
 
   // A contributed command activates the extension in any workspace, so
   // discover projects here and start servers only where there are some.
   projects.register();
   await projects.refresh();
-  await updateActive(projects);
+  await updateKeys(projects);
   terminals.register();
   return {
     binary: (folder) => projects.serverAt(folder)?.binary,
@@ -258,7 +259,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     agents: { mcp: mcp.api, tools: tools.api, terminals: terminals.api },
     ui: {
       statusBar: statusBar.api,
-      projects: projectsView.api,
+      switchProject: switchProject.api,
       lens: lens.api,
       review: reviewView.api,
       thisPage: sidebar.thisPageApi,
@@ -317,13 +318,16 @@ async function pickServer(projects: ProjectRegistry): Promise<ProjectServer | un
   return picked?.server;
 }
 
-/** Tells VS Code whether the workspace has a project, for the `ascribe.active` conditions. */
-function updateActive(projects: ProjectRegistry): Thenable<unknown> {
-  return vscode.commands.executeCommand(
-    "setContext",
-    "ascribe.active",
-    projects.projects.length > 0,
-  );
+/**
+ * Tells VS Code whether the workspace has a project, and whether it has
+ * several, for the manifest's `when` conditions.
+ */
+async function updateKeys(projects: ProjectRegistry): Promise<void> {
+  const keys = projectKeys(projects.projects.length);
+  await Promise.all([
+    vscode.commands.executeCommand("setContext", "ascribe.active", keys.active),
+    vscode.commands.executeCommand("setContext", "ascribe.multipleProjects", keys.multipleProjects),
+  ]);
 }
 
 interface ProtocolPosition {

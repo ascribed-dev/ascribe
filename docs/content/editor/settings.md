@@ -12,7 +12,7 @@ How the [VS Code extension](index.md) works in a workspace that holds more than 
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
 
 @available: ascribe 0.3.2
-A folder whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`. A project there isn't listed in the **Projects** view and gets no language server, so its pages get no diagnostics and no preview. Folders that `files.exclude` hides are left out too.
+A folder whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`. A project there isn't listed in **Switch Project** and gets no language server, so its pages get no diagnostics and no preview. Folders that `files.exclude` hides are left out too.
 
 A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
 
@@ -24,7 +24,7 @@ A project's server starts the first time you open one of its Markdown files or i
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 
-An `ascribe.toml` you add or delete is picked up as you work. If the editor misses a new one, opening or switching to one of the new project's files picks it up. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so, and `ascribe.projects.exclude` leaves out the folders that aren't projects.
+An `ascribe.toml` you add or delete is picked up as you work. If the editor misses a new one, opening or switching to one of the new project's files picks it up. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so, and that **Switch Project** lists only those 50; `ascribe.projects.exclude` leaves out the folders that aren't projects.
 
 Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 
@@ -47,7 +47,7 @@ npx ascribe check --config handbook
 
 ### Commands and output
 
-Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](index.md#the-status-bar) names that project, and the [Projects view](index.md#the-projects-view) lists them all. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
+Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](index.md#the-status-bar) names that project. The sidebar shows it too, and [Switch Project](index.md#switch-project) lists them all and shows another in the sidebar until a file of another project is active. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
 
 Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
 

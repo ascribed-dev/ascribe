@@ -12,7 +12,7 @@
               "type": "null"
             }
           ],
-          "description": "Where it's declared: in `ascribe.toml`, or, for a glossary term, in\n`page`. `null` for a built-in note type, and for an entry that can't\nbe found there."
+          "description": "Where it's declared: in `ascribe.toml`, or, for a glossary term, in\n`page`. `null` for a built-in note type, the implicit `page` type and\n`site` build, and an entry that can't be found there."
         },
         "key": {
           "description": "Its key, id, or name, as pages write it.",
@@ -37,12 +37,19 @@
           ]
         },
         "uses": {
-          "description": "How many places use it; `null` for a build, which pages don't name.",
+          "description": "How many places use it; `null` for a build, which pages don't name.\nFor a content type, how many pages have it.",
           "minimum": 0,
           "type": [
             "integer",
             "null"
           ]
+        },
+        "values": {
+          "description": "A dimension's values, in declaration order; left out for every other\nkind.",
+          "items": {
+            "$ref": "#/$defs/InventoryValue"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -197,6 +204,39 @@
       ],
       "type": "object"
     },
+    "InventoryValue": {
+      "description": "A value of a dimension.",
+      "properties": {
+        "declaration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the dimension's `values` in `ascribe.toml` has it, inside its\nquotes; `null` when it can't be found there."
+        },
+        "label": {
+          "description": "Its label, where it has one besides the value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": {
+          "description": "The value, as pages write it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "label",
+        "declaration"
+      ],
+      "type": "object"
+    },
     "LspPosition": {
       "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
       "properties": {
@@ -272,6 +312,11 @@
           "const": "build",
           "description": "A build.",
           "type": "string"
+        },
+        {
+          "const": "type",
+          "description": "A page content type.",
+          "type": "string"
         }
       ]
     }
@@ -294,7 +339,7 @@
       "type": "array"
     },
     "model": {
-      "description": "The content model's entries: phrases, features, glossary terms,\ndimensions, note types, widgets, then builds, each kind in\ndeclaration order.",
+      "description": "The content model's entries: phrases, features, glossary terms,\ndimensions, note types, widgets, builds, then page content types,\neach kind in declaration order.",
       "items": {
         "$ref": "#/$defs/InventoryEntry"
       },

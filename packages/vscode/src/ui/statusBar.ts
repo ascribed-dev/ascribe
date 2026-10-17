@@ -7,6 +7,7 @@ import { choices, lineDescription, type ChosenBuilds } from "./chosenBuild.js";
 import { RESTRICTED_NOTICE, statusFor, waitingNotice, type Notice } from "./describe.js";
 import type { BuildLenses } from "./lens.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
+import { SWITCH_PROJECT_COMMAND } from "./switchProject.js";
 
 const MENU_COMMAND = "ascribe.projectMenu";
 const SWITCH_BUILD_COMMAND = "ascribe.switchBuild";
@@ -114,6 +115,14 @@ export class StatusBar implements vscode.Disposable {
         run: () => vscode.commands.executeCommand(CHECK_EVERY_BUILD_COMMAND),
       },
       { label: "$(output) Show output", run: () => server.showOutput() },
+      ...(this.projects.servers.length >= 2
+        ? [
+            {
+              label: "$(arrow-swap) Switch project",
+              run: () => vscode.commands.executeCommand(SWITCH_PROJECT_COMMAND),
+            },
+          ]
+        : []),
       { label: "$(debug-restart) Restart server", run: () => server.restart() },
     ];
     if (page) {

@@ -4,6 +4,7 @@
 // in VS Code's refactor preview before anything is written.
 
 import * as vscode from "vscode";
+import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { TargetsResult } from "../shapes.js";
 import { isCancellation, type ContextCache, type Where } from "./context.js";
@@ -99,30 +100,13 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
       const effects: Effects = {
         copy: (text) => Promise.resolve(vscode.env.clipboard.writeText(text)),
         say: (message) => say(message),
-        rename: async (position, newName, uri) => {
-          const result = await server.requestEdit(
-            "textDocument/rename",
-            { textDocument: { uri: uri ?? where.uri }, position, newName },
-            `Nothing renamed: there's nothing to rename there, or ${newName} breaks the content model's rules or is taken.`,
-          );
-          if ("error" in result) {
-            say(result.error, true);
-            return false;
-          }
-          // Other files change: show every change in the refactor preview first.
-          const page = document.uri.toString();
-          const files = result.edit.entries().map(([file]) => file);
-          const elsewhere = files.some((file) => file.toString() !== page);
-          record.previewed = elsewhere;
-          record.files = files.map((file) => vscode.workspace.asRelativePath(file, false)).sort();
-          if (!elsewhere) return vscode.workspace.applyEdit(result.edit, { isRefactoring: true });
-          const applied = await vscode.workspace.applyEdit(confirmEach(result.edit, newName), {
-            isRefactoring: true,
-          });
-          if (!applied)
-            say("Nothing renamed: check the changes to make in the preview, then Apply.");
-          return applied;
-        },
+        rename: (position, newName, uri) =>
+          renameAt(
+            server,
+            { uri: uri ?? where.uri, position, newName, page: document.uri.toString() },
+            record,
+            say,
+          ),
       };
       record.done = await action.does.run(context, targets, args, effects);
       return record;
@@ -196,6 +180,49 @@ async function openMade(
     editor.selection = new vscode.Selection(select.start, select.end);
     editor.revealRange(select);
   }
+}
+
+/** What to rename: what's at `position` of `uri`, to `newName`. */
+export interface RenameAt {
+  uri: string;
+  position: { line: number; character: number };
+  newName: string;
+  /** The page it's asked from, whose changes alone apply without the preview. */
+  page?: string | undefined;
+}
+
+/**
+ * Renames with the server's rename (`F2`'s), applied as a refactoring. When
+ * it changes a file other than `page`, every change is shown in VS Code's
+ * refactor preview first. Whether it was applied; what it previewed and
+ * changed is written to `record`.
+ */
+export async function renameAt(
+  server: ProjectServer,
+  { uri, position, newName, page }: RenameAt,
+  record: Pick<RunRecord, "previewed" | "files">,
+  say: (message: string, warn?: boolean) => void,
+): Promise<boolean> {
+  const result = await server.requestEdit(
+    "textDocument/rename",
+    { textDocument: { uri }, position, newName },
+    `Nothing renamed: there's nothing to rename there, or ${newName} breaks the content model's rules or is taken.`,
+  );
+  if ("error" in result) {
+    say(result.error, true);
+    return false;
+  }
+  // Other files change: show every change in the refactor preview first.
+  const files = result.edit.entries().map(([file]) => file);
+  const elsewhere = files.some((file) => file.toString() !== page);
+  record.previewed = elsewhere;
+  record.files = files.map((file) => vscode.workspace.asRelativePath(file, false)).sort();
+  if (!elsewhere) return vscode.workspace.applyEdit(result.edit, { isRefactoring: true });
+  const applied = await vscode.workspace.applyEdit(confirmEach(result.edit, newName), {
+    isRefactoring: true,
+  });
+  if (!applied) say("Nothing renamed: check the changes to make in the preview, then Apply.");
+  return applied;
 }
 
 /** An edit with every change marked as needing confirmation, so VS Code previews it. */

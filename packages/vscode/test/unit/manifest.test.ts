@@ -17,7 +17,10 @@ interface Manifest {
       commandPalette: { command: string; when: string }[];
       "editor/title": { command: string; when: string }[];
       "view/item/context": { command: string; when: string }[];
+      [menu: string]: { command?: string; when?: string }[];
     };
+    views: Record<string, { id: string; name: string; when?: string }[]>;
+    viewsWelcome: { view: string; when: string; contents: string }[];
     configuration: {
       properties: Record<string, { default: unknown; enum?: string[]; scope?: string }>;
     };
@@ -54,6 +57,41 @@ describe("package.json", () => {
     );
   });
 
+  it("offers Switch Project only while the workspace has several projects", () => {
+    const shown = Object.values(manifest.contributes.menus)
+      .flat()
+      .filter((entry) => entry.command === "ascribe.switchProject");
+    // The Command Palette, and the title bars of Pages and Content model.
+    expect(shown.map((entry) => entry.when)).toEqual([
+      "ascribe.active && ascribe.multipleProjects",
+      "view == ascribe.pages && ascribe.multipleProjects",
+      "view == ascribe.model && ascribe.multipleProjects",
+    ]);
+  });
+
+  it("has no Projects view, and keeps Pages, with the welcome messages, in every workspace", () => {
+    const views = manifest.contributes.views.ascribe ?? [];
+    expect(views.map((view) => view.id)).toEqual([
+      "ascribe.review",
+      "ascribe.thisPage",
+      "ascribe.pages",
+      "ascribe.model",
+    ]);
+    expect(views.find((view) => view.id === "ascribe.pages")?.when).toBeUndefined();
+    const welcome = manifest.contributes.viewsWelcome;
+    expect(welcome.map((entry) => [entry.view, entry.when])).toEqual([
+      ["ascribe.pages", "!isWorkspaceTrusted"],
+      ["ascribe.pages", "isWorkspaceTrusted && !ascribe.active"],
+      ["ascribe.pages", "ascribe.active && ascribe.sidebar.failed"],
+      ["ascribe.model", "ascribe.active && ascribe.sidebar.failed"],
+    ]);
+    const named = [
+      ...manifest.contributes.commands.map((command) => command.command),
+      ...views.map((view) => `${view.id} ${view.name}`),
+    ];
+    expect(named.filter((name) => /\bprojects\b/i.test(name))).toEqual([]);
+  });
+
   it("is private, so nothing can be published by accident", () => {
     expect(manifest.private).toBe(true);
   });
@@ -79,10 +117,14 @@ describe("package.json", () => {
       // A review thread's buttons in the source editor act on that thread, so
       // the palette never shows them.
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
-      // So do the Projects view's buttons, which act on their project.
-      else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
-      // And the Pages view's, which act on their section or page.
-      else if (entry.command.startsWith("ascribe.pages.")) expect(entry.when).toBe("false");
+      // So do the links of the sidebar's welcome, which act on the project it shows.
+      else if (entry.command.startsWith("ascribe.sidebar.")) expect(entry.when).toBe("false");
+      // And the Pages and Content model views', which act on their item or view.
+      else if (
+        entry.command.startsWith("ascribe.pages.") ||
+        entry.command.startsWith("ascribe.model.")
+      )
+        expect(entry.when).toBe("false");
       // So do the walkthrough's buttons, which bring back a page first.
       else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
       // Prompt agent on one problem is a code action on that problem.
@@ -173,11 +215,24 @@ describe("package.json", () => {
       "ascribe.review.hideAdvice",
       "ascribe.showOutput",
       "ascribe.restartServer",
-      "ascribe.projects.refresh",
-      "ascribe.projects.showOutput",
-      "ascribe.projects.restart",
+      "ascribe.switchProject",
+      "ascribe.sidebar.showOutput",
+      "ascribe.sidebar.restart",
       "ascribe.pages.placeHere",
       "ascribe.pages.renameLabel",
+      "ascribe.pages.openPreview",
+      "ascribe.pages.copyLink",
+      "ascribe.pages.renameOrMove",
+      "ascribe.pages.findReferences",
+      "ascribe.pages.revealInExplorer",
+      "ascribe.pages.newPageHere",
+      "ascribe.pages.orphansOnly",
+      "ascribe.pages.showAll",
+      "ascribe.model.findReferences",
+      "ascribe.model.rename",
+      "ascribe.model.insert",
+      "ascribe.model.unusedOnly",
+      "ascribe.model.showAll",
       "ascribe.review.replyNow",
       "ascribe.review.addToReview",
       "ascribe.review.resolve",
