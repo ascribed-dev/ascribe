@@ -75,6 +75,9 @@ fn each_output_lists_its_pages_and_the_assets_the_build_keeps() {
                 page("quickstart"),
             ];
             expected.extend(only.iter().map(|stem| page(stem)));
+            if emitter.name() == "json" {
+                expected.push("_ascribe/nav.json".to_owned());
+            }
             expected.sort();
             assert_eq!(files, expected, "{build} {}", emitter.name());
         }
