@@ -2703,7 +2703,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Navigation: an Astro site's sidebar comes from the project"
     },
     {
@@ -2982,7 +2982,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/567"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The editor's views: the safe-fixes-on-save integration test fails intermittently"
     },
     {
