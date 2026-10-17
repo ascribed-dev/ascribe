@@ -176,3 +176,47 @@ fn a_program_the_editor_sends_starts_the_prompts_commands() {
         "{text}"
     );
 }
+
+#[test]
+fn a_pages_prompt_names_the_memos_about_it_personal_ones_marked() {
+    let team = "---\nabout: install.md\n---\n\nThe overview comes first.\n";
+    let mine = "---\nabout: install.md#gone\n---\n\nAsk about this.\n";
+    let other = "---\nabout: upgrade.md\n---\n\nNot this page.\n";
+    let fixture = Fixture::new(
+        MODEL,
+        &[
+            ("docs/install.md", BROKEN),
+            ("docs/upgrade.md", CLEAN),
+            ("memos/overview.md", team),
+            ("memos/upgrade.md", other),
+            (".ascribe/memos/gone.md", mine),
+        ],
+    );
+    let path = fixture.path("docs/install.md");
+    let uri = support::uri(&path);
+    let mut client = Client::start(&fixture.root());
+    client.open(&path, 1, BROKEN);
+    client.settle();
+    let diagnostic = client.diagnostics(&path).remove(0);
+    let file = ask(
+        &mut client,
+        json!({ "kind": "file", "textDocument": { "uri": uri.as_str() } }),
+    );
+    let problem = ask(
+        &mut client,
+        json!({ "kind": "problem", "textDocument": { "uri": uri.as_str() }, "diagnostic": diagnostic }),
+    );
+    for answer in [&file, &problem] {
+        let text = prompt(answer);
+        assert!(
+            text.contains(
+                "Memos about this page, to read before changing it:\n\
+                 - .ascribe/memos/gone.md, about install.md#gone (personal, kept on this \
+                 machine; detached: what its `about` names isn't there)\n\
+                 - memos/overview.md, about install.md\n"
+            ),
+            "{text}"
+        );
+        assert!(!text.contains("memos/upgrade.md"), "{text}");
+    }
+}

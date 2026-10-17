@@ -83,6 +83,7 @@ fn page_prompt(context: &Context, page: &PageDiff) -> String {
     let review = Review {
         base: &base,
         content_root: &root,
+        memos: &[],
     };
     prompt::page(context, &review, "site", page)
 }
@@ -204,6 +205,7 @@ fn a_fragments_reach_lists_the_pages_that_show_it_up_to_the_cap() {
     let review = Review {
         base: &base,
         content_root: &root,
+        memos: &[],
     };
     let fragment = RelPath::parse("_fragments/prereqs.md").unwrap();
     let text =
@@ -241,9 +243,62 @@ fn every_changed_page_is_a_line() {
     let review = Review {
         base: &base,
         content_root: &root,
+        memos: &[],
     };
     let text = prompt::pages(&context(), &review, &builds).expect("a prompt");
     insta::assert_snapshot!(text);
     let unchanged = diff(&before, &before);
     assert_eq!(prompt::pages(&context(), &review, &unchanged), None);
+}
+
+#[test]
+fn a_change_names_the_memos_on_its_page_its_section_and_its_block() {
+    let before = "---\ntitle: Keys\n---\n\n## Rotate\n\nOld step.\n\nGone soon.\n\n## Revoke\n\nRevoke it now.\n\nAnother line.\n";
+    let after = "---\ntitle: Keys\n---\n\n## Rotate\n\nOld step.\n\n## Revoke\n\nRevoke it now.\n\nAnother changed line.\n";
+    let old = version(
+        MODEL,
+        &[("keys.md", before), ("other.md", "# Other\n\nText.\n")],
+    );
+    let new = version(
+        MODEL,
+        &[("keys.md", after), ("other.md", "# Other\n\nText.\n")],
+    );
+    let memo = |name: &str, front: &str| {
+        ascribe_resolve::MemoFile::parse(
+            RelPath::parse(&format!("memos/{name}.md")).unwrap(),
+            format!("---\n{front}\n---\n\nWhy.\n"),
+        )
+    };
+    let memos = [
+        memo("page", "about: keys.md"),
+        memo("rotate", "about: keys.md#rotate"),
+        memo(
+            "revoke-first",
+            "about: keys.md#revoke\nquote: Revoke it now",
+        ),
+        memo("revoke-second", "about: keys.md#revoke\nquote: Another"),
+        memo("gone", "about: keys.md#rotate\nquote: Gone soon"),
+        memo("other", "about: other.md"),
+    ];
+    let places = ascribe_check::prompt::MemoPlace::all(&new.project, &memos);
+    let builds = diff(&old, &new);
+    let base = base();
+    let root = content_root();
+    let review = Review {
+        base: &base,
+        content_root: &root,
+        memos: &places,
+    };
+    let text = prompt::page(&context(), &review, "site", find(&builds, "keys.md"));
+    let ask = ": check the change still agrees with it.";
+    assert!(
+        text.contains(&format!(
+            "Memos about what changed, to read before judging it:\n\
+             - site/memos/gone.md, about keys.md#rotate (outdated: no block holds its quote now){ask}\n\
+             - site/memos/page.md, about keys.md{ask}\n\
+             - site/memos/revoke-second.md, about keys.md#revoke{ask}\n\
+             - site/memos/rotate.md, about keys.md#rotate{ask}\n\n"
+        )),
+        "{text}"
+    );
 }

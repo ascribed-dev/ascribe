@@ -1,5 +1,6 @@
 //! `ascribe agents sync`, `ascribe agents index`, and `ascribe agents skill`, by running the binary
-//! on copies of projects in temporary repositories. This repository has an
+//! on copies of projects in temporary repositories, and the memos the `fix`
+//! and `review` prompts of `ascribe agents prompt` name. This repository has an
 //! `AGENTS.md` of its own, so nothing here runs on `examples/` in place.
 //!
 //! `tests/output/agents/` holds what `sync` writes for `examples/quill` and each
@@ -1322,5 +1323,111 @@ fn the_project_files_page_lists_what_sync_writes() {
     assert!(
         unwritten.is_empty(),
         "the project files page lists {unwritten:?}, which sync doesn't write"
+    );
+}
+
+/// Commits everything in `dir`, with a fixed author.
+fn commit_all(dir: &Path) {
+    for args in [&["add", "-A"][..], &["commit", "-q", "-m", "base"]] {
+        let out = Command::new("git")
+            .current_dir(dir)
+            .args([
+                "-c",
+                "user.name=Test",
+                "-c",
+                "user.email=test@example.com",
+                "-c",
+                "commit.gpgsign=false",
+            ])
+            .args(args)
+            .output()
+            .expect("run git");
+        assert!(out.status.success(), "git {args:?} failed");
+    }
+}
+
+/// The page `docs/<page>` of `repo`, with `from` replaced by `to`.
+fn edit(repo: &Path, page: &str, from: &str, to: &str) {
+    let path = repo.join("docs").join(page);
+    let text = read(&path);
+    assert!(text.contains(from), "{page} has no {from:?}");
+    write(&path, &text.replacen(from, to, 1));
+}
+
+const AGENT_FIRST: &str = "- memos/agent-first.md, about install-agent.md#install-agent: check the change still agrees with it.";
+
+#[test]
+fn review_names_the_memo_on_a_changed_block_and_not_on_another_page() {
+    let repo = repository("quill");
+    commit_all(repo.path());
+    let review = ["agents", "prompt", "review", "--arg", "base=HEAD"];
+    edit(
+        repo.path(),
+        "install-agent.md",
+        "1. Install the agent package:",
+        "1. Install the agent package first:",
+    );
+    let text = stdout(&run(repo.path(), &review, 0));
+    assert!(
+        text.contains(&format!(
+            "Memos about what changed, to read before judging it:\n{AGENT_FIRST}\n"
+        )),
+        "{text}"
+    );
+
+    let repo = repository("quill");
+    commit_all(repo.path());
+    edit(repo.path(), "quickstart.md", "browser", "web browser");
+    let text = stdout(&run(repo.path(), &review, 0));
+    assert!(text.contains("quickstart.md"), "{text}");
+    assert!(!text.contains("Memos about"), "{text}");
+}
+
+#[test]
+fn fix_names_the_memos_about_its_page_and_says_which_is_detached() {
+    let repo = repository("quill");
+    write(
+        &repo.path().join("memos/gone.md"),
+        "---\nabout: install-agent.md#gone\n---\n\nA section that went.\n",
+    );
+    let text = stdout(&run(
+        &repo.path().join("docs"),
+        &["agents", "prompt", "fix", "--arg", "path=install-agent.md"],
+        0,
+    ));
+    assert!(
+        text.contains(
+            "Memos about this page, to read before changing it:\n\
+             - memos/agent-first.md, about install-agent.md#install-agent\n\
+             - memos/gone.md, about install-agent.md#gone (detached: what its `about` names \
+             isn't there)\n"
+        ),
+        "{text}"
+    );
+    assert!(!text.contains("product-name.md"), "{text}");
+}
+
+#[test]
+fn fix_lists_ten_memos_and_the_command_that_lists_the_rest() {
+    let repo = repository("quill");
+    for i in 0..12 {
+        write(
+            &repo.path().join(format!("memos/upgrade-{i:02}.md")),
+            &format!("---\nabout: upgrade.md\n---\n\nReason {i}.\n"),
+        );
+    }
+    let text = stdout(&run(
+        repo.path(),
+        &["agents", "prompt", "fix", "--arg", "path=docs/upgrade.md"],
+        0,
+    ));
+    let listed = text
+        .lines()
+        .filter(|l| l.starts_with("- memos/upgrade-"))
+        .count();
+    assert_eq!(listed, 10, "{text}");
+    assert!(
+        text.contains("and 2 more: `ascribe outline docs/upgrade.md` lists them\n"),
+        "{text}"
     );
 }

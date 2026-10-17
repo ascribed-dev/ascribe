@@ -12,6 +12,10 @@
 //! - [`batch`]: the problems of one of `ascribe report`'s sections, at most
 //!   [`MAX_LISTED`], each with the evidence its registry entry names.
 //!
+//! A prompt about a page's problems names the memo files about the page
+//! after them ([`page_memos`]), as one about changes names those about what
+//! changed (`ascribe_diff::prompt`).
+//!
 //! They follow the agent prompt format (`project-docs/agents/README.md`):
 //! the task, where, what Ascribe knows, how to finish; plain text with
 //! Markdown, at most [`LIMIT`] characters, and the same prompt for the same
@@ -25,6 +29,10 @@ use ascribe_core::{Applicability, FileId, LineIndex, Location, RelPath};
 
 use crate::evidence;
 use crate::{Diagnostic, MODEL_FILE, Project, Registry, Reported, Severity};
+
+mod memos;
+
+pub use memos::{Ask, MAX_MEMOS, MemoPlace, about_file, about_lines, memo_lines};
 
 /// The most characters a prompt has: what the agents' own links take.
 pub const LIMIT: usize = 5_000;
@@ -409,6 +417,7 @@ pub fn problem(
     if let Some(lines) = &lines {
         known.push(quoted(lines, &file));
     }
+    known.extend(page_memos(project, context, &[d.location.file]));
 
     let target = file.clone();
     assemble(
@@ -468,6 +477,7 @@ pub fn file(
     if order.len() > MAX_LISTED {
         listed.push(format!("and {} more: `{rest}`", order.len() - MAX_LISTED));
     }
+    listed.extend(page_memos(project, context, &[file]));
     Some(assemble(
         &task(counts, &format!("`{path}`")),
         &place,
@@ -536,6 +546,13 @@ pub fn project(
         ));
     }
     listed.push(format!("To list each problem: `{concise}`"));
+    let mut named: Vec<FileId> = reported
+        .iter()
+        .map(|r| r.diagnostic.location.file)
+        .collect();
+    named.sort_unstable();
+    named.dedup();
+    listed.extend(page_memos(project, context, &named));
 
     Some(assemble(
         &task(counts, &where_),
@@ -633,6 +650,36 @@ pub fn batch(
         &format!("(cut: run `{verify}` for the rest)"),
         &context.finish_with(verify),
     ))
+}
+
+/// The lines that name the memo files about the source files `files`, the
+/// committed ones and those kept on this machine ([`memo_lines`]): about
+/// one page, its `ascribe outline` lists the rest past [`MAX_MEMOS`]. Empty
+/// when there are none, and a file that isn't a source has none.
+pub fn page_memos(project: &Project, context: &Context, files: &[FileId]) -> Vec<String> {
+    let memos = project.all_memos();
+    if memos.is_empty() {
+        return Vec::new();
+    }
+    let pages: Vec<(FileId, RelPath)> = files
+        .iter()
+        .filter_map(|id| Some((*id, project.file(*id)?.content_path?.clone())))
+        .collect();
+    if pages.is_empty() {
+        return Vec::new();
+    }
+    let places = MemoPlace::all(&project.held_index(), memos);
+    let found = pages
+        .iter()
+        .flat_map(|(_, p)| about_file(&places, p))
+        .collect();
+    match pages.as_slice() {
+        [(one, _)] => {
+            let page = context.shown(&path_of(project, *one));
+            memo_lines(context, found, Ask::Page, Some(&page))
+        }
+        _ => memo_lines(context, found, Ask::Pages, None),
+    }
 }
 
 /// What a prompt says of the advice it names: something to look at.
