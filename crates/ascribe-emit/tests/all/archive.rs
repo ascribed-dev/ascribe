@@ -163,14 +163,15 @@ fn the_search_index_has_each_page_by_heading_with_its_code() {
     assert_eq!(
         hrefs,
         [
+            "keys.html",
             "configure-legacy.html",
             "install-agent.html",
-            "keys.html",
             "quickstart.html",
             "upgrade.html",
-        ]
+        ],
+        "in reading order"
     );
-    let install = &pages[1];
+    let install = &pages[2];
     assert_eq!(install["title"], "Install the Quill agent");
     let section = install["sections"]
         .as_array()
@@ -248,7 +249,7 @@ versions = "app"
 "#;
 
 #[test]
-fn folders_are_named_by_their_index_page_and_the_contents_page_moves_aside_for_the_root() {
+fn sections_are_named_by_their_own_page_and_the_contents_page_moves_aside_for_the_root() {
     let project = support::memory_project(
         FOLDERS,
         &[
@@ -307,7 +308,7 @@ fn folders_are_named_by_their_index_page_and_the_contents_page_moves_aside_for_t
         "{sidebar}"
     );
     assert!(
-        sidebar.contains("<p class=\"archive-folder\">ref</p>"),
+        sidebar.contains("<p class=\"archive-folder\">Ref</p>"),
         "{sidebar}"
     );
     assert!(
@@ -320,4 +321,145 @@ fn folders_are_named_by_their_index_page_and_the_contents_page_moves_aside_for_t
     );
     let all = &texts["all.html"];
     assert!(all.contains("<a href=\"./index.html\">home</a>"), "{all}");
+}
+
+/// The source paths of a section of `_ascribe/nav.json` in reading order:
+/// its own page, then its pages, each nested section whose own page is one
+/// of them right after it, then the other nested sections.
+fn reading_order(section: &serde_json::Value, own: bool, out: &mut Vec<String>) {
+    let source = |page: &serde_json::Value| page["source"].as_str().map(str::to_owned);
+    if own && let Some(page) = source(&section["page"]) {
+        out.push(page);
+    }
+    let pages = section["pages"].as_array().cloned().unwrap_or_default();
+    let nested = section["sections"].as_array().cloned().unwrap_or_default();
+    let mut read = vec![false; nested.len()];
+    for page in &pages {
+        out.extend(source(page));
+        for (at, n) in nested.iter().enumerate() {
+            if !read[at] && source(&n["page"]).is_some() && source(&n["page"]) == source(page) {
+                read[at] = true;
+                reading_order(n, false, out);
+            }
+        }
+    }
+    for (n, read) in nested.iter().zip(read) {
+        if !read {
+            reading_order(n, true, out);
+        }
+    }
+}
+
+#[test]
+fn an_archive_lists_the_pages_its_line_s_site_sidebar_lists_in_its_order() {
+    let nav = "version = 1\n\n\
+        [[sections]]\nfolder = \"ref/\"\nlabel = \"Look it up\"\n\n\
+        [[sections]]\nfolder = \"guide/\"\npages = [\"b.md\", \"deep.md\"]\n";
+    // Both lines live, so 1.0 is an older line, without what 2.0 adds.
+    let model = FOLDERS.replace(
+        "live = [\"1.0\"]\nplanned = [\"2.0\"]",
+        "live = [\"2.0\", \"1.0\"]",
+    );
+    assert_ne!(model, FOLDERS, "the lines moved");
+    let project = support::memory_project_with_files(
+        &model,
+        &[
+            ("index.md", "---\ntitle: Home\n---\n\nText.\n"),
+            ("guide/index.md", "---\ntitle: The guide\n---\n\nText.\n"),
+            (
+                "guide/a.md",
+                "---\ntitle: A\navailable: app 2.0\n---\n\nNew.\n",
+            ),
+            ("guide/b.md", "---\ntitle: B\n---\n\nText.\n"),
+            ("guide/deep.md", "---\ntitle: Deep\n---\n\nText.\n"),
+            ("guide/deep/x.md", "---\ntitle: X\n---\n\nText.\n"),
+            ("ref/z.md", "---\ntitle: Z\n---\n\nText.\n"),
+        ],
+        &[("ascribe.nav", nav)],
+    );
+    for (line, expected) in [
+        (
+            "app 1.0",
+            vec![
+                "index.md",
+                "ref/z.md",
+                "guide/index.md",
+                "guide/b.md",
+                "guide/deep.md",
+                "guide/deep/x.md",
+            ],
+        ),
+        (
+            "app 2.0",
+            vec![
+                "index.md",
+                "ref/z.md",
+                "guide/index.md",
+                "guide/b.md",
+                "guide/deep.md",
+                "guide/deep/x.md",
+                "guide/a.md",
+            ],
+        ),
+    ] {
+        let line = ascribe_model::named_line(line).expect("a line").1;
+        let build = project
+            .model()
+            .line_build("site", &line)
+            .expect("the line's build");
+        // The line's site output, and its sidebar's reading order.
+        let index = project.for_build(&build);
+        let router = ascribe_resolve::AstroRouter::from_consumer(&index.model().consumer);
+        let resolved = index.resolve_build(&build, &router);
+        let cx = ascribe_emit::EmitContext::new(&index, std::path::Path::new("/nowhere"), &build);
+        let site = ascribe_emit::emit(
+            &ascribe_emit::SiteEmitter::new(index.model()),
+            &cx,
+            &resolved,
+        )
+        .expect("the site emits");
+        let nav_json = site
+            .files
+            .iter()
+            .find(|f| f.path.as_str() == "_ascribe/nav.json")
+            .and_then(|f| match &f.contents {
+                Contents::Text(text) => serde_json::from_str::<serde_json::Value>(text).ok(),
+                Contents::Copy(_) => None,
+            })
+            .expect("the site's navigation");
+        let mut sidebar = Vec::new();
+        reading_order(&nav_json["root"], true, &mut sidebar);
+        assert_eq!(sidebar, expected, "the site's sidebar of {line:?}");
+        // The archive's sidebar, on its contents page.
+        let archive = archive(
+            &project,
+            std::path::Path::new("/nowhere"),
+            &build,
+            &ArchiveOptions::default(),
+        )
+        .expect("archived");
+        let texts = texts(&archive);
+        let contents = &texts["contents.html"];
+        let side = &contents[contents.find("archive-sidebar").expect("a sidebar")..];
+        let side = &side[..side.find("</nav>").expect("its end")];
+        let hrefs: Vec<String> = values(side, "href")
+            .into_iter()
+            .skip(1)
+            .map(|h| h.trim_start_matches("./").replace(".html", ".md"))
+            .collect();
+        assert_eq!(hrefs, expected, "the archive's sidebar of {line:?}");
+        assert!(
+            side.contains("<p class=\"archive-folder\">Look it up</p>"),
+            "{side}"
+        );
+        assert!(
+            side.contains("<li><a href=\"./guide/deep.html\">Deep</a>\n<ul>\n<li><a href=\"./guide/deep/x.html\">X</a></li>\n</ul>\n</li>"),
+            "the nested section in its page's place: {side}"
+        );
+        let x = &texts["guide/deep/x.html"];
+        assert!(
+            x.contains("<a rel=\"prev\" href=\"../deep.html\">Previous: Deep</a>"),
+            "{x}"
+        );
+    }
 }

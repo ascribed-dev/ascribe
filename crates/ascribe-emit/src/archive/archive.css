@@ -118,6 +118,11 @@ td {
   margin: 0.25rem 0;
 }
 
+.archive-sidebar ul ul {
+  margin: 0.25rem 0 0;
+  padding-left: var(--a-space);
+}
+
 .archive-sidebar a {
   color: inherit;
   text-decoration: none;

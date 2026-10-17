@@ -7,12 +7,13 @@
 //! writes. Each page is one complete HTML file, `install.md` as
 //! `install.html`: the page rendered as [`render_site_html`] renders the
 //! site output, with no script, under a statement of what it is, with a
-//! sidebar of every page, the contents of the page from its headings, and
-//! links to the previous and next pages. Beside the pages are the assets
-//! they use, mirrored as the plain output places them, the stylesheet
-//! (the element library's, then the archive's own), a contents page, every
-//! page in one document for printing (`all.html`), a `robots.txt`, and
-//! the search: its script and its index ([`search`]).
+//! sidebar of the line's navigation, the contents of the page from its
+//! headings, and links to the previous and next pages in reading order.
+//! Beside the pages are the assets they use, mirrored as the plain output
+//! places them, the stylesheet (the element library's, then the archive's
+//! own), a contents page, every page in one document for printing
+//! (`all.html`), a `robots.txt`, and the search: its script and its index
+//! ([`search`]).
 //!
 //! Every link between pages is relative, so the folder works from a disk
 //! and at any address. A link out of the line, and a link to an address
@@ -25,7 +26,8 @@ use std::sync::{Mutex, PoisonError};
 
 use ascribe_core::{RelPath, names};
 use ascribe_model::Build;
-use ascribe_resolve::{AstroRouter, Project, ResolvedBuild, ResolvedPage};
+use ascribe_model::Segment;
+use ascribe_resolve::{AstroRouter, Project, ResolvedBuild, ResolvedPage, SharedSection};
 
 use crate::assets::encode_path;
 use crate::emitter::{EmitContext, Emitter, PageContext, emit};
@@ -131,7 +133,7 @@ pub fn archive(
         ),
         current: options.current.clone(),
     };
-    let emitter = ArchiveEmitter::new(&resolved, statement);
+    let emitter = ArchiveEmitter::new(index, &resolved, statement);
     let cx = EmitContext::new(index, root, build);
     let emission = emit(&emitter, &cx, &resolved)?;
     let pages = emission
@@ -183,67 +185,159 @@ struct Statement {
 struct NavPage {
     source: RelPath,
     output: RelPath,
+    /// Its label as HTML, in the sidebar, the contents page, and previous
+    /// and next.
+    label: String,
     /// Its title, as HTML.
     title: String,
 }
 
-/// The way around: every page in reading order, by folder.
+/// A part of the sidebar and the contents page: a page, or a nested
+/// section with its own page, when it has one, and its parts.
+enum Part {
+    Page(usize),
+    Section {
+        label: String,
+        page: Option<usize>,
+        parts: Vec<Part>,
+    },
+}
+
+/// The way around: the line's navigation ([`ascribe_resolve::navigation`]).
 struct Nav {
-    /// Every page, in reading order: the folders in path order, the line's
-    /// root first, and in each its `index` page, then the rest by path.
+    /// Every page: those in the navigation in reading order, then those it
+    /// leaves out, being `unlisted`, in path order.
     pages: Vec<NavPage>,
-    /// Each folder: its name as HTML (none for the root), and its pages,
-    /// as indexes into `pages`.
-    folders: Vec<(Option<String>, Vec<usize>)>,
+    /// How many of `pages` are in the navigation, and so have a previous
+    /// and a next.
+    listed: usize,
+    /// The groups: the root's pages, with no label, then each top section,
+    /// its label as HTML, and its parts.
+    groups: Vec<(Option<String>, Vec<Part>)>,
     /// The contents page.
     contents: RelPath,
 }
 
 impl Nav {
-    fn new(build: &ResolvedBuild) -> Nav {
-        let mut by_folder: BTreeMap<String, Vec<&ResolvedPage>> = BTreeMap::new();
+    fn new(project: &Project, build: &ResolvedBuild) -> Nav {
+        let navigation = project.navigation();
+        let share = navigation.share(project, build);
+        let mut pages: Vec<NavPage> = share
+            .root
+            .reading_order()
+            .into_iter()
+            .map(|p| NavPage {
+                source: p.page.path.clone(),
+                output: page_file(&p.page.path),
+                label: label_html(p.label.as_str(), p.formatted),
+                title: title_html(p.page),
+            })
+            .collect();
+        let listed = pages.len();
+        let at: BTreeMap<RelPath, usize> = pages
+            .iter()
+            .enumerate()
+            .map(|(i, p)| (p.source.clone(), i))
+            .collect();
         for page in &build.pages {
-            let folder = page.path.parent().unwrap_or_else(RelPath::root);
-            by_folder
-                .entry(folder.as_str().to_owned())
-                .or_default()
-                .push(page);
-        }
-        let is_index = |page: &ResolvedPage| {
-            let name = page.path.file_name().unwrap_or_default();
-            name.split('.').next() == Some("index")
-        };
-        let mut pages = Vec::new();
-        let mut folders = Vec::new();
-        for (folder, mut list) in by_folder {
-            list.sort_by(|a, b| is_index(b).cmp(&is_index(a)).then(a.path.cmp(&b.path)));
-            let name = if folder.is_empty() {
-                None
-            } else {
-                Some(match list.first().filter(|p| is_index(p)) {
-                    Some(index) => title_html(index),
-                    None => encode(&folder),
-                })
-            };
-            let mut indexes = Vec::new();
-            for page in list {
-                indexes.push(pages.len());
+            if !at.contains_key(&page.path) {
                 pages.push(NavPage {
                     source: page.path.clone(),
                     output: page_file(&page.path),
+                    label: title_html(page),
                     title: title_html(page),
                 });
             }
-            folders.push((name, indexes));
         }
+        let index = |p: &ascribe_resolve::NavPage<'_>| at.get(&p.page.path).copied();
+        let root = &share.root;
+        // A top section's own page beside its folder is that section's.
+        let beside: Vec<&RelPath> = root
+            .sections
+            .iter()
+            .filter_map(|s| s.page.as_ref())
+            .map(|p| &p.page.path)
+            .collect();
+        let mut groups = vec![(
+            None,
+            root.page
+                .iter()
+                .chain(&root.pages)
+                .filter(|p| !beside.contains(&&p.page.path))
+                .filter_map(|p| index(p).map(Part::Page))
+                .collect::<Vec<_>>(),
+        )];
+        for section in &root.sections {
+            groups.push((
+                Some(label_html(&section.label, section.formatted)),
+                parts(section, true, &index),
+            ));
+        }
+        groups.retain(|(_, parts)| !parts.is_empty());
         let root_page = pages.iter().any(|p| p.output.as_str() == INDEX);
         let contents = RelPath::parse(if root_page { CONTENTS } else { INDEX })
             .unwrap_or_else(|_| RelPath::root());
         Nav {
             pages,
-            folders,
+            listed,
+            groups,
             contents,
         }
+    }
+}
+
+/// A section's parts: its own page, with `own`, then its pages, each nested
+/// section whose own page is beside its folder in that page's place, and
+/// the other nested sections after them.
+fn parts(
+    section: &SharedSection<'_>,
+    own: bool,
+    index: &dyn Fn(&ascribe_resolve::NavPage<'_>) -> Option<usize>,
+) -> Vec<Part> {
+    let mut out = Vec::new();
+    if own && let Some(page) = section.page.as_ref().and_then(index) {
+        out.push(Part::Page(page));
+    }
+    let mut placed = vec![false; section.sections.len()];
+    for page in &section.pages {
+        let nested = section.sections.iter().enumerate().find(|(at, n)| {
+            !placed[*at]
+                && n.page
+                    .as_ref()
+                    .is_some_and(|p| p.page.path == page.page.path)
+        });
+        match nested {
+            Some((at, nested)) => {
+                placed[at] = true;
+                out.push(nested_part(nested, index));
+            }
+            None => out.extend(index(page).map(Part::Page)),
+        }
+    }
+    for (nested, placed) in section.sections.iter().zip(placed) {
+        if !placed {
+            out.push(nested_part(nested, index));
+        }
+    }
+    out
+}
+
+fn nested_part(
+    section: &SharedSection<'_>,
+    index: &dyn Fn(&ascribe_resolve::NavPage<'_>) -> Option<usize>,
+) -> Part {
+    Part::Section {
+        label: label_html(&section.label, section.formatted),
+        page: section.page.as_ref().and_then(index),
+        parts: parts(section, false, index),
+    }
+}
+
+/// A label as HTML: its formatted form, or its text.
+fn label_html(label: &str, formatted: Option<&[Segment]>) -> String {
+    match formatted {
+        Some(segments) => frontmatter::html(segments),
+        None => encode(label),
     }
 }
 
@@ -284,14 +378,14 @@ enum LinkAction {
 }
 
 impl ArchiveEmitter {
-    fn new(build: &ResolvedBuild, statement: Statement) -> ArchiveEmitter {
+    fn new(project: &Project, build: &ResolvedBuild, statement: Statement) -> ArchiveEmitter {
         let routes = build
             .pages
             .iter()
             .map(|p| (p.route.trim_end_matches('/').to_owned(), page_file(&p.path)))
             .collect();
         ArchiveEmitter {
-            nav: Nav::new(build),
+            nav: Nav::new(project, build),
             routes,
             statement,
             unlinked: Mutex::new(BTreeSet::new()),
@@ -417,7 +511,7 @@ impl ArchiveEmitter {
 
     /// The previous and next pages, from the page at `at` in reading order.
     fn pager(&self, at: Option<usize>, dir: &RelPath) -> String {
-        let Some(at) = at else {
+        let Some(at) = at.filter(|at| *at < self.nav.listed) else {
             return String::new();
         };
         let mut links = Vec::new();
@@ -425,14 +519,19 @@ impl ArchiveEmitter {
             links.push(format!(
                 "<a rel=\"prev\" href=\"{}\">Previous: {}</a>",
                 encode(&relative(dir, &previous.output)),
-                previous.title
+                previous.label
             ));
         }
-        if let Some(next) = self.nav.pages.get(at + 1) {
+        if let Some(next) = self
+            .nav
+            .pages
+            .get(at + 1)
+            .filter(|_| at + 1 < self.nav.listed)
+        {
             links.push(format!(
                 "<a rel=\"next\" href=\"{}\">Next: {}</a>",
                 encode(&relative(dir, &next.output)),
-                next.title
+                next.label
             ));
         }
         if links.is_empty() {
@@ -523,42 +622,65 @@ impl ArchiveEmitter {
             encode(&relative(dir, &self.nav.contents)),
             mark(&self.nav.contents)
         ));
-        for (name, pages) in &self.nav.folders {
+        for (name, parts) in &self.nav.groups {
             if let Some(name) = name {
                 out.push_str(&format!("<p class=\"archive-folder\">{name}</p>\n"));
             }
-            out.push_str("<ul>\n");
-            for page in pages.iter().filter_map(|i| self.nav.pages.get(*i)) {
-                out.push_str(&format!(
-                    "<li><a href=\"{}\"{}>{}</a></li>\n",
-                    encode(&relative(dir, &page.output)),
-                    mark(&page.output),
-                    page.title
-                ));
-            }
-            out.push_str("</ul>\n");
+            out.push_str(&self.list(parts, dir, Some(current)));
         }
         out.push_str("</nav>\n");
         out
     }
 
-    /// The contents page: every page, by folder.
+    /// `parts` as a list, each link relative to `dir`, nested sections as
+    /// lists in their place, with the page at `current` marked.
+    fn list(&self, parts: &[Part], dir: &RelPath, current: Option<&RelPath>) -> String {
+        let link = |at: usize, text: Option<&str>| {
+            self.nav.pages.get(at).map(|page| {
+                let mark = if current == Some(&page.output) {
+                    " aria-current=\"page\""
+                } else {
+                    ""
+                };
+                format!(
+                    "<a href=\"{}\"{mark}>{}</a>",
+                    encode(&relative(dir, &page.output)),
+                    text.unwrap_or(&page.label)
+                )
+            })
+        };
+        let mut out = String::from("<ul>\n");
+        for part in parts {
+            match part {
+                Part::Page(at) => {
+                    if let Some(link) = link(*at, None) {
+                        out.push_str(&format!("<li>{link}</li>\n"));
+                    }
+                }
+                Part::Section { label, page, parts } => {
+                    let head = page
+                        .and_then(|at| link(at, Some(label)))
+                        .unwrap_or_else(|| format!("<span>{label}</span>"));
+                    out.push_str(&format!(
+                        "<li>{head}\n{}</li>\n",
+                        self.list(parts, dir, current)
+                    ));
+                }
+            }
+        }
+        out.push_str("</ul>\n");
+        out
+    }
+
+    /// The contents page: every page in the navigation, by section.
     fn contents_html(&self) -> String {
         let dir = self.nav.contents.parent().unwrap_or_else(RelPath::root);
         let mut main = String::from("<h1>Contents</h1>\n");
-        for (name, pages) in &self.nav.folders {
+        for (name, parts) in &self.nav.groups {
             if let Some(name) = name {
                 main.push_str(&format!("<h2>{name}</h2>\n"));
             }
-            main.push_str("<ul>\n");
-            for page in pages.iter().filter_map(|i| self.nav.pages.get(*i)) {
-                main.push_str(&format!(
-                    "<li><a href=\"{}\">{}</a></li>\n",
-                    encode(&relative(&dir, &page.output)),
-                    page.title
-                ));
-            }
-            main.push_str("</ul>\n");
+            main.push_str(&self.list(parts, &dir, None));
         }
         let all = RelPath::parse(ARCHIVE_ALL).unwrap_or_else(|_| RelPath::root());
         main.push_str(&format!(
