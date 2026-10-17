@@ -2595,8 +2595,11 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/568"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The editor's views: This page, whole"
     },
     {
@@ -2656,8 +2659,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/566"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Memos: agents are told which memos are about a page"
     },
     {
@@ -2675,7 +2681,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Memos: Ascribe's docs have a guide to memos and use them"
     },
     {
@@ -2969,8 +2975,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/567"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The editor's views: the safe-fixes-on-save integration test fails intermittently"
     }
   ]
