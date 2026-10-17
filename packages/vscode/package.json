@@ -1430,7 +1430,7 @@
         },
         {
           "command": "ascribe.pages.renameLabel",
-          "when": "view == ascribe.pages && viewItem == ascribe.pages.section",
+          "when": "view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(section|page|own|unplaced)$/",
           "group": "navigation@2"
         },
         {

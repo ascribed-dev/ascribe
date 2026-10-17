@@ -4,6 +4,7 @@
 import * as path from "node:path";
 import { pageDetail } from "../preview/reviewText.js";
 import { comparable, within } from "../projects.js";
+import type { ServerState } from "../serverState.js";
 import type {
   ChangedPage,
   InventoryEntry,
@@ -269,6 +270,33 @@ export function followedProject<T>(
   return shown;
 }
 
+/** What Pages and Content model show above their items, while their project's server can't answer. */
+export interface ViewsNotice {
+  /** The message above each view's items; `""` for none, which leaves the welcome showing. */
+  message: string;
+  /** The views' description: the project's name. */
+  description: string;
+}
+
+/**
+ * What the views show while their project's server has failed or is
+ * starting, from its state, its project's name, and the inventory they
+ * have: a failed one's welcome, with Show Output and Restart, under the
+ * project's name; a starting one's message, until it answers. `undefined`
+ * otherwise, when the inventory decides.
+ */
+export function viewsNotice(
+  state: ServerState | undefined,
+  name: string,
+  inventory: InventoryResult | undefined,
+): ViewsNotice | undefined {
+  if (state === "failed") return { message: "", description: name };
+  if (state === "starting" && !inventory) {
+    return { message: "Starting the project's language server.", description: name };
+  }
+  return undefined;
+}
+
 /**
  * The content path of `file`, a file system path, in the content root
  * `root`, or `undefined` outside it. Windows paths compare without case, as
@@ -350,10 +378,13 @@ export function pagesLook(node: PagesNode, build?: string): ItemLook {
       const incoming = node.page?.incoming ?? 0;
       const out = leftOut(node.page, build);
       return {
-        label: node.page?.title ?? basename(path),
+        label: node.page?.label ?? basename(path),
         description: out ? `Not in ${build}` : node.placed ? path : "not placed",
         tooltip: [
           path,
+          ...(node.page?.navLabel != null && node.page.title !== null
+            ? [`Its nav-label shortens its title, ${node.page.title}`]
+            : []),
           `${count(incoming, "link or include", "links and includes")} from other files`,
           ...(node.own ? ["The section's own page, which comes first"] : []),
           ...(node.placed
@@ -396,6 +427,38 @@ export function pagesLook(node: PagesNode, build?: string): ItemLook {
         expandable: false,
       };
   }
+}
+
+/** What Rename Label… on an item of Pages asks for, and the edit it asks the server for. */
+export type LabelRename =
+  | { action: "setSectionLabel"; folder: string; value: string; prompt: string }
+  | { action: "setPageLabel"; page: string; value: string; prompt: string };
+
+/**
+ * What Rename Label… on `node` asks: a section's `label` in `ascribe.nav`,
+ * or a page's `nav-label`, each offering the label as written, else the one
+ * it has. `undefined` for an item with no label to rename.
+ */
+export function labelRename(node: PagesNode): LabelRename | undefined {
+  if (node.kind === "section") {
+    const { section } = node;
+    return {
+      action: "setSectionLabel",
+      folder: section.folder,
+      value: section.labelSet ?? section.label,
+      prompt: "The section's label in every sidebar. Leave it empty for its default.",
+    };
+  }
+  if (node.kind === "page") {
+    return {
+      action: "setPageLabel",
+      page: node.path,
+      value: node.page?.navLabel ?? node.page?.label ?? basename(node.path),
+      prompt:
+        "The page's name in every sidebar and in its neighbors' links, its nav-label. Leave it empty for its title.",
+    };
+  }
+  return undefined;
 }
 
 /** Why `to` can't be the new path of the file at `from`, or `undefined` when it can. */

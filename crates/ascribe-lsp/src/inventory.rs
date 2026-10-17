@@ -68,6 +68,13 @@ pub struct InventoryPage {
     pub path: String,
     /// Its title (frontmatter `title`).
     pub title: Option<String>,
+    /// Its label where it's an entry in a list, as the navigation shows it:
+    /// its `nav-label` as plain text, else its title, else its file name
+    /// without `.md`.
+    pub label: String,
+    /// The `nav-label` its frontmatter gives it, as written, when it gives
+    /// one.
+    pub nav_label: Option<String>,
     /// Its content type; `null` when no one type applies.
     #[serde(rename = "type")]
     pub content_type: Option<String>,
@@ -214,6 +221,13 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
         .map(|file| InventoryPage {
             path: file.path.to_string(),
             title: file.title.clone(),
+            label: ascribe_resolve::file_label(file, &ctx.model),
+            nav_label: file
+                .frontmatter
+                .as_ref()
+                .and_then(|f| f.get(ascribe_resolve::NAV_LABEL))
+                .and_then(|l| l.as_str())
+                .map(str::to_owned),
             content_type: file.content_type(&ctx.model).map(|t| t.name.clone()),
             incoming: count(Usable::File(file.path.clone())),
             builds: crate::page_rows::builds(ctx, file)

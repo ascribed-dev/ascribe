@@ -4,7 +4,13 @@ import type { ProjectRegistry } from "../registry.js";
 import { TOGGLE_LENS_COMMAND } from "./buildLens.js";
 import { CHECK_EVERY_BUILD_COMMAND } from "./checkEveryBuild.js";
 import { choices, lineDescription, type ChosenBuilds } from "./chosenBuild.js";
-import { RESTRICTED_NOTICE, statusFor, waitingNotice, type Notice } from "./describe.js";
+import {
+  projectKeys,
+  RESTRICTED_NOTICE,
+  statusFor,
+  waitingNotice,
+  type Notice,
+} from "./describe.js";
 import type { BuildLenses } from "./lens.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
 import { SWITCH_PROJECT_COMMAND } from "./switchProject.js";
@@ -115,7 +121,7 @@ export class StatusBar implements vscode.Disposable {
         run: () => vscode.commands.executeCommand(CHECK_EVERY_BUILD_COMMAND),
       },
       { label: "$(output) Show output", run: () => server.showOutput() },
-      ...(this.projects.servers.length >= 2
+      ...(projectKeys(this.projects.servers.length).multipleProjects
         ? [
             {
               label: "$(arrow-swap) Switch project",
