@@ -8,7 +8,12 @@ import type {
   InventoryFragment,
   InventoryPage,
   InventoryResult,
+  LspRange,
   ModelKind,
+  PageAbout,
+  PageExample,
+  PageHealth,
+  PageInclude,
   PageMemo,
   PagePlace,
   PageResult,
@@ -223,6 +228,7 @@ export type Place = PagePlace;
 /** An item of the This page view. */
 export type ThisPageNode =
   | { kind: "about"; rows: readonly AboutRow[] }
+  | { kind: "health"; rows: readonly AboutRow[] }
   | { kind: "review"; review: ThisPageReview }
   | { kind: "threads"; threads: readonly PageThread[] }
   | { kind: "thread"; thread: PageThread }
@@ -238,14 +244,49 @@ export type ThisPageNode =
   | { kind: "group"; group: "links" | "includes"; files: readonly PlacesInFile[] }
   | { kind: "file"; file: PlacesInFile }
   | { kind: "place"; place: Place }
+  | { kind: "included"; includes: readonly PageInclude[] }
+  | { kind: "include"; include: PageInclude }
   | { kind: "row"; row: AboutRow };
 
-/** A row of About: a label and what it says. */
-interface AboutRow {
+/** A row of About or Health: a label and what it says, and where it goes. */
+export interface AboutRow {
   label: string;
   value: string;
   tooltip: string;
+  /** Whether it says something needs doing: overdue, too long, stale. */
+  warn?: boolean | undefined;
+  /** What choosing it does, if anything. */
+  opens?: RowTarget | undefined;
 }
+
+/** Where a row goes: a place in a file, or a command. */
+export type RowTarget =
+  | { kind: "place"; uri: string; range: LspRange }
+  | { kind: "command"; command: string; title: string };
+
+/** VS Code's diagnostics for the page, by how loudly they speak. */
+export interface ProblemCounts {
+  errors: number;
+  warnings: number;
+  advice: number;
+}
+
+/** What This page knows besides the server's answer. */
+export interface ThisPageContext {
+  /** The page's `file:` URI, which rows in its frontmatter open. */
+  uri?: string | undefined;
+  /** Its problems, as the Problems panel counts them. */
+  problems?: ProblemCounts | undefined;
+}
+
+/** The command a Builds row runs: the build picker. */
+export const SWITCH_BUILD = "ascribe.switchBuild";
+
+/** The command a Template row runs. */
+export const NEXT_PLACEHOLDER = "ascribe.nextPlaceholder";
+
+/** The command a Problems row runs. */
+export const SHOW_PROBLEMS = "workbench.action.problems.focus";
 
 /** What review says about the page, while review is on for its project. */
 export interface ThisPageReview {
@@ -279,9 +320,13 @@ interface PlacesInFile {
 
 /**
  * The This page view's top level: About, then Review while review is on,
- * then Connections, then Memos; nothing for a file that isn't a page.
+ * then Health, Connections, and Memos; nothing for a file that isn't a page.
  */
-export function thisPageRoots(page: PageResult, review?: ThisPageReview): ThisPageNode[] {
+export function thisPageRoots(
+  page: PageResult,
+  review?: ThisPageReview,
+  context: ThisPageContext = {},
+): ThisPageNode[] {
   const { about } = page;
   if (!about) return [];
   const rows: AboutRow[] = [
@@ -318,11 +363,13 @@ export function thisPageRoots(page: PageResult, review?: ThisPageReview): ThisPa
           },
     );
   }
+  rows.push(...aboutRows(about, context.uri));
   const links = byFile(page.linkedFrom);
   const includes = byFile(page.includedBy);
   return [
     { kind: "about", rows },
     ...(review ? [{ kind: "review" as const, review }] : []),
+    { kind: "health", rows: healthRows(page.health, context) },
     {
       kind: "connections",
       heading: page.heading?.text,
@@ -331,10 +378,212 @@ export function thisPageRoots(page: PageResult, review?: ThisPageReview): ThisPa
       groups: [
         { kind: "group", group: "links", files: links },
         { kind: "group", group: "includes", files: includes },
+        { kind: "included", includes: page.includes },
       ],
     },
     { kind: "memos", heading: page.heading?.text, memos: page.memos },
   ];
+}
+
+/** About's rows past what the page is: each only when it has something to say. */
+function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
+  const rows: AboutRow[] = [];
+  const at = (range: LspRange | null): RowTarget | undefined =>
+    uri && range ? { kind: "place", uri, range } : undefined;
+  const { description, review, listing, template } = about;
+  if (description) {
+    const { length, limit } = description;
+    const long = length !== null && limit !== null && length > limit;
+    rows.push({
+      label: "Description",
+      value:
+        length === null
+          ? "missing"
+          : limit === null
+            ? count(length, "character", "characters")
+            : `${length} of ${limit} characters${long ? ", too long" : ""}`,
+      tooltip:
+        length === null
+          ? `No \`${description.field}\`: write a sentence saying what the page is for`
+          : limit === null
+            ? `Its \`${description.field}\`, which search results show with its title`
+            : `Its \`${description.field}\`, its line in llms.txt, reads best under ${limit} characters`,
+      warn: length === null || long,
+      opens: at(description.range),
+    });
+  }
+  if (review) {
+    rows.push({
+      label: "Review",
+      value: reviewText(review.date, review.days, review.overdue),
+      tooltip: `\`${review.field}\`: ${review.date}`,
+      warn: review.overdue,
+      opens: at(review.range),
+    });
+  }
+  if (about.availability !== null) {
+    rows.push({
+      label: "Availability",
+      value: about.availability,
+      tooltip: "Its own `available`: where and since when it applies",
+    });
+  }
+  if (about.builds.length > 0) {
+    const published = about.builds.filter((b) => b.leftOut === null).map((b) => b.name);
+    const left = about.builds.filter((b) => b.leftOut !== null);
+    const parts = [
+      published.length > 0 ? `published by ${published.join(", ")}` : "",
+      left.length > 0 ? `left out by ${left.map((b) => b.name).join(", ")}` : "",
+    ].filter((part) => part !== "");
+    rows.push({
+      label: "Builds",
+      value: capitalized(parts.join("; ")),
+      tooltip: [
+        ...left.map(
+          (b) =>
+            `${b.name} leaves it out: ${b.leftOut === "variant" ? "its `variant` names none of the build's values" : "its `available` makes it unavailable there"}`,
+        ),
+        "Choose a build to see the page as it publishes it",
+      ].join("\n"),
+      opens: { kind: "command", command: SWITCH_BUILD, title: "Switch Build" },
+    });
+  }
+  if (listing) {
+    const rule = listing.rule === null ? "" : `\n${listing.rule}`;
+    rows.push({
+      label: "Listing",
+      value: `${capitalized(listing.listing)}${listingFrom(listing.from)}`,
+      tooltip: `In build ${listing.build}${rule}`,
+      opens:
+        listing.uri && listing.range
+          ? { kind: "place", uri: listing.uri, range: listing.range }
+          : undefined,
+    });
+  }
+  for (const permalink of about.permalinks) {
+    rows.push({
+      label: "Permalink",
+      value: permalink.name,
+      tooltip:
+        permalink.heading === null
+          ? "The page's permalink: an address that keeps leading here"
+          : `A permalink to “${permalink.heading}”: an address that keeps leading here`,
+      opens: at(permalink.range),
+    });
+  }
+  if (template) {
+    rows.push({
+      label: "Template",
+      value: `${template.type} template, ${count(template.left, "placeholder", "placeholders")} left`,
+      tooltip: "Goes to the next place the template left to fill in",
+      warn: true,
+      opens: { kind: "command", command: NEXT_PLACEHOLDER, title: "Go to Next Placeholder" },
+    });
+  }
+  return rows;
+}
+
+/** "overdue since 3 October", "due in 12 days", "due today". */
+function reviewText(date: string, days: number | null, overdue: boolean): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const thisYear =
+    days === null
+      ? undefined
+      : new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, (day ?? 1) - days)).getUTCFullYear();
+  const named = `${day} ${months[(month ?? 1) - 1] ?? ""}${thisYear === year ? "" : ` ${year}`}`;
+  if (overdue) return `overdue since ${named}`;
+  if (days === null) return `due ${named}`;
+  if (days === 0) return "due today";
+  return `due in ${count(days, "day", "days")}`;
+}
+
+/** Where a listing comes from, as the end of its row. */
+function listingFrom(from: string): string {
+  switch (from) {
+    case "default":
+      return " (the default)";
+    case "page":
+      return ", by its own `listing`";
+    case "site":
+      return ", by `[listing] default`";
+    case "older-lines":
+      return ", by `[listing] older-lines`";
+    case "folder":
+      return ", by `[listing.folders]`";
+    case "type":
+      return ", by `[listing.types]`";
+    default:
+      return "";
+  }
+}
+
+/** Health's rows: the problems, the size, and each tested example. */
+function healthRows(health: PageHealth, { uri, problems }: ThisPageContext): AboutRow[] {
+  const rows: AboutRow[] = [];
+  if (problems) {
+    const parts = [
+      problems.errors > 0 ? count(problems.errors, "error", "errors") : "",
+      problems.warnings > 0 ? count(problems.warnings, "warning", "warnings") : "",
+      problems.advice > 0 ? `${problems.advice} advice` : "",
+    ].filter((part) => part !== "");
+    rows.push({
+      label: "Problems",
+      value: parts.length > 0 ? parts.join(", ") : "none",
+      tooltip: "Opens the Problems panel, where Show Active File Only keeps it to this page",
+      warn: problems.errors > 0 || problems.warnings > 0,
+      opens: { kind: "command", command: SHOW_PROBLEMS, title: "Show Problems" },
+    });
+  }
+  const { size } = health;
+  if (size) {
+    const over = size.limit !== null && size.characters >= size.limit;
+    rows.push({
+      label: "Size",
+      value: `${thousands(size.characters)}${size.limit === null ? "" : ` of ${thousands(size.limit)}`} characters, in ${size.build}`,
+      tooltip: [
+        `Its Markdown in build ${size.build}, the largest of the builds that publish it`,
+        size.limit === null
+          ? "page-size is off"
+          : `page-size reports a page at ${thousands(size.limit)} characters`,
+      ].join("\n"),
+      warn: over,
+    });
+  }
+  for (const example of health.examples) {
+    rows.push({
+      label: "Example",
+      value: `${example.address}, ${exampleState(example)}`,
+      tooltip: example.tested ?? exampleState(example),
+      warn: example.state !== "tested",
+      opens: uri ? { kind: "place", uri, range: example.range } : undefined,
+    });
+  }
+  return rows;
+}
+
+function exampleState(example: PageExample): string {
+  switch (example.state) {
+    case "tested":
+      return "tested";
+    case "stale":
+      return "changed since it was tested";
+    case "untested":
+      return "not tested";
+  }
 }
 
 function byFile(places: readonly Place[]): PlacesInFile[] {
@@ -352,7 +601,10 @@ function byFile(places: readonly Place[]): PlacesInFile[] {
 export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
   switch (node.kind) {
     case "about":
+    case "health":
       return node.rows.map((row) => ({ kind: "row", row }));
+    case "included":
+      return node.includes.map((include) => ({ kind: "include", include }));
     case "review":
       return reviewRows(node.review);
     case "threads":
@@ -366,6 +618,7 @@ export function thisPageChildren(node: ThisPageNode): ThisPageNode[] {
     case "file":
       return node.file.places.map((place) => ({ kind: "place", place }));
     case "place":
+    case "include":
     case "row":
     case "thread":
     case "memo":
@@ -400,6 +653,40 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
   switch (node.kind) {
     case "about":
       return { ...section("About", "", "info", "What the page is"), expanded: true };
+    case "health": {
+      const warned = node.rows.filter((row) => row.warn).length;
+      return {
+        ...section(
+          "Health",
+          warned === 0 ? "" : count(warned, "thing to do", "things to do"),
+          "pulse",
+          "Its problems, its size, and its tested examples",
+        ),
+        expandable: node.rows.length > 0,
+        dimmed: node.rows.length === 0,
+        expanded: true,
+      };
+    }
+    case "included": {
+      const size = node.includes.length;
+      return {
+        ...group("Includes", size, "file-submodule", "The fragments and code files it shows"),
+        dimmed: size === 0,
+        expandable: size > 0,
+      };
+    }
+    case "include": {
+      const { include } = node;
+      const snippet = include.kind === "snippet";
+      return {
+        label: include.written,
+        description: include.path ?? "not found",
+        tooltip: `${snippet ? "@snippet" : "@include"}: ${include.written}, line ${include.range.start.line + 1}`,
+        icon: snippet ? "code" : "file-symlink-file",
+        dimmed: include.uri === null,
+        expandable: false,
+      };
+    }
     case "review":
       return {
         ...section(
@@ -517,7 +804,7 @@ export function thisPageLook(node: ThisPageNode): ItemLook {
         label: node.row.label,
         description: node.row.value,
         tooltip: node.row.tooltip,
-        icon: "blank",
+        icon: node.row.warn ? "warning" : "blank",
         dimmed: false,
         expandable: false,
       };
@@ -536,6 +823,15 @@ function group(label: string, size: number, icon: string, tooltip: string): Item
 
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
+}
+
+function capitalized(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** A number with commas between its thousands, as `page-size` writes it. */
+function thousands(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function basename(path: string): string {

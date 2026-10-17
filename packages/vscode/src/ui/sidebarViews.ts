@@ -3,7 +3,7 @@ import type { ProjectServer } from "../client.js";
 import type { ChangedPage } from "../preview/protocol.js";
 import type { ReviewController } from "../preview/review.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { InventoryResult, PageResult } from "../shapes.js";
+import type { InventoryResult, LspRange, PageResult } from "../shapes.js";
 import {
   modelChildren,
   modelLook,
@@ -18,6 +18,7 @@ import {
   type ItemLook,
   type ModelNode,
   type PagesNode,
+  type ProblemCounts,
   type ThisPageNode,
   type ThisPageReview,
 } from "./sidebar.js";
@@ -39,6 +40,8 @@ const THIS_PAGE_DEBOUNCE_MS = 250;
 export interface SidebarItem extends ItemLook {
   /** The file and line it opens, if it opens one. */
   opens: string | undefined;
+  /** The command it runs in place of opening a file, if it runs one. */
+  runs?: string;
   children: SidebarItem[];
 }
 
@@ -121,11 +124,13 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
   items(node?: N): SidebarItem[] {
     return this.getChildren(node).map((child) => {
       const target = this.opens(child);
+      const command = this.command(child);
       return {
         ...this.look(child),
         opens: target
           ? `${target.uri.toString()}${target.selection ? `:${target.selection.start.line + 1}` : ""}`
           : undefined,
+        ...(command ? { runs: command.command } : {}),
         children: this.items(child),
       };
     });
@@ -192,28 +197,44 @@ export class SidebarViews implements vscode.Disposable {
   );
 
   private readonly thisPage = new Tree<ThisPageNode>(
-    () => (this.page ? thisPageRoots(this.page, this.pageReview) : []),
+    () =>
+      this.page
+        ? thisPageRoots(this.page, this.pageReview, {
+            uri: this.pageFile?.toString(),
+            problems: this.pageFile && problemsOf(this.pageFile),
+          })
+        : [],
     thisPageChildren,
     thisPageLook,
     (node) => {
-      if (node.kind === "memo") {
-        const { start, end } = node.memo.body;
-        return {
-          uri: vscode.Uri.parse(node.memo.uri),
-          selection: new vscode.Range(start.line, start.character, end.line, end.character),
-        };
-      }
-      if (node.kind !== "place") return undefined;
-      const { start, end } = node.place.range;
-      return {
-        uri: vscode.Uri.parse(node.place.uri),
+      const at = (uri: string, { start, end }: LspRange) => ({
+        uri: vscode.Uri.parse(uri),
         selection: new vscode.Range(start.line, start.character, end.line, end.character),
-      };
+      });
+      switch (node.kind) {
+        case "memo":
+          return at(node.memo.uri, node.memo.body);
+        case "place":
+          return at(node.place.uri, node.place.range);
+        case "include":
+          return node.include.uri ? { uri: vscode.Uri.parse(node.include.uri) } : undefined;
+        case "row":
+          return node.row.opens?.kind === "place"
+            ? at(node.row.opens.uri, node.row.opens.range)
+            : undefined;
+        default:
+          return undefined;
+      }
     },
-    (node) =>
-      node.kind === "thread"
-        ? { command: OPEN_THREAD, title: "Open Thread in the Preview", arguments: [node] }
-        : undefined,
+    (node) => {
+      if (node.kind === "thread") {
+        return { command: OPEN_THREAD, title: "Open Thread in the Preview", arguments: [node] };
+      }
+      if (node.kind === "row" && node.row.opens?.kind === "command") {
+        return { command: node.row.opens.command, title: node.row.opens.title };
+      }
+      return undefined;
+    },
   );
 
   constructor(
@@ -273,6 +294,14 @@ export class SidebarViews implements vscode.Disposable {
       vscode.window.onDidChangeActiveTextEditor(() => this.follow()),
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
         if (textEditor === vscode.window.activeTextEditor) this.soon("thisPage");
+      }),
+      // Health's Problems row counts VS Code's diagnostics, which the
+      // server doesn't answer with: the view is drawn again, not asked again.
+      vscode.languages.onDidChangeDiagnostics(({ uris }) => {
+        const shown = this.pageFile?.toString();
+        if (this.page && uris.some((uri) => uri.toString() === shown)) {
+          this.thisPage.changed.fire();
+        }
       }),
       ...this.watchPages(),
       vscode.workspace.onDidSaveTextDocument((document) => {
@@ -464,6 +493,18 @@ const OPEN_THREAD = "ascribe.review.openThread";
 
 /** What This page says when the active file isn't a page of a project. */
 const NO_PAGE = "Open a page to see what's known about it.";
+
+/** The page's diagnostics, counted as the Problems panel shows them. */
+function problemsOf(uri: vscode.Uri): ProblemCounts {
+  const counts: ProblemCounts = { errors: 0, warnings: 0, advice: 0 };
+  for (const diagnostic of vscode.languages.getDiagnostics(uri)) {
+    if (diagnostic.severity === vscode.DiagnosticSeverity.Error) counts.errors++;
+    else if (diagnostic.severity === vscode.DiagnosticSeverity.Warning) counts.warnings++;
+    // A hint isn't in the Problems panel.
+    else if (diagnostic.severity === vscode.DiagnosticSeverity.Information) counts.advice++;
+  }
+  return counts;
+}
 
 /** The URI of a content path under the content root. */
 function contentFile(content: string, file: string): vscode.Uri {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { InventoryResult, PageResult } from "../../src/shapes.js";
+import type { InventoryResult, PageAbout, PageListing, PageResult } from "../../src/shapes.js";
 import {
   modelChildren,
   modelLook,
@@ -11,6 +11,9 @@ import {
   thisPageChildren,
   thisPageLook,
   thisPageRoots,
+  NEXT_PLACEHOLDER,
+  SHOW_PROBLEMS,
+  SWITCH_BUILD,
   type Place,
   type ThisPageNode,
   type ThisPageReview,
@@ -32,10 +35,10 @@ const inventory: InventoryResult = {
   modelUri: "file:///p/ascribe.toml",
   contentUri: "file:///p/docs",
   pages: [
-    { path: "guides/install.md", title: "Install", type: "guide", incoming: 3 },
-    { path: "index.md", title: "Home", type: "page", incoming: 0 },
-    { path: "old.md", title: null, type: null, incoming: 0 },
-    { path: "ref/api.md", title: "API", type: "reference", incoming: 1 },
+    { path: "guides/install.md", title: "Install", type: "guide", incoming: 3, builds: ["site"] },
+    { path: "index.md", title: "Home", type: "page", incoming: 0, builds: ["site"] },
+    { path: "old.md", title: null, type: null, incoming: 0, builds: ["site"] },
+    { path: "ref/api.md", title: "API", type: "reference", incoming: 1, builds: ["site"] },
   ],
   fragments: [
     { path: "_setup.md", includedBy: ["guides/install.md", "index.md"] },
@@ -143,14 +146,26 @@ describe("the This page view", () => {
     range: range(line),
     text,
   });
-  const about = {
+  /** What the server says beyond what the page is, when it has nothing to say. */
+  const quiet = {
+    description: null,
+    review: null,
+    availability: null,
+    builds: [],
+    listing: null,
+    permalinks: [],
+    template: null,
+  };
+  const about: PageAbout = {
     path: "keys.md",
     fragment: false,
     title: "API keys",
     type: "page",
     address: "/keys/",
     markdownAddress: "/keys.md",
+    ...quiet,
   };
+  const health = { size: null, examples: [] };
   const page: PageResult = {
     about,
     heading: { id: "rotate-keys", text: "Rotate keys", range: range(11) },
@@ -161,6 +176,8 @@ describe("the This page view", () => {
     ],
     includedBy: [],
     memos: [],
+    health,
+    includes: [],
   };
 
   /** Every item as `label (description)`, depth first. */
@@ -181,6 +198,7 @@ describe("the This page view", () => {
       "  Type (page)",
       "  Address (/keys/)",
       "  Markdown (/keys.md)",
+      "Health",
       "Connections (to “Rotate keys”)",
       "  Linked from (3)",
       "    a.md (a.md)",
@@ -189,12 +207,13 @@ describe("the This page view", () => {
       "      See [rotate](keys.md#rotate-keys). (line 4)",
       "      Again: [a](keys.md#rotate-keys). (line 10)",
       "  Included by (0)",
+      "  Includes (0)",
       "Memos (none)",
     ]);
     const roots = thisPageRoots(page);
-    expect(roots.map((n) => thisPageLook(n).expanded)).toEqual([true, true, true]);
-    expect(thisPageLook(nth(roots, 2))).toMatchObject({ dimmed: true, expandable: false });
-    const included = nth(thisPageChildren(nth(roots, 1)), 1);
+    expect(roots.map((n) => thisPageLook(n).expanded)).toEqual([true, true, true, true]);
+    expect(thisPageLook(nth(roots, 3))).toMatchObject({ dimmed: true, expandable: false });
+    const included = nth(thisPageChildren(nth(roots, 2)), 1);
     expect(thisPageLook(included)).toMatchObject({ dimmed: true, expandable: false });
   });
 
@@ -212,11 +231,13 @@ describe("the This page view", () => {
       "  Type (page)",
       "  Address (/keys/)",
       "  Markdown (not published)",
+      "Health",
       "Connections (to the page)",
       "  Linked from (0)",
       "  Included by (1)",
       "    guide.md (guide.md)",
       "      @include: keys.md (line 3)",
+      "  Includes (0)",
       "Memos (none)",
     ]);
   });
@@ -238,7 +259,7 @@ describe("the This page view", () => {
         memo(".ascribe/memos/mine.md", "Ask Sam.", "placed", true),
       ],
     });
-    const memos = nth(roots, 2);
+    const memos = nth(roots, 3);
     expect(flat([memos])).toEqual([
       "Memos (about “Rotate keys”)",
       "  Why keys rotate. (memos/why.md)",
@@ -259,6 +280,7 @@ describe("the This page view", () => {
         type: null,
         address: null,
         markdownAddress: null,
+        ...quiet,
       },
       heading: null,
     });
@@ -308,9 +330,11 @@ describe("the This page view", () => {
         "  Open threads (2)",
         "    Comment a (octocat · _setup.md:3)",
         "    Comment b (octocat · keys.md)",
+        "Health",
         "Connections (to “Rotate keys”)",
         "  Linked from (0)",
         "  Included by (0)",
+        "  Includes (0)",
         "Memos (none)",
       ]);
       const reviewNode = nth(roots, 1);
@@ -340,9 +364,173 @@ describe("the This page view", () => {
     });
   });
 
+  describe("About's and Health's rows", () => {
+    const uri = "file:///p/docs/keys.md";
+    const listing: PageListing = {
+      build: "site",
+      listing: "unlisted",
+      from: "folder",
+      rule: '"internal/" = "unlisted"',
+      uri: "file:///p/ascribe.toml",
+      range: range(20),
+    };
+    const fullAbout: PageAbout = {
+      ...about,
+      description: { field: "description", length: 312, limit: 300, range: range(3) },
+      review: {
+        field: "review-by",
+        date: "2026-10-03",
+        days: -14,
+        overdue: true,
+        range: range(4),
+      },
+      availability: "self-managed 3.5",
+      builds: [
+        { name: "site", leftOut: null },
+        { name: "agents", leftOut: null },
+        { name: "cloud", leftOut: "availability" },
+      ],
+      listing,
+      permalinks: [
+        { name: "keys", heading: null, range: range(5) },
+        { name: "rotate-keys", heading: "Rotate keys", range: range(12) },
+      ],
+      template: { type: "how-to", left: 2 },
+    };
+    const full: PageResult = {
+      ...page,
+      about: fullAbout,
+      health: {
+        size: { characters: 31_200, build: "site", limit: 50_000 },
+        examples: [
+          {
+            address: "code:greet.ts#greet",
+            state: "tested",
+            tested: "Node 22 on Linux",
+            range: range(30),
+          },
+          { address: "code:old.ts", state: "stale", tested: null, range: range(40) },
+        ],
+      },
+      includes: [
+        {
+          kind: "include",
+          written: "_setup.md",
+          path: "_setup.md",
+          uri: "file:///p/docs/_setup.md",
+          range: range(8),
+        },
+        {
+          kind: "snippet",
+          written: "code:greet.ts#greet",
+          path: "code/greet.ts",
+          uri: "file:///p/code/greet.ts",
+          range: range(30),
+        },
+      ],
+    };
+    const roots = thisPageRoots(full, undefined, {
+      uri,
+      problems: { errors: 0, warnings: 1, advice: 2 },
+    });
+
+    it("say whether the page is described, due, published, listed, and unfinished", () => {
+      expect(flat([nth(roots, 0)]).slice(5)).toEqual([
+        "  Description (312 of 300 characters, too long)",
+        "  Review (overdue since 3 October)",
+        "  Availability (self-managed 3.5)",
+        "  Builds (Published by site, agents; left out by cloud)",
+        "  Listing (Unlisted, by `[listing.folders]`)",
+        "  Permalink (keys)",
+        "  Permalink (rotate-keys)",
+        "  Template (how-to template, 2 placeholders left)",
+      ]);
+      expect(flat([nth(roots, 1)])).toEqual([
+        "Health (2 things to do)",
+        "  Problems (1 warning, 2 advice)",
+        "  Size (31,200 of 50,000 characters, in site)",
+        "  Example (code:greet.ts#greet, tested)",
+        "  Example (code:old.ts, changed since it was tested)",
+      ]);
+    });
+
+    it("open the place each is set, or run the command that acts on it", () => {
+      const rows = (node: ThisPageNode) =>
+        thisPageChildren(node).flatMap((n) => (n.kind === "row" ? [n.row] : []));
+      const about = rows(nth(roots, 0));
+      const opened = (label: string) => about.find((row) => row.label === label)?.opens;
+      expect(opened("Description")).toEqual({ kind: "place", uri, range: range(3) });
+      expect(opened("Listing")).toEqual({
+        kind: "place",
+        uri: "file:///p/ascribe.toml",
+        range: range(20),
+      });
+      expect(opened("Builds")).toMatchObject({ kind: "command", command: SWITCH_BUILD });
+      expect(opened("Template")).toMatchObject({ kind: "command", command: NEXT_PLACEHOLDER });
+      expect(opened("Availability")).toBeUndefined();
+      const health = rows(nth(roots, 1));
+      expect(health[0]?.opens).toMatchObject({ kind: "command", command: SHOW_PROBLEMS });
+      // Size goes nowhere: its tooltip says which build and the limit.
+      expect(health[1]?.opens).toBeUndefined();
+      expect(health[1]?.tooltip).toContain("50,000");
+      expect(health[2]?.opens).toEqual({ kind: "place", uri, range: range(30) });
+    });
+
+    it("list what the page includes under Connections", () => {
+      const connections = nth(roots, 2);
+      expect(flat([nth(thisPageChildren(connections), 2)])).toEqual([
+        "Includes (2)",
+        "  _setup.md (_setup.md)",
+        "  code:greet.ts#greet (code/greet.ts)",
+      ]);
+    });
+
+    it("say when a review is due, and that a short description is fine", () => {
+      const later = thisPageRoots({
+        ...full,
+        about: {
+          ...fullAbout,
+          description: { field: "description", length: 120, limit: null, range: range(3) },
+          review: {
+            field: "review-by",
+            date: "2027-01-03",
+            days: 12,
+            overdue: false,
+            range: range(4),
+          },
+          builds: [{ name: "site", leftOut: null }],
+          listing: {
+            ...listing,
+            listing: "listed",
+            from: "default",
+            rule: null,
+            uri: null,
+            range: null,
+          },
+          template: null,
+        },
+      });
+      expect(flat([nth(later, 0)]).slice(5, 9)).toEqual([
+        "  Description (120 characters)",
+        "  Review (due in 12 days)",
+        "  Availability (self-managed 3.5)",
+        "  Builds (Published by site)",
+      ]);
+      expect(flat([nth(later, 0)])).toContain("  Listing (Listed (the default))");
+    });
+  });
+
   it("has nothing to show for a file that isn't a page", () => {
     expect(
-      thisPageRoots({ about: null, heading: null, linkedFrom: [], includedBy: [], memos: [] }),
+      thisPageRoots({
+        about: null,
+        heading: null,
+        linkedFrom: [],
+        includedBy: [],
+        memos: [],
+        health,
+        includes: [],
+      }),
     ).toEqual([]);
   });
 });

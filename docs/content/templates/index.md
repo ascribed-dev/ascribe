@@ -132,6 +132,9 @@ There's no command that writes the page for you at the terminal: copying the fil
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
 
 @available: next
+In VS Code, the sidebar's [This page](../editor/index.md#this-page-pages-and-content-model) says how many are left on the page, and choosing the row goes to the next one.
+
+@available: next
 A memo the page keeps from its template isn't reported, and **Go to Next Placeholder** passes over it: it's never published, so what to do with it is yours to decide. A placeholder in a block quote is reported as any other is.
 
 @available: next

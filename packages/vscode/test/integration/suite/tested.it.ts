@@ -85,4 +85,26 @@ describe("a code file a page shows", () => {
       await vscode.workspace.fs.delete(vscode.Uri.joinPath(scratch, ".."), { recursive: true });
     }
   });
+
+  it("lists the page's tested examples in This page, and the files its snippets show", async () => {
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await vscode.window.showTextDocument(uriOf("docs", "index.md"));
+    const items = await waitFor("This page's Health", async () => {
+      await api.ui.thisPage.whenSettled();
+      const shown = api.ui.thisPage.items();
+      return shown.some((item) => item.label === "Health") && shown;
+    });
+    const health = items.find((item) => item.label === "Health");
+    const greet = health?.children.find(
+      (item) => item.label === "Example" && item.description.startsWith("code:examples/greet.ts"),
+    );
+    assert.ok(greet, JSON.stringify(health));
+    assert.ok(greet.description.endsWith(", tested"), greet.description);
+    assert.ok(greet.opens?.endsWith("/docs/index.md:7"), greet.opens);
+    const includes = items
+      .find((item) => item.label === "Connections")
+      ?.children.find((item) => item.label === "Includes");
+    const shown = includes?.children.find((item) => item.description === "code/examples/greet.ts");
+    assert.ok(shown?.opens?.endsWith("/code/examples/greet.ts"), JSON.stringify(includes));
+  });
 });
