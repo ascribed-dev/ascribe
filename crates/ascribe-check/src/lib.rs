@@ -51,6 +51,7 @@ pub mod prompt;
 pub mod prose;
 pub mod registry;
 mod releases;
+pub mod roles;
 mod scope;
 pub mod site;
 pub mod tool;

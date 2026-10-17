@@ -9,6 +9,7 @@ use ascribe_syntax::{Block, BlockKind, CodeBlock};
 use serde_yaml_ng::Value;
 
 use super::Ctx;
+use crate::roles;
 use crate::yaml::YamlIndex;
 
 /// The most characters of a page's first paragraph a prompt quotes.
@@ -28,38 +29,23 @@ impl Ctx<'_> {
         first_line: Span,
     ) {
         let checks = &self.model.checks;
-        if !checks.is_off(diagnostics::PAGE_DESCRIPTION_MISSING)
-            && let Some(field) = schema.field_with_role(FieldRole::Description)
-            // A required field's absence is already `frontmatter-missing-field`,
-            // and a default is a description.
-            && !field.required
-            && field.default.is_none()
+        if let Some(field) = schema.field_with_role(FieldRole::Description)
+            && roles::description_missing(checks, field, value)
         {
-            let missing = match value.get(field.name.as_str()) {
-                None | Some(Value::Null) => true,
-                Some(Value::String(s)) => s.trim().is_empty(),
-                // Another type is `frontmatter-type-mismatch`.
-                Some(_) => false,
-            };
-            if missing {
-                let at = index
-                    .get(&field.name)
-                    .map_or(first_line, |n| n.key.unwrap_or(n.value));
-                let issue = Issue::new(
-                    diagnostics::PAGE_DESCRIPTION_MISSING,
-                    Location::new(self.id, at),
-                )
-                .with_arg("field", field.name.clone())
-                .with_arg("opening", self.opening(value));
-                self.report(issue);
-            }
+            let at = index
+                .get(&field.name)
+                .map_or(first_line, |n| n.key.unwrap_or(n.value));
+            let issue = Issue::new(
+                diagnostics::PAGE_DESCRIPTION_MISSING,
+                Location::new(self.id, at),
+            )
+            .with_arg("field", field.name.clone())
+            .with_arg("opening", self.opening(value));
+            self.report(issue);
         }
-        if let Some(today) = self.project.today()
-            && !checks.is_off(diagnostics::REVIEW_OVERDUE)
-            && let Some(field) = schema.field_with_role(FieldRole::ReviewDate)
-            && let Some(Value::String(text)) = value.get(field.name.as_str())
-            && let Some(due) = ascribe_core::Date::parse(text)
-            && due < today
+        if let Some(field) = schema.field_with_role(FieldRole::ReviewDate)
+            && let Some(due) = roles::review_date(field, value)
+            && roles::review_overdue(checks, self.project.today(), due)
         {
             let at = index.get(&field.name).map_or(first_line, |n| n.value);
             let issue = Issue::new(diagnostics::REVIEW_OVERDUE, Location::new(self.id, at))

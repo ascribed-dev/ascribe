@@ -1,8 +1,10 @@
 //! This page's parity with the outputs and the checks: what `ascribe/page`
 //! says of a page's size is what `page-size` measures in `ascribe check`,
-//! its listing is what `pages.json` writes for it in `ascribe build`, and
-//! its review is overdue exactly where `ascribe check` reports
-//! `review-overdue`, for a project made here and for `examples/quill`.
+//! its listing is what `pages.json` writes for it in `ascribe build`, its
+//! review warns exactly where `ascribe check` reports `review-overdue`, and
+//! its description is missing exactly where it reports
+//! `page-description-missing`, for projects made here and for
+//! `examples/quill`.
 //!
 //! The server runs as a real process over stdio, as an editor starts it,
 //! with `ASCRIBE_TODAY` set as `ascribe check` has it. `page-size`'s limit
@@ -226,27 +228,43 @@ fn record(out: &Path, build: &str, source: &str) -> Value {
         .unwrap_or_else(|| panic!("no {source} in {}", path.display()))
 }
 
+/// How many pages of a project This page says something of, so a caller can
+/// check the project exercises it.
+#[derive(Debug, Default, PartialEq)]
+struct Said {
+    /// Pages whose review date has passed.
+    overdue: usize,
+    /// Of those, the ones whose review warns.
+    reported: usize,
+    /// Pages whose description is measured.
+    measured: usize,
+    /// Pages whose description is missing.
+    missing: usize,
+}
+
 /// Compares This page with `ascribe check` and `ascribe build` for every
-/// page of the project at `root`. Returns how many pages say they're
-/// overdue, so a caller can check the project exercises it.
-fn parity(root: &Path) -> usize {
+/// page of the project at `root`. A project with errors doesn't build, so
+/// for one `builds` is false and its listings aren't compared.
+fn parity(root: &Path, builds: bool) -> Said {
     let model_path = root.join("ascribe.toml");
     let mut model_text = fs::read_to_string(&model_path).expect("model");
     model_text.push_str("\n[checks.page-size]\nlimit = 1\n");
     fs::write(&model_path, model_text).expect("write model");
     let model = ascribe_model::load(&model_path).expect("the model loads");
-    let status = Command::new(env!("CARGO_BIN_EXE_ascribe"))
-        .current_dir(root)
-        .args(["build", "--emit", "site"])
-        .env("NO_COLOR", "1")
-        .output()
-        .expect("run ascribe build");
-    assert!(status.status.success(), "{status:?}");
+    if builds {
+        let status = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+            .current_dir(root)
+            .args(["build", "--emit", "site"])
+            .env("NO_COLOR", "1")
+            .output()
+            .expect("run ascribe build");
+        assert!(status.status.success(), "{status:?}");
+    }
     let out = root.join(&model.project.output_dir);
     let content = root.join(&model.project.content_root);
     let checked = check(root);
     let mut server = Server::start(root);
-    let mut overdue = 0;
+    let mut said = Said::default();
     let mut pages: Vec<PathBuf> = Vec::new();
     collect_pages(&content, &mut pages);
     pages.sort();
@@ -287,7 +305,7 @@ fn parity(root: &Path) -> usize {
             (None, size) => panic!("{rel}: This page says {size}, and page-size reports nothing"),
         }
         // Listing: the page's record in the build's pages.json.
-        if !about["listing"].is_null() {
+        if builds && !about["listing"].is_null() {
             let listing = &about["listing"];
             let build = listing["build"].as_str().unwrap();
             let record = record(&out, build, &rel);
@@ -305,18 +323,30 @@ fn parity(root: &Path) -> usize {
                 "{rel} in {build}"
             );
         }
-        // Review: overdue where review-overdue is reported.
-        let says = about["review"]["overdue"] == true;
+        // Review: a warning where review-overdue is reported.
+        let review = &about["review"];
+        let reported = review["reported"] == true;
         assert_eq!(
-            says,
+            reported,
             slugged("review-overdue").is_some(),
-            "{rel}: This page says {}, and check reports {found:?}",
-            about["review"]
+            "{rel}: This page says {review}, and check reports {found:?}",
         );
-        overdue += usize::from(says);
+        assert!(!reported || review["overdue"] == true, "{rel}: {review}");
+        said.overdue += usize::from(review["overdue"] == true);
+        said.reported += usize::from(reported);
+        // Description: missing where page-description-missing is reported.
+        let description = &about["description"];
+        let missing = !description.is_null() && description["length"].is_null();
+        assert_eq!(
+            missing,
+            slugged("page-description-missing").is_some(),
+            "{rel}: This page says {description}, and check reports {found:?}",
+        );
+        said.measured += usize::from(description["length"].is_u64());
+        said.missing += usize::from(missing);
     }
     server.shutdown();
-    overdue
+    said
 }
 
 fn collect_pages(dir: &Path, out: &mut Vec<PathBuf>) {
@@ -385,7 +415,90 @@ fn this_page_agrees_with_check_and_build_for_a_project_with_every_row() {
         fs::create_dir_all(path.parent().unwrap()).expect("mkdir");
         fs::write(path, text).expect("write");
     }
-    assert_eq!(parity(&root), 1);
+    let said = parity(&root, true);
+    assert_eq!(
+        said,
+        Said {
+            overdue: 1,
+            reported: 1,
+            measured: 1,
+            missing: 2
+        }
+    );
+}
+
+/// A project that turns `review-overdue` off, whose description has a
+/// default, and whose pages' descriptions are each a case the check is
+/// silent for.
+const QUIET_MODEL: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[types.guide.frontmatter]
+title = "string"
+summary = { type = "string", role = "description", default = "A guide to *Lantern*." }
+review-by = { type = "date?", role = "review-date" }
+
+[types.note.frontmatter]
+title = "string"
+description = { type = "string", role = "description" }
+
+[types.tip.frontmatter]
+title = "string"
+description = { type = "string?", role = "description" }
+
+[consumer]
+site = "https://docs.example.com"
+agents = true
+
+[checks]
+review-overdue = "off"
+"#;
+
+#[test]
+fn this_page_agrees_with_check_where_the_checks_stay_silent() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let root = dir.path().canonicalize().expect("real path");
+    let files = [
+        ("ascribe.toml", QUIET_MODEL),
+        // The default is its description, and its review is overdue with
+        // the check off.
+        (
+            "docs/index.md",
+            "---\ntype: guide\ntitle: Home\nreview-by: 2026-10-03\n---\n\nStart here.\n",
+        ),
+        // Its own description over the default.
+        (
+            "docs/own.md",
+            "---\ntype: guide\ntitle: Own\nsummary: Its own.\n---\n\nIt has one.\n",
+        ),
+        // A required description left out is frontmatter-missing-field's.
+        (
+            "docs/note.md",
+            "---\ntype: note\ntitle: Note\n---\n\nA note.\n",
+        ),
+        // A description that isn't a string is frontmatter-type-mismatch's.
+        (
+            "docs/tip.md",
+            "---\ntype: tip\ntitle: Tip\ndescription: 3\n---\n\nA tip.\n",
+        ),
+    ];
+    for (path, text) in files {
+        let path = root.join(path);
+        fs::create_dir_all(path.parent().unwrap()).expect("mkdir");
+        fs::write(path, text).expect("write");
+    }
+    let said = parity(&root, false);
+    assert_eq!(
+        said,
+        Said {
+            overdue: 1,
+            reported: 0,
+            measured: 2,
+            missing: 0
+        }
+    );
 }
 
 #[test]
@@ -396,5 +509,5 @@ fn this_page_agrees_with_check_and_build_for_quill() {
         &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
         &root,
     );
-    parity(&root);
+    parity(&root, true);
 }

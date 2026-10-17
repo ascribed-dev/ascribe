@@ -382,6 +382,7 @@ describe("the This page view", () => {
         date: "2026-10-03",
         days: -14,
         overdue: true,
+        reported: true,
         range: range(4),
       },
       availability: "self-managed 3.5",
@@ -485,6 +486,30 @@ describe("the This page view", () => {
       ]);
     });
 
+    it("warn of an overdue review only where review-overdue reports it", () => {
+      const warned = (reported: boolean) => {
+        const roots = thisPageRoots({
+          ...full,
+          about: {
+            ...fullAbout,
+            review: {
+              field: "review-by",
+              date: "2026-10-03",
+              days: -14,
+              overdue: true,
+              reported,
+              range: range(4),
+            },
+          },
+        });
+        return thisPageChildren(nth(roots, 0))
+          .flatMap((n) => (n.kind === "row" ? [n.row] : []))
+          .find((row) => row.label === "Review");
+      };
+      expect(warned(true)).toMatchObject({ value: "overdue since 3 October", warn: true });
+      expect(warned(false)).toMatchObject({ value: "overdue since 3 October", warn: false });
+    });
+
     it("say when a review is due, and that a short description is fine", () => {
       const later = thisPageRoots({
         ...full,
@@ -496,6 +521,7 @@ describe("the This page view", () => {
             date: "2027-01-03",
             days: 12,
             overdue: false,
+            reported: false,
             range: range(4),
           },
           builds: [{ name: "site", leftOut: null }],

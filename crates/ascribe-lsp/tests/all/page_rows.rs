@@ -124,7 +124,7 @@ fn about_says_whether_the_page_is_described_due_published_listed_and_unfinished(
     );
     assert_eq!(
         about["review"],
-        json!({ "field": "review-by", "date": "2026-10-03", "days": -14, "overdue": true, "range": line(4, 0, 21) })
+        json!({ "field": "review-by", "date": "2026-10-03", "days": -14, "overdue": true, "reported": true, "range": line(4, 0, 21) })
     );
     assert_eq!(about["availability"], "self-managed");
     assert_eq!(
@@ -162,11 +162,14 @@ fn about_says_whether_the_page_is_described_due_published_listed_and_unfinished(
 }
 
 #[test]
-fn review_says_overdue_where_review_overdue_reports_the_page() {
+fn review_warns_where_review_overdue_reports_the_page() {
     let f = project();
     let mut client = started(&f.root());
     let path = f.path("docs/internal/rotate.md");
-    assert_eq!(page(&mut client, &path)["about"]["review"]["overdue"], true);
+    assert_eq!(
+        page(&mut client, &path)["about"]["review"]["reported"],
+        true
+    );
     assert!(
         client.codes(&path).contains(&"review-overdue".to_owned()),
         "{:?}",
