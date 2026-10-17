@@ -2610,8 +2610,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/557"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Memos: memo files in `memos/`"
     },
     {
@@ -2630,7 +2633,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Memos: memo files in the editor"
     },
     {
@@ -2908,6 +2911,24 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Memos: say something about an empty container memo"
+    },
+    {
+      "content": {
+        "body": "Since #556 (phase 4 of the [Memos plan](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/memos/phase-4-templates.md)), a template's instructions to the writer are memos, and memos are never published. Several template sections are now only a heading and a memo, for example concept's \"Use cases\", reference's \"\\{Reference description}\", and troubleshooting's \"Symptom 1\", \"Cause 1 of symptom 1\", and \"Solution or workaround to cause 1 of symptom 1\". When a page made from one of these templates leaves such a section unfilled, it builds as a heading with nothing under it. `template-placeholder-left` reports nothing there, because the section has no placeholder left. Before #556, the instruction was a placeholder, and the check reported it.\n\nRaised in the review of #556; the maintainer asked for this issue.\n\n**What might help,** one of:\n- **Template-scoped:** on a page of a type with a template, advice for a section that the template gives no content but a memo, and that the page still leaves empty, with nothing in it but memos and directives such as `@id`. This could be a variant of `template-placeholder-left` or a diagnostic of its own. It targets exactly this gap, and reports nothing on pages without a template.\n- **General:** advice for any section with no content, subsections included, on any page. This is wider, and it needs a rule for what counts as empty. A `##` heading followed directly by `###` is common and fine, so only a section with nothing in its whole extent would count.\n\n**Done looks like:** a decision on which one (or neither), recorded with the change. If it's a diagnostic or a variant, the change adds its registry entry, a conformance case built from a template section that is only a heading and a memo, and its docs, including the templates guide's \"What the check finds\".\n\nOut of scope: changing the templates' words, or moving memos so these sections get a placeholder back.",
+        "number": 558,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Templates: say something about a section a page leaves empty",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/558"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBY05U",
+      "labels": [
+        "enhancement",
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "Templates: say something about a section a page leaves empty"
     }
   ]
 }
