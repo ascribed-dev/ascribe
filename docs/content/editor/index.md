@@ -229,7 +229,7 @@ A type with no template makes a page with its frontmatter: its `type`, the title
 ### Memo files
 @available: next
 
-A [memo file](../writing/memo-files.md) says why a section or a block is written the way it is. The editor shows them where they apply, and writes them for you.
+A [memo file](../writing/memo-files.md) says why a section or a block is written the way it is. The editor shows them where they apply, and writes them for you. [Leave a memo for whoever edits next](../writing/memos.md) says when to write one.
 
 - A **CodeLens** above a heading or a block that has memos counts them: "1 memo", "2 memos", or "3 memos, 1 outdated" when one's quote isn't found any more. A lens at the top of the page counts the memos about the whole page. Click it to open the memo, or, with several, to pick one; each opens at its text.
 - **Ascribe: Add a memo** makes a file in `memos/` about the section the cursor is in, by its id, or about the page when the cursor is above its first heading with an id. Its `quote` is the selected text, or the first line of the block at the cursor; on a heading it has none, and it's about the heading's section. The file is named from the quote's first words, or the heading's id, and never made over a file that's there. It's saved and opened at its text, so you start writing why. It's in the actions bar's **Memos** group, the Command Palette, and the editor's **Ascribe** submenu.

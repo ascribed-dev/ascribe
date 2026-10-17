@@ -819,6 +819,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `versions/release.md` | `ascribe versions` | reference |
 | `writing/directives.md` | Directive reference | reference |
 | `writing/memo-files.md` | Memo files | reference |
+| `writing/memos.md` | Leave a memo for whoever edits next | how-to |
 | `writing/variants.md` | Content that varies | tutorial |
 
 READMEs published with a package, a crate, or the repository:

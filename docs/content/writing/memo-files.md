@@ -5,7 +5,7 @@ description: "A memo longer than a line or two, in a file of its own in `memos/`
 available: next
 ---
 
-A memo says why a page is written the way it is, for whoever changes it next. One a line or two long goes in the page, as [`@memo`](directives.md#memo). A longer one goes in a file of its own, a **memo file**, in the folder `memos/` beside `ascribe.toml`. Neither is ever published. This page describes memo files; the [Ascribe specification]({repo}/blob/main/SPEC.md#77-memo-files) is the normative definition.
+A memo says why a page is written the way it is, for whoever changes it next. One a line or two long goes in the page, as [`@memo`](directives.md#memo). A longer one goes in a file of its own, a **memo file**, in the folder `memos/` beside `ascribe.toml`. Neither is ever published. This page describes memo files, and [Leave a memo for whoever edits next](memos.md) says when to write one; the [Ascribe specification]({repo}/blob/main/SPEC.md#77-memo-files) is the normative definition.
 
 ## Write a memo file
 

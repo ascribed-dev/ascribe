@@ -544,7 +544,7 @@ In the editor, a review check's problem has a quick fix, **Mark as intended, and
 
 ([SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo))
 
-Keeps a note for the people and agents who maintain the page: why a section comes first, why a table is laid out the way it is, why a caveat is there. A memo sits beside what it's about, and is never published.
+Keeps a note for the people and agents who maintain the page: why a section comes first, why a table is laid out the way it is, why a caveat is there. A memo sits beside what it's about, and is never published. [Leave a memo for whoever edits next](memos.md) says when to write one, when a [memo file](memo-files.md) is better, and when a pull request comment is.
 
 ```markdown
 ## Rotate a key
