@@ -378,7 +378,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@steps` | line | none | following block | Mark an ordered list as a procedure |
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
 | `@snippet` | line | identifier (address) | self | Take a code example from a file |
-| `@intended` | line | line (reason) | following block | Acknowledge a check's problem as intended |
+| `@intended` | line | line (reason) | top of section, else following block | Acknowledge a check's problem as intended |
 | `@memo` | line, container (raw) | line (text), in line form | top of section, else following block, in either form | Keep a note for the people who maintain the page, never published |
 | `@term` | line | none | top of section | Make a glossary page's heading a term |
 
@@ -673,14 +673,14 @@ Extensions are compared without regard to case. A file whose extension isn't in 
 
 ### 4.9 `@intended`
 
-Says that a problem a processor reports is intended: the author has looked at it and keeps it. An acknowledgement names one check and gives a reason, and it applies to one page, one block, or one content model entry.
+Says that a problem a processor reports is intended: the author has looked at it and keeps it. An acknowledgement names one check and gives a reason, and it applies to one page, one block, one heading, or one content model entry.
 
 ```
 @intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
-- **Form:** line. **Binding:** following block. **Primary:** REQUIRED reason (a line primary, §3.4): plain text, the rest of the line.
+- **Form:** line. **Binding:** the heading, at the top of a section (§3.8); otherwise the following block. **Primary:** REQUIRED reason (a line primary, §3.4): plain text, the rest of the line.
 - **Attributes:**
 
   | Key | Type | Default | Meaning |
@@ -689,6 +689,14 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 
 - **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
   - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
+  - **A heading:** `@intended` at the top of its section, among the directives under the heading. The acknowledgement covers that check's problems located at the heading, and nothing else in the section:
+
+    ```
+    ## Workspace
+    @term
+    @intended {check=glossary-term-unused}: Linked from the product's own UI.
+    ```
+
   - **A page or a fragment:** the reserved frontmatter key `intended`, a list of mappings with a `check` and a `reason`:
 
     ```yaml
@@ -697,7 +705,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
         reason: Linked from the site's sidebar, which the content model can't see.
     ```
 
-  - **A content model entry or an image:** `[[intended]]` in the content model (§7.2), with a `check`, a `reason`, and exactly one of `phrase`, `feature`, `term` (a glossary term's id, §5.4), or `image` (a path under the content root):
+  - **A content model entry or an image:** `[[intended]]` in the content model (§7.2), with a `check`, a `reason`, and exactly one of `phrase`, `feature`, or `image` (a path under the content root):
 
     ```toml
     [[intended]]
@@ -755,7 +763,7 @@ A plan for turning a flag on for a growing share of users.
   | `match` | `first`, `every`, or `marked` | the glossary's | Which occurrences are linked: the first on each page, every one, or none, for a word that also has an ordinary sense, whose author links the occurrences that mean the term |
   | `case-sensitive` | boolean | the glossary's | Whether an occurrence must match the term's case |
 
-- `@term` makes a term only on a page the glossary lists (§7.2), or in a fragment such a page includes. Elsewhere, it isn't a term.
+- `@term` makes a term only on a page the glossary lists (§7.2), or in a fragment such a page includes. Elsewhere, it isn't a term, and it's an error (§8.2).
 - **Never in an output.** `@term` renders nothing: the heading and its section are published as they'd be without it.
 
 ---
@@ -827,7 +835,7 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 A glossary is one or more pages, which the content model lists (§7.2). Each heading on a glossary page marked `@term` (§4.11), written on the page or in a fragment it includes, is a **glossary term**:
 
 - **Its text** is the heading's text (§5.5), and its aliases are its `@term`'s. **Its id** is the heading's source id.
-- **Its definition** is the first block of its section's own content, when that's a paragraph, as plain text: phrases substituted for the build, emphasis and code reduced to their text, a link to its text, an image to its alt text, inline HTML dropped, and whitespace runs one space. A paragraph a fragment brings in counts. The definition is resolved for each build.
+- **Its definition** is the first block of its section's own content, when that's a paragraph, as plain text: phrases substituted for the build, emphasis and code reduced to their text, a link to its text, an image to its alt text, inline HTML dropped, and whitespace runs one space. Directives that bind the heading, and `@available`, `@intended`, and `@memo` above the paragraph, come before the section's own content. A paragraph a fragment brings in counts. A section that opens with groups (§3.6), such as `@variant`, has the paragraph each arm opens with, in the builds that keep that arm. A section that opens with anything else has no definition, which is an error (§8.2). The definition is resolved for each build: a build that removes the paragraph leaves the term without a definition in that build.
 - **It's linked** to its heading on the first of its glossary pages the build publishes. A heading that two glossary pages show, through a fragment, is one term.
 - Two terms, or a term and an alias, with the same text, compared ignoring case unless both terms are case-sensitive, are an error at the second, which isn't a term (§8.2).
 
@@ -835,7 +843,7 @@ Processors link occurrences of glossary terms to their definitions according to 
 
 **A link an author writes to a term's heading is a use of the term,** as a linked occurrence is, and outputs show it as one. Exactly a link whose destination is the term's heading by its id is; a link to the glossary page, or to another heading in the term's section, is an ordinary link. Where a term is linked only at its first occurrence, such a link counts as that occurrence, so a processor doesn't also link a later one on the page.
 
-Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish isn't linked in that build.
+Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish, or that has no definition in the build, isn't linked in that build.
 
 ### 5.5 Heading ids
 
@@ -1147,6 +1155,8 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice | Error |
 | Navigation | A folder with an `index.md` and a page beside it with the folder's name | Error |
 | Glossary | Two terms, or a term and an alias, with the same text | Error |
+| Glossary | A term whose section doesn't start with a paragraph | Error |
+| Glossary | `@term` on a heading that no page the glossary lists shows | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

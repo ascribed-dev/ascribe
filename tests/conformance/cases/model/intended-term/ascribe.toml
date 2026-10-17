@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[glossary]
+pages = ["input.md"]
+
+[[intended]]
+check = "glossary-term-unused"
+term = "region"
+reason = "The product's own screens link here."

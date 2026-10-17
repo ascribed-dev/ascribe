@@ -8,12 +8,26 @@
 //! pages in the order `pages` gives them. Two different headings with the
 //! same text, or a text that is another term's alias, are a duplicate: the
 //! first is the term, and the second is left out and reported.
+//!
+//! A term's definition is the paragraph that opens its section (SPEC §5.4):
+//! the first block of the section's own content, after the directives that
+//! bind its heading and those that only annotate the block below them
+//! (`@available`, `@intended`, `@memo`). A paragraph a fragment brings in
+//! counts, and a section that opens with groups, such as `@variant`, has
+//! the paragraph that opens each arm, for the builds that keep it. A section
+//! that opens with anything else has no definition.
+//!
+//! `@term` on a heading that no glossary page shows isn't a term, and is
+//! listed apart ([`Glossary::off_page`]).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use ascribe_core::{FileId, RelPath, Span};
+use ascribe_core::{FileId, Location, RelPath, Span};
 use ascribe_model::GlossaryMatch;
+use ascribe_syntax::{Block, BlockKind, Bound};
 
+use crate::expand::{ExpandedBlock, ExpandedKind};
+use crate::index::FileKind;
 use crate::project::Project;
 
 /// A glossary term: a heading marked `@term` on a glossary page.
@@ -40,6 +54,12 @@ pub struct Term {
     pub heading: Span,
     /// The `@term` directive line, in that file.
     pub mark: Span,
+    /// Where the paragraphs that may define it are written, in its first
+    /// page's expansion: the first block of its section's own content, or,
+    /// when the section opens with groups, the paragraph that opens each of
+    /// their arms. Empty
+    /// when the section opens with anything else.
+    pub definition: Vec<Location>,
     /// The glossary pages that show the term, in the order `pages` lists
     /// them. A term is linked to the first a build publishes.
     pub pages: Vec<RelPath>,
@@ -74,6 +94,20 @@ pub struct DuplicateTerm {
     pub first_page: RelPath,
 }
 
+/// `@term` on a heading no glossary page shows (`term-off-glossary-page`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OffPage {
+    /// The file it's written in.
+    pub file: FileId,
+    /// That file's content path.
+    pub path: RelPath,
+    /// The `@term` directive line.
+    pub mark: Span,
+    /// Whether the file is a page, which `[glossary] pages` could list; a
+    /// fragment is shown only by the pages that include it.
+    pub page: bool,
+}
+
 /// The project's glossary terms, and the headings left out as duplicates.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Glossary {
@@ -82,6 +116,9 @@ pub struct Glossary {
     pub terms: Vec<Term>,
     /// The headings left out because an earlier term has their text.
     pub duplicates: Vec<DuplicateTerm>,
+    /// Each `@term` on a heading no glossary page shows, in path order and
+    /// source order.
+    pub off_page: Vec<OffPage>,
 }
 
 impl Glossary {
@@ -111,6 +148,8 @@ impl Project {
         // Each text seen so far, lowercased, with the term and the text as
         // written.
         let mut seen: HashMap<String, Vec<(usize, String)>> = HashMap::new();
+        // Every heading marked `@term` that a glossary page shows.
+        let mut shown: HashSet<(FileId, Span)> = HashSet::new();
         for listed in &settings.pages {
             let Ok(page) = RelPath::parse(&listed.path) else {
                 continue;
@@ -125,6 +164,7 @@ impl Project {
                 let Some(file) = self.file(&written_in).map(|f| f.file) else {
                     continue;
                 };
+                shown.insert((file, heading.span));
                 if let Some(same) = terms.iter_mut().find(|t| t.is_heading(file, heading.span)) {
                     if !same.pages.contains(&page) {
                         same.pages.push(page.clone());
@@ -141,6 +181,7 @@ impl Project {
                     file,
                     heading: heading.span,
                     mark: mark.span,
+                    definition: opening(&expanded.blocks, file, heading.span).unwrap_or_default(),
                     pages: vec![page.clone()],
                 };
                 if let Some(duplicate) = duplicate_of(&term, &terms, &seen) {
@@ -156,7 +197,108 @@ impl Project {
                 terms.push(term);
             }
         }
-        Glossary { terms, duplicates }
+        let mut off_page = Vec::new();
+        for index in self.files() {
+            for heading in &index.headings {
+                let Some(mark) = &heading.term else {
+                    continue;
+                };
+                if !shown.contains(&(index.file, heading.span)) {
+                    off_page.push(OffPage {
+                        file: index.file,
+                        path: index.path.clone(),
+                        mark: mark.span,
+                        page: index.kind == FileKind::Page,
+                    });
+                }
+            }
+        }
+        Glossary {
+            terms,
+            duplicates,
+            off_page,
+        }
+    }
+}
+
+/// Where the paragraphs that open the section of the heading written at
+/// `heading` in `file` are written, among `blocks` and the blocks inside
+/// them: empty when the section opens with anything else, and `None` when
+/// the heading isn't there.
+fn opening(blocks: &[ExpandedBlock], file: FileId, heading: Span) -> Option<Vec<Location>> {
+    let Some(at) = blocks
+        .iter()
+        .position(|b| b.file == file && b.span == heading && is_heading(b))
+    else {
+        return blocks
+            .iter()
+            .find_map(|b| children(b).find_map(|list| opening(list, file, heading)));
+    };
+    let mut out = Vec::new();
+    paragraphs(&blocks[at + 1..], &mut out);
+    Some(out)
+}
+
+/// The paragraph that `blocks` opens with, or, when they open with groups
+/// (one `@variant` group, or several in a row, each of which a build may
+/// remove), the paragraph each arm opens with, in `out`.
+fn paragraphs(blocks: &[ExpandedBlock], out: &mut Vec<Location>) {
+    let mut groups = false;
+    for block in blocks.iter().filter(|b| !annotates(b)) {
+        match &block.kind {
+            ExpandedKind::Leaf(Block {
+                kind: BlockKind::Paragraph(_),
+                ..
+            }) if !groups => {
+                out.push(Location::new(block.file, block.span));
+                return;
+            }
+            ExpandedKind::Group { arms, .. } => {
+                groups = true;
+                for arm in arms {
+                    paragraphs(&arm.children, out);
+                }
+            }
+            _ => return,
+        }
+    }
+}
+
+/// The lists of blocks directly inside a block.
+fn children(block: &ExpandedBlock) -> Box<dyn Iterator<Item = &[ExpandedBlock]> + '_> {
+    match &block.kind {
+        ExpandedKind::Leaf(_) => Box::new(std::iter::empty()),
+        ExpandedKind::BlockQuote { children } | ExpandedKind::Container { children, .. } => {
+            Box::new(std::iter::once(children.as_slice()))
+        }
+        ExpandedKind::List { items, .. } => Box::new(items.iter().map(|i| i.children.as_slice())),
+        ExpandedKind::Group { arms, .. } => Box::new(arms.iter().map(|a| a.children.as_slice())),
+    }
+}
+
+fn is_heading(block: &ExpandedBlock) -> bool {
+    matches!(&block.kind, ExpandedKind::Leaf(b) if matches!(b.kind, BlockKind::Heading(_)))
+}
+
+/// Whether a block comes before a section's own content without being any
+/// of it: a directive that binds the heading (`@id`, `@term`), or one that
+/// annotates the block below it without changing what that block is
+/// (`@available`, `@intended`, `@memo`).
+fn annotates(block: &ExpandedBlock) -> bool {
+    let line = match &block.kind {
+        ExpandedKind::Leaf(Block {
+            kind: BlockKind::Directive(line),
+            ..
+        }) => line,
+        ExpandedKind::Container { opener, .. } => opener,
+        _ => return false,
+    };
+    match line.binding {
+        Some(Bound::Heading) => true,
+        Some(Bound::FollowingBlock) => {
+            matches!(line.name.as_str(), "available" | "intended" | "memo")
+        }
+        _ => false,
     }
 }
 

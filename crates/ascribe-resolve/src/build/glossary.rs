@@ -6,11 +6,13 @@
 //!   ([`crate::Glossary`]). It's linked to its heading on the first of its
 //!   glossary pages the build publishes; a term whose pages the build doesn't
 //!   publish, or whose heading it removes, isn't linked.
-//! - Its **definition** is the first block of its section's own content,
-//!   when that's a paragraph, as plain text: phrases substituted for the
-//!   build, emphasis and code reduced to their text, a link to its text, an
-//!   image to its alt text, inline HTML dropped, and whitespace runs one
-//!   space. A section that opens with anything else has an empty definition.
+//! - Its **definition** is the paragraph that opens its section
+//!   ([`Term::definition`]), as the build has it, as plain text: phrases
+//!   substituted for the build, emphasis and code reduced to their text, a
+//!   link to its text, an image to its alt text, inline HTML dropped, and
+//!   whitespace runs one space. A term with no such paragraph, or whose
+//!   paragraph the build removes, has no definition in the build, and isn't
+//!   linked in it.
 //! - Occurrences match **whole words**, and where terms overlap the
 //!   **longest** match wins (`API key` over `API`).
 //! - Matching applies to **prose** only: paragraphs, table cells, and a
@@ -32,7 +34,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use ascribe_core::RelPath;
 use ascribe_model::{ContentModel, GlossaryMatch};
-use ascribe_syntax::{BlockKind, Bound, Inline, InlineKind, Link, LinkForm};
+use ascribe_syntax::{BlockKind, Inline, InlineKind, Link, LinkForm};
 
 use super::BuildResolver;
 use super::inlines::{inline_text, prose_lists_mut};
@@ -60,11 +62,13 @@ pub(crate) fn build_terms(resolver: &BuildResolver<'_>) -> Vec<BuildTerm> {
         let Some(page_id) = resolver.page_id_of(page, term.file, term.heading) else {
             continue;
         };
-        let url = resolver.router().link(page, Some(&page_id));
-        let definition = resolver
+        let Some(definition) = resolver
             .stage(page)
-            .and_then(|staged| definition(&staged.blocks, &term))
-            .unwrap_or_default();
+            .and_then(|staged| term.definition_in(&staged.blocks))
+        else {
+            continue;
+        };
+        let url = resolver.router().link(page, Some(&page_id));
         out.push(BuildTerm {
             term,
             url,
@@ -115,27 +119,39 @@ pub fn glossary_targets(model: &ContentModel) -> BTreeSet<RelPath> {
         .collect()
 }
 
-/// A term's definition in a list of blocks: the paragraph that opens its
-/// heading's section, as plain text. `None` when the heading isn't there.
-pub(crate) fn definition(blocks: &[ResolvedBlock], term: &Term) -> Option<String> {
-    let at = blocks
-        .iter()
-        .position(|b| b.heading.is_some() && term.is_heading(b.file, b.span));
-    let Some(at) = at else {
-        return blocks
-            .iter()
-            .flat_map(|b| child_lists(b))
-            .find_map(|list| definition(list, term));
-    };
-    // The heading's own directives (`@id`, `@term`, a section's
-    // `@available`) come before its content.
-    let first = blocks[at + 1..].iter().find(|b| !binds_heading(b));
-    Some(match first.map(|b| &b.kind) {
-        Some(ResolvedKind::Leaf(block)) => match &block.kind {
-            BlockKind::Paragraph(p) => collapse(&inline_text(&p.inlines)),
-            _ => String::new(),
-        },
-        _ => String::new(),
+impl Term {
+    /// The term's definition in a page's resolved blocks: the first of the
+    /// paragraphs that may define it ([`Term::definition`]) that the build
+    /// kept, as plain text. `None` when the term has no such paragraph, or
+    /// the build removed them all.
+    pub fn definition_in(&self, blocks: &[ResolvedBlock]) -> Option<String> {
+        let at = |b: &ResolvedBlock| {
+            self.definition
+                .iter()
+                .any(|d| b.file == d.file && b.span == d.span)
+        };
+        find(blocks, &at).and_then(|b| match &b.kind {
+            ResolvedKind::Leaf(block) => match &block.kind {
+                BlockKind::Paragraph(p) => Some(collapse(&inline_text(&p.inlines))),
+                _ => None,
+            },
+            _ => None,
+        })
+    }
+}
+
+/// The first block among `blocks`, or inside them, that `matches`.
+fn find<'b>(
+    blocks: &'b [ResolvedBlock],
+    matches: &dyn Fn(&ResolvedBlock) -> bool,
+) -> Option<&'b ResolvedBlock> {
+    blocks.iter().find_map(|b| {
+        if matches(b) {
+            return Some(b);
+        }
+        child_lists(b)
+            .into_iter()
+            .find_map(|list| find(list, matches))
     })
 }
 
@@ -149,14 +165,6 @@ fn child_lists(block: &ResolvedBlock) -> Vec<&Vec<ResolvedBlock>> {
         ResolvedKind::List { items, .. } => items.iter().map(|i| &i.children).collect(),
         ResolvedKind::Group { arms, .. } => arms.iter().map(|a| &a.children).collect(),
     }
-}
-
-/// Whether a block is a directive line that binds the heading above it.
-fn binds_heading(block: &ResolvedBlock) -> bool {
-    matches!(
-        &block.kind,
-        ResolvedKind::Leaf(b) if matches!(&b.kind, BlockKind::Directive(line) if line.binding == Some(Bound::Heading))
-    )
 }
 
 /// Text with every run of whitespace one space, and none at either end.

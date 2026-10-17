@@ -82,7 +82,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-phrase-value-type` | Every phrase value is a string. | `` phrase `{key}` must be a quoted string, but it's {found}; write {key} = "{value}" `` |
 | `model-glossary-page` | Each path in `[glossary] pages` is a page under the content root, not a fragment, with its name's case as on disk. Whether it's there is checked with the project's files, as a type's `template` is. | `` `{path}` in `[glossary] pages` doesn't exist ``<br>`` `{path}` in `[glossary] pages` is a fragment; list the page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. A `[glossary] terms` table is `model-unknown-key`, and two terms with the same text, which are read from pages, are `glossary-term-duplicate`, a check of the project. Image attribute types are covered by the rules in §24.3.
+`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. A `[glossary] terms` table is `model-unknown-key`. Terms are read from pages, so their rules are checks of the project: two terms with the same text are `glossary-term-duplicate`, a term with no definition `glossary-definition-missing`, and `@term` on a page `pages` doesn't list `term-off-glossary-page`. Image attribute types are covered by the rules in §24.3.
 
 ### 24.6 Widgets
 
@@ -132,7 +132,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 |---|---|---|
 | `model-check-not-configurable` | `[checks]` names only checks the diagnostics registry marks configurable. | `` `{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off `` |
 | `model-intended-check` | `[[intended]]` names a review check that's acknowledged at a content model entry. | `` `{check}` isn't a check `` |
-| `model-intended-entry` | `[[intended]]` names exactly one declared phrase, feature, glossary term, or image. | `` an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image` `` |
+| `model-intended-entry` | `[[intended]]` names exactly one declared phrase, feature, or image. | `` an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, or `image` `` |
 | `model-checks-vale` | `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules. | `` `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini` `` |
 
 ### 24.10 Permalinks

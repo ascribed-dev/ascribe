@@ -5,7 +5,8 @@
 //! ([`ACKNOWLEDGEABLE`](crate::diagnostics::ACKNOWLEDGEABLE)), and each
 //! reports its problems at one kind of place, so each problem has one place
 //! to be acknowledged: a page in its frontmatter, a block with `@intended`
-//! above it, or a content model entry in `ascribe.toml`.
+//! above it (a heading with `@intended` at the top of its section), or a
+//! content model entry in `ascribe.toml`.
 
 use crate::DiagnosticSlug;
 
@@ -26,7 +27,8 @@ pub enum Place {
     /// A page or fragment as a whole: acknowledged in its `intended`
     /// frontmatter.
     Page,
-    /// One block: acknowledged with `@intended` directly above it.
+    /// One block: acknowledged with `@intended` directly above it, or, for
+    /// a heading, at the top of its section.
     Block,
     /// A content model entry or an image, which has no page: acknowledged
     /// in `ascribe.toml`'s `[[intended]]`.
@@ -65,7 +67,9 @@ impl Place {
     pub const fn written(self) -> &'static str {
         match self {
             Place::Page => "in the page's `intended` frontmatter",
-            Place::Block => "with `@intended` directly above the block",
+            Place::Block => {
+                "with `@intended` directly above the block, or at the top of a heading's section"
+            }
             Place::Entry => "in `[[intended]]` in ascribe.toml",
         }
     }
@@ -120,8 +124,6 @@ pub enum EntryKind {
     Phrase,
     /// A feature, by its key (`feature = "sync"`).
     Feature,
-    /// A glossary term, by its id (`term = "api-key"`).
-    Term,
     /// An image file, by its path under the content root
     /// (`image = "images/diagram.png"`).
     Image,
@@ -129,19 +131,13 @@ pub enum EntryKind {
 
 impl EntryKind {
     /// Every kind, in the order the docs list them.
-    pub const ALL: [EntryKind; 4] = [
-        EntryKind::Phrase,
-        EntryKind::Feature,
-        EntryKind::Term,
-        EntryKind::Image,
-    ];
+    pub const ALL: [EntryKind; 3] = [EntryKind::Phrase, EntryKind::Feature, EntryKind::Image];
 
     /// Its key in `[[intended]]`.
     pub const fn key(self) -> &'static str {
         match self {
             EntryKind::Phrase => "phrase",
             EntryKind::Feature => "feature",
-            EntryKind::Term => "term",
             EntryKind::Image => "image",
         }
     }

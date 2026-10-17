@@ -1391,6 +1391,57 @@ fn fix_applies_the_safe_fixes_and_reports_whats_left() {
 }
 
 #[test]
+fn fix_leaves_a_term_off_its_glossary_page_and_its_fix_lists_the_page() {
+    let reference = "---\ntitle: Reference\n---\n\n## Zone\n@term\n\nA part of a region.\n";
+    let dir = project(&[
+        (
+            "index.md",
+            "---\ntitle: Home\n---\n\nSee the [reference](reference.md).\n",
+        ),
+        ("reference.md", reference),
+    ]);
+    let model = dir.path().join("ascribe.toml");
+    let with_comment = format!("# The content model.\n{MODEL}");
+    fs::write(&model, &with_comment).expect("write the model");
+
+    // Listing a page links its terms everywhere, so `--fix` doesn't.
+    let out = ascribe(dir.path(), &["check", "--fix"]);
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    assert!(!stdout(&out).contains("fixed"), "{}", stdout(&out));
+    assert_eq!(fs::read_to_string(&model).expect("the model"), with_comment);
+
+    // The fix the editor applies lists the page, and the error goes.
+    let report = json_of(&ascribe(dir.path(), &["check", "--format", "json"]));
+    let found = diagnostics_of(&report);
+    assert_eq!(found.len(), 1, "{report}");
+    assert_eq!(found[0]["slug"], "term-off-glossary-page");
+    let fix = &found[0]["fixes"][0];
+    assert_eq!(fix["applicability"], "unsafe");
+    assert_eq!(fix["file"], "ascribe.toml");
+    let edit = &fix["edits"][0];
+    let at = |end: &str| {
+        usize::try_from(edit["range"][end]["offset"].as_u64().expect("an offset"))
+            .expect("an offset that fits")
+    };
+    let mut fixed = with_comment.clone();
+    fixed.replace_range(
+        at("start")..at("end"),
+        edit["new_text"].as_str().expect("text"),
+    );
+    assert!(
+        fixed.starts_with(&with_comment),
+        "the rest is kept: {fixed}"
+    );
+    assert!(
+        fixed.ends_with("\n[glossary]\npages = [\"reference.md\"]\n"),
+        "{fixed}"
+    );
+    fs::write(&model, &fixed).expect("write the model");
+    let out = ascribe(dir.path(), &["check"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+}
+
+#[test]
 fn fix_lists_what_it_applied_in_the_json() {
     let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
     let report = json_of(&ascribe(

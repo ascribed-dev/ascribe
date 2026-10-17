@@ -1,6 +1,6 @@
 description: >-
   An `[[intended]]` table names exactly one declared entry: a phrase, a
-  feature, a glossary term, or an image.
+  feature, or an image.
 spec: ["4.9", "7.2"]
 tags: [model]
 

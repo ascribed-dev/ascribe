@@ -173,6 +173,19 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [A page's label](../navigation/index.md#a-page-s-label) in the navigation reference.
 
+### ASC241 `glossary-definition-long`
+@id {permalink=true}: ASC241
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+
+**When:** A term's definition, as a build derives it, is longer than the limit `description-too-long` measures a description against.
+
+**Message:** the definition of the term "\{term}" is over \{limit} characters in build `{build}`, too long for a link's title or a hover
+
+**Fix:** End the first paragraph after the definition, in a sentence or two, and put the rest in a second paragraph. The first paragraph is what a link to the term shows as its title and the editor shows on hover; the rest of the section is still on the glossary page. The length is counted on the definition as each build derives it, with phrases substituted and formatting dropped.
+
+**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`
@@ -230,13 +243,13 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 ### ASC158 `glossary-term-unused`
 @id {permalink=true}: ASC158
 
-Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
 **When:** The term, and each of its aliases, appears in no other page's prose, and no link names its heading.
 
 **Message:** the glossary term `{term}` appears in no other file's prose, and no link names its heading, so it's never linked
 
-**Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements).
+**Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it with [`@intended`](../writing/directives.md#intended) at the top of the term's section, under its heading.
 
 **Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
 

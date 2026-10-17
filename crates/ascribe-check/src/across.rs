@@ -151,7 +151,7 @@ pub(crate) fn for_every_build(
         }
         if on(diagnostics::GLOSSARY_TERM_UNUSED) {
             // A term is reported at its heading, on its glossary page, and
-            // acknowledged in `[[intended]]` by its id.
+            // acknowledged with `@intended` at the top of its section.
             for t in index.glossary().terms {
                 if unused(Usable::Term(t.id.clone())) {
                     issues.push(
@@ -159,8 +159,7 @@ pub(crate) fn for_every_build(
                             diagnostics::GLOSSARY_TERM_UNUSED,
                             Location::new(file(t.file), t.heading),
                         )
-                        .with_arg("term", t.term.clone())
-                        .with_arg(ENTRY_ARG, entry_arg(EntryKind::Term, &t.id)),
+                        .with_arg("term", t.term.clone()),
                     );
                 }
             }

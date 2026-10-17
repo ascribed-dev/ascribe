@@ -24,13 +24,28 @@ impl Loader<'_> {
             self.wrong_type("intended", v, "an array of tables, written [[intended]]");
             return out;
         };
-        let keys = ["check", "reason", "phrase", "feature", "term", "image"];
+        let keys = ["check", "reason", "phrase", "feature", "image"];
+        // `term` is checked apart: in an allowed list it would be suggested,
+        // and a glossary term is acknowledged at its heading now.
+        let allowed = [keys.as_slice(), &["term"]].concat();
         for item in items.iter() {
             let Some(t) = self.as_table("intended[]", item) else {
                 continue;
             };
             let span = sp(item);
-            self.check_keys("intended", t, &keys);
+            // A glossary term is a heading, acknowledged with `@intended` at
+            // the top of its section (SPEC §4.9): say so.
+            for (key, key_span, _) in entries(t) {
+                if key == "term" {
+                    self.push(
+                        self.issue(diagnostics::MODEL_UNKNOWN_KEY, key_span)
+                            .with_variant("intended-term")
+                            .with_arg("key", key)
+                            .with_arg("table", "intended"),
+                    );
+                }
+            }
+            self.check_keys("intended", t, &allowed);
             let check = self.require("intended", t, span, "check").and_then(|c| {
                 let name = self.string("intended.check", c, false)?;
                 self.check_name(&name, sp(c))
@@ -60,11 +75,10 @@ impl Loader<'_> {
                         let declared = match kind {
                             EntryKind::Phrase => phrases.iter().any(|p| p.key == name),
                             EntryKind::Feature => features.iter().any(|f| f.key == name),
-                            // A term is a heading on a glossary page, and an
-                            // image is a file, neither of which the content
-                            // model sees; an acknowledgement that names no
-                            // term or image is reported as unused.
-                            EntryKind::Term | EntryKind::Image => true,
+                            // An image is a file, which the content model
+                            // doesn't see; an acknowledgement that names no
+                            // image is reported as unused.
+                            EntryKind::Image => true,
                         };
                         if declared {
                             Some((*kind, name))
@@ -142,7 +156,6 @@ fn kind_noun(kind: EntryKind) -> &'static str {
     match kind {
         EntryKind::Phrase => "phrase",
         EntryKind::Feature => "feature",
-        EntryKind::Term => "glossary term",
         EntryKind::Image => "image",
     }
 }
@@ -248,9 +261,9 @@ mod tests {
         let check = "check = \"binding-blank-line\"\n";
         let found = load(&format!(
             "[[intended]]\n{check}reason = \"r\"\n\
-             [[intended]]\n{check}phrase = \"old-name\"\nterm = \"api-key\"\nreason = \"r\"\n\
+             [[intended]]\n{check}phrase = \"old-name\"\nimage = \"a.png\"\nreason = \"r\"\n\
              [[intended]]\n{check}feature = \"syncs\"\nreason = \"r\"\n\
-             [[intended]]\n{check}term = \"api-key\"\nreason = \" \"\n\
+             [[intended]]\n{check}image = \"a.png\"\nreason = \" \"\n\
              [[intended]]\n{check}feature = \"sync\"\n"
         ))
         .unwrap_err();

@@ -460,6 +460,11 @@ fn cases() -> Vec<Case> {
             Some("glossary-terms"),
             "spec = \"0.1\"\n[glossary]\nterms = { a = { term = \"A\" } } #!\n",
         ),
+        case(
+            "model-unknown-key",
+            Some("intended-term"),
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]]\ncheck = \"phrase-unused\"\nphrase = \"x\"\nterm = \"x\" #!\nreason = \"r\"\n",
+        ),
         // 22.6 Widgets
         case(
             "model-widget-reserved-name",
@@ -717,7 +722,7 @@ fn cases() -> Vec<Case> {
         case(
             "model-intended-entry",
             Some("several"),
-            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]] #!\ncheck = \"link-target-missing\"\nphrase = \"x\"\nterm = \"x\"\nreason = \"r\"\n",
+            "spec = \"0.1\"\n[phrases]\nx = \"X\"\n[[intended]] #!\ncheck = \"link-target-missing\"\nphrase = \"x\"\nimage = \"x.png\"\nreason = \"r\"\n",
         ),
         case(
             "model-intended-entry",

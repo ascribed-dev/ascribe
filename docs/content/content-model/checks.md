@@ -62,9 +62,9 @@ Says that a check's problem with a content model entry or an image is intended, 
 |---|---|---|---|
 | `check` | string | required | The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](../checks/diagnostics.md) says. |
 | `reason` | string | required | Why the problem is intended. Not empty. |
-| `phrase`, `feature`, `term`, or `image` | string | required | The entry: a phrase's key, a feature's key, a glossary term's id, or an image's path under the content root. Exactly one. |
+| `phrase`, `feature`, or `image` | string | required | The entry: a phrase's key, a feature's key, or an image's path under the content root. Exactly one. |
 
-A glossary term whose only occurrences are inside a phrase's value is reported by `glossary-term-unused`, since the search for uses doesn't read phrase values. Acknowledge it here with `term`.
+A glossary term is a heading, so it's acknowledged on its page instead, with [`@intended`](../writing/directives.md#intended) under its heading; `term` here is an error that says so.
 
 **Rules.** A check that doesn't exist, isn't a review check, or reports its problems somewhere other than an entry is an error (`model-intended-check`). A table without exactly one entry key, or naming an entry that isn't declared, is an error (`model-intended-entry`).
 

@@ -2,7 +2,8 @@
 //!
 //! A review check's problem can be acknowledged where the check reports it:
 //! a page in its `intended` frontmatter, a block with `@intended` above it,
-//! or a content model entry in `[[intended]]`. [`Acknowledgements`] reads
+//! a heading with `@intended` at the top of its section, or a content model
+//! entry in `[[intended]]`. [`Acknowledgements`] reads
 //! the valid ones (the checks report the rest, in `check_file` and the
 //! content model's loader), and [`Acknowledgements::apply`] takes the
 //! problems they cover out of a list of diagnostics, keeps them aside with
@@ -14,7 +15,9 @@ use ascribe_core::{
     Applicability, DiagnosticSlug, FileId, Fix, Issue, Location, Place, Span, TextEdit, diagnostics,
 };
 use ascribe_model::{CheckLevel, ContentModel};
-use ascribe_syntax::{Block, BlockKind, ParseOptions, PrimaryValue, bound_block, parse};
+use ascribe_syntax::{
+    Block, BlockKind, ParseOptions, PrimaryValue, bound_block, bound_heading, parse,
+};
 use serde_yaml_ng::Value;
 
 use crate::yaml::YamlIndex;
@@ -44,8 +47,9 @@ pub struct Acknowledgement {
 pub enum Covers {
     /// A page or fragment: problems located in the file.
     Page(FileId),
-    /// A block: problems located in its span, or with a related place there
-    /// (a problem in an included fragment is located at the include).
+    /// A block, or a heading: problems located in its span, or with a
+    /// related place there (a problem in an included fragment is located at
+    /// the include).
     Block(Location),
     /// A content model entry or an image: problems that name it, as
     /// [`entry_arg`](ascribe_core::intended::entry_arg) writes it.
@@ -403,7 +407,11 @@ fn blocks(
                     _ => "",
                 };
                 let slug = check.and_then(|c| check_named(c, Place::Block, review).ok());
-                let bound = bound_block(list, i).and_then(|k| list.get(k));
+                // At the top of a section, the heading; elsewhere, the block
+                // below.
+                let bound = bound_block(list, i)
+                    .or_else(|| bound_heading(list, i))
+                    .and_then(|k| list.get(k));
                 if let (Some(slug), Some(bound), false) = (slug, bound, reason.is_empty()) {
                     out.push(Acknowledgement {
                         check: slug,

@@ -236,7 +236,8 @@ impl Builtin {
             Builtin::Intended => DirectiveSchema {
                 // SPEC §3.4: a line primary, the rest of the line.
                 primary: Primary::Reason { required: true },
-                binding: Some(Binding::Block),
+                // SPEC §4.9: at the top of a section, the heading.
+                binding: Some(Binding::HeadingOrBlock),
                 attributes: Attributes::Declared(vec![AttributeSchema {
                     key: "check".into(),
                     ty: AttributeType::String,
@@ -244,9 +245,12 @@ impl Builtin {
                     // what an acknowledgement names (`intended-check`).
                     required: false,
                     default: None,
-                    description: Some("The check the block's problem comes from.".into()),
+                    description: Some("The check the problem comes from.".into()),
                 }]),
-                description: Some("Acknowledge a check's problem in the next block.".into()),
+                description: Some(
+                    "Acknowledge a check's problem in the next block, or at the section's heading."
+                        .into(),
+                ),
                 ..base
             },
             Builtin::Memo => DirectiveSchema {
@@ -538,7 +542,7 @@ mod tests {
                 "intended",
                 Forms::LINE,
                 Primary::Reason { required: true },
-                Some(Binding::Block),
+                Some(Binding::HeadingOrBlock),
             ),
             (
                 "memo",

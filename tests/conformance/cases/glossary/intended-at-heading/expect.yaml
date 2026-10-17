@@ -1,0 +1,14 @@
+description: >-
+  `@intended` at the top of a section acknowledges a problem reported at its
+  heading, as `glossary-term-unused` is, and nothing wider. Further down the
+  section it covers the block under it, not the heading, so there it
+  covers nothing.
+spec: ["4.9", "5.4"]
+tags: [check, page-check, resolve]
+
+diagnostics:
+  - {slug: glossary-term-unused, file: glossary.md, line: 16}
+builds:
+  site:
+    diagnostics:
+      - {slug: intended-unused, file: glossary.md, line: 21}

@@ -41,6 +41,7 @@ pub(super) fn check_page(index: &Project, page: &ResolvedPage, links: &LinkProbl
     headings(index, page, &mut found);
     heading_levels(index, page, &mut found);
     title_heading(index, page, &mut found);
+    definitions(index, page, &mut found);
     link_ids(index, page, links, &mut found);
     let mut seen = Vec::new();
     found.retain(|f| {
@@ -243,6 +244,42 @@ fn title_heading(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
         issue,
         cause: (page.file, span, Arc::from([])),
     });
+}
+
+/// `glossary-definition-long`: on a glossary page, a term whose definition,
+/// as this build derives it, is longer than a description may be (one
+/// limit for both, `llms::DESCRIPTION_LIMIT`), at its heading.
+fn definitions(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    let checks = &index.model().checks;
+    if checks.is_off(diagnostics::GLOSSARY_DEFINITION_LONG)
+        || !ascribe_resolve::glossary_targets(index.model()).contains(&page.path)
+    {
+        return;
+    }
+    let limit = ascribe_resolve::llms::DESCRIPTION_LIMIT;
+    let glossary = index.glossary();
+    for (block, _) in page.headings() {
+        let Some(term) = glossary.term_at(block.file, block.span) else {
+            continue;
+        };
+        let long = term
+            .definition_in(&page.blocks)
+            .is_some_and(|d| d.chars().count() > limit);
+        if !long {
+            continue;
+        }
+        let issue = Issue::new(
+            diagnostics::GLOSSARY_DEFINITION_LONG,
+            Location::new(block.file, block.span),
+        )
+        .with_arg("term", term.term.clone())
+        .with_arg("limit", limit.to_string())
+        .with_arg("build", page.build.clone());
+        out.push(Found {
+            issue: at_include_site(index, issue, &block.via),
+            cause: (block.file, block.span, block.via.clone()),
+        });
+    }
 }
 
 /// `heading-level-skipped`: a heading more than one level below the one

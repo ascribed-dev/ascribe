@@ -113,7 +113,7 @@ pub use fs::{
     DiskFs, FileSystem, LinkCheck, MemoryFs, Probe, Sources, in_nested_project, is_link,
     is_source_path, link_on_the_way,
 };
-pub use glossary::{DuplicateTerm, Glossary, Term};
+pub use glossary::{DuplicateTerm, Glossary, OffPage, Term};
 pub use incremental::{
     Affected, ApplyError, Change, FileIds, IncrementalProject, ModelImpact, ResolvedCache,
     Snapshot, Stats, Version,
