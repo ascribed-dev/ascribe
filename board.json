@@ -2858,7 +2858,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/591"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "The editor's views: chat has Ascribe's skill, and dropped images"
     },
     {
@@ -3152,7 +3152,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/598"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Find All References on a page type in Content model"
     },
     {
@@ -3186,7 +3186,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/598"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "A page type's use drops a tab-separated comment after `type:`"
     }
   ]
