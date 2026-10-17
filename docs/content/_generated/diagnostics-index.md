@@ -226,3 +226,4 @@
 | [ASC227](../checks/diagnostics/content-checks.md#ASC227) | `memo-outdated` | Advice | File | write |
 | [ASC228](../checks/diagnostics/content-checks.md#ASC228) | `memo-long` | Advice | File | write |
 | [ASC229](../checks/diagnostics/content-checks.md#ASC229) | `template-section-empty` | Advice | File | write |
+| [ASC230](../checks/diagnostics/pages.md#ASC230) | `nav-invalid` | Error | File | write |

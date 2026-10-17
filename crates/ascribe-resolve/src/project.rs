@@ -2,7 +2,7 @@
 //! the edges between files, and the problems found on the way.
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Slugger, Span, diagnostics};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, NAV_FILE, NavFile};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
@@ -12,6 +12,7 @@ use crate::fs::FileSystem;
 use crate::incremental::FileIds;
 use crate::index::{FileIndex, FileKind, Heading, Include, RefKind, Reference, index_file};
 use crate::layout::Layout;
+use crate::navigation::Navigation;
 use crate::references::{SourceSet, include_issue, reference_issue, resolve_reference};
 use crate::slug::{default_slugger, slugger_by_name};
 use crate::snippet::{CodeFiles, Snippet, resolve_snippet};
@@ -197,6 +198,14 @@ impl ReverseEdges {
     }
 }
 
+/// `ascribe.nav` beside `ascribe.toml`, when it's there and reads.
+fn read_nav(fs: &dyn FileSystem) -> Option<Arc<NavFile>> {
+    let path = RelPath::parse(NAV_FILE).ok()?;
+    let bytes = fs.read_file(&path).ok()?;
+    let text = String::from_utf8(bytes).ok()?;
+    NavFile::parse(&text, FileId::new(0)).ok().map(Arc::new)
+}
+
 fn insert_sorted<T>(list: &mut Vec<T>, item: T, key: impl Fn(&T) -> (RelPath, Span)) {
     let at = key(&item);
     let position = list.partition_point(|e| key(e) <= at);
@@ -259,6 +268,8 @@ pub struct Project {
     unreadable: Vec<Unreadable>,
     nested: Vec<RelPath>,
     own_folder: Option<RelPath>,
+    /// `ascribe.nav`, when the project has one that reads (SPEC §7.8).
+    nav: Option<Arc<NavFile>>,
     /// Expansions worked out so far, by page. `None` records a path that
     /// isn't a file. Filled on demand; the incremental update drops the
     /// entries a change can affect (`crate::incremental`).
@@ -278,6 +289,7 @@ impl Clone for Project {
             unreadable: self.unreadable.clone(),
             nested: self.nested.clone(),
             own_folder: self.own_folder.clone(),
+            nav: self.nav.clone(),
             expansions: Mutex::new(self.expansion_cache().clone()),
         }
     }
@@ -360,6 +372,7 @@ impl Project {
             unreadable,
             nested: folders.nested,
             own_folder: folders.own,
+            nav: read_nav(fs),
             expansions: Mutex::new(HashMap::new()),
         };
         project.resolutions = project
@@ -387,6 +400,18 @@ impl Project {
             .collect();
         project.edges = project.build_edges();
         project
+    }
+
+    /// `ascribe.nav`, when the project has one and it reads; a file that
+    /// doesn't is `nav-invalid`, and the project has the default order.
+    pub fn nav_file(&self) -> Option<&NavFile> {
+        self.nav.as_deref()
+    }
+
+    /// The project's navigation (SPEC §7.8): `ascribe.nav`'s order over the
+    /// default ([`Navigation::of`]).
+    pub fn navigation(&self) -> Navigation {
+        Navigation::of(self, self.nav_file())
     }
 
     /// The content model the project was indexed with.

@@ -987,6 +987,34 @@ The agent goes first because its installer writes the config file that
 - `memos/` MUST NOT be inside the content root, where its files would be pages; it is when the content root is the project's folder.
 - Memo files are no part of any output, and a change to one is no change to a page.
 
+### 7.8 Navigation
+
+A project MAY say what order its sections and pages come in, and their labels, in `ascribe.nav`, beside `ascribe.toml`. Every sidebar a processor or a consumer draws is the project's **navigation**: the file's order over the default, or the default without the file.
+
+```toml
+version = 1
+
+[[sections]]
+folder = ""
+
+[[sections]]
+folder = "reference/"
+label = "Reference"
+
+[[sections]]
+folder = "guides/"
+pages = ["install.md", "configure.md"]
+```
+
+- A **section** is the content root, or a folder under it with a page at any depth. Fragments (§2.2) are no section's pages, so a folder whose name begins with `_` isn't a section. A page is in its folder's section, and in no other.
+- A section's **own page** is its `index.md`, or else the page beside the folder with the folder's name: `checks/diagnostics.md` for `checks/diagnostics/`. A page beside its folder is also one of the parent section's pages. The content root's own page is its `index.md`, the home page.
+- `version` is `1`. Each `[[sections]]` table lists one section: `folder`, its path from the content root ending in `/`, or `""` for the content root; optionally `pages`, the file names of pages in that folder, in order, which may name the page beside a nested folder but not the section's own page; and optionally `label`, one line. Nothing else may be written. The tables' order is the sections' order.
+- **The default order:** sections in path order, the content root first. In each, its own page first, then its pages by their content type, in the order the content model declares types (§7.2), then by title. A nested section whose own page is beside its folder sits right after that page among its parent's pages; one with an `index.md` comes after the parent's pages.
+- **The file's order over it:** the sections the file lists come first, in its order, among their siblings, and the rest after, in path order. In a section that lists `pages`, those pages come first, in its order, and the rest after, by title; a nested section whose own page is named moves with it. A section with no `pages` has the default order.
+- A section's **label** is its `label`, else its own page's title, else its folder's name with its first letter capitalized. The content root's is "Start" unless `label` says otherwise.
+- **One navigation for a project.** A build's navigation is its share: the pages it publishes and offers (§2.1), so a page that's `unlisted` isn't in it, and the sections left with one.
+- A file that can't be read as above is an error, and the project has the default order, as if it had no file.
+
 ---
 
 ## 8. Validation
@@ -1070,6 +1098,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
 | Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root | Error |
 | Memo files | A memo file's `about` that names nothing in the project | Warning |
+| Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it | Error |
 | Glossary | A term's `link` that names a heading its page doesn't have | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
@@ -1225,6 +1254,8 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 **Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by folder, each linked to its Markdown version with its description. An index too long for one fetch is split into one per folder. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so the content model MUST give the site's origin; without it, the content model is invalid. In a versioned build with more than one live line (§9.3), each line has its own, under its base path: its `llms.txt` lists the line's pages, its heading names the line, and an older line's opens with a paragraph that links to the current line's `llms.txt`.
 
 **Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1) and where it comes from (the page, a rule of the content model, or neither), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root, with a group for each kind of crawler the content model disallows, naming every crawler of that kind the processor knows. A page's canonical address is its own, except in an older line of a versioned build (§9.3), where it's the address in the current line of the same page, or of the page the current line publishes in its place, following `replaces` (§2.1) as a link does (§5.2); a page the current line has neither of keeps its own. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
+
+**Navigation.** The site output holds the build's navigation (§7.8), a tree: the content root's section, each section with its folder, its label, its own page, its pages, and its nested sections, in order, and each page with its source path, its label, and its content type, joined to its record on the source path. A label is its title as plain text, and in the output's formatted form where the title has one. A build with no pages has an empty root.
 
 **JSON output.** The resolved tree, for custom consumers.
 

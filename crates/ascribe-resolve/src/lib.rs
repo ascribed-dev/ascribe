@@ -86,6 +86,7 @@ mod links;
 pub mod llms;
 pub mod memos;
 mod named;
+pub mod navigation;
 pub mod pages;
 mod project;
 pub mod references;
@@ -126,6 +127,7 @@ pub use memos::{
     PERSONAL_MEMOS_FOLDER, Personal, Placement, folder_in_content, is_memo_path, place,
 };
 pub use named::{BadTarget, EntryKind, Named, PREFIXES};
+pub use navigation::{BuildNavigation, NavPage, Navigation, Section, SharedSection};
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };

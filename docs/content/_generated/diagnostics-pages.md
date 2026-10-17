@@ -736,3 +736,18 @@ Warning · file level · next step: choose · [SPEC §7.7]({repo}/blob/main/SPEC
 **Fix:** Point `about` at what the memo is about now. Renaming a page or changing a heading's id leaves the memos about it detached, so give them the new name. If what it was about is gone, the memo is too: delete the file.
 
 **Read more:** [Placed, outdated, and detached](../writing/memo-files.md#placed-outdated-and-detached) in the memo files reference.
+
+## Navigation
+
+### ASC230 `nav-invalid`
+@id {permalink=true}: ASC230
+
+Error · file level · next step: write · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it.
+
+**Message:** ascribe.nav can't be read: \{detail}
+
+**Fix:** Correct the file to the shape the reference gives it: `version = 1`, and a `[[sections]]` table for each section listed, with `folder`, a path from the content root ending in `/`, or `""` for the root, and optionally `pages`, a list of file names in that folder, and `label`. Until it reads, every sidebar has the default order, as if the project had no file.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.

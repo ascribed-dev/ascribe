@@ -714,6 +714,9 @@ pub const MEMO_LONG: DiagnosticSlug = DiagnosticSlug("memo-long");
 /// `ASC229`, advice, file level: a content check (area `pages`).
 pub const TEMPLATE_SECTION_EMPTY: DiagnosticSlug = DiagnosticSlug("template-section-empty");
 
+/// `ASC230`, error, file level: SPEC §8.2, "Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it".
+pub const NAV_INVALID: DiagnosticSlug = DiagnosticSlug("nav-invalid");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -941,6 +944,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     MEMO_OUTDATED,
     MEMO_LONG,
     TEMPLATE_SECTION_EMPTY,
+    NAV_INVALID,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

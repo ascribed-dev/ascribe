@@ -1,0 +1,9 @@
+description: >-
+  A section's key the grammar doesn't have, and a folder that isn't a path
+  ending in `/`, are each invalid, at the key and the value.
+spec: ["7.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-invalid, file: ascribe.nav, line: 4}
+  - {slug: nav-invalid, file: ascribe.nav, line: 5}
