@@ -5,4 +5,4 @@
   + const groups = sidebar(await getCollection("docs"), { nav, entry });
   ```
 
-  A group gains `sections`, its nested sections, and `folder`, `page`, and `formatted` from the navigation; each page gains `label`, its title, and `formatted.label`, its HTML when the title has code. The starter's layout makes the move, and keeps its `src/nav.ts`. See [`sidebar()`](docs/content/astro/reference.md#sidebar).
+  A group gains `sections`, its nested sections, and `folder`, `page`, and `formatted` from the navigation; each page gains `label`, its title, and `formatted.label`, its HTML when the title has code. See [`sidebar()`](docs/content/astro/reference.md#sidebar).

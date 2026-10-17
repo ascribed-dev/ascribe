@@ -1,0 +1,331 @@
+[
+  {
+    "label": "Start",
+    "pages": [
+      {
+        "href": "/docs/",
+        "label": "Ascribe documentation"
+      },
+      {
+        "href": "/docs/getting-started/",
+        "label": "Getting started"
+      }
+    ]
+  },
+  {
+    "label": "Writing pages",
+    "pages": [
+      {
+        "href": "/docs/writing/directives/",
+        "label": "Directive reference"
+      },
+      {
+        "href": "/docs/writing/memo-files/",
+        "label": "Memo files"
+      },
+      {
+        "href": "/docs/writing/memos/",
+        "label": "Leave a memo for whoever edits next"
+      },
+      {
+        "href": "/docs/writing/variants/",
+        "label": "Content that varies"
+      }
+    ]
+  },
+  {
+    "label": "The content model",
+    "pages": [
+      {
+        "href": "/docs/content-model/",
+        "label": "ascribe.toml reference"
+      },
+      {
+        "href": "/docs/content-model/checks/",
+        "label": "ascribe.toml: checks, permalinks, and listing"
+      },
+      {
+        "href": "/docs/content-model/output/",
+        "label": "ascribe.toml: consumer, builds, and sources"
+      },
+      {
+        "href": "/docs/content-model/content/",
+        "label": "ascribe.toml: dimensions, phrases, and widgets"
+      }
+    ]
+  },
+  {
+    "label": "Checks and reports",
+    "pages": [
+      {
+        "href": "/docs/checks/check/",
+        "label": "ascribe check, build, and fmt"
+      },
+      {
+        "href": "/docs/checks/diagnostics/",
+        "label": "Diagnostics"
+      },
+      {
+        "href": "/docs/checks/diagnostics/content-checks/",
+        "label": "Diagnostics: content checks",
+        "nested": true
+      },
+      {
+        "href": "/docs/checks/diagnostics/directives/",
+        "label": "Diagnostics: directives",
+        "nested": true
+      },
+      {
+        "href": "/docs/checks/diagnostics/pages/",
+        "label": "Diagnostics: links, pages, and sources",
+        "nested": true
+      },
+      {
+        "href": "/docs/checks/diagnostics/content-model/",
+        "label": "Diagnostics: the content model",
+        "nested": true
+      },
+      {
+        "href": "/docs/checks/vale/",
+        "label": "Prose, through Vale"
+      },
+      {
+        "href": "/docs/checks/report/",
+        "label": "The project report"
+      }
+    ]
+  },
+  {
+    "label": "Review",
+    "pages": [
+      {
+        "href": "/docs/review/",
+        "label": "Review"
+      },
+      {
+        "href": "/docs/review/diff/",
+        "label": "ascribe diff, drift, and report"
+      },
+      {
+        "href": "/docs/review/troubleshooting/",
+        "label": "Troubleshooting review"
+      }
+    ]
+  },
+  {
+    "label": "The editor",
+    "pages": [
+      {
+        "href": "/docs/editor/",
+        "label": "Editing"
+      },
+      {
+        "href": "/docs/editor/settings/",
+        "label": "Editor workspaces, settings, and commands"
+      }
+    ]
+  },
+  {
+    "label": "Agents",
+    "pages": [
+      {
+        "href": "/docs/agents/",
+        "label": "Agents"
+      },
+      {
+        "href": "/docs/agents/commands/",
+        "label": "ascribe agents, mcp, and lsp"
+      },
+      {
+        "href": "/docs/agents/measuring/",
+        "label": "What to measure"
+      }
+    ]
+  },
+  {
+    "label": "Examples and drift",
+    "pages": [
+      {
+        "href": "/docs/examples/",
+        "label": "Drift"
+      },
+      {
+        "href": "/docs/examples/tested/",
+        "label": "Show what an example was tested with"
+      },
+      {
+        "href": "/docs/examples/sources/",
+        "label": "ascribe init, sources, observe, permalinks, templates, and vale"
+      }
+    ]
+  },
+  {
+    "label": "Publishing with Astro",
+    "pages": [
+      {
+        "href": "/docs/astro/",
+        "label": "Astro"
+      },
+      {
+        "href": "/docs/astro/reference/",
+        "label": "@ascribed/astro reference"
+      },
+      {
+        "href": "/docs/astro/elements/",
+        "label": "Element library reference"
+      }
+    ]
+  },
+  {
+    "label": "Permalinks",
+    "pages": [
+      {
+        "href": "/docs/permalinks/",
+        "label": "Permalinks"
+      }
+    ]
+  },
+  {
+    "label": "Navigation",
+    "pages": [
+      {
+        "href": "/docs/navigation/",
+        "label": "Navigation"
+      },
+      {
+        "href": "/docs/navigation/order/",
+        "label": "Put your pages in order"
+      }
+    ]
+  },
+  {
+    "label": "Versions",
+    "pages": [
+      {
+        "href": "/docs/versions/",
+        "label": "Versions"
+      },
+      {
+        "href": "/docs/versions/release/",
+        "label": "ascribe versions"
+      }
+    ]
+  },
+  {
+    "label": "Page templates",
+    "pages": [
+      {
+        "href": "/docs/templates/",
+        "label": "Page templates"
+      }
+    ]
+  },
+  {
+    "label": "The command",
+    "pages": [
+      {
+        "href": "/docs/command/",
+        "label": "Command reference"
+      },
+      {
+        "href": "/docs/command/questions/",
+        "label": "ascribe explain, model, outline, link, refs, rename, and render"
+      },
+      {
+        "href": "/docs/command/project-files/",
+        "label": "Files Ascribe writes"
+      }
+    ]
+  },
+  {
+    "label": "Contracts",
+    "pages": [
+      {
+        "href": "/docs/contracts/content-model/",
+        "label": "ascribe.toml format contract"
+      },
+      {
+        "href": "/docs/contracts/content-model/content/",
+        "label": "ascribe.toml format contract: dimensions, phrases, and widgets",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/content-model/output/",
+        "label": "ascribe.toml format contract: consumer, builds, and sources",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/content-model/checks/",
+        "label": "ascribe.toml format contract: checks, permalinks, and listing",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/content-model/validation/",
+        "label": "ascribe.toml format contract: validation rules",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/site-render/",
+        "label": "Site-render contract"
+      },
+      {
+        "href": "/docs/contracts/output-layout/",
+        "label": "Output-layout contract"
+      },
+      {
+        "href": "/docs/contracts/assets/",
+        "label": "Asset contract"
+      },
+      {
+        "href": "/docs/contracts/archive/",
+        "label": "Archive contract"
+      },
+      {
+        "href": "/docs/contracts/tested-examples/",
+        "label": "Tested examples contract"
+      },
+      {
+        "href": "/docs/contracts/json-reports/",
+        "label": "JSON report contract"
+      },
+      {
+        "href": "/docs/contracts/json-reports/diff/",
+        "label": "JSON reports: ascribe diff and ascribe drift",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/report/",
+        "label": "JSON reports: ascribe report",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/sources/",
+        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, and ascribe permalinks",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/templates/",
+        "label": "JSON reports: ascribe templates",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/questions/",
+        "label": "JSON reports: the commands that answer questions",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/versions/",
+        "label": "JSON reports: ascribe versions",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/permalinks-list/",
+        "label": "The permalinks list"
+      },
+      {
+        "href": "/docs/contracts/navigation/",
+        "label": "The navigation contract"
+      }
+    ]
+  }
+]

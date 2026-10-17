@@ -1,22 +1,13 @@
 // The starter: what `npx @ascribed/astro init` writes, and that
-// examples/astro-site's collection and route are what it writes for that
-// project. Run with ASCRIBE_BLESS=1 to rewrite the example's from the starter
-// in starter/.
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+// examples/astro-site's collection, route, and layout are what it writes for
+// that project. Run with ASCRIBE_BLESS=1 to rewrite the example's from the
+// starter in starter/.
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { chooseBuild, init, schemaImport, STARTER_FILES, starterFiles } from "../src/init.js";
-import { navFor } from "../src/nav.js";
 import { readProject } from "../src/project.js";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm --filter @ascribed/astro exec vitest run test/init.test.ts";
@@ -31,30 +22,10 @@ function project(toml: string): string {
   return dir;
 }
 
-/** Every Markdown file under `dir` outside a folder starting `_`, by path from it. */
-function pagesUnder(dir: string): string[] {
-  return readdirSync(dir, { recursive: true, encoding: "utf8" })
-    .map((file) => file.split(path.sep).join("/"))
-    .filter(
-      (file) => file.endsWith(".md") && !file.split("/").some((part) => part.startsWith("_")),
-    );
-}
-
-/**
- * The starter's files the example has as `init` writes them. Its layout is its
- * own, which draws the sidebar from the project's navigation, with no list.
- */
-const SHARED: readonly string[] = ["src/content.config.ts", "src/pages/[...slug].astro"];
-
 describe("the example", () => {
-  it("has the collection and the route init writes for it", () => {
-    // Its pages: its content's Markdown, but for fragments. `init` lists them from a build.
-    const files = starterFiles({
-      schema: schemaImport(example, readProject(example), "site"),
-      nav: navFor(pagesUnder(path.join(example, "content"))),
-    });
+  it("has the files init writes for it", () => {
+    const files = starterFiles({ schema: schemaImport(example, readProject(example), "site") });
     for (const [file, text] of files) {
-      if (!SHARED.includes(file)) continue;
       const at = path.join(example, file);
       if (process.env["ASCRIBE_BLESS"]) writeFileSync(at, text);
       expect(readFileSync(at, "utf8"), `${file} is out of date: run ${BLESS}`).toBe(text);
@@ -106,67 +77,26 @@ describe("schemaImport", () => {
   });
 });
 
-describe("starterFiles", () => {
-  it("lays out a long group as Prettier would", () => {
-    const pages = Array.from({ length: 6 }, (_, i) => `Reference/A long page name ${i}.md`);
-    const nav = starterFiles({ schema: "../s.ts", nav: [{ label: "Reference", pages }] }).get(
-      "src/nav.ts",
-    );
-    expect(nav).toContain(
-      '  {\n    label: "Reference",\n    pages: [\n      "Reference/A long page name 0.md",\n',
-    );
-  });
-});
-
-describe.skipIf(process.platform === "win32")("init", () => {
-  /** An Astro root with `ascribe.toml`, and a stand-in compiler that writes a manifest of two pages. */
-  function site(): { root: string; binary: string } {
+describe("init", () => {
+  it("writes the three files, and no list of the pages", async () => {
     const root = project('spec = "0.1"\n');
-    const binary = path.join(root, "fake-ascribe");
-    const manifest = JSON.stringify({
-      files: [
-        { path: "index.md", kind: "page" },
-        { path: "Guides/Install.md", kind: "page" },
-        { path: "Guides/shot.png", kind: "asset" },
-      ],
-    });
-    writeFileSync(
-      binary,
-      `#!/bin/sh\nmkdir -p .ascribe/build/site\necho '${manifest}' > .ascribe/build/site/site.manifest.json\n`,
-    );
-    chmodSync(binary, 0o755);
-    return { root, binary };
-  }
-
-  it("writes the four files, with the project's pages in the sidebar's list", async () => {
-    const { root, binary } = site();
-    process.env["ASCRIBE_BIN"] = binary;
-    try {
-      const result = await init({ root });
-      expect(result).toEqual({ build: "site", written: [...STARTER_FILES] });
-    } finally {
-      delete process.env["ASCRIBE_BIN"];
-    }
-    const nav = readFileSync(path.join(root, "src/nav.ts"), "utf8");
-    expect(nav).toContain(
-      '  { label: "Start", pages: ["index.md"] },\n  { label: "Guides", pages: ["Guides/Install.md"] },\n];',
-    );
+    const result = await init({ root });
+    expect(result).toEqual({ build: "site", written: [...STARTER_FILES] });
+    expect(existsSync(path.join(root, "src/nav.ts"))).toBe(false);
     expect(readFileSync(path.join(root, "src/content.config.ts"), "utf8")).toContain(
       'import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";',
     );
+    const layout = readFileSync(path.join(root, "src/layouts/Docs.astro"), "utf8");
+    expect(layout).toContain("sidebar(entries, { entry })");
+    expect(layout).toContain("neighbors(entry, entries)");
   });
 
   it("writes nothing when one of the files is there", async () => {
-    const { root, binary } = site();
-    mkdirSync(path.join(root, "src"));
-    writeFileSync(path.join(root, "src/nav.ts"), "// mine\n");
-    process.env["ASCRIBE_BIN"] = binary;
-    try {
-      await expect(init({ root })).rejects.toThrow(/src\/nav\.ts is\. It wrote nothing/);
-    } finally {
-      delete process.env["ASCRIBE_BIN"];
-    }
+    const root = project('spec = "0.1"\n');
+    mkdirSync(path.join(root, "src/layouts"), { recursive: true });
+    writeFileSync(path.join(root, "src/layouts/Docs.astro"), "<!-- mine -->\n");
+    await expect(init({ root })).rejects.toThrow(/src\/layouts\/Docs\.astro is\. It wrote nothing/);
     expect(existsSync(path.join(root, "src/content.config.ts"))).toBe(false);
-    expect(readFileSync(path.join(root, "src/nav.ts"), "utf8")).toBe("// mine\n");
+    expect(readFileSync(path.join(root, "src/layouts/Docs.astro"), "utf8")).toBe("<!-- mine -->\n");
   });
 });

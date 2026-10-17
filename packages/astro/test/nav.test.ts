@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   entryId,
-  navFor,
   navigationGroups,
   navProblems,
   neighborsIn,
@@ -251,22 +250,6 @@ describe("navigationGroups", () => {
         (e) => e.filePath,
       ),
     ).toThrow(/_ascribe\/nav\.json\) names pages the collection has no entry for:\n- index\.md\n/);
-  });
-});
-
-describe("navFor", () => {
-  it("puts the root's pages under Start, the root page first, then a group per folder", () => {
-    expect(
-      navFor(["Reference/Options.md", "about.md", "Guides/b.md", "index.md", "Guides/Sub/a.md"]),
-    ).toEqual([
-      { label: "Start", pages: ["index.md", "about.md"] },
-      { label: "Guides", pages: ["Guides/Sub/a.md", "Guides/b.md"] },
-      { label: "Reference", pages: ["Reference/Options.md"] },
-    ]);
-  });
-
-  it("is empty for no pages", () => {
-    expect(navFor([])).toEqual([]);
   });
 });
 

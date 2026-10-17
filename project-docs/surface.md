@@ -822,6 +822,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `getting-started.md` | Getting started | tutorial |
 | `index.md` | Ascribe documentation | index |
 | `navigation/index.md` | Navigation | reference |
+| `navigation/order.md` | Put your pages in order | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `review/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
 | `review/index.md` | Review | how-to |
@@ -891,7 +892,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.claude/rules/ascribe*.md` and `.github/instructions/ascribe*.instructions.md` | `ascribe agents sync`, at the repository's root, with `--target claude-rules` and `--target copilot`. | Yes |
 | `.claude/settings.json`, `.mcp.json`, `.codex/hooks.json`, and `.github/hooks/ascribe.json` | `ascribe agents sync --with-hook`, at the repository's root: the hooks' entries and the MCP server, beside your own. | Yes |
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
-| `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
+| `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
 
 ## What nothing declares

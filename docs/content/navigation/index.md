@@ -7,6 +7,8 @@ available: next
 
 A project's **navigation** is its sections and pages in order, each with its label. Every sidebar and table of contents is drawn from it: an Astro site's `sidebar()` and `neighbors()` read it from the build (see [the Astro reference](../astro/reference.md#sidebar)), and so do [`llms.txt`](../content-model/output.md#consumer), `ascribe agents index`, an [archive](../versions/index.md#archive-a-line) of a release line, the JSON output, and `ascribe model`. With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
 
+To choose the order and the labels, see [Put your pages in order](order.md).
+
 ## Sections and pages
 
 | Term | What it is |

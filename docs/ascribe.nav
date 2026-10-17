@@ -1,0 +1,80 @@
+# The docs' sections and pages, in the site's order. A section's `pages` is
+# written only where its order isn't the default (its own page, then by type
+# in ascribe.toml's order, then by title), and a `label` where its own page's
+# title, or its folder's name, isn't the sidebar's. site/test/e2e.test.ts holds
+# the published sidebar to site/test/fixtures/sidebar.json.
+version = 1
+
+[[sections]]
+folder = ""
+
+[[sections]]
+folder = "writing/"
+label = "Writing pages"
+
+[[sections]]
+folder = "content-model/"
+label = "The content model"
+
+[[sections]]
+folder = "checks/"
+label = "Checks and reports"
+
+[[sections]]
+folder = "review/"
+
+[[sections]]
+folder = "editor/"
+label = "The editor"
+
+[[sections]]
+folder = "agents/"
+
+[[sections]]
+folder = "examples/"
+label = "Examples and drift"
+pages = ["tested.md", "sources.md"]
+
+[[sections]]
+folder = "astro/"
+label = "Publishing with Astro"
+
+[[sections]]
+folder = "permalinks/"
+
+[[sections]]
+folder = "navigation/"
+
+[[sections]]
+folder = "versions/"
+
+[[sections]]
+folder = "templates/"
+
+[[sections]]
+folder = "command/"
+label = "The command"
+
+# Contracts keep an order of their own.
+[[sections]]
+folder = "contracts/"
+label = "Contracts"
+pages = [
+  "content-model.md",
+  "site-render.md",
+  "output-layout.md",
+  "assets.md",
+  "archive.md",
+  "tested-examples.md",
+  "json-reports.md",
+  "permalinks-list.md",
+  "navigation.md",
+]
+
+[[sections]]
+folder = "contracts/content-model/"
+pages = ["content.md", "output.md", "checks.md", "validation.md"]
+
+[[sections]]
+folder = "contracts/json-reports/"
+pages = ["diff.md", "report.md", "sources.md", "templates.md", "questions.md", "versions.md"]
