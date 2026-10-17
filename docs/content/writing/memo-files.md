@@ -28,11 +28,11 @@ doesn't mention the agent.
 
 The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no author, no date, and nothing to finish: a reason, kept for as long as it holds.
 
-`memos/` is outside the content root, so its files aren't pages.
+`memos/` is outside the content root, so its files aren't pages. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there. A [personal memo](memo-files.md#personal-memos) doesn't need that.
 
 ### Personal memos
 
-A memo that's only for you goes in `.ascribe/memos/` instead, in the same format. It's a **personal memo**: `.ascribe/` is the folder the project doesn't commit ([project files](../command/project-files.md)), so it stays on your machine. The editor, `ascribe outline`, and `ascribe refs` read both folders, and mark a personal memo as one. `ascribe check` reads `memos/` only, so what it reports is the same on every machine; the editor reports a personal memo's problems as it reports a team memo's. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there.
+A memo that's only for you goes in `.ascribe/memos/` instead, in the same format. It's a **personal memo**: `.ascribe/` is the folder the project doesn't commit ([project files](../command/project-files.md)), so it stays on your machine. The editor, `ascribe outline`, and `ascribe refs` read both folders, and mark a personal memo as one. `ascribe check` reads `memos/` only, so what it reports is the same on every machine; the editor reports a personal memo's problems as it reports a team memo's.
 
 A memo is read by someone about to change the page, so it's short: over 2,000 characters, `ascribe check` reports it as advice, [`memo-long`](../checks/diagnostics/content-checks.md#ASC228). `[checks.memo-long] limit` sets another limit, in characters.
 

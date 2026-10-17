@@ -329,6 +329,32 @@ fn add_memo_writes_the_section_and_the_block_at_the_cursor() {
 }
 
 #[test]
+fn a_quote_yaml_would_read_as_a_number_or_null_is_written_as_text() {
+    let page =
+        "---\ntitle: Guide\n---\n\n## Values\n@id: values\n\n```json\nnull\n```\n\n1.0\n\ntrue\n";
+    let fixture = Fixture::new(MODEL, &[("docs/guide.md", page)]);
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    for (needle, quote) in [
+        ("null\n```", "\"null\""),
+        ("1.0", "\"1.0\""),
+        ("true", "\"true\""),
+    ] {
+        let cursor = at(page, needle);
+        let (_, text) = created(&add(
+            &mut client,
+            &fixture,
+            "addMemo",
+            json!({ "start": cursor, "end": cursor }),
+        ));
+        assert!(text.contains(&format!("\nquote: {quote}\n")), "{text}");
+        // And it's a memo file ascribe check reads as one, placed.
+        let memo = ascribe_resolve::MemoFile::parse(ascribe_core::RelPath::root(), text.clone());
+        assert!(memo.problems.is_empty(), "{text}: {:?}", memo.problems);
+    }
+}
+
+#[test]
 fn a_team_memo_isnt_added_when_memos_is_in_the_content_root() {
     let fixture = Fixture::new(
         "spec = \"0.1\"\n\n[project]\ncontent-root = \".\"\noutput-dir = \"../build\"\n",

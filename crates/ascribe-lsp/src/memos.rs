@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use ascribe_core::path::normalize;
 use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_resolve::{
-    Committed, EntryKind, FileIndex, MEMOS_FOLDER, MemoFile, MemoState, MemoStore, Named,
+    Committed, EntryKind, FileIndex, Key, MEMOS_FOLDER, MemoFile, MemoState, MemoStore, Named,
     PERSONAL_MEMOS_FOLDER, PREFIXES, Personal, Usable, folder_in_content, place,
 };
 use ascribe_syntax::{Block, BlockKind, raw_text};
@@ -244,7 +244,9 @@ pub(crate) fn add(
         // A quote the memo wouldn't find isn't written.
         let memo = memo_text(&about, Some(quote));
         let memo = MemoFile::parse(RelPath::root(), memo);
-        place(&memo, ctx.snapshot.project()).is_some_and(|p| p.state == MemoState::Placed)
+        memo.problems.is_empty()
+            && memo.quote.is_some()
+            && place(&memo, ctx.snapshot.project()).is_some_and(|p| p.state == MemoState::Placed)
     });
     let folder = RelPath::parse(if personal {
         PERSONAL_MEMOS_FOLDER
@@ -321,14 +323,19 @@ fn memo_text(about: &str, quote: Option<&str>) -> String {
     text
 }
 
-/// `value` as a YAML scalar: as it is when YAML reads it back so, and in
-/// double quotes otherwise.
+/// `value` as a YAML scalar: as it is when YAML reads it back as the same
+/// text, and in double quotes otherwise, so `42`, `true`, and `null` stay
+/// text.
 fn yaml(value: &str) -> String {
     let plain = !value.is_empty()
         && value
             .chars()
             .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.' | '/' | '#'))
-        && !value.starts_with(['-', '#', '.']);
+        && !value.starts_with(['-', '#', '.'])
+        && matches!(
+            serde_yaml_ng::from_str::<serde_yaml_ng::Value>(value),
+            Ok(serde_yaml_ng::Value::String(read)) if read == value
+        );
     if plain {
         value.to_owned()
     } else {
@@ -472,22 +479,26 @@ pub(crate) fn complete(ctx: &Ctx, text: &str, offset: usize) -> Option<Vec<Compl
     Some(out)
 }
 
+/// Where a key's value is written on its line: after the key's `:`, inside
+/// its quotes when it has them. `None` when it's written in another form,
+/// such as with an escape.
+fn value_span(memo: &MemoFile, key: &Key) -> Option<Span> {
+    let line = memo.text.get(key.line.range())?;
+    let colon = line.find(':')? + 1;
+    let at = colon + line.get(colon..)?.find(key.value.as_str())?;
+    let start = key.line.start() + at;
+    Some(Span::new(start, start + key.value.len()))
+}
+
 /// A link from a memo file's `about` to what it names: the page, the
 /// heading, or the entry in `ascribe.toml`. None when it names nothing.
 pub(crate) fn links(ctx: &Ctx, memo: &MemoFile) -> Vec<DocumentLink> {
     let (Some(about), Some(named)) = (&memo.about, &memo.named) else {
         return Vec::new();
     };
-    let Some(line) = memo.text.get(about.line.range()) else {
+    let Some(span) = value_span(memo, about) else {
         return Vec::new();
     };
-    let Some(at) = line.find(about.value.as_str()) else {
-        return Vec::new();
-    };
-    let span = Span::new(
-        about.line.start() + at,
-        about.line.start() + at + about.value.len(),
-    );
     let target = match named.find(ctx.snapshot.project()) {
         Some(Usable::File(path)) => ctx.uri_of(&path),
         Some(Usable::Heading { file, id }) => {
@@ -530,15 +541,9 @@ fn about_edits(
         let Some(new) = renamed(path, id.as_deref()) else {
             continue;
         };
-        let Some(at) = memo
-            .text
-            .get(about.line.range())
-            .and_then(|line| line.find(about.value.as_str()))
-        else {
+        let Some(span) = value_span(&memo, about) else {
             continue;
         };
-        let start = about.line.start() + at;
-        let span = Span::new(start, start + about.value.len());
         let Some(uri) = uri_of(ctx, &memo.path) else {
             continue;
         };
@@ -634,6 +639,9 @@ mod tests {
         assert_eq!(yaml("install-agent.md#install"), "install-agent.md#install");
         assert_eq!(yaml("Run it: now"), "\"Run it: now\"");
         assert_eq!(yaml("#heading"), "\"#heading\"");
+        for scalar in ["42", "1.0", "true", "null", "1e3"] {
+            assert_eq!(yaml(scalar), format!("\"{scalar}\""));
+        }
     }
 
     #[test]
