@@ -296,17 +296,8 @@ fn type_use(model: &ContentModel, file: &FileIndex) -> Option<(String, Span)> {
     }
     let name = file.frontmatter.as_ref()?.get(TYPE_KEY)?.as_str()?;
     let declared = model.type_named(Some(name)).found()?;
-    let line = frontmatter_key(file, TYPE_KEY)?;
-    let text = file.source.get(line.range())?;
-    // The value: after the key's `:`, without a comment.
-    let colon = text.find(':')? + 1;
-    let value = text[colon..].split(" #").next().unwrap_or_default();
-    let lead = value.len() - value.trim_start().len();
-    let start = line.start() + colon + lead;
-    Some((
-        declared.name.clone(),
-        Span::new(start, start + value.trim().len()),
-    ))
+    let span = crate::replaces::frontmatter_value_span(file, TYPE_KEY)?;
+    Some((declared.name.clone(), span))
 }
 
 /// The links and includes in `file` that name a source file, and a heading
