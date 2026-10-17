@@ -2684,7 +2684,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/569"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Memos: Ascribe's docs have a guide to memos and use them"
     },
     {
@@ -2995,9 +2995,43 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/570"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBaKFk",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/572"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "This page's Description and Review rows can warn where their checks stay silent"
+    },
+    {
+      "content": {
+        "body": "Found while fixing #565 (PR #567). With VS Code 1.142.0 under `xvfb-run`, three busy CPU loops, and trace logs on, the actions suite (`packages/vscode/test/integration/suite/actions.it.ts`) failed in two other tests, about once in 100 runs each. Neither has been seen in CI yet.\n\n**1. \"applies them with Source Action, and leaves the rest\"** (the page's safe fixes), seen twice, once before and once after #567's change:\n\n```\nAssertionError [ERR_ASSERTION]: Timed out waiting for the fixes\n```\n\n`editor.action.sourceAction` with `{ kind: \"source.fixAll.ascribe\", apply: \"first\" }` ran after the diagnostics were in. The server answered the code action requests in a few milliseconds, but no edit was applied. The trace logs (at `messages`, not `verbose`) don't show whether the answer had the fix-all action, or whether VS Code dropped the manual trigger for a newer automatic one. Not confirmed; to check first: VS Code's code action model replaces a pending manual trigger when the editor's markers change, and both Ascribe and the Markdown extension publish diagnostics for `keys.md`.\n\n**2. \"lists the fixes for a problem at the cursor first\"** (the actions bar), seen once, after #567:\n\n```\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ '-- Structure'\n- '-- Fix'\n```\n\nThe bar opened with no fixes for the `{flush}` problem at the cursor, though the test had waited for its diagnostic.\n\n**Done looks like:** reproduce each with the LSP trace at `verbose` (`\"ascribe.trace.server\": \"verbose\"` in the suite's settings in `test/integration/run.ts`, `--log trace` in its `launchArgs`, and the run's `user-data/logs` kept on failure), name the cause, and fix it in the test or the extension, with no skip, retry, or sleep.",
+        "number": 571,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The editor's views: two rarer intermittent failures in the actions integration suite",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/571"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBaLCY",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The editor's views: two rarer intermittent failures in the actions integration suite"
+    },
+    {
+      "content": {
+        "body": "Found while fixing #570 (PR #572).\n\n`page-description-missing` treats a description field's `default` as the page's description (\"a default is a description\"), and since #572 This page's Description row measures the default when the page leaves the field out. But the outputs and the other check don't:\n\n1. **`llms.txt`** gives a page that relies on the default no description. With `summary = { type = \"string\", role = \"description\", default = \"A guide to *Lantern*.\" }` and a page that leaves `summary` out, `ascribe build` writes `- [Home](https://docs.example.com/index.md)` with nothing after it. `ascribe_resolve::llms::description` reads only the page's own frontmatter.\n2. **`description-too-long`** (`check_description_length` in `crates/ascribe-check/src/checks/frontmatter.rs`) measures only the page's own value, so a default over 300 characters is never reported, though This page's row now says \"too long\" for it.\n\nDone looks like: decide whether a default description is the page's description in the outputs (SPEC says a default is \"the value used when absent\"). If it is, `llms.txt` (and whatever else reads `llms::description`) uses it, and `description-too-long` reports a long default, with `ascribe_check::roles::description` as the one place that says what the page's description is. That's an output change, named file by file.",
+        "number": 573,
+        "repository": "ascribed-dev/ascribe",
+        "title": "llms.txt and description-too-long ignore a description field's default",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/573"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBaRmE",
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Ready",
-      "title": "This page's Description and Review rows can warn where their checks stay silent"
+      "title": "llms.txt and description-too-long ignore a description field's default"
     }
   ]
 }
