@@ -132,6 +132,14 @@ export class Review {
       this.content.removeAttribute(DATA_SHOW);
       return;
     }
+    // A removed page is drawn as it was, whole: it has nothing to mark.
+    if (removed(view)) {
+      this.marks = [];
+      clearMarks(this.content);
+      setShow(this.content, "was");
+      this.stopSources ??= showSources(this.content);
+      return;
+    }
     let was: ParentNode | null = null;
     if (view.wasHtml !== null) {
       const template = document.createElement("template");
@@ -279,6 +287,7 @@ export class Review {
     base.title = `Compared with ${view.commit}, where this branch left ${view.base}`;
     info.append(base);
     if (view.page?.status === "added") info.append(" · a new page");
+    if (removed(view)) info.append(" · a removed page, as it was");
     if (view.causes.length > 0) {
       info.append(" · changed only through ");
       view.causes.forEach((cause, i) => {
@@ -315,9 +324,11 @@ export class Review {
     previous.title = "Previous change";
     previous.disabled = total === 0;
     const next = button("↓", "square", () => this.step(1));
-    next.setAttribute("aria-label", "Next change");
-    next.title = "Next change";
-    const cells = [info, count, shows, previous, next];
+    const nextLabel = removed(view) ? "Next changed page" : "Next change";
+    next.setAttribute("aria-label", nextLabel);
+    next.title = nextLabel;
+    // A removed page has no changes to step through, nor a page now to show.
+    const cells = removed(view) ? [info, next] : [info, count, shows, previous, next];
     if (this.threads?.active) {
       const n = this.threads.count();
       const all = button(n === undefined ? "Comments" : `Comments (${n})`, "", () =>
@@ -367,7 +378,11 @@ export class Review {
       notice.append(
         span(
           "",
-          total === 0 ? "This page has no changes." : "That was the last change on this page.",
+          removed(view)
+            ? "This branch removes this page."
+            : total === 0
+              ? "This page has no changes."
+              : "That was the last change on this page.",
         ),
         span("spacer", ""),
       );
@@ -386,6 +401,11 @@ export class Review {
     }
     this.bar.replaceChildren(...parts);
   }
+}
+
+/** Whether the view is of a page the branch removed, which the preview shows as it was. */
+function removed(view: ReviewView): boolean {
+  return view.page?.status === "removed";
 }
 
 /** The label the marks put on a block: inside it at its start, or just before it. */

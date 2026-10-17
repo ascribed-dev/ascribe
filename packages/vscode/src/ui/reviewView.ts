@@ -230,11 +230,13 @@ export class ReviewView implements vscode.Disposable, vscode.TreeDataProvider<Re
     this.changed.fire();
   }
 
-  /** Opens a changed page and its preview at its first change; a removed page, its source diff. */
+  /** Opens a changed page and its preview at its first change; a removed page, the preview as it was. */
   private async openPage(page: ChangedPage): Promise<void> {
     const uri = this.pageUri(page);
+    const root = this.changes?.contentRoot;
     if (uri) await this.review.showPage(uri);
-    else await this.openSources([page]);
+    else if (root)
+      await this.review.showRemovedPage(vscode.Uri.file(fromContentPath(root, page.path)));
   }
 
   /** Opens the source changes of `pages`, or of every changed page, in one diff. */

@@ -4,6 +4,7 @@
 
 import * as path from "node:path";
 import { countsText } from "./counts.js";
+import type { FormattedPiece, PreviewReview } from "../shapes.js";
 import type { BaseInfo, ChangedPage, PageDiff } from "./protocol.js";
 
 /** The content model's file, which `because` names last when it's a cause. */
@@ -86,6 +87,26 @@ export function causes(
   return out;
 }
 
+/**
+ * A removed page, as the preview shows it: the page as it was at the base,
+ * from the server's review of a file that's gone. `null` for any other page.
+ */
+export function removedPage(review: PreviewReview | null): {
+  path: string;
+  title: string | null;
+  formattedTitle: FormattedPiece[] | null;
+  html: string;
+} | null {
+  const changes = review?.changes;
+  if (!review || changes?.status !== "removed" || review.wasHtml === null) return null;
+  return {
+    path: changes.path,
+    title: review.wasTitle,
+    formattedTitle: review.wasFormattedTitle,
+    html: review.wasHtml,
+  };
+}
+
 /** An absolute path from a root and a `/`-separated path below it. */
 export function fromContentPath(root: string, contentPath: string): string {
   return path.join(root, ...contentPath.split("/"));
@@ -94,7 +115,7 @@ export function fromContentPath(root: string, contentPath: string): string {
 /**
  * The changed page to offer after `current` (a content path): the next one
  * in path order, or, past the last, the first (`first`). Removed pages are
- * skipped, since there's nothing to open. `null` when no other page changed.
+ * skipped: the offer opens a page in the editor. `null` when no other page changed.
  */
 export function nextChangedPage(
   pages: readonly ChangedPage[],

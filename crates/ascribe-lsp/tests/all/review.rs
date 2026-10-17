@@ -269,6 +269,46 @@ fn a_new_page_is_added_and_has_no_page_as_it_was() {
     assert_eq!(listed["pages"][0]["formatted_title"], Value::Null);
 }
 
+#[test]
+fn a_removed_page_is_previewed_as_it_was() {
+    let f = repository();
+    f.remove("docs/other.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    set_base(&mut client, json!({}));
+    let result = preview(&mut client, &f.path("docs/other.md"));
+    // There's no page now, and nothing wrong with that.
+    assert_eq!(result["page"], Value::Null);
+    assert_eq!(result["problems"], json!([]));
+    let review = &result["review"];
+    assert_eq!(review["changes"]["status"], "removed");
+    assert_eq!(review["changes"]["route"], "/other/");
+    assert!(
+        review["wasHtml"].as_str().is_some_and(
+            |html| html.contains("Nothing here.") && html.contains("data-ascribe-source")
+        ),
+        "{review}"
+    );
+    assert_eq!(review["wasTitle"], "Other");
+
+    // Without review, or for a path that was never a page, there's nothing to show.
+    let plain = client
+        .request(
+            "ascribe/preview",
+            json!({ "textDocument": { "uri": support::uri(&f.path("docs/other.md")).as_str() } }),
+        )
+        .response_result
+        .unwrap();
+    assert_eq!(plain["review"], Value::Null);
+    assert_eq!(
+        plain["problems"][0]["message"],
+        "other.md isn't a page of the project."
+    );
+    let never = preview(&mut client, &f.path("docs/never.md"));
+    assert_eq!(never["review"], Value::Null);
+    assert_eq!(never["problems"][0]["severity"], "info");
+}
+
 fn base_file(client: &mut Client, path: &Path) -> Value {
     client
         .request(

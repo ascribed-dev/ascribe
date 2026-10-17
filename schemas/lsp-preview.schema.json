@@ -519,8 +519,25 @@
           ],
           "description": "The page's changes, as `ascribe diff --format json` reports a page\n(its keys are snake_case); `null` when the page didn't change."
         },
+        "wasFormattedTitle": {
+          "description": "That title formatted, when its field sets `inline = \"code\"`.",
+          "items": {
+            "$ref": "#/$defs/FormattedPiece"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "wasHtml": {
-          "description": "The page as it was at the base, rendered as `html` is, with source\nanchors, for showing removed blocks and changed blocks as they were;\n`null` when the page didn't change or is new.",
+          "description": "The page as it was at the base, rendered as `html` is, with source\nanchors, for showing removed blocks and changed blocks as they were,\nand a removed page whole; `null` when the page didn't change or is\nnew.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wasTitle": {
+          "description": "The page's title as it was, with `wasHtml`.",
           "type": [
             "string",
             "null"
@@ -530,7 +547,9 @@
       "required": [
         "base",
         "changes",
-        "wasHtml"
+        "wasHtml",
+        "wasTitle",
+        "wasFormattedTitle"
       ],
       "type": "object"
     },
