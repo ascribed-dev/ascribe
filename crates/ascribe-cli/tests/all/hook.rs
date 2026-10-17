@@ -6,9 +6,11 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::mpsc::{self, Receiver};
+use std::time::Duration;
 
 use serde_json::{Value, json};
 use tempfile::TempDir;
@@ -66,15 +68,7 @@ fn hook(args: &[&str], input: &str, cache: Option<&Path>) -> Output {
 /// hook starts the server, which may not answer in time.
 fn served(args: &[&str], input: &str, cache: &Path) -> Output {
     for _ in 0..20 {
-        let started = std::time::Instant::now();
         let out = hook(args, input, Some(cache));
-        // The harness reads the hook's answer until its output closes: a
-        // server that kept it open would hold the agent up.
-        assert!(
-            started.elapsed() < std::time::Duration::from_secs(15),
-            "the hook took {:?}",
-            started.elapsed()
-        );
         assert_eq!(out.status.code(), Some(0));
         if !out.stdout.is_empty() {
             return out;
@@ -99,13 +93,42 @@ fn hook_of(exe: &Path, args: &[&str], input: &str, cache: Option<&Path>) -> Outp
         None => command.env("ASCRIBE_HOOK_SERVER", "off"),
     };
     let mut child = command.spawn().unwrap();
+    let stdout = read_until_closed(child.stdout.take().unwrap());
+    let stderr = read_until_closed(child.stderr.take().unwrap());
     child
         .stdin
         .take()
         .unwrap()
         .write_all(input.as_bytes())
         .unwrap();
-    child.wait_with_output().unwrap()
+    let status = child.wait().unwrap();
+    // The harness reads the hook's answer until its output closes: a check
+    // server that kept the hook's output open would hold the agent up
+    // until the server stopped, which an idle one does only after minutes.
+    // So once the hook has exited, its output closes, however long the
+    // hook took. The bound is only for the readers to see it on a loaded
+    // runner, and far short of a server's lifetime.
+    let closed = |output: Receiver<Vec<u8>>| {
+        output
+            .recv_timeout(Duration::from_secs(60))
+            .expect("the hook's output stayed open after it exited")
+    };
+    Output {
+        status,
+        stdout: closed(stdout),
+        stderr: closed(stderr),
+    }
+}
+
+/// Reads `output` on a thread of its own, sending all of it once it closes.
+fn read_until_closed(mut output: impl Read + Send + 'static) -> Receiver<Vec<u8>> {
+    let (send, receive) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut all = Vec::new();
+        output.read_to_end(&mut all).unwrap();
+        let _ = send.send(all);
+    });
+    receive
 }
 
 fn stdout(out: &Output) -> String {
