@@ -77,7 +77,7 @@ Beside each file it writes, `sync` says which agents read it, and when an agent 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
 @available: next
-When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tells the agent to read a block's memo before changing the block, and to keep the two together. When the rules run over their 4,000 characters, that sentence is cut before the page types.
+When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tells the agent to read a block's memo before changing the block, and to keep the two together. When the project has a [memo file](../writing/memo-files.md) in `memos/`, a sentence after it says that `ascribe outline <page>` lists the memos about a page and its headings, and to read a memo before changing the block it's about. A [personal memo](../writing/memo-files.md#personal-memos) doesn't count, so the rules are the same on every machine. When the rules run over their 4,000 characters, those sentences are cut first, before the page types.
 
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
 
@@ -160,6 +160,16 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
 `new-page` says where the page goes: where its `path` says, a file or a folder, or else where the request says, and otherwise in the content root, named for the title as its address would be, `docs/rotate-keys.md`; never over a file that's there. For a type with a [template](../templates/index.md), it gives the template with its `type` and title set, to start the file from, and before it, the paths of the type's `guide`, the template's guide and Ascribe's notes, for the agent to read before it writes. The guide isn't put in the prompt: it's long, and a file the agent reads arrives whole. For a type with no template, it gives the frontmatter the type requires, with each field to fill in.
+
+### Memos in a prompt
+@available: next
+
+A prompt about a page names the [memo files](../writing/memo-files.md) about it, so your agent reads why the page is written as it is before it changes it. They come after the problems, under a heading of their own, a line each: the memo's path, what its `about` names, and its state when it isn't placed. The agent opens the file and reads it whole; a prompt never has a memo's text in it.
+
+- **`fix`**, `ascribe check --format prompt`, and **Prompt agent** on a problem, a file, or a project list the memos about each page they name, outdated and detached ones too, saying which.
+- **`review`** and `ascribe diff --format prompt` list each memo on a changed block, on the section a change is in, or on the whole page, and ask the agent to check the change still agrees with it. A memo whose quote is in another block of the section isn't listed.
+
+A [personal memo](../writing/memo-files.md#personal-memos) is listed in prompts made on the machine that has it, marked as personal. Each list stops at ten memos, and says how many more there are and the `ascribe outline` command that lists them.
 
 ### In review
 

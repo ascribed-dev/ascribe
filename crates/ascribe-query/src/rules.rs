@@ -12,7 +12,7 @@ use ascribe_check::prompt::shell_word;
 use ascribe_core::RelPath;
 use ascribe_core::schema::{Attributes, Builtin, DirectiveSchema, Primary};
 use ascribe_model::ContentModel;
-use ascribe_resolve::{FileSystem, Layout, Project};
+use ascribe_resolve::{Committed, FileSystem, Layout, MemoStore, Project};
 
 use crate::model::{Section, entries, fit, type_entries};
 
@@ -27,6 +27,11 @@ pub const MEMO_SENTENCE: &str = "Read a block's `@memo` before changing the bloc
      the two together: a memo says why the page is written the way it is, and is never \
      published.";
 
+/// What the rules say of memo files, in a project with one in `memos/`.
+pub const MEMO_FILE_SENTENCE: &str = "`ascribe outline <page>` lists the memo files about a \
+     page and each of its headings: read a memo before changing the block it's about, and \
+     keep it.";
+
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
@@ -36,10 +41,13 @@ pub const MEMO_SENTENCE: &str = "Read a block's `@memo` before changing the bloc
 /// `templates.lock`.
 ///
 /// In a project whose pages have a `@memo`, the rules say to read a block's
-/// memo before changing it, in [`MEMO_SENTENCE`].
+/// memo before changing it, in [`MEMO_SENTENCE`]; in one with a memo file
+/// in `memos/`, where to find the memos about a page, in
+/// [`MEMO_FILE_SENTENCE`], after it. Personal memos don't count: the rules
+/// are the same on every machine.
 ///
-/// When the whole is longer than [`RULES_BUDGET`], the memo sentence is cut
-/// first; then the page types' lines, and the cut says where the full list
+/// When the whole is longer than [`RULES_BUDGET`], the memo sentences are
+/// cut first; then the page types' lines, and the cut says where the full list
 /// is; then the directives'.
 pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPath) -> String {
     let model = project.model();
@@ -62,11 +70,13 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
         directive_reference_url(),
     );
     let used = project.directive_names();
-    let memo = if used.contains(Builtin::Memo.name()) {
-        format!("\n{MEMO_SENTENCE}\n")
-    } else {
-        String::new()
-    };
+    let mut memo = String::new();
+    if used.contains(Builtin::Memo.name()) {
+        memo.push_str(&format!("\n{MEMO_SENTENCE}\n"));
+    }
+    if !Committed::new(fs, project.layout()).memos().is_empty() {
+        memo.push_str(&format!("\n{MEMO_FILE_SENTENCE}\n"));
+    }
     let lines = directive_lines(model, &used);
     let directives = |n: usize| -> String {
         if lines.is_empty() {
@@ -550,9 +560,25 @@ mod tests {
     }
 
     #[test]
-    fn the_memo_sentence_is_cut_before_the_type_lines() {
+    fn a_project_with_a_memo_file_is_told_where_a_pages_memos_are() {
+        let model = "spec = \"0.1\"\n";
+        let plain = "---\ntitle: Keys\n---\n\nRotate the key.\n";
+        let memo = "---\nabout: keys.md\n---\n\nKept short.\n";
+        let rules = rules_of(model, &[("docs/keys.md", plain), ("memos/keys.md", memo)]);
+        assert!(rules.contains(MEMO_FILE_SENTENCE), "{rules}");
+        assert!(!rules.contains(MEMO_SENTENCE), "{rules}");
+        // A memo kept on one machine doesn't change the rules.
+        let rules = rules_of(
+            model,
+            &[("docs/keys.md", plain), (".ascribe/memos/keys.md", memo)],
+        );
+        assert!(!rules.contains("memo"), "{rules}");
+    }
+
+    #[test]
+    fn the_memo_sentences_are_cut_before_the_type_lines() {
         // Types whose lines take the budget but for a few characters more
-        // than the memo sentence leaves.
+        // than the memo sentences leave.
         let mut model = String::from("spec = \"0.1\"\n");
         let page = "---\ntype: kind-0\ntitle: Keys\n---\n\n@memo: Kept short.\nRotate the key.\n";
         let mut i = 0;
@@ -561,9 +587,15 @@ mod tests {
                 "{model}\n[types.kind-{i}]\npurpose = \"A page about one kind of thing.\"\n\n\
                  [types.kind-{i}.frontmatter]\ntitle = \"string\"\n"
             );
-            let rules = rules_of(&with, &[("docs/keys.md", page)]);
+            let memo = "---\nabout: keys.md\n---\n\nKept short.\n";
+            let rules = rules_of(&with, &[("docs/keys.md", page), ("memos/keys.md", memo)]);
+            assert_eq!(
+                rules.contains(MEMO_SENTENCE),
+                rules.contains(MEMO_FILE_SENTENCE),
+                "{rules}"
+            );
             if !rules.contains(MEMO_SENTENCE) {
-                // The sentence went, and every type line stayed.
+                // The sentences went, and every type line stayed.
                 assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
                 assert!(
                     !rules.contains("more: `ascribe model --section types`"),

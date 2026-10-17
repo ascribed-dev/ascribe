@@ -61,4 +61,7 @@ In `examples/quill`, the memo above is about the section of `install-agent.md` t
 
 - **In VS Code**, a CodeLens above a heading or a block counts its memos and opens them, **This page** lists the memos about the heading at the cursor, and **Ascribe: Add a memo** writes one from the cursor, with `about` and `quote` filled in ([Memo files in the editor](../editor/index.md#memo-files)).
 
-No build, preview, report, or `ascribe diff` reads a memo file.
+@available: next
+- **Agents' prompts and rules** name the memos about the page they're about, or about what changed, a line each with the memo's path, and never its text. The rules say where to find a page's memos ([Memos in a prompt](../agents/index.md#memos-in-a-prompt)).
+
+No build, preview, or report reads a memo file, and a change to one alone isn't a change to `ascribe diff`.
