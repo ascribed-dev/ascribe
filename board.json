@@ -2879,7 +2879,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/593"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Glossary pages: a glossary is a page"
     },
     {
@@ -3147,8 +3147,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/589"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBgLDY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/595"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Find All References on a page type in Content model"
     },
     {
@@ -3161,9 +3164,26 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/594"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBg0nY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/596"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "A page's label keeps a title's backticks but reads a nav-label as plain text"
+    },
+    {
+      "content": {
+        "body": "From the review of #595. `type_use` in `crates/ascribe-resolve/src/uses.rs` cuts the frontmatter `type` value at `\" #\"`, so `type: guide\t# how-to` (a tab before the comment) puts the comment inside the span Find All References shows.\n\nDone when `type_use` takes the value's span from `crate::replaces::frontmatter_value_span(file, TYPE_KEY)`, which drops a comment however it's separated, in place of its own split and `frontmatter_key` call, and the test `a_page_type_is_found_where_pages_name_it` in `crates/ascribe-lsp/tests/all/references.rs` covers a tab-separated comment.",
+        "number": 597,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A page type's use drops a tab-separated comment after `type:`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/597"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBhIsg",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A page type's use drops a tab-separated comment after `type:`"
     }
   ]
 }
