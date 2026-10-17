@@ -3148,10 +3148,11 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBgLDY",
       "linked pull requests": [
-        "https://github.com/ascribed-dev/ascribe/pull/595"
+        "https://github.com/ascribed-dev/ascribe/pull/595",
+        "https://github.com/ascribed-dev/ascribe/pull/598"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Done",
+      "status": "In progress",
       "title": "Find All References on a page type in Content model"
     },
     {
@@ -3168,7 +3169,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/596"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "A page's label keeps a title's backticks but reads a nav-label as plain text"
     },
     {
@@ -3181,8 +3182,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/597"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBhIsg",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/598"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "A page type's use drops a tab-separated comment after `type:`"
     }
   ]
