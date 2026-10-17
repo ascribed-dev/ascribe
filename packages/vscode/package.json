@@ -652,6 +652,12 @@
         ]
       }
     ],
+    "chatSkills": [
+      {
+        "path": "./dist/skills/ascribe/SKILL.md",
+        "when": "ascribe.active && !ascribe.agentsSynced"
+      }
+    ],
     "mcpServerDefinitionProviders": [
       {
         "id": "ascribe.mcp",

@@ -1,6 +1,7 @@
 // Bundles the extension into one file the extension host can load, and the
 // integration tests into the files the test runner loads. `--watch` rebuilds
 // the extension and the webview files on each change, until stopped.
+import { cpSync, rmSync } from "node:fs";
 import process from "node:process";
 import { URL, fileURLToPath } from "node:url";
 import { build, context } from "esbuild";
@@ -37,6 +38,13 @@ const common = {
   sourcemap: true,
   logLevel: "info",
 };
+
+// The skill chat gets where a project has no synced copy (`chatSkills` in
+// package.json), copied from its one home, the folder `@ascribed/cli` ships,
+// so it's never written twice. The integration tests compare the two.
+const skill = fileURLToPath(new URL("../cli/skills/ascribe/", import.meta.url));
+rmSync("dist/skills", { recursive: true, force: true });
+cpSync(skill, "dist/skills/ascribe", { recursive: true });
 
 await bundle({
   ...common,

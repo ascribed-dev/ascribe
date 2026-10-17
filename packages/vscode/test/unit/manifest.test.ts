@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
 import { MCP_LABEL } from "../../src/agents/mcpServer.js";
+import { SYNCED_KEY } from "../../src/agents/synced.js";
 import { PAGES_CONTEXT } from "../../src/ui/sidebar.js";
 
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");
@@ -30,6 +31,7 @@ interface Manifest {
     semanticTokenModifiers: { id: string }[];
     semanticTokenScopes: { language: string; scopes: Record<string, string[]> }[];
     keybindings: { command: string; key: string; mac?: string; when: string }[];
+    chatSkills: { path: string; when?: string }[];
     mcpServerDefinitionProviders: { id: string; label: string }[];
     languageModelTools: {
       name: string;
@@ -363,6 +365,19 @@ describe("semantic tokens and the server's legend", () => {
     const problems = declared.find((t) => t.name === "ascribe_editor_problems");
     expect(problems?.modelDescription).toContain("editor's build only");
     expect(problems?.modelDescription).toContain("ascribe_check");
+  });
+
+  it("offers chat the skill the build copies from its one home, where no synced copy is", () => {
+    expect(manifest.contributes.chatSkills).toEqual([
+      { path: "./dist/skills/ascribe/SKILL.md", when: `ascribe.active && !${SYNCED_KEY}` },
+    ]);
+    // The build copies `@ascribed/cli`'s folder there, and the package keeps it.
+    const build = read("../../esbuild.mjs");
+    expect(build).toContain('new URL("../cli/skills/ascribe/", import.meta.url)');
+    expect(build).toContain('cpSync(skill, "dist/skills/ascribe", { recursive: true });');
+    expect(read("../../.vscodeignore").split("\n")).toContain("!dist/skills/**");
+    // Chat takes a skill whose folder is named as its `name` says.
+    expect(read("../../../cli/skills/ascribe/SKILL.md")).toMatch(/^---\nname: ascribe\n/);
   });
 });
 

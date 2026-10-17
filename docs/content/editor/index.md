@@ -100,6 +100,9 @@ The review tools answer while [review](index.md#review-in-the-preview) is on, an
 
 An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on the window's path is another binary or none, the extension puts the folder of the binary each workspace folder's first project uses first on the path of that folder's terminals; a terminal that was open before asks to be relaunched. [Prompt agent](../agents/index.md#prompt-your-agent)'s prompts then name the binary by its path, for an agent that doesn't work in the window's terminals, such as Claude Code's extension.
 
+@available: next
+Chat has [Ascribe's skill](../agents/index.md#the-skill), which teaches an agent the loop of editing a page and checking it, with nothing to set up. The extension ships it, and offers it while no workspace folder has a copy from [`ascribe agents sync`](../agents/index.md#agent-instructions) in `.agents/skills/ascribe/`, `.claude/skills/ascribe/`, or `.github/skills/ascribe/`. Once one does, chat lists that copy, the project's, instead. VS Code reads those folders only at the top of a workspace folder, and `sync` writes at the repository's root, so in a workspace opened below the root, chat keeps the extension's copy after a `sync`.
+
 ### Completion
 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.

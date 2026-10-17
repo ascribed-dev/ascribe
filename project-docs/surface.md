@@ -595,6 +595,12 @@ The MCP server, offered to VS Code's agents:
 |---|---|
 | `ascribe.mcp` | Ascribe |
 
+The skill, offered to VS Code's chat:
+
+| File | When |
+|---|---|
+| `./dist/skills/ascribe/SKILL.md` | `ascribe.active && !ascribe.agentsSynced` |
+
 ## The plugin
 
 For agents. Read from `plugins/ascribe/`.

@@ -123,6 +123,9 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 
 `sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
 
+@available: next
+In VS Code, chat has the skill before you run `sync`: the [extension](index.md#vs-code) ships it.
+
 See [`ascribe agents`](commands.md#cli-agents) for every option.
 
 ## Prompt your agent
@@ -220,6 +223,9 @@ The [Ascribe extension](../editor/index.md) gives an agent in VS Code, such as G
 - **Tools only the editor has.** `ascribe_editor_problems`, the problems of files as the editor has them, saved or not; and, while review is on, `ascribe_review_threads`, the pull request's open threads, and `ascribe_review_changes`, the changed pages. Name one in chat with `#`, or let the agent pick it.
 - **Prompt agent**, on a problem, a file, a project, or in review, as [Prompt your agent](index.md#prompt-your-agent) says.
 - **The binary the editor runs.** When `ascribe` on the window's path isn't the binary the extension runs, such as the one bundled with it, the extension puts that binary's folder first on the path of the window's terminals, so `ascribe` in a terminal runs it. A terminal that was open before asks to be relaunched. **Prompt agent**'s prompts then name the binary by its path, so an agent that doesn't work in the window's terminals, such as Claude Code's extension, runs the same one.
+
+@available: next
+- **The skill, with nothing to set up.** The extension gives VS Code's chat [the skill](index.md#the-skill) in a project that never ran `ascribe agents sync`. Once a workspace folder has a synced copy, in `.agents/skills/ascribe/`, `.claude/skills/ascribe/`, or `.github/skills/ascribe/`, chat lists that one, the project's, and not the extension's. VS Code reads those folders at the top of each workspace folder, and `sync` writes at the repository's root, so a workspace opened at a project below the root, such as `docs/`, gets the extension's copy even after `sync`.
 
 See [Agents in VS Code](../editor/index.md#agents-in-vs-code).
 
