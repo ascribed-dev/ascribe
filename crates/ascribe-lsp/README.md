@@ -487,7 +487,7 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 
 - Paths are content paths, relative to `contentUri`, the content root.
 - A page's `label` is its name where it's an entry in a list, as the
-  navigation shows it: its `nav-label` as plain text, else its title, else its
+  navigation shows it: as plain text, its `nav-label`, else its title, else its
   file name without `.md`. `navLabel` is the `nav-label` as written, or `null`.
 - `incoming` is how many links from other files, and includes, name the page.
 - `orphans` are the pages whose `incoming` is 0, other than index pages

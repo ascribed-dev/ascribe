@@ -265,7 +265,7 @@
       "description": "A page of the navigation.",
       "properties": {
         "label": {
-          "description": "Its label: its `nav-label` as plain text, else its title, else its\nfile name without `.md`.",
+          "description": "Its label as plain text: its `nav-label`, else its title, else its\nfile name without `.md`.",
           "type": "string"
         },
         "source": {
@@ -294,7 +294,7 @@
           "type": "string"
         },
         "label": {
-          "description": "Its label: from `ascribe.nav`, else its own page's title, else its\nfolder's name with `-` and `_` as spaces and its first letter\ncapitalized, and \"Start\" for the root.",
+          "description": "Its label: from `ascribe.nav`, else its own page's title as plain\ntext, else its folder's name with `-` and `_` as spaces and its first\nletter capitalized, and \"Start\" for the root.",
           "type": "string"
         },
         "listed": {

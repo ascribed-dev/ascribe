@@ -297,6 +297,24 @@ describe("the Pages view", () => {
     expect(labelRename(nth(roots, roots.length - 1))).toBeUndefined();
   });
 
+  it("offers a page's title as written, code spans and all, when it has no nav-label", () => {
+    const coded: InventoryResult = {
+      ...navigated,
+      pages: navigated.pages.map((page) =>
+        page.path === "ref/api.md"
+          ? { ...page, title: "The `loom` API", label: "The loom API" }
+          : page,
+      ),
+    };
+    const api = pageOf(pagesRoots(coded), "ref/api.md");
+    expect(pagesLook(api).label).toBe("The loom API");
+    expect(labelRename(api)).toMatchObject({
+      action: "setPageLabel",
+      page: "ref/api.md",
+      value: "The `loom` API",
+    });
+  });
+
   it("names a page with no title by its file, as the navigation does", () => {
     const roots = pagesRoots({
       ...navigated,

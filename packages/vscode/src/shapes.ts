@@ -846,7 +846,7 @@ export interface InventoryPage {
   title: string | null;
   /**
    * Its label where it's an entry in a list, as the navigation shows it:
-   * its `nav-label` as plain text, else its title, else its file name
+   * as plain text, its `nav-label`, else its title, else its file name
    * without `.md`.
    */
   label: string;
@@ -910,8 +910,8 @@ export interface InventorySection {
   /** Its folder, from the content root, ending in `/`; `""` for the root. */
   folder: string;
   /**
-   * Its label: `label` from `ascribe.nav`, else its own page's title,
-   * else its folder's name, and "Start" for the root.
+   * Its label: `label` from `ascribe.nav`, else its own page's title as
+   * plain text, else its folder's name, and "Start" for the root.
    */
   label: string;
   /** The `label` `ascribe.nav` gives it, when it gives one. */

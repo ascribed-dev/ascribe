@@ -453,7 +453,9 @@ export function labelRename(node: PagesNode): LabelRename | undefined {
     return {
       action: "setPageLabel",
       page: node.path,
-      value: node.page?.navLabel ?? node.page?.label ?? basename(node.path),
+      // The title as written, not the label, which is plain text: a
+      // `nav-label` taken from it keeps its code spans (decision #594).
+      value: node.page?.navLabel ?? node.page?.title ?? node.page?.label ?? basename(node.path),
       prompt:
         "The page's name in every sidebar and in its neighbors' links, its nav-label. Leave it empty for its title.",
     };

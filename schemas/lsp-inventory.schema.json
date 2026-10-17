@@ -109,7 +109,7 @@
           "type": "integer"
         },
         "label": {
-          "description": "Its label where it's an entry in a list, as the navigation shows it:\nits `nav-label` as plain text, else its title, else its file name\nwithout `.md`.",
+          "description": "Its label where it's an entry in a list, as the navigation shows it:\nas plain text, its `nav-label`, else its title, else its file name\nwithout `.md`.",
           "type": "string"
         },
         "navLabel": {
@@ -157,7 +157,7 @@
           "type": "string"
         },
         "label": {
-          "description": "Its label: `label` from `ascribe.nav`, else its own page's title,\nelse its folder's name, and \"Start\" for the root.",
+          "description": "Its label: `label` from `ascribe.nav`, else its own page's title as\nplain text, else its folder's name, and \"Start\" for the root.",
           "type": "string"
         },
         "labelSet": {
