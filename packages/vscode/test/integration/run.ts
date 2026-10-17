@@ -23,7 +23,8 @@
 //               GitHub, against the real `ascribe lsp`. Opened through a
 //               symlink, except on Windows. Needs ASCRIBE_BIN and `git`.
 //   actions     a copy of examples/quill, the editor's actions run through
-//               their commands with scripted answers, against the real
+//               their commands with scripted answers, and the page's safe
+//               fixes applied on an explicit save, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
@@ -202,7 +203,15 @@ const suites: Suite[] = [
   {
     name: "actions",
     fixture: path.join(repositoryRoot, "examples/quill"),
-    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+    prepare: () => ({
+      "ascribe.path": realServer,
+      ...startAll,
+      // Set before VS Code starts, not by the test that saves with it: writing
+      // a setting opens settings.json, which starts the JSON extensions, and
+      // when one registers its code actions during the save, VS Code cancels
+      // the save's code actions and the save with them (#565).
+      "[markdown]": { "editor.codeActionsOnSave": { "source.fixAll.ascribe": "explicit" } },
+    }),
   },
   {
     name: "site",

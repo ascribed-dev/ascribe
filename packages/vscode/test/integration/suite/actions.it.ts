@@ -381,6 +381,10 @@ describe("the editor's actions", () => {
     /** keys.md with two problems a safe fix fixes, and one only an unsafe one does. */
     async function withProblems(): Promise<vscode.TextEditor> {
       const editor = await open("keys.md", 9, 0);
+      // From the page as it is on disk, and its problems as the server has
+      // them for it: not the ones a test before this one added.
+      assert.equal(editor.document.isDirty, false);
+      await diagnosticsOf(editor.document.uri, (all) => !all.some(added));
       const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
       assert.ok(
         await editor.edit((e) =>
@@ -395,6 +399,13 @@ describe("the editor's actions", () => {
         return has("`/install-agent.md`") && has("this memo is empty");
       });
       return editor;
+    }
+
+    /** Whether a problem is one of those `withProblems` adds. */
+    function added(diagnostic: vscode.Diagnostic): boolean {
+      return ["`/install-agent.md`", "this memo is empty", "`keyz.md`"].some((text) =>
+        diagnostic.message.includes(text),
+      );
     }
 
     function assertFixed(text: string): void {
@@ -415,24 +426,16 @@ describe("the editor's actions", () => {
     });
 
     it("applies them on save where editor.codeActionsOnSave asks", async () => {
-      const settings = vscode.workspace.getConfiguration("editor", { languageId: "markdown" });
-      await settings.update(
-        "codeActionsOnSave",
-        { "source.fixAll.ascribe": "explicit" },
-        vscode.ConfigurationTarget.Workspace,
-        true,
-      );
+      // The suite's settings ask for them on an explicit save (run.ts).
+      const asked = vscode.workspace
+        .getConfiguration("editor", { languageId: "markdown" })
+        .get<Record<string, string>>("codeActionsOnSave");
+      assert.deepEqual(asked, { "source.fixAll.ascribe": "explicit" });
       try {
         const editor = await withProblems();
         assert.ok(await editor.document.save());
         assertFixed(editor.document.getText());
       } finally {
-        await settings.update(
-          "codeActionsOnSave",
-          undefined,
-          vscode.ConfigurationTarget.Workspace,
-          true,
-        );
         // Back to the page as it was, on disk too.
         const document = await vscode.workspace.openTextDocument(uriOf("docs", "keys.md"));
         const text = document.getText();
