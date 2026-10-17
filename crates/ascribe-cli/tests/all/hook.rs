@@ -676,3 +676,47 @@ fn a_stop_runs_no_command_a_committed_folder_shaped_like_a_repository_names() {
     }
     assert!(!planted.ran(), "the hook ran the planted command");
 }
+
+#[test]
+fn an_edit_that_adds_an_unplaced_page_names_the_fix_and_makes_none() {
+    let dir = project();
+    let root = dir.path();
+    let nav = root.join("ascribe.nav");
+    let listed = "version = 1\n\n[[sections]]\nfolder = \"guides/\"\npages = [\"setup.md\"]\n";
+    fs::create_dir_all(root.join("docs/guides")).unwrap();
+    let page = |title: &str| format!("---\ntitle: {title}\n---\n\nSee [home](../index.md).\n");
+    fs::write(root.join("docs/guides/setup.md"), page("Setup")).unwrap();
+    fs::write(&nav, listed).unwrap();
+    fs::write(root.join("docs/guides/new.md"), page("New")).unwrap();
+    let cache = tempfile::tempdir().unwrap();
+    let said = "`ascribe check docs/guides/new.md` reports 1 advice with a safe fix, which you make:\n\
+                docs/guides/new.md:2: [ASC235] `guides/`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title\n  \
+                Fix: Add `new.md` to `guides/`'s pages in ascribe.nav.\n\
+                Checked build `site` only. Run `ascribe explain <code>` for any you don't recognize.\n";
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/guides/new.md");
+        let here = hook(&[harness], &input, None);
+        assert_eq!(context(harness, &here), said, "{harness}");
+        // The check server says the same.
+        let out = served(&[harness], &input, cache.path());
+        assert_eq!(context(harness, &out), said, "{harness}");
+    }
+    // The hook writes no file.
+    assert_eq!(fs::read_to_string(&nav).unwrap(), listed);
+    // The agent makes the fix, and the hook goes quiet, in its own process
+    // and through the server that saw the page unplaced.
+    fs::write(
+        &nav,
+        listed.replace("\"setup.md\"]", "\"setup.md\", \"new.md\"]"),
+    )
+    .unwrap();
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/guides/new.md");
+        assert_quiet(harness, "edit", &hook(&[harness], &input, None));
+        assert_quiet(
+            harness,
+            "edit",
+            &hook(&[harness], &input, Some(cache.path())),
+        );
+    }
+}

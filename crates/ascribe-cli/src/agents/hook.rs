@@ -3,13 +3,15 @@
 //! decides how the hook's input is read and how the answer reaches the
 //! model.
 //!
-//! After an edit, the answer is the errors in the files the tool wrote, as
-//! `additionalContext`: Claude Code's and Codex's `hookSpecificOutput`, and
-//! Copilot's top-level field, each added to what the model sees beside the
-//! tool's result. Before the agent finishes, it's `decision: "block"` with a
-//! `reason`, which every harness reads the same way and which keeps the
-//! agent working. With nothing to say, the hook prints nothing and exits 0;
-//! Codex expects JSON from a stop hook that exits 0, so it gets `{}`.
+//! After an edit, the answer is the errors in the files the tool wrote, and
+//! the advice in them with a safe fix, naming the fix, which the hook
+//! doesn't make (decision #578), as `additionalContext`: Claude Code's and
+//! Codex's `hookSpecificOutput`, and Copilot's top-level field, each added
+//! to what the model sees beside the tool's result. Before the agent
+//! finishes, it's `decision: "block"` with a `reason`, which every harness
+//! reads the same way and which keeps the agent working. With nothing to
+//! say, the hook prints nothing and exits 0; Codex expects JSON from a stop
+//! hook that exits 0, so it gets `{}`.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -147,9 +149,9 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
         }
         let shown: Vec<String> = files.iter().map(|f| from(cwd, f)).collect();
         match check_by(&config, Ask::Files(files), deadline, server) {
-            Some(Ok(f)) if f.errors > 0 => found.push((shown, f)),
-            // No errors, a project that can't be checked (the stop hook
-            // says why), or out of time: nothing to say.
+            Some(Ok(f)) if f.errors > 0 || f.fixable > 0 => found.push((shown, f)),
+            // Nothing to report, a project that can't be checked (the stop
+            // hook says why), or out of time: nothing to say.
             _ => {}
         }
     }
@@ -176,21 +178,40 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
     }
 }
 
-/// What the model reads after an edit: the errors, then which build was
-/// checked.
+/// What the model reads after an edit: the errors, the advice with a safe
+/// fix and each one's fix, then which build was checked.
 fn edit_text(files: &[String], found: &Found) -> String {
-    let mut lines = vec![format!(
-        "`ascribe check {}` reports {}:",
-        files.join(" "),
-        count(found.errors, "error")
-    )];
-    lines.extend(found.lines.iter().cloned());
-    if found.errors > LIMIT {
+    let files = files.join(" ");
+    let mut lines = Vec::new();
+    if found.errors > 0 {
         lines.push(format!(
-            "and {} more: `ascribe check {} --editor-build --format concise`",
-            found.errors - LIMIT,
-            files.join(" ")
+            "`ascribe check {files}` reports {}:",
+            count(found.errors, "error")
         ));
+        lines.extend(found.lines.iter().cloned());
+        if found.errors > LIMIT {
+            lines.push(format!(
+                "and {} more: `ascribe check {files} --editor-build --format concise`",
+                found.errors - LIMIT
+            ));
+        }
+    }
+    if found.fixable > 0 {
+        // Each fix is the agent's to make: the hook writes no file.
+        lines.push(format!(
+            "`ascribe check {files}` reports {} advice with a safe fix, which you make:",
+            found.fixable
+        ));
+        for (line, fix) in &found.fixes {
+            lines.push(line.clone());
+            lines.push(format!("  Fix: {fix}."));
+        }
+        if found.fixable > LIMIT {
+            lines.push(format!(
+                "and {} more: `ascribe check {files} --format concise`",
+                found.fixable - LIMIT
+            ));
+        }
     }
     let build = found.build.as_deref().unwrap_or_default();
     lines.push(format!(

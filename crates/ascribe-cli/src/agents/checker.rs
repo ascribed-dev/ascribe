@@ -44,7 +44,7 @@ pub const IDLE: Duration = Duration::from_secs(10 * 60);
 
 /// What a check found, as a hook reports it: the counts, the first
 /// [`LIMIT`] errors as `ascribe check --format concise` writes them, and
-/// for a quick check the build it covered.
+/// for a quick check the build it covered and the advice with a safe fix.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Found {
     /// How many errors.
@@ -60,6 +60,35 @@ pub struct Found {
     /// it: `[checks.vale] command` is a program in the project.
     #[serde(default)]
     pub prose: Option<String>,
+    /// For a quick check, how many of the advice in the files have a safe
+    /// fix, which the hook reports and doesn't make (decision #578).
+    #[serde(default)]
+    pub fixable: usize,
+    /// The first [`LIMIT`] of them: each one's line, as `--format concise`
+    /// writes it, and the title of its safe fix.
+    #[serde(default)]
+    pub fixes: Vec<(String, String)>,
+}
+
+impl Found {
+    /// Adds an advice with a safe fix, once.
+    fn add_fixable(&mut self, line: String, fix: &str) {
+        if self.fixes.iter().any(|(l, _)| *l == line) {
+            return;
+        }
+        self.fixable += 1;
+        if self.fixes.len() < LIMIT {
+            self.fixes.push((line, fix.to_owned()));
+        }
+    }
+}
+
+/// The title of a diagnostic's first safe fix.
+fn safe_fix(d: &ascribe_check::Diagnostic) -> Option<&str> {
+    d.fixes
+        .iter()
+        .find(|fix| fix.applicability == ascribe_core::Applicability::Safe)
+        .map(|fix| fix.title.as_str())
 }
 
 /// What a hook asks.
@@ -189,13 +218,47 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         Some(r) if refused => Some(line_of(r)?),
         _ => None,
     };
-    Ok(Found {
+    let mut found = Found {
         errors: outcome.counts.errors,
         warnings: outcome.counts.warnings,
         lines,
         build: editor_build.then(|| build.map(str::to_owned)).flatten(),
         prose,
-    })
+        ..Found::default()
+    };
+    // After an edit, the advice with a safe fix: the file-level checks'
+    // and the page-level ones', and those of the checks across the project
+    // that hold for every build, which the language server runs on save,
+    // and so the check server reports too.
+    if let Ask::Files(asked) = ask {
+        let across = content_dir(config).map_or_else(Vec::new, |content| {
+            let paths: Vec<RelPath> = asked
+                .iter()
+                .filter_map(|file| relative_path(&content, file))
+                .collect();
+            ascribe_check::diagnose_every_build_in(project, &paths)
+        });
+        let across: Vec<Reported> = across
+            .into_iter()
+            .map(|diagnostic| Reported {
+                diagnostic,
+                repeats: 0,
+            })
+            .collect();
+        for r in concise::order(files, reported)
+            .into_iter()
+            .map(|i| &reported[i])
+            .chain(&across)
+        {
+            if r.diagnostic.severity != Severity::Advice {
+                continue;
+            }
+            if let Some(fix) = safe_fix(&r.diagnostic) {
+                found.add_fixable(line_of(r)?, fix);
+            }
+        }
+    }
+    Ok(found)
 }
 
 /// No check server can be started: there's no cache folder for its
@@ -724,8 +787,13 @@ impl Kept {
                         found.warnings += 1;
                         continue;
                     }
-                    // Advice never reaches the agent from the hook.
-                    Severity::Advice => continue,
+                    // Advice reaches the agent only with a safe fix.
+                    Severity::Advice => {
+                        if let Some(fix) = problem.safe_fixes.first() {
+                            found.add_fixable(line, fix);
+                        }
+                        continue;
+                    }
                 }
                 found.errors += 1;
                 if found.lines.len() < LIMIT {

@@ -63,7 +63,7 @@ pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};
 use ascribe_core::FileId;
 pub use builds::{
     Diagnosed, UnknownBuild, count_errors, count_errors_in, diagnose, diagnose_editor_build,
-    diagnose_editor_build_in, select_builds,
+    diagnose_editor_build_in, diagnose_every_build_in, select_builds,
 };
 pub use checks::check_file;
 use checks::{check_examples, check_sources};

@@ -37,6 +37,9 @@ pub struct Problem {
     pub message: String,
     /// How serious it is.
     pub severity: Severity,
+    /// The titles of its safe fixes, in this file or another, such as
+    /// `ascribe.nav` for a page's `nav-page-unplaced`.
+    pub safe_fixes: Vec<String>,
 }
 
 /// One project, loaded and kept current.
@@ -164,5 +167,12 @@ fn problem(file: &Path, d: &Diagnostic) -> Problem {
             Some(DiagnosticSeverity::INFORMATION | DiagnosticSeverity::HINT) => Severity::Advice,
             _ => Severity::Error,
         },
+        safe_fixes: ["fixes", "elsewhere"]
+            .iter()
+            .filter_map(|key| d.data.as_ref()?.get(key)?.as_array())
+            .flatten()
+            .filter(|fix| fix.get("applicability").and_then(|a| a.as_str()) == Some("safe"))
+            .filter_map(|fix| fix.get("title")?.as_str().map(str::to_owned))
+            .collect(),
     }
 }

@@ -152,6 +152,34 @@ pub fn count_errors_in(project: &Project, build: &Build) -> usize {
         .count()
 }
 
+/// The diagnostics located in `files` (content paths of source files) of
+/// the checks across the project that hold for every build: the
+/// navigation's, the permalinks list's, the glossary's, `fragment-unused`,
+/// and the content model's unused entries, with levels and acknowledgements
+/// applied. The language server reports them in a file on save, besides
+/// what [`diagnose_editor_build`] reports for it; the agents' hook adds them
+/// after an edit, for the advice with a safe fix it passes on.
+pub fn diagnose_every_build_in(project: &Project, files: &[RelPath]) -> Vec<Diagnostic> {
+    let ids: Vec<ascribe_core::FileId> = files
+        .iter()
+        .filter_map(|path| project.source_at(path))
+        .map(|file| file.id)
+        .collect();
+    let diagnostics = PageChecker::new(project)
+        .for_every_build(false)
+        .into_iter()
+        .filter(|(id, _)| ids.contains(id))
+        .flat_map(|(_, found)| found)
+        .collect();
+    Acknowledgements::of(project)
+        .apply(
+            project.model(),
+            apply_levels(&project.model().checks, diagnostics),
+            false,
+        )
+        .diagnostics
+}
+
 /// What the language server reports, for `ascribe check --editor-build`:
 /// the file-level diagnostics, and the page-level ones of the editor's build
 /// alone (`[editor] build`; `ContentModel::editor_default_build`), without
