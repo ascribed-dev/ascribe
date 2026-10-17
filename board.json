@@ -2443,8 +2443,11 @@
         "bug",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/554"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "`available-same-in-every-line` offers to drop a patch version of the oldest line, which a line's output shows"
     },
     {
@@ -2505,6 +2508,9 @@
         "rust",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/553"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "The editor's views: a Review view of the changed pages"
@@ -2564,8 +2570,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/556"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Memos: a template's instructions to the writer are memos"
     },
     {
@@ -2893,8 +2902,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/551"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBX3Tg",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/555"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Memos: say something about an empty container memo"
     }
   ]
