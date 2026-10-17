@@ -1,0 +1,10 @@
+description: >-
+  A `folder` that isn't a section is an error at the folder: a misspelling,
+  a folder of fragments, and a folder written in another case.
+spec: ["7.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-folder-unknown, file: ascribe.nav, line: 4}
+  - {slug: nav-folder-unknown, file: ascribe.nav, line: 7}
+  - {slug: nav-folder-unknown, file: ascribe.nav, line: 10}

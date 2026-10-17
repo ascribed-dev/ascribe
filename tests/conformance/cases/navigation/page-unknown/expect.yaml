@@ -1,0 +1,13 @@
+description: >-
+  A `pages` entry that isn't a page in its section's folder is an error at
+  the entry: a misspelling, a name in another case, a path into a nested
+  folder, the section's own `index.md`, and a name like nothing there.
+spec: ["7.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-page-unknown, file: ascribe.nav, line: 7}
+  - {slug: nav-page-unknown, file: ascribe.nav, line: 8}
+  - {slug: nav-page-unknown, file: ascribe.nav, line: 9}
+  - {slug: nav-page-unknown, file: ascribe.nav, line: 10}
+  - {slug: nav-page-unknown, file: ascribe.nav, line: 11}

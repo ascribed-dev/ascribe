@@ -41,6 +41,8 @@ pub struct NavSection {
     /// The file names of its pages, in order, each with its span; `None`
     /// when the entry has no `pages`.
     pub pages: Option<Vec<(String, Span)>>,
+    /// Where `pages`' list is, brackets included, when it's one.
+    pub pages_span: Option<Span>,
     /// Its label, when it sets one.
     pub label: Option<String>,
 }
@@ -185,6 +187,10 @@ impl Reader {
                 }
             },
         };
+        let pages_span = table
+            .get("pages")
+            .filter(|v| matches!(v.get_ref(), DeValue::Array(_)))
+            .map(sp);
         let pages = table.get("pages").and_then(|v| match v.get_ref() {
             DeValue::Array(list) => {
                 let mut names = Vec::new();
@@ -230,6 +236,7 @@ impl Reader {
             folder,
             folder_span,
             pages,
+            pages_span,
             label,
         })
     }
@@ -284,6 +291,15 @@ mod tests {
         assert_eq!(pages, ["Options.md", "index.md"]);
         assert_eq!(nav.section("").and_then(|s| s.pages.as_ref()), None);
         assert_eq!(nav.position("Guides/My Setup/"), Some(2));
+        let text = "version = 1\n[[sections]]\nfolder = \"a/\"\npages = [ \"b.md\" ]\n";
+        let nav = read(text);
+        let a = &nav.sections[0];
+        assert_eq!(&text[a.folder_span.range()], "\"a/\"");
+        assert_eq!(a.pages_span.map(|s| &text[s.range()]), Some("[ \"b.md\" ]"));
+        assert_eq!(
+            a.pages.as_ref().map(|p| &text[p[0].1.range()]),
+            Some("\"b.md\"")
+        );
         assert!(read("version = 1\n").sections.is_empty());
     }
 

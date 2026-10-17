@@ -44,6 +44,7 @@ pub mod intended;
 mod levels;
 pub mod links;
 mod memos;
+mod nav;
 pub mod page;
 mod permalinks;
 mod project;
@@ -103,6 +104,7 @@ pub(crate) fn check_files_with(
         None if across::any_file_level(&project.model().checks)
             || memos::any(project)
             || project.permalinks().is_some()
+            || project.nav().is_some()
             || !project.model().permalinks.is_empty() =>
         {
             PageChecker::new(project).for_every_build(true)
@@ -126,6 +128,7 @@ pub(crate) fn check_files_with(
     if let Some(Err(problems)) = project.nav() {
         sources.extend(problems.iter().map(Diagnostic::from_issue));
     }
+    sources.extend(across.remove(&NAV_FILE_ID).unwrap_or_default());
     sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
     // The image files' come last, in path order.

@@ -1,0 +1,12 @@
+version = 1
+
+[[sections]]
+folder = "Reference/"
+pages = [
+  "Options.md",
+  "Optoins.md",
+  "options.md",
+  "Deep/Keys.md",
+  "index.md",
+  "Nothing-like-it.md",
+]

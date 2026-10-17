@@ -28,7 +28,7 @@ mod memo;
 mod refs;
 mod sources;
 pub(crate) mod template;
-mod text;
+pub(crate) mod text;
 
 use ascribe_core::{
     Applicability, DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics,

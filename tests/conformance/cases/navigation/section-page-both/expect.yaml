@@ -1,0 +1,9 @@
+description: >-
+  A folder with an `index.md` and a page beside it with the folder's name is
+  an error on the `index.md`, with or without `ascribe.nav`. A page beside
+  a folder with no `index.md` is the folder's own page, and fine.
+spec: ["7.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: section-page-both, file: checks/index.md, line: 2}

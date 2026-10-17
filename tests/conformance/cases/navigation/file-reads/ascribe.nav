@@ -3,12 +3,7 @@ version = 1
 [[sections]]
 folder = ""
 
-# A folder and a page that name nothing are passed over until the checks
-# report them.
-[[sections]]
-folder = "Reference/"
-
 [[sections]]
 folder = "Guides/"
 label = "How-to"
-pages = ["My Setup.md", "Missing.md"]
+pages = ["My Setup.md"]

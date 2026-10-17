@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 use ascribe_core::{Applicability, FileId, TextEdit, apply_edits};
 
-use crate::{Diagnostic, LOCK_FILE_ID, PERMALINKS_FILE_ID, Project};
+use crate::{Diagnostic, LOCK_FILE_ID, NAV_FILE_ID, PERMALINKS_FILE_ID, Project};
 
 /// One fix applied.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -64,8 +64,9 @@ impl ascribe_core::Coded for FixError {
 ///
 /// The same fix offered by two diagnostics is applied once. A fix whose
 /// edits overlap one already taken, or don't fit the file, is left out.
-/// Only the content model, the lock, the permalinks list, and the source
-/// files that were read are changed; nothing else a fix could name is.
+/// Only the content model, the lock, the permalinks list, the navigation
+/// file, and the source files that were read are changed; nothing else a fix
+/// could name is.
 pub fn safe_fixes<'a>(
     project: &Project,
     model: &Path,
@@ -192,9 +193,13 @@ fn overlaps(taken: &[TextEdit], fix: &[TextEdit]) -> bool {
 }
 
 /// The text of a file the fixes may change: the content model, the lock,
-/// the permalinks list, or a source file that was read.
+/// the permalinks list, the navigation file, or a source file that was read.
 fn writable_text(project: &Project, file: FileId) -> Option<&str> {
-    if file == FileId::new(0) || file == LOCK_FILE_ID || file == PERMALINKS_FILE_ID {
+    if file == FileId::new(0)
+        || file == LOCK_FILE_ID
+        || file == PERMALINKS_FILE_ID
+        || file == NAV_FILE_ID
+    {
         return project.file(file).map(|entry| entry.text);
     }
     project

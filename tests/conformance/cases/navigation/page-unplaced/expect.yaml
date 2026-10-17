@@ -1,0 +1,8 @@
+description: >-
+  A page of a section whose `pages` leaves it out is advice on the page.
+  The section's own page isn't, nor is a page of a section with no `pages`.
+spec: ["7.8"]
+tags: [check]
+
+diagnostics:
+  - {slug: nav-page-unplaced, file: Reference/Defaults.md, line: 2, severity: advice}

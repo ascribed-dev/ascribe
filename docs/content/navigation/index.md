@@ -21,7 +21,7 @@ With no file, and for whatever the file leaves out:
 
 - Sections come in path order, the content root first.
 - In a section, its own page is first, then its pages by their content type, in the order `ascribe.toml` declares the types, then by title.
-- A nested section whose own page is beside its folder sits where that page sits among its parent's pages. One with an `index.md` comes after the parent's pages, in path order.
+- A nested section whose own page is beside its folder sits where that page sits among its parent's pages. Any other comes after the parent's pages, in path order.
 
 ## The file
 @id: the-file
@@ -51,7 +51,23 @@ pages = ["My Setup.md", "Upgrade.md"]
 | `pages` | Optional. File names in that folder, in the order they come; the section's other pages come after them, by title. It may name the page beside a nested folder, which places that section where the page is. A section without `pages` has the default order. | `pages = ["My Setup.md"]` |
 | `label` | Optional. The section's label, on one line. | `label = "How-to guides"` |
 
-A file that isn't TOML, has no `version` or another one, has a key other than these, or a value of the wrong kind is `nav-invalid`, and the project has the default order until it reads. A `folder` with no pages, or a `pages` entry that isn't a page of its folder, matches nothing and is passed over for now: nothing reports it, so check a name you've written against the file names.
+A file that isn't TOML, has no `version` or another one, has a key other than these, or a value of the wrong kind is `nav-invalid`, and the project has the default order until it reads.
+
+## Problems
+@id: problems
+
+Once the file reads, `ascribe check` and the editor hold it to the project. Each problem in the file is reported at the value it's about, and what it names wrongly is passed over until it's fixed:
+
+| Problem | Reported | What fixes it |
+|---|---|---|
+| `nav-page-unknown`, error | At a `pages` entry that isn't a page in the section's folder: a misspelling, another case, a path with `/`, or the section's own `index.md` | Write the file name as it is on disk. The fix offered changes it to the closest page's name, so check it's the one you meant. |
+| `nav-folder-unknown`, error | At a `folder` that isn't a section: no page is in it or under it, its case differs, or its name starts with `_` | Write a section's folder as it is on disk. The fix offered changes it to the closest section's. |
+| `nav-duplicate`, error | At a folder listed a second time, or a page named a second time in one `pages` | Only the first counts. The fix removes the second table or entry, so keep what you need from it in the first. |
+| `section-page-both`, error | On a folder's `index.md` when the page beside the folder has its name too, with or without the file | Keep one of them as the section's own page. Until then, the `index.md` is. |
+| `nav-page-unplaced`, advice | On a page its section's `pages` doesn't name. A section without `pages` reports nothing. | The fix adds the section's unnamed pages to `pages`, in the order they come in now, so nothing moves. Then move them where you want them. |
+| `nav-section-unplaced`, advice | On the first page of a section the file doesn't list when it lists one of the section's siblings. A folder none of whose sections are listed reports nothing. | The fix adds a `[[sections]]` table for each, in the order they come in now. |
+
+The fixes keep the file's comments and layout. The two pieces of advice are what tells an agent, or a writer, that a page or a folder they've just added isn't where the file says the others go: `ascribe check --fix` places every one of them at once, where the default already shows it, and the editor offers the same fix on the page. A project that wants every page placed can raise them to errors in [`[checks]`](../content-model/checks.md).
 
 ## What a build shows
 

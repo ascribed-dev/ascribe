@@ -751,3 +751,55 @@ Error · file level · next step: write · [SPEC §7.8]({repo}/blob/main/SPEC.md
 **Fix:** Correct the file to the shape the reference gives it: `version = 1`, and a `[[sections]]` table for each section listed, with `folder`, a path from the content root ending in `/`, or `""` for the root, and optionally `pages`, a list of file names in that folder, and `label`. Until it reads, every sidebar has the default order, as if the project had no file.
 
 **Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
+### ASC231 `nav-page-unknown`
+@id {permalink=true}: ASC231
+
+Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** A `pages` entry in `ascribe.nav` that isn't a page in its section's folder, or that names the section's own `index.md`.
+
+**Message:** `{name}` isn't a page in `{folder}`; its pages are: \{values}
+
+**Fix:** Write the file name of a page in the section's folder, as it is on disk, case included, or remove the entry. A page in a nested folder is listed in that folder's own section, and a section's `index.md` comes first without being listed. The fix offered renames the entry to the closest page's name; check it's the one you meant. Until the name matches a page, the entry is passed over, and the pages the list leaves out come after the ones it names.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
+### ASC232 `nav-folder-unknown`
+@id {permalink=true}: ASC232
+
+Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** A `folder` in `ascribe.nav` that isn't a section.
+
+**Message:** `{folder}` isn't a section: no page is in it or in a folder under it
+
+**Fix:** Write the path of a folder with a page in it or under it, from the content root, ending in `/`, as it is on disk, case included, or remove the section's table. A folder whose name starts with `_` holds fragments, and isn't a section. The fix offered changes the folder to the closest section's; check it's the one you meant. Until the folder matches a section, its table is passed over.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
+### ASC233 `nav-duplicate`
+@id {permalink=true}: ASC233
+
+Error · file level · next step: fix · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice.
+
+**Message:** the section `{folder}` is listed already, earlier in the file; its first table is the one that counts
+
+**Fix:** Remove the second, keeping what you need from it in the first: a section's table, `pages`, and `label` are read from its first table only, and a page takes its first place in the list. The fix removes the second table, or the second entry in `pages`.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
+### ASC234 `section-page-both`
+@id {permalink=true}: ASC234
+
+Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** A folder with an `index.md` and a page beside it with the folder's name.
+
+**Message:** `{folder}` has this `index.md` and `{page}` beside it, and a section has one own page; keep one of them
+
+**Fix:** A section's own page is its `index.md` or the page beside its folder with its name, not both. Keep the one you want first in the section: move the other's content into it and delete it, or rename the other so it's a page of its own. Until then, the `index.md` is the section's own page, and the page beside the folder is one of its parent's pages.
+
+**Read more:** [Sections and pages](../navigation/index.md#sections-and-pages) in the navigation reference.

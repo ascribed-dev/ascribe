@@ -18,7 +18,7 @@ pub(super) fn list<S: AsRef<str>>(values: &[S]) -> String {
 }
 
 /// Joins values in backticks: `` `a`, `b` ``.
-pub(super) fn quoted_list<S: AsRef<str>>(values: &[S]) -> String {
+pub(crate) fn quoted_list<S: AsRef<str>>(values: &[S]) -> String {
     values
         .iter()
         .map(|v| format!("`{}`", v.as_ref()))
@@ -54,7 +54,7 @@ fn edit_distance(a: &str, b: &str) -> usize {
 }
 
 /// The closest candidate to `key`, if it's close enough to be a typo.
-pub(super) fn suggest<'a>(
+pub(crate) fn suggest<'a>(
     key: &str,
     candidates: impl IntoIterator<Item = &'a str>,
 ) -> Option<&'a str> {

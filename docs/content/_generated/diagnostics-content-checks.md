@@ -370,6 +370,32 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Read more:** [Write a memo file](../writing/memo-files.md#write-a-memo-file) in the memo files reference.
 
+### ASC235 `nav-page-unplaced`
+@id {permalink=true}: ASC235
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page.
+
+**Message:** `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title
+
+**Fix:** Add the page's file name to the section's `pages` in `ascribe.nav`, where it should come. The fix appends the section's pages that aren't named, in the order they come in now, so the navigation is the same after it; move the names to where you want them.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
+### ASC236 `nav-section-unplaced`
+@id {permalink=true}: ASC236
+
+Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
+
+**When:** `ascribe.nav` lists one or more of a section's sibling sections and not the section, which is reported on its first page. A folder none of whose sections the file lists has the default order, and isn't reported.
+
+**Message:** ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order
+
+**Fix:** Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them.
+
+**Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
+
 ## Outputs
 
 ### ASC163 `description-too-long`

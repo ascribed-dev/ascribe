@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-226 in all. By severity: 42 advice, 159 error, 25 warning. By level: 201 file, 25 page. By kind of next step: 51 choose, 14 fix, 7 outside, 12 review, 142 write.
+232 in all. By severity: 44 advice, 163 error, 25 warning. By level: 207 file, 25 page. By kind of next step: 54 choose, 17 fix, 7 outside, 12 review, 142 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -335,6 +335,12 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC228` | `memo-long` | advice | write | this memo is {length} characters, over the {limit} limit |
 | `ASC229` | `template-section-empty` | advice | write | the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it |
 | `ASC230` | `nav-invalid` | error | write | ascribe.nav can't be read: {detail} |
+| `ASC231` | `nav-page-unknown` | error | choose | `{name}` isn't a page in `{folder}`; its pages are: {values} |
+| `ASC232` | `nav-folder-unknown` | error | choose | `{folder}` isn't a section: no page is in it or in a folder under it |
+| `ASC233` | `nav-duplicate` | error | fix | the section `{folder}` is listed already, earlier in the file; its first table is the one that counts |
+| `ASC234` | `section-page-both` | error | choose | `{folder}` has this `index.md` and `{page}` beside it, and a section has one own page; keep one of them |
+| `ASC235` | `nav-page-unplaced` | advice | fix | `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title |
+| `ASC236` | `nav-section-unplaced` | advice | fix | ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order |
 
 ## The VS Code extension
 
