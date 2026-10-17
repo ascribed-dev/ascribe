@@ -1,7 +1,6 @@
 // A site's sidebar: the project's navigation, `_ascribe/nav.json` in a
 // build's site output (the navigation contract), joined to the collection;
-// or a site's own list of pages, which the starter writes as the site's
-// `src/nav.ts` (`npx @ascribed/astro init`), checked against the collection.
+// or a site's own list of pages, `{ nav }`, checked against the collection.
 import { slug } from "github-slugger";
 
 /** A group of the sidebar: a label, and its pages' source files, in order. */
@@ -332,31 +331,4 @@ export function sidebarGroups<E extends NavEntry>(
     }),
     sections: [],
   }));
-}
-
-/**
- * The starter's list for a project's pages, by their paths in the site
- * output: the pages at the content root in a group named "Start", the root
- * page first, then a group for each folder, named as the folder is, in order
- * of their names.
- */
-export function navFor(pages: readonly string[]): NavGroup[] {
-  const groups = new Map<string, string[]>();
-  const sorted = pages.toSorted((a, b) => {
-    const rootA = a === "index.md";
-    const rootB = b === "index.md";
-    if (rootA !== rootB) return rootA ? -1 : 1;
-    return a < b ? -1 : a > b ? 1 : 0;
-  });
-  for (const page of sorted) {
-    const slash = page.indexOf("/");
-    const label = slash === -1 ? "Start" : page.slice(0, slash);
-    groups.set(label, [...(groups.get(label) ?? []), page]);
-  }
-  const start = groups.get("Start");
-  groups.delete("Start");
-  return [
-    ...(start === undefined ? [] : [{ label: "Start", pages: start }]),
-    ...[...groups].map(([label, files]) => ({ label, pages: files })),
-  ];
 }
