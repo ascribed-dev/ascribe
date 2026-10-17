@@ -106,7 +106,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-232 in all. By severity: 45 advice, 162 error, 25 warning. By level: 207 file, 25 page. By kind of next step: 53 choose, 17 fix, 7 outside, 12 review, 143 write.
+235 in all. By severity: 46 advice, 164 error, 25 warning. By level: 209 file, 26 page. By kind of next step: 54 choose, 17 fix, 7 outside, 12 review, 145 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -250,7 +250,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC144` | `intended-entry` | error | write | `intended` is a list of acknowledgements, each with a `check` and a `reason` |
 | `ASC145` | `intended-unused` | advice | fix | nothing here needs acknowledging any more: `{check}` reports no problem here in any build |
 | `ASC146` | `model-intended-check` | error | choose | `{check}` isn't a check |
-| `ASC147` | `model-intended-entry` | error | choose | an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image` |
+| `ASC147` | `model-intended-entry` | error | choose | an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, or `image` |
 | `ASC148` | `model-field-role` | error | write | role = "{role}" only works on a {expected} field, and `{field}` is "{type}" |
 | `ASC149` | `page-size` | advice | write | this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose |
 | `ASC150` | `page-description-missing` | advice | write | this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title |
@@ -342,6 +342,9 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC237` | `nav-label-long` | advice | write | this `nav-label` is {length} characters, longer than the {title}-character title it stands for in the sidebar |
 | `ASC238` | `model-glossary-page` | error | choose | `{path}` in `[glossary] pages` doesn't exist |
 | `ASC239` | `glossary-term-duplicate` | error | write | "{text}" is already the glossary term `{first}`, on {page} |
+| `ASC240` | `glossary-definition-missing` | error | write | the term "{term}" has no definition: its section doesn't start with a paragraph |
+| `ASC241` | `glossary-definition-long` | advice | write | the definition of the term "{term}" is over {limit} characters in build `{build}`, too long for a link's title or a hover |
+| `ASC242` | `term-off-glossary-page` | error | choose | `@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term |
 
 ## The VS Code extension
 

@@ -4,7 +4,7 @@
 
 use ascribe_core::intended::{EntryKind, Place};
 use ascribe_core::{Span, TextEdit};
-use ascribe_syntax::{ParsedDocument, frontmatter_lines};
+use ascribe_syntax::{Block, BlockKind, Bound, ParsedDocument, frontmatter_lines};
 
 /// The quick fix's title.
 pub(crate) const TITLE: &str = "Mark as intended, and write why";
@@ -92,7 +92,8 @@ fn page(check: &str, source: &str, document: &ParsedDocument, nl: &str) -> Optio
 }
 
 /// An `@intended` line directly above the outermost block the problem is
-/// in, at its indentation.
+/// in, at its indentation; for a heading, at the top of its section, after
+/// the directives already there.
 fn block(
     check: &str,
     source: &str,
@@ -100,10 +101,14 @@ fn block(
     at: usize,
     nl: &str,
 ) -> Option<TextEdit> {
-    let block = document
+    let i = document
         .blocks
         .iter()
-        .find(|b| b.span.start() <= at && at <= b.span.end())?;
+        .position(|b| b.span.start() <= at && at <= b.span.end())?;
+    let block = &document.blocks[i];
+    if matches!(block.kind, BlockKind::Heading(_)) {
+        return under_heading(check, source, &document.blocks, i, nl);
+    }
     let start = source
         .get(..block.span.start())?
         .rfind('\n')
@@ -116,6 +121,39 @@ fn block(
         start,
         format!("{indent}@intended {{check={check}}}: {REASON}{nl}"),
     ))
+}
+
+/// An `@intended` line at the top of the section of the heading
+/// `blocks[heading]`, after the directives that bind it.
+fn under_heading(
+    check: &str,
+    source: &str,
+    blocks: &[Block],
+    heading: usize,
+    nl: &str,
+) -> Option<TextEdit> {
+    let last = blocks[heading + 1..]
+        .iter()
+        .take_while(|b| b.binding() == Some(Bound::Heading))
+        .last()
+        .unwrap_or(&blocks[heading]);
+    let end = last.span.end();
+    let start = source
+        .get(..blocks[heading].span.start())?
+        .rfind('\n')
+        .map_or(0, |i| i + 1);
+    let indent = source.get(start..blocks[heading].span.start())?;
+    if !indent.chars().all(|c| c == ' ' || c == '\t') {
+        return None;
+    }
+    let line = format!("{indent}@intended {{check={check}}}: {REASON}");
+    if source.get(..end)?.ends_with('\n') {
+        return Some(TextEdit::insert(end, format!("{line}{nl}")));
+    }
+    Some(match source.get(end..)?.find('\n') {
+        Some(i) => TextEdit::insert(end + i + 1, format!("{line}{nl}")),
+        None => TextEdit::insert(source.len(), format!("{nl}{line}")),
+    })
 }
 
 /// An `[[intended]]` table at the end of `ascribe.toml`.
@@ -173,6 +211,23 @@ mod tests {
                 None
             ),
             "# Title\n\n@intended {check=some-check}: why this is intended\nOne.\nTwo.\n\nThree.\n"
+        );
+    }
+
+    #[test]
+    fn a_heading_gets_a_line_at_the_top_of_its_section() {
+        assert_eq!(
+            apply(
+                "# Title\n\n## Region\n@term\n\nA place.\n",
+                Place::Block,
+                "Region",
+                None
+            ),
+            "# Title\n\n## Region\n@term\n@intended {check=some-check}: why this is intended\n\nA place.\n"
+        );
+        assert_eq!(
+            apply("## Region", Place::Block, "Region", None),
+            "## Region\n@intended {check=some-check}: why this is intended"
         );
     }
 

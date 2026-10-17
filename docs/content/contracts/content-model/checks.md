@@ -51,10 +51,9 @@ Acknowledges a review check's problem with a content model entry or an image as 
 | `reason` | string | required | Why the problem is intended. Not empty. |
 | `phrase` | string | | A phrase's key, declared in `[phrases]`. |
 | `feature` | string | | A feature's key, declared in `[features]`. |
-| `term` | string | | A glossary term's id: the id of its heading on a glossary page. |
 | `image` | string | | An image's path under the content root. |
 
-Exactly one of `phrase`, `feature`, `term`, and `image`. The acknowledgement covers the check's problems that name that entry, in every build. One that covers nothing when every build is checked is advice (`intended-unused`), reported at its `[[intended]]` header with a fix that removes the table.
+Exactly one of `phrase`, `feature`, and `image`. A glossary term is a heading, acknowledged with `@intended` at the top of its section; `term` is `model-unknown-key`. The acknowledgement covers the check's problems that name that entry, in every build. One that covers nothing when every build is checked is advice (`intended-unused`), reported at its `[[intended]]` header with a fix that removes the table.
 
 **Rules** (§24.9): the check exists, with a did-you-mean suggestion for one that doesn't, is a review check, and is reported at an entry (`model-intended-check`); the table names exactly one declared entry (`model-intended-entry`); `check` and `reason` are present (`model-missing-key`) and `reason` isn't empty (`model-empty-text`); and the table has no other key (`model-unknown-key`).
 

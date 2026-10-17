@@ -1,0 +1,31 @@
+description: >-
+  A term follows its section, and its definition the paragraph a build
+  keeps. The fixture is shaped like examples/quill's builds. `Streaming
+  sync`'s section is marked `@available: self-managed 3.5`, so its long
+  definition is reported only in the builds that publish the section: the
+  site's 3.5 line and `self-managed-3.5`. `Workspace`'s long definition is
+  in the cloud arm of a variant, so it's reported where that arm is kept,
+  and a switcher keeps it first, but not in `self-managed-3.5`. `Relay`'s
+  definition is cloud only, so self-managed builds keep its heading without
+  a definition, which nothing reports.
+spec: ["5.4", "9.3"]
+tags: [check, page-check, resolve]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: glossary-definition-long, file: glossary.md, line: 5}
+      - {slug: glossary-definition-long, file: glossary.md, line: 11}
+  site@3.4:
+    diagnostics:
+      - {slug: glossary-definition-long, file: glossary.md, line: 11}
+  cloud:
+    diagnostics:
+      - {slug: glossary-definition-long, file: glossary.md, line: 11}
+  self-managed-3.3:
+    diagnostics:
+      - {slug: glossary-definition-long, file: glossary.md, line: 11}
+  self-managed-3.5:
+    diagnostics:
+      - {slug: glossary-definition-long, file: glossary.md, line: 5}

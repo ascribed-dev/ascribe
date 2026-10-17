@@ -19,7 +19,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 
 **Message:** unknown key `{key}` in `[{table}]`
 
-**Fix:** Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`.
+**Fix:** Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading.
 
 **Read more:** [The file](../content-model/index.md#11-the-file) in the `ascribe.toml` reference.
 
@@ -921,9 +921,9 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
-**Message:** an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`
+**Message:** an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, or `image`
 
-**Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes.
+**Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes.
 
 **Read more:** [`[[intended]]`: acknowledgements](../content-model/checks.md#intended-acknowledgements) in the `ascribe.toml` reference.
 

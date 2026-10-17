@@ -1,0 +1,17 @@
+description: >-
+  `@intended` at the top of a section acknowledges a problem reported at its
+  heading, as `glossary-term-unused` is, and one in the block under it when
+  no blank line parts them, as an `html-comment` is, and nothing wider.
+  Further down the section it covers the block under it, not the heading, so
+  there it covers nothing; nor does one a blank line parts from the block.
+spec: ["4.9", "5.4"]
+tags: [check, page-check, resolve]
+
+diagnostics:
+  - {slug: glossary-term-unused, file: glossary.md, line: 16}
+  - {slug: html-comment, file: index.md, line: 14}
+builds:
+  site:
+    diagnostics:
+      - {slug: intended-unused, file: glossary.md, line: 21}
+      - {slug: intended-unused, file: index.md, line: 12}

@@ -1,0 +1,13 @@
+description: >-
+  `[[intended]]` has no `term`: a glossary term is a heading, and its
+  problems are acknowledged with `@intended` at the top of its section. The
+  key is unknown, with a message that says where the acknowledgement goes;
+  `glossary-term-unused` isn't acknowledged in `[[intended]]`, and the table
+  names no entry, each of which is reported too.
+spec: ["4.9", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 8}
+  - {slug: model-intended-check, file: ascribe.toml, line: 7}
+  - {slug: model-intended-entry, file: ascribe.toml, line: 6}

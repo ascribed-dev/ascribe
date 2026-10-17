@@ -525,6 +525,15 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 - **Only review checks.** A check whose next step is *review* reports something that may be fine as it is, such as a page nothing links to. Only those can be acknowledged; a problem that's always wrong, such as a link to a page that doesn't exist, is fixed instead. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged.
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
+  - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and, when no blank line comes between, in the block directly under the `@intended` line, so a section's first block is acknowledged as any other block is. It covers nothing else in the section. An unused glossary term is acknowledged this way:
+
+    ```markdown
+    ## Workspace
+    @term
+    @intended {check=glossary-term-unused}: Linked from the product's own screens.
+
+    The space a team's projects are in.
+    ```
   - **A page or a fragment:** the `intended` frontmatter key, a list of entries with a `check` and a `reason`:
 
     ```yaml
@@ -584,7 +593,8 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 
 - It goes directly under the heading, with the heading's `@id` if it has one. It takes no primary.
 - **Attributes:** `aliases`, other forms that count as the term, separated by `|` (`aliases="API keys|keys"`); `match`, which occurrences are linked, `first`, `every`, or `marked`; and `case-sensitive`, `true` or `false`. The last two default to `[glossary]`'s settings.
-- A term is only a term on a page `[glossary] pages` lists, or in a fragment such a page includes. See [Glossary terms](directives.md#glossary-terms).
+- A term is only a term on a page `[glossary] pages` lists, or in a fragment such a page includes. Anywhere else, `@term` is an error, `term-off-glossary-page`, whose fix lists the page in `pages`. See [Glossary terms](directives.md#glossary-terms).
+- The paragraph under the heading must be the first thing in the section, after the heading's directives: a section that opens with anything else has no definition, which is an error, `glossary-definition-missing`. Keep it to a sentence or two, since it's shown where there's no room for more: one over 300 characters is reported as advice, `glossary-definition-long`.
 - It renders nothing: the heading and its section are published as they would be without it.
 
 ## Project widgets

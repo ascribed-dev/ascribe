@@ -233,3 +233,6 @@
 | [ASC237](../checks/diagnostics/content-checks.md#ASC237) | `nav-label-long` | Advice | File | write |
 | [ASC238](../checks/diagnostics/content-model.md#ASC238) | `model-glossary-page` | Error | File | choose |
 | [ASC239](../checks/diagnostics/pages.md#ASC239) | `glossary-term-duplicate` | Error | File | write |
+| [ASC240](../checks/diagnostics/pages.md#ASC240) | `glossary-definition-missing` | Error | File | write |
+| [ASC241](../checks/diagnostics/content-checks.md#ASC241) | `glossary-definition-long` | Advice | Page | write |
+| [ASC242](../checks/diagnostics/pages.md#ASC242) | `term-off-glossary-page` | Error | File | choose |

@@ -1593,7 +1593,8 @@ message = "unknown key `{key}` in `[{table}]`"
 messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
 messages.type-key = "`{key}` isn't a key of `[{table}]`: a page says what type it is in its frontmatter, with `type: {type}`"
 messages.glossary-terms = "`{key}` isn't a key of `[{table}]`: a term is a heading marked `@term` on a page that `[glossary] pages` lists"
-fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`."
+messages.intended-term = "`{key}` isn't a key of `[[{table}]]`: a glossary term is acknowledged with `@intended` at the top of its section, under its heading"
+fix = "Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading."
 
 [[diagnostic]]
 code = "ASC062"
@@ -2708,7 +2709,7 @@ messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
 messages.missing = "an acknowledgement names the check it's for: add `{example}`"
 messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
 messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}"
-fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
+fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block (a heading's under the heading), and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
 
 [[diagnostic]]
 code = "ASC144"
@@ -2765,11 +2766,11 @@ evidence = []
 spec = "4.9"
 reference = "content-model/checks.md#intended-acknowledgements"
 group = "checks"
-message = "an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`"
+message = "an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, or `image`"
 messages.several = "an acknowledgement in [[intended]] is about one thing, and this one names {keys}"
 messages.unknown = "there's no {kind} `{name}` in this content model"
 messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why the problem is intended"
-fix = "Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes."
+fix = "Give the acknowledgement exactly one of `phrase`, `feature`, or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes."
 
 [[diagnostic]]
 code = "ASC148"
@@ -2938,13 +2939,13 @@ level = "file"
 next = "review"
 evidence = []
 configurable = true
-place = "entry"
+place = "block"
 area = "project"
 spec = "5.4"
 reference = "content-model/content.md#122-terms"
 when = "The term, and each of its aliases, appears in no other page's prose, and no link names its heading"
 message = "the glossary term `{term}` appears in no other file's prose, and no link names its heading, so it's never linked"
-fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model/checks.md#intended-acknowledgements)."
+fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it with [`@intended`](writing/directives.md#intended) at the top of the term's section, under its heading."
 
 [[diagnostic]]
 code = "ASC159"
@@ -4335,3 +4336,46 @@ reference = "content-model/content.md#12-glossary"
 row = "Glossary | Two terms, or a term and an alias, with the same text"
 message = "\"{text}\" is already the glossary term `{first}`, on {page}"
 fix = "Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive."
+
+[[diagnostic]]
+code = "ASC240"
+slug = "glossary-definition-missing"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "5.4"
+reference = "content-model/content.md#12-glossary"
+row = "Glossary | A term whose section doesn't start with a paragraph"
+message = "the term \"{term}\" has no definition: its section doesn't start with a paragraph"
+fix = "Write the definition as the first paragraph under the term's heading, after its `@term` and any other directives that bind the heading. A link's title and the editor's hover show that paragraph, so a section that opens with a note, a list, a code block, or a subheading leaves them nothing to show."
+
+[[diagnostic]]
+code = "ASC241"
+slug = "glossary-definition-long"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+spec = "5.4"
+reference = "content-model/content.md#12-glossary"
+configurable = true
+area = "pages"
+when = "A term's definition, as a build derives it, is longer than the limit `description-too-long` measures a description against"
+message = "the definition of the term \"{term}\" is over {limit} characters in build `{build}`, too long for a link's title or a hover"
+messages.builds = "the definition of the term \"{term}\" is over {limit} characters in builds {builds}, too long for a link's title or a hover"
+fix = "End the first paragraph after the definition, in a sentence or two, and put the rest in a second paragraph. The first paragraph is what a link to the term shows as its title and the editor shows on hover; the rest of the section is still on the glossary page. The length is counted on the definition as each build derives it, with phrases substituted and formatting dropped."
+
+[[diagnostic]]
+code = "ASC242"
+slug = "term-off-glossary-page"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.11"
+reference = "content-model/content.md#12-glossary"
+row = "Glossary | `@term` on a heading that no page the glossary lists shows"
+message = "`@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term"
+messages.fragment = "`@term` is in the fragment `{path}`, which no page `[glossary] pages` lists includes, so this heading isn't a term"
+fix = "List the page in `[glossary] pages` in ascribe.toml, or move the term to a glossary page, or remove `@term`. Listing the page links its terms on every other page, so the fix that adds it is offered in the editor and never applied by `ascribe check --fix`. A fragment is listed through a page that includes it."

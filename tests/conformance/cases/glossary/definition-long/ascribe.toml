@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[glossary]
+pages = ["glossary.md"]
+
+[builds.site]

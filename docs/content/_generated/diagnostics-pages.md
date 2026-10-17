@@ -574,7 +574,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 
 **Message:** `{check}` isn't a check
 
-**Fix:** Name the check whose problem is intended, by its name in the [diagnostics reference](../checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable.
+**Fix:** Name the check whose problem is intended, by its name in the [diagnostics reference](../checks/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block (a heading's under the heading), and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable.
 
 **Read more:** [`@intended`](../writing/directives.md#intended) in the directive reference.
 
@@ -801,5 +801,31 @@ Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md
 **Message:** "\{text}" is already the glossary term `{first}`, on \{page}
 
 **Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive.
+
+**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+
+### ASC240 `glossary-definition-missing`
+@id {permalink=true}: ASC240
+
+Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+
+**When:** A term whose section doesn't start with a paragraph.
+
+**Message:** the term "\{term}" has no definition: its section doesn't start with a paragraph
+
+**Fix:** Write the definition as the first paragraph under the term's heading, after its `@term` and any other directives that bind the heading. A link's title and the editor's hover show that paragraph, so a section that opens with a note, a list, a code block, or a subheading leaves them nothing to show.
+
+**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+
+### ASC242 `term-off-glossary-page`
+@id {permalink=true}: ASC242
+
+Error · file level · next step: choose · [SPEC §4.11]({repo}/blob/main/SPEC.md#411-term)
+
+**When:** `@term` on a heading that no page the glossary lists shows.
+
+**Message:** `@term` is on `{path}`, which isn't a page `[glossary] pages` lists, so this heading isn't a term
+
+**Fix:** List the page in `[glossary] pages` in ascribe.toml, or move the term to a glossary page, or remove `@term`. Listing the page links its terms on every other page, so the fix that adds it is offered in the editor and never applied by `ascribe check --fix`. A fragment is listed through a page that includes it.
 
 **Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.

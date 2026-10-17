@@ -1,0 +1,11 @@
+description: >-
+  `@term` makes a term only on a page `[glossary] pages` lists, or in a
+  fragment such a page includes. Elsewhere it's an error at the directive,
+  and the heading isn't a term: on a page, with a fix that lists the page,
+  and in a fragment, which is listed through a page that includes it.
+spec: ["4.11", "5.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: term-off-glossary-page, file: reference.md, line: 6}
+  - {slug: term-off-glossary-page, file: _tenant.md, line: 2}

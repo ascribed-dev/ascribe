@@ -743,7 +743,7 @@ fn definitions(page: &ResolvedPage) -> Vec<(String, String)> {
 fn a_definition_is_its_paragraph_as_plain_text_for_each_build() {
     // Markup reduced to its text and a phrase substituted; a paragraph a
     // fragment brings in; the paragraph of the variant the build keeps; and a
-    // section that opens with a list, which has none.
+    // section that opens with a list, which has none, so it isn't linked.
     let glossary = "---\ntype: page\ntitle: Glossary\n---\n\n\
 ## Agent\n@term\n\n\
 The *{product}* agent, see [docs](index.md), `code`, ![the logo](a.png) and <b>bold</b>\n   text.\n\n\
@@ -769,7 +769,6 @@ The *{product}* agent, see [docs](index.md), `code`, ![the logo](a.png) and <b>b
             ),
             ("relay".to_owned(), "Passes messages on.".to_owned()),
             ("workspace".to_owned(), workspace.to_owned()),
-            ("mirror".to_owned(), String::new()),
         ]
     };
     assert_eq!(in_build("cloud"), shared("A hosted workspace."));
@@ -869,4 +868,31 @@ fn a_build_lists_the_pages_it_drops_and_the_assets_it_copies() {
             .collect::<Vec<_>>(),
         ["a.png"]
     );
+}
+
+#[test]
+fn a_term_is_linked_only_in_the_builds_that_publish_its_section() {
+    // `Streaming` is in 3.5 only; `Relay`'s definition comes from a
+    // fragment that marks it cloud only, so a self-managed build removes the
+    // paragraph and keeps the heading.
+    let glossary = "---\ntype: page\ntitle: Glossary\n---\n\n\
+## Streaming\n@term\n@available: self-managed 3.5\n\n\
+Changes sent as they happen.\n\n\
+## Relay\n@term\n\n@include: _relay.md\n\n\
+A second paragraph, which never defines it.\n";
+    let p = project(&[
+        ("index.md", &page("Streaming goes through a relay.\n")),
+        ("glossary.md", glossary),
+        ("_relay.md", "@available: cloud\nPasses messages on.\n"),
+    ]);
+    let terms = |build: &str| -> Vec<String> {
+        glossed(&resolve(&p, "index.md", build))
+            .into_iter()
+            .map(|(term, _)| term)
+            .collect()
+    };
+    assert_eq!(terms("site"), ["streaming", "relay"]);
+    assert_eq!(terms("sm-3.5"), ["streaming"]);
+    assert_eq!(terms("sm-3.3"), Vec::<String>::new());
+    assert_eq!(terms("cloud"), ["relay"]);
 }

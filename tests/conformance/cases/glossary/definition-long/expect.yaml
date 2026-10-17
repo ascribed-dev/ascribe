@@ -1,0 +1,12 @@
+description: >-
+  A definition longer than a description may be (300 characters, as the
+  build derives it) is advice at the term's heading, in each build where
+  it's over: the first, at 320 characters, is reported, and the second, at
+  280, isn't.
+spec: ["5.4"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: glossary-definition-long, file: glossary.md, line: 5, severity: advice}

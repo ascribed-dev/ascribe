@@ -1,0 +1,11 @@
+description: >-
+  A term's definition is the paragraph its section opens with. A section
+  that opens with anything else, such as a note or a subheading, has none,
+  which is an error at the term's heading. A paragraph a fragment brings in
+  counts.
+spec: ["5.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: glossary-definition-missing, file: glossary.md, line: 5}
+  - {slug: glossary-definition-missing, file: glossary.md, line: 10}

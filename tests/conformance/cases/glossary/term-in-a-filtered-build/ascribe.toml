@@ -1,0 +1,36 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# Shaped like examples/quill: cloud has no versions, and self-managed's live
+# lines are 3.4 and 3.5.
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[glossary]
+pages = ["glossary.md"]
+
+# Every arm as a switcher, availability as badges, and an output for each
+# live line of self-managed.
+[builds.site]
+variants = "switch"
+availability = "badge"
+versions = "self-managed"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+[builds."self-managed-3.3"]
+variants = "switch"
+availability = { filter = "self-managed 3.3" }
+
+# Self-managed 3.5 only: deployment groups reduce to their self-managed arm.
+[builds."self-managed-3.5"]
+variants = { deployment = "self-managed" }
+availability = { filter = "self-managed 3.5" }

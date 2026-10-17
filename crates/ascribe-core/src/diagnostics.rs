@@ -733,6 +733,16 @@ pub const MODEL_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("model-glossary-p
 /// `ASC239`, error, file level: SPEC §8.2, "Glossary | Two terms, or a term and an alias, with the same text".
 pub const GLOSSARY_TERM_DUPLICATE: DiagnosticSlug = DiagnosticSlug("glossary-term-duplicate");
 
+/// `ASC240`, error, file level: SPEC §8.2, "Glossary | A term whose section doesn't start with a paragraph".
+pub const GLOSSARY_DEFINITION_MISSING: DiagnosticSlug =
+    DiagnosticSlug("glossary-definition-missing");
+
+/// `ASC241`, advice, page level: a content check (area `pages`).
+pub const GLOSSARY_DEFINITION_LONG: DiagnosticSlug = DiagnosticSlug("glossary-definition-long");
+
+/// `ASC242`, error, file level: SPEC §8.2, "Glossary | `@term` on a heading that no page the glossary lists shows".
+pub const TERM_OFF_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("term-off-glossary-page");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -967,6 +977,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     NAV_LABEL_LONG,
     MODEL_GLOSSARY_PAGE,
     GLOSSARY_TERM_DUPLICATE,
+    GLOSSARY_DEFINITION_MISSING,
+    GLOSSARY_DEFINITION_LONG,
+    TERM_OFF_GLOSSARY_PAGE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1019,6 +1032,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     NAV_PAGE_UNPLACED,
     NAV_SECTION_UNPLACED,
     NAV_LABEL_LONG,
+    GLOSSARY_DEFINITION_LONG,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries
@@ -1030,7 +1044,7 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (FRAGMENT_UNUSED, crate::Place::Page),
     (PHRASE_UNUSED, crate::Place::Entry),
     (FEATURE_UNUSED, crate::Place::Entry),
-    (GLOSSARY_TERM_UNUSED, crate::Place::Entry),
+    (GLOSSARY_TERM_UNUSED, crate::Place::Block),
     (IMAGE_UNUSED, crate::Place::Entry),
     (IMAGE_LARGE, crate::Place::Entry),
     (LINK_EXTERNAL_BROKEN, crate::Place::Block),
