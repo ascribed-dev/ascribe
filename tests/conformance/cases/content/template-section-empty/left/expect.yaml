@@ -1,0 +1,10 @@
+description: >-
+  A section the template gives only a memo, which the page keeps and writes
+  nothing under, is reported at its heading: it would build as a heading
+  with nothing under it, and has no placeholder for
+  template-placeholder-left to find.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-section-empty, file: troubleshooting/sync.md, line: 9, severity: advice}

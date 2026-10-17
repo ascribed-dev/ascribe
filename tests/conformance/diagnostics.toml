@@ -4213,3 +4213,18 @@ reference = "writing/memo-files.md#write-a-memo-file"
 when = "A memo file's body is longer than the limit: 2,000 characters, or `[checks.memo-long] limit`"
 message = "this memo is {length} characters, over the {limit} limit"
 fix = "A memo is read by whoever is about to change the page, so it says why in as few words as it can. Cut what the page itself says, and split a memo about several things into one about each. The limit is 2,000 characters; set another in `ascribe.toml`, such as `[checks.memo-long] limit = 4000`."
+
+[[diagnostic]]
+code = "ASC229"
+slug = "template-section-empty"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+reference = "content-model/index.md#41-page-types"
+configurable = true
+area = "pages"
+when = "A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at"
+message = "the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it"
+fix = "Write the section's text under its heading. The template gives it only memos, its instructions to the writer, which are never published, so left as it is the section builds as a heading with nothing under it. Follow each memo, then delete it or keep it. If the page doesn't need the section, remove its heading and its memos."

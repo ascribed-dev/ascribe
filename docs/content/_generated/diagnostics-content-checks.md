@@ -147,6 +147,19 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 **Read more:** [`@memo`](../writing/directives.md#memo) in the directive reference.
 
+### ASC229 `template-section-empty`
+@id {permalink=true}: ASC229
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at.
+
+**Message:** the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it
+
+**Fix:** Write the section's text under its heading. The template gives it only memos, its instructions to the writer, which are never published, so left as it is the section builds as a heading with nothing under it. Follow each memo, then delete it or keep it. If the page doesn't need the section, remove its heading and its memos.
+
+**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`

@@ -1,0 +1,7 @@
+description: >-
+  A page of a type that names no template isn't looked at, whatever its
+  sections have.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []
