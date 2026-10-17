@@ -288,7 +288,15 @@ describe("the registry", () => {
     const table = readme.slice(readme.indexOf("| Action | Applies to |"));
     // Two aren't actions: New Page and Go to Next Placeholder are commands
     // of their own (src/actions/newPage.ts), since neither is about a place in a page.
-    const commands = ["newPage", "nextPlaceholder"];
+    // The navigation's are the Pages view's drags and menu (src/ui/sidebarViews.ts).
+    const commands = [
+      "newPage",
+      "nextPlaceholder",
+      "moveSection",
+      "movePage",
+      "placePage",
+      "setSectionLabel",
+    ];
     const operations = [...table.matchAll(/^\| `(\w+)` \|/gm)]
       .map((m) => m[1])
       .filter((operation) => operation !== undefined && !commands.includes(operation));

@@ -67,6 +67,8 @@ describe("package.json", () => {
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
       // So do the Projects view's buttons, which act on their project.
       else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
+      // And the Pages view's, which act on their section or page.
+      else if (entry.command.startsWith("ascribe.pages.")) expect(entry.when).toBe("false");
       // So do the walkthrough's buttons, which bring back a page first.
       else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
       // Prompt agent on one problem is a code action on that problem.
@@ -160,6 +162,8 @@ describe("package.json", () => {
       "ascribe.projects.refresh",
       "ascribe.projects.showOutput",
       "ascribe.projects.restart",
+      "ascribe.pages.placeHere",
+      "ascribe.pages.renameLabel",
       "ascribe.review.replyNow",
       "ascribe.review.addToReview",
       "ascribe.review.resolve",

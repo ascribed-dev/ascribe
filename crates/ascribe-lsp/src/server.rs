@@ -631,15 +631,16 @@ fn page_request(shared: &Shared, request: &Request) -> Result<serde_json::Value,
 }
 
 /// `ascribe/edit`, as [`answer`] answers it, but asked through any of the
-/// project's files for `newPage`, which isn't about a page.
+/// project's files for `newPage` and the navigation's actions, which aren't
+/// about a page.
 fn edit_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
-    use crate::edit::{EditAction, EditParams, edit};
+    use crate::edit::{EditParams, edit};
     let params: EditParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
     let uri = params.text_document.uri.clone();
     let target = {
         let core = shared.lock();
-        if params.action == EditAction::NewPage {
+        if params.action.about_project() {
             core.project_target(&uri)
         } else {
             core.nav_target(&uri)

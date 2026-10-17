@@ -46,6 +46,8 @@ mod new_page;
 mod page;
 #[path = "all/page_rows.rs"]
 mod page_rows;
+#[path = "all/pages_view.rs"]
+mod pages_view;
 #[path = "all/preview.rs"]
 mod preview;
 #[path = "all/prose.rs"]

@@ -149,7 +149,7 @@ The lens is placed from the saved file, as a build reads it: the editor doesn't 
 
 ### Refactoring
 
-- **Rename or move a file** in the Explorer, and the links and includes that point to it are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it, and the `about` of each [memo file](index.md#memo-files) about it or a heading in it.
+- **Rename or move a file or a folder** in the Explorer, and the links and includes that point to what it holds are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it, the `about` of each [memo file](index.md#memo-files) about it or a heading in it, and [`ascribe.nav`](../navigation/index.md#the-file): a page's entry in its section's `pages`, taken out when it leaves the folder, and a folder's `folder`.
 - **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` among them, and the memo files about it, or a phrase key to update its uses and its declaration.
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
@@ -285,10 +285,15 @@ About's other rows say whether the page is published, listed, due, and finished.
 
 A fragment has no builds, listing, or size of its own: it's published only where it's included.
 
-- **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). An orphan is still in the sidebar, which is all that reaches it, unless it's `unlisted`, when nothing reaches it but its address: it's a hint, not an error.
+- **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and shows the project's [navigation](../navigation/index.md): **Start**, the content root's section, with the home page first, then each section in order, each by its label with its pages by title and their paths beside them, then the project's fragments by folder, each with the files that include it. A page's tooltip counts the links and includes that reach it. Opening a page selects it in Pages, with its sections expanded. It's the easy way to change the order, which it writes to `ascribe.nav` as typing does: the file opens with the change unsaved, and **Undo** takes it back, the file too when the drag made it.
+  - **Drag a section** onto another beside it, and it's put before it when you drag it up and after it when you drag it down. The sections beside it are listed in the file in the order they had, so nothing else moves.
+  - **Drag a page** onto another of its section the same way, or onto its section to put it first. The section's `pages` lists its pages as they stood, with the one you moved where you put it.
+  - **Drag a page onto another section**, or a page of one, and it asks first, since the page's address changes. On **Move**, its file moves to that section's folder, and the links to it and `ascribe.nav` follow, as they do when you move a file in the Explorer.
+  - A page `ascribe.nav` leaves out of a section that lists its pages is at the end of its section, marked **not placed**; **Place Here** in its menu adds it to the end of the section's `pages`.
+  - **Rename Label…** in a section's menu sets its `label`; leave it empty for the default.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
 
-Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
+Pages and Content model update when you save a file of the project, when a page is added or deleted, Pages as you edit `ascribe.nav` too, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
 
 ### The status bar
 @available: ascribe 0.2.0

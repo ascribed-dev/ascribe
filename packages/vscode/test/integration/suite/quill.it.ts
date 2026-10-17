@@ -58,27 +58,24 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
-  it("lists the project's pages by type, its fragments, and what includes each", async () => {
+  it("lists the project's pages in the navigation's order, its fragments, and what includes each", async () => {
     const api = await activated();
     await openAt(keys);
+    // Quill has no ascribe.nav and one type, so its pages are in title order.
     const expected = [
-      "page (8)",
-      "  Broken (broken.md)",
-      "  Configure the agent (3.4) (configure-legacy.md)",
-      "  Configure the agent (configure.md)",
-      "  Install the Quill agent (install-agent.md)",
+      "Start",
       "  API keys (keys.md)",
+      "  Broken (broken.md)",
+      "  Configure the agent (configure.md)",
+      "  Configure the agent (3.4) (configure-legacy.md)",
+      "  Install the Quill agent (install-agent.md)",
       "  Try Quill in the browser (quickstart.md)",
       "  Upgrade the agent (upgrade.md)",
       "  Webhooks (webhooks.md)",
       "Fragments (1)",
-      "  _fragments/prerequisites.md (1 file)",
-      "    install-agent.md (includes it)",
-      // No page links to configure-legacy.md by name: a versioned build
-      // reaches it through configure.md's `replaces`.
-      "Orphans (2)",
-      "  Broken (broken.md)",
-      "  Configure the agent (3.4) (configure-legacy.md)",
+      "  _fragments/ (1)",
+      "    prerequisites.md (1 file)",
+      "      install-agent.md (includes it)",
     ];
     // These run before the tests that add and rename pages: a page that's
     // still open in the editor stays in the project after it's deleted.
@@ -88,7 +85,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       return items.join("\n") === expected.join("\n") ? items : undefined;
     }).catch(() => flat(api.ui.sidebar.items("pages")));
     assert.deepEqual(pages, expected);
-    const page = api.ui.sidebar.items("pages")[0]?.children[4];
+    const page = api.ui.sidebar.items("pages")[0]?.children[0];
     assert.ok(page?.opens?.endsWith("/docs/keys.md"), page?.opens);
   });
 
