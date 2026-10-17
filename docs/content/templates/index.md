@@ -134,13 +134,17 @@ How a line is wrapped doesn't matter, so an editor that rewraps a paragraph does
 @available: next
 A memo the page keeps from its template isn't reported, and **Go to Next Placeholder** passes over it: it's never published, so what to do with it is yours to decide. A placeholder in a block quote is reported as any other is.
 
+@available: next
+**A section the template gives only memos,** such as the concept's "Use cases" or the troubleshooting template's "Symptom 1", has no placeholder to leave, so one a page doesn't fill in builds as a heading with nothing under it. `ascribe check` reports it as advice of its own, at its heading (`template-section-empty`): a section of the page with the template's heading, at the same level and with the same text, that has nothing in it but memos, directives bound to its heading such as `@id`, and the headings of subsections as empty as it is. A section followed directly by a subsection with text in it is filled, and a section you've renamed is your own. Write the section, or take out its heading when the page doesn't need it.
+
 The check finds only what was never touched. A placeholder with one word changed, or with the space before its closing brace taken out, as the how-to's `\{Task name }` has, isn't the template's any more, and isn't reported; nor is one you've begun filling in. Nor does it look at a page's shape: a how-to with its steps taken out, and none written, has nothing left of the template to report. Read a page through before publishing it.
 
-To turn it off, or make it a warning, set its level in [`[checks]`](../content-model/checks.md#19-checks):
+To turn either check off, or make it a warning, set its level in [`[checks]`](../content-model/checks.md#19-checks):
 
 ```toml
 [checks]
 template-placeholder-left = "warning"
+template-section-empty = "off"
 ```
 
 ## See also
@@ -148,3 +152,4 @@ template-placeholder-left = "warning"
 - [`ascribe templates`](../examples/sources.md#cli-templates-eject): `list` and `eject`, and their options.
 - [Page types](../content-model/index.md#41-page-types): a type's `template`, `guide`, and `purpose`.
 - [ASC195 `template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195): what the check reports.
+- [ASC229 `template-section-empty`](../checks/diagnostics/content-checks.md#ASC229): what it reports of a section left empty.

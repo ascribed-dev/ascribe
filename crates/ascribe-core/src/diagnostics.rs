@@ -711,6 +711,9 @@ pub const MEMO_OUTDATED: DiagnosticSlug = DiagnosticSlug("memo-outdated");
 /// `ASC228`, advice, file level: a content check (area `project`).
 pub const MEMO_LONG: DiagnosticSlug = DiagnosticSlug("memo-long");
 
+/// `ASC229`, advice, file level: a content check (area `pages`).
+pub const TEMPLATE_SECTION_EMPTY: DiagnosticSlug = DiagnosticSlug("template-section-empty");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -937,6 +940,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     MEMO_DETACHED,
     MEMO_OUTDATED,
     MEMO_LONG,
+    TEMPLATE_SECTION_EMPTY,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -985,6 +989,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     MEMO_EMPTY,
     MEMO_OUTDATED,
     MEMO_LONG,
+    TEMPLATE_SECTION_EMPTY,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

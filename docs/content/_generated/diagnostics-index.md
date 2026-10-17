@@ -225,3 +225,4 @@
 | [ASC226](../checks/diagnostics/pages.md#ASC226) | `memo-detached` | Warning | File | choose |
 | [ASC227](../checks/diagnostics/content-checks.md#ASC227) | `memo-outdated` | Advice | File | write |
 | [ASC228](../checks/diagnostics/content-checks.md#ASC228) | `memo-long` | Advice | File | write |
+| [ASC229](../checks/diagnostics/content-checks.md#ASC229) | `template-section-empty` | Advice | File | write |

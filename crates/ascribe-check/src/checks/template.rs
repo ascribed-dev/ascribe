@@ -1,5 +1,7 @@
 //! `template-placeholder-left`: what a page of a type with a template still
-//! has of the template's placeholders, never filled in.
+//! has of the template's placeholders, never filled in; and
+//! `template-section-empty`: a section the template gives only memos that
+//! the page still leaves empty.
 //!
 //! The template and the page are each read as text, block by block: a
 //! paragraph, a heading, or a table's cell is one piece of text, with
@@ -17,15 +19,25 @@
 //! aren't blocks with text, so a page that keeps them isn't reported: what
 //! to do with a memo is the writer's to decide.
 //!
+//! A section of the template that has nothing under its heading, before the
+//! next heading, but memos and directives bound to its heading, such as
+//! `@id`, has no placeholder to leave, so a page that leaves it unfilled
+//! builds a heading with nothing under it. A page's section with the same
+//! heading, at the same level and with the same text, is empty when nothing
+//! in its whole extent, its subsections included, is more than a memo, a
+//! directive bound to a heading, or a subsection's heading: a `##` heading
+//! followed directly by a `###` section with text in it is filled (decision
+//! #558).
+//!
 //! The template is read once a project, through its [`FileSystem`]
 //! (`Project::template`), and a template that can't be read is the content
 //! model's error (`model-type-template`), so here it's only not looked at.
 //!
 //! [`FileSystem`]: ascribe_resolve::FileSystem
 
-use ascribe_core::{Issue, Location, Span, diagnostics};
+use ascribe_core::{DiagnosticSlug, Issue, Location, Span, diagnostics};
 use ascribe_model::{ContentModel, TYPE_KEY};
-use ascribe_syntax::{Block, BlockKind, Inline, InlineKind, ParseOptions, parse};
+use ascribe_syntax::{Block, BlockKind, Bound, Heading, Inline, InlineKind, ParseOptions, parse};
 use serde_yaml_ng::Value;
 
 use super::Ctx;
@@ -33,6 +45,9 @@ use crate::yaml::YamlIndex;
 
 /// The most words of a placeholder or a value a message quotes.
 const OPENING_WORDS: usize = 8;
+
+/// The directive whose blocks are memos.
+const MEMO: &str = "memo";
 
 /// A template, as the check compares a page with it.
 #[derive(Debug, Default)]
@@ -43,6 +58,9 @@ pub(crate) struct Template {
     /// Each distinct placeholder, as its pieces, in the order they're first
     /// found.
     placeholders: Vec<Vec<String>>,
+    /// Each section with only memos under its heading, as the heading's
+    /// level and text, in order.
+    memo_sections: Vec<(u8, String)>,
 }
 
 impl Template {
@@ -106,6 +124,22 @@ impl Template {
         // One that never closes runs to the end of the template.
         if let Some(pieces) = open {
             template.add_placeholder(pieces);
+        }
+        for (at, block) in doc.blocks.iter().enumerate() {
+            let BlockKind::Heading(heading) = &block.kind else {
+                continue;
+            };
+            let own: Vec<&Block> = doc.blocks[at + 1..]
+                .iter()
+                .take_while(|b| !matches!(b.kind, BlockKind::Heading(_)))
+                .collect();
+            let key = (heading.level, heading_text(text, heading));
+            if own.iter().any(|b| is_memo(b))
+                && own.iter().all(|b| is_nothing(b))
+                && !template.memo_sections.contains(&key)
+            {
+                template.memo_sections.push(key);
+            }
         }
         template
     }
@@ -279,6 +313,30 @@ fn push_text(source: &str, span: Span, value: &str, out: &mut Vec<(char, usize, 
     }
 }
 
+/// A heading's text, as a unit reads it.
+fn heading_text(source: &str, heading: &Heading) -> String {
+    Unit::finish(chars(source, &heading.inlines))
+        .chars
+        .iter()
+        .collect()
+}
+
+/// Whether `block` is a memo, a line or a container.
+fn is_memo(block: &Block) -> bool {
+    match &block.kind {
+        BlockKind::Directive(line) => line.name == MEMO,
+        BlockKind::Container(container) => container.opener.name == MEMO,
+        _ => false,
+    }
+}
+
+/// Whether `block` gives a section nothing a reader sees: a memo, or a
+/// directive bound to the section's heading, such as `@id`.
+fn is_nothing(block: &Block) -> bool {
+    is_memo(block)
+        || matches!(&block.kind, BlockKind::Directive(_)) && block.binding() == Some(Bound::Heading)
+}
+
 /// The first words of `text`, with an ellipsis when there are more.
 fn opening(text: &str) -> String {
     let words: Vec<&str> = text.split_whitespace().collect();
@@ -300,14 +358,9 @@ fn value_text(value: &Value) -> Option<String> {
 }
 
 impl Ctx<'_> {
-    /// The template of the page's type, when it has one and the check is on.
-    fn page_template(&self) -> Option<std::sync::Arc<Template>> {
-        if self
-            .model
-            .checks
-            .is_off(diagnostics::TEMPLATE_PLACEHOLDER_LEFT)
-            || self.model.is_fragment(self.file.path.as_str())
-        {
+    /// The template of the page's type, when it has one and `check` is on.
+    fn page_template(&self, check: DiagnosticSlug) -> Option<std::sync::Arc<Template>> {
+        if self.model.checks.is_off(check) || self.model.is_fragment(self.file.path.as_str()) {
             return None;
         }
         match self.page_type() {
@@ -318,7 +371,7 @@ impl Ctx<'_> {
 
     /// The frontmatter fields whose values are still the template's.
     pub(super) fn check_template_fields(&mut self, value: &Value, index: &YamlIndex) {
-        let Some(template) = self.page_template() else {
+        let Some(template) = self.page_template(diagnostics::TEMPLATE_PLACEHOLDER_LEFT) else {
             return;
         };
         for (field, expected) in &template.fields {
@@ -346,7 +399,8 @@ impl Ctx<'_> {
 
     /// The template's placeholders the page's body still has.
     pub(super) fn check_template_body(&mut self, blocks: &[Block]) {
-        let Some(template) = self.page_template() else {
+        self.check_template_sections(blocks);
+        let Some(template) = self.page_template(diagnostics::TEMPLATE_PLACEHOLDER_LEFT) else {
             return;
         };
         let source = self.file.text.clone();
@@ -363,6 +417,47 @@ impl Ctx<'_> {
                     self.location(unit.span(start, end, &source)),
                 )
                 .with_arg("placeholder", opening(&text));
+                self.report(issue);
+            }
+        }
+    }
+}
+
+impl Ctx<'_> {
+    /// The template's sections of only memos that the page has, with the
+    /// same heading, and leaves empty.
+    fn check_template_sections(&mut self, blocks: &[Block]) {
+        let Some(template) = self.page_template(diagnostics::TEMPLATE_SECTION_EMPTY) else {
+            return;
+        };
+        if template.memo_sections.is_empty() {
+            return;
+        }
+        let source = self.file.text.clone();
+        for (at, block) in blocks.iter().enumerate() {
+            let BlockKind::Heading(heading) = &block.kind else {
+                continue;
+            };
+            let text = heading_text(&source, heading);
+            if !template
+                .memo_sections
+                .contains(&(heading.level, text.clone()))
+            {
+                continue;
+            }
+            let empty = blocks[at + 1..]
+                .iter()
+                .take_while(|b| match &b.kind {
+                    BlockKind::Heading(h) => h.level > heading.level,
+                    _ => true,
+                })
+                .all(|b| matches!(b.kind, BlockKind::Heading(_)) || is_nothing(b));
+            if empty {
+                let issue = Issue::new(
+                    diagnostics::TEMPLATE_SECTION_EMPTY,
+                    self.location(heading.content),
+                )
+                .with_arg("heading", opening(&text));
                 self.report(issue);
             }
         }

@@ -1,0 +1,9 @@
+description: >-
+  A section the page leaves empty is reported whether or not it keeps the
+  template's memo: a directive bound to its heading, such as @id, is no
+  content.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-section-empty, file: troubleshooting/sync.md, line: 9, severity: advice}

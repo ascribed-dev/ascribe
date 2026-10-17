@@ -1,0 +1,8 @@
+description: >-
+  A section the page writes text in isn't reported, and neither is one whose
+  own part is only a memo when a subsection under it has text: a heading
+  followed directly by a subsection is how many pages are written.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []
