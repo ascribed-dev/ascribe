@@ -19,7 +19,7 @@ export interface Fix {
   edits: boolean;
   /**
    * How many changes its edit makes. The action that applies a page's safe
-   * fixes makes one for each fix; the problems it fixes don't come back
+   * fixes makes one or more for each fix; the problems it fixes don't come back
    * through `vscode.executeCodeActionProvider`, which drops a code action's
    * diagnostics.
    */
