@@ -45,7 +45,7 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 ### 4. Write the site's files
 
-A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar too. One command writes the four files, in the Astro project's root:
+A site needs a content collection of the built pages, a route for them, and a layout that loads the elements; this one has a sidebar too. One command writes the three files, in the Astro project's root:
 
 @available: ascribe 0.3.0
 @variant {pm=npm}:
@@ -59,7 +59,7 @@ pnpm exec ascribe-astro init
 @end
 
 @available: ascribe 0.3.0
-It writes `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/nav.ts`, and from then on they're yours to change; it never writes over a file, and if any of the four is there, it writes nothing. It builds the project first, to list its pages in the sidebar. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
+It writes `src/content.config.ts`, `src/pages/[...slug].astro`, and `src/layouts/Docs.astro`, and from then on they're yours to change; it never writes over a file, and if any of the three is there, it writes nothing. With the Ascribe project elsewhere, say where with `--project ../docs`, and with several builds in `ascribe.toml`, say which the site shows with `--build`. The sections below say what each file does, as `init` writes them for the `ascribe.toml` above.
 
 #### The collection
 
@@ -110,14 +110,16 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 #### The sidebar
 @available: ascribe 0.3.0
 
-`init` writes the site a list of its pages, by their source files under the content root, in groups:
-
-@snippet {title=src/nav.ts}: code:packages/astro/starter/src/nav.ts
-
-It writes the pages there are, the root's under **Start** and a group for each folder; reorder and relabel them as you like. The layout's `sidebar(await getCollection("docs"), { nav, entry })`, from `@ascribed/astro/content`, gives each page its entry, its address, the one Ascribe's links use, and its label, and fails the build when the list leaves out a page, names a file that isn't one, or names a page twice. So when you add a page, add it to the list too. With several projects, it lists the project the entries came from; `sidebar(entries, { nav, name: "docs" })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions) the sidebar shows that page's line, and the list is checked against every line's pages.
+@available: next
+The layout draws the sidebar from the project's [navigation](../navigation/index.md): its sections and pages in the order `ascribe.nav` gives, or the default order, so the site keeps no list of its own. `sidebar(await getCollection("docs"), { entry })`, from `@ascribed/astro/content`, gives its groups: the content root's pages under **Start**, then a group for each top section, with its nested sections in `sections`. Each page has its entry, its address, the one Ascribe's links use, and its label, its title or a shorter `nav-label`, with `formatted.label` its HTML when it has code ([`sidebar()`](reference.md#sidebar)). `neighbors(entry, entries)` gives the pages before and after this one in the same order, for the links at the page's foot ([previous and next](reference.md#neighbors)).
 
 @available: next
-Leave `nav` out, and delete `src/nav.ts`, and the sidebar is the project's [navigation](../navigation/index.md) instead: its sections and pages in the order `ascribe.nav` gives, or the default order, with no list for the site to keep. `sidebar(await getCollection("docs"), { entry })` is what `examples/astro-site` calls. Each group is a section, with its nested sections in `sections`, and each page's `label` is its title, with `formatted.label` its HTML when the title has code ([`sidebar()`](reference.md#sidebar)).
+With several projects, the sidebar lists the project the entries came from; `sidebar(entries, { name: "docs", entry })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions), the sidebar shows that page's line.
+
+@available: next
+To change the order or a label, write `ascribe.nav`, or drag the pages in the editor: [Put your pages in order](../navigation/order.md).
+
+A site can keep a list of its own instead, such as the `src/nav.ts` that `init` wrote in 0.3, passed as `sidebar(entries, { nav, entry })`. It keeps working: the sidebar shows the list's groups in its order, and the build fails when the list leaves out a page, names a file that isn't one, or names a page twice. To move it over to the project's navigation, see [Move a site's own list over](../navigation/order.md#own-list).
 
 ### 5. Build
 

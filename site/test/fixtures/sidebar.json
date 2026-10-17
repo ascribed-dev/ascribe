@@ -191,6 +191,10 @@
       {
         "href": "/docs/navigation/",
         "label": "Navigation"
+      },
+      {
+        "href": "/docs/navigation/order/",
+        "label": "Put your pages in order"
       }
     ]
   },
