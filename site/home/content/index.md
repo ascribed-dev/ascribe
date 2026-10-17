@@ -88,7 +88,6 @@ Then [read getting started]({site}/go/getting-started/): it sets up a project, w
 ## Where it's going
 
 - **Search.** Find where the pages say something as readers see it, through phrases, fragments, and variants, and edit it at its source.
-- **Notes.** Why a page is written the way it is, kept beside it for the people and agents who change it, and never shown to readers.
 
 ## Early, and open source
 
