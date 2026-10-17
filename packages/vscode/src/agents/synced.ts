@@ -13,7 +13,7 @@ export const SYNCED_KEY = "ascribe.agentsSynced";
  * The folders of a workspace folder VS Code's chat loads skills from, the
  * two `ascribe agents sync` writes among them.
  */
-export const SKILL_FOLDERS = [".github/skills", ".claude/skills", ".agents/skills"] as const;
+const SKILL_FOLDERS = [".github/skills", ".claude/skills", ".agents/skills"] as const;
 
 /** Where a synced copy of the skill would be in a workspace folder, one per folder chat reads. */
 export function syncedSkillPaths(workspaceFolder: string): string[] {
