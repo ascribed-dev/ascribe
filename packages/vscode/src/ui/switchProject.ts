@@ -14,7 +14,7 @@ export interface ProjectChooser {
 }
 
 /** An item of Switch Project, as the tests see it. */
-export interface SwitchProjectItem {
+interface SwitchProjectItem {
   folder: string;
   label: string;
   description: string;
