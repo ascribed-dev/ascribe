@@ -1442,6 +1442,9 @@ fn quill_s_llms_txt_follows_its_navigation_and_keeps_each_title() {
         "site = \"https://docs.quill.dev\"\nagents = true",
     );
     write(&config, &text);
+    let keys = dir.join("docs/keys.md");
+    let page = read(&keys).replace("title: API keys\n", "title: API keys\nnav-label: Keys\n");
+    write(&keys, &page);
     run(
         dir,
         &["build", "--build", "site", "--emit", "site,plain"],

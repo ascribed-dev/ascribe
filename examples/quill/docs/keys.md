@@ -1,7 +1,6 @@
 ---
 type: page
 title: API keys
-nav-label: Keys
 description: Create and rotate the API keys the Quill agent uses.
 ---
 
