@@ -249,7 +249,7 @@ export type ThisPageNode =
   | { kind: "row"; row: AboutRow };
 
 /** A row of About or Health: a label and what it says, and where it goes. */
-export interface AboutRow {
+interface AboutRow {
   label: string;
   value: string;
   tooltip: string;
@@ -260,7 +260,7 @@ export interface AboutRow {
 }
 
 /** Where a row goes: a place in a file, or a command. */
-export type RowTarget =
+type RowTarget =
   | { kind: "place"; uri: string; range: LspRange }
   | { kind: "command"; command: string; title: string };
 
