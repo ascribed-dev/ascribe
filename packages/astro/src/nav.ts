@@ -150,10 +150,14 @@ export function navigationGroups<E extends NavEntry>(
     };
   };
   const { root } = navigation;
-  const top = { ...group(root, undefined), sections: [] };
+  // A top section's own page beside its folder is in that section's group.
+  const top = {
+    ...group({ ...root, pages: root.pages.filter((nav) => !beside(root, nav)) }, undefined),
+    sections: [],
+  };
   const groups = [
     ...(top.pages.length === 0 ? [] : [top]),
-    ...root.sections.map((section) => group(section, root)),
+    ...root.sections.map((section) => group(section, undefined)),
   ];
   if (missing.length > 0) {
     throw new Error(
@@ -167,8 +171,10 @@ export function navigationGroups<E extends NavEntry>(
  * The navigation's pages in reading order, depth first: a section's own
  * page, then its pages, each nested section whose own page is beside its
  * folder right after that page, with its pages and nested sections, and the
- * other nested sections after them, each from its own page. Previous and
- * next follow it, as an archive and `llms.txt` do.
+ * other nested sections after them, each from its own page. The content
+ * root reads as the sidebar groups it: its own page and its pages that
+ * aren't beside a folder, then each top section from its own page. Previous
+ * and next follow it, as an archive and `llms.txt` do.
  */
 export function readingOrder(navigation: Navigation): NavPage[] {
   const out: NavPage[] = [];
@@ -188,8 +194,16 @@ export function readingOrder(navigation: Navigation): NavPage[] {
       if (!done[at]) read(nested, true);
     });
   };
-  read(navigation.root, true);
+  const { root } = navigation;
+  if (root.page !== undefined) out.push(root.page);
+  out.push(...root.pages.filter((nav) => !beside(root, nav)));
+  for (const section of root.sections) read(section, true);
   return out;
+}
+
+/** Whether `page` is the own page of one of `section`'s nested sections. */
+function beside(section: NavSection, page: NavPage): boolean {
+  return section.sections.some((nested) => nested.page?.source === page.source);
 }
 
 /** A page's previous and next, each with its entry, its address, and its label. */

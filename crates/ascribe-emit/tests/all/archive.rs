@@ -323,9 +323,32 @@ fn sections_are_named_by_their_own_page_and_the_contents_page_moves_aside_for_th
     assert!(all.contains("<a href=\"./index.html\">home</a>"), "{all}");
 }
 
-/// The source paths of a section of `_ascribe/nav.json` in reading order:
-/// its own page, then its pages, each nested section whose own page is one
-/// of them right after it, then the other nested sections.
+/// The source paths of `_ascribe/nav.json`'s pages as `sidebar()` in
+/// `@ascribed/astro` draws them: the root's own page and its pages that
+/// aren't beside a top folder, then each top section's group.
+fn sidebar_order(nav: &serde_json::Value) -> Vec<String> {
+    let root = &nav["root"];
+    let source = |page: &serde_json::Value| page["source"].as_str().map(str::to_owned);
+    let sections = root["sections"].as_array().cloned().unwrap_or_default();
+    let beside: Vec<String> = sections.iter().filter_map(|s| source(&s["page"])).collect();
+    let mut out: Vec<String> = source(&root["page"]).into_iter().collect();
+    out.extend(
+        root["pages"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(source)
+            .filter(|page| !beside.contains(page)),
+    );
+    for section in &sections {
+        reading_order(section, true, &mut out);
+    }
+    out
+}
+
+/// The source paths of a section of `_ascribe/nav.json` in its group's
+/// order: its own page, then its pages, each nested section whose own page
+/// is one of them right after it, then the other nested sections.
 fn reading_order(section: &serde_json::Value, own: bool, out: &mut Vec<String>) {
     let source = |page: &serde_json::Value| page["source"].as_str().map(str::to_owned);
     if own && let Some(page) = source(&section["page"]) {
@@ -373,7 +396,9 @@ fn an_archive_lists_the_pages_its_line_s_site_sidebar_lists_in_its_order() {
             ("guide/b.md", "---\ntitle: B\n---\n\nText.\n"),
             ("guide/deep.md", "---\ntitle: Deep\n---\n\nText.\n"),
             ("guide/deep/x.md", "---\ntitle: X\n---\n\nText.\n"),
+            ("ref.md", "---\ntitle: Reference\n---\n\nText.\n"),
             ("ref/z.md", "---\ntitle: Z\n---\n\nText.\n"),
+            ("zfaq.md", "---\ntitle: Zebra FAQ\n---\n\nText.\n"),
         ],
         &[("ascribe.nav", nav)],
     );
@@ -382,6 +407,8 @@ fn an_archive_lists_the_pages_its_line_s_site_sidebar_lists_in_its_order() {
             "app 1.0",
             vec![
                 "index.md",
+                "zfaq.md",
+                "ref.md",
                 "ref/z.md",
                 "guide/index.md",
                 "guide/b.md",
@@ -393,6 +420,8 @@ fn an_archive_lists_the_pages_its_line_s_site_sidebar_lists_in_its_order() {
             "app 2.0",
             vec![
                 "index.md",
+                "zfaq.md",
+                "ref.md",
                 "ref/z.md",
                 "guide/index.md",
                 "guide/b.md",
@@ -427,9 +456,11 @@ fn an_archive_lists_the_pages_its_line_s_site_sidebar_lists_in_its_order() {
                 Contents::Copy(_) => None,
             })
             .expect("the site's navigation");
-        let mut sidebar = Vec::new();
-        reading_order(&nav_json["root"], true, &mut sidebar);
-        assert_eq!(sidebar, expected, "the site's sidebar of {line:?}");
+        assert_eq!(
+            sidebar_order(&nav_json),
+            expected,
+            "the site's sidebar of {line:?}"
+        );
         // The archive's sidebar, on its contents page.
         let archive = archive(
             &project,
@@ -455,6 +486,18 @@ fn an_archive_lists_the_pages_its_line_s_site_sidebar_lists_in_its_order() {
         assert!(
             side.contains("<li><a href=\"./guide/deep.html\">Deep</a>\n<ul>\n<li><a href=\"./guide/deep/x.html\">X</a></li>\n</ul>\n</li>"),
             "the nested section in its page's place: {side}"
+        );
+        // Previous and next go down the sidebar: from the root's last page
+        // into the first group, `ref.md` beside `ref/` heading it.
+        let faq = &texts["zfaq.html"];
+        assert!(
+            faq.contains("<a rel=\"next\" href=\"./ref.html\">Next: Reference</a>"),
+            "{faq}"
+        );
+        let z = &texts["ref/z.html"];
+        assert!(
+            z.contains("<a rel=\"next\" href=\"../guide/index.html\">Next: The guide</a>"),
+            "{z}"
         );
         let x = &texts["guide/deep/x.html"];
         assert!(

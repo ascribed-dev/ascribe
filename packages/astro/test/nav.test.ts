@@ -185,6 +185,48 @@ describe("navigationGroups", () => {
     expect(nested?.pages.map((page) => page.href)).toEqual(["/checks/diagnostics/pages"]);
   });
 
+  it("puts a page beside a top folder in that folder's group, as reading order does", () => {
+    // `guides.md` beside `guides/`, and `zfaq.md` after it among the root's pages.
+    const beside: Navigation = {
+      version: 1,
+      root: {
+        folder: "",
+        label: "Start",
+        page: { source: "index.md", label: "Home" },
+        pages: [
+          { source: "guides.md", label: "Guides" },
+          { source: "zfaq.md", label: "Zebra FAQ" },
+        ],
+        sections: [
+          {
+            folder: "guides/",
+            label: "Guides",
+            page: { source: "guides.md", label: "Guides" },
+            pages: [{ source: "guides/alpha.md", label: "Alpha" }],
+            sections: [],
+          },
+        ],
+      },
+    };
+    const entries = ["index.md", "guides.md", "zfaq.md", "guides/alpha.md"].map((file) => ({
+      id: entryId(file),
+      filePath: file,
+    }));
+    const drawn = navigationGroups(
+      beside,
+      entries,
+      (entry) => `/${entry.id}`,
+      (entry) => entry.filePath,
+    );
+    expect(drawn.map((group) => [group.label, group.pages.map((page) => page.label)])).toEqual([
+      ["Start", ["Home", "Zebra FAQ"]],
+      ["Guides", ["Guides", "Alpha"]],
+    ]);
+    expect(readingOrder(beside).map((page) => page.label)).toEqual(
+      drawn.flatMap((group) => group.pages.map((page) => page.label)),
+    );
+  });
+
   it("leaves the root out when it has no pages", () => {
     const empty: Navigation = {
       version: 1,

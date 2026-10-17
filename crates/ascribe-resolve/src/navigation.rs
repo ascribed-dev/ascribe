@@ -107,11 +107,31 @@ impl<'a> SharedSection<'a> {
     /// Its pages in reading order, depth first: its own page, then its
     /// pages, each nested section whose own page is beside its folder right
     /// after that page, with its pages and nested sections, and the other
-    /// nested sections after them, each from its own page.
+    /// nested sections after them, each from its own page. The content root
+    /// reads as a sidebar groups it: its own page and its pages that aren't
+    /// beside a folder, then each top section from its own page.
     pub fn reading_order(&self) -> Vec<&NavPage<'a>> {
         let mut out = Vec::new();
-        self.read(true, &mut out);
+        if self.folder.is_empty() {
+            out.extend(&self.page);
+            out.extend(self.pages.iter().filter(|p| !self.is_beside(p)));
+            for section in &self.sections {
+                section.read(true, &mut out);
+            }
+        } else {
+            self.read(true, &mut out);
+        }
         out
+    }
+
+    /// Whether `page` is the own page of one of its nested sections, beside
+    /// that section's folder.
+    pub fn is_beside(&self, page: &NavPage<'_>) -> bool {
+        self.sections.iter().any(|s| {
+            s.page
+                .as_ref()
+                .is_some_and(|p| p.page.path == page.page.path)
+        })
     }
 
     fn read<'s>(&'s self, own: bool, out: &mut Vec<&'s NavPage<'a>>) {

@@ -70,7 +70,7 @@ A nested section whose own page is beside its folder, such as `checks/diagnostic
 
 ## 3. Reading order
 
-The pages in reading order are a section's `page`, then its `pages`, each followed by the nested section it places, then the nested sections no page places, from `root`, depth first, each page once. It's the order of previous and next in `neighbors()` and in an archive.
+The pages in reading order are a section's `page`, then its `pages`, each followed by the nested section it places, then the nested sections no page places, from `root`, depth first, each page once. At `root`, a page that's a top section's `page` is read with that section: `root`'s `page` and its other `pages` come first, then each of its `sections` from its `page`, so the order is a sidebar's groups read one after another. It's the order of previous and next in `neighbors()` and in an archive.
 
 ## 4. What a reader can rely on
 

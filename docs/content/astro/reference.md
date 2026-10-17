@@ -239,7 +239,7 @@ It returns the groups in order. The content root's pages are the first group, la
 | `formatted.label` | The label as HTML, when it's a title with code (`inline = "code"`). |
 | `folder` | The section's folder, from the content root. Absent in a site's own list. |
 | `page` | The section's own page. |
-| `pages` | Its pages in order, each `{ entry, href, label, formatted? }`: the collection entry, its address, the one Ascribe's links use, and its label. A section's `index.md` is first among them; an own page beside the folder, such as `checks/diagnostics.md` for `checks/diagnostics/`, is among the parent's pages instead, and the nested group sits right after it. |
+| `pages` | Its pages in order, each `{ entry, href, label, formatted? }`: the collection entry, its address, the one Ascribe's links use, and its label. A section's `index.md` is first among them; an own page beside the folder, such as `checks/diagnostics.md` for `checks/diagnostics/`, is among the parent's pages instead, and the nested group sits right after it. A top section's own page beside its folder, such as `guides.md` for `guides/`, is first in that section's group, not in the root's. |
 | `sections` | Its nested sections, as groups, in order. Empty in a site's own list. A layout that draws one level leaves them out. |
 
 The build fails when the navigation names a page the collection has no entry for, which happens only when the site output is from another build than the collection; build again.
