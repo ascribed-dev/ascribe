@@ -15,7 +15,6 @@ src/assets/logo.svg         the header's mark and wordmark, generated (../design
 src/content.config.ts       a collection per project, `docs`, `home`, and `demo`, each with the schema ascribe build generates, and `changelog`
 src/changelog.ts            the changelog's collection, how its links and headings are pointed, and how its entries are collapsed and grouped
 src/demo.ts                 where the landing page's demonstration draws demo/'s page: inside its widget, after the source
-src/nav.ts                  the docs' sidebar: every page, grouped and in order
 src/site.ts                 the site's name, repository, the docs' route, and the site's own pages left out of the sitemap
 src/pages/[...slug].astro   a route per page of home/, at the root, through render() so its images are Astro's, with demo/'s page drawn in each demonstration (src/components/Demonstrations.astro)
 src/pages/docs/[...slug].astro  a route per docs page: the docs' base path plus its entry id
@@ -28,7 +27,8 @@ src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
 scripts/screenshot.ts       the review picture: a pull request on the docs in astro dev (see Screenshots)
-test/                       navigation, links and anchors, the projects, the demonstration, content negotiation, the sitemap and robots.txt, and the built site in Chromium
+test/                       links and anchors, the projects, the demonstration, content negotiation, the sitemap and robots.txt, and the built site in Chromium
+test/fixtures/sidebar.json  the docs' sidebar as the site publishes it
 test/fixtures/crawled/      a small built site with a page that says noindex, for the sitemap's rules
 ```
 
@@ -69,13 +69,12 @@ npm run typecheck
 npm test              # after a build
 ```
 
-- `test/nav.test.ts`: every published docs page is in `src/nav.ts`, and it names nothing else.
 - `test/projects.test.ts`: the docs' route is their base path; every permalink `home/`'s pages link to is one the docs publish, by `ascribe permalinks verify`, which also fails on a retired name; and the landing page's install commands are getting started's.
 - `test/negotiation.test.ts`: the edge function answers a docs page asked for as Markdown with its `.md`, passing on the `.md` file's `x-robots-tag` and `link`, and a page of `home/`, which has none, with the page.
 - `test/changelog.test.ts`: the changelog's rules for links, anchors, and collapsed entries, on Markdown made in the test, with no build.
 - `test/links.test.ts`: every link and anchor between the built pages lands, the changelog's included.
 - `test/crawlers.test.ts`: the sitemap lists every built page that doesn't say `noindex`, other than a permalink's forwarding page, the 404 page, and `unindexed` in `src/site.ts`, and nothing else; a page that says `noindex` is in neither the sitemap nor `llms.txt`; `robots.txt` names the sitemap; and the changelog has its canonical link. No docs page is marked `listing: unlisted`, so the rules are also run on `test/fixtures/crawled/`, which has such a page.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the footer, on every kind of page, with its links to Credits, the changelog, the license, and the repository, and the changelog's link to a docs page, its entries opening one at a time and all at once, its area counts, Behavior changes only, and its contents, beside it and, at phone width, above it; Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's; and Credits, from the footer and the landing page, with comrak's release and no sideways scroll at phone width.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the landing page, its one heading in the hero, and its link to getting started; the favicons, touch icon, and social card resolve, and the card's address is absolute; each page outside the docs names its own card, which is served; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar, group by group and page by page, against `test/fixtures/sidebar.json`; search, with the network blocked; the edit link; the 404 page; the menu at phone width; the footer, on every kind of page, with its links to Credits, the changelog, the license, and the repository, and the changelog's link to a docs page, its entries opening one at a time and all at once, its area counts, Behavior changes only, and its contents, beside it and, at phone width, above it; Why Ascribe, from the header and the landing page, with its examples, its marks, its link to the comparison, and its screenshots, each the reader's scheme's; and Credits, from the footer and the landing page, with comrak's release and no sideways scroll at phone width.
 
 ## Addresses
 
@@ -83,14 +82,7 @@ A docs page's address is `/docs/` and its file's path under `docs/content/`, so 
 
 ## Navigation
 
-Ascribe's content model has no page order or grouping, so the site lists its pages in `src/nav.ts`, by source file, and the test keeps the list complete. A page added to `docs/content/` fails `npm test` until it's in the list.
-
-For the content model to give a site its navigation, it would need:
-
-- **an order and a group for each page**, either in `ascribe.toml` (a list of groups, each a label and its pages' files) or in each page's frontmatter (a group and a weight);
-- **checking**: `ascribe check` reporting a published page that's in no group, and a group naming a file that isn't a page, which is what the test does now;
-- **the result in the outputs**: the groups, in order, with each page's title and route, in the JSON output and as a module the site can import, so a layout renders the sidebar and previous and next links without its own list;
-- **a label for a page in the navigation**, where its title is too long (`ascribe.toml reference`).
+The docs' sidebar is their navigation: `../docs/ascribe.nav` orders the sections, and the pages where the default order isn't the site's, and labels the sections whose own page's title isn't the sidebar's ([Put your pages in order](https://ascribed-dev.com/docs/navigation/order/)). `src/components/Sidebar.astro` draws it with `sidebar()` from `@ascribed/astro/content`, with a nested section's pages right after its own page. A page added to `docs/content/` is in the sidebar where the default order puts it, and `ascribe check` reports a name in `ascribe.nav` that isn't a page. `test/e2e.test.ts` holds the published sidebar to `test/fixtures/sidebar.json`, so adding, moving, or relabeling a page changes the fixture with it.
 
 ## The site's own pages
 

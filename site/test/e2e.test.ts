@@ -5,7 +5,7 @@
 // without a script, and Why Ascribe, with its screenshots.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { launchChromium, requireBuild, serve, siteAddress, siteDir } from "./built.ts";
 
@@ -345,6 +345,26 @@ test("the sidebar lists the pages and marks the current one", async () => {
   const current = page.locator('#sidebar a[aria-current="page"]');
   expect(await current.textContent()).toContain("Command reference");
   expect(await page.locator("#sidebar a").count()).toBeGreaterThanOrEqual(13);
+  await page.close();
+});
+
+// The sidebar is ../docs/ascribe.nav's order over the docs' pages, held to
+// test/fixtures/sidebar.json group by group and page by page. A page added,
+// moved, or relabeled changes the fixture with it.
+test("the sidebar is the docs' navigation, entry by entry", async () => {
+  const fixture = path.join(siteDir, "test", "fixtures", "sidebar.json");
+  const page = await open("/docs/");
+  const groups = await page.evaluate(() =>
+    [...document.querySelectorAll("#sidebar section")].map((section) => ({
+      label: section.querySelector("h2")?.textContent ?? "",
+      pages: [...section.querySelectorAll("li")].map((li) => ({
+        href: li.querySelector("a")?.getAttribute("href") ?? "",
+        label: li.textContent?.trim() ?? "",
+        ...(li.classList.contains("nested") ? { nested: true } : {}),
+      })),
+    })),
+  );
+  expect(groups).toEqual(JSON.parse(readFileSync(fixture, "utf8")));
   await page.close();
 });
 
