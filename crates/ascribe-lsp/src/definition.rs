@@ -167,9 +167,8 @@ impl Entry<'_> {
 /// The span of an entry in the model's text: a phrase's key, the header of
 /// the table that declares a feature, glossary term, dimension, note type,
 /// widget, build, or content type, or a dimension value's text inside its
-/// quotes. The
-/// model keeps no spans, so this reads the text; it finds entries written as
-/// tables and keys, which is how `ascribe.toml` declares them.
+/// quotes. The model keeps no spans, so this reads the text; it finds entries
+/// written as tables and keys, which is how `ascribe.toml` declares them.
 pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
     let own_table = entry.table();
     // A content type declared only through its nested tables,

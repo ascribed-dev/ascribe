@@ -21,6 +21,7 @@ import type { ContextResult, InventoryResult, LspRange, PageResult } from "../sh
 import { insertPlan, LastEditors } from "./insertAt.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
 import {
+  blocksMove,
   modelChildren,
   modelDeclaration,
   modelLook,
@@ -704,11 +705,13 @@ export class SidebarViews implements vscode.Disposable {
     const content = this.inventory?.contentUri;
     if (!content) return undefined;
     const target = contentFile(content, to);
-    try {
-      await vscode.workspace.fs.stat(target);
-      return `${to} is there already.`;
-    } catch {
-      // Nothing's there: it can move.
+    if (blocksMove(from, to)) {
+      try {
+        await vscode.workspace.fs.stat(target);
+        return `${to} is there already.`;
+      } catch {
+        // Nothing's there: it can move.
+      }
     }
     const edit = new vscode.WorkspaceEdit();
     edit.renameFile(contentFile(content, from), target, { overwrite: false });

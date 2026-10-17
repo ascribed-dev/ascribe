@@ -7,6 +7,7 @@ import type {
   PageResult,
 } from "../../src/shapes.js";
 import {
+  blocksMove,
   contentPathOf,
   leftOut,
   modelChildren,
@@ -338,6 +339,15 @@ describe("Rename or Move… on a page", () => {
     expect(newPathProblem("keys.md", "/keys2.md")).toMatch(/from the content root/);
     expect(newPathProblem("keys.md", "../keys2.md")).toMatch(/from the content root/);
     expect(newPathProblem("keys.md", "guides//keys.md")).toMatch(/from the content root/);
+    expect(newPathProblem("keys.md", "guides\\keys.md")).toMatch(/from the content root/);
+    expect(newPathProblem("keys.md", "Keys.md")).toBeUndefined();
+  });
+
+  it("lets a rename that changes only case past the file it finds there", () => {
+    expect(blocksMove("keys.md", "Keys.md")).toBe(false);
+    expect(blocksMove("guides/keys.md", "Guides/KEYS.md")).toBe(false);
+    expect(blocksMove("keys.md", "guides/keys.md")).toBe(true);
+    expect(blocksMove("keys.md", "keys2.md")).toBe(true);
   });
 });
 

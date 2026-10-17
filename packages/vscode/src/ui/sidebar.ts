@@ -388,11 +388,23 @@ export function newPathProblem(from: string, to: string): string | undefined {
   if (!path.endsWith(".md")) return "A page's or fragment's path ends in .md.";
   if (
     path.startsWith("/") ||
+    path.includes("\\") ||
     path.split("/").some((part) => part === "" || part === ".." || part === ".")
   ) {
     return "Enter a path from the content root, such as guides/install.md.";
   }
   return undefined;
+}
+
+/**
+ * Whether a file already at `to` keeps the one at `from` from moving there.
+ * It doesn't when the two paths differ only in case: on a case-insensitive
+ * file system the file found at `to` is the one being renamed, and on a
+ * case-sensitive one a different file there still stops the move, which
+ * doesn't overwrite.
+ */
+export function blocksMove(from: string, to: string): boolean {
+  return from.toLowerCase() !== to.toLowerCase();
 }
 
 /** Whether an item can be dragged: any section but the root, and any page but a section's own. */
