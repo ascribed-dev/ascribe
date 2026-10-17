@@ -2512,7 +2512,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/553"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The editor's views: a Review view of the changed pages"
     },
     {
@@ -2553,7 +2553,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The editor's views: which pages show a code file, and a page's safe fixes in one action"
     },
     {
@@ -2633,7 +2633,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Memos: memo files in the editor"
     },
     {
@@ -2927,8 +2927,22 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Templates: say something about a section a page leaves empty"
+    },
+    {
+      "content": {
+        "body": "Follow-up from #528 / #553. The phase file ([phase-2-review.md](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/editor-ui/phase-2-review.md), \"The view\") says choosing a removed page in the Review view opens the preview's **As it was**. The preview can't show a page with no file today: `ascribe/preview` needs the page's file, and a removed page has none ([reported on #528](https://github.com/ascribed-dev/ascribe/issues/528#issuecomment-6226383211)). #553 opens the removed page's source diff instead.\n\nDone looks like: choosing a removed page in the Review view (and in Changed Pages) opens the preview showing the page as it was at the base, which needs a path through `crates/ascribe-lsp/src/preview.rs` and the webview for a page known only at the base. The editor page's Review view section and its integration test change to match.",
+        "number": 559,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The editor's views: a removed page opens the preview's As it was",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/559"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBY_Is",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "The editor's views: a removed page opens the preview's As it was"
     }
   ]
 }
