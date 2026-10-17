@@ -2599,7 +2599,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/568"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The editor's views: This page, whole"
     },
     {
@@ -2680,8 +2680,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/569"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Memos: Ascribe's docs have a guide to memos and use them"
     },
     {
@@ -2981,6 +2984,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "The editor's views: the safe-fixes-on-save integration test fails intermittently"
+    },
+    {
+      "content": {
+        "body": "Follow-up from the review of #568 (E4, This page whole). Two rows in `crates/ascribe-lsp/src/page_rows.rs` repeat a check's decision rather than sharing it, and can disagree with it:\n\n1. **Review** warns \"overdue\" whenever the review date is before today, without looking at `checks.is_off(REVIEW_OVERDUE)`. A project that turns `review-overdue` off still gets the warning icon. \"Overdue\" stays true there; the warning shouldn't show.\n2. **Description** shows \"missing\" with a warning whenever the page's own frontmatter has no non-empty string. `page-description-missing` is narrower: it says nothing for a field with a `default` (the page has the default's description), for a `required` field (that's `frontmatter-missing-field`), or for a non-string value (`frontmatter-type-mismatch`). So a type whose description has a default warns \"missing\" on every page that leans on it, and the docs' \"when the page leaves it empty\" doesn't hold.\n\nWhat fixes both: have each row get its answer from the check's own code, or from a function that code shares, rather than a copy of its condition. The Description row should measure the default when there is one, and keep \"missing\" for where the check reports it. The Review row should warn only when `review-overdue` is on. Extend `crates/ascribe-cli/tests/all/page_parity.rs` with a project that turns the check off and a type whose description has a default.",
+        "number": 570,
+        "repository": "ascribed-dev/ascribe",
+        "title": "This page's Description and Review rows can warn where their checks stay silent",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/570"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBaKFk",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "This page's Description and Review rows can warn where their checks stay silent"
     }
   ]
 }
