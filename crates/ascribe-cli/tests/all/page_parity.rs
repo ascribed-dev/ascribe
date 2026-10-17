@@ -3,8 +3,9 @@
 //! its listing is what `pages.json` writes for it in `ascribe build`, its
 //! review warns exactly where `ascribe check` reports `review-overdue`, and
 //! its description is missing exactly where it reports
-//! `page-description-missing`, for projects made here and for
-//! `examples/quill`.
+//! `page-description-missing` and too long exactly where it reports
+//! `description-too-long`, on the page or on the default it leaves the
+//! field to, for projects made here and for `examples/quill`.
 //!
 //! The server runs as a real process over stdio, as an editor starts it,
 //! with `ASCRIBE_TODAY` set as `ascribe check` has it. `page-size`'s limit
@@ -240,6 +241,8 @@ struct Said {
     measured: usize,
     /// Pages whose description is missing.
     missing: usize,
+    /// Pages whose description warns that it's too long.
+    long: usize,
 }
 
 /// Compares This page with `ascribe check` and `ascribe build` for every
@@ -263,6 +266,9 @@ fn parity(root: &Path, builds: bool) -> Said {
     let out = root.join(&model.project.output_dir);
     let content = root.join(&model.project.content_root);
     let checked = check(root);
+    let on_default = checked
+        .get("ascribe.toml")
+        .is_some_and(|found| found.iter().any(|d| d["slug"] == "description-too-long"));
     let mut server = Server::start(root);
     let mut said = Said::default();
     let mut pages: Vec<PathBuf> = Vec::new();
@@ -344,6 +350,20 @@ fn parity(root: &Path, builds: bool) -> Said {
         );
         said.measured += usize::from(description["length"].is_u64());
         said.missing += usize::from(missing);
+        // Description: too long where description-too-long is reported, on
+        // the page, or on the default in ascribe.toml when it leaves the
+        // field to it.
+        let long = description["reported"] == true;
+        let on_page = slugged("description-too-long").is_some();
+        assert!(
+            !on_page || long,
+            "{rel}: This page says {description}, and check reports {found:?}",
+        );
+        assert!(
+            !long || on_page || on_default,
+            "{rel}: This page says {description}, and check reports {found:?}",
+        );
+        said.long += usize::from(long);
     }
     server.shutdown();
     said
@@ -358,6 +378,11 @@ fn collect_pages(dir: &Path, out: &mut Vec<PathBuf>) {
             out.push(path);
         }
     }
+}
+
+/// A description over the 300 characters `description-too-long` allows.
+fn long_description() -> String {
+    "This page says a great deal about itself. ".repeat(8)
 }
 
 const MODEL: &str = r#"spec = "0.1"
@@ -395,12 +420,17 @@ availability = { filter = "cloud" }
 fn this_page_agrees_with_check_and_build_for_a_project_with_every_row() {
     let dir = tempfile::tempdir().expect("temp dir");
     let root = dir.path().canonicalize().expect("real path");
+    let long = format!(
+        "---\ntype: guide\ntitle: Long\ndescription: {}\n---\n\nSee [home](index.md).\n",
+        long_description()
+    );
     let files = [
         ("ascribe.toml", MODEL),
         (
             "docs/index.md",
             "---\ntype: guide\ntitle: Home\ndescription: The start.\n---\n\nSee [the guide](guide.md).\n",
         ),
+        ("docs/long.md", long.as_str()),
         (
             "docs/internal/rotate.md",
             "---\ntype: guide\ntitle: Rotate keys\nreview-by: 2026-10-03\navailable: self-managed\n---\n\nRotate them.\n",
@@ -421,8 +451,9 @@ fn this_page_agrees_with_check_and_build_for_a_project_with_every_row() {
         Said {
             overdue: 1,
             reported: 1,
-            measured: 1,
-            missing: 2
+            measured: 2,
+            missing: 2,
+            long: 1,
         }
     );
 }
@@ -454,12 +485,17 @@ agents = true
 
 [checks]
 review-overdue = "off"
+description-too-long = "off"
 "#;
 
 #[test]
 fn this_page_agrees_with_check_where_the_checks_stay_silent() {
     let dir = tempfile::tempdir().expect("temp dir");
     let root = dir.path().canonicalize().expect("real path");
+    let long = format!(
+        "---\ntype: guide\ntitle: Long\nsummary: {}\n---\n\nIt has one.\n",
+        long_description()
+    );
     let files = [
         ("ascribe.toml", QUIET_MODEL),
         // The default is its description, and its review is overdue with
@@ -473,6 +509,13 @@ fn this_page_agrees_with_check_where_the_checks_stay_silent() {
             "docs/own.md",
             "---\ntype: guide\ntitle: Own\nsummary: Its own.\n---\n\nIt has one.\n",
         ),
+        // An empty own description leaves it to the default.
+        (
+            "docs/empty.md",
+            "---\ntype: guide\ntitle: Empty\nsummary: \"\"\n---\n\nIt has none.\n",
+        ),
+        // Too long, with description-too-long off.
+        ("docs/long.md", long.as_str()),
         // A required description left out is frontmatter-missing-field's.
         (
             "docs/note.md",
@@ -495,8 +538,71 @@ fn this_page_agrees_with_check_where_the_checks_stay_silent() {
         Said {
             overdue: 1,
             reported: 0,
+            measured: 4,
+            missing: 0,
+            long: 0,
+        }
+    );
+}
+
+/// A project whose description field's default is too long.
+const LONG_DEFAULT_MODEL: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[types.guide.frontmatter]
+title = "string"
+summary = { type = "string?", role = "description", default = "DEFAULT" }
+
+[consumer]
+site = "https://docs.example.com"
+agents = true
+"#;
+
+#[test]
+fn this_page_warns_of_a_long_default_that_check_reports_once_in_the_model() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let root = dir.path().canonicalize().expect("real path");
+    let model = LONG_DEFAULT_MODEL.replace("DEFAULT", long_description().trim());
+    let files = [
+        ("ascribe.toml", model.as_str()),
+        // Leaves the field to the default.
+        (
+            "docs/index.md",
+            "---\ntype: guide\ntitle: Home\n---\n\nSee [the guide](guide.md).\n",
+        ),
+        // Leaves it empty, which is the same.
+        (
+            "docs/guide.md",
+            "---\ntype: guide\ntitle: Guide\nsummary: \"\"\n---\n\nSee [home](index.md).\n",
+        ),
+    ];
+    for (path, text) in files {
+        let path = root.join(path);
+        fs::create_dir_all(path.parent().unwrap()).expect("mkdir");
+        fs::write(path, text).expect("write");
+    }
+    let checked = check(&root);
+    let long: Vec<&str> = checked
+        .iter()
+        .flat_map(|(file, found)| {
+            found
+                .iter()
+                .filter(|d| d["slug"] == "description-too-long")
+                .map(move |_| file.as_str())
+        })
+        .collect();
+    assert_eq!(long, ["ascribe.toml"], "{checked:?}");
+    let said = parity(&root, true);
+    assert_eq!(
+        said,
+        Said {
+            overdue: 0,
+            reported: 0,
             measured: 2,
-            missing: 0
+            missing: 0,
+            long: 2,
         }
     );
 }

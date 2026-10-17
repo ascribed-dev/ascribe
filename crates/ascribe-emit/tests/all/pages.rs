@@ -383,6 +383,32 @@ fn llms_txt_agrees_with_the_records_with_rules_at_every_level() {
     llms_txt_agrees_with_the_records(&project);
 }
 
+#[test]
+fn a_page_that_leaves_its_description_to_the_default_has_the_default() {
+    let model = MODEL.replace(
+        "role = \"description\" }",
+        "role = \"description\", default = \"A guide to *Lantern*.\" }",
+    );
+    assert_ne!(model, MODEL, "the model's description field moved");
+    let files = [
+        ("index.md", "---\ntype: page\ntitle: Home\n---\n"),
+        (
+            "empty.md",
+            "---\ntype: page\ntitle: Empty\ndescription: \" \"\n---\n",
+        ),
+        (
+            "own.md",
+            "---\ntype: page\ntitle: Own\ndescription: Its own.\n---\n",
+        ),
+    ];
+    let project = memory_project(&model, &files);
+    let pages = records(&project)["pages"].clone();
+    assert_eq!(pages["/docs/"]["description"], "A guide to Lantern.");
+    assert_eq!(pages["/docs/empty/"]["description"], "A guide to Lantern.");
+    assert_eq!(pages["/docs/own/"]["description"], "Its own.");
+    llms_txt_agrees_with_the_records(&project);
+}
+
 fn llms_txt_agrees_with_the_records(project: &Project) {
     let records = records(project);
     let site = records["site"].as_str().expect("a site");

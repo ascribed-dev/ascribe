@@ -12,8 +12,10 @@
 //!   [`FileSystem`](ascribe_resolve::FileSystem); and
 //!   `availability-left-behind` compares each feature's versions with each
 //!   target's current line in `[releases]`; `release-line-ended` compares
-//!   each live line's `ends` with the day the check runs as; and
-//!   `crawlers-disallowed` reads `[crawlers]`.
+//!   each live line's `ends` with the day the check runs as;
+//!   `crawlers-disallowed` reads `[crawlers]`; and `description-too-long`
+//!   measures a description field's `default`, once, where `ascribe.toml`
+//!   writes it, since every page that leaves the field to it shares it.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, and `title-duplicate` and `description-duplicate`, two pages
@@ -31,8 +33,8 @@ use ascribe_core::availability::{AvailabilitySpec, Detail, Version};
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{Date, DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{
-    AvailabilityMode, CheckLevel, Checks, ContentModel, GlossaryMatch, Listing, Permission,
-    Purpose, in_line,
+    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, GlossaryMatch, Listing,
+    Permission, Purpose, in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
@@ -66,6 +68,7 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::AVAILABLE_IN_NO_LINE,
     diagnostics::RELEASE_LINE_ENDED,
     diagnostics::CRAWLERS_DISALLOWED,
+    diagnostics::DESCRIPTION_TOO_LONG,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -201,6 +204,10 @@ pub(crate) fn for_every_build(
         crawlers_disallowed(project.model(), &mut issues);
     }
 
+    if on(diagnostics::DESCRIPTION_TOO_LONG) {
+        long_default_descriptions(project, &mut issues);
+    }
+
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
         self::images(project, index, &on, &mut issues);
     }
@@ -265,6 +272,47 @@ fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
                 .with_arg("date", end.date.to_string()),
             );
         }
+    }
+}
+
+/// `description-too-long` on a description field's `default`, at the value
+/// in `ascribe.toml`: a page that leaves the field out, or empty, has the
+/// default as its description (decision #573), so it's measured as a page's
+/// own is, and reported once rather than on each such page.
+fn long_default_descriptions(project: &Project, issues: &mut Vec<Issue>) {
+    let model = project.model();
+    for ty in &model.types {
+        let Some(field) = ty.frontmatter.field_with_role(FieldRole::Description) else {
+            continue;
+        };
+        let Some(text) = field
+            .default
+            .as_ref()
+            .and_then(serde_yaml_ng::Value::as_str)
+            .and_then(|raw| ascribe_resolve::llms::description_text(model, raw))
+        else {
+            continue;
+        };
+        let length = text.chars().count();
+        if !crate::roles::description_too_long(model, length) {
+            continue;
+        }
+        let Some(span) =
+            ascribe_model::field_default_span(project.model_text(), &ty.name, &field.name)
+        else {
+            continue;
+        };
+        issues.push(
+            Issue::new(
+                diagnostics::DESCRIPTION_TOO_LONG,
+                Location::new(FileId::new(0), span),
+            )
+            .with_arg("length", length.to_string())
+            .with_arg(
+                "limit",
+                ascribe_resolve::llms::DESCRIPTION_LIMIT.to_string(),
+            ),
+        );
     }
 }
 
@@ -508,7 +556,8 @@ fn duplicate_titles(
 /// The pages of the build that share a description, ignoring case and runs
 /// of spaces: each is reported at its own description, naming the others.
 /// A description is the field the page's type marks `role =
-/// "description"`, as its line in `llms.txt` has it.
+/// "description"`, as its line in `llms.txt` has it, when the page writes
+/// it rather than leaving it to the field's default.
 fn duplicate_descriptions(
     index: &ascribe_resolve::Project,
     resolved: &[&ResolvedPage],
@@ -518,6 +567,12 @@ fn duplicate_descriptions(
     let described = resolved.iter().filter_map(|page| {
         let text = ascribe_resolve::llms::description(model, page)?;
         let field = ascribe_resolve::llms::description_field(model, page.frontmatter.as_ref())?;
+        // The pages that leave the field to its default share it by design:
+        // only a description a page writes is its own to change.
+        page.frontmatter
+            .as_ref()?
+            .get(field.name.as_str())
+            .and_then(ascribe_resolve::llms::own_description)?;
         let span = field_span(index.file(&page.path)?, &field.name)?;
         Some((*page, text, span))
     });

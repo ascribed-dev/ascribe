@@ -755,6 +755,21 @@ impl Loader<'_> {
     }
 }
 
+/// Where the content model's text `text` writes the `default` of the field
+/// `field` of the content type `ty`: the value's span, for a check that
+/// reports on it. `None` when it writes none, or doesn't parse.
+pub fn field_default_span(text: &str, ty: &str, field: &str) -> Option<Span> {
+    let root = DeTable::parse(text).ok()?;
+    let mut table = root.get_ref();
+    for key in ["types", ty, "frontmatter", field] {
+        let DeValue::Table(t) = table.get(key)?.get_ref() else {
+            return None;
+        };
+        table = t;
+    }
+    table.get("default").map(sp)
+}
+
 /// The `default` value node of a table-form entry.
 fn default_value<'a, 'i>(entry: &'a V<'i>, span: Span) -> Option<&'a V<'i>> {
     let DeValue::Table(t) = entry.get_ref() else {

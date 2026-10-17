@@ -376,7 +376,13 @@ describe("the This page view", () => {
     };
     const fullAbout: PageAbout = {
       ...about,
-      description: { field: "description", length: 312, limit: 300, range: range(3) },
+      description: {
+        field: "description",
+        length: 312,
+        limit: 300,
+        reported: true,
+        range: range(3),
+      },
       review: {
         field: "review-by",
         date: "2026-10-03",
@@ -510,12 +516,41 @@ describe("the This page view", () => {
       expect(warned(false)).toMatchObject({ value: "overdue since 3 October", warn: false });
     });
 
+    it("warn of a long description only where description-too-long reports it", () => {
+      const warned = (reported: boolean) => {
+        const roots = thisPageRoots({
+          ...full,
+          about: {
+            ...fullAbout,
+            description: {
+              field: "description",
+              length: 312,
+              limit: 300,
+              reported,
+              range: range(3),
+            },
+          },
+        });
+        return thisPageChildren(nth(roots, 0))
+          .flatMap((n) => (n.kind === "row" ? [n.row] : []))
+          .find((row) => row.label === "Description");
+      };
+      expect(warned(true)).toMatchObject({ value: "312 of 300 characters, too long", warn: true });
+      expect(warned(false)).toMatchObject({ value: "312 of 300 characters", warn: false });
+    });
+
     it("say when a review is due, and that a short description is fine", () => {
       const later = thisPageRoots({
         ...full,
         about: {
           ...fullAbout,
-          description: { field: "description", length: 120, limit: null, range: range(3) },
+          description: {
+            field: "description",
+            length: 120,
+            limit: null,
+            reported: false,
+            range: range(3),
+          },
           review: {
             field: "review-by",
             date: "2027-01-03",

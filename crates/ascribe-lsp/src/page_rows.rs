@@ -4,11 +4,12 @@
 //!
 //! Each row is taken from the code that decides the same thing for a check
 //! or an output, never from a second reading of the model: the description
-//! is measured as `description-too-long` measures it, and is missing where
-//! `page-description-missing` says so, the review date is overdue where
-//! `review-overdue` says so ([`ascribe_check::roles`]), the builds are the builds'
-//! own drops ([`ascribe_resolve::Project::dropped`]), the listing is what
-//! the page's record in `pages.json` says ([`ascribe_resolve::pages::records`]),
+//! is measured as `description-too-long` measures it, and is too long or
+//! missing where `description-too-long` or `page-description-missing` says
+//! so, the review date is overdue where `review-overdue` says so
+//! ([`ascribe_check::roles`]), the builds are the builds' own drops
+//! ([`ascribe_resolve::Project::dropped`]), the listing is what the page's
+//! record in `pages.json` says ([`ascribe_resolve::pages::records`]),
 //! the size is `page-size`'s measure ([`ascribe_check::page::markdown_size`]),
 //! the placeholders are `template-placeholder-left`'s, and a tested
 //! example's state is the one `example-stale` and `example-unobserved` read.
@@ -38,13 +39,17 @@ pub struct PageDescription {
     pub field: String,
     /// Its length in characters, as plain text on one line, as
     /// `description-too-long` measures it: the page's own, or its field's
-    /// default when it leaves the field out. `null` when it has none, which
-    /// is where `page-description-missing` reports it.
+    /// default when it leaves the field out or empty. `null` when it has
+    /// none, which is where `page-description-missing` reports it.
     pub length: Option<usize>,
     /// The most characters it has before `description-too-long` reports it;
     /// `null` when the project publishes no `llms.txt`
     /// (`[consumer] agents`), which is the only place it's too long for.
     pub limit: Option<usize>,
+    /// Whether `description-too-long` reports it: it's over `limit`, and the
+    /// project hasn't turned the check off. A default is reported where
+    /// `ascribe.toml` writes it.
+    pub reported: bool,
     /// The field's line, or the page's first line when it has none, in the
     /// negotiated position encoding.
     #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
@@ -309,8 +314,10 @@ fn published<'m>(ctx: &'m Ctx, builds: &[PageBuild]) -> Vec<&'m Build> {
 }
 
 /// The description row: the page's own description, or its field's
-/// default, measured; or "missing" where `page-description-missing` reports
-/// the page. A page that has neither has no row.
+/// default when it leaves the field out or empty, measured, and too long
+/// where `description-too-long` says so; or "missing" where
+/// `page-description-missing` reports the page. A page that has neither has
+/// no row.
 fn description(
     ctx: &Ctx,
     file: &FileIndex,
@@ -333,6 +340,7 @@ fn description(
         field: field.name.clone(),
         length,
         limit: ctx.model.consumer.agents.then_some(llms::DESCRIPTION_LIMIT),
+        reported: length.is_some_and(|length| roles::description_too_long(&ctx.model, length)),
         range: range(at),
     })
 }

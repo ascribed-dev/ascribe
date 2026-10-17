@@ -243,7 +243,7 @@
           "type": "string"
         },
         "length": {
-          "description": "Its length in characters, as plain text on one line, as\n`description-too-long` measures it: the page's own, or its field's\ndefault when it leaves the field out. `null` when it has none, which\nis where `page-description-missing` reports it.",
+          "description": "Its length in characters, as plain text on one line, as\n`description-too-long` measures it: the page's own, or its field's\ndefault when it leaves the field out or empty. `null` when it has\nnone, which is where `page-description-missing` reports it.",
           "minimum": 0,
           "type": [
             "integer",
@@ -261,12 +261,17 @@
         "range": {
           "$ref": "#/$defs/LspRange",
           "description": "The field's line, or the page's first line when it has none, in the\nnegotiated position encoding."
+        },
+        "reported": {
+          "description": "Whether `description-too-long` reports it: it's over `limit`, and the\nproject hasn't turned the check off. A default is reported where\n`ascribe.toml` writes it.",
+          "type": "boolean"
         }
       },
       "required": [
         "field",
         "length",
         "limit",
+        "reported",
         "range"
       ],
       "type": "object"

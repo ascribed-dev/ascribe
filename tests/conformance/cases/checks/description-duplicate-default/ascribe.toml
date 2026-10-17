@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description", default = "A page of the product's docs." }
+
+[builds.site]
+variants = "switch"
+availability = "badge"

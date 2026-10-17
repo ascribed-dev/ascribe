@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+# The outputs for agents, whose llms.txt has a line per page.
+[consumer]
+site = "https://docs.example.com"
+agents = true
+
+[types.page.frontmatter]
+title = "string"
+description = { type = "string?", role = "description", default = "This page explains, in more detail than anyone reading an index needs, every way the product can be installed, configured, upgraded, and removed, on each platform it supports, with notes on the versions where each option changed, and a long list of the problems people have run into along the way and what they did about them." }
