@@ -122,8 +122,8 @@ pub use index::{
 pub use layout::Layout;
 pub use links::{encode_destination, link_path, named_headings};
 pub use memos::{
-    Committed, Invalid, Key, MEMOS_FOLDER, MemoFile, MemoProblem, MemoState, MemoStore, Placement,
-    folder_in_content, place,
+    Committed, Invalid, Key, MEMOS_FOLDER, MemoFile, MemoProblem, MemoState, MemoStore,
+    PERSONAL_MEMOS_FOLDER, Personal, Placement, folder_in_content, place,
 };
 pub use named::{BadTarget, EntryKind, Named, PREFIXES};
 pub use project::{

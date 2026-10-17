@@ -1,0 +1,1 @@
+- **Personal memos, kept on one machine in `.ascribe/memos/`.** They're memo files in the same format as `memos/`'s. `ascribe outline` and `ascribe refs` list them with `personal`, and `ascribe check` doesn't read them, so what it reports is the same on every machine ([memo files](docs/content/writing/memo-files.md#personal-memos)).

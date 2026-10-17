@@ -2,7 +2,9 @@
 //! its `about` or `quote` line: `memo-invalid`, a file that isn't one;
 //! `memo-detached`, an `about` that names nothing; `memo-outdated`, a quote
 //! no block holds; and `memo-long`, a body over the limit. They run for
-//! every build, over the source index, on the committed memos only.
+//! every build, over the source index, on the memos the project's checks
+//! read: the committed ones for `ascribe check`, and the personal ones too
+//! in the editor.
 
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Span, diagnostics};
 use ascribe_model::suggest;
@@ -28,7 +30,7 @@ pub(crate) const MEMO_CHECKS: &[DiagnosticSlug] = &[
 /// Whether there's anything for the memo checks to look at: a memo file, or
 /// a `memos/` folder inside the content root.
 pub(crate) fn any(project: &Project) -> bool {
-    !project.memos().is_empty() || in_content(project).is_some()
+    !project.checked_memos().is_empty() || in_content(project).is_some()
 }
 
 /// The first source file in a `memos/` folder inside the content root.
@@ -67,7 +69,7 @@ pub(crate) fn check_memos(
         .checks
         .limit(diagnostics::MEMO_LONG)
         .unwrap_or(MEMO_LIMIT);
-    for (i, memo) in project.memos().iter().enumerate() {
+    for (i, memo) in project.checked_memos().iter().enumerate() {
         let at = |span: Span| Location::new(memo_id(i), span);
         if on(diagnostics::MEMO_INVALID) {
             for problem in &memo.problems {

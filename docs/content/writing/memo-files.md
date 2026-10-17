@@ -28,7 +28,11 @@ doesn't mention the agent.
 
 The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no author, no date, and nothing to finish: a reason, kept for as long as it holds.
 
-`memos/` is outside the content root, so its files aren't pages. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there.
+`memos/` is outside the content root, so its files aren't pages.
+
+### Personal memos
+
+A memo that's only for you goes in `.ascribe/memos/` instead, in the same format. It's a **personal memo**: `.ascribe/` is the folder the project doesn't commit ([project files](../command/project-files.md)), so it stays on your machine. The editor, `ascribe outline`, and `ascribe refs` read both folders, and mark a personal memo as one. `ascribe check` reads `memos/` only, so what it reports is the same on every machine; the editor reports a personal memo's problems as it reports a team memo's. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there.
 
 A memo is read by someone about to change the page, so it's short: over 2,000 characters, `ascribe check` reports it as advice, [`memo-long`](../checks/diagnostics/content-checks.md#ASC228). `[checks.memo-long] limit` sets another limit, in characters.
 
@@ -50,7 +54,7 @@ In `examples/quill`, the memo above is about the section of `install-agent.md` t
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-memo.txt
 
-- **`ascribe outline`** lists the memos about a page under it, and those about a section or a block in it under its heading, with each one's first line. An outdated memo says so; a detached one isn't listed. With `--format json`, the page and each heading have `memos` ([`ascribe outline`](../command/questions.md#cli-outline)). The MCP tool `ascribe_outline` returns the same.
-- **`ascribe refs`** lists each memo file about its target as a place, with the use `memo`, at the memo's `about` line. A detached memo is listed under the target it names, so `ascribe refs` finds the memos about a page or heading that's gone.
+- **`ascribe outline`** lists the memos about a page under it, and those about a section or a block in it under its heading, with each one's first line. An outdated memo says so, a personal one is listed as a personal memo, and a detached one isn't listed. With `--format json`, the page and each heading have `memos`, each with `personal` ([`ascribe outline`](../command/questions.md#cli-outline)). The MCP tool `ascribe_outline` returns the same.
+- **`ascribe refs`** lists each memo file about its target as a place, with the use `memo`, at the memo's `about` line, and `personal` true for a personal memo. A detached memo is listed under the target it names, so `ascribe refs` finds the memos about a page or heading that's gone.
 
 No build, preview, report, or `ascribe diff` reads a memo file.
