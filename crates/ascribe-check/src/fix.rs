@@ -85,24 +85,16 @@ pub fn safe_fixes<'a>(
                 None => {
                     taken.push(Taken {
                         file: fix.file,
-                        edits: Vec::new(),
+                        edits: Settled::default(),
                         applied: Vec::new(),
                     });
                     taken.len() - 1
                 }
             };
             let file = &mut taken[i];
-            // An overlapping fix, the same fix offered again among them, or
-            // edits outside the text, aren't taken.
-            if overlaps(&file.edits, &fix.edits) {
+            if !file.edits.take(text, &fix.edits) {
                 continue;
             }
-            let mut with = file.edits.clone();
-            with.extend(fix.edits.iter().cloned());
-            if apply_edits(text, &with).is_err() {
-                continue;
-            }
-            file.edits = with;
             file.applied.push(Applied {
                 code: d.code,
                 slug: d.slug.to_string(),
@@ -112,14 +104,14 @@ pub fn safe_fixes<'a>(
     }
     let mut files: Vec<FixedFile> = taken
         .into_iter()
-        .filter(|t| !t.edits.is_empty())
+        .filter(|t| !t.edits.edits().is_empty())
         .filter_map(
             |Taken {
                  file,
                  edits,
                  applied,
              }| {
-                let text = apply_edits(writable_text(project, file)?, &edits).ok()?;
+                let text = apply_edits(writable_text(project, file)?, edits.edits()).ok()?;
                 Some(FixedFile {
                     file,
                     path: path_on_disk(project, model, file)?,
@@ -137,8 +129,39 @@ pub fn safe_fixes<'a>(
 /// The fixes taken for one file so far: their edits, and what they fix.
 struct Taken {
     file: FileId,
-    edits: Vec<TextEdit>,
+    edits: Settled,
     applied: Vec<Applied>,
+}
+
+/// The edits of the fixes taken for one file, settled as `--fix` settles
+/// them: the editor's action that applies a page's safe fixes takes them
+/// the same way.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Settled {
+    edits: Vec<TextEdit>,
+}
+
+impl Settled {
+    /// Takes a fix's edits of `text`, unless they overlap one already taken,
+    /// are the same fix offered again, or don't fit the text: whether it
+    /// took them.
+    pub fn take(&mut self, text: &str, fix: &[TextEdit]) -> bool {
+        if overlaps(&self.edits, fix) {
+            return false;
+        }
+        let mut with = self.edits.clone();
+        with.extend(fix.iter().cloned());
+        if apply_edits(text, &with).is_err() {
+            return false;
+        }
+        self.edits = with;
+        true
+    }
+
+    /// The edits taken, in the order they were.
+    pub fn edits(&self) -> &[TextEdit] {
+        &self.edits
+    }
 }
 
 /// Writes each fixed file's new text.
@@ -243,6 +266,20 @@ mod tests {
         assert_eq!(fixed[0].text, "ABcef");
         assert_eq!(fixed[0].applied.len(), 2);
         assert_eq!(fixed[0].path, Path::new("/p").join("docs/a.md"));
+    }
+
+    #[test]
+    fn settled_keeps_the_first_of_two_fixes_that_overlap() {
+        let mut settled = Settled::default();
+        assert!(settled.take("abcdef", &[TextEdit::replace(0..2, "AB")]));
+        assert!(!settled.take("abcdef", &[TextEdit::replace(1..3, "x")]));
+        assert!(!settled.take("abcdef", &[TextEdit::replace(0..2, "AB")]));
+        assert!(!settled.take("abcdef", &[TextEdit::insert(99, "!")]));
+        assert!(settled.take("abcdef", &[TextEdit::delete(3..4)]));
+        assert_eq!(
+            settled.edits(),
+            [TextEdit::replace(0..2, "AB"), TextEdit::delete(3..4)]
+        );
     }
 
     #[test]

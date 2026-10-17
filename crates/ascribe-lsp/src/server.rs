@@ -20,14 +20,15 @@ use lsp_types::request::{
     SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
-    CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
-    DocumentLinkOptions, ExecuteCommandOptions, FoldingRangeProviderCapability,
-    GotoDefinitionResponse, HoverProviderCapability, InitializeParams, InitializeResult, OneOf,
-    RenameOptions, SemanticTokens, SemanticTokensFullOptions, SemanticTokensOptions,
-    SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensServerCapabilities,
-    ServerCapabilities, ServerInfo, ShowDocumentParams, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Uri,
-    WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
+    CodeActionKind, CodeActionOptions, CodeActionProviderCapability, CodeLensOptions,
+    CompletionOptions, DocumentFormattingParams, DocumentLinkOptions, ExecuteCommandOptions,
+    FoldingRangeProviderCapability, GotoDefinitionResponse, HoverProviderCapability,
+    InitializeParams, InitializeResult, OneOf, RenameOptions, SemanticTokens,
+    SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
+    SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
+    ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 
 use crate::compute::{Outcome, compute};
@@ -116,6 +117,16 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             .as_ref()
             .and_then(|g| g.position_encodings.as_deref()),
     );
+    // A client that registers lenses dynamically is asked for them in the
+    // pages and in the sources' files, by one registration (`shown.rs`),
+    // after the project loads; any other gets them in the pages it sends.
+    let lens_registration = params
+        .capabilities
+        .text_document
+        .as_ref()
+        .and_then(|t| t.code_lens.as_ref())
+        .and_then(|c| c.dynamic_registration)
+        .unwrap_or(false);
     let result = InitializeResult {
         capabilities: ServerCapabilities {
             position_encoding: Some(encoding.kind()),
@@ -153,11 +164,17 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 resolve_provider: Some(false),
                 work_done_progress_options: Default::default(),
             }),
-            code_lens_provider: Some(CodeLensOptions {
+            code_lens_provider: (!lens_registration).then_some(CodeLensOptions {
                 resolve_provider: Some(false),
             }),
             inlay_hint_provider: Some(OneOf::Left(true)),
-            code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
+            code_action_provider: Some(CodeActionProviderCapability::Options(CodeActionOptions {
+                code_action_kinds: Some(vec![
+                    CodeActionKind::QUICKFIX,
+                    CodeActionKind::new(crate::code_action::FIX_ALL_KIND),
+                ]),
+                ..CodeActionOptions::default()
+            })),
             document_formatting_provider: Some(OneOf::Left(true)),
             folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
             rename_provider: Some(OneOf::Right(RenameOptions {
@@ -193,7 +210,8 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|w| w.did_change_watched_files.as_ref())
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
-    core.can_refresh_lenses = params
+    core.lens_registration = lens_registration;
+    core.lens_refresh = params
         .capabilities
         .workspace
         .as_ref()
@@ -450,16 +468,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            CodeLensRequest::METHOD => {
-                navigation(shared, &request, |p: lsp_types::CodeLensParams| {
-                    (p.text_document.uri, |ctx: &Ctx| {
-                        let mut lenses = crate::links::code_lenses(ctx);
-                        lenses.extend(crate::memos::code_lenses(ctx));
-                        lenses.sort_by_key(|l| (l.range.start.line, l.range.start.character));
-                        Some(lenses)
-                    })
-                })
-            }
+            CodeLensRequest::METHOD => code_lens_request(shared, &request),
             InlayHintRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::InlayHintParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {
@@ -690,16 +699,58 @@ fn memo_links(shared: &Shared, request: &Request) -> Option<Vec<lsp_types::Docum
     Some(crate::memos::links(&ctx, &memo))
 }
 
+/// Lenses: on a page's `@include`s and on what memo files are about
+/// (`memos.rs`), and in a code file a `@snippet` shows, how many pages show
+/// it (`shown.rs`). A file that's neither has no answer (`null`).
+fn code_lens_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::CodeLensParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri;
+    let (page, code) = {
+        let core = shared.lock();
+        (core.nav_target(&uri), core.lens_target(&uri))
+    };
+    if page.is_none() && code.is_none() {
+        return Ok(serde_json::Value::Null);
+    }
+    let mut lenses = page
+        .as_ref()
+        .map(crate::links::code_lenses)
+        .unwrap_or_default();
+    if let Some(ctx) = &page {
+        lenses.extend(crate::memos::code_lenses(ctx));
+        lenses.sort_by_key(|l| (l.range.start.line, l.range.start.character));
+    }
+    if let Some((ctx, path)) = &code {
+        lenses.extend(crate::shown::lenses(ctx, path));
+    }
+    to_json(request, lenses)
+}
+
 /// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
-/// too, whose problems about an entry can be marked as intended.
+/// too, whose problems about an entry can be marked as intended. A source
+/// file's are worked out with the diagnostics last published for it, for
+/// the action that applies its safe fixes.
 fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     let params: lsp_types::CodeActionParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
-    let target = shared.lock().code_action_target(&params.text_document.uri);
+    let (target, published) = {
+        let core = shared.lock();
+        let published = crate::uri::uri_to_path(&params.text_document.uri)
+            .map(|path| core.checked_with_version(&normalize(&path)))
+            .unwrap_or_default();
+        (
+            core.code_action_target(&params.text_document.uri),
+            published,
+        )
+    };
     let Some(ctx) = target else {
         return Ok(serde_json::Value::Null);
     };
-    to_json(request, crate::code_action::actions(&ctx, params))
+    to_json(
+        request,
+        crate::code_action::actions(&ctx, params, &published),
+    )
 }
 
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {

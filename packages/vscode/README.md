@@ -8,10 +8,10 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 
 ## Features
 
-- **Diagnostics as you type**, across the whole project, the same ones `ascribe check` reports in CI. Many come with a quick fix.
+- **Diagnostics as you type**, across the whole project, the same ones `ascribe check` reports in CI. Many come with a quick fix, and **Apply the safe fixes in this page** applies the safe ones together, on request or on save.
 - **Completion** for directives, attributes and their values, phrases, availability, include paths, and links, which you search by page and heading title rather than by path.
 - **Hover** for links and includes (the target's title and first paragraph), phrases (their values), and availability (what it means on the published site).
-- **Navigation**: go to definition, Find All References for pages, headings, phrases, and the rest of the content model, clickable links, a CodeLens on each include, and hints that show the title an empty-text link will get.
+- **Navigation**: go to definition, Find All References for pages, headings, phrases, and the rest of the content model, clickable links, a CodeLens on each include, one in a code file a page shows that says which pages show it, and hints that show the title an empty-text link will get.
 - **Refactoring**: renaming or moving a file updates the links and includes that point to it; renaming a heading's `@id`, a phrase, or a dimension value updates its uses.
 - **Formatting** into canonical form, on request or on save, and **highlighting** of directives, phrases, and title lines.
 - **A live page preview** that renders the page as the published site does, as you type, for any build, and a **site preview** that opens it on the site's dev server.

@@ -6,7 +6,7 @@
 
 import * as vscode from "vscode";
 import type { ContextResult } from "../shapes.js";
-import { entries, shown, type Entry, type Fix } from "./bar.js";
+import { entries, FIX_ALL_KIND, shown, type Entry, type Fix } from "./bar.js";
 import type { Action } from "./registry.js";
 import type { Prompter } from "./steps.js";
 
@@ -57,15 +57,18 @@ const SEVERITY_ICON: Record<vscode.DiagnosticSeverity, string> = {
 const isCommand = (action: vscode.CodeAction | vscode.Command): action is vscode.Command =>
   typeof action.command === "string";
 
-/** The quick fixes every provider offers for a range of a document. */
-async function quickFixes(uri: vscode.Uri, range: vscode.Range): Promise<CodeFix[]> {
+/**
+ * The actions of a kind every provider offers for a range of a document: the
+ * quick fixes there, or the action that applies the page's safe fixes.
+ */
+async function codeFixes(uri: vscode.Uri, range: vscode.Range, kind: string): Promise<CodeFix[]> {
   let found: (vscode.CodeAction | vscode.Command)[] | undefined;
   try {
     found = await vscode.commands.executeCommand<(vscode.CodeAction | vscode.Command)[]>(
       "vscode.executeCodeActionProvider",
       uri,
       range,
-      vscode.CodeActionKind.QuickFix.value,
+      kind,
       RESOLVE,
     );
   } catch {
@@ -73,7 +76,8 @@ async function quickFixes(uri: vscode.Uri, range: vscode.Range): Promise<CodeFix
   }
   return (found ?? []).flatMap((action) => {
     if (isCommand(action)) return [];
-    const diagnostic = action.diagnostics?.[0];
+    // The page's safe fixes together are about no one problem.
+    const diagnostic = action.kind?.value === FIX_ALL_KIND ? undefined : action.diagnostics?.[0];
     return [
       {
         action,
@@ -82,6 +86,7 @@ async function quickFixes(uri: vscode.Uri, range: vscode.Range): Promise<CodeFix
         problem: diagnostic?.message,
         disabled: action.disabled !== undefined,
         edits: action.edit !== undefined,
+        fixes: action.edit?.entries().reduce((sum, [, edits]) => sum + edits.length, 0) ?? 0,
         severity: diagnostic?.severity,
       },
     ];
@@ -175,13 +180,16 @@ export class ActionsBar {
     this.open = pick;
     pick.show();
 
-    const [context, fixes] = await Promise.all([
+    const whole = document.validateRange(new vscode.Range(0, 0, document.lineCount, 0));
+    const [context, all, quick] = await Promise.all([
       this.host.context(editor).then(
         (answer) => answer,
         () => undefined,
       ),
-      quickFixes(document.uri, range),
+      codeFixes(document.uri, whole, FIX_ALL_KIND),
+      codeFixes(document.uri, range, vscode.CodeActionKind.QuickFix.value),
     ]);
+    const fixes = [...all.filter((fix) => fix.kind === FIX_ALL_KIND), ...quick];
     if (closed) return;
     const rows = context ? entries(context, fixes).map(row) : [FAILED];
     record.rows = rows.map((r) =>

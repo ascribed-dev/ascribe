@@ -61,3 +61,6 @@ The rules for agents say it at the end of the type's line. A type `ascribe templ
 
 @available: ascribe 0.3.1
 **A page that still has its template's text.** On a page of a type with a template, `ascribe check` reports as advice each of the template's placeholders the page still has word for word, and a frontmatter field with the template's value (`template-placeholder-left`). The [guide to page templates](../../templates/index.md#whats-left-to-fill-in) says what it finds and what it can't.
+
+@available: next
+**A section the template leaves to the page.** A section the template gives nothing under its heading but memos, and that a page of the type still leaves empty, builds as a heading with nothing under it; `ascribe check` reports it as advice at its heading (`template-section-empty`). The [guide to page templates](../../templates/index.md#whats-left-to-fill-in) says what counts as empty.

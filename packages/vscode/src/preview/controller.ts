@@ -24,7 +24,14 @@ import type {
 import { canonicalReference, isExternal, splitFragment } from "./refs.js";
 import { ReviewController, type ReviewApi } from "./review.js";
 import { SourceComments, type SourceThreadRecord } from "./sourceComments.js";
-import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
+import {
+  baseCommit,
+  baseName,
+  causes,
+  fromContentPath,
+  parseSource,
+  removedPage,
+} from "./reviewText.js";
 import { previewProblems } from "./routing.js";
 import { findDevServer, noDevServerMessage, pageUrl, sectionAt } from "./site.js";
 
@@ -126,6 +133,11 @@ export class PreviewController implements vscode.Disposable {
   private panelDisposables: vscode.Disposable[] = [];
   private ready = false;
   private document: vscode.TextDocument | undefined;
+  /**
+   * A page the branch removed, chosen in review: it has no document, so the
+   * preview shows it as it was at the base until an Ascribe editor is active.
+   */
+  private removed: vscode.Uri | undefined;
   private timer: NodeJS.Timeout | undefined;
   private refreshing = false;
   private again = false;
@@ -187,13 +199,14 @@ export class PreviewController implements vscode.Disposable {
     this.review = new ReviewController(
       projects,
       {
-        previewedDocument: () => (this.panel ? this.document : undefined),
+        previewedFile: () => (this.panel ? this.file() : undefined),
         previewActive: () => this.panel?.active ?? false,
         previewBuild: (folder) => this.builds.get(folder),
         refresh: () => {
           if (this.panel) this.schedule(0);
         },
         showPage: (uri) => this.showPage(uri),
+        showRemovedPage: (uri) => this.showRemovedPage(uri),
         submitReview: (server, page) => this.submitReview(server, page),
         openThread: (uri, threadId) => this.openThread(uri, threadId),
       },
@@ -332,22 +345,26 @@ export class PreviewController implements vscode.Disposable {
     };
   }
 
-  /** Opens the preview, beside the editor or in its place, for the active Ascribe document. */
-  async open(column = vscode.ViewColumn.Beside): Promise<void> {
+  /**
+   * Opens the preview, beside the editor or in its place, for the active
+   * Ascribe document, or (without `follow`) for the file it has.
+   */
+  async open(column = vscode.ViewColumn.Beside, follow = true): Promise<void> {
     const beside = column === vscode.ViewColumn.Beside;
     if (this.panel) {
       this.panel.reveal(beside ? undefined : column, beside);
-      this.followActiveEditor();
+      if (follow) this.followActiveEditor();
       this.schedule(0);
       return;
     }
-    this.followActiveEditor();
+    if (follow) this.followActiveEditor();
     // The content root is needed before the panel exists: it's one of the
     // directories the webview may read, and is fixed when the panel is made.
-    const first = this.document && (await this.query(this.document));
+    const file = this.file();
+    const first = file && (await this.query(file));
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
-      panelTitle(this.document),
+      panelTitle(file),
       { viewColumn: column, preserveFocus: beside },
       {
         ...this.webviewOptions(first?.contentRoot ?? undefined, first?.assetRoots ?? []),
@@ -446,8 +463,14 @@ export class PreviewController implements vscode.Disposable {
       return false;
     }
     this.document = editor.document;
-    if (this.panel) this.panel.title = panelTitle(this.document);
+    this.removed = undefined;
+    if (this.panel) this.panel.title = panelTitle(this.document.uri);
     return true;
+  }
+
+  /** The file previewed: the document's, or the removed page's. */
+  private file(): vscode.Uri | undefined {
+    return this.document?.uri ?? this.removed;
   }
 
   private schedule(delay: number): void {
@@ -458,22 +481,23 @@ export class PreviewController implements vscode.Disposable {
     }, delay);
   }
 
-  /** The server of the project that owns the previewed document. */
+  /** The server of the project that owns the previewed file. */
   private server(): ProjectServer | undefined {
-    return this.document && this.projects.serverFor(this.document.uri);
+    const file = this.file();
+    return file && this.projects.serverFor(file);
   }
 
   /**
-   * Asks the server of the project that owns a document for its page, in the
+   * Asks the server of the project that owns a file for its page, in the
    * build chosen in that project, starting the server if it hasn't started.
    */
   private async query(
-    document: vscode.TextDocument,
+    file: vscode.Uri,
     buildOverride?: string,
   ): Promise<PreviewResult | undefined> {
-    const server = await this.projects.ensureStartedFor(document.uri);
+    const server = await this.projects.ensureStartedFor(file);
     if (!server) return undefined;
-    const params: PreviewParams = { textDocument: { uri: document.uri.toString() } };
+    const params: PreviewParams = { textDocument: { uri: file.toString() } };
     const build = buildOverride ?? this.builds.get(server.project.folder);
     if (build !== undefined) params.build = build;
     if (this.review.baseOf(server)) params.review = true;
@@ -504,16 +528,18 @@ export class PreviewController implements vscode.Disposable {
   private async renderOnce(): Promise<void> {
     const panel = this.panel;
     const document = this.document;
+    const file = this.file();
     if (!panel) return;
     let result: PreviewResult | undefined;
-    if (document) {
+    if (file) {
       // The language client sends a change before a request that follows it,
       // but the server may answer from an older version if the notification
       // is still on its way; the answer says which version it used.
       for (let attempt = 0; attempt < 20; attempt++) {
-        result = await this.query(document);
+        result = await this.query(file);
         if (
           !result ||
+          !document ||
           result.documentVersion === null ||
           result.documentVersion >= document.version
         ) {
@@ -522,13 +548,18 @@ export class PreviewController implements vscode.Disposable {
         await new Promise((resolve) => setTimeout(resolve, 25));
       }
       // Review is on, and the server has no base: it restarted. Set it again.
-      const server = this.projects.serverFor(document.uri);
-      if (result?.page && !result.review && server && this.review.baseOf(server)) {
-        if (await this.review.restore(server)) result = await this.query(document);
+      const server = this.projects.serverFor(file);
+      if (
+        (result?.page ?? this.removed) &&
+        !result?.review &&
+        server &&
+        this.review.baseOf(server)
+      ) {
+        if (await this.review.restore(server)) result = await this.query(file);
       }
     }
     if (!this.panel || panel !== this.panel) return;
-    const server = document && this.projects.serverFor(document.uri);
+    const server = file && this.projects.serverFor(file);
     const folder = server?.project.folder;
     // A build the content model no longer has (its file changed): back to the editor's.
     const chosen = folder === undefined ? undefined : this.builds.get(folder);
@@ -544,7 +575,7 @@ export class PreviewController implements vscode.Disposable {
       return;
     }
     const problems = previewProblems({
-      file: document?.uri.fsPath,
+      file: file?.fsPath,
       project: server && this.projects.name(server.project),
       state: server?.state,
       result,
@@ -566,9 +597,11 @@ export class PreviewController implements vscode.Disposable {
     this.followRoots(result.contentRoot ?? undefined, result.assetRoots);
     const assets = this.assetUris(result);
     const base = server && this.review.baseOf(server);
+    // A removed page shows as it was at the base: there's no page now.
+    const removed = result.page === null ? removedPage(result.review) : null;
     let review: ReviewView | null = null;
-    if (result.page && document && base && result.review) {
-      const goToFirst = this.firstChangeOf === document.uri.fsPath;
+    if ((result.page || removed) && file && base && result.review) {
+      const goToFirst = this.firstChangeOf === file.fsPath;
       if (goToFirst) this.firstChangeOf = undefined;
       review = {
         base: server
@@ -582,8 +615,10 @@ export class PreviewController implements vscode.Disposable {
         threads: null,
         errors: server?.errorCount() ?? 0,
       };
-      if (server) {
-        const goTo = this.threadToGo?.file === document.uri.fsPath ? this.threadToGo : undefined;
+      // A removed page's threads are on the base's lines, which the source
+      // diff shows; the preview shows the page without them.
+      if (server && !removed) {
+        const goTo = this.threadToGo?.file === file.fsPath ? this.threadToGo : undefined;
         if (goTo) {
           this.threadToGo = undefined;
           this.threadsOpenedLog.push(goTo.threadId);
@@ -596,13 +631,13 @@ export class PreviewController implements vscode.Disposable {
     const message: Extract<ToWebview, { type: "render" }> = {
       type: "render",
       seq: ++this.seq,
-      path: result.page?.path ?? null,
+      path: result.page?.path ?? removed?.path ?? null,
       build: result.build,
       builds: result.builds,
-      title: result.page?.title ?? null,
-      formattedTitle: result.page?.formattedTitle ?? null,
+      title: result.page?.title ?? removed?.title ?? null,
+      formattedTitle: result.page?.formattedTitle ?? removed?.formattedTitle ?? null,
       available: (result.page?.frontmatter as PageFrontmatter | undefined)?.available ?? [],
-      html: result.page?.html ?? null,
+      html: result.page?.html ?? removed?.html ?? null,
       assets,
       problems,
       review,
@@ -610,7 +645,7 @@ export class PreviewController implements vscode.Disposable {
     this.latest = { message, result, folder };
     this.log.push({
       seq: message.seq,
-      document: document?.uri.toString() ?? "",
+      document: file?.toString() ?? "",
       version: document?.version ?? -1,
       sentAt: Date.now(),
       result,
@@ -755,9 +790,9 @@ export class PreviewController implements vscode.Disposable {
       }
       case "atEnd": {
         const server = this.server();
-        const page = this.latest?.result.page;
-        if (!server || !page) return;
-        const next = await this.review.next(server, page.path);
+        const path = this.latest?.message.path;
+        if (!server || !path) return;
+        const next = await this.review.next(server, path);
         const reply: ToWebview = { type: "nextPage", ...next };
         void this.panel?.webview.postMessage(reply);
         return;
@@ -1069,6 +1104,14 @@ export class PreviewController implements vscode.Disposable {
     await this.showPage(uri, false);
   }
 
+  /** Shows a page the branch removed, which has no file to open, in the preview as it was at the base. */
+  private async showRemovedPage(uri: vscode.Uri): Promise<void> {
+    this.document = undefined;
+    this.removed = uri;
+    if (this.panel) this.panel.title = panelTitle(uri);
+    await this.open(vscode.ViewColumn.Beside, false);
+  }
+
   /** Opens a changed page and its preview, and (with `firstChange`) goes to its first change once it's drawn. */
   private async showPage(uri: vscode.Uri, firstChange = true): Promise<void> {
     if (firstChange) this.firstChangeOf = uri.fsPath;
@@ -1157,7 +1200,7 @@ export class PreviewController implements vscode.Disposable {
       this.tell(noDevServerMessage(this.projects.name(server.project)));
       return;
     }
-    const page = (await this.query(document, found.server.build))?.page;
+    const page = (await this.query(document.uri, found.server.build))?.page;
     if (!page) {
       this.tell(
         `Ascribe: ${vscode.workspace.asRelativePath(document.uri)} isn't a page of the ${found.server.build} build, which the dev server shows.`,
@@ -1224,7 +1267,7 @@ export class PreviewController implements vscode.Disposable {
       latest.build === found.server.build &&
       this.latest?.folder === server.project.folder
         ? latest.page
-        : (await this.query(document, found.server.build))?.page;
+        : (await this.query(document.uri, found.server.build))?.page;
     if (this.surface !== "site" || document !== this.document) return;
     if (!page) {
       problem(
@@ -1316,8 +1359,8 @@ function affectsProject(document: vscode.TextDocument): boolean {
   );
 }
 
-function panelTitle(document: vscode.TextDocument | undefined): string {
-  return document ? `Preview: ${path.basename(document.uri.fsPath)}` : "Ascribe preview";
+function panelTitle(file: vscode.Uri | undefined): string {
+  return file ? `Preview: ${path.basename(file.fsPath)}` : "Ascribe preview";
 }
 
 /** Whether the preview and the editor scroll together, in a direction, for a document. */

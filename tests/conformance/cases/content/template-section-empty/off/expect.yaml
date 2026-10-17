@@ -1,0 +1,6 @@
+description: >-
+  Turned off in [checks], a section the page leaves empty isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

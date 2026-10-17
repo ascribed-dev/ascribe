@@ -1,0 +1,8 @@
+description: >-
+  A section is the template's when its heading has the same text at the same
+  level: a page that renames the heading has a section of its own, and it
+  isn't reported.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics: []

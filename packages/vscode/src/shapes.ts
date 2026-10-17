@@ -1274,10 +1274,15 @@ export interface PreviewReview {
   changes: PageDiff | null;
   /**
    * The page as it was at the base, rendered as `html` is, with source
-   * anchors, for showing removed blocks and changed blocks as they were;
-   * `null` when the page didn't change or is new.
+   * anchors, for showing removed blocks and changed blocks as they were,
+   * and a removed page whole; `null` when the page didn't change or is
+   * new.
    */
   wasHtml: string | null;
+  /** The page's title as it was, with `wasHtml`. */
+  wasTitle: string | null;
+  /** That title formatted, when its field sets `inline = "code"`. */
+  wasFormattedTitle: FormattedPiece[] | null;
 }
 
 /** A heading written in the previewed file. */

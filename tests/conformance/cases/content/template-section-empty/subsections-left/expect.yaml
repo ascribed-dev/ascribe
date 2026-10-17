@@ -1,0 +1,10 @@
+description: >-
+  A section whose whole extent, its subsections included, has nothing but
+  memos and headings is reported, and so is each of its subsections the
+  template gives only a memo.
+spec: ["7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-section-empty, file: troubleshooting/sync.md, line: 13, severity: advice}
+  - {slug: template-section-empty, file: troubleshooting/sync.md, line: 16, severity: advice}

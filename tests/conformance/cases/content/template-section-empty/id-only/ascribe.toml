@@ -1,0 +1,11 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.troubleshooting]
+template = "templates/troubleshooting.md"
+
+[types.troubleshooting.frontmatter]
+title = "string"
+description = "string"

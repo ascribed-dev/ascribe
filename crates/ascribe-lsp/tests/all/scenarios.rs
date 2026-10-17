@@ -71,7 +71,10 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
             "workspace"
         ]
     );
-    assert_eq!(caps["codeActionProvider"], true);
+    assert_eq!(
+        caps["codeActionProvider"]["codeActionKinds"],
+        serde_json::json!(["quickfix", "source.fixAll.ascribe"])
+    );
     assert_eq!(caps["documentFormattingProvider"], true);
     assert_eq!(caps["referencesProvider"], true);
     assert_eq!(caps["renameProvider"]["prepareProvider"], true);

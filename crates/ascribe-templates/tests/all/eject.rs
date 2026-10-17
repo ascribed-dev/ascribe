@@ -555,7 +555,8 @@ fn a_project_given_the_whole_set_checks_clean() {
 
 /// For each type of the set, a page copied from its template whole: `ascribe
 /// check` reports a placeholder left on every line the template opens one
-/// with `\{`, and the title and the description, and nothing else. That a
+/// with `\{`, and the title and the description, a section left empty only
+/// at a heading the template follows with a memo, and nothing else. That a
 /// page filled in reports nothing is `examples/templates`, which has one of
 /// each, and `crates/ascribe-cli/tests/all/check.rs`.
 #[test]
@@ -575,13 +576,36 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
 
         let others: Vec<_> = found
             .iter()
-            .filter(|d| d.slug.as_str() != "template-placeholder-left")
+            .filter(|d| {
+                !matches!(
+                    d.slug.as_str(),
+                    "template-placeholder-left" | "template-section-empty"
+                )
+            })
             .map(|d| format!("{}: {}", d.slug, d.message))
             .collect();
         assert!(others.is_empty(), "{}: {others:#?}", template.name);
         let lines = ascribe_core::LineIndex::new(text);
+        let source: Vec<&str> = text.lines().collect();
+        for d in found
+            .iter()
+            .filter(|d| d.slug.as_str() == "template-section-empty")
+        {
+            let at = lines
+                .line_col(d.location.span.start())
+                .and_then(|at| usize::try_from(at.line).ok())
+                .unwrap_or_default();
+            let heading = source.get(at).is_some_and(|l| l.starts_with('#'));
+            let memo = source.get(at + 1).is_some_and(|l| l.starts_with("@memo"));
+            assert!(
+                heading && memo,
+                "{}: a section reported empty at line {at}, from 0, that isn't a heading the template follows with a memo",
+                template.name
+            );
+        }
         let mut reported: Vec<u32> = found
             .iter()
+            .filter(|d| d.slug.as_str() == "template-placeholder-left")
             .filter_map(|d| lines.line_col(d.location.span.start()))
             .map(|at| at.line)
             .collect();

@@ -139,7 +139,7 @@ and `problems` says why. Field names are camelCase.
 | `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served, and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
 | `page.links` | Each link to a page: `{ href, path, id }`, `href` as the HTML writes it, `path` the target file, `id` the heading it names. |
 | `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0. The HTML's anchors locate every block, headings included. |
-| `review` | With `review: true` and a base set (below): `{ base, changes, wasHtml }`. `base` is what the base resolved to. `changes` is the page as `ascribe diff --format json` reports it (`status`, `own_file_changed`, `because`, `page_changed`, `counts`, `changes`; its keys are snake_case), or `null` when the page didn't change. `wasHtml` is the page as it was at the base, rendered as `page.html` is, with anchors, for showing removed blocks and changed blocks as they were; `null` for a new page or no change. `null` without a base or a page. |
+| `review` | With `review: true` and a base set (below): `{ base, changes, wasHtml, wasTitle, wasFormattedTitle }`. `base` is what the base resolved to. `changes` is the page as `ascribe diff --format json` reports it (`status`, `own_file_changed`, `because`, `page_changed`, `counts`, `changes`; its keys are snake_case), or `null` when the page didn't change. `wasHtml` is the page as it was at the base, rendered as `page.html` is, with anchors, for showing removed blocks and changed blocks as they were; `null` for a new page or no change. `wasTitle` and `wasFormattedTitle` are its title then, as `page.title` and `page.formattedTitle` are. `null` without a base or a page. A page the branch removed has no file, so `page` is `null` and `problems` is empty, but `review` is there, its `changes.status` `removed`, and `wasHtml` the whole page as it was. |
 
 Every problem is in `problems`, not in a JSON-RPC error: a malformed request
 (parameters that don't parse) is the only error, `InvalidParams`. The request runs on the server's main loop, so it must not grow with the
@@ -652,7 +652,12 @@ tokens (full and range), the position encoding, and completion
 document links, CodeLens, inlay hints, code actions, document formatting, folding
 ranges, rename (with `prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
-`workspace/didChangeWatchedFiles`.
+`workspace/didChangeWatchedFiles`, and `textDocument/codeLens` (below), which
+is then not advertised. Code actions advertise their kinds: `quickfix`, and
+`source.fixAll.ascribe`, every safe fix of a source file's published problems
+in one edit, settled as `ascribe check --fix` settles them
+(`ascribe_check::fix::Settled`); it's offered only when what was published is
+for the document's version.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
 
@@ -763,6 +768,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `references.rs` | Find all references |
 | `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
 | `memos.rs` | Memo files: their CodeLens, This page's memos, `addMemo`, and completion and a link in a memo file |
+| `shown.rs` | "Shown in N pages", the CodeLens in a code file a `@snippet` shows, and the registration for the sources' files |
 | `folding.rs` | Folding ranges |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
@@ -823,6 +829,19 @@ language client wires from the capability): it answers by sending
 `window/showDocument`, so **no client code is needed**. **Inlay hints**
 show the resolved title inside the `[` of an empty-text link.
 
+**"Shown in N pages"** is a CodeLens in a code file a `@snippet` shows: on a
+region's start tag line, and on the first line for a file shown whole,
+counting the pages that show it (a fragment's `@snippet` counts each page that
+includes the fragment). A client that registers lenses dynamically gets one
+registration, `ascribe-code-lens`, whose filters are the project's pages
+(Markdown under its folder) and each source's folder with its `include`
+patterns, registered again when `ascribe.toml` moves them; its code files are
+never sent, and the regions are read from disk through `FileSystem`. A file
+change on disk under a source, or a source saved, sends
+`workspace/codeLens/refresh` when the client supports it. The lens's command,
+`ascribe.showReferences`, is the client's: its arguments are the file's URI, a
+position, and the `@snippet` lines as locations, as VS Code's
+`editor.action.showReferences` takes them.
 ### Memo files
 
 Memo files (SPEC §7.7), committed in `memos/` and personal in

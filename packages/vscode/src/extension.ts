@@ -38,6 +38,8 @@ export interface AscribeApi {
   onDidStartServer: vscode.Event<string>;
   /** Settles when every start or restart under way is over. */
   whenSettled(): Promise<void>;
+  /** The folders of the projects whose servers registered their lenses for a file, for tests. */
+  lensesFor(uri: vscode.Uri): Promise<string[]>;
   /** The preview, for tests. */
   preview: PreviewApi;
   /** The editor's actions, for tests. */
@@ -203,6 +205,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         `Ascribe: copied \`${line}\`. Run it in a terminal.`,
       );
     }),
+    // The command a lens in a code file carries: the pages showing it, in the
+    // references peek, as Find All References lists places.
+    vscode.commands.registerCommand("ascribe.showReferences", async (...args: unknown[]) => {
+      const shown = referencesOf(args);
+      if (!shown) return;
+      await vscode.commands.executeCommand(
+        "editor.action.showReferences",
+        shown.uri,
+        shown.position,
+        shown.locations,
+      );
+    }),
     // A lens on several memos lists them to open one (crates/ascribe-lsp/src/memos.rs).
     vscode.commands.registerCommand("ascribe.showMemos", (memos: unknown) => showMemos(memos)),
     vscode.commands.registerCommand("ascribe.showOutput", async () => {
@@ -231,6 +245,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         disposables,
       ),
     whenSettled: () => projects.whenSettled(),
+    lensesFor: async (uri) => {
+      const document = await vscode.workspace.openTextDocument(uri);
+      return projects.servers
+        .filter((server) => server.registeredLenses(document))
+        .map((server) => server.project.folder);
+    },
     preview: preview.api,
     actions: actions.api,
     newPage: newPage.api,
@@ -247,6 +267,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };
+}
+
+/**
+ * The arguments of `ascribe.showReferences` as the server writes them, in the
+ * editor's types: a file's URI, a position in it, and locations, each a URI
+ * and a range. `undefined` when they aren't that.
+ */
+function referencesOf(
+  args: unknown[],
+): { uri: vscode.Uri; position: vscode.Position; locations: vscode.Location[] } | undefined {
+  const [uri, position, locations] = args as [unknown, unknown, unknown];
+  const asPosition = (value: unknown): vscode.Position | undefined => {
+    const p = value as { line?: unknown; character?: unknown } | null;
+    return typeof p?.line === "number" && typeof p.character === "number"
+      ? new vscode.Position(p.line, p.character)
+      : undefined;
+  };
+  const at = asPosition(position);
+  if (typeof uri !== "string" || !at || !Array.isArray(locations)) return undefined;
+  const found: vscode.Location[] = [];
+  for (const location of locations as {
+    uri?: unknown;
+    range?: { start?: unknown; end?: unknown };
+  }[]) {
+    const start = asPosition(location.range?.start);
+    const end = asPosition(location.range?.end);
+    if (typeof location.uri !== "string" || !start || !end) return undefined;
+    found.push(new vscode.Location(vscode.Uri.parse(location.uri), new vscode.Range(start, end)));
+  }
+  return { uri: vscode.Uri.parse(uri), position: at, locations: found };
 }
 
 /** The only project's server, or the one picked from a list when there are several. */

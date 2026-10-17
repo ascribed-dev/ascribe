@@ -16,7 +16,11 @@ use crate::nav::{Ctx, directive_at};
 // Longer than the lint allows from before it was on. Split it only while
 // changing it for another reason.
 #[allow(clippy::too_many_lines)]
-pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
+pub(crate) fn actions(
+    ctx: &Ctx,
+    params: CodeActionParams,
+    published: &(Vec<Diagnostic>, Option<i32>),
+) -> Vec<CodeActionOrCommand> {
     let Some(file) = ctx.file() else {
         return model_actions(ctx, params);
     };
@@ -28,6 +32,11 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
         .encoding
         .offset_lenient(&index, &file.source, params.range.end);
     let mut actions = Vec::new();
+    if asks_for(params.context.only.as_deref(), FIX_ALL_KIND)
+        && let Some(fix_all) = fix_all(ctx, file, published)
+    {
+        actions.push(fix_all);
+    }
 
     for diagnostic in params.context.diagnostics {
         let Some(slug) = diagnostic
@@ -236,6 +245,100 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
         ));
     }
     actions
+}
+
+/// The kind of the action that applies a page's safe fixes.
+pub(crate) const FIX_ALL_KIND: &str = "source.fixAll.ascribe";
+
+/// Its title.
+pub(crate) const FIX_ALL_TITLE: &str = "Apply the safe fixes in this page";
+
+/// Whether a request for the kinds `only` (every kind, for none) asks for
+/// actions of `kind`: one of them is `kind`, or a kind it's under.
+fn asks_for(only: Option<&[CodeActionKind]>, kind: &str) -> bool {
+    only.is_none_or(|only| {
+        only.iter().any(|asked| {
+            kind == asked.as_str()
+                || kind
+                    .strip_prefix(asked.as_str())
+                    .is_some_and(|rest| rest.starts_with('.'))
+        })
+    })
+}
+
+/// "Apply the safe fixes in this page": every safe fix of the problems last
+/// published for `file`, in one edit, taken as `ascribe check --fix` takes
+/// them, in its order (advice last) and with two that edit the same text
+/// settled the same way: the first is kept, and the other's problem stays
+/// for the next run. None when it has no safe fix, or when what was
+/// published is for another version of the document than the editor's.
+fn fix_all(
+    ctx: &Ctx,
+    file: &ascribe_resolve::FileIndex,
+    (published, version): &(Vec<Diagnostic>, Option<i32>),
+) -> Option<CodeActionOrCommand> {
+    if *version != ctx.version {
+        return None;
+    }
+    let index = LineIndex::new(&file.source);
+    let mut diagnostics: Vec<&Diagnostic> = published.iter().collect();
+    diagnostics.sort_by_key(|d| {
+        (
+            d.severity == Some(lsp_types::DiagnosticSeverity::INFORMATION),
+            d.range.start,
+            d.range.end,
+        )
+    });
+    let mut settled = ascribe_check::fix::Settled::default();
+    let mut fixed: Vec<Diagnostic> = Vec::new();
+    for diagnostic in diagnostics {
+        let fixes = diagnostic
+            .data
+            .as_ref()
+            .and_then(|data| data.get("fixes"))
+            .and_then(serde_json::Value::as_array);
+        for fix in fixes.into_iter().flatten() {
+            if fix.get("applicability").and_then(serde_json::Value::as_str) != Some("safe") {
+                continue;
+            }
+            let edits: Vec<ascribe_core::TextEdit> = fix
+                .get("edits")
+                .and_then(serde_json::Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(|edit| serde_json::from_value::<TextEdit>(edit.clone()).ok())
+                .map(|edit| {
+                    let start = ctx
+                        .encoding
+                        .offset_lenient(&index, &file.source, edit.range.start);
+                    let end = ctx
+                        .encoding
+                        .offset_lenient(&index, &file.source, edit.range.end);
+                    ascribe_core::TextEdit::replace(start..end.max(start), edit.new_text)
+                })
+                .collect();
+            if !edits.is_empty()
+                && settled.take(&file.source, &edits)
+                && !fixed.contains(diagnostic)
+            {
+                fixed.push(diagnostic.clone());
+            }
+        }
+    }
+    if settled.edits().is_empty() {
+        return None;
+    }
+    let edits = settled
+        .edits()
+        .iter()
+        .map(|edit| text_edit(ctx, &file.source, edit.clone()))
+        .collect();
+    let CodeActionOrCommand::CodeAction(mut action) = action(ctx, FIX_ALL_TITLE, fixed, edits)
+    else {
+        return None;
+    };
+    action.kind = Some(CodeActionKind::new(FIX_ALL_KIND));
+    Some(CodeActionOrCommand::CodeAction(action))
 }
 
 fn action(

@@ -1,6 +1,6 @@
 import * as assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as vscode from "vscode";
 import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
@@ -513,6 +513,35 @@ describe("the Review view, with a fake GitHub", () => {
       committed.map((t) => `${t}\n`),
     );
     assert.deepEqual(await baseTexts(withGit), await baseTexts(withoutGit));
+  });
+
+  it("opens a removed page in the preview as it was", async () => {
+    const quickstart = uriOf("docs", "quickstart.md");
+    const text = readFileSync(quickstart.fsPath, "utf8");
+    rmSync(quickstart.fsPath);
+    try {
+      const page = await waitFor("the removed page", async () =>
+        (await api.preview.review.changedPages(workspace())).find((p) => p.status === "removed"),
+      );
+      assert.equal(page.title, "Try Quill in the browser");
+      const chosen = Date.now();
+      await vscode.commands.executeCommand("ascribe.review.openPage", {
+        kind: "page",
+        page: { page, openThreads: 0 },
+      });
+      const shown = await api.preview.whenDrawn(
+        "the removed page as it was",
+        (r) =>
+          r.sentAt >= chosen &&
+          r.result.review?.changes?.status === "removed" &&
+          r.report?.reviewHeader?.includes("a removed page, as it was") === true,
+      );
+      assert.equal(shown.result.page, null);
+      assert.equal(shown.result.review?.wasTitle, "Try Quill in the browser");
+      assert.ok(shown.report?.anchored, JSON.stringify(shown.report));
+    } finally {
+      writeFileSync(quickstart.fsPath, text);
+    }
   });
 
   it("is gone once review stops", async () => {

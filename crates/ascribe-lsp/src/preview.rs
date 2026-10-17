@@ -108,9 +108,14 @@ pub struct PreviewReview {
     /// (its keys are snake_case); `null` when the page didn't change.
     pub changes: Option<PageDiff>,
     /// The page as it was at the base, rendered as `html` is, with source
-    /// anchors, for showing removed blocks and changed blocks as they were;
-    /// `null` when the page didn't change or is new.
+    /// anchors, for showing removed blocks and changed blocks as they were,
+    /// and a removed page whole; `null` when the page didn't change or is
+    /// new.
     pub was_html: Option<String>,
+    /// The page's title as it was, with `wasHtml`.
+    pub was_title: Option<String>,
+    /// That title formatted, when its field sets `inline = "code"`.
+    pub was_formatted_title: Option<Vec<FormattedPiece>>,
 }
 
 /// A build of the content model, for a picker.
@@ -434,6 +439,15 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
     };
     let snapshot = &target.snapshot;
     let Some(index) = snapshot.file(path) else {
+        // A page this branch removed has no file, but review shows it as it
+        // was at the base.
+        if review
+            && let Some(base) = &target.review
+            && let Some(removed) = removed_page(target, base, &build.name, path)
+        {
+            result.review = Some(removed);
+            return result;
+        }
         result.problems.push(PreviewProblem::info(format!(
             "{path} isn't a page of the project."
         )));
@@ -616,15 +630,38 @@ fn review_of(target: &Target, base: &ReviewBase, build: &str, path: &RelPath) ->
         model_text: &target.model_text,
     };
     let changes = ascribe_diff::compare_page_in(base.side(), now, build, path);
-    let was_html = changes
+    let was = changes
         .as_ref()
         .filter(|c| c.status != PageStatus::Added)
-        .and_then(|_| base.page_html(build, path));
+        .and_then(|_| base.page(build, path));
+    let (was_html, was_title, was_formatted_title) = match was {
+        Some((html, title)) => (Some(html), title.plain, title.formatted),
+        None => (None, None, None),
+    };
     PreviewReview {
         base: base.info.clone(),
         changes,
         was_html,
+        was_title,
+        was_formatted_title,
     }
+}
+
+/// The page at `path`, which has no file now, when the build had it at the
+/// base: its review, with the page as it was. `None` for a path that was
+/// never a page of the build.
+fn removed_page(
+    target: &Target,
+    base: &ReviewBase,
+    build: &str,
+    path: &RelPath,
+) -> Option<PreviewReview> {
+    let review = review_of(target, base, build, path);
+    let removed = review
+        .changes
+        .as_ref()
+        .is_some_and(|c| c.status == PageStatus::Removed);
+    (removed && review.was_html.is_some()).then_some(review)
 }
 
 /// Whether the preview may read an asset's file, and if so which directory it

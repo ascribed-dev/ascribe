@@ -1,0 +1,9 @@
+# A project whose source, code/, is a folder beside it, which the project
+# at ../api shows too.
+spec = "0.1"
+
+[project]
+content-root = "content"
+
+[sources.code]
+path = "../code"

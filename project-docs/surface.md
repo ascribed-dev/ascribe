@@ -105,7 +105,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-224 in all. By severity: 41 advice, 158 error, 25 warning. By level: 199 file, 25 page. By kind of next step: 51 choose, 14 fix, 7 outside, 12 review, 140 write.
+225 in all. By severity: 42 advice, 158 error, 25 warning. By level: 200 file, 25 page. By kind of next step: 51 choose, 14 fix, 7 outside, 12 review, 141 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -333,6 +333,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC226` | `memo-detached` | warning | choose | `{about}` isn't a page or fragment of the project, so this memo is about nothing |
 | `ASC227` | `memo-outdated` | advice | write | no block of `{about}` has the words this memo quotes, so it's on the {place} and no block |
 | `ASC228` | `memo-long` | advice | write | this memo is {length} characters, over the {limit} limit |
+| `ASC229` | `template-section-empty` | advice | write | the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it |
 
 ## The VS Code extension
 
@@ -849,6 +850,7 @@ READMEs published with a package, a crate, or the repository:
 | `packages/vscode/README.md` |
 | `packages/vscode/test/fixtures/monorepo/code/README.md` |
 | `packages/vscode/test/fixtures/monorepo/docs/README.md` |
+| `packages/vscode/test/fixtures/shared-sources/README.md` |
 | `plugins/ascribe/README.md` |
 
 ## Files Ascribe puts in a project

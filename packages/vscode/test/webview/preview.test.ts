@@ -513,6 +513,57 @@ describe("review in the preview webview", () => {
     await preview.page.close();
   });
 
+  it("shows a removed page as it was, with nothing to step through but the next page", async () => {
+    const preview = await open();
+    // The extension sends the page as it was as the page: there is none now.
+    await preview.send(
+      render(1, WAS, {
+        path: "page.md",
+        title: "Old page",
+        review: {
+          base: "main",
+          commit: "1a2b3c4",
+          page: {
+            path: "page.md",
+            route: "/page/",
+            status: "removed",
+            own_file_changed: true,
+            because: [],
+            page_changed: [],
+            counts: { changed: 0, added: 0, removed: 0, moved: 0 },
+            changes: [],
+          },
+          wasHtml: WAS,
+          causes: [],
+          goToFirst: false,
+          threads: null,
+          errors: 0,
+        },
+      } as Partial<ToWebview>),
+    );
+    const drawn = await preview.next("rendered");
+    if (drawn.type !== "rendered") throw new Error();
+    expect(drawn.report.marks).toEqual({});
+    expect(drawn.report.reviewHeader).toContain("a removed page, as it was");
+    const content = preview.page.locator("[data-role=content]");
+    await expect(content.getAttribute("data-ascribe-show")).resolves.toBe("was");
+    await expect(preview.page.getByText("A paragraph that went away.").isVisible()).resolves.toBe(
+      true,
+    );
+    // No Now side to switch to, and no changes to count.
+    await expect(preview.page.getByRole("button", { name: "As it will be" }).count()).resolves.toBe(
+      0,
+    );
+    await expect(preview.page.locator(".review .position").count()).resolves.toBe(0);
+    const from = preview.posted.length;
+    await preview.page.getByRole("button", { name: "Next changed page" }).click();
+    await preview.next("atEnd", from);
+    await expect(preview.page.locator(".review .notice").textContent()).resolves.toContain(
+      "This branch removes this page.",
+    );
+    await preview.page.close();
+  });
+
   it("shows the page as it will be and as it was", async () => {
     const preview = await open();
     await preview.send(reviewed(1));
