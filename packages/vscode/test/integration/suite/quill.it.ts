@@ -444,15 +444,16 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
 
   it("finds a page type's pages from its declaration, at each page's type", async () => {
     const api = await activated();
-    const page = all(api.ui.sidebar.items("model")).find(
-      (i) => i.label === "page" && /pages?$/.test(i.description ?? ""),
-    );
-    const pages = Number(/^(\d+) pages?$/.exec(page?.description ?? "")?.[1]);
-    assert.ok(pages > 0, page?.description);
     const found = await api.ui.sidebar.act("findReferences", "type:page");
     assert.equal(found.done, true, found.messages.join());
-    assert.equal(found.references?.length, pages + 1, found.references?.join("\n"));
-    assert.match(found.references?.[0] ?? "", /^ascribe\.toml:\d+$/);
+    const shown = found.references ?? [];
+    // Its declaration, then each page at its `type` line. Other tests add
+    // and remove pages, so this checks the example's own, not a count.
+    assert.match(shown[0] ?? "", /^ascribe\.toml:\d+$/);
+    for (const page of ["configure.md", "keys.md", "quickstart.md", "webhooks.md"]) {
+      const at = `docs/${page}:${lineOf(uriOf("docs", page), "type:")}`;
+      assert.ok(shown.includes(at), `${at} in\n${shown.join("\n")}`);
+    }
   });
 
   it("lists only what nothing uses with Unused Only", async () => {
