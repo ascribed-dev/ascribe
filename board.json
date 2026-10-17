@@ -1735,7 +1735,7 @@
     },
     {
       "content": {
-        "body": "## Ascribe report\n\n0 errors, 0 warnings, 1 advice.\n\n### External links\n\nChecked 36 addresses: asked about 4, and reused 32 answers, the oldest from 15 October.\n\nNone is broken or moved.\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 24 pass, 3 warn, 1 skip.\n\nTo change:\n\n- [ASC171] the site passes the delivery spec's `llms-txt-links-resolve` check with a warning, which what Ascribe writes should pass without one: 49/50 same-origin sampled links resolve (98%); 1 broken; 1 failed to fetch. Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/38891121089)\n",
+        "body": "[The run](https://github.com/ascribed-dev/ascribe/actions/runs/39024672669)\n",
         "number": 423,
         "repository": "ascribed-dev/ascribe",
         "title": "Docs report: links and the published site",
@@ -2684,7 +2684,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/569"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Memos: Ascribe's docs have a guide to memos and use them"
     },
     {
@@ -2703,7 +2703,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Navigation: an Astro site's sidebar comes from the project"
     },
     {
@@ -3029,8 +3029,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/573"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBaRmE",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/574"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "llms.txt and description-too-long ignore a description field's default"
     }
   ]
