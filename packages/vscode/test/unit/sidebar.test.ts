@@ -515,8 +515,8 @@ describe("the Content model view", () => {
     expect(modelLook(guide)).toMatchObject({ label: "guide", description: "2 pages" });
     expect(modelLook(reference)).toMatchObject({ description: "no pages", dimmed: true });
     expect(modelDeclaration(guide)).toEqual(range(20));
-    // A type isn't renamed, inserted, or found in pages from here.
-    expect(modelLook(guide).context).toBe("ascribe.model.type");
+    // A type is found in the pages that name it, but isn't renamed or inserted from here.
+    expect(modelLook(guide).context).toBe("ascribe.model.type references");
   });
 
   it("lists a dimension's values, each renamed where it's declared", () => {
@@ -551,6 +551,16 @@ describe("the Content model view", () => {
     // A built-in note type has no declaration to ask at; a build isn't used by pages.
     expect(context("note", "note")).toBe("ascribe.model.note");
     expect(context("build", "site")).toBe("ascribe.model.build");
+    expect(context("type", "guide")).toBe("ascribe.model.type references");
+    // The implicit page type isn't declared, and its pages name no type.
+    const implicit = {
+      kind: "type",
+      key: "page",
+      label: null,
+      uses: 3,
+      declaration: null,
+    } as const;
+    expect(modelLook({ kind: "entry", entry: implicit }).context).toBe("ascribe.model.type");
   });
 
   it("lists only the entries nothing uses with Unused Only", () => {

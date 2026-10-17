@@ -442,6 +442,19 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
     assert.match(found.references?.[0] ?? "", /^ascribe\.toml:\d+$/);
   });
 
+  it("finds a page type's pages from its declaration, at each page's type", async () => {
+    const api = await activated();
+    const page = all(api.ui.sidebar.items("model")).find(
+      (i) => i.label === "page" && /pages?$/.test(i.description ?? ""),
+    );
+    const pages = Number(/^(\d+) pages?$/.exec(page?.description ?? "")?.[1]);
+    assert.ok(pages > 0, page?.description);
+    const found = await api.ui.sidebar.act("findReferences", "type:page");
+    assert.equal(found.done, true, found.messages.join());
+    assert.equal(found.references?.length, pages + 1, found.references?.join("\n"));
+    assert.match(found.references?.[0] ?? "", /^ascribe\.toml:\d+$/);
+  });
+
   it("lists only what nothing uses with Unused Only", async () => {
     const api = await activated();
     await api.ui.sidebar.filter("model", true);

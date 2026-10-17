@@ -204,5 +204,7 @@ fn use_name(kind: UseKind) -> &'static str {
         UseKind::Variant => "variant",
         UseKind::Note => "note",
         UseKind::Widget => "widget",
+        // `ascribe refs` doesn't ask about content types, so it lists none.
+        UseKind::Type => "type",
     }
 }

@@ -22,18 +22,21 @@
 //!   key that names it, and each availability spec entry that names it or
 //!   one of its values;
 //! - a **note type** by each `@note` of that type (`note` when it gives none);
-//! - a **widget** by each directive line, container, or arm that opens it.
+//! - a **widget** by each directive line, container, or arm that opens it;
+//! - a declared **page content type** by the `type` value of each page's
+//!   frontmatter that names it. The implicit `page` type has none: its pages
+//!   name no type.
 
 use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::schema::{Attributes, Builtin, DefaultValue};
 use ascribe_core::{RelPath, Span};
-use ascribe_model::{ContentModel, GlossaryMatch};
+use ascribe_model::{ContentModel, GlossaryMatch, TYPE_KEY};
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind};
 
 use crate::build::{Terms, prose_lists};
 use crate::index::walk::walk_blocks;
-use crate::index::{FileIndex, RefKind, frontmatter_key};
+use crate::index::{FileIndex, FileKind, RefKind, frontmatter_key};
 use crate::project::{Project, Resolution};
 
 /// Something a page can use.
@@ -60,6 +63,8 @@ pub enum Usable {
     Note(String),
     /// A project widget, by name.
     Widget(String),
+    /// A declared page content type, by name.
+    Type(String),
 }
 
 /// How a place uses what it names.
@@ -81,6 +86,8 @@ pub enum UseKind {
     Note,
     /// A widget's directive.
     Widget,
+    /// A page's frontmatter `type`.
+    Type,
 }
 
 /// One place something is used.
@@ -184,27 +191,32 @@ struct Wants {
     availability: bool,
     terms: bool,
     directives: bool,
+    types: bool,
 }
 
 impl Wants {
     fn of(target: Option<&Usable>) -> Wants {
-        let only = |files, phrases, availability, terms, directives| Wants {
+        let only = |files, phrases, availability, terms, directives, types| Wants {
             files,
             phrases,
             availability,
             terms,
             directives,
+            types,
         };
         match target {
-            None => only(true, true, true, true, true),
+            None => only(true, true, true, true, true, true),
             Some(Usable::File(_) | Usable::Heading { .. }) => {
-                only(true, false, false, false, false)
+                only(true, false, false, false, false, false)
             }
-            Some(Usable::Phrase(_)) => only(false, true, false, false, false),
-            Some(Usable::Feature(_)) => only(false, false, true, false, false),
-            Some(Usable::Term(_)) => only(false, false, false, true, false),
-            Some(Usable::Dimension(_)) => only(false, false, true, false, true),
-            Some(Usable::Note(_) | Usable::Widget(_)) => only(false, false, false, false, true),
+            Some(Usable::Phrase(_)) => only(false, true, false, false, false, false),
+            Some(Usable::Feature(_)) => only(false, false, true, false, false, false),
+            Some(Usable::Term(_)) => only(false, false, false, true, false, false),
+            Some(Usable::Dimension(_)) => only(false, false, true, false, true, false),
+            Some(Usable::Note(_) | Usable::Widget(_)) => {
+                only(false, false, false, false, true, false)
+            }
+            Some(Usable::Type(_)) => only(false, false, false, false, false, true),
         }
     }
 }
@@ -268,7 +280,33 @@ fn visit(
                 f(used, place(span, kind))
             });
         }
+        if wants.types
+            && let Some((name, span)) = type_use(model, file)
+        {
+            f(&Usable::Type(name), place(span, UseKind::Type));
+        }
     }
+}
+
+/// The declared content type a page's frontmatter `type` names, and where
+/// its value is written.
+fn type_use(model: &ContentModel, file: &FileIndex) -> Option<(String, Span)> {
+    if file.kind != FileKind::Page {
+        return None;
+    }
+    let name = file.frontmatter.as_ref()?.get(TYPE_KEY)?.as_str()?;
+    let declared = model.type_named(Some(name)).found()?;
+    let line = frontmatter_key(file, TYPE_KEY)?;
+    let text = file.source.get(line.range())?;
+    // The value: after the key's `:`, without a comment.
+    let colon = text.find(':')? + 1;
+    let value = text[colon..].split(" #").next().unwrap_or_default();
+    let lead = value.len() - value.trim_start().len();
+    let start = line.start() + colon + lead;
+    Some((
+        declared.name.clone(),
+        Span::new(start, start + value.trim().len()),
+    ))
 }
 
 /// The links and includes in `file` that name a source file, and a heading
