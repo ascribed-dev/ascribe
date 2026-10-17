@@ -735,6 +735,9 @@ pub const NAV_PAGE_UNPLACED: DiagnosticSlug = DiagnosticSlug("nav-page-unplaced"
 /// `ASC236`, advice, file level: a content check (area `project`).
 pub const NAV_SECTION_UNPLACED: DiagnosticSlug = DiagnosticSlug("nav-section-unplaced");
 
+/// `ASC237`, advice, file level: a content check (area `pages`).
+pub const NAV_LABEL_LONG: DiagnosticSlug = DiagnosticSlug("nav-label-long");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -969,6 +972,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     SECTION_PAGE_BOTH,
     NAV_PAGE_UNPLACED,
     NAV_SECTION_UNPLACED,
+    NAV_LABEL_LONG,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1020,6 +1024,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     TEMPLATE_SECTION_EMPTY,
     NAV_PAGE_UNPLACED,
     NAV_SECTION_UNPLACED,
+    NAV_LABEL_LONG,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

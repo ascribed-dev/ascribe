@@ -1431,3 +1431,46 @@ fn fix_lists_ten_memos_and_the_command_that_lists_the_rest() {
         "{text}"
     );
 }
+
+#[test]
+fn quill_s_llms_txt_follows_its_navigation_and_keeps_each_title() {
+    let repo = repository("quill");
+    let dir = repo.path();
+    let config = dir.join("ascribe.toml");
+    let text = read(&config).replace(
+        "site = \"https://docs.quill.dev\"",
+        "site = \"https://docs.quill.dev\"\nagents = true",
+    );
+    write(&config, &text);
+    run(
+        dir,
+        &["build", "--build", "site", "--emit", "site,plain"],
+        0,
+    );
+    let llms = read(&dir.join(".ascribe/build/site/plain/llms.txt"));
+    let headings: Vec<&str> = llms.lines().filter(|l| l.starts_with("## ")).collect();
+    assert_eq!(headings, ["## Start"], "{llms}");
+    // The navigation's order, `keys.md` first by title, with its title.
+    let nav: serde_json::Value = serde_json::from_str(&read(
+        &dir.join(".ascribe/build/site/site/_ascribe/nav.json"),
+    ))
+    .expect("the navigation");
+    let pages = nav["root"]["pages"].as_array().expect("the root's pages");
+    let order: Vec<String> = pages
+        .iter()
+        .filter_map(|p| p["source"].as_str())
+        .map(|s| format!("https://docs.quill.dev/{s}"))
+        .collect();
+    let listed: Vec<String> = llms
+        .lines()
+        .filter_map(|line| line.split_once("](").map(|(_, rest)| rest))
+        .filter_map(|rest| rest.split_once(')').map(|(url, _)| url.to_owned()))
+        .collect();
+    assert_eq!(listed, order, "{llms}");
+    assert_eq!(pages[0]["source"], "keys.md");
+    assert_eq!(pages[0]["label"], "Keys", "the sidebar's name for it");
+    assert!(
+        llms.contains("- [API keys](https://docs.quill.dev/keys.md)"),
+        "{llms}"
+    );
+}

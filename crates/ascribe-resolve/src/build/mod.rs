@@ -83,8 +83,9 @@ pub use permalinks::{DeclaredPermalink, Destination, Permalink, permalinks};
 pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
-    LinkTarget, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild,
-    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
+    LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock,
+    ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope,
+    Substitution,
 };
 
 use crate::index::FileKind;
@@ -375,6 +376,10 @@ impl<'p> BuildResolver<'p> {
         drop_unpublished(&mut blocks);
         let frontmatter = frontmatter.and_then(without_acknowledgements);
         let permalink = permalinks::of_page(index);
+        let nav_label = index
+            .frontmatter
+            .as_ref()
+            .and_then(|f| phrases::nav_label(model, self.build, index.content_type(model), f));
         Some(ResolvedPage {
             path: path.clone(),
             file: index.file,
@@ -383,6 +388,7 @@ impl<'p> BuildResolver<'p> {
             frontmatter,
             title,
             formatted,
+            nav_label,
             availability: page_availability,
             permalink,
             listing,

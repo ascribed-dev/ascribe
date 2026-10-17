@@ -297,3 +297,55 @@ fn labels_are_formatted_where_the_title_is() {
     let own = guides.page.as_ref().expect("its own page");
     assert!(own.formatted.is_some());
 }
+
+#[test]
+fn a_page_s_nav_label_is_its_label_formatted_as_its_title_is() {
+    let labeled = |kind: &str, title: &str, label: &str| {
+        format!("---\ntype: {kind}\ntitle: {title}\nnav-label: \"{label}\"\n---\n\nText.\n")
+    };
+    let p = project(
+        &[
+            ("index.md", page("guide", "Home")),
+            (
+                "Guides/keys.md",
+                labeled("guide", "The API keys of `loom`", "`loom` keys"),
+            ),
+            (
+                "Guides/options.md",
+                labeled("reference", "Every option there is", "Options"),
+            ),
+        ],
+        None,
+    );
+    let navigation = p.navigation();
+    let build = p.model().build("site").expect("a build");
+    let resolved = p.resolve_build(build, &DefaultRouter::new());
+    let share = navigation.share(&p, &resolved);
+    let pages = &share.root.sections[0].pages;
+    let keys = pages
+        .iter()
+        .find(|n| n.page.path.as_str() == "Guides/keys.md")
+        .expect("the keys");
+    assert_eq!(keys.label, "loom keys");
+    assert_eq!(
+        keys.formatted.map(ascribe_model::inline::plain_text),
+        Some("loom keys".to_owned())
+    );
+    let options = pages
+        .iter()
+        .find(|n| n.page.path.as_str() == "Guides/options.md")
+        .expect("the options");
+    assert_eq!(options.label, "Options");
+    assert!(
+        options.formatted.is_none(),
+        "its title isn't read with inline markup"
+    );
+    // The order is still by title.
+    assert_eq!(pages[0].page.path.as_str(), "Guides/keys.md");
+    // The project's labels, before a build, as `ascribe model` reports them.
+    let file = p.file(&ascribe_core::RelPath::parse("Guides/keys.md").expect("a path"));
+    assert_eq!(
+        ascribe_resolve::file_label(file.expect("the file"), p.model()),
+        "loom keys"
+    );
+}

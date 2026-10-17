@@ -5,7 +5,7 @@ description: The order a project's sections and pages come in, from ascribe.nav 
 available: next
 ---
 
-A project's **navigation** is its sections and pages in order, each with its label. Every sidebar is drawn from it: an Astro site's `sidebar()` reads it from the build (see [the Astro reference](../astro/reference.md#sidebar)). With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
+A project's **navigation** is its sections and pages in order, each with its label. Every sidebar and table of contents is drawn from it: an Astro site's `sidebar()` and `neighbors()` read it from the build (see [the Astro reference](../astro/reference.md#sidebar)), and so do [`llms.txt`](../agents/index.md), `ascribe agents index`, an [archive](../versions/index.md#archive-a-line) of a release line, the JSON output, and `ascribe model`. With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
 
 ## Sections and pages
 
@@ -13,7 +13,8 @@ A project's **navigation** is its sections and pages in order, each with its lab
 |---|---|
 | Section | The content root, or a folder under it with a page at any depth. Fragments aren't pages, so a folder whose name starts with `_` isn't a section. A page is in its folder's section, and only there: to move it to another, move the file. |
 | A section's own page | Its `index.md`, or else the page beside the folder with the folder's name, such as `checks/diagnostics.md` for `checks/diagnostics/`. A page beside its folder is also one of the parent section's pages, and the nested section sits right after it. The content root's own page is its `index.md`, the home page. |
-| Label | A section's `label` in the file, else its own page's title, else its folder's name with its first letter capitalized. The content root's is **Start** unless the file gives it another. A page's label is its title. |
+| Label | A section's `label` in the file, else its own page's title, else its folder's name with its first letter capitalized. The content root's is **Start** unless the file gives it another. A page's label is its [`nav-label`](#a-page-s-label), else its title. |
+| Reading order | A section's own page, then its pages in order, a nested section whose own page is beside its folder right after that page, and the other nested sections after the pages; from the content root, depth first. It's the order of previous and next, an archive, and a section's pages in `llms.txt`. The home page has no previous. |
 
 ## The default order
 
@@ -22,6 +23,21 @@ With no file, and for whatever the file leaves out:
 - Sections come in path order, the content root first.
 - In a section, its own page is first, then its pages by their content type, in the order `ascribe.toml` declares the types, then by title.
 - A nested section whose own page is beside its folder sits where that page sits among its parent's pages. Any other comes after the parent's pages, in path order.
+
+## A page's label
+@id: a-page-s-label
+
+A page's label is its title unless its frontmatter gives it a shorter one, `nav-label`, for wherever it's an entry in a list: the sidebar, and the links to the previous and next pages.
+
+```yaml
+---
+type: reference
+title: Create and rotate API keys
+nav-label: Keys
+---
+```
+
+`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a content type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`.
 
 ## The file
 @id: the-file
@@ -66,6 +82,7 @@ Once the file reads, `ascribe check` and the editor hold it to the project. Each
 | `section-page-both`, error | On a folder's `index.md` when the page beside the folder has its name too, with or without the file | Keep one of them as the section's own page. Until then, the `index.md` is. |
 | `nav-page-unplaced`, advice | On a page its section's `pages` doesn't name. A section without `pages` reports nothing. | The fix adds the section's unnamed pages to `pages`, in the order they come in now, so nothing moves. Then move them where you want them. |
 | `nav-section-unplaced`, advice | On the first page of a section the file doesn't list when it lists one of the section's siblings. A folder none of whose sections are listed reports nothing. | The fix adds a `[[sections]]` table for each, in the order they come in now. A file that writes `sections = [...]` inline gets no fix: add the sections to its list. |
+| `nav-label-long`, advice | At a page's `nav-label` that's longer than its title, each counted as a reader sees it | Shorten it, or remove it so the title is the label. |
 
 The fixes keep the file's comments and layout. The two pieces of advice are what tells a writer that a page or a folder they've just added isn't where the file says the others go, and an agent too when it runs `ascribe check`, since the agents' hook reports only errors: `ascribe check --fix` places every one of them at once, where the default already shows it, and the editor offers the same fix on the page. A project that wants every page placed can raise them to errors in [`[checks]`](../content-model/checks.md).
 
@@ -73,4 +90,14 @@ The fixes keep the file's comments and layout. The two pieces of advice are what
 
 The navigation is the project's, and each build shows its share: the pages it publishes and offers, and the sections left with one. A page that's [`listing: unlisted`](../content-model/index.md#listing-a-page) is published at its address and left out of the navigation, so out of the sidebar too. A build with no pages has an empty navigation.
 
-Each build's site output has its share as `_ascribe/nav.json`, beside the page records.
+Each build's site output has its share as `_ascribe/nav.json`, beside the page records, and so does its JSON output, with each formatted label in its own form. In a [versioned build](../versions/index.md), each line has its own: a page a newer line adds isn't in an older line's navigation.
+
+## Who reads it
+
+| Reader | What it takes |
+|---|---|
+| A site's sidebar | `sidebar()` in `@ascribed/astro`: the root's pages under its label, then a group for each top section, with nested sections inside. |
+| Previous and next | `neighbors()` in `@ascribed/astro`: the pages before and after one in reading order. |
+| [`llms.txt`](../agents/index.md#llms-txt) and `ascribe agents index` | A section for the root's pages, under its label, then one for each top section, with its nested sections' pages in reading order. A page keeps its title there. |
+| An [archive](../versions/index.md#archive-a-line) | Its sidebar and contents page, nested sections in their place, and previous and next in reading order. |
+| `ascribe model --format json` | The project's navigation under `navigation`, every page that isn't `unlisted`, with each section's `listed`: whether `ascribe.nav` lists it. |

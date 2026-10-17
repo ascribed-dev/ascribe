@@ -233,3 +233,4 @@
 | [ASC234](../checks/diagnostics/pages.md#ASC234) | `section-page-both` | Error | File | choose |
 | [ASC235](../checks/diagnostics/content-checks.md#ASC235) | `nav-page-unplaced` | Advice | File | fix |
 | [ASC236](../checks/diagnostics/content-checks.md#ASC236) | `nav-section-unplaced` | Advice | File | fix |
+| [ASC237](../checks/diagnostics/content-checks.md#ASC237) | `nav-label-long` | Advice | File | write |

@@ -167,7 +167,8 @@ pub struct ModelNavSection {
 pub struct ModelNavPage {
     /// Its path from the content root.
     pub source: String,
-    /// Its label: its title, or its file name without `.md`.
+    /// Its label: its `nav-label` as plain text, else its title, else its
+    /// file name without `.md`.
     pub label: String,
     /// Its content type's name, when it has one.
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
@@ -244,7 +245,7 @@ fn nav_page(project: &Project, path: &RelPath) -> Option<ModelNavPage> {
     }
     Some(ModelNavPage {
         source: path.to_string(),
-        label: file_label(file),
+        label: file_label(file, model),
         type_name: type_name.map(str::to_owned),
     })
 }

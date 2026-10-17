@@ -265,7 +265,7 @@
       "description": "A page of the navigation.",
       "properties": {
         "label": {
-          "description": "Its label: its title, or its file name without `.md`.",
+          "description": "Its label: its `nav-label` as plain text, else its title, else its\nfile name without `.md`.",
           "type": "string"
         },
         "source": {

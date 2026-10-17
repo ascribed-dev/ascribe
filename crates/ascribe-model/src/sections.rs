@@ -90,6 +90,7 @@ impl Loader<'_> {
                         | "replaces"
                         | "intended"
                         | "type"
+                        | "nav-label"
                 )
             };
             for (name, span, _) in entries(ft) {
@@ -178,6 +179,7 @@ impl Loader<'_> {
                                 | "replaces"
                                 | "intended"
                                 | "type"
+                                | "nav-label"
                                 | "slug"
                                 | "formatted"
                                 | "source"

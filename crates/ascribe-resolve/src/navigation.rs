@@ -31,7 +31,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use ascribe_core::RelPath;
 use ascribe_model::{ContentModel, NavFile, Segment};
 
-use crate::build::{ResolvedBuild, ResolvedPage};
+use crate::build::{NAV_LABEL, ResolvedBuild, ResolvedPage};
 use crate::index::{FileIndex, FileKind};
 use crate::project::Project;
 
@@ -146,9 +146,11 @@ impl<'a> SharedSection<'a> {
 pub struct NavPage<'a> {
     /// The page.
     pub page: &'a ResolvedPage,
-    /// Its label as plain text: its title, or its file name without `.md`.
+    /// Its label as plain text: its `nav-label`, else its title, else its
+    /// file name without `.md`.
     pub label: String,
-    /// Its label in pieces, when its title is read with inline markup.
+    /// Its label in pieces, when it's read with inline markup, as the title
+    /// is.
     pub formatted: Option<&'a [Segment]>,
     /// Its content type's name, when it has one.
     pub type_name: Option<&'a str>,
@@ -387,10 +389,17 @@ impl<'a> Sharer<'a> {
             return None;
         }
         let model = self.project.model();
+        let (label, formatted) = match &page.nav_label {
+            Some(own) => (own.text.clone(), own.formatted.as_deref()),
+            None => (
+                page.title.clone().unwrap_or_else(|| stem(path).to_owned()),
+                page.formatted_title(),
+            ),
+        };
         Some(NavPage {
             page,
-            label: page.title.clone().unwrap_or_else(|| stem(path).to_owned()),
-            formatted: page.formatted_title(),
+            label,
+            formatted,
             type_name: self
                 .project
                 .file(path)
@@ -415,12 +424,28 @@ pub fn folder_label(folder: &str) -> String {
     }
 }
 
-/// A page's label as the source has it, before a build: its title, or
-/// its file name without `.md`.
-pub fn file_label(file: &FileIndex) -> String {
-    file.title
-        .clone()
-        .unwrap_or_else(|| stem(&file.path).to_owned())
+/// A page's label as the source has it, before a build: its `nav-label` as
+/// plain text, else its title, else its file name without `.md`.
+pub fn file_label(file: &FileIndex, model: &ContentModel) -> String {
+    let own = file
+        .frontmatter
+        .as_ref()
+        .and_then(|f| f.get(NAV_LABEL))
+        .and_then(|l| l.as_str());
+    let inline = file
+        .content_type(model)
+        .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"))
+        .is_some_and(|f| f.inline.is_some());
+    match own {
+        Some(own) if inline => {
+            ascribe_model::inline::plain_text(&ascribe_model::inline::parse(own, &|_| None))
+        }
+        Some(own) => own.to_owned(),
+        None => file
+            .title
+            .clone()
+            .unwrap_or_else(|| stem(&file.path).to_owned()),
+    }
 }
 
 /// The folder a path is in, ending in `/`, or `""` at the content root.
