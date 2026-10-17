@@ -346,7 +346,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-75 commands, 37 of them actions.
+77 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -382,6 +382,8 @@ Commands that aren't actions:
 | Ascribe: Refresh | `ascribe.projects.refresh` |
 | Ascribe: Show Output | `ascribe.projects.showOutput` |
 | Ascribe: Restart Server | `ascribe.projects.restart` |
+| Ascribe: Place Here | `ascribe.pages.placeHere` |
+| Ascribe: Rename Label… | `ascribe.pages.renameLabel` |
 | Ascribe: Reply Now | `ascribe.review.replyNow` |
 | Ascribe: Add to Review | `ascribe.review.addToReview` |
 | Ascribe: Resolve | `ascribe.review.resolve` |
@@ -479,10 +481,10 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 75 |
+| `commandPalette` | 77 |
 | `editor/title` | 5 |
 | `view/title` | 7 |
-| `view/item/context` | 3 |
+| `view/item/context` | 5 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |

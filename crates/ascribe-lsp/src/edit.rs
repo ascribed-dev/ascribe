@@ -29,6 +29,7 @@ mod blocks;
 mod inline;
 mod insert;
 mod model;
+pub(crate) mod navigation;
 mod page;
 pub(crate) mod start;
 
@@ -148,11 +149,23 @@ pub enum EditAction {
     /// Creates a personal memo file, in `.ascribe/memos/`, as `addMemo`
     /// does.
     AddPersonalMemo,
+    /// Puts a section before a sibling in `ascribe.nav`, or after them all.
+    /// Asked through any of the project's files.
+    MoveSection,
+    /// Puts a page before another of its section's in `ascribe.nav`, or
+    /// after them all. Asked through any of the project's files.
+    MovePage,
+    /// Appends a page its section's `pages` leaves out to it. Asked through
+    /// any of the project's files.
+    PlacePage,
+    /// Sets a section's `label` in `ascribe.nav`, or takes it out. Asked
+    /// through any of the project's files.
+    SetSectionLabel,
 }
 
 impl EditAction {
     /// Every action, in the order the README documents them.
-    pub const ALL: [EditAction; 36] = [
+    pub const ALL: [EditAction; 40] = [
         EditAction::WrapNote,
         EditAction::SetNoteType,
         EditAction::UnwrapNote,
@@ -189,7 +202,24 @@ impl EditAction {
         EditAction::NextPlaceholder,
         EditAction::AddMemo,
         EditAction::AddPersonalMemo,
+        EditAction::MoveSection,
+        EditAction::MovePage,
+        EditAction::PlacePage,
+        EditAction::SetSectionLabel,
     ];
+
+    /// Whether the action is about the whole project, asked through any of
+    /// its files, rather than about a place in a page.
+    pub fn about_project(self) -> bool {
+        matches!(
+            self,
+            EditAction::NewPage
+                | EditAction::MoveSection
+                | EditAction::MovePage
+                | EditAction::PlacePage
+                | EditAction::SetSectionLabel
+        )
+    }
 }
 
 /// The answer to `ascribe/edit`: the edit, or why there is none.
@@ -244,6 +274,10 @@ pub(crate) fn edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> EditResult {
 fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, String> {
     if params.action == EditAction::NewPage {
         return start::new_page(ctx, &params.args);
+    }
+    if params.action.about_project() {
+        let asked = navigation::asked(params.action, &params.args)?;
+        return navigation::edit(ctx, &asked);
     }
     let Some(file) = ctx.file() else {
         return Ok(EditResult::default());
@@ -325,7 +359,11 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         EditAction::NewPage
         | EditAction::NextPlaceholder
         | EditAction::AddMemo
-        | EditAction::AddPersonalMemo => {
+        | EditAction::AddPersonalMemo
+        | EditAction::MoveSection
+        | EditAction::MovePage
+        | EditAction::PlacePage
+        | EditAction::SetSectionLabel => {
             return Err("The action has no edit to plan here.".to_owned());
         }
     }?;

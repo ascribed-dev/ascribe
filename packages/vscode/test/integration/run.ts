@@ -41,6 +41,10 @@
 //               projects whose sources share a folder, a lens from each in
 //               the code file, against the real `ascribe lsp`. Needs
 //               ASCRIBE_BIN and `git`.
+//   navigation  a copy of examples/astro-site with a page added to Reference,
+//               the Pages view as its navigation: dragging, Place Here,
+//               Rename Label…, moving a page, and revealing the open one,
+//               against the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -276,6 +280,20 @@ const suites: Suite[] = [
     },
   },
   {
+    name: "navigation",
+    fixture: path.join(repositoryRoot, "examples/astro-site"),
+    prepare: (workspace) => {
+      // The site's own dependencies aren't the editor's.
+      rmSync(path.join(workspace, "node_modules"), { recursive: true, force: true });
+      // A second page in Reference, which Options is dragged below.
+      writeFileSync(
+        path.join(workspace, "content/Reference/Limits.md"),
+        "---\ntype: page\ntitle: Limits\n---\n\nWhat Loom can hold. See [the options](Options.md).\n",
+      );
+      return { "ascribe.path": realServer, ...startAll };
+    },
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The file watcher's trace, to see why it missed a file if it does (#56).
@@ -310,6 +328,7 @@ const needsServer = new Set([
   "templates",
   "tested",
   "shared",
+  "navigation",
   "monorepo",
 ]);
 

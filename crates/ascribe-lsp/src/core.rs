@@ -511,7 +511,30 @@ impl Core {
         for path in gone {
             self.clear(&path);
         }
+        // The project read `ascribe.nav` from the disk; an open buffer wins.
+        self.refresh_nav();
         self.publish_open_configs();
+    }
+
+    /// Gives the long-lived project `ascribe.nav` as the editor has it now,
+    /// its open buffer over the disk, so the navigation it gives, which the
+    /// Pages view draws, follows the file. Every change to the file comes
+    /// here, as each sets `across_dirty` for the checks.
+    fn refresh_nav(&mut self) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        let nav = RelPath::parse(ascribe_model::NAV_FILE)
+            .ok()
+            .and_then(|path| loaded.fs.read_file(&path).ok())
+            .and_then(|bytes| String::from_utf8(bytes).ok())
+            .and_then(|text| {
+                ascribe_model::NavFile::parse(&text, ascribe_core::FileId::new(0)).ok()
+            })
+            .map(Arc::new);
+        if let Ok(affected) = loaded.inc.apply([Change::Nav(nav)]) {
+            self.absorb(&affected);
+        }
     }
 
     // -- A source's `ascribe.examples.toml` -------------------------------------
@@ -680,6 +703,7 @@ impl Core {
         {
             loaded.fs.set_buffer(&project, None);
             loaded.across_dirty = true;
+            self.refresh_nav();
             return;
         }
         self.refresh_from_disk(&path);
@@ -726,6 +750,7 @@ impl Core {
         if let Some(project) = loaded.nav_file(path) {
             loaded.fs.set_buffer(&project, Some(text));
             loaded.across_dirty = true;
+            self.refresh_nav();
             return;
         }
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
@@ -752,6 +777,7 @@ impl Core {
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
         let mut visited = Visited::default();
         let mut refresh = false;
+        let mut nav = false;
         for event in events {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
@@ -789,6 +815,7 @@ impl Core {
                 // sources: the checks across the project compare them with
                 // the content. An open buffer of `ascribe.nav` wins.
                 loaded.across_dirty = true;
+                nav |= loaded.nav_file(&path).is_some();
                 continue;
             }
             memos |= self.loaded.as_ref().is_some_and(|loaded| {
@@ -845,6 +872,9 @@ impl Core {
         }
         if memos {
             self.refresh_lenses();
+        }
+        if nav {
+            self.refresh_nav();
         }
         if sync_model {
             self.sync_model();

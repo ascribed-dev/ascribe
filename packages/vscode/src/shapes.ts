@@ -820,6 +820,18 @@ export interface InventoryFragment {
   includedBy: string[];
 }
 
+/** A page in a section of the navigation. */
+export interface InventoryNavPage {
+  /** Its content path, as `pages` has it. */
+  path: string;
+  /**
+   * Whether it has its place: its section lists no pages, or lists it.
+   * One that isn't comes after those that are, and `nav-page-unplaced`
+   * reports it.
+   */
+  placed: boolean;
+}
+
 /** A page. */
 export interface InventoryPage {
   /** Its content path. */
@@ -853,6 +865,12 @@ export interface InventoryResult {
    */
   orphans: string[];
   /**
+   * The project's navigation (SPEC §7.8), `ascribe.nav`'s order over the
+   * default: its root section. `null` for a document that isn't one of
+   * the project's files.
+   */
+  navigation: InventorySection | null;
+  /**
    * The content model's entries: phrases, features, glossary terms,
    * dimensions, note types, widgets, then builds, each kind in
    * declaration order.
@@ -868,6 +886,39 @@ export interface InventoryResult {
    * declarations are in.
    */
   modelUri?: string;
+}
+
+/** A section of the navigation: a folder and its pages, in order. */
+export interface InventorySection {
+  /** Its folder, from the content root, ending in `/`; `""` for the root. */
+  folder: string;
+  /**
+   * Its label: `label` from `ascribe.nav`, else its own page's title,
+   * else its folder's name, and "Start" for the root.
+   */
+  label: string;
+  /** The `label` `ascribe.nav` gives it, when it gives one. */
+  labelSet: string | null;
+  /**
+   * The content path of its own page: its `index.md`, or the page beside
+   * the folder with its name, which is then one of its parent's `pages`
+   * too, and the section sits where it does.
+   */
+  page: string | null;
+  /** Its pages in order, its own page not among them. */
+  pages: InventoryNavPage[];
+  /**
+   * Its nested sections: each whose own page is among `pages` sits
+   * there; the rest come after the pages, in this order.
+   */
+  sections: InventorySection[];
+  /** Whether `ascribe.nav` lists it. */
+  listed: boolean;
+  /**
+   * Whether `ascribe.nav` lists its pages, so a page it leaves out isn't
+   * placed.
+   */
+  listsPages: boolean;
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */

@@ -1,19 +1,29 @@
 import { describe, expect, it } from "vitest";
-import type { InventoryResult, PageAbout, PageListing, PageResult } from "../../src/shapes.js";
+import type {
+  InventoryResult,
+  InventorySection,
+  PageAbout,
+  PageListing,
+  PageResult,
+} from "../../src/shapes.js";
 import {
+  contentPathOf,
   modelChildren,
   modelLook,
   modelRoots,
+  NEXT_PLACEHOLDER,
   pagesChildren,
+  pagesDrop,
+  pagesFind,
   pagesLook,
+  pagesParent,
   pagesPath,
   pagesRoots,
+  SHOW_PROBLEMS,
+  SWITCH_BUILD,
   thisPageChildren,
   thisPageLook,
   thisPageRoots,
-  NEXT_PLACEHOLDER,
-  SHOW_PROBLEMS,
-  SWITCH_BUILD,
   type Place,
   type ThisPageNode,
   type ThisPageReview,
@@ -45,6 +55,7 @@ const inventory: InventoryResult = {
     { path: "_unused.md", includedBy: [] },
   ],
   orphans: ["old.md"],
+  navigation: null,
   model: [
     { kind: "phrase", key: "product", label: "Quill", uses: 14, declaration: range(4) },
     { kind: "phrase", key: "old", label: "Old", uses: 0, declaration: range(5) },
@@ -53,54 +64,205 @@ const inventory: InventoryResult = {
   ],
 };
 
+/** A section of the navigation, with what the test gives it. */
+function section(
+  folder: string,
+  label: string,
+  more: Partial<InventorySection> = {},
+): InventorySection {
+  return {
+    folder,
+    label,
+    labelSet: null,
+    page: null,
+    pages: [],
+    sections: [],
+    listed: false,
+    listsPages: false,
+    ...more,
+  };
+}
+
+const page = (path: string, placed = true) => ({ path, placed });
+
+/**
+ * Start with its home page; Guides with a nested section that sits where
+ * its page beside the folder does, and a page left out of its list;
+ * Reference.
+ */
+const deep = section("guides/deep/", "Deep", {
+  page: "guides/deep.md",
+  pages: [page("guides/deep/part.md")],
+});
+const guides = section("guides/", "Guides", {
+  listed: true,
+  listsPages: true,
+  labelSet: "Guides",
+  pages: [page("guides/install.md"), page("guides/deep.md"), page("guides/old.md", false)],
+  sections: [deep],
+});
+const reference = section("ref/", "Reference", { pages: [page("ref/api.md")] });
+const navigated: InventoryResult = {
+  ...inventory,
+  pages: [
+    ...inventory.pages,
+    { path: "guides/deep.md", title: "Deep", type: "guide", incoming: 1, builds: ["site"] },
+    { path: "guides/deep/part.md", title: "Part", type: "guide", incoming: 1, builds: ["site"] },
+    { path: "guides/old.md", title: "Old", type: "guide", incoming: 0, builds: ["site"] },
+  ],
+  fragments: [
+    { path: "_setup.md", includedBy: ["guides/install.md", "index.md"] },
+    { path: "_parts/_unused.md", includedBy: [] },
+  ],
+  navigation: section("", "Start", {
+    page: "index.md",
+    sections: [guides, reference],
+  }),
+};
+
+/** The view as lines: each item's label and description, its children indented. */
+function outline(nodes: ReturnType<typeof pagesRoots>, depth = 0): string[] {
+  return nodes.flatMap((node) => {
+    const look = pagesLook(node);
+    return [
+      `${"  ".repeat(depth)}${look.label}${look.description ? ` (${look.description})` : ""}`,
+      ...outline(pagesChildren(node), depth + 1),
+    ];
+  });
+}
+
+/** The node of a section, by its folder. */
+function sectionOf(roots: ReturnType<typeof pagesRoots>, folder: string) {
+  const find = (
+    nodes: ReturnType<typeof pagesRoots>,
+  ): ReturnType<typeof pagesRoots>[number] | undefined => {
+    for (const node of nodes) {
+      if (node.kind === "section" && node.section.folder === folder) return node;
+      const found = find(pagesChildren(node));
+      if (found) return found;
+    }
+    return undefined;
+  };
+  const found = find(roots);
+  if (!found) throw new Error(`no section ${folder}`);
+  return found;
+}
+
+function pageOf(roots: ReturnType<typeof pagesRoots>, path: string) {
+  const found = pagesFind(roots, path);
+  if (!found) throw new Error(`no page ${path}`);
+  return found;
+}
+
 describe("the Pages view", () => {
-  it("groups pages by type, then fragments, then orphans", () => {
+  it("draws the navigation: Start, each section in order with its pages, then fragments by folder", () => {
+    expect(outline(pagesRoots(navigated))).toEqual([
+      "Start",
+      "  Home (index.md)",
+      "Guides (guides/)",
+      "  Install (guides/install.md)",
+      // A section whose page sits beside its folder sits where that page does.
+      "  Deep (guides/deep/)",
+      "    Deep (guides/deep.md)",
+      "    Part (guides/deep/part.md)",
+      "  Old (not placed)",
+      "Reference (ref/)",
+      "  API (ref/api.md)",
+      "Fragments (2)",
+      "  the content root (1)",
+      "    _setup.md (2 files)",
+      "      guides/install.md (includes it)",
+      "      index.md (includes it)",
+      "  _parts/ (1)",
+      "    _unused.md (not included)",
+    ]);
+  });
+
+  it("marks a page the file leaves out, offers Place Here on it, and Rename Label… on a section", () => {
+    const roots = pagesRoots(navigated);
+    const old = pageOf(roots, "guides/old.md");
+    expect(pagesLook(old)).toMatchObject({ icon: "warning", context: "ascribe.pages.unplaced" });
+    expect(pagesLook(old).tooltip).toContain("Place Here appends it");
+    expect(pagesLook(pageOf(roots, "guides/install.md")).context).toBe("ascribe.pages.page");
+    // A section's own page doesn't move.
+    expect(pagesLook(pageOf(roots, "index.md")).context).toBeUndefined();
+    expect(pagesLook(sectionOf(roots, "guides/")).context).toBe("ascribe.pages.section");
+    expect(pagesPath(pageOf(roots, "guides/install.md"))).toBe("guides/install.md");
+  });
+
+  it("knows each item's parent, so the open page can be revealed", () => {
+    const roots = pagesRoots(navigated);
+    const part = pageOf(roots, "guides/deep/part.md");
+    const up: string[] = [];
+    for (let node = pagesParent(part); node; node = pagesParent(node)) {
+      up.push(pagesLook(node).label);
+    }
+    expect(up).toEqual(["Deep", "Guides"]);
+    expect(pagesParent(sectionOf(roots, "guides/"))).toBeUndefined();
+  });
+
+  it("shows only fragments when there's no navigation", () => {
     const roots = pagesRoots(inventory);
-    expect(roots.map((n) => pagesLook(n).label)).toEqual([
-      "guide",
-      "page",
-      "reference",
-      "no type",
-      "Fragments",
-      "Orphans",
-    ]);
-    expect(roots.map((n) => pagesLook(n).description)).toEqual(["1", "1", "1", "1", "2", "1"]);
+    expect(roots.map((n) => n.kind)).toEqual(["fragments"]);
+    expect(pagesRoots({ ...inventory, fragments: [] })).toEqual([]);
   });
+});
 
-  it("shows a page's title as its label and its path as the description", () => {
-    const guides = nth(pagesRoots(inventory), 0);
-    const install = nth(pagesChildren(guides), 0);
-    expect(pagesLook(install)).toMatchObject({
-      label: "Install",
-      description: "guides/install.md",
-      icon: "file",
+describe("dropping in the Pages view", () => {
+  const roots = pagesRoots(navigated);
+  const drop = (dragged: string, target: string) => {
+    const node = (name: string) =>
+      name.endsWith("/") || name === "" ? sectionOf(roots, name) : pageOf(roots, name);
+    return pagesDrop(node(dragged), node(target));
+  };
+
+  it("puts a section before one above it, and after one below it", () => {
+    expect(drop("ref/", "guides/")).toEqual({
+      kind: "edit",
+      action: "moveSection",
+      args: { folder: "ref/", before: "guides/" },
     });
-    expect(pagesPath(install)).toBe("guides/install.md");
-    // A page without a title shows its file name.
-    const untyped = nth(pagesRoots(inventory), 3);
-    expect(pagesLook(nth(pagesChildren(untyped), 0)).label).toBe("old.md");
+    expect(drop("guides/", "ref/")).toEqual({
+      kind: "edit",
+      action: "moveSection",
+      args: { folder: "guides/", before: null },
+    });
+    expect(drop("ref/", "guides/deep/")).toMatchObject({ kind: "none" });
   });
 
-  it("lists what includes each fragment, and marks one nothing includes", () => {
-    const fragments = nth(pagesRoots(inventory), 4);
-    const children = pagesChildren(fragments);
-    const setup = nth(children, 0);
-    const unused = nth(children, 1);
-    expect(pagesLook(setup)).toMatchObject({ description: "2 files", expandable: true });
-    expect(pagesChildren(setup).map((n) => pagesPath(n))).toEqual([
-      "guides/install.md",
-      "index.md",
-    ]);
-    expect(pagesLook(unused)).toMatchObject({
-      description: "not included",
-      dimmed: true,
-      expandable: false,
+  it("puts a page among its section's, and first when dropped on its section", () => {
+    expect(drop("guides/old.md", "guides/install.md")).toEqual({
+      kind: "edit",
+      action: "movePage",
+      args: { page: "guides/old.md", before: "guides/install.md" },
+    });
+    expect(drop("guides/install.md", "guides/old.md")).toEqual({
+      kind: "edit",
+      action: "movePage",
+      args: { page: "guides/install.md", before: null },
+    });
+    // A section beside its page moves as its page does.
+    expect(drop("guides/deep/", "guides/install.md")).toEqual({
+      kind: "edit",
+      action: "movePage",
+      args: { page: "guides/deep.md", before: "guides/install.md" },
+    });
+    expect(drop("guides/old.md", "guides/")).toEqual({
+      kind: "edit",
+      action: "movePage",
+      args: { page: "guides/old.md", before: "guides/install.md" },
     });
   });
 
-  it("leaves out groups with nothing in them", () => {
-    const roots = pagesRoots({ ...inventory, fragments: [], orphans: [] });
-    expect(roots.map((n) => n.kind)).toEqual(["type", "type", "type", "type"]);
+  it("moves a page's file when it's dropped on another section, asked first", () => {
+    expect(drop("guides/install.md", "ref/")).toEqual({
+      kind: "move",
+      page: "guides/install.md",
+      folder: "ref/",
+      label: "Reference",
+    });
+    expect(drop("guides/install.md", "ref/api.md")).toMatchObject({ kind: "move", folder: "ref/" });
+    expect(drop("index.md", "ref/")).toEqual({ kind: "none" });
   });
 });
 
@@ -593,5 +755,27 @@ describe("the This page view", () => {
         includes: [],
       }),
     ).toEqual([]);
+  });
+});
+
+describe("a file's content path, for revealing it in Pages", () => {
+  it("is the path below the content root, in the file's own case", () => {
+    expect(contentPathOf("/work/docs/Guides/My Setup.md", "/work/docs")).toBe("Guides/My Setup.md");
+    expect(contentPathOf("/work/docs/Guides/My Setup.md", "/work/docs/")).toBe(
+      "Guides/My Setup.md",
+    );
+  });
+
+  it("matches a Windows drive in either case, as the server and VS Code write it", () => {
+    expect(contentPathOf("c:\\work\\docs\\Guides\\My Setup.md", "C:\\work\\docs")).toBe(
+      "Guides/My Setup.md",
+    );
+    expect(contentPathOf("C:\\Work\\Docs\\index.md", "c:\\work\\docs")).toBe("index.md");
+  });
+
+  it("is nothing outside the root, or for the root itself", () => {
+    expect(contentPathOf("/work/docs-old/index.md", "/work/docs")).toBeUndefined();
+    expect(contentPathOf("/work/docs", "/work/docs")).toBeUndefined();
+    expect(contentPathOf("/Work/docs/index.md", "/work/docs")).toBeUndefined();
   });
 });

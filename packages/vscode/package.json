@@ -397,6 +397,16 @@
         "icon": "$(debug-restart)"
       },
       {
+        "command": "ascribe.pages.placeHere",
+        "title": "Place Here",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.pages.renameLabel",
+        "title": "Rename Label…",
+        "category": "Ascribe"
+      },
+      {
         "command": "ascribe.review.replyNow",
         "title": "Reply Now",
         "category": "Ascribe"
@@ -1154,6 +1164,14 @@
           "when": "false"
         },
         {
+          "command": "ascribe.pages.placeHere",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.pages.renameLabel",
+          "when": "false"
+        },
+        {
           "command": "ascribe.review.replyNow",
           "when": "false"
         },
@@ -1265,6 +1283,16 @@
           "command": "ascribe.projects.restart",
           "when": "view == ascribe.projects && viewItem =~ /^ascribe\\.project\\.(running|failed)$/",
           "group": "inline@2"
+        },
+        {
+          "command": "ascribe.pages.placeHere",
+          "when": "view == ascribe.pages && viewItem == ascribe.pages.unplaced",
+          "group": "navigation@1"
+        },
+        {
+          "command": "ascribe.pages.renameLabel",
+          "when": "view == ascribe.pages && viewItem == ascribe.pages.section",
+          "group": "navigation@2"
         }
       ],
       "comments/commentThread/context": [

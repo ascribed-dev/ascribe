@@ -297,3 +297,46 @@ fn labels_are_formatted_where_the_title_is() {
     let own = guides.page.as_ref().expect("its own page");
     assert!(own.formatted.is_some());
 }
+
+#[test]
+fn a_long_lived_project_follows_the_file_as_it_changes() {
+    let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads");
+    let layout = Layout::from_model(&model);
+    let mut fs = MemoryFs::new(&layout);
+    for (path, text) in files() {
+        fs = fs.with_source(path, &text);
+    }
+    let mut project = ascribe_resolve::IncrementalProject::load(Arc::new(model), layout, fs);
+    let folders = |p: &ascribe_resolve::IncrementalProject| -> Vec<String> {
+        p.snapshot()
+            .navigation()
+            .root
+            .sections
+            .iter()
+            .map(|s| s.folder.clone())
+            .collect()
+    };
+    assert_eq!(folders(&project), ["Guides/", "Reference/"]);
+    let nav = ascribe_model::NavFile::parse(
+        "version = 1\n[[sections]]\nfolder = \"Reference/\"\n",
+        FileId::new(0),
+    )
+    .expect("it reads");
+    let before = project.version();
+    let affected = project
+        .apply([ascribe_resolve::Change::Nav(Some(Arc::new(nav.clone())))])
+        .expect("it applies");
+    assert!(!affected.is_empty(), "a new snapshot");
+    assert!(affected.recheck.is_empty() && affected.re_resolve.is_empty());
+    assert_eq!(folders(&project), ["Reference/", "Guides/"]);
+    // The same file again changes nothing.
+    let again = project
+        .apply([ascribe_resolve::Change::Nav(Some(Arc::new(nav)))])
+        .expect("it applies");
+    assert!(again.is_empty());
+    assert_ne!(project.version(), before);
+    project
+        .apply([ascribe_resolve::Change::Nav(None)])
+        .expect("it applies");
+    assert_eq!(folders(&project), ["Guides/", "Reference/"]);
+}

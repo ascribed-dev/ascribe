@@ -361,7 +361,7 @@ TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 
 | Result | Meaning |
 |---|---|
-| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change; for `newPage`, its `documentChanges` create the page and then give it its text, and `select` is in the new page. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
+| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change; for `newPage`, its `documentChanges` create the page and then give it its text, and `select` is in the new page; for the navigation's actions, it changes `ascribe.nav`, keeping its comments, or, with no file, its `documentChanges` create it and give it its text, and `select` is `null`. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
 | `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
 
 The operations, where each applies, and its arguments (`?` is optional):
@@ -401,6 +401,10 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `addGlossaryTerm` | Anywhere in a page | `id`, `term`, `definition`, `aliases?` (a list), `link?` (a page from the content root, with `#id`) | A `[glossary.terms.<id>]` table with those keys |
 | `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
 | `newPage` | Any of the project's files: `textDocument` names the project, and `range` is unused | `type`, `title`, `folder?` (a folder in the content root, as a `file:` URI) | A new page, made by `ascribe_templates::start`: the type's template with its `title` set, or its frontmatter when it has none, with `type:` first in its frontmatter, in `folder` or the content root, named for the title. Never over a file. `select` is the first thing the template left to fill in |
+| `moveSection` | Any of the project's files, as `newPage` | `folder` (a section's folder from the content root, ending in `/`), `before?` (a sibling section's folder; none for the end) | `ascribe.nav`'s `[[sections]]` with the section before `before` among its siblings: the siblings it didn't list are listed in the order they had, so nothing else moves |
+| `movePage` | Any of the project's files, as `newPage` | `page` (a content path), `before?` (a page of the same section; none for the end) | The section's `pages`, listing its pages as they stood with `page` before `before`; its table is added, and its siblings', when the file doesn't list it |
+| `placePage` | Any of the project's files, as `newPage` | `page` | `page` at the end of its section's `pages`, which leaves it out |
+| `setSectionLabel` | Any of the project's files, as `newPage` | `folder`, `label?` (none or empty for the default) | The section's `label` |
 | `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
 | `addMemo` | Anywhere in a page | | A new memo file in `memos/`, its `documentChanges` creating it and giving it its text: `about` is the innermost section with an id at the cursor, as `page.md#id`, or the page above the first heading; `quote` is the selection, its whitespace runs as one space, or the first line of the block at the cursor, left out on a heading or when the memo wouldn't find it. Named from the quote's first words, or the heading's id, never over a file. `select` is the empty line for the memo's text. Refused when `memos/` is in the content root |
 | `addPersonalMemo` | Anywhere in a page | | As `addMemo`, in `.ascribe/memos/` |
@@ -471,6 +475,9 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
   "pages": [{ "path": "guide.md", "title": "Guide", "type": "page", "incoming": 3 }],
   "fragments": [{ "path": "_setup.md", "includedBy": ["guide.md"] }],
   "orphans": ["old.md"],
+  "navigation": { "folder": "", "label": "Start", "labelSet": null, "page": "index.md",
+                  "pages": [{ "path": "guide.md", "placed": true }], "sections": [],
+                  "listed": false, "listsPages": false },
   "model": [{ "kind": "phrase", "key": "product", "label": "Quill", "uses": 14,
               "declaration": { "start": …, "end": … } }]
 }
@@ -481,6 +488,15 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 - `orphans` are the pages whose `incoming` is 0, other than index pages
   (`index.md`, in any folder). A reader may still reach one through a
   navigation the project doesn't know about, so it's a hint, not an error.
+- `navigation` is the project's navigation (`ascribe_resolve::Navigation`),
+  from `ascribe.nav` as it's typed: the content root's section, each section
+  with its `folder`, its `label` and the `labelSet` the file gives it, its own
+  `page`, its `pages` in order (the own page not among them, each `placed`
+  unless the section lists its `pages` and leaves it out), and its nested
+  `sections`, in order: one whose own page is among `pages` sits where that
+  page is. `listed` is whether the file lists the section, and `listsPages`
+  whether it lists its pages. `null` only in an answer for a file outside
+  the project.
 - `model` lists the phrases, features, glossary terms, dimensions, note types,
   widgets, and builds, each kind in declaration order. `kind` is `phrase`,
   `feature`, `term`, `dimension`, `note`, `widget`, or `build`; `label` is the
@@ -651,7 +667,7 @@ tokens (full and range), the position encoding, and completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, references,
 document links, CodeLens, inlay hints, code actions, document formatting, folding
 ranges, rename (with `prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
-for files. Registered dynamically after `initialized`, when the client allows it:
+for files and folders. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`, and `textDocument/codeLens` (below), which
 is then not advertised. Code actions advertise their kinds: `quickfix`, and
 `source.fixAll.ascribe`, every safe fix of a source file's published problems
@@ -683,6 +699,10 @@ edit. `prepareRename` answers with the range and the current name, or says why
 nothing at the cursor can be renamed. Formatting returns only the minimal edits
 from `ascribe-fmt`; the VS Code client applies those edits on save when
 `ascribe.formatOnSave` is enabled, and requests file-move edits before renaming.
+A file or a folder that moves also edits `ascribe.nav`
+(`edit::navigation::moved`): a page's entry in its section's `pages` follows
+it, or is taken out when it leaves the folder, and a folder's `folder`, with
+its nested sections', follows it.
 
 ## How it works
 
@@ -693,7 +713,9 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
   (`didOpen`, `didChange`, `didClose`; an open document's text wins over the
   file on disk, and closing one reverts to the disk), the file watcher (files
   and directories created, changed, deleted, or moved by anything else, sources
-  and assets alike), and `ascribe.toml` (open or on disk).
+  and assets alike), and `ascribe.toml` (open or on disk). `ascribe.nav`,
+  open or on disk, is read again when it changes, and the long-lived project
+  takes its navigation (`Change::Nav`).
 - **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
   (`ascribe-resolve`'s tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the

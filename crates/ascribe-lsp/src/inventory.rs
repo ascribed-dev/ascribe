@@ -1,5 +1,6 @@
 //! The `ascribe/inventory` request: what a project has and how much each part
-//! is used, for the editor's Pages and Content model views. It answers from
+//! is used, and its navigation, for the editor's Pages and Content model
+//! views. It answers from
 //! the current snapshot, so it includes unsaved edits, and counts with the
 //! search Find All References lists from ([`ascribe_resolve::Project::uses`]),
 //! so each count is the length of that list.
@@ -8,7 +9,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::{LineIndex, RelPath};
 use ascribe_model::GlossaryMatch;
-use ascribe_resolve::Usable;
+use ascribe_resolve::{Project, Section, Usable};
 use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
 
@@ -49,6 +50,10 @@ pub struct InventoryResult {
     /// other than index pages (`index.md`, in any folder). Without a
     /// navigation file a reader may still reach them, so this is a hint.
     pub orphans: Vec<String>,
+    /// The project's navigation (SPEC §7.8), `ascribe.nav`'s order over the
+    /// default: its root section. `null` for a document that isn't one of
+    /// the project's files.
+    pub navigation: Option<InventorySection>,
     /// The content model's entries: phrases, features, glossary terms,
     /// dimensions, note types, widgets, then builds, each kind in
     /// declaration order.
@@ -72,6 +77,47 @@ pub struct InventoryPage {
     /// The builds that publish it, in declaration order: the ones This
     /// page's Builds row says publish it.
     pub builds: Vec<String>,
+}
+
+/// A section of the navigation: a folder and its pages, in order.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct InventorySection {
+    /// Its folder, from the content root, ending in `/`; `""` for the root.
+    pub folder: String,
+    /// Its label: `label` from `ascribe.nav`, else its own page's title,
+    /// else its folder's name, and "Start" for the root.
+    pub label: String,
+    /// The `label` `ascribe.nav` gives it, when it gives one.
+    pub label_set: Option<String>,
+    /// The content path of its own page: its `index.md`, or the page beside
+    /// the folder with its name, which is then one of its parent's `pages`
+    /// too, and the section sits where it does.
+    pub page: Option<String>,
+    /// Its pages in order, its own page not among them.
+    pub pages: Vec<InventoryNavPage>,
+    /// Its nested sections: each whose own page is among `pages` sits
+    /// there; the rest come after the pages, in this order.
+    pub sections: Vec<InventorySection>,
+    /// Whether `ascribe.nav` lists it.
+    pub listed: bool,
+    /// Whether `ascribe.nav` lists its pages, so a page it leaves out isn't
+    /// placed.
+    pub lists_pages: bool,
+}
+
+/// A page in a section of the navigation.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct InventoryNavPage {
+    /// Its content path, as `pages` has it.
+    pub path: String,
+    /// Whether it has its place: its section lists no pages, or lists it.
+    /// One that isn't comes after those that are, and `nav-page-unplaced`
+    /// reports it.
+    pub placed: bool,
 }
 
 /// A fragment.
@@ -178,7 +224,42 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
         pages,
         fragments,
         orphans,
+        navigation: Some(section(
+            snapshot.project(),
+            &snapshot.project().navigation().root,
+        )),
         model: model_entries(ctx, &counts),
+    }
+}
+
+/// A section of the navigation, as the inventory has it.
+fn section(project: &Project, section: &Section) -> InventorySection {
+    let entry = project.nav_file().and_then(|f| f.section(&section.folder));
+    let listed: Option<Vec<&str>> = entry
+        .and_then(|e| e.pages.as_ref())
+        .map(|pages| pages.iter().map(|(name, _)| name.as_str()).collect());
+    InventorySection {
+        folder: section.folder.clone(),
+        label: section.label(project),
+        label_set: section.label.clone(),
+        page: section.page.as_ref().map(ToString::to_string),
+        pages: section
+            .pages
+            .iter()
+            .map(|page| InventoryNavPage {
+                path: page.to_string(),
+                placed: listed
+                    .as_ref()
+                    .is_none_or(|names| names.contains(&page.file_name().unwrap_or_default())),
+            })
+            .collect(),
+        sections: section
+            .sections
+            .iter()
+            .map(|nested| self::section(project, nested))
+            .collect(),
+        listed: section.listed,
+        lists_pages: listed.is_some(),
     }
 }
 

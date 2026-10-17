@@ -68,6 +68,24 @@
       ],
       "type": "object"
     },
+    "InventoryNavPage": {
+      "description": "A page in a section of the navigation.",
+      "properties": {
+        "path": {
+          "description": "Its content path, as `pages` has it.",
+          "type": "string"
+        },
+        "placed": {
+          "description": "Whether it has its place: its section lists no pages, or lists it.\nOne that isn't comes after those that are, and `nav-page-unplaced`\nreports it.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "placed"
+      ],
+      "type": "object"
+    },
     "InventoryPage": {
       "description": "A page.",
       "properties": {
@@ -108,6 +126,66 @@
         "type",
         "incoming",
         "builds"
+      ],
+      "type": "object"
+    },
+    "InventorySection": {
+      "description": "A section of the navigation: a folder and its pages, in order.",
+      "properties": {
+        "folder": {
+          "description": "Its folder, from the content root, ending in `/`; `\"\"` for the root.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Its label: `label` from `ascribe.nav`, else its own page's title,\nelse its folder's name, and \"Start\" for the root.",
+          "type": "string"
+        },
+        "labelSet": {
+          "description": "The `label` `ascribe.nav` gives it, when it gives one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "listed": {
+          "description": "Whether `ascribe.nav` lists it.",
+          "type": "boolean"
+        },
+        "listsPages": {
+          "description": "Whether `ascribe.nav` lists its pages, so a page it leaves out isn't\nplaced.",
+          "type": "boolean"
+        },
+        "page": {
+          "description": "The content path of its own page: its `index.md`, or the page beside\nthe folder with its name, which is then one of its parent's `pages`\ntoo, and the section sits where it does.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pages": {
+          "description": "Its pages in order, its own page not among them.",
+          "items": {
+            "$ref": "#/$defs/InventoryNavPage"
+          },
+          "type": "array"
+        },
+        "sections": {
+          "description": "Its nested sections: each whose own page is among `pages` sits\nthere; the rest come after the pages, in this order.",
+          "items": {
+            "$ref": "#/$defs/InventorySection"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "folder",
+        "label",
+        "labelSet",
+        "page",
+        "pages",
+        "sections",
+        "listed",
+        "listsPages"
       ],
       "type": "object"
     },
@@ -221,6 +299,17 @@
         "null"
       ]
     },
+    "navigation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/InventorySection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The project's navigation (SPEC §7.8), `ascribe.nav`'s order over the\ndefault: its root section. `null` for a document that isn't one of\nthe project's files."
+    },
     "orphans": {
       "description": "The content paths of the pages no other file links to or includes,\nother than index pages (`index.md`, in any folder). Without a\nnavigation file a reader may still reach them, so this is a hint.",
       "items": {
@@ -240,6 +329,7 @@
     "pages",
     "fragments",
     "orphans",
+    "navigation",
     "model"
   ],
   "title": "InventoryResult",
