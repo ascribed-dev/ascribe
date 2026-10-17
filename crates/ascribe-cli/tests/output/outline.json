@@ -8,6 +8,7 @@
   "type": "page",
   "build": null,
   "not_published": null,
+  "memos": [],
   "headings": [
     {
       "level": 2,
@@ -16,7 +17,8 @@
       "explicit_id": true,
       "file": "docs/keys.md",
       "line": 7,
-      "fragment": null
+      "fragment": null,
+      "memos": []
     },
     {
       "level": 2,
@@ -25,7 +27,8 @@
       "explicit_id": true,
       "file": "docs/keys.md",
       "line": 12,
-      "fragment": null
+      "fragment": null,
+      "memos": []
     },
     {
       "level": 2,
@@ -34,7 +37,8 @@
       "explicit_id": true,
       "file": "docs/keys.md",
       "line": 23,
-      "fragment": null
+      "fragment": null,
+      "memos": []
     }
   ]
 }

@@ -114,12 +114,17 @@ impl Entry {
 }
 
 /// The project's files, in path order: `ascribe.toml`, `ascribe.lock` and
-/// `ascribe.permalinks` (there or not), every file under the content root, and each local
-/// source's folder (there or not). In the content root, folders whose names
+/// `ascribe.permalinks` (there or not), every file under the content root,
+/// every file in `memos/`, and each local source's folder (there or not). In the content root, folders whose names
 /// start with `.`, `node_modules`, and the output directory are left out,
 /// and a symbolic link to a folder isn't followed.
 fn list(root: &Path, project: &Project) -> Vec<Stamp> {
     let mut files = content_listing(root, project.content_root(), &project.layout().output_dir);
+    walk(
+        &root.join(ascribe_resolve::MEMOS_FOLDER),
+        &|_| false,
+        &mut files,
+    );
     for source in &project.model().sources {
         files.push(presence(&normalize(&root.join(&source.path))));
     }

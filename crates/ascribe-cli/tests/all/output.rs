@@ -799,6 +799,19 @@ fn answers() {
         "outline.json",
         &json(&run(&root, &["outline", keys, "--format", "json"], 0)),
     );
+    // A page with a memo file about one of its sections.
+    expect(
+        "outline-memos.txt",
+        &stdout(&run(&root, &["outline", install], 0)),
+    );
+    expect(
+        "refs-memo.txt",
+        &stdout(&run(
+            &root,
+            &["refs", "install-agent.md#install-agent", "--config", quill],
+            0,
+        )),
+    );
     expect(
         "link.txt",
         &stdout(&run(

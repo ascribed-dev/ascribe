@@ -514,7 +514,7 @@ fn ascribe_refs_agrees_with_find_all_references() {
         let asked = ascribe_query::refs::Asked::entry(target)
             .unwrap_or_else(|| ascribe_query::refs::Asked::path(target))
             .expect("a target");
-        let refs = ascribe_query::refs(&project, &asked, target, usize::MAX);
+        let refs = ascribe_query::refs(&project, &asked, target, usize::MAX, &[]);
         let command: Vec<(String, u32, u32)> = refs
             .places
             .iter()

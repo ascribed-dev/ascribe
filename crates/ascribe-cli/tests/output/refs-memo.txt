@@ -1,0 +1,4 @@
+docs/keys.md:21:100: link
+memos/agent-first.md:2:1: memo
+
+2 places use install-agent.md#install-agent.

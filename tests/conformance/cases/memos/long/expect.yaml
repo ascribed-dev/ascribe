@@ -1,0 +1,9 @@
+description: >-
+  A memo whose text is longer than the limit is advice, at its `about`.
+  The limit is `[checks.memo-long] limit`, here 40 characters; a memo at
+  the limit isn't reported.
+spec: ["7.7"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-long, file: memos/long.md, line: 2}

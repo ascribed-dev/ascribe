@@ -1,0 +1,6 @@
+description: >-
+  `memo-outdated` can be turned off in `[checks]`.
+spec: ["7.7"]
+tags: [check]
+
+diagnostics: []

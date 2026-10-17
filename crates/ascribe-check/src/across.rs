@@ -205,6 +205,10 @@ pub(crate) fn for_every_build(
         self::images(project, index, &on, &mut issues);
     }
 
+    if crate::memos::MEMO_CHECKS.iter().any(|slug| on(*slug)) && crate::memos::any(project) {
+        crate::memos::check_memos(project, index, &on, &mut issues);
+    }
+
     let mut out: BTreeMap<FileId, Vec<Diagnostic>> = BTreeMap::new();
     for issue in &issues {
         out.entry(issue.location.file)

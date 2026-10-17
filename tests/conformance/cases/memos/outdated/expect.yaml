@@ -1,0 +1,10 @@
+description: >-
+  A memo whose quote no block of its target holds is outdated: the words
+  were changed, or the quote runs across two blocks. It's advice, at the
+  memo's quote.
+spec: ["7.7"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-outdated, file: memos/across.md, line: 3}
+  - {slug: memo-outdated, file: memos/reworded.md, line: 3}

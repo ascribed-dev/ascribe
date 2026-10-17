@@ -136,18 +136,25 @@ fn the_examples_pages_are_the_spec_appendix_b_page() {
 
 #[test]
 fn quill_project_case_matches_the_example() {
-    let example = read_tree(&repo().join("examples/quill/docs"));
-    let case = read_tree(&repo().join("tests/conformance/cases/projects/quill/files"));
-    assert_eq!(
-        example.iter().map(|(p, _)| p).collect::<Vec<_>>(),
-        case.iter().map(|(p, _)| p).collect::<Vec<_>>(),
-        "the case and the example have different files"
-    );
-    for ((path, a), (_, b)) in example.iter().zip(&case) {
-        assert!(
-            a == b,
-            "{path} differs between examples/quill and the project case"
+    // The pages, and the memo files beside them.
+    for (example, case) in [("docs", "files"), ("memos", "memos")] {
+        let example = read_tree(&repo().join("examples/quill").join(example));
+        let case = read_tree(
+            &repo()
+                .join("tests/conformance/cases/projects/quill")
+                .join(case),
         );
+        assert_eq!(
+            example.iter().map(|(p, _)| p).collect::<Vec<_>>(),
+            case.iter().map(|(p, _)| p).collect::<Vec<_>>(),
+            "the case and the example have different files"
+        );
+        for ((path, a), (_, b)) in example.iter().zip(&case) {
+            assert!(
+                a == b,
+                "{path} differs between examples/quill and the project case"
+            );
+        }
     }
     let model = std::fs::read_to_string(repo().join("examples/quill/ascribe.toml")).unwrap();
     let case_model =

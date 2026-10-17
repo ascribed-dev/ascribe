@@ -1,0 +1,11 @@
+description: >-
+  A memo whose `about` names nothing in the project is detached: a page or
+  fragment that isn't there, a heading the page doesn't have, or an entry
+  the content model doesn't declare. It's reported at the memo's `about`.
+spec: ["7.7", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-detached, file: memos/entry.md, line: 2}
+  - {slug: memo-detached, file: memos/heading.md, line: 2}
+  - {slug: memo-detached, file: memos/page.md, line: 2}

@@ -11,7 +11,9 @@ use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
     ContentModel, LOCK_FILE, Lock, LockedSource, PERMALINKS_FILE, PermalinkList, SourceBound,
 };
-use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
+use ascribe_resolve::{
+    CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, SourceSet,
+};
 
 use crate::Diagnostic;
 use crate::checks::template::Template;
@@ -30,6 +32,10 @@ pub const PERMALINKS_FILE_ID: FileId = FileId::new(0x7FFF_FFFE);
 /// in image files: the image checks list them in path order, and number them
 /// from here ([`Project::images`]).
 pub const IMAGE_FILE_IDS: u32 = 0x4000_0000;
+
+/// The id of the first memo file (SPEC §7.7), for locations in memo files:
+/// [`Project::memos`] lists them in path order, and numbers them from here.
+pub const MEMO_FILE_IDS: u32 = 0x2000_0000;
 
 /// One source file: a Markdown file under the content root.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -248,6 +254,8 @@ pub struct Project {
     /// The templates the content types name, by type, read the first time a
     /// page of one is checked.
     templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>,
+    /// The committed memo files, read the first time they're asked for.
+    memos: Arc<OnceLock<Vec<MemoFile>>>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -558,6 +566,7 @@ impl Project {
             link_index: OnceLock::new(),
             today: None,
             templates: Arc::default(),
+            memos: Arc::default(),
         }
     }
 
@@ -705,6 +714,17 @@ impl Project {
 
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
+        if let Some(i) = id.index().checked_sub(MEMO_FILE_IDS)
+            && id.index() < IMAGE_FILE_IDS
+        {
+            let memo = self.memos().get(i as usize)?;
+            return Some(FileEntry {
+                id,
+                display_path: memo.path.to_string(),
+                text: &memo.text,
+                content_path: None,
+            });
+        }
         if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
             && id.index() < PERMALINKS_FILE_ID.index()
         {
@@ -792,13 +812,31 @@ impl Project {
             Some(self.fs.0.clone()),
         )
         .with_today(self.today)
-        .with_templates(self.templates.clone())
+        .with_reads_of(self)
     }
 
-    /// This project, with the templates another read of the same project
-    /// has, since a page's text doesn't change them.
-    fn with_templates(self, templates: Arc<OnceLock<HashMap<String, Arc<Template>>>>) -> Project {
-        Project { templates, ..self }
+    /// This project, with the templates and memo files another read of the
+    /// same project has, since a page's text doesn't change them.
+    fn with_reads_of(self, other: &Project) -> Project {
+        Project {
+            templates: other.templates.clone(),
+            memos: other.memos.clone(),
+            ..self
+        }
+    }
+
+    /// The committed memo files (SPEC §7.7), in path order, read through the
+    /// project's [`FileSystem`] the first time they're asked for. None when
+    /// `memos/` is inside the content root, where its files are pages. The
+    /// memo at position `i` has the id `MEMO_FILE_IDS + i`.
+    pub fn memos(&self) -> &[MemoFile] {
+        self.memos
+            .get_or_init(|| Committed::new(self.file_system(), &self.layout).memos())
+    }
+
+    /// The ids of the memo files.
+    pub fn memo_ids(&self) -> impl Iterator<Item = FileId> + '_ {
+        (0..self.memos().len()).map(memo_id)
     }
 
     /// The template content type `name` names, read through the project's
@@ -900,6 +938,14 @@ impl SourceSet for Project {
         pages.sort();
         pages
     }
+}
+
+/// The id of the memo file at position `i` of [`Project::memos`].
+pub(crate) fn memo_id(i: usize) -> FileId {
+    // A project has far fewer memo files than the ids from MEMO_FILE_IDS to
+    // the images'.
+    #[allow(clippy::cast_possible_truncation)]
+    FileId::new(MEMO_FILE_IDS + i as u32)
 }
 
 /// The id of the image at position `i` of [`Project::images`].

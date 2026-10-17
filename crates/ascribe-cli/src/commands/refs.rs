@@ -91,14 +91,20 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<R
     };
     let loaded = answer::load(projects, global, near)?;
     let asked = match entry {
-        Some(asked) => asked,
+        Some(asked) => asked.map_err(QueryError::from),
         None => path_target(&loaded.project, &args.target),
     }?;
     let limit = args.limit.unwrap_or(match args.format {
         Format::Text => TEXT_LIMIT,
         Format::Json => JSON_LIMIT,
     });
-    let mut refs = ascribe_query::refs(loaded.index(), &asked, &args.target, limit);
+    let mut refs = ascribe_query::refs(
+        loaded.index(),
+        &asked,
+        &args.target,
+        limit,
+        loaded.project.memos(),
+    );
     if refs.truncated {
         // The same command, with the limit that lists them all, each word
         // quoted as a shell needs it.
@@ -126,18 +132,18 @@ fn path_target(project: &ascribe_check::Project, given: &str) -> Result<Asked, Q
         None => (given, None),
     };
     let Ok(source) = answer::source_path(project, Path::new(path)) else {
-        return Asked::path(given);
+        return Ok(Asked::path(given)?);
     };
     let content = match id {
         Some(id) => format!("{source}#{id}"),
         None => source.to_string(),
     };
-    Asked::path(&content)
+    Ok(Asked::path(&content)?)
 }
 
 /// Writes the places as text, as the command does without `--format json`.
 pub fn write_text(out: &mut dyn Write, r: &Refs) -> io::Result<()> {
-    if !r.exists {
+    if !r.exists && r.places.is_empty() {
         return writeln!(out, "{} doesn't exist.", r.target);
     }
     for place in &r.places {
@@ -149,6 +155,9 @@ pub fn write_text(out: &mut dyn Write, r: &Refs) -> io::Result<()> {
     }
     if !r.places.is_empty() {
         writeln!(out)?;
+    }
+    if !r.exists {
+        return writeln!(out, "{} doesn't exist; the memos above name it.", r.target);
     }
     let places = if r.total == 1 {
         "place uses"

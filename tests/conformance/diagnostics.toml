@@ -4144,3 +4144,72 @@ title: Plans
 |---|---|
 | Team | 10 |
 '''
+
+[[diagnostic]]
+code = "ASC225"
+slug = "memo-invalid"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.7"
+reference = "writing/memo-files.md#write-a-memo-file"
+row = "Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root"
+message = "this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---`"
+messages.unreadable = "this memo file can't be read: {reason}"
+messages.yaml = "this memo file's frontmatter isn't valid YAML: {detail}"
+messages.about-missing = "this memo file has no `about`, so it's about nothing; name what it's about as `ascribe refs` does, such as `page.md#id`"
+messages.key = "a memo file has two keys, `about` and `quote`, so `{key}` isn't one"
+messages.not-text = "`{key}` is text, and this one is empty or isn't text"
+messages.about = "`{about}` isn't something a memo can be about: {reason}"
+messages.quote = "`{about}` is an entry of ascribe.toml, which has no text to quote; remove `quote`"
+messages.content-root = "`memos/` is inside the content root, so its files are read as pages, not memos; set `[project] content-root` to a folder below the project's, such as `\"docs\"`"
+fix = "A memo file starts with frontmatter: `about`, which names what the memo is about the way `ascribe refs` names a target (`page.md`, `page.md#id`, or an entry such as `phrase:product`), and `quote`, which you can leave out, with words of the block it's about. Nothing else goes in the frontmatter. The folder `memos/` is beside `ascribe.toml`, outside the content root."
+
+[[diagnostic]]
+code = "ASC226"
+slug = "memo-detached"
+severity = "warning"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.7"
+reference = "writing/memo-files.md#placed-outdated-and-detached"
+row = "Memo files | A memo file's `about` that names nothing in the project"
+message = "`{about}` isn't a page or fragment of the project, so this memo is about nothing"
+messages.page-suggestion = "`{about}` isn't a page or fragment of the project, so this memo is about nothing; did you mean `{suggestion}`?"
+messages.heading = "`{page}` has no heading `#{id}`, so this memo is about nothing; its ids are: {ids}"
+messages.heading-none = "`{page}` has no headings, so this memo is about nothing"
+messages.entry = "`{about}` isn't declared in ascribe.toml, so this memo is about nothing"
+messages.entry-suggestion = "`{about}` isn't declared in ascribe.toml, so this memo is about nothing; did you mean `{suggestion}`?"
+fix = "Point `about` at what the memo is about now. Renaming a page or changing a heading's id leaves the memos about it detached, so give them the new name. If what it was about is gone, the memo is too: delete the file."
+
+[[diagnostic]]
+code = "ASC227"
+slug = "memo-outdated"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.7"
+reference = "writing/memo-files.md#placed-outdated-and-detached"
+when = "No block of what a memo file's `about` names holds its `quote`"
+message = "no block of `{about}` has the words this memo quotes, so it's on the {place} and no block"
+fix = "The words were changed since the memo was written. Read the memo against the page as it is: if it still holds, quote the words it's about now; if it doesn't, change it or delete it. A quote is found in one block, with any run of spaces and line breaks read as one space."
+
+[[diagnostic]]
+code = "ASC228"
+slug = "memo-long"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+configurable = true
+area = "project"
+spec = "7.7"
+reference = "writing/memo-files.md#write-a-memo-file"
+when = "A memo file's body is longer than the limit: 2,000 characters, or `[checks.memo-long] limit`"
+message = "this memo is {length} characters, over the {limit} limit"
+fix = "A memo is read by whoever is about to change the page, so it says why in as few words as it can. Cut what the page itself says, and split a memo about several things into one about each. The limit is 2,000 characters; set another in `ascribe.toml`, such as `[checks.memo-long] limit = 4000`."
