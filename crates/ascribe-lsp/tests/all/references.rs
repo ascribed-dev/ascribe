@@ -357,9 +357,10 @@ fn a_page_type_is_found_where_pages_name_it() {
     let f = Fixture::new(
         &model,
         &[
+            // With a comment after a tab.
             (
                 "docs/index.md",
-                "---\ntitle: Home\ntype: page\n---\n\n# Home\n",
+                "---\ntitle: Home\ntype: page\t# the default\n---\n\n# Home\n",
             ),
             ("docs/guide.md", guide),
             // Written on Windows, with a comment after the value.
