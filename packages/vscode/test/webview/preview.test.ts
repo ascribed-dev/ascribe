@@ -555,6 +555,9 @@ describe("review in the preview webview", () => {
       0,
     );
     await expect(preview.page.locator(".review .position").count()).resolves.toBe(0);
+    // Its blocks have no source now, so hovering names none.
+    await preview.page.getByText("Run the installer.").hover();
+    await expect(preview.page.locator(".ascribe-where").count()).resolves.toBe(0);
     const from = preview.posted.length;
     await preview.page.getByRole("button", { name: "Next changed page" }).click();
     await preview.next("atEnd", from);
