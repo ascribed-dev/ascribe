@@ -79,6 +79,7 @@ pub mod build;
 mod closest;
 mod expand;
 pub mod fs;
+mod glossary;
 pub mod incremental;
 mod index;
 mod layout;
@@ -112,13 +113,14 @@ pub use fs::{
     DiskFs, FileSystem, LinkCheck, MemoryFs, Probe, Sources, in_nested_project, is_link,
     is_source_path, link_on_the_way,
 };
+pub use glossary::{DuplicateTerm, Glossary, Term};
 pub use incremental::{
     Affected, ApplyError, Change, FileIds, IncrementalProject, ModelImpact, ResolvedCache,
     Snapshot, Stats, Version,
 };
 pub use index::{
     AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, PhrasePlace,
-    PhraseUse, RefKind, Reference, Target, heading_text, index_file,
+    PhraseUse, RefKind, Reference, Target, TermMark, heading_text, index_file,
 };
 pub use layout::Layout;
 pub use links::{encode_destination, link_path, named_headings};

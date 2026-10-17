@@ -392,6 +392,8 @@ pub struct GlossaryUse {
     pub text: String,
     /// The URL the text now links to.
     pub url: String,
+    /// The term's definition in the build.
+    pub definition: String,
 }
 
 /// What a surviving `@available` directive declares (SPEC §4.4).

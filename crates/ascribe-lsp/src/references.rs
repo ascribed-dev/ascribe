@@ -112,8 +112,8 @@ pub(crate) fn target_at(ctx: &Ctx, offset: usize) -> Option<Usable> {
     (in_frontmatter || in_title).then(|| Usable::File(ctx.path.clone()))
 }
 
-/// Where `target` is declared: the file's start, the heading, or the
-/// entry in `ascribe.toml`.
+/// Where `target` is declared: the file's start, the heading (a glossary
+/// term's own included), or the entry in `ascribe.toml`.
 fn declaration(ctx: &Ctx, lines: &mut Lines<'_>, target: &Usable) -> Option<Location> {
     let entry = match target {
         Usable::File(path) => return file_start(ctx, path),
@@ -121,9 +121,17 @@ fn declaration(ctx: &Ctx, lines: &mut Lines<'_>, target: &Usable) -> Option<Loca
             let heading = ctx.snapshot.heading(file, id)?;
             return lines.location(file, Some(heading));
         }
+        Usable::Term(id) => {
+            let glossary = ctx.snapshot.glossary();
+            let term = glossary.term(id)?;
+            let heading = ctx
+                .snapshot
+                .file(&term.written_in)?
+                .heading_at(term.heading)?;
+            return lines.location(&term.written_in, Some(heading));
+        }
         Usable::Phrase(key) => Entry::Phrase(key),
         Usable::Feature(key) => Entry::Feature(key),
-        Usable::Term(id) => Entry::Term(id),
         Usable::Dimension(name) => Entry::Dimension(name),
         Usable::Note(name) => Entry::Note(name),
         Usable::Widget(name) => Entry::Widget(name),

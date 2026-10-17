@@ -570,47 +570,47 @@ mod tests {
 
     #[test]
     fn a_table_goes_after_the_last_table_of_its_section() {
-        let text = "[glossary]\nmatch = \"every\"\n\n[glossary.terms.api]\nterm = \"API\" # short\ndefinition = \"An interface.\"\n\n[builds.site]\n";
+        let text = "[types]\nmatch = \"every\"\n\n[types.page.api]\nterm = \"API\" # short\ndefinition = \"An interface.\"\n\n[builds.site]\n";
         let file = ModelFile::parse(text).expect("parses");
         let edit = file
             .add_table(
-                &["glossary", "terms", "sdk"],
+                &["types", "page", "sdk"],
                 &[
                     ("term", Value::from("SDK")),
                     ("aliases", Value::Array(["SDKs"].into_iter().collect())),
                     ("definition", Value::from("A kit.")),
                 ],
-                &["glossary"],
+                &["types"],
             )
             .expect("adds");
         assert_eq!(
             apply(text, vec![edit]),
-            "[glossary]\nmatch = \"every\"\n\n[glossary.terms.api]\nterm = \"API\" # short\ndefinition = \"An interface.\"\n\n[glossary.terms.sdk]\nterm = \"SDK\"\naliases = [\"SDKs\"]\ndefinition = \"A kit.\"\n\n[builds.site]\n"
+            "[types]\nmatch = \"every\"\n\n[types.page.api]\nterm = \"API\" # short\ndefinition = \"An interface.\"\n\n[types.page.sdk]\nterm = \"SDK\"\naliases = [\"SDKs\"]\ndefinition = \"A kit.\"\n\n[builds.site]\n"
         );
         let text = "spec = \"0.1\"\n";
         let file = ModelFile::parse(text).expect("parses");
         let edit = file
             .add_table(
-                &["glossary", "terms", "sdk"],
+                &["types", "page", "sdk"],
                 &[("term", Value::from("SDK"))],
-                &["glossary"],
+                &["types"],
             )
             .expect("adds");
         assert_eq!(
             apply(text, vec![edit]),
-            "spec = \"0.1\"\n\n[glossary.terms.sdk]\nterm = \"SDK\"\n"
+            "spec = \"0.1\"\n\n[types.page.sdk]\nterm = \"SDK\"\n"
         );
     }
 
     #[test]
     fn a_table_inside_an_inline_one_is_refused() {
-        let text = "[glossary]\nterms = { api = { term = \"API\", definition = \"x\" } }\n";
+        let text = "[types]\npage = { api = { term = \"API\", definition = \"x\" } }\n";
         let file = ModelFile::parse(text).expect("parses");
         let edit = file
             .add_table(
-                &["glossary", "terms", "sdk"],
+                &["types", "page", "sdk"],
                 &[("term", Value::from("SDK"))],
-                &["glossary"],
+                &["types"],
             )
             .expect("found a place");
         assert!(file.finish(vec![edit]).is_err());

@@ -452,9 +452,7 @@ export function modelLook(node: ModelNode): ItemLook {
   const tooltip = [entry.key];
   if (entry.label !== null) tooltip.push(entry.label);
   if (uses !== undefined) tooltip.push(unused ? "Unused: nothing uses it" : `${uses} in pages`);
-  if (entry.uses === null && entry.kind === "term") {
-    tooltip.push("Marked: the links to its page are its uses");
-  }
+  if (entry.page !== null) tooltip.push(`On ${entry.page}`);
   if (entry.declaration === null) {
     tooltip.push(entry.kind === "note" ? "Built in" : "Not found in ascribe.toml");
   }

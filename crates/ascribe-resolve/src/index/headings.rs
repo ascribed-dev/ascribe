@@ -1,7 +1,7 @@
 //! Headings, their sections, and their source ids (SPEC §5.5).
 
 use ascribe_core::{Slugger, Span};
-use ascribe_model::ContentModel;
+use ascribe_model::{ContentModel, GlossaryMatch};
 use ascribe_syntax::{Block, BlockKind, Inline, InlineKind, PrimaryValue, bound_heading};
 
 /// A heading's explicit id: the `@id` directive under it (SPEC §4.1).
@@ -14,6 +14,20 @@ pub struct ExplicitId {
     /// Whether the directive marks the id as a permalink
     /// (`{permalink=true}`, SPEC §4.1).
     pub permalink: bool,
+}
+
+/// A heading's `@term` directive (SPEC §4.11): on a glossary page, the
+/// heading is a glossary term.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TermMark {
+    /// The `@term` directive line.
+    pub span: Span,
+    /// `aliases`, split on `|`, each trimmed; empty ones are left out.
+    pub aliases: Vec<String>,
+    /// `match`, when it's set to one of its values.
+    pub match_mode: Option<GlossaryMatch>,
+    /// `case-sensitive`, when it's set to a boolean.
+    pub case_sensitive: Option<bool>,
 }
 
 /// A heading in a file.
@@ -31,6 +45,9 @@ pub struct Heading {
     /// The explicit id, if the heading has an `@id`. The first one, if it has
     /// several.
     pub explicit_id: Option<ExplicitId>,
+    /// The heading's `@term`, if it has one. The first one, if it has
+    /// several.
+    pub term: Option<TermMark>,
     /// The heading's **source id**: its `@id`, or its slug, numbered within
     /// the file by the slugger (SPEC §5.5). Only headings without `@id` take
     /// part in numbering. Empty for a heading whose slug is empty.
@@ -92,6 +109,7 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
                     has_phrase: has_declared_phrase(&h.inlines, model),
                     text,
                     explicit_id: None,
+                    term: None,
                     source_id: String::new(),
                     section: Span::new(block.span.start(), last.span.end()),
                     empty_slug: false,
@@ -112,18 +130,27 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
             _ => {}
         }
     }
-    // Explicit ids: an `@id` binds the heading before it in this list.
-    // SPEC §4.1: the first `@id` with a value wins, valid or not.
+    // Explicit ids and terms: an `@id` or a `@term` binds the heading before
+    // it in this list. SPEC §4.1: the first `@id` with a value wins, valid or
+    // not.
     for (i, block) in blocks.iter().enumerate() {
         let BlockKind::Directive(line) = &block.kind else {
             continue;
         };
-        if line.name != "id" {
+        if line.name != "id" && line.name != "term" {
             continue;
         }
         let Some(heading_at) = bound_heading(blocks, i) else {
             continue;
         };
+        if line.name == "term" {
+            if let Some(idx) = at[heading_at]
+                && out[idx].term.is_none()
+            {
+                out[idx].term = Some(term_mark(line));
+            }
+            continue;
+        }
         let Some(PrimaryValue::Identifier(primary)) = &line.primary else {
             continue;
         };
@@ -136,6 +163,37 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
                 permalink: is_permalink(line),
             });
         }
+    }
+}
+
+/// What a `@term` line says. A value of the wrong type is left out, as the
+/// default; the file-level checks report it.
+fn term_mark(line: &ascribe_syntax::DirectiveLine) -> TermMark {
+    let text = |key: &str| {
+        line.attributes
+            .as_ref()
+            .and_then(|a| a.get(key))
+            .and_then(|a| a.value.as_ref())
+            .and_then(|v| v.as_text())
+    };
+    TermMark {
+        span: line.span,
+        aliases: text("aliases")
+            .map(|a| {
+                a.split('|')
+                    .map(str::trim)
+                    .filter(|a| !a.is_empty())
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        match_mode: text("match").and_then(|m| match m {
+            "first" => Some(GlossaryMatch::First),
+            "every" => Some(GlossaryMatch::Every),
+            "marked" => Some(GlossaryMatch::Marked),
+            _ => None,
+        }),
+        case_sensitive: text("case-sensitive").and_then(|c| c.parse().ok()),
     }
 }
 

@@ -236,16 +236,17 @@ fn add_nav_edit(
 }
 
 /// The edits to `ascribe.toml` that keep what it names by path following
-/// the files that move: a glossary term's `link`, and a retired permalink's
-/// `to`, each keeping its `#id`. `None` when they can't be made in place.
+/// the files that move: a glossary page in `[glossary] pages`, and a retired
+/// permalink's `to`, keeping its `#id`. `None` when they can't be made in
+/// place.
 fn model_path_edits(ctx: &Ctx, mappings: &[(RelPath, RelPath)]) -> Option<Vec<TextEdit>> {
     model_link_edits(ctx, |written| moved_path(written, mappings))
 }
 
-/// The edits to `ascribe.toml` that change what it names by a link from the
-/// content root, a glossary term's `link` and a retired permalink's `to`,
-/// to what `change` gives for each as it's written, leaving those it gives
-/// `None` for. `None` when they can't be made in place.
+/// The edits to `ascribe.toml` that change what it names by a path from the
+/// content root, a glossary page and a retired permalink's `to`, to what
+/// `change` gives for each as it's written, leaving those it gives `None`
+/// for. `None` when they can't be made in place.
 fn model_link_edits(
     ctx: &Ctx,
     mut change: impl FnMut(&str) -> Option<String>,
@@ -254,25 +255,30 @@ fn model_link_edits(
     let Ok(file) = ModelFile::parse(&ctx.model_text) else {
         return Some(Vec::new());
     };
+    let mut named: Vec<Vec<model_file::Seg>> = Vec::new();
+    if let Some(entries) = file.table_like(&model_file::path(&["permalinks", "retired"])) {
+        for (name, _) in entries.iter() {
+            named.push(model_file::path(&["permalinks", "retired", name, "to"]));
+        }
+    }
+    let pages = model_file::path(&["glossary", "pages"]);
+    if let Some(list) = file.get(&pages).and_then(toml_edit::Item::as_array) {
+        for i in 0..list.len() {
+            let mut at = pages.clone();
+            at.push(model_file::Seg::Index(i));
+            named.push(at);
+        }
+    }
     let mut edits = Vec::new();
-    for (table, key) in [
-        (["glossary", "terms"], "link"),
-        (["permalinks", "retired"], "to"),
-    ] {
-        let Some(entries) = file.table_like(&model_file::path(&table)) else {
+    for at in named {
+        let Some(written) = file.get(&at).and_then(toml_edit::Item::as_str) else {
             continue;
         };
-        for (name, _) in entries.iter() {
-            let at = model_file::path(&[table[0], table[1], name, key]);
-            let Some(written) = file.get(&at).and_then(toml_edit::Item::as_str) else {
-                continue;
-            };
-            if let Some(changed) = change(written) {
-                edits.push(
-                    file.replace_value(&at, toml_edit::Value::from(changed))
-                        .ok()?,
-                );
-            }
+        if let Some(changed) = change(written) {
+            edits.push(
+                file.replace_value(&at, toml_edit::Value::from(changed))
+                    .ok()?,
+            );
         }
     }
     if edits.is_empty() {
@@ -817,8 +823,8 @@ fn add_id_reference_edits(
             }
         }
     }
-    // A glossary term's `link`, and a retired permalink's `to`, name the
-    // heading the same way, from the content root. Their edits go with the
+    // A retired permalink's `to` names the heading the same way, from the
+    // content root. Their edits go with the
     // phrases' to `ascribe.toml`, keyed by where each is, which no phrase's
     // key can be.
     for edit in model_link_edits(ctx, |written| {

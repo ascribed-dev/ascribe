@@ -76,7 +76,7 @@ impl ModelSpec {
             t.push_str("[widgets.quill-aside]\nforms = [\"line\", \"container\"]\nprimary = \"text?\"\nbinding = \"block\"\ntitle = \"accepted\"\n\n");
         }
         if self.glossary {
-            t.push_str("[glossary]\nmatch = \"first\"\n\n[glossary.terms.api]\nterm = \"API key\"\ndefinition = \"A secret.\"\nlink = \"/glossary.md#api\"\n\n");
+            t.push_str("[glossary]\nmatch = \"first\"\npages = [\"glossary.md\"]\n\n");
         }
         t.push_str("[consumer]\nprofile = \"astro\"\nbase-path = \"/docs/\"\n\n[builds.site]\nvariants = \"switch\"\navailability = \"badge\"\n");
         if self.cloud_build {
@@ -167,6 +167,7 @@ pub const BODY: &[&str] = &[
     "@quill-callout: Heads up\n",
     "## Shared setup\n",
     "## API\n@id: api\n",
+    "## API key\n@id: api\n@term\n\nA secret.\n",
     "![l](Logo.png) [dir](files/)\n",
     "@include: shared/thing.md\n",
     "Some prose about {extra} and more.\n",

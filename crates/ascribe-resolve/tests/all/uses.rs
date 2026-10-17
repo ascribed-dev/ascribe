@@ -31,17 +31,8 @@ label = "Security"
 [phrases]
 product = "Quill"
 
-[glossary.terms.api-key]
-term = "API key"
-aliases = ["API keys"]
-definition = "A secret."
-link = "/reference.md#api-key"
-
-[glossary.terms.agent]
-term = "agent"
-definition = "The process that runs builds."
-link = "/reference.md#agent"
-match = "marked"
+[glossary]
+pages = ["reference.md"]
 
 [widgets.quill-lab]
 forms = ["line"]
@@ -98,7 +89,7 @@ fn quill() -> Project {
         ),
         (
             "docs/reference.md",
-            "---\ntitle: Reference\nvariant:\n  deployment: cloud\n---\n\n## API key\n\n@include: _setup.md#install\n\n`API key` in code and [API key](index.md) in a link aren't occurrences.\n",
+            "---\ntitle: Reference\nvariant:\n  deployment: cloud\n---\n\n## API key\n@term {aliases=\"API keys\"}\n\n@include: _setup.md#install\n\n`API key` in code and [API key](index.md) in a link aren't occurrences.\n",
         ),
     ])
 }
@@ -229,6 +220,11 @@ fn a_glossary_term_is_used_where_its_text_is_in_prose() {
         uses(&p, &Usable::Term("api-key".into())),
         [
             ("guide.md".into(), "api key".into(), UseKind::Term),
+            (
+                "index.md".into(),
+                "[keys](reference.md#api-key)".into(),
+                UseKind::Link
+            ),
             ("index.md".into(), "API key".into(), UseKind::Term),
             ("index.md".into(), "API keys".into(), UseKind::Term),
         ]
@@ -236,9 +232,10 @@ fn a_glossary_term_is_used_where_its_text_is_in_prose() {
 }
 
 #[test]
-fn a_marked_glossary_term_has_no_uses_in_prose() {
+fn a_marked_glossary_term_is_used_only_by_the_links_to_its_heading() {
     // A marked term isn't linked automatically: "agent" in prose is just a
-    // word, and an author's link to the term's page is a use of that page.
+    // word, and an author's link to the term's heading is a use of the term
+    // and of the heading.
     let p = project(&[
         (
             "docs/index.md",
@@ -246,11 +243,18 @@ fn a_marked_glossary_term_has_no_uses_in_prose() {
         ),
         (
             "docs/reference.md",
-            "# Reference\n\n## Agent\n\nIt runs builds.\n",
+            "# Reference\n\n## Agent\n@term {match=marked}\n\nIt runs builds.\n",
         ),
     ]);
-    assert_eq!(uses(&p, &Usable::Term("agent".into())), []);
-    assert_eq!(p.use_counts().get(&Usable::Term("agent".into())), None);
+    assert_eq!(
+        uses(&p, &Usable::Term("agent".into())),
+        [(
+            "index.md".into(),
+            "[the agent](reference.md#agent)".into(),
+            UseKind::Link
+        )]
+    );
+    assert_eq!(p.use_counts().get(&Usable::Term("agent".into())), Some(&1));
     assert_eq!(
         uses(
             &p,

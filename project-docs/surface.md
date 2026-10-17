@@ -73,6 +73,7 @@ For authors. Read from `crates/ascribe-core/src/schema.rs`.
 | `@snippet` | SPEC §4.8 |
 | `@intended` | SPEC §4.9 |
 | `@memo` | SPEC §4.10 |
+| `@term` | SPEC §4.11 |
 
 ## `ascribe.toml`
 
@@ -89,7 +90,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §9 |
 | `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §10 |
 | `[phrases]` | The phrases registry (SPEC §5.1). | §11 |
-| `[glossary]` | The glossary (SPEC §5.4): terms, their definitions, and how occurrences are matched. | §12 |
+| `[glossary]` | The glossary (SPEC §5.4): the pages that hold its terms, and how occurrences are matched. | §12 |
 | `[images]` | Image attributes (SPEC §5.3): which keys may appear in an attribute block after an image, and their types. | §13 |
 | `[widgets.<name>]` | Project widgets (SPEC §6): directives a documentation set defines. | §14 |
 | `[consumer]` | The consumer profile (SPEC §9.5): how the site output fits a specific consumer. | §15 |
@@ -105,7 +106,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-233 in all. By severity: 45 advice, 163 error, 25 warning. By level: 208 file, 25 page. By kind of next step: 54 choose, 17 fix, 7 outside, 12 review, 143 write.
+232 in all. By severity: 45 advice, 162 error, 25 warning. By level: 207 file, 25 page. By kind of next step: 53 choose, 17 fix, 7 outside, 12 review, 143 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -202,8 +203,6 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC095` | `model-availability-history-order` | error | write | feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier} |
 | `ASC096` | `model-feature-nested` | error | write | feature `{key}`: available must be an availability spec, not another feature (`{other}`) |
 | `ASC097` | `model-phrase-value-type` | error | write | phrase `{key}` must be a quoted string, but it's {found}; write {key} = "{value}" |
-| `ASC098` | `model-glossary-duplicate-term` | error | write | "{text}" is declared by both glossary terms `{a}` and `{b}` |
-| `ASC099` | `model-glossary-link` | error | choose | glossary term `{id}` links to {path}, which doesn't exist |
 | `ASC100` | `model-widget-reserved-name` | error | write | widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library |
 | `ASC101` | `model-widget-forms` | error | choose | forms must be ["line"], ["container"], or ["line", "container"] |
 | `ASC102` | `model-widget-binding` | error | choose | widget `{name}` has a line form, so it needs a binding: "self", "heading", "block", or "heading-or-block" |
@@ -262,7 +261,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC155` | `fragment-unused` | advice | review | no file includes this fragment, so nothing publishes it |
 | `ASC156` | `phrase-unused` | advice | review | no file uses the phrase `{key}` |
 | `ASC157` | `feature-unused` | advice | review | no file uses the feature `{key}` |
-| `ASC158` | `glossary-term-unused` | advice | review | the glossary term `{term}` appears in no file's prose, so it's never linked |
+| `ASC158` | `glossary-term-unused` | advice | review | the glossary term `{term}` appears in no other file's prose, and no link names its heading, so it's never linked |
 | `ASC159` | `image-unused` | advice | review | no file shows or links to `{path}` |
 | `ASC160` | `image-large` | advice | review | `{path}` is {size}, over the {limit} limit for an image |
 | `ASC161` | `title-duplicate` | advice | write | `{title}` is also the title of {others}, so readers can't tell the pages apart in search results or a list of pages |
@@ -307,7 +306,6 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC200` | `example-unobserved` | advice | outside | `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` |
 | `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 | `ASC202` | `observation-file-missing` | advice | outside | `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again |
-| `ASC203` | `glossary-link-target-missing` | error | choose | glossary term `{id}` links to `{link}`, and `{path}` has no heading with the id `{heading}` |
 | `ASC204` | `model-releases-target` | error | choose | `[releases.{target}]`: `{target}` isn't a declared dimension value |
 | `ASC205` | `model-releases-line` | error | write | `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts |
 | `ASC206` | `model-build-versions` | error | write | build `{build}` is versioned by `{target}`, which has no live line; list its lines in `[releases.{target}]`, such as `live = ["3.4"]` |
@@ -342,6 +340,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC235` | `nav-page-unplaced` | advice | fix | `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title |
 | `ASC236` | `nav-section-unplaced` | advice | fix | ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order |
 | `ASC237` | `nav-label-long` | advice | write | this `nav-label` is {length} characters, longer than the {title}-character title it stands for in the sidebar |
+| `ASC238` | `model-glossary-page` | error | choose | `{path}` in `[glossary] pages` doesn't exist |
+| `ASC239` | `glossary-term-duplicate` | error | write | "{text}" is already the glossary term `{first}`, on {page} |
 
 ## The VS Code extension
 
@@ -429,7 +429,7 @@ Actions, which the actions bar and the lightbulb offer where each applies:
 | Insert a code snippet | Add `@snippet:` with code from one of the project's sources. | A blank line between blocks |
 | Insert a widget | Add one of the project's widgets, `@name`, with the attributes it needs. | A blank line between blocks |
 | Make this a phrase | Declare the selected text in `[phrases]` and write `{key}` in its place, and in its other occurrences if you choose. | Text selected in one paragraph or heading |
-| Add to the glossary | Declare the selected text as a term in `[glossary.terms]`, with its aliases, definition, and link. | Text selected in one paragraph or heading |
+| Add to the glossary | Add the selected text to the glossary page as a term: a heading marked `@term`, with its aliases and definition. | Text selected in one paragraph or heading |
 | Change a feature's availability | Set where a feature in `[features]` is available, such as its state or version. | Anywhere in a page |
 | Rename this phrase everywhere | Change a phrase's key in `[phrases]` and every `{key}` that uses it: the one at the cursor, or one you choose. | Anywhere in a page; a phrase at the cursor is the one renamed |
 | Rename a dimension value everywhere | Change a value in `[dimensions]` and everywhere it's used: `@variant` attributes, `variant:`, availability, and builds. | Anywhere in a page; a `@variant` attribute's value at the cursor is the one renamed |
@@ -820,6 +820,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
 | `getting-started.md` | Getting started | tutorial |
+| `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |

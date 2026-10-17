@@ -51,40 +51,7 @@ nested = "{product}"
 
 [glossary]
 match = "first"
-
-[glossary.terms.api-key]
-term = "API key"
-aliases = ["API keys"]
-definition = "A secret token."
-link = "/glossary.md#api-key"
-
-[glossary.terms.api]
-term = "API"
-definition = "An interface."
-link = "/glossary.md#api"
-
-[glossary.terms.go]
-term = "Go"
-definition = "A language."
-link = "/glossary.md#go"
-case-sensitive = true
-
-[glossary.terms.orphan]
-term = "orphan"
-definition = "No link."
-
-[glossary.terms.build]
-term = "build"
-aliases = ["builds"]
-definition = "A named output configuration."
-link = "/glossary.md#build"
-match = "marked"
-
-[glossary.terms.mode]
-term = "mode"
-definition = "How a build treats content."
-link = "/glossary.md#mode"
-match = "every"
+pages = ["glossary.md"]
 
 [consumer]
 profile = "astro"
@@ -126,6 +93,10 @@ availability = { filter = "self-managed 3.5" }
 pub fn path(text: &str) -> RelPath {
     RelPath::parse(text).expect("a valid path")
 }
+
+/// The glossary page [`MODEL`] names: `API key`, `API`, `Go`
+/// (case-sensitive), `build` (marked), and `mode` (every occurrence).
+pub const GLOSSARY: &str = "---\ntype: page\ntitle: Glossary\n---\n\n## API key\n@term {aliases=\"API keys\"}\n\nA secret token.\n\n## API\n@term\n\nAn interface.\n\n## Go\n@term {case-sensitive=true}\n\nA language.\n\n## Build\n@term {aliases=\"builds\", match=marked}\n\nA named output configuration.\n\n## Mode\n@term {match=every}\n\nHow a build treats content.\n";
 
 /// A project with these content files (paths relative to the content root),
 /// under [`MODEL`] or another model.

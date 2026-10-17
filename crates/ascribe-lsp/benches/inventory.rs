@@ -35,13 +35,16 @@ use synthetic::{Client, MODEL, page_path, page_text, write, write_project};
 const SAMPLES: usize = 100;
 const TARGET: Duration = Duration::from_millis(50);
 
-/// A glossary term that is in every page's prose ("Steps for page 7.").
-const GLOSSARY: &str = "\n[glossary.terms.page]\nterm = \"page\"\ndefinition = \"A page.\"\n";
+/// A glossary page, with a term that is in every page's prose ("Steps for
+/// page 7.").
+const GLOSSARY: &str = "\n[glossary]\npages = [\"glossary.md\"]\n";
+const GLOSSARY_PAGE: &str = "---\ntitle: Glossary\n---\n\n## Page\n@term\n\nA page.\n";
 
 fn run(pages: usize) -> (Duration, Duration) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
     write_project(&root, pages);
+    write(&root, "docs/glossary.md", GLOSSARY_PAGE);
     write(&root, "ascribe.toml", &format!("{MODEL}{GLOSSARY}"));
     let edited = pages / 2;
     let path = root.join(format!("docs/{}", page_path(edited)));

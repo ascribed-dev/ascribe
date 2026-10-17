@@ -138,8 +138,12 @@ impl Server {
         let file = Project::load_model_bounded(&config, self.cache.bound())
             .map_err(|e| answer::Stop::Load(crate::context::Failure::Load(e)).message())?;
         let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
+        let loaded = answer::load(&self.cache, &self.global(), Some(Path::new(project)))
+            .map_err(|f| answer::Stop::Load(f).message())?;
+        let terms = ascribe_query::terms(loaded.index());
         Ok(ascribe_query::summary(
             &file.model,
+            terms,
             None,
             SUMMARY_BUDGET,
             Some(&fs),

@@ -357,13 +357,37 @@ fn glossary_links_carry_the_definition_as_their_title_and_name_the_term() {
         FULL_MODEL,
         &[
             ("index.md", &page("Keep your API key safe.\n")),
-            ("reference/glossary.md", &page("## API key\n")),
+            ("reference/glossary.md", GLOSSARY),
         ],
     );
     let out = strip_frontmatter(&site(&project, "site", "index.md"));
     assert_eq!(
         out,
         "Keep your [API key](/docs/reference/glossary#api-key \"A secret token that authenticates the Quill agent to Quill Cloud.\")<ascribe-attributes data-ascribe-term=\"api-key\"></ascribe-attributes> safe.\n"
+    );
+}
+
+/// A glossary page with one term, `API key`.
+const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\n## API key\n@term {aliases=\"API keys\"}\n\nA secret token that authenticates the Quill agent to Quill Cloud.\n";
+
+#[test]
+fn a_link_to_a_terms_heading_is_a_use_and_other_links_to_its_page_are_not() {
+    let project = memory_project(
+        FULL_MODEL,
+        &[
+            (
+                "index.md",
+                &page(
+                    "Read [about keys](reference/glossary.md#api-key) in [the glossary](reference/glossary.md).\n",
+                ),
+            ),
+            ("reference/glossary.md", GLOSSARY),
+        ],
+    );
+    let out = strip_frontmatter(&site(&project, "site", "index.md"));
+    assert_eq!(
+        out,
+        "Read [about keys](/docs/reference/glossary#api-key \"A secret token that authenticates the Quill agent to Quill Cloud.\")<ascribe-attributes data-ascribe-term=\"api-key\"></ascribe-attributes> in [the glossary](/docs/reference/glossary).\n"
     );
 }
 

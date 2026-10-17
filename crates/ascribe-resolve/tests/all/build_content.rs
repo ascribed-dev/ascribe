@@ -8,7 +8,7 @@ use crate::build_support;
 use ascribe_model::Segment;
 use ascribe_resolve::{LinkTarget, RefKind, ResolvedBlock, ResolvedKind, ResolvedPage};
 use ascribe_syntax::{BlockKind, InlineKind};
-use build_support::{MODEL, path, plain, project, project_with, resolve, summary};
+use build_support::{GLOSSARY, MODEL, path, plain, project, project_with, resolve, summary};
 
 const PAGE: &str = "---\ntype: page\ntitle: Test\n---\n\n";
 
@@ -625,13 +625,7 @@ fn an_asset_in_an_included_fragment_keeps_where_it_is_written() {
 // -- Glossary ---------------------------------------------------------------
 
 fn glossary_project(body: &str) -> ascribe_resolve::Project {
-    project(&[
-        ("index.md", &page(body)),
-        (
-            "glossary.md",
-            "---\ntype: page\ntitle: Glossary\n---\n\n## API key\n\n## API\n\n## Go\n\n## Build\n\n## Mode\n",
-        ),
-    ])
+    project(&[("index.md", &page(body)), ("glossary.md", GLOSSARY)])
 }
 
 fn glossed(page: &ResolvedPage) -> Vec<(String, String)> {
@@ -685,14 +679,16 @@ fn a_term_can_set_its_own_match() {
         "Every build has a mode. Builds differ by mode. Rotate the API key, then the API key.\n\nSee [a build](glossary.md#build).\n",
     );
     let resolved = resolve(&p, "index.md", "site");
-    // `build` is `marked`: never linked automatically, only by the author's
-    // link. `mode` is `every`; `API key` keeps the glossary's `first`.
+    // `build` is `marked`: never linked automatically, and the author's link
+    // to its heading is its use. `mode` is `every`; `API key` keeps the
+    // glossary's `first`.
     assert_eq!(
         glossed(&resolved),
         [
             ("mode".to_owned(), "mode".to_owned()),
             ("mode".to_owned(), "mode".to_owned()),
-            ("api-key".to_owned(), "API key".to_owned())
+            ("api-key".to_owned(), "API key".to_owned()),
+            ("build".to_owned(), "a build".to_owned())
         ]
     );
     let ResolvedKind::Leaf(leaf) = &resolved.blocks[1].kind else {
@@ -721,7 +717,7 @@ fn glossary_terms_are_linked_in_prose_only() {
 }
 
 #[test]
-fn a_term_without_a_link_or_on_its_own_page_isnt_linked() {
+fn a_term_isnt_linked_on_its_own_glossary_page() {
     let p = glossary_project("An orphan and the API key.\n");
     assert_eq!(
         glossed(&resolve(&p, "index.md", "site")),

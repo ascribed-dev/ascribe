@@ -20,9 +20,9 @@ use serde::Serialize;
 
 use crate::ASCRIBE_VERSION;
 
-/// The version of [`ModelReport`]'s schema: 2 since a type has no `files` or
-/// `default` (decision 450).
-pub const MODEL_SCHEMA_VERSION: u32 = 2;
+/// The version of [`ModelReport`]'s schema: 3 since a glossary term has no
+/// `definition` or `link`, and says where its heading is (decision 545a).
+pub const MODEL_SCHEMA_VERSION: u32 = 3;
 
 /// A section of the content model.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -114,7 +114,8 @@ pub struct ModelReport {
     /// Features, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub features: Option<Vec<ModelFeature>>,
-    /// Glossary terms, in declaration order.
+    /// Glossary terms, in the order of `[glossary] pages`, and on each page
+    /// in document order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub glossary: Option<Vec<ModelTerm>>,
     /// Project widgets, in declaration order.
@@ -331,22 +332,29 @@ pub struct ModelFeature {
     pub availability: String,
 }
 
-/// A glossary term.
+/// A glossary term: a heading marked `@term` on a glossary page. Its
+/// definition is the paragraph under the heading, which differs by build:
+/// the JSON output of a build has it.
 #[derive(Debug, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct ModelTerm {
-    /// Its id.
+    /// Its id: its heading's id.
     pub id: String,
-    /// The term.
+    /// The term: its heading's text.
     pub term: String,
     /// Other ways it's written.
     pub aliases: Vec<String>,
-    /// Its definition.
-    pub definition: String,
     /// Which occurrences are linked: `first` on each page, `every` one, or
     /// only those an author links (`marked`).
     #[serde(rename = "match")]
     pub match_mode: &'static str,
+    /// Whether an occurrence must match its case.
+    pub case_sensitive: bool,
+    /// The file its heading is written in, from the content root: its
+    /// glossary page, or a fragment the page includes.
+    pub page: String,
+    /// The heading's line in that file, from 1.
+    pub line: usize,
 }
 
 /// A project widget.
@@ -500,10 +508,43 @@ pub struct ModelRemote {
     pub branch: Option<String>,
 }
 
-/// The content model's sections, or only `section`. With `fs`, each source in
-/// the same repository says what its tested examples are.
+/// The project's glossary terms, as [`ModelReport::glossary`] lists them,
+/// read from `index`, the project's source index.
+pub fn terms(index: &Project) -> Vec<ModelTerm> {
+    index
+        .glossary()
+        .terms
+        .into_iter()
+        .map(|t| {
+            let line = index.file(&t.written_in).map_or(1, |f| {
+                f.source
+                    .get(..t.heading.start())
+                    .map_or(0, |before| before.matches('\n').count())
+                    + 1
+            });
+            ModelTerm {
+                id: t.id,
+                term: t.term,
+                aliases: t.aliases,
+                match_mode: match t.match_mode {
+                    GlossaryMatch::First => "first",
+                    GlossaryMatch::Every => "every",
+                    GlossaryMatch::Marked => "marked",
+                },
+                case_sensitive: t.case_sensitive,
+                page: t.written_in.to_string(),
+                line,
+            }
+        })
+        .collect()
+}
+
+/// The content model's sections, or only `section`, with the glossary's
+/// `terms` ([`terms`]). With `fs`, each source in the same repository says
+/// what its tested examples are.
 pub fn model(
     model: &ContentModel,
+    terms: Vec<ModelTerm>,
     section: Option<Section>,
     fs: Option<&dyn FileSystem>,
 ) -> ModelReport {
@@ -534,24 +575,7 @@ pub fn model(
                 })
                 .collect()
         }),
-        glossary: wants(Section::Glossary).map(|()| {
-            model
-                .glossary
-                .terms
-                .iter()
-                .map(|t| ModelTerm {
-                    id: t.id.clone(),
-                    term: t.term.clone(),
-                    aliases: t.aliases.clone(),
-                    definition: t.definition.clone(),
-                    match_mode: match t.match_mode {
-                        GlossaryMatch::First => "first",
-                        GlossaryMatch::Every => "every",
-                        GlossaryMatch::Marked => "marked",
-                    },
-                })
-                .collect()
-        }),
+        glossary: wants(Section::Glossary).map(|()| terms),
         widgets: wants(Section::Widgets).map(|()| widgets(model)),
         releases: wants(Section::Releases).map(|()| releases(model)),
         builds: wants(Section::Builds).map(|()| builds(model)),
@@ -808,11 +832,12 @@ fn releases(model: &ContentModel) -> Vec<ModelReleases> {
 /// `section`, only that one, never cut.
 pub fn summary(
     model: &ContentModel,
+    terms: Vec<ModelTerm>,
     section: Option<Section>,
     budget: usize,
     fs: Option<&dyn FileSystem>,
 ) -> String {
-    let report = self::model(model, section, fs);
+    let report = self::model(model, terms, section, fs);
     let sections: Vec<(Section, Vec<String>)> = Section::ALL
         .into_iter()
         .filter(|s| section.is_none_or(|wanted| wanted == *s))
@@ -855,10 +880,13 @@ pub(crate) fn fit(all: &[usize], fits: impl Fn(&[usize]) -> bool) -> Vec<usize> 
     taken
 }
 
-/// A line of Markdown for each entry of a section, as the summary lists
-/// them.
+/// A line of Markdown for each entry of a section that the content model
+/// declares alone (not the glossary's), as the summary lists them.
 pub(crate) fn entries(model: &ContentModel, section: Section) -> Vec<String> {
-    lines(&self::model(model, Some(section), None), section)
+    lines(
+        &self::model(model, Vec::new(), Some(section), None),
+        section,
+    )
 }
 
 /// A line of Markdown for each page type, as the summary lists them, saying

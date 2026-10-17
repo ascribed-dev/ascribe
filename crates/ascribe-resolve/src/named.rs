@@ -146,11 +146,10 @@ impl Named {
                 match kind {
                     EntryKind::Phrase => model.has_phrase(&name).then_some(Usable::Phrase(name)),
                     EntryKind::Feature => model.feature(&name).map(|_| Usable::Feature(name)),
-                    EntryKind::Term => model
-                        .glossary
-                        .terms
-                        .iter()
-                        .any(|t| t.id == name)
+                    EntryKind::Term => project
+                        .glossary()
+                        .term(&name)
+                        .is_some()
                         .then_some(Usable::Term(name)),
                     EntryKind::Dimension => model.dimension(&name).map(|_| Usable::Dimension(name)),
                     EntryKind::Note => model.note_type(&name).map(|_| Usable::Note(name)),

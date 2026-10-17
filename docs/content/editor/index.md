@@ -38,7 +38,7 @@ After you install the extension, VS Code opens its walkthrough, **Get Started wi
 
 ### Diagnostics
 
-Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../content-model/output.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
+Every [diagnostic](../checks/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../glossary.md#build) named by `[editor] build` in `ascribe.toml`.
 
 @available: ascribe 0.3.2
 When that build is [versioned](../versions/index.md), they're for every line of it, and a problem only some lines have says which, such as "(only in build `site@3.4`)".
@@ -135,7 +135,7 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 ### Navigation
 
 - **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a phrase or feature key, to its entry in `ascribe.toml`.
-- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there. A term with `match = "marked"` is only a word until you link it, so it has no uses of its own: use **Find All References** on its page or heading instead.
+- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses.
 - **Document links**: links, images, and includes are clickable. A link outside the docs is clickable when it's a web address (`http`, `https`) or an email address (`mailto`); one with any other scheme, such as `tel:` or `vscode:`, stays as it's written for the site's readers, and isn't a link in the editor.
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
@@ -149,8 +149,8 @@ The lens is placed from the saved file, as a build reads it: the editor doesn't 
 
 ### Refactoring
 
-- **Rename or move a file or a folder** in the Explorer, and the links and includes that point to what it holds are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it, the `about` of each [memo file](index.md#memo-files) about it or a heading in it, and [`ascribe.nav`](../navigation/index.md#the-file): a page's entry in its section's `pages`, taken out when it leaves the folder, and a folder's `folder`.
-- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` among them, and the memo files about it, or a phrase key to update its uses and its declaration.
+- **Rename or move a file or a folder** in the Explorer, and the links and includes that point to what it holds are updated, and so are the glossary's `pages` and the retired permalinks' `to` in `ascribe.toml` that name it, the `about` of each [memo file](index.md#memo-files) about it or a heading in it, and [`ascribe.nav`](../navigation/index.md#the-file): a page's entry in its section's `pages`, taken out when it leaves the folder, and a folder's `folder`.
+- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the retired permalinks' `to` in `ascribe.toml` among them, and the memo files about it, or a phrase key to update its uses and its declaration.
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
@@ -219,7 +219,7 @@ To use another key, open **Preferences: Open Keyboard Shortcuts**, search for `a
 
 #### Changing the content model
 
-The actions in the bar's **Content model** group change `ascribe.toml` from a page: **Make this a phrase**, **Add to the glossary**, **Change a feature's availability**, **Rename this phrase everywhere**, and **Rename a dimension value everywhere**. A rename changes what `F2` does (see [Refactoring](index.md#refactoring)), for the phrase or value at the cursor, or one you pick from the project's wherever the cursor is.
+The actions in the bar's **Content model** group change `ascribe.toml`, or the glossary page, from a page: **Make this a phrase**, **Add to the glossary**, **Change a feature's availability**, **Rename this phrase everywhere**, and **Rename a dimension value everywhere**. A rename changes what `F2` does (see [Refactoring](index.md#refactoring)), for the phrase or value at the cursor, or one you pick from the project's wherever the cursor is.
 
 These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename that changes other files lists every change in the refactor preview first, where you check the changes to make and **Apply** them, or **Discard** them all.
 
@@ -291,7 +291,7 @@ A fragment has no builds, listing, or size of its own: it's published only where
   - **Drag a page onto another section**, or a page of one, and it asks first, since the page's address changes. On **Move**, its file moves to that section's folder, and the links to it and `ascribe.nav` follow, as they do when you move a file in the Explorer.
   - A page `ascribe.nav` leaves out of a section that lists its pages is at the end of its section, marked **not placed**; **Place Here** in its menu adds it to the end of the section's `pages`.
   - **Rename Label…** in a section's menu sets its `label`; leave it empty for the default.
-- **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
+- **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`, or a glossary term's heading on its page. The counts are what **Find All References** lists for the same entry.
 
 Pages and Content model update when you save a file of the project, when a page is added or deleted, Pages as you edit `ascribe.nav` too, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
 

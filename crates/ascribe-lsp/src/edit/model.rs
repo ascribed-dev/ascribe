@@ -1,6 +1,7 @@
-//! The content model: making the selected text a phrase, declaring a
-//! glossary term, and changing a feature's availability. Each edits
-//! `ascribe.toml` in place ([`ModelFile`]); making a phrase edits pages too.
+//! The content model: making the selected text a phrase, adding a glossary
+//! term, and changing a feature's availability. Making a phrase and changing
+//! a feature edit `ascribe.toml` in place ([`ModelFile`]), and making a
+//! phrase edits pages too; a glossary term is added to the glossary's page.
 //!
 //! What these edits make is checked as a whole: `ascribe.toml` as it would
 //! be must load, and the project, checked with that model and those pages,
@@ -57,20 +58,11 @@ pub(crate) fn make_phrase(page: &Page<'_>) -> Outcome {
     Ok(plan)
 }
 
+/// Adds a term to the glossary: a section at the end of the first page
+/// `[glossary] pages` lists, its heading the term and marked `@term`, with
+/// the definition as its paragraph (SPEC §5.4).
 pub(crate) fn add_glossary_term(page: &Page<'_>) -> Outcome {
     let ctx = page.ctx;
-    let id = page.line_arg("id")?;
-    if !ascribe_model::is_key(&id) {
-        return Err(format!(
-            "`{id}` can't be a term's id: {}.",
-            ascribe_model::KEY_RULE
-        ));
-    }
-    if ctx.model.glossary.terms.iter().any(|t| t.id == id) {
-        return Err(format!(
-            "The glossary already has a term with the id `{id}`."
-        ));
-    }
     let term = page.line_arg("term")?;
     let aliases: Vec<String> = match page.args.get("aliases") {
         None | Some(Json::Null) => Vec::new(),
@@ -80,58 +72,65 @@ pub(crate) fn add_glossary_term(page: &Page<'_>) -> Outcome {
     .map(|a| a.trim().to_owned())
     .filter(|a| !a.is_empty())
     .collect();
-    if aliases.iter().any(|a| a.contains(['\n', '\r'])) {
-        return Err("Each alias must be one line.".to_owned());
+    if aliases
+        .iter()
+        .any(|a| a.contains(['\n', '\r', '|', '"', '\\']))
+    {
+        return Err("Each alias must be one line, without `|`, `\"`, or `\\`.".to_owned());
     }
     let definition = page.line_arg("definition")?;
-    let link = page
-        .opt_str("link")?
-        .map(|l| l.trim().to_owned())
-        .filter(|l| !l.is_empty());
-    if let Some(link) = &link {
-        check_glossary_link(ctx, link)?;
-    }
-    let mut entries = vec![("term", Value::from(term.as_str()))];
-    if !aliases.is_empty() {
-        entries.push((
-            "aliases",
-            Value::Array(aliases.iter().map(String::as_str).collect()),
-        ));
-    }
-    entries.push(("definition", Value::from(definition.as_str())));
-    if let Some(link) = &link {
-        entries.push(("link", Value::from(link.as_str())));
-    }
-    let file = model_file(ctx)?;
-    let mut plan = Plan::new(Vec::new());
-    plan.model
-        .push(file.add_table(&["glossary", "terms", &id], &entries, &["glossary"])?);
-    Ok(plan)
-}
-
-/// A glossary term's link names a heading its page has: the content model
-/// checks the page, but nothing else checks the id.
-fn check_glossary_link(ctx: &Ctx, link: &str) -> Result<(), String> {
-    if link.contains(['\n', '\r']) {
-        return Err("`link` must be one line.".to_owned());
-    }
-    let (page, id) = link.split_once('#').unwrap_or((link, ""));
-    let page = page.strip_prefix('/').unwrap_or(page);
-    let Some(file) = RelPath::parse(page)
-        .ok()
-        .and_then(|p| ctx.snapshot.file(&p))
-    else {
-        // The content model reports a page that isn't there.
-        return Ok(());
+    let Some(listed) = ctx.model.glossary.pages.first() else {
+        return Err(
+            "The project has no glossary page: list one in `[glossary] pages` in ascribe.toml."
+                .to_owned(),
+        );
     };
-    if !id.is_empty()
-        && !crate::nav::link_headings(&ctx.snapshot, file)
+    let glossary = ctx.snapshot.glossary();
+    for text in std::iter::once(&term).chain(&aliases) {
+        let lower = text.to_lowercase();
+        if let Some(existing) = glossary
+            .terms
             .iter()
-            .any(|h| h.source_id == id)
-    {
-        return Err(format!("`{page}` has no heading with the id `{id}`."));
+            .find(|t| t.texts().any(|t| t.to_lowercase() == lower))
+        {
+            return Err(format!(
+                "“{text}” is already the glossary term `{}`, on {}.",
+                existing.id, existing.written_in
+            ));
+        }
     }
-    Ok(())
+    let path = RelPath::parse(&listed.path).map_err(|e| e.to_string())?;
+    let file = ctx
+        .snapshot
+        .file(&path)
+        .ok_or_else(|| format!("The glossary page `{path}` isn't there."))?;
+    // The level of the page's other terms, else the level under its title.
+    let level = glossary
+        .terms
+        .iter()
+        .filter(|t| t.written_in == path)
+        .find_map(|t| file.heading_at(t.heading))
+        .map_or(2, |h| h.level);
+    let mut section = String::new();
+    if !file.source.is_empty() && !file.source.ends_with('\n') {
+        section.push('\n');
+    }
+    if !file.source.is_empty() && !file.source.ends_with("\n\n") {
+        section.push('\n');
+    }
+    section.push_str(&format!("{} {term}\n@term", "#".repeat(usize::from(level))));
+    if !aliases.is_empty() {
+        section.push_str(&format!(" {{aliases=\"{}\"}}", aliases.join("|")));
+    }
+    section.push_str(&format!("\n\n{definition}\n"));
+    let edit = TextEdit::replace(Span::empty(file.source.len()), section);
+    let mut plan = Plan::new(Vec::new());
+    if path == ctx.path {
+        plan.edits.push(edit);
+    } else {
+        plan.files.entry(path).or_default().push(edit);
+    }
+    Ok(plan)
 }
 
 pub(crate) fn promote_feature(page: &Page<'_>) -> Outcome {
@@ -422,12 +421,14 @@ pub(super) fn finish(page: &Page<'_>, uri: &Uri, plan: Plan) -> Result<EditResul
             .ok_or_else(overlap)?;
         changes.insert(file_uri, converted);
     }
-    let model_uri = crate::uri::path_to_uri(&ctx.config)
-        .ok_or_else(|| "`ascribe.toml` can't be named as a URI.".to_owned())?;
-    changes.insert(
-        model_uri,
-        convert(&LineIndex::new(&ctx.model_text), &model_edits),
-    );
+    if !model_edits.is_empty() {
+        let model_uri = crate::uri::path_to_uri(&ctx.config)
+            .ok_or_else(|| "`ascribe.toml` can't be named as a URI.".to_owned())?;
+        changes.insert(
+            model_uri,
+            convert(&LineIndex::new(&ctx.model_text), &model_edits),
+        );
+    }
     Ok(EditResult::Edit {
         edit: WorkspaceEdit {
             changes: Some(changes),

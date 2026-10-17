@@ -398,7 +398,7 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `setImageWidth` | An image | `width` | The image's `width` attribute, when the model declares one |
 | `setImageAlt` | An image | `alt` | The image's alt text |
 | `makePhrase` | Plain text selected in prose, on one line | `key`, `everywhere?` (default `false`) | `key = "<the text>"` in `[phrases]`, and `{key}` in place of the selection; with `everywhere`, in place of each of its `occurrences` too |
-| `addGlossaryTerm` | Anywhere in a page | `id`, `term`, `definition`, `aliases?` (a list), `link?` (a page from the content root, with `#id`) | A `[glossary.terms.<id>]` table with those keys |
+| `addGlossaryTerm` | Anywhere in a page | `term`, `definition`, `aliases?` (a list) | A section at the end of the first page `[glossary] pages` lists: the term as its heading, `@term` with the aliases, and the definition as its paragraph |
 | `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
 | `newPage` | Any of the project's files: `textDocument` names the project, and `range` is unused | `type`, `title`, `folder?` (a folder in the content root, as a `file:` URI) | A new page, made by `ascribe_templates::start`: the type's template with its `title` set, or its frontmatter when it has none, with `type:` first in its frontmatter, in `folder` or the content root, named for the title. Never over a file. `select` is the first thing the template left to fill in |
 | `moveSection` | Any of the project's files, as `newPage` | `folder` (a section's folder from the content root, ending in `/`), `before?` (a sibling section's folder; none for the end) | `ascribe.nav`'s `[[sections]]` with the section before `before` among its siblings: the siblings it didn't list are listed in the order they had, so nothing else moves |
@@ -502,11 +502,12 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
   `feature`, `term`, `dimension`, `note`, `widget`, or `build`; `label` is the
   phrase's value, the feature's name, the term, the dimension's label (when it
   isn't its name), the note type's label, or the widget's description.
-  `uses` is `null` for a build, which pages don't name, and for a glossary
-  term with `match = "marked"`, whose uses are the links to its page.
+  `uses` is `null` for a build, which pages don't name.
   `declaration` is the entry's table header in `ascribe.toml` (a phrase's
   key), in `modelUri`, found as `ascribe/targets` finds ranges; it's `null`
-  for a built-in note type.
+  for a built-in note type. A glossary term's is its heading, in `page`,
+  the content path of the file it's written in; `page` is `null` for every
+  other entry.
 
 Every count is the length of the list Find All References returns for the same
 thing ([Navigation](#navigation)): both come from
@@ -835,7 +836,7 @@ from `ascribe_resolve::Project::uses`, the search the inventory counts with:
 | The start of the file, its frontmatter, or its title | The links from other files to the file, and its includes |
 | A `{key}` | Every declared `{key}` |
 | An availability spec that is a feature key | The specs that are that key (`@available`, a row's `available`, frontmatter `available`); a spec of targets lists the uses of its dimension |
-| A glossary term in prose | Its occurrences in prose, and its aliases', matched as the build matches them (whole words, its case rule), whether it links them first or every time. A term with `match = "marked"` has none: its uses are the links to its page |
+| A glossary term in prose | Its occurrences in prose, and its aliases', matched as the build matches them (whole words, its case rule), whether it links them first or every time, and the links to its heading; none on a glossary page that shows it. A term with `match = "marked"` has only the links |
 | A `@note`, or its `type` | The notes of that type (`note` when none is given) |
 | A widget's name | Its directives |
 | A `@variant` or its attribute | The dimension's `@variant` attributes, frontmatter `variant` keys, and the availability specs that name it or its values |

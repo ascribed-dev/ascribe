@@ -345,32 +345,6 @@ function occurrenceDetail(occurrences: TargetOccurrence[]): string {
   return [...counts].map(([path, count]) => (count === 1 ? path : `${path} (${count})`)).join(", ");
 }
 
-/** A link for a glossary term: none, or a page or heading, written from the content root. */
-export function glossaryLinkStep(targets: TargetsResult): Step {
-  const pages: Choice[] = (targets.pages ?? []).map((page) => ({
-    label: `$(file) ${page.title ?? page.path}`,
-    description: page.path,
-    value: page.rootLink,
-    section: "Pages",
-  }));
-  const headings: Choice[] = (targets.headings ?? []).map((heading) => ({
-    label: heading.text,
-    description: `${heading.page}#${heading.id}`,
-    value: heading.rootLink,
-    section: "Headings",
-  }));
-  // A heading appears once per page that includes it: keep the first.
-  const seen = new Set<string>();
-  const unique = [...pages, ...headings].filter((c) => !seen.has(c.value) && seen.add(c.value));
-  return {
-    kind: "pick",
-    key: "link",
-    prompt: "Link the term to a page or heading?",
-    choices: [{ label: "No link", value: "" }, ...unique],
-    empty: "",
-  };
-}
-
 /** Which phrase: each key with its value. */
 export function phraseStep(targets: TargetsResult): Step {
   return {

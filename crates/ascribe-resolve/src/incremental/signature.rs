@@ -8,7 +8,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 use ascribe_model::ContentModel;
-use ascribe_syntax::{Block, BlockKind, DirectiveLine};
+use ascribe_syntax::{Block, BlockKind, Bound, DirectiveLine, bound_heading};
 
 use crate::index::FileIndex;
 
@@ -24,13 +24,17 @@ pub(crate) fn hash_of(value: &(impl Hash + ?Sized)) -> u64 {
 ///
 /// That is: whether it's a page or a fragment; its frontmatter as written
 /// (the title, and `variant` and `available`, which decide whether a build
-/// publishes it); its headings (level, text, source id, `@id`); and every
+/// publishes it); its headings (level, text, source id, `@id`); every
 /// directive line and container or group opener as written, with how blocks
-/// nest. Directives are included because `@available`, `@variant`, and
-/// `@include` decide which headings survive a build and what a page holds.
+/// nest; and, for a heading marked `@term`, the block that opens its section,
+/// which is the term's definition on a glossary page (SPEC §5.4). Directives
+/// are included because `@available`, `@variant`, `@include`, and `@term`
+/// decide which headings survive a build, what a page holds, and what the
+/// glossary's terms are.
 ///
 /// Editing a paragraph, a code block, or the destination of a link leaves it
-/// unchanged, so the pages that link to this one aren't re-resolved for it.
+/// unchanged, so the pages that link to this one aren't re-resolved for it,
+/// unless the paragraph is a term's definition.
 pub(crate) fn structure_signature(index: &FileIndex) -> u64 {
     let mut h = DefaultHasher::new();
     index.kind.hash(&mut h);
@@ -49,7 +53,39 @@ pub(crate) fn structure_signature(index: &FileIndex) -> u64 {
         heading.has_phrase.hash(&mut h);
     }
     blocks(&index.document.blocks, &index.source, &mut h);
+    definitions(&index.document.blocks, &index.source, &mut h);
     h.finish()
+}
+
+/// The text of the block that opens each `@term` heading's section, in every
+/// list of blocks.
+fn definitions(list: &[Block], source: &str, h: &mut DefaultHasher) {
+    for (i, block) in list.iter().enumerate() {
+        match &block.kind {
+            BlockKind::Directive(line) if line.name == "term" => {
+                if let Some(heading) = bound_heading(list, i)
+                    && let Some(first) = list[heading + 1..]
+                        .iter()
+                        .find(|b| b.binding() != Some(Bound::Heading))
+                {
+                    source.get(first.span.range()).hash(h);
+                }
+            }
+            BlockKind::BlockQuote(q) => definitions(&q.children, source, h),
+            BlockKind::List(l) => {
+                for item in &l.items {
+                    definitions(&item.children, source, h);
+                }
+            }
+            BlockKind::Container(c) => definitions(&c.children, source, h),
+            BlockKind::Group(g) => {
+                for arm in &g.arms {
+                    definitions(&arm.children, source, h);
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 fn line(line: &DirectiveLine, source: &str, h: &mut DefaultHasher) {
@@ -201,28 +237,19 @@ impl Fingerprints {
                 (&t.name, t.implicit, fields)
             })
             .collect();
-        // Where a phrase, a feature, a glossary term, or a release line
+        // Where a phrase, a feature, a glossary page, or a release line
         // is declared is read only by the diagnostics of `ascribe.toml`.
         let phrase_values: Vec<_> = phrases.iter().map(|p| (&p.key, &p.value)).collect();
         let feature_specs: Vec<_> = features
             .iter()
             .map(|f| (&f.key, &f.name, &f.available_text, &f.available))
             .collect();
-        let terms: Vec<_> = glossary
-            .terms
-            .iter()
-            .map(|t| {
-                (
-                    (&t.id, &t.term, &t.aliases, &t.definition),
-                    (&t.link, t.case_sensitive, t.match_mode),
-                )
-            })
-            .collect();
+        let glossary_pages: Vec<_> = glossary.pages.iter().map(|p| &p.path).collect();
         let declared: Vec<_> = phrases
             .iter()
             .map(|p| p.span)
             .chain(features.iter().map(|f| f.span))
-            .chain(glossary.terms.iter().map(|t| t.span))
+            .chain(glossary.pages.iter().map(|p| p.span))
             .chain(releases.iter().flat_map(|r| {
                 r.lines()
                     .into_iter()
@@ -265,7 +292,7 @@ impl Fingerprints {
                     phrase_values
                 ),
                 (
-                    (glossary.match_mode, glossary.case_sensitive, terms),
+                    (glossary.match_mode, glossary.case_sensitive, glossary_pages),
                     image_attributes,
                     widgets,
                     consumer,

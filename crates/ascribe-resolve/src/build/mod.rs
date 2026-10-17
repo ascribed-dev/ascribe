@@ -211,6 +211,8 @@ pub struct BuildResolver<'p> {
     /// Resolvers for the other lines of a versioned build, by name, made
     /// when a link leads out of this line.
     others: RefCell<HashMap<String, Rc<BuildResolver<'p>>>>,
+    /// The glossary's terms as this build links them, worked out once.
+    terms: OnceCell<Rc<Vec<glossary::BuildTerm>>>,
 }
 
 impl<'p> BuildResolver<'p> {
@@ -227,7 +229,27 @@ impl<'p> BuildResolver<'p> {
             headings: RefCell::new(BTreeMap::new()),
             replacements: OnceCell::new(),
             others: RefCell::new(HashMap::new()),
+            terms: OnceCell::new(),
         }
+    }
+
+    /// The definition of the glossary term with this id in this build (SPEC
+    /// §5.4): the paragraph that opens its section, as plain text. `None`
+    /// when the build doesn't link the term.
+    pub fn term_definition(&self, id: &str) -> Option<String> {
+        self.terms()
+            .iter()
+            .find(|t| t.term.id == id)
+            .map(|t| t.definition.clone())
+    }
+
+    /// The glossary's terms as this build links them: each with its URL and
+    /// its definition. A term whose pages the build doesn't publish, or
+    /// whose heading it removes, isn't listed.
+    pub(crate) fn terms(&self) -> Rc<Vec<glossary::BuildTerm>> {
+        self.terms
+            .get_or_init(|| Rc::new(glossary::build_terms(self)))
+            .clone()
     }
 
     pub(crate) fn project(&self) -> &'p Project {

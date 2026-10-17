@@ -18,7 +18,6 @@ import {
   destinationStep,
   dimensionStep,
   everywhereSteps,
-  glossaryLinkStep,
   imageStep,
   includePath,
   includeSteps,
@@ -907,28 +906,20 @@ export const ACTIONS: Action[] = [
     id: "addGlossaryTerm",
     title: "Add to the glossary",
     description:
-      "Declare the selected text as a term in `[glossary.terms]`, with its aliases, definition, and link",
+      "Add the selected text to the glossary page as a term: a heading marked `@term`, with its aliases and definition",
     where: "Text selected in one paragraph or heading",
     hint: "Select text in one paragraph or heading to add it to the glossary.",
     group: "model",
     applies: key("ascribe.selection.prose"),
     when: "ascribe.selection.prose",
-    needs: ["pages", "headings"],
-    ask: (c, targets) => ({
-      steps: (answers) => [
+    ask: (c) => ({
+      steps: () => [
         {
           kind: "text",
           key: "term",
           prompt: "What's the term?",
           value: c.selection?.text.trim(),
           validate: oneLine("the term"),
-        },
-        {
-          kind: "text",
-          key: "id",
-          prompt: "What id? It names the term in ascribe.toml.",
-          value: suggestKey(text(answers, "term") ?? c.selection?.text ?? "") || undefined,
-          validate: validKey(),
         },
         {
           kind: "text",
@@ -939,24 +930,19 @@ export const ACTIONS: Action[] = [
         {
           kind: "text",
           key: "definition",
-          prompt: "What does it mean? Readers see this where the term is linked.",
+          prompt:
+            "What does it mean? It's the paragraph under the term's heading, and readers see it where the term is linked.",
           validate: oneLine("a definition"),
         },
-        glossaryLinkStep(targets),
       ],
-      args: (answers) => {
-        const link = text(answers, "link");
-        return {
-          id: text(answers, "id")?.trim(),
-          term: text(answers, "term")?.trim(),
-          aliases: (text(answers, "aliases") ?? "")
-            .split(",")
-            .map((alias) => alias.trim())
-            .filter((alias) => alias !== ""),
-          definition: text(answers, "definition")?.trim(),
-          ...(link ? { link } : {}),
-        };
-      },
+      args: (answers) => ({
+        term: text(answers, "term")?.trim(),
+        aliases: (text(answers, "aliases") ?? "")
+          .split(",")
+          .map((alias) => alias.trim())
+          .filter((alias) => alias !== ""),
+        definition: text(answers, "definition")?.trim(),
+      }),
     }),
     does: { operation: "addGlossaryTerm" },
   },

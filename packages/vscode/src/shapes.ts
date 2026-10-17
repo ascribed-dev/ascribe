@@ -799,17 +799,20 @@ export interface InventoryEntry {
   key: string;
   /** Its label, name, or term, where it has one besides its key. */
   label: string | null;
-  /**
-   * How many places use it; `null` for a build, which pages don't name,
-   * and for a glossary term with `match = "marked"`, whose uses are links
-   * to its page.
-   */
+  /** How many places use it; `null` for a build, which pages don't name. */
   uses: number | null;
   /**
-   * Where `ascribe.toml` declares it; `null` for a built-in note type,
-   * and for an entry that can't be found there.
+   * Where it's declared: in `ascribe.toml`, or, for a glossary term, in
+   * `page`. `null` for a built-in note type, and for an entry that can't
+   * be found there.
    */
   declaration: LspRange | null;
+  /**
+   * For a glossary term, the content path of the file its heading is
+   * written in, which `declaration` is a range in: its glossary page, or
+   * a fragment the page includes. `null` for an entry of `ascribe.toml`.
+   */
+  page: string | null;
 }
 
 /** A fragment. */

@@ -455,11 +455,12 @@ pub(crate) fn complete(ctx: &Ctx, text: &str, offset: usize) -> Option<Vec<Compl
         }
     }
     let model = &ctx.model;
+    let glossary = ctx.snapshot.glossary();
     for (prefix, kind) in PREFIXES {
         let names: Vec<&str> = match kind {
             EntryKind::Phrase => model.phrases.iter().map(|p| p.key.as_str()).collect(),
             EntryKind::Feature => model.features.iter().map(|f| f.key.as_str()).collect(),
-            EntryKind::Term => model.glossary.terms.iter().map(|t| t.id.as_str()).collect(),
+            EntryKind::Term => glossary.terms.iter().map(|t| t.id.as_str()).collect(),
             EntryKind::Dimension => model.dimensions.iter().map(|d| d.name.as_str()).collect(),
             EntryKind::Note => model.notes.iter().map(|n| n.name.as_str()).collect(),
             EntryKind::Widget => model
@@ -584,7 +585,8 @@ pub(crate) fn move_edits(ctx: &Ctx, moved: impl Fn(&RelPath) -> RelPath) -> Vec<
     })
 }
 
-/// `ascribe.toml` at the entry's declaration.
+/// `ascribe.toml` at the entry's declaration, or a glossary term's page at
+/// its heading.
 fn entry_uri(ctx: &Ctx, named: &Named) -> Option<Uri> {
     let Named::Entry { kind, name } = named else {
         return None;
@@ -592,7 +594,16 @@ fn entry_uri(ctx: &Ctx, named: &Named) -> Option<Uri> {
     let entry = match kind {
         EntryKind::Phrase => Entry::Phrase(name),
         EntryKind::Feature => Entry::Feature(name),
-        EntryKind::Term => Entry::Term(name),
+        EntryKind::Term => {
+            let glossary = ctx.snapshot.glossary();
+            let term = glossary.term(name)?;
+            let file = ctx.snapshot.file(&term.written_in)?;
+            let line = ctx
+                .encoding
+                .position(&LineIndex::new(&file.source), term.heading.start())
+                .map_or(0, |p| p.line);
+            return with_line(&ctx.uri_of(&term.written_in)?, line);
+        }
         EntryKind::Dimension => Entry::Dimension(name),
         EntryKind::Note => Entry::Note(name),
         EntryKind::Widget => Entry::Widget(name),

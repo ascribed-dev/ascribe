@@ -100,23 +100,19 @@ impl Renderer<'_> {
 
     /// The glossary term a link is a use of, as its id and the definition
     /// the link carries as its title: the term whose use in this block has
-    /// this URL and text.
+    /// the link's URL and text.
     pub(crate) fn glossary_term(
         &self,
         block: &ResolvedBlock,
         link: &Link,
+        url: &str,
     ) -> Option<(String, String)> {
         let text = plain_text(&link.children);
-        let used = block
+        block
             .glossary
             .iter()
-            .find(|g| g.url == link.destination && g.text == text)?;
-        self.model
-            .glossary
-            .terms
-            .iter()
-            .find(|t| t.id == used.term)
-            .map(|t| (t.id.clone(), t.definition.clone()))
+            .find(|g| g.url == url && g.text == text)
+            .map(|g| (g.term.clone(), g.definition.clone()))
     }
 
     /// A list of sibling blocks as chunks: one string per block (a directive

@@ -218,10 +218,15 @@ export class SidebarViews implements vscode.Disposable {
     modelLook,
     (node) => {
       const model = this.inventory?.modelUri;
-      if (node.kind !== "entry" || !model || !node.entry.declaration) return undefined;
+      const content = this.inventory?.contentUri;
+      if (node.kind !== "entry" || !node.entry.declaration) return undefined;
+      // A glossary term is declared on its page; the rest in `ascribe.toml`.
+      const page = node.entry.page;
+      const uri = page ? content && contentFile(content, page) : model && vscode.Uri.parse(model);
+      if (!uri) return undefined;
       const { start, end } = node.entry.declaration;
       return {
-        uri: vscode.Uri.parse(model),
+        uri,
         selection: new vscode.Range(start.line, start.character, end.line, end.character),
       };
     },

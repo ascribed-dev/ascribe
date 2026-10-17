@@ -57,10 +57,18 @@ const inventory: InventoryResult = {
   orphans: ["old.md"],
   navigation: null,
   model: [
-    { kind: "phrase", key: "product", label: "Quill", uses: 14, declaration: range(4) },
-    { kind: "phrase", key: "old", label: "Old", uses: 0, declaration: range(5) },
-    { kind: "note", key: "note", label: "Note", uses: 2, declaration: null },
-    { kind: "build", key: "site", label: null, uses: null, declaration: range(9) },
+    { kind: "phrase", key: "product", label: "Quill", uses: 14, declaration: range(4), page: null },
+    { kind: "phrase", key: "old", label: "Old", uses: 0, declaration: range(5), page: null },
+    { kind: "note", key: "note", label: "Note", uses: 2, declaration: null, page: null },
+    { kind: "build", key: "site", label: null, uses: null, declaration: range(9), page: null },
+    {
+      kind: "term",
+      key: "api-key",
+      label: "API key",
+      uses: 3,
+      declaration: range(6),
+      page: "ref/api.md",
+    },
   ],
 };
 
@@ -271,6 +279,7 @@ describe("the Content model view", () => {
     const roots = modelRoots(inventory);
     expect(roots.map((n) => [modelLook(n).label, modelLook(n).description])).toEqual([
       ["Phrases", "2"],
+      ["Glossary", "1"],
       ["Note types", "1"],
       ["Builds", "1"],
     ]);
@@ -280,8 +289,9 @@ describe("the Content model view", () => {
   it("shows each entry's uses, and marks one nothing uses", () => {
     const roots = modelRoots(inventory);
     const phrases = nth(roots, 0);
-    const notes = nth(roots, 1);
-    const builds = nth(roots, 2);
+    const glossary = nth(roots, 1);
+    const notes = nth(roots, 2);
+    const builds = nth(roots, 3);
     const entries = modelChildren(phrases);
     const product = nth(entries, 0);
     const old = nth(entries, 1);
@@ -293,6 +303,8 @@ describe("the Content model view", () => {
     });
     expect(modelLook(old)).toMatchObject({ description: "unused", dimmed: true });
     expect(modelLook(nth(modelChildren(notes), 0)).tooltip).toContain("Built in");
+    // A glossary term says which page it's on.
+    expect(modelLook(nth(modelChildren(glossary), 0)).tooltip).toContain("On ref/api.md");
     // Pages don't name builds: no count.
     expect(modelLook(nth(modelChildren(builds), 0))).toMatchObject({
       description: "",

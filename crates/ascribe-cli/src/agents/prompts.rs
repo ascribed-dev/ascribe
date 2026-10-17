@@ -179,7 +179,7 @@ fn new_page(projects: &dyn Projects, arguments: &Arguments) -> Result<String, St
         .get("title")
         .map(String::as_str)
         .unwrap_or_default();
-    let types = ascribe_query::model(project.model(), Some(Section::Types), None)
+    let types = ascribe_query::model(project.model(), Vec::new(), Some(Section::Types), None)
         .types
         .unwrap_or_default();
     let (Some(page_type), Some(content_type)) = (

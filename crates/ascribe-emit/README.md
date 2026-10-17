@@ -105,7 +105,7 @@ Every block has a `type`, and:
 | `source` | `file`, `span`, `lines` (first and last), and `via`: the includes it came through, outermost first (`file`, `span`, `line`), absent for a page's own blocks |
 | `availability` | Its effective availability below page level: the innermost spec, with `enclosing` chaining outward to the scope it sits in. Absent when nothing but the page's availability applies |
 | `links` | The block's own links and images, resolved: `span`, `kind`, `destination`, `target` |
-| `glossary` | Glossary terms linked in its prose: `term`, `text`, `url` |
+| `glossary` | Glossary terms linked in its prose, and its links to a term's heading: `term`, `text`, `url`, `definition` |
 | `substitutions` | Phrases replaced in its text: `span` (over the source), `key`, `value` |
 | `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers), and `tested` when the file is a tested example. Its `source` is the `@snippet` line |
 

@@ -407,6 +407,10 @@ fn builtin_line(builtin: Builtin) -> String {
                           `@end` around several lines: a note for whoever maintains the page, \
                           never published"
             .to_owned(),
+        Builtin::Term => "`@term` on the line under a heading of a glossary page, with \
+                          `{aliases=\"<a>|<b>\"}` for other forms: the heading is a glossary \
+                          term, defined by the paragraph under it"
+            .to_owned(),
     }
 }
 
