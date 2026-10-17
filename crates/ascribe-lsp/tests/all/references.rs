@@ -386,7 +386,7 @@ fn any_file_of_the_project_asks_for_the_inventory_and_the_targets() {
     for file in ["docs/nested/docs/n.md", "docs/nested/ascribe.toml"] {
         assert_eq!(
             inventory(&mut client, &f.path(file)),
-            json!({ "pages": [], "fragments": [], "orphans": [], "model": [] }),
+            json!({ "pages": [], "fragments": [], "orphans": [], "navigation": null, "model": [] }),
             "{file}"
         );
     }
