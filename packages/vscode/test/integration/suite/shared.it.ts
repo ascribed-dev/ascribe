@@ -19,7 +19,7 @@ describe("a code file two projects show", () => {
   });
 
   it("has a lens from each project, each naming its project", async () => {
-    const greet = uriOf("code", "greet.ts");
+    const greet = uriOf("code", "greet.py");
     await vscode.window.showTextDocument(greet);
     const titles = await waitFor("a lens from each project", async () => {
       const found = await vscode.commands.executeCommand<vscode.CodeLens[]>(

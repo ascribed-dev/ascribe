@@ -2,4 +2,4 @@
 title: Greet a reader
 ---
 
-@snippet: code:greet.ts#greet
+@snippet: code:greet.py#greet
