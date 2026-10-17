@@ -11,6 +11,7 @@ import {
   pageDetail,
   pageLabel,
   parseSource,
+  removedPage,
   sameBase,
 } from "../../src/preview/reviewText.js";
 
@@ -106,6 +107,34 @@ describe("causes", () => {
   it("is empty when the page's own file changed", () => {
     expect(causes(page({ because: ["_fragments/prereqs.md"] }), roots)).toEqual([]);
     expect(causes(null, roots)).toEqual([]);
+  });
+});
+
+describe("removedPage", () => {
+  const base = { requested: "main", commit: "1a2b3c4d", merge_base: null };
+  const was = {
+    base,
+    wasHtml: "<p>Gone.</p>",
+    wasTitle: "Old",
+    wasFormattedTitle: [{ type: "code" as const, value: "old" }],
+  };
+  const { title: _, formatted_title: __, ...diff } = page({ path: "old.md", status: "removed" });
+
+  it("is the page as it was, for a removed page", () => {
+    expect(removedPage({ ...was, changes: { ...diff, changes: [] } })).toEqual({
+      path: "old.md",
+      title: "Old",
+      formattedTitle: [{ type: "code", value: "old" }],
+      html: "<p>Gone.</p>",
+    });
+  });
+
+  it("is null for a page that's still there, and without a review", () => {
+    expect(
+      removedPage({ ...was, changes: { ...diff, status: "changed", changes: [] } }),
+    ).toBeNull();
+    expect(removedPage({ ...was, changes: null })).toBeNull();
+    expect(removedPage(null)).toBeNull();
   });
 });
 

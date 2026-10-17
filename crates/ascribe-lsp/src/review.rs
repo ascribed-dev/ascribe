@@ -132,6 +132,9 @@ pub struct BaseFileResult {
     pub problem: Option<String>,
 }
 
+/// A page as it was at a base: its HTML, rendered with anchors, and its title.
+type PageAsItWas = (String, PageTitle);
+
 /// A base: what it resolved to, and the project as it was there.
 pub(crate) struct ReviewBase {
     pub info: BaseInfo,
@@ -140,9 +143,9 @@ pub(crate) struct ReviewBase {
     pub project: Option<Project>,
     /// The content model's text there.
     pub model_text: String,
-    /// The pages as they were, rendered, by build and path; `None` for a page
-    /// the build didn't have.
-    pages: Mutex<HashMap<(String, RelPath), Option<String>>>,
+    /// The pages as they were, rendered, with their titles, by build and
+    /// path; `None` for a page the build didn't have.
+    pages: Mutex<HashMap<(String, RelPath), Option<PageAsItWas>>>,
     /// The last answer to `ascribe/review/changes`, and what it was computed
     /// from.
     changes: Mutex<Option<(ChangesKey, ChangesResult)>>,
@@ -168,17 +171,14 @@ impl ReviewBase {
         })
     }
 
-    /// The page at `path` of `build` as it was, rendered with anchors; `None`
-    /// when the build didn't have it.
-    pub fn page_html(&self, build: &str, path: &RelPath) -> Option<String> {
+    /// The page at `path` of `build` as it was, rendered with anchors, and
+    /// its title; `None` when the build didn't have it.
+    pub fn page(&self, build: &str, path: &RelPath) -> Option<PageAsItWas> {
         let key = (build.to_owned(), path.clone());
         let mut pages = self.pages.lock().unwrap_or_else(PoisonError::into_inner);
         pages
             .entry(key)
-            .or_insert_with(|| {
-                ascribe_diff::html::page_html(self.project.as_ref()?, build, path)
-                    .map(|(html, _)| html)
-            })
+            .or_insert_with(|| ascribe_diff::html::page_html(self.project.as_ref()?, build, path))
             .clone()
     }
 }

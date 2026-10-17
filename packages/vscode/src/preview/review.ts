@@ -20,8 +20,8 @@ const CHANGES_REQUEST = "ascribe/review/changes";
 
 /** What review needs from the preview. */
 export interface ReviewHost {
-  /** The document the preview shows, if it's open. */
-  previewedDocument(): vscode.TextDocument | undefined;
+  /** The file the preview shows, if it's open: a removed page's too. */
+  previewedFile(): vscode.Uri | undefined;
   /** Whether the preview is the active editor. */
   previewActive(): boolean;
   /** The build the preview shows for a project, by folder. */
@@ -30,6 +30,8 @@ export interface ReviewHost {
   refresh(): void;
   /** Opens a page in the editor and the preview, and goes to its first change. */
   showPage(uri: vscode.Uri): Promise<void>;
+  /** Shows a page the branch removed in the preview, as it was at the base. */
+  showRemovedPage(uri: vscode.Uri): Promise<void>;
   /**
    * Opens the preview's submit dialog for the project: on the page it shows,
    * when that's the project's, else on `page`, opened first.
@@ -181,8 +183,8 @@ export class ReviewController implements vscode.Disposable {
    * it read. Called when the preview regains focus.
    */
   async recheck(): Promise<void> {
-    const document = this.host.previewedDocument();
-    const server = document && this.projects.serverFor(document.uri);
+    const file = this.host.previewedFile();
+    const server = file && this.projects.serverFor(file);
     const base = server && this.baseOf(server);
     if (!server || !base || server.state !== "running" || this.rechecking.has(server)) return;
     this.rechecking.add(server);
@@ -226,6 +228,11 @@ export class ReviewController implements vscode.Disposable {
   /** Opens a changed page in the editor and the preview, at its first change. */
   showPage(uri: vscode.Uri): Promise<void> {
     return this.host.showPage(uri);
+  }
+
+  /** Shows a page the branch removed in the preview, as it was at the base. */
+  showRemovedPage(uri: vscode.Uri): Promise<void> {
+    return this.host.showRemovedPage(uri);
   }
 
   /** Opens the submit dialog for the project's review, in the preview. */
@@ -333,14 +340,14 @@ export class ReviewController implements vscode.Disposable {
 
   /** The project review acts on: the preview's, when it's active, else the active file's. */
   private target(): ProjectServer | undefined {
-    const previewed = this.host.previewedDocument();
-    if (this.host.previewActive() && previewed) return this.projects.serverFor(previewed.uri);
+    const previewed = this.host.previewedFile();
+    if (this.host.previewActive() && previewed) return this.projects.serverFor(previewed);
     const active = vscode.window.activeTextEditor?.document;
     if (active?.uri.scheme === "file") {
       const server = this.projects.serverFor(active.uri);
       if (server) return server;
     }
-    return previewed && this.projects.serverFor(previewed.uri);
+    return previewed && this.projects.serverFor(previewed);
   }
 
   /** The project a command acts on, with its server running; says why not when there's none. */
@@ -500,13 +507,9 @@ export class ReviewController implements vscode.Disposable {
     }
     const page = picked.page;
     if (!page || result.contentRoot === null) return;
-    if (page.status === "removed") {
-      void vscode.window.showInformationMessage(
-        `Ascribe: ${page.path} was removed, so there is no page to open.`,
-      );
-      return;
-    }
-    await this.host.showPage(vscode.Uri.file(fromContentPath(result.contentRoot, page.path)));
+    const uri = vscode.Uri.file(fromContentPath(result.contentRoot, page.path));
+    if (page.status === "removed") await this.host.showRemovedPage(uri);
+    else await this.host.showPage(uri);
   }
 
   private async start(server: ProjectServer, base: string | undefined): Promise<SetBaseResult> {
