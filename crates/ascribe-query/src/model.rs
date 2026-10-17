@@ -145,8 +145,8 @@ pub struct ModelNavSection {
     /// The folder, from the content root, ending in `/`; `""` for the root.
     pub folder: String,
     /// Its label: from `ascribe.nav`, else its own page's title, else its
-    /// folder's name with its first letter capitalized, and "Start" for the
-    /// root.
+    /// folder's name with `-` and `_` as spaces and its first letter
+    /// capitalized, and "Start" for the root.
     pub label: String,
     /// Its own page: its `index.md`, or the page beside the folder with its
     /// name, which is then one of the parent's `pages` too.

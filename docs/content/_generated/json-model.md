@@ -298,7 +298,7 @@
           "type": "string"
         },
         "label": {
-          "description": "Its label: from `ascribe.nav`, else its own page's title, else its\nfolder's name with its first letter capitalized, and \"Start\" for the\nroot.",
+          "description": "Its label: from `ascribe.nav`, else its own page's title, else its\nfolder's name with `-` and `_` as spaces and its first letter\ncapitalized, and \"Start\" for the root.",
           "type": "string"
         },
         "listed": {

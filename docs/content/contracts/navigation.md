@@ -56,7 +56,7 @@ Each build's site output has its share of the project's [navigation](../navigati
 | `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
 | `root` | The content root's section. A build with no pages has it with no `page`, and empty `pages` and `sections`. |
 | `folder` | A section's folder, from the content root, ending in `/`; `""` for the root. |
-| `label` | A section's label as plain text: its `label` in `ascribe.nav`, else its own page's title, else its folder's name with its first letter capitalized; the root's is `Start` unless the file gives it another. A page's label is its `nav-label`, else its title. |
+| `label` | A section's label as plain text: its `label` in `ascribe.nav`, else its own page's title, else its folder's name with `-` and `_` as spaces and its first letter capitalized; the root's is `Start` unless the file gives it another. A page's label is its `nav-label`, else its title. |
 | `formatted.label` | The label in its formatted form, when it's read with inline markup (`inline = "code"`), as a page's `formatted.title` is: HTML with code spans as `<code>` in the site output, and pieces in the JSON output. Absent otherwise. |
 | `page` | A section's own page, when the build publishes and offers it: its `index.md`, or the page beside the folder with its name. Absent otherwise. |
 | `pages` | A section's pages in order, its own page never among them. |
