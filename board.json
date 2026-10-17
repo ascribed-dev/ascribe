@@ -2747,7 +2747,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Navigation: every reader follows the navigation"
     },
     {
@@ -2766,7 +2766,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Navigation: the Pages view is the navigation, in order by dragging"
     },
     {
@@ -3056,7 +3056,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBeXdo",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The agents' hook settles nav-page-unplaced after an agent adds a page"
     },
     {
@@ -3073,7 +3073,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The agents' hook tests time out on a slow Windows runner"
     }
   ]
