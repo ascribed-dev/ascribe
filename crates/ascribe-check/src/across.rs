@@ -18,7 +18,8 @@
 //!   writes it, since every page that leaves the field to it shares it.
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
-//!   includes, and `title-duplicate` and `description-duplicate`, two pages
+//!   includes, which only the sidebar reaches, or nothing for one that's
+//!   `unlisted`, and `title-duplicate` and `description-duplicate`, two pages
 //!   the build publishes with one title, or one description. [`PageChecker`](crate::PageChecker) runs them on each build it
 //!   resolves.
 //!
@@ -496,7 +497,8 @@ pub(crate) fn for_build(
 }
 
 /// The pages no other page of the build links to or includes, other than
-/// index pages and a build's only page.
+/// index pages and a build's only page, each saying what reaches it: the
+/// sidebar, or nothing but its address for one that's `unlisted`.
 fn orphans(index: &ascribe_resolve::Project, resolved: &[&ResolvedPage], out: &mut Vec<Found>) {
     // A build's only page has no other page to be linked from.
     if resolved.len() < 2 {
@@ -527,8 +529,15 @@ fn orphans(index: &ascribe_resolve::Project, resolved: &[&ResolvedPage], out: &m
             continue;
         };
         let span = title_span(file);
+        let issue = Issue::new(diagnostics::PAGE_ORPHAN, Location::new(page.file, span));
+        // An unlisted page is in no sidebar either (SPEC §7.8).
+        let issue = if page.listing == Listing::Unlisted {
+            issue.with_variant("unlisted")
+        } else {
+            issue
+        };
         out.push(Found {
-            issue: Issue::new(diagnostics::PAGE_ORPHAN, Location::new(page.file, span)),
+            issue,
             cause: (page.file, span, Arc::from([])),
         });
     }
