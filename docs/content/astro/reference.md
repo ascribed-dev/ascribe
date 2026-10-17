@@ -219,6 +219,33 @@ A `location` with `add_header` lines of its own, such as one that gives `.md` fi
 
 Cloudflare Pages reads a `_headers` file in the same form as Netlify's, but takes at most 100 rules, one for each Markdown version here; a larger site gives the rules to a Worker instead.
 
+## The sidebar
+@id: sidebar
+@available: next
+
+`sidebar(entries, options)`, from `@ascribed/astro/content`, gives a layout its sidebar: the project's [navigation](../navigation/index.md), from the build's `_ascribe/nav.json` ([navigation contract](../contracts/navigation.md)), each page joined to its collection entry. `entries` is the collection, `await getCollection("docs")`.
+
+| Option | Meaning |
+|---|---|
+| `entry` | The page the sidebar is on. With a [versioned build](index.md#versions), the sidebar shows that page's line; without it, the current line's. |
+| `name` | Which project's collection, with [several projects](index.md#several-projects-in-one-site), as `ascribeCollection` takes it. By default, the project the entries were loaded from. |
+| `nav` | A site's own list of groups, `{ label, pages }`, each page a source file from the content root, which overrides the project's navigation. The build fails when the list leaves out a page of the collection, names a file that isn't one, or names a page twice. |
+
+It returns the groups in order. The content root's pages are the first group, labeled **Start** unless `ascribe.nav` says otherwise, and each top section is a group of its own; a site's list gives its groups as they are.
+
+| Field | Meaning |
+|---|---|
+| `label` | The group's label, as plain text. |
+| `formatted.label` | The label as HTML, when it's a title with code (`inline = "code"`). |
+| `folder` | The section's folder, from the content root. Absent in a site's own list. |
+| `page` | The section's own page. |
+| `pages` | Its pages in order, each `{ entry, href, label, formatted? }`: the collection entry, its address, the one Ascribe's links use, and its label. A section's `index.md` is first among them; an own page beside the folder, such as `checks/diagnostics.md` for `checks/diagnostics/`, is among the parent's pages instead, and the nested group sits right after it. |
+| `sections` | Its nested sections, as groups, in order. Empty in a site's own list. A layout that draws one level leaves them out. |
+
+The build fails when the navigation names a page the collection has no entry for, which happens only when the site output is from another build than the collection; build again.
+
+A site that passed its list first, `sidebar(nav, entries, options)`, passes it as an option: `sidebar(entries, { ...options, nav })`.
+
 ## Review in the site preview
 @id {permalink=true}: review-in-the-site-preview
 @available: ascribe 0.2.0

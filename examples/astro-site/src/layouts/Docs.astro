@@ -9,8 +9,7 @@ import Head from "@ascribed/astro/Head.astro";
 // what it is and where the current one is.
 import Versions from "@ascribed/astro/Versions.astro";
 import VersionBanner from "@ascribed/astro/VersionBanner.astro";
-import { sidebar } from "@ascribed/astro/content";
-import { nav } from "../nav.ts";
+import { sidebar, type Formatted } from "@ascribed/astro/content";
 
 interface Props {
   entry: CollectionEntry<"docs">;
@@ -31,15 +30,19 @@ interface Page {
 
 const { entry, headings } = Astro.props;
 const page = (of: CollectionEntry<"docs">) => of.data as Page;
+const escape = (text: string) =>
+  text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 /** A page's title as HTML: its formatted form, or its plain text escaped. */
 const titleHtml = (of: CollectionEntry<"docs">) =>
-  page(of).formatted?.title ??
-  page(of).title.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  page(of).formatted?.title ?? escape(page(of).title);
+/** A sidebar label as HTML: its formatted form, or its plain text escaped. */
+const labelHtml = (of: { label: string; formatted?: Formatted }) =>
+  of.formatted?.label ?? escape(of.label);
 const { available } = page(entry);
-// The sidebar: src/nav.ts's groups, each page with its address. The build
-// fails when the list leaves out a page, or names one that doesn't exist.
-// With a versioned build, it shows the pages of the line this page is in.
-const groups = sidebar(nav, await getCollection("docs"), { entry });
+// The sidebar: the project's navigation, in ascribe.nav's order or the
+// default one, each page with its address and label. With a versioned build,
+// it shows the pages of the line this page is in.
+const groups = sidebar(await getCollection("docs"), { entry });
 ---
 
 <!doctype html>
@@ -55,7 +58,7 @@ const groups = sidebar(nav, await getCollection("docs"), { entry });
       {
         groups.map((group) => (
           <section>
-            <h2>{group.label}</h2>
+            <h2 set:html={labelHtml(group)} />
             <ul>
               {group.pages.map((item) => (
                 <li>
@@ -63,7 +66,7 @@ const groups = sidebar(nav, await getCollection("docs"), { entry });
                     href={item.href}
                     aria-current={item.entry.id === entry.id ? "page" : undefined}
                   >
-                    <Fragment set:html={titleHtml(item.entry)} />
+                    <Fragment set:html={labelHtml(item)} />
                   </a>
                 </li>
               ))}

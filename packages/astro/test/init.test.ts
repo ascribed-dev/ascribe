@@ -1,6 +1,7 @@
 // The starter: what `npx @ascribed/astro init` writes, and that
-// examples/astro-site's files are what it writes for that project. Run with
-// ASCRIBE_BLESS=1 to rewrite the example's from the starter in starter/.
+// examples/astro-site's collection and route are what it writes for that
+// project. Run with ASCRIBE_BLESS=1 to rewrite the example's from the starter
+// in starter/.
 import {
   chmodSync,
   existsSync,
@@ -39,14 +40,21 @@ function pagesUnder(dir: string): string[] {
     );
 }
 
+/**
+ * The starter's files the example has as `init` writes them. Its layout is its
+ * own, which draws the sidebar from the project's navigation, with no list.
+ */
+const SHARED: readonly string[] = ["src/content.config.ts", "src/pages/[...slug].astro"];
+
 describe("the example", () => {
-  it("has the files init writes for it", () => {
+  it("has the collection and the route init writes for it", () => {
     // Its pages: its content's Markdown, but for fragments. `init` lists them from a build.
     const files = starterFiles({
       schema: schemaImport(example, readProject(example), "site"),
       nav: navFor(pagesUnder(path.join(example, "content"))),
     });
     for (const [file, text] of files) {
+      if (!SHARED.includes(file)) continue;
       const at = path.join(example, file);
       if (process.env["ASCRIBE_BLESS"]) writeFileSync(at, text);
       expect(readFileSync(at, "utf8"), `${file} is out of date: run ${BLESS}`).toBe(text);

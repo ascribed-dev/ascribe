@@ -14,10 +14,11 @@
 //     docs: defineCollection(ascribeCollection({ schema: docs, name: "docs" })),
 //   };
 //
-// A layout's sidebar, from the site's list of pages (`src/nav.ts`, which
-// `npx @ascribed/astro init` writes), checked against the collection:
+// A layout's sidebar, from the project's navigation (`ascribe.nav`'s order,
+// or the default), or from a site's own list of pages as `nav`:
 //
-//   const groups = sidebar(nav, await getCollection("docs"));
+//   const groups = sidebar(await getCollection("docs"), { entry });
+import { readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { glob, type LoaderContext } from "astro/loaders";
@@ -33,14 +34,24 @@ import {
   type PageLine,
 } from "./versions.js";
 import {
+  navigationGroups,
   pageRoute,
   sidebarGroups,
   type NavEntry,
   type NavGroup,
+  type Navigation,
   type SidebarGroup,
 } from "./nav.js";
 
-export type { NavGroup, SidebarGroup, SidebarPage } from "./nav.js";
+export type {
+  Formatted,
+  NavGroup,
+  NavPage,
+  NavSection,
+  Navigation,
+  SidebarGroup,
+  SidebarPage,
+} from "./nav.js";
 export type { Listing, ListingFrom, PageRecord, Step } from "./records.js";
 export type { LineNotice } from "./versions.js";
 export { headTags, scriptJson, type Card, type HeadOptions, type HeadTag } from "./head.js";
@@ -144,44 +155,113 @@ function lineStore(
 }
 
 /**
- * A layout's sidebar: `nav`'s groups, each page with its collection entry and
- * its address, which is the one Ascribe's links use. `entries` is the
- * collection (`await getCollection("docs")`), and `name` says which project's,
- * as for `ascribeCollection`; with several projects and no `name`, it's the one
- * the entries were loaded from. Throws, naming each, when `nav` leaves out a page
- * of the collection, names a file that isn't one, or names a page twice, so the
- * build fails until the list is complete.
+ * A layout's sidebar: the project's navigation, from the build's
+ * `_ascribe/nav.json`, each page with its collection entry, its address,
+ * which is the one Ascribe's links use, and its label. The root's pages are
+ * the first group, "Start", and each top section is a group of its own, with
+ * its nested sections in `sections`. `entries` is the collection (`await
+ * getCollection("docs")`), and `name` says which project's, as for
+ * `ascribeCollection`; with several projects and no `name`, it's the one the
+ * entries were loaded from. Throws when the navigation names a page the
+ * collection has no entry for.
+ *
+ * A site's own list, `nav`, overrides the project's: its groups, in its
+ * order, checked against the collection. It throws, naming each, when the
+ * list leaves out a page of the collection, names a file that isn't one, or
+ * names a page twice, so the build fails until the list is complete.
  *
  * With a versioned build, `entry`, the page the sidebar is on, says which
- * line's pages it shows: each page of the list that line has, so an older
- * line's sidebar stays in that line. The list is checked against every
- * line's pages. Without `entry`, it shows the current line's.
+ * line's pages it shows: that line's navigation, or each page of the list
+ * that line has, so an older line's sidebar stays in that line. A list is
+ * checked against every line's pages. Without `entry`, it shows the current
+ * line's.
  */
 export function sidebar<E extends NavEntry>(
-  nav: readonly NavGroup[],
   entries: readonly E[],
-  options: { name?: string; entry?: { data?: unknown } } = {},
+  options: { name?: string; entry?: { data?: unknown }; nav?: readonly NavGroup[] } = {},
 ): SidebarGroup<E>[] {
+  if (!Array.isArray(entries) || (entries.length > 0 && !("id" in (entries[0] as object)))) {
+    throw new Error(
+      "@ascribed/astro: sidebar() takes the collection first, and a site's own list as an option: `sidebar(entries, { nav })`.",
+    );
+  }
   const root = sidebarRoot(entries, options.name);
   const at = routes.find((route) => route.siteRoot === root);
   const basePath = at?.basePath ?? "/";
   const trailingSlash = at?.trailingSlash ?? "always";
   const route = (id: string) => pageRoute(id, basePath, trailingSlash);
   const lines = linesOf(root);
-  if (lines === undefined) return sidebarGroups(nav, entries, route, (e) => sourceFile(root, e));
-  const current = lines.find((line) => line.status === "current")?.line;
-  const shown = lineOf(options.entry) ?? current;
+  const current = lines?.find((line) => line.status === "current")?.line;
+  const shown = lines === undefined ? undefined : (lineOf(options.entry) ?? current);
   const lineRoot = (entry: NavEntry) =>
-    lines.find((line) => line.line === lineOf(entry))?.siteRoot ?? root;
-  return sidebarGroups(nav, entries, route, (entry) => sourceFile(lineRoot(entry), entry), {
-    // An older line's ids have the line in front.
-    id: (entry) => {
-      const line = lineOf(entry);
-      if (line === undefined || line === current) return entry.id;
-      return entry.id === line ? "index" : entry.id.slice(line.length + 1);
-    },
-    shown: (entry) => lineOf(entry) === shown,
-  });
+    lines?.find((line) => line.line === lineOf(entry))?.siteRoot ?? root;
+  // An older line's ids have the line in front.
+  const id = (entry: NavEntry) => {
+    const line = lineOf(entry);
+    if (line === undefined || line === current) return entry.id;
+    return entry.id === line ? "index" : entry.id.slice(line.length + 1);
+  };
+  const title = (entry: E) => recordFor(lineRoot(entry), sourceFile(lineRoot(entry), entry))?.title;
+  if (options.nav !== undefined) {
+    if (lines === undefined)
+      return sidebarGroups(
+        options.nav,
+        entries,
+        route,
+        (e) => sourceFile(root, e),
+        undefined,
+        title,
+      );
+    return sidebarGroups(
+      options.nav,
+      entries,
+      route,
+      (entry) => sourceFile(lineRoot(entry), entry),
+      { id, shown: (entry) => lineOf(entry) === shown },
+      title,
+    );
+  }
+  const shownRoot = lines?.find((line) => line.line === shown)?.siteRoot ?? root;
+  const navigation = readNavigation(shownRoot);
+  const own = entries.filter((entry) => lines === undefined || lineOf(entry) === shown);
+  return navigationGroups(
+    navigation,
+    own,
+    (entry) => route(entry.id),
+    (entry) => sourceFile(lineRoot(entry), entry),
+  );
+}
+
+/** The navigation's format version this reads. */
+const NAV_VERSION = 1;
+
+/** A build's navigation by its site output root, as last read, and when its file was written. */
+const navigations = new Map<string, { written: number; navigation: Navigation }>();
+
+/**
+ * The navigation in a build's site output, `_ascribe/nav.json`. Read again
+ * when the file changes, as it does with each build in `astro dev`.
+ */
+function readNavigation(siteRoot: string): Navigation {
+  const file = path.join(siteRoot, "_ascribe", "nav.json");
+  let written: number;
+  try {
+    written = statSync(file).mtimeMs;
+  } catch {
+    throw new Error(
+      `@ascribed/astro: ${file} isn't there. \`ascribe build\` writes it beside the page records; update @ascribed/cli and @ascribed/astro together, or pass the site's own list as \`sidebar(entries, { nav })\`.`,
+    );
+  }
+  const known = navigations.get(siteRoot);
+  if (known !== undefined && known.written === written) return known.navigation;
+  const navigation = JSON.parse(readFileSync(file, "utf8")) as Navigation;
+  if (navigation.version !== NAV_VERSION) {
+    throw new Error(
+      `@ascribed/astro: ${file} is version ${String(navigation.version)} of the navigation, and this version of the integration reads version ${NAV_VERSION}. Update @ascribed/astro and @ascribed/cli together.`,
+    );
+  }
+  navigations.set(siteRoot, { written, navigation });
+  return navigation;
 }
 
 /** The line an entry of a versioned build's collection is from, or `undefined`. */

@@ -183,8 +183,5 @@ export async function versioned(name: string): Promise<string> {
       ),
   );
   await write(root, { "content/Guides/Upgrade.md": UPGRADE_PAGE });
-  await edit(path.join(root, "src", "nav.ts"), (text) =>
-    text.replace('pages: ["Guides/My Setup.md"]', 'pages: ["Guides/My Setup.md", "Guides/Upgrade.md"]'),
-  );
   return root;
 }
