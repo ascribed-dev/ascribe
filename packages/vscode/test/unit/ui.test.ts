@@ -2,10 +2,10 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ResolvedBinary } from "../../src/binary.js";
 import {
-  childNodes,
-  nodeLook,
-  projectNodes,
+  projectKeys,
   statusFor,
+  switchItemAt,
+  switchItems,
   tildeFolder,
   waitingNotice,
   type ActiveFile,
@@ -170,63 +170,123 @@ describe("the status bar item", () => {
   });
 });
 
-describe("the Projects view", () => {
-  const look = (node: Parameters<typeof nodeLook>[0]) => nodeLook(node, (folder) => folder);
+describe("the context keys about the projects", () => {
+  it("has neither key with no project, ascribe.active alone with one, and both with two", () => {
+    expect(projectKeys(0)).toEqual({ active: false, multipleProjects: false });
+    expect(projectKeys(1)).toEqual({ active: true, multipleProjects: false });
+    expect(projectKeys(2)).toEqual({ active: true, multipleProjects: true });
+  });
 
-  it("lists every project, started or not, with its folder and its state", () => {
-    const nodes = projectNodes(registry());
-    expect(nodes.map((node) => look(node))).toEqual([
-      expect.objectContaining({
-        label: "docs",
-        description: path.join(root, "docs"),
-        icon: "book",
-        expandable: true,
-        contextValue: "ascribe.project.running",
-      }),
-      expect.objectContaining({ label: "handbook", contextValue: "ascribe.project.running" }),
-      expect.objectContaining({
-        label: "handbook/pages/nested",
-        icon: "sync~spin",
-        contextValue: "ascribe.project.starting",
-      }),
+  it("counts the registry's projects, so one left out doesn't show Switch Project", () => {
+    // Two ascribe.toml files found, one left out by ascribe.projects.exclude.
+    const kept = registry().slice(0, 1);
+    expect(projectKeys(kept.length).multipleProjects).toBe(false);
+  });
+});
+
+describe("Switch Project", () => {
+  const show = (folder: string) => folder;
+
+  it("lists every project, the sidebar's first and marked, with its folder and state", () => {
+    const handbook = path.join(root, "handbook", "ascribe.toml");
+    const items = switchItems(registry(), handbook, show);
+    expect(items.map((item) => [item.label, item.description, item.detail, item.current])).toEqual([
+      [
+        "$(check) handbook",
+        path.join(root, "handbook"),
+        "running, site build · /usr/local/bin/ascribe (setting, 0.2.0)",
+        true,
+      ],
+      [
+        "$(blank) docs",
+        path.join(root, "docs"),
+        "running, cloud build · /usr/local/bin/ascribe (setting, 0.2.0)",
+        false,
+      ],
+      [
+        "$(blank) handbook/pages/nested",
+        path.join(root, "handbook", "pages", "nested"),
+        "starting",
+        false,
+      ],
     ]);
   });
 
-  it("gives a running project its ascribe.toml, editor build, and binary", () => {
-    const [docs] = projectNodes(registry());
-    if (!docs) throw new Error("no project");
-    expect(childNodes(docs).map((node) => look(node))).toEqual([
-      expect.objectContaining({
-        label: "ascribe.toml",
-        description: "content model",
-        icon: undefined,
-        expandable: false,
-      }),
-      expect.objectContaining({ label: "site", description: "editor build", icon: "package" }),
-      expect.objectContaining({
-        label: "ascribe 0.2.0",
-        description: "setting",
-        tooltip: "/usr/local/bin/ascribe (setting, 0.2.0)",
-      }),
-    ]);
-  });
-
-  it("gives a project whose server isn't running only its ascribe.toml", () => {
-    const nested = projectNodes(registry())[2];
-    if (!nested) throw new Error("no project");
-    expect(childNodes(nested).map((node) => look(node).label)).toEqual(["ascribe.toml"]);
-    const failed = projectNodes([project("docs", "docs", { ...running, state: "failed" })])[0];
-    if (!failed) throw new Error("no project");
-    expect(childNodes(failed).map((node) => look(node).label)).toEqual(["ascribe.toml"]);
-    expect(look(failed)).toEqual(
-      expect.objectContaining({ icon: "warning", contextValue: "ascribe.project.failed" }),
+  it("says which projects haven't been checked yet, and which failed", () => {
+    const items = switchItems(
+      [project("docs", "docs"), project("handbook", "handbook", { state: "failed" })],
+      undefined,
+      show,
     );
+    expect(items.map((item) => [item.label, item.detail])).toEqual([
+      ["$(blank) docs", "not checked yet"],
+      ["$(blank) handbook", "failed"],
+    ]);
   });
 
-  it("has no children below a project's own", () => {
-    const [docs] = projectNodes(registry());
-    if (!docs) throw new Error("no project");
-    for (const child of childNodes(docs)) expect(childNodes(child)).toEqual([]);
+  it("offers Restart only on a server that is running or has failed", () => {
+    const items = switchItems(
+      [
+        project("a", "a"),
+        project("b", "b", { state: "starting" }),
+        project("c", "c", running),
+        project("d", "d", { state: "failed" }),
+      ],
+      undefined,
+      show,
+    );
+    expect(items.map((item) => item.buttons)).toEqual([
+      ["showOutput"],
+      ["showOutput"],
+      ["showOutput", "restart"],
+      ["showOutput", "restart"],
+    ]);
+  });
+
+  describe("on Windows paths", () => {
+    const windows = (folder: string, name: string): ProjectInfo => ({
+      ...project("x", name),
+      folder,
+      config: `${folder}\\ascribe.toml`,
+    });
+    const projects = [
+      windows("C:\\Work\\Docs", "Docs"),
+      windows("C:\\Work\\Examples\\Quill", "Examples/Quill"),
+    ];
+
+    it("marks the sidebar's project whatever the case of its drive and folders", () => {
+      // The server writes the drive in upper case, VS Code in lower.
+      const items = switchItems(projects, "c:\\work\\examples\\quill\\ascribe.toml", show);
+      expect(items.map((item) => [item.label, item.current])).toEqual([
+        ["$(check) Examples/Quill", true],
+        ["$(blank) Docs", false],
+      ]);
+    });
+
+    it("finds an item by its folder in either case and with either separator", () => {
+      const items = switchItems(projects, undefined, show);
+      expect(switchItemAt(items, "c:/work/examples/quill/")?.label).toBe("$(blank) Examples/Quill");
+      expect(switchItemAt(items, "C:\\WORK\\DOCS")?.label).toBe("$(blank) Docs");
+      expect(switchItemAt(items, "C:\\Work\\Doc")).toBeUndefined();
+    });
+  });
+
+  it("compares POSIX paths with case, as Linux does", () => {
+    const posix = (folder: string, name: string): ProjectInfo => ({
+      ...project("x", name),
+      folder,
+      config: `${folder}/ascribe.toml`,
+    });
+    const items = switchItems(
+      [posix("/work/Docs", "Docs"), posix("/work/docs", "docs")],
+      "/work/docs/ascribe.toml",
+      show,
+    );
+    expect(items.filter((item) => item.current).map((item) => item.label)).toEqual([
+      "$(check) docs",
+    ]);
+    expect(switchItemAt(items, "/work/Docs/")?.label).toBe("$(blank) Docs");
+    expect(switchItemAt(items, "/WORK/DOCS")).toBeUndefined();
   });
 
   it("writes a folder in the home directory from ~", () => {

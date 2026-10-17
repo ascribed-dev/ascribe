@@ -249,18 +249,21 @@ A [memo file](../writing/memo-files.md) says why a section or a block is written
 ### The Ascribe sidebar
 @available: ascribe 0.3.0
 
-The Ascribe icon in the activity bar opens the Ascribe sidebar, with four views: **Projects**, **This page**, **Pages**, and **Content model**.
+The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder.
 
 @available: next
 While review is on, a **Review** view comes first: see [The Review view](index.md#the-review-view).
 
-#### The Projects view
-
-The **Projects** view lists every project in the workspace, started or not, by name, with its folder and an icon for its server's state. Under each is its `ascribe.toml`, which opens it, and, while its server runs, its editor build and the `ascribe` binary in use. Each project's buttons show its server's output, and restart its server when it's running or failed. The view updates as projects come and go and servers start and stop, and opening it starts no server. In a workspace with no project, it says how to start one.
-
 #### This page, Pages, and Content model
 
-The other three views show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
+The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
+
+#### Switch Project
+@available: next
+
+In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in Pages' and Content model's title bars, and in the [status bar](index.md#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
+
+Choosing a project shows it in the sidebar and starts its server if it hasn't started. It's a jump, not a pin: the sidebar stays on it until a file of another project becomes active, and then follows that file as before.
 
 @available: next
 **This page** says what's known about the active page, in four sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](index.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
@@ -313,7 +316,7 @@ While a page or an `ascribe.toml` is the active editor, the status bar names its
 
 In Restricted Mode, Ascribe runs nothing, since it would run the project's own `ascribe` binary. The status bar shows **Ascribe: not checking**, and the Problems panel's "No problems" doesn't mean the project is clean. Click it to manage the folder's trust; once you trust it, Ascribe starts.
 
-Click it for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
+Click it for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Switch project** in a workspace with several projects, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**.
 
 Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](index.md#the-build-lens) dims by it, and the status bar names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
 

@@ -10,4 +10,4 @@ my-docs/
     └── install.md
 ```
 
-A workspace can hold several projects, such as a site's and a handbook's. Each page belongs to the nearest `ascribe.toml` above it.
+A workspace can hold several projects, such as a site's and a handbook's. Each page belongs to the nearest `ascribe.toml` above it, and **Ascribe: Switch Project** chooses which one the sidebar shows.

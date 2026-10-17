@@ -9,6 +9,7 @@ import type {
 import {
   blocksMove,
   contentPathOf,
+  followedProject,
   leftOut,
   modelChildren,
   modelDeclaration,
@@ -916,6 +917,29 @@ describe("the This page view", () => {
         includes: [],
       }),
     ).toEqual([]);
+  });
+});
+
+describe("the project the sidebar follows", () => {
+  const known = ["docs", "quill"];
+
+  it("takes the active file's project when the active editor changes to it", () => {
+    expect(followedProject("quill", "docs", true, known)).toBe("docs");
+    expect(followedProject("docs", "docs", true, known)).toBe("docs");
+  });
+
+  it("keeps a project Switch Project chose while the views are only drawn again", () => {
+    // Its server starting, or the projects changing, isn't a file becoming active.
+    expect(followedProject("quill", "docs", false, known)).toBe("quill");
+  });
+
+  it("stays on its project for a file of no project", () => {
+    expect(followedProject("quill", undefined, true, known)).toBe("quill");
+  });
+
+  it("takes the active file's project when it shows none, or one that's gone", () => {
+    expect(followedProject(undefined, "docs", false, known)).toBe("docs");
+    expect(followedProject("gone", "docs", false, known)).toBe("docs");
   });
 });
 

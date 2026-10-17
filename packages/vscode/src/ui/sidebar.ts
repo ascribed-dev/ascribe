@@ -253,6 +253,23 @@ export function pagesPath(node: PagesNode): string | undefined {
 }
 
 /**
+ * The project the sidebar shows: the active file's, when the active editor
+ * has just changed to it or the sidebar shows none (or one that's gone);
+ * otherwise the one it shows, which Switch Project may have chosen. A file of
+ * no project leaves it where it is.
+ */
+export function followedProject<T>(
+  shown: T | undefined,
+  active: T | undefined,
+  editorChanged: boolean,
+  known: readonly T[],
+): T | undefined {
+  if (active === undefined) return shown;
+  if (editorChanged || shown === undefined || !known.includes(shown)) return active;
+  return shown;
+}
+
+/**
  * The content path of `file`, a file system path, in the content root
  * `root`, or `undefined` outside it. Windows paths compare without case, as
  * the server writes the drive in upper case and VS Code in lower; the path
