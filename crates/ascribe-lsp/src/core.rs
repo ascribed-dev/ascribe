@@ -91,12 +91,12 @@ impl Loaded {
         )
     }
 
-    /// What a path on disk is to this project.
     /// `ascribe.nav`'s path from the project root, when `abs` is it.
     pub(crate) fn nav_file(&self, abs: &Path) -> Option<RelPath> {
         relative_path(&self.root, abs).filter(|p| p.as_str() == ascribe_model::NAV_FILE)
     }
 
+    /// What a path on disk is to this project.
     pub(crate) fn classify(&self, abs: &Path) -> Option<Kind> {
         let project_rel = relative_path(&self.root, abs)?;
         if project_rel.as_str() == MODEL_FILE {

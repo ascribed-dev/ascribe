@@ -322,6 +322,14 @@ impl Checker<'_> {
                 toml_string(&section.folder)
             ));
         }
+        // Tables appended after `sections = [...]` would be a second
+        // `sections`, which doesn't read: a file that writes them inline
+        // gets the advice without a fix.
+        let inline = self
+            .nav
+            .sections
+            .iter()
+            .any(|entry| table_span(self.text, entry.folder_span).is_none());
         let edit = TextEdit::insert(self.text.len(), tables);
         let title = match left.as_slice() {
             [(one, _)] => format!("Add `{}` to ascribe.nav", one.folder),
@@ -342,7 +350,11 @@ impl Checker<'_> {
             } else {
                 issue
             };
-            out.push(issue.with_fix(fix(title.clone(), vec![edit.clone()], Applicability::Safe)));
+            out.push(if inline {
+                issue
+            } else {
+                issue.with_fix(fix(title.clone(), vec![edit.clone()], Applicability::Safe))
+            });
         }
     }
 

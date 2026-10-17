@@ -392,7 +392,7 @@ Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §
 
 **Message:** ascribe.nav lists other sections in `{parent}` and not `{folder}`, so it comes after them, in path order
 
-**Fix:** Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them.
+**Fix:** Add a `[[sections]]` table with the section's `folder` to `ascribe.nav`, where the section should come. The fix appends a table for each section that isn't listed, in the order they come in now, so the navigation is the same after it; move the tables to where you want them. A file that writes `sections = [...]` inline gets no fix: add each section to its list.
 
 **Read more:** [The file](../navigation/index.md#the-file) in the navigation reference.
 

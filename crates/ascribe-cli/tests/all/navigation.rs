@@ -151,6 +151,27 @@ fn an_unplaced_page_is_advice_on_it_and_fix_places_it() {
     assert!(nav_problems(dir.path()).is_empty());
 }
 
+#[test]
+fn sections_written_inline_get_the_advice_without_a_fix() {
+    let dir = astro_site();
+    let nav = dir.path().join("ascribe.nav");
+    let text = "version = 1\nsections = [{ folder = \"Guides/\" }]\n";
+    write(&nav, text);
+    let problems = nav_problems(dir.path());
+    assert_eq!(
+        problems
+            .iter()
+            .map(|(slug, _, _, fixes)| (slug.as_str(), fixes.len()))
+            .collect::<Vec<_>>(),
+        [("nav-section-unplaced", 0)],
+        "{problems:?}"
+    );
+    // Tables appended after the inline list would be a second `sections`.
+    ascribe(dir.path(), &["check", "--fix"]);
+    assert_eq!(read(&nav), text);
+    assert_eq!(nav_problems(dir.path()), problems);
+}
+
 /// A project whose sections and pages the file leaves out in an order
 /// that isn't their paths': titles against file names, and a type ahead of
 /// the default type.
