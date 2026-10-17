@@ -42,7 +42,9 @@ Where a memo is is worked out each time it's read, from the pages as they are, a
 
 - **Placed.** With no `quote`, it's on what `about` names. With one, it's on the first block of that page or section, in the order they're written, whose source holds the quote. Line breaks and runs of spaces count as one space, and case counts. A quote is found in one block: words that run across two paragraphs aren't.
 - **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/content-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
-- **Detached.** `about` names nothing: the page was renamed or deleted, or the heading's id changed. It's a warning, [`memo-detached`](../checks/diagnostics/pages.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
+- **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/pages.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
+
+A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and in the editor, `F2` on a heading's `@id` or text and moving a file in the Explorer, rewrite the `about` of each memo that names the heading or the page, in both folders, keeping its `#id` when the page moves. Its `quote` and its text are left as they are.
 
 A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/pages.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
 

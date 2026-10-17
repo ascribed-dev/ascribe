@@ -494,5 +494,21 @@ describe("the editor's actions", () => {
       const lens = await lensAt(page.document.uri, 57, "1 memo");
       assert.equal(await follow(lens), ".ascribe/memos/connect.md");
     });
+
+    it("rewrites a memo's about when F2 renames its heading's @id", async () => {
+      // "@id: install-agent", under "## Install the agent".
+      const page = await open("install-agent.md", 19, 6);
+      const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
+        "vscode.executeDocumentRenameProvider",
+        page.document.uri,
+        new vscode.Position(19, 6),
+        "install",
+      );
+      const memo = edit.get(uriOf("memos", "agent-first.md"));
+      assert.deepEqual(
+        memo.map((e) => e.newText),
+        ["install-agent.md#install"],
+      );
+    });
   });
 });

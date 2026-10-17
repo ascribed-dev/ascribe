@@ -353,3 +353,123 @@ fn a_team_memo_isnt_added_when_memos_is_in_the_content_root() {
         "{result}"
     );
 }
+
+/// The new text of each edit a rename's answer makes to a memo file, with
+/// the character it starts at.
+fn memo_edits(result: &Value, fixture: &Fixture, rel: &str) -> Vec<(u64, String)> {
+    let uri = support::uri(&fixture.path(rel));
+    result["changes"][uri.as_str()]
+        .as_array()
+        .map(|edits| {
+            edits
+                .iter()
+                .map(|e| {
+                    (
+                        e["range"]["start"]["character"].as_u64().unwrap(),
+                        e["newText"].as_str().unwrap().to_owned(),
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+const RENAMED: &[(&str, &str)] = &[
+    (
+        "memos/section.md",
+        "---\nabout: guide.md#install\n---\n\nWhy the section.\n",
+    ),
+    (
+        ".ascribe/memos/mine.md",
+        "---\nabout: \"guide.md#install\"\nquote: Run the installer\n---\n\nMine.\n",
+    ),
+    (
+        "memos/page.md",
+        "---\nabout: guide.md\n---\n\nWhy the page.\n",
+    ),
+    (
+        "memos/upgrade.md",
+        "---\nabout: guide.md#upgrade\n---\n\nWhy upgrade.\n",
+    ),
+    (
+        "memos/phrase.md",
+        "---\nabout: phrase:product\n---\n\nWhy.\n",
+    ),
+];
+
+#[test]
+fn renaming_an_id_rewrites_the_about_of_the_memos_in_both_folders() {
+    let (fixture, mut client) = project(RENAMED);
+    let page = fixture.path("docs/guide.md");
+    client.open(&page, 1, GUIDE);
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": doc(&fixture, "docs/guide.md"),
+                "position": at(GUIDE, "install\n\nRun"),
+                "newName": "setup",
+            }),
+        )
+        .response_result
+        .expect("a rename");
+    assert_eq!(
+        memo_edits(&result, &fixture, "memos/section.md"),
+        [(7, "guide.md#setup".to_owned())]
+    );
+    // Inside its quotes, which stay.
+    assert_eq!(
+        memo_edits(&result, &fixture, ".ascribe/memos/mine.md"),
+        [(8, "guide.md#setup".to_owned())]
+    );
+    for untouched in ["memos/page.md", "memos/upgrade.md", "memos/phrase.md"] {
+        assert!(
+            memo_edits(&result, &fixture, untouched).is_empty(),
+            "{untouched}"
+        );
+    }
+    // An id made from the heading's text follows the text.
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": doc(&fixture, "docs/guide.md"),
+                "position": at(GUIDE, "Upgrade\n\nUpgrade"),
+                "newName": "Upgrading",
+            }),
+        )
+        .response_result
+        .expect("a rename");
+    assert_eq!(
+        memo_edits(&result, &fixture, "memos/upgrade.md"),
+        [(7, "guide.md#upgrading".to_owned())]
+    );
+}
+
+#[test]
+fn moving_a_page_rewrites_the_about_of_the_memos_keeping_the_id() {
+    let (fixture, mut client) = project(RENAMED);
+    let result = client
+        .request(
+            "workspace/willRenameFiles",
+            json!({ "files": [{
+                "oldUri": support::uri(&fixture.path("docs/guide.md")).as_str(),
+                "newUri": support::uri(&fixture.path("docs/guides/guide.md")).as_str(),
+            }] }),
+        )
+        .response_result
+        .expect("a rename");
+    for (memo, at, about) in [
+        ("memos/section.md", 7, "guides/guide.md#install"),
+        (".ascribe/memos/mine.md", 8, "guides/guide.md#install"),
+        ("memos/page.md", 7, "guides/guide.md"),
+        ("memos/upgrade.md", 7, "guides/guide.md#upgrade"),
+    ] {
+        assert_eq!(
+            memo_edits(&result, &fixture, memo),
+            [(at, about.to_owned())],
+            "{memo}"
+        );
+    }
+    assert!(memo_edits(&result, &fixture, "memos/phrase.md").is_empty());
+}

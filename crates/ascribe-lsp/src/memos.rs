@@ -5,8 +5,9 @@
 //! The memos are read each time they're asked for, committed and personal,
 //! through the project's file system, which holds an open memo file's text
 //! ([`crate::fsx::LayerFs`]), and placed against the current snapshot, as
-//! `ascribe outline` places them. Nothing is cached, and nothing is written
-//! to a memo but the file **Add a memo** creates.
+//! `ascribe outline` places them. Nothing is cached. A memo is written only
+//! when **Add a memo** creates it, and when a rename changes what its
+//! `about` names ([`id_edits`], [`move_edits`]).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -509,6 +510,73 @@ pub(crate) fn links(ctx: &Ctx, memo: &MemoFile) -> Vec<DocumentLink> {
         tooltip: Some(format!("Open {}", about.value)),
         data: None,
     }]
+}
+
+/// The edits that keep each memo's `about` naming its page or heading
+/// through a rename: an id that changes, or a file that moves. `renamed`
+/// gives, for the file and id a memo names, what it names after, or `None`
+/// when that doesn't change. The value is replaced where it's written,
+/// inside its quotes when it has them; the memo's `quote` and text are left
+/// as they are. Committed and personal memos alike.
+fn about_edits(
+    ctx: &Ctx,
+    mut renamed: impl FnMut(&RelPath, Option<&str>) -> Option<String>,
+) -> Vec<(Uri, TextEdit)> {
+    let mut edits = Vec::new();
+    for memo in read(ctx) {
+        let (Some(about), Some(Named::Path { path, id })) = (&memo.about, &memo.named) else {
+            continue;
+        };
+        let Some(new) = renamed(path, id.as_deref()) else {
+            continue;
+        };
+        let Some(at) = memo
+            .text
+            .get(about.line.range())
+            .and_then(|line| line.find(about.value.as_str()))
+        else {
+            continue;
+        };
+        let start = about.line.start() + at;
+        let span = Span::new(start, start + about.value.len());
+        let Some(uri) = uri_of(ctx, &memo.path) else {
+            continue;
+        };
+        edits.push((
+            uri,
+            TextEdit {
+                range: ctx.encoding.range(&LineIndex::new(&memo.text), span),
+                new_text: new,
+            },
+        ));
+    }
+    edits
+}
+
+/// The edits to the memos about the heading `old_id` of `file` when its id
+/// becomes `new_id`. A heading in a fragment is named in the fragment, so
+/// only `file#old_id` is.
+pub(crate) fn id_edits(
+    ctx: &Ctx,
+    file: &RelPath,
+    old_id: &str,
+    new_id: &str,
+) -> Vec<(Uri, TextEdit)> {
+    about_edits(ctx, |path, id| {
+        (path == file && id == Some(old_id)).then(|| format!("{path}#{new_id}"))
+    })
+}
+
+/// The edits to the memos about a file that moves, or a heading in it, as
+/// `moved` gives each file's new path: the path changes, and `#id` stays.
+pub(crate) fn move_edits(ctx: &Ctx, moved: impl Fn(&RelPath) -> RelPath) -> Vec<(Uri, TextEdit)> {
+    about_edits(ctx, |path, id| {
+        let new = moved(path);
+        (new != *path).then(|| match id {
+            Some(id) => format!("{new}#{id}"),
+            None => new.to_string(),
+        })
+    })
 }
 
 /// `ascribe.toml` at the entry's declaration.

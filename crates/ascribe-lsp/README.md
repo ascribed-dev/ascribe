@@ -845,6 +845,10 @@ memo file. `ascribe check` reads the committed ones only.
   link from `about` to the page, the heading, or the entry in `ascribe.toml`.
 - **This page** lists them (`ascribe/page`'s `memos`), and `addMemo` and
   `addPersonalMemo` (`ascribe/edit`) create one.
+- **Rename:** a heading's id changed, by `F2` on its `@id` or its text, and a
+  file that moves (`workspace/willRenameFiles`) edit the `about` of each memo
+  that names it, in both folders, keeping `#id` when the file moves. The
+  value is replaced where it's written, inside its quotes when it has them.
 
 ## Performance
 

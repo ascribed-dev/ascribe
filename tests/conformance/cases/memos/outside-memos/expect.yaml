@@ -1,0 +1,10 @@
+description: >-
+  Only `memos/` beside `ascribe.toml` holds memo files. A file in the
+  same format elsewhere, such as a personal memo in `.ascribe/memos/` that
+  the project doesn't commit, isn't one, so what it names isn't checked,
+  and the check is the same on every machine.
+spec: ["7.7"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-detached, file: memos/gone.md, line: 2}
