@@ -179,4 +179,7 @@ team = { type = "enum(docs, platform)", role = "owner" }
 
 Without a role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
+@available: next
+In VS Code, the sidebar's [This page](../editor/index.md#this-page-pages-and-content-model) shows a page's description against its limit, and when it's due for review, from the fields with these roles.
+
 **Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a content type's own fields: not a field in an object, nor in the fragment schema. Two fields of one type can't have the same role.

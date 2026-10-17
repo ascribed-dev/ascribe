@@ -702,6 +702,9 @@ export interface Entry {
   rule?: string;
 }
 
+/** A tested example's state. */
+export type ExampleState = "tested" | "stale" | "untested";
+
 /** Text a build leaves out of a page. */
 export interface Excluded {
   /**
@@ -785,6 +788,9 @@ export interface FrontmatterValue {
   value: string;
 }
 
+/** What kind of directive includes it. */
+export type IncludeKind = "include" | "snippet";
+
 /** An entry of the content model. */
 export interface InventoryEntry {
   /** What kind of entry it is. */
@@ -824,6 +830,11 @@ export interface InventoryPage {
   type: string | null;
   /** How many links from other files, and includes, name it. */
   incoming: number;
+  /**
+   * The builds that publish it, in declaration order: the ones This
+   * page's Builds row says publish it.
+   */
+  builds: string[];
 }
 
 /**
@@ -858,6 +869,9 @@ export interface InventoryResult {
    */
   modelUri?: string;
 }
+
+/** Why a build leaves a page out (SPEC §9.3). */
+export type LeftOut = "variant" | "availability";
 
 /** A file to create, empty. */
 export interface LspCreateFile {
@@ -967,6 +981,65 @@ export interface PageAbout {
    * and for a fragment.
    */
   markdownAddress: string | null;
+  /**
+   * Its description, when its type gives a field the description role;
+   * `null` for a fragment.
+   */
+  description: PageDescription | null;
+  /**
+   * When it's due for review, when its type gives a field the
+   * review-date role and the page has a date in it.
+   */
+  review: PageReview | null;
+  /** Its own `available`, as shown; `null` when it has none. */
+  availability: string | null;
+  /**
+   * Whether each build publishes it, in declaration order; empty for a
+   * fragment, which is published only where it's included.
+   */
+  builds: PageBuild[];
+  /**
+   * Whether it's listed, and what sets that; `null` for a fragment and
+   * for a page no build publishes.
+   */
+  listing: PageListing | null;
+  /** The permalinks the file declares, in document order. */
+  permalinks: PagePermalink[];
+  /**
+   * What its type's template still leaves to fill in; `null` when its
+   * type has no template or nothing of it is left.
+   */
+  template: PageTemplate | null;
+}
+
+/** Whether a build publishes the page. */
+export interface PageBuild {
+  /** The build's name. */
+  name: string;
+  /** Why the build leaves the page out; `null` when it publishes it. */
+  leftOut: LeftOut | null;
+}
+
+/** A page's description, measured against its line in `llms.txt`. */
+export interface PageDescription {
+  /** The frontmatter field the page's type gives the description role. */
+  field: string;
+  /**
+   * Its length in characters, as plain text on one line, as
+   * `description-too-long` measures it; `null` when the page has none.
+   */
+  length: number | null;
+  /**
+   * The most characters it has before `description-too-long` reports it;
+   * `null` when the project publishes no `llms.txt`
+   * (`[consumer] agents`), which is the only place it's too long for.
+   */
+  limit: number | null;
+  /**
+   * The field's line, or the page's first line when it has none, in the
+   * negotiated position encoding.
+   */
+  range: LspRange;
 }
 
 /** What changed on one page of a build. */
@@ -1006,6 +1079,18 @@ export interface PageDiff {
   changes: Change[];
 }
 
+/** A tested example a `@snippet` of the file shows. */
+export interface PageExample {
+  /** The `@snippet`'s address, as written. */
+  address: string;
+  /** Whether it's tested as it is now. */
+  state: ExampleState;
+  /** What it was tested with, when it's tested. */
+  tested: string | null;
+  /** The `@snippet` line, in the negotiated position encoding. */
+  range: LspRange;
+}
+
 /** A heading of the page. */
 export interface PageHeading {
   /** Its source id: its `@id`, or its slug. */
@@ -1017,6 +1102,62 @@ export interface PageHeading {
   text: string;
   /** The heading line, in the negotiated position encoding. */
   range: LspRange;
+}
+
+/** How a page stands: its size, and its tested examples. */
+export interface PageHealth {
+  /**
+   * Its plain Markdown's size in the build where it's largest; `null`
+   * for a fragment, and for a page no build publishes.
+   */
+  size: PageSize | null;
+  /**
+   * Each `@snippet` of the file that shows a tested example, in
+   * document order.
+   */
+  examples: PageExample[];
+}
+
+/** What a file includes: a fragment, or a snippet of a code file. */
+export interface PageInclude {
+  /** `include` for an `@include`, `snippet` for a `@snippet`. */
+  kind: IncludeKind;
+  /** What it names, as written. */
+  written: string;
+  /**
+   * The file it shows: a fragment's content path, or a code file's path
+   * from the project root; `null` when the address names no file.
+   */
+  path: string | null;
+  /** That file's `file:` URI. */
+  uri: string | null;
+  /** The directive line, in the negotiated position encoding. */
+  range: LspRange;
+}
+
+/** Whether search engines list a page, and what sets that. */
+export interface PageListing {
+  /**
+   * The build it's read from: the editor's build when it publishes the
+   * page, and otherwise the first that does.
+   */
+  build: string;
+  /** `listed`, `unquoted`, or `unlisted`: `pages.json`'s `listing`. */
+  listing: string;
+  /**
+   * What sets it, as `pages.json`'s `listing_from.level` says: `default`,
+   * `page`, `site`, `older-lines`, `folder`, or `type`.
+   */
+  from: string;
+  /** The rule of `[listing]` that sets it, as written; `null` otherwise. */
+  rule: string | null;
+  /**
+   * The `file:` URI of the file that sets it: the page for its own
+   * `listing`, `ascribe.toml` for a rule; `null` when nothing does.
+   */
+  uri: string | null;
+  /** Where in that file, in the negotiated position encoding. */
+  range: LspRange | null;
 }
 
 /** A memo This page lists. */
@@ -1039,6 +1180,19 @@ export interface PageMemo {
    * encoding.
    */
   body: LspRange;
+}
+
+/** A permalink declared in the file (SPEC §7.5). */
+export interface PagePermalink {
+  /** Its name. */
+  name: string;
+  /** The text of the heading it leads to; `null` for the page's own. */
+  heading: string | null;
+  /**
+   * The page's `permalink` line, or the heading's `@id` line, in the
+   * negotiated position encoding.
+   */
+  range: LspRange;
 }
 
 /** A link or an `@include`. */
@@ -1088,10 +1242,55 @@ export interface PageResult {
    * the personal ones, each in path order. A detached memo isn't listed.
    */
   memos: PageMemo[];
+  /**
+   * How the page stands: its size and its tested examples. Empty when
+   * the document isn't a page or a fragment.
+   */
+  health: PageHealth;
+  /** The file's `@include`s and `@snippet`s, in document order. */
+  includes: PageInclude[];
+}
+
+/** When a page is due for review. */
+export interface PageReview {
+  /** The frontmatter field with the review-date role. */
+  field: string;
+  /** The date it holds, `YYYY-MM-DD`. */
+  date: string;
+  /**
+   * The days from today to the date: negative once it's passed. `null`
+   * when the server has no day to count from.
+   */
+  days: number | null;
+  /** Whether the date has passed, so `review-overdue` reports the page. */
+  overdue: boolean;
+  /** The field's line, in the negotiated position encoding. */
+  range: LspRange;
+}
+
+/** A page's size, as `page-size` measures it. */
+export interface PageSize {
+  /** Characters of plain Markdown. */
+  characters: number;
+  /** The build it's that size in: the first of the largest. */
+  build: string;
+  /** The size `page-size` reports it at; `null` when the check is off. */
+  limit: number | null;
 }
 
 /** Whether a page is new, gone, or different. */
 export type PageStatus = "added" | "removed" | "changed";
+
+/** What a page's template still leaves to fill in. */
+export interface PageTemplate {
+  /** The content type whose template it is. */
+  type: string;
+  /**
+   * How many placeholders and template values are left, as
+   * `template-placeholder-left` finds them.
+   */
+  left: number;
+}
 
 /** What a piece of a formatted value is. */
 export type PieceKind = "text" | "code";

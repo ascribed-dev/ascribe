@@ -22,10 +22,14 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     ]);
   }
 
+  /**
+   * This page's items, without Health, whose Problems row counts what the
+   * checks report and is held by its own test.
+   */
   async function settled(): Promise<ReturnType<typeof flat>> {
     const api = await activated();
     await api.ui.thisPage.whenSettled();
-    return flat(api.ui.thisPage.items());
+    return flat(api.ui.thisPage.items().filter((item) => item.label !== "Health"));
   }
 
   /** Waits for This page to show what `wanted` accepts, and returns what it shows. */
@@ -113,6 +117,9 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "  Type (page)",
       "  Address (/keys/)",
       "  Markdown (not published)",
+      "  Description (52 characters)",
+      "  Builds (Published by site, site@3.4, cloud, self-managed-3.3)",
+      "  Listing (Listed (the default))",
       ...connections,
     ];
   }
@@ -134,12 +141,14 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "    install-agent.md (install-agent.md)",
       linkToRotate,
       "  Included by (0)",
+      "  Includes (0)",
       "Memos (none)",
     ]);
     assert.deepEqual(await showing("This page under Rotate keys", exactly(rotate)), rotate);
     assert.ok(
       api.ui.thisPage
-        .items()[1]
+        .items()
+        .find((item) => item.label === "Connections")
         ?.children[0]?.children[0]?.children[0]?.opens?.endsWith("/docs/install-agent.md:94"),
     );
     // A cursor move asks once.
@@ -149,6 +158,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "Connections (to “Create a key”)",
       "  Linked from (0)",
       "  Included by (0)",
+      "  Includes (0)",
       "Memos (none)",
     ]);
     assert.deepEqual(await showing("This page under Create a key", exactly(create)), create);
@@ -158,7 +168,32 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     const whole = await showing("This page for keys.md", (items) =>
       items.includes("Connections (to the page)"),
     );
-    assert.equal(whole[6], "  Linked from (4)", whole.join("\n"));
+    assert.ok(whole.includes("  Linked from (4)"), whole.join("\n"));
+  });
+
+  it("says how the page stands in Health, and its rows go where they say", async () => {
+    const api = await activated();
+    await vscode.commands.executeCommand("ascribe.thisPage.focus");
+    await openAt(keys);
+    const health = await waitFor("Health", async () => {
+      await api.ui.thisPage.whenSettled();
+      return api.ui.thisPage.items().find((item) => item.label === "Health");
+    });
+    const rows = health.children.map((item) => `${item.label} (${item.description})`);
+    // The same count the Problems panel has for the page.
+    const problems = vscode.languages.getDiagnostics(keys);
+    assert.match(
+      rows[0] ?? "",
+      /^Problems \((none|.*(error|warning|advice).*)\)$/,
+      rows.join("\n"),
+    );
+    assert.equal(rows[0] === "Problems (none)", problems.length === 0, rows.join("\n"));
+    assert.equal(health.children[0]?.runs, "workbench.action.problems.focus");
+    assert.match(rows[1] ?? "", /^Size \([\d,]+ of 50,000 characters, in site\)$/, rows.join("\n"));
+    const about = api.ui.thisPage.items().find((item) => item.label === "About");
+    const row = (label: string) => about?.children.find((item) => item.label === label);
+    assert.ok(row("Description")?.opens?.endsWith("/docs/keys.md:4"), row("Description")?.opens);
+    assert.equal(row("Builds")?.runs, "ascribe.switchBuild");
   });
 
   it("counts an unsaved edit's link before it's saved", async () => {
@@ -176,7 +211,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       const items = await showing("two links to Rotate keys", (shown) =>
         shown.includes("  Linked from (2)"),
       );
-      assert.equal(items[6], "  Linked from (2)", items.join("\n"));
+      assert.ok(items.includes("  Linked from (2)"), items.join("\n"));
       assert.ok(document.isDirty);
     } finally {
       await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(installAgent));

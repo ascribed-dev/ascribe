@@ -30,7 +30,7 @@ mod inline;
 mod insert;
 mod model;
 mod page;
-mod start;
+pub(crate) mod start;
 
 pub(crate) use model::selection_occurrences;
 pub(crate) use start::content_folder;

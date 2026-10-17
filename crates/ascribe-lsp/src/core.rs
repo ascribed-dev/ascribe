@@ -698,6 +698,8 @@ impl Core {
     /// Follows what the file watcher reports: files and directories created,
     /// changed, or deleted by anything else.
     pub(crate) fn did_change_watched(&mut self, events: Vec<FileEvent>) {
+        // This page's rows read files the snapshot doesn't hold.
+        self.page_uses.forget();
         let mut sync_model = false;
         let mut memos = false;
         let mut changes: Vec<Change> = Vec::new();

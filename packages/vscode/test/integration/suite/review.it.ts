@@ -435,10 +435,10 @@ describe("the Review view, with a fake GitHub", () => {
       ),
       JSON.stringify(threads),
     );
-    // Connections and Memos still follow, so the view's other sections don't move.
+    // Health, Connections, and Memos still follow, so the view's other sections don't move.
     assert.deepEqual(
       api.ui.thisPage.items().map((item) => item.label),
-      ["About", "Review", "Connections", "Memos"],
+      ["About", "Review", "Health", "Connections", "Memos"],
     );
 
     await api.ui.thisPage.openThread(firstThread);

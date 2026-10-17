@@ -255,7 +255,29 @@ The **Projects** view lists every project in the workspace, started or not, by n
 The other three views show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
 
 @available: next
-**This page** says what's known about the active page, in three sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Connections** lists what links to the page, grouped by file, under **Linked from**, and what includes it under **Included by**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading. **Memos** lists the [memo files](index.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
+**This page** says what's known about the active page, in four sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](index.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
+
+About's other rows say whether the page is published, listed, due, and finished. Each is shown only when it has something to say, apart from a description, which is shown "missing" when the page's type has a description field and the page leaves it empty. A row with somewhere to go opens it:
+
+| Row | Says | Opens |
+|---|---|---|
+| **Description** | Its length, against the 300 characters its line in `llms.txt` reads best under when the project publishes one ([`description-too-long`](../checks/diagnostics/content-checks.md#ASC163)), or "missing" | The field in the frontmatter |
+| **Review** | "overdue since 3 October" or "due in 12 days", from the field with the [`review-date` role](../content-model/index.md#54-field-roles), as [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today | The field |
+| **Availability** | The page's own `available` | Nothing |
+| **Builds** | "Published by site, agents; left out by cloud": the builds that publish the page and the ones that leave it out, with why in its tooltip | **Switch Build**, to see the page as a build publishes it; **Dim What the Build Leaves Out** shows what that build leaves out of it |
+| **Listing** | "Listed (the default)" or "Unlisted, by `[listing.folders]`": what [`pages.json`](../content-model/checks.md#22-listing) says of the page, and the rule that sets it | The page's own `listing`, or the rule in `ascribe.toml` |
+| **Permalink** | A [permalink](../permalinks/index.md) the page or one of its headings declares, one row each | Its `permalink` or its `@id` line |
+| **Template** | "how-to template, 2 placeholders left": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
+
+**Health** has these rows:
+
+| Row | Says | Opens |
+|---|---|---|
+| **Problems** | "1 warning, 2 advice": VS Code's problems for the page, as the Problems panel counts them | The Problems panel, where its filter's **Show Active File Only** keeps it to the page |
+| **Size** | "31,200 of 50,000 characters, in site": the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it, shown always so a page is seen growing toward the limit | Nothing; its tooltip says which build and the limit |
+| **Example** | Each [tested example](../examples/tested.md) a `@snippet` of the page shows: tested, changed since it was tested, or not tested | Its `@snippet` line |
+
+A fragment has no builds, listing, or size of its own: it's published only where it's included.
 
 - **Pages** has **New Page** in its title bar ([Start a page](index.md#start-a-page)), and lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
@@ -305,7 +327,7 @@ The view's badge counts the comments you haven't submitted. Its title bar has **
 
 **Ascribe: Open Source Changes** opens VS Code's diff of every changed source file at once: each changed page's file, and the fragments, pages, and `ascribe.toml` they changed through, each at the base against the working tree. A snippet's code file isn't among them. The base side comes from VS Code's Git extension, or from Ascribe's language server where the Git extension is off. VS Code's diff may repeat file headers past 30 files, so on a large branch a page's own diff button is the better way through.
 
-While review is on, **This page** has a **Review** section between About and Connections: whether the branch changes the page, with its counts and what it changed through, or "this branch doesn't change it", and **Open threads**, the pull request's unresolved threads on the page or on a file it includes. Choosing a thread opens the page's preview at it.
+While review is on, **This page** has a **Review** section between About and Health: whether the branch changes the page, with its counts and what it changed through, or "this branch doesn't change it", and **Open threads**, the pull request's unresolved threads on the page or on a file it includes. Choosing a thread opens the page's preview at it.
 
 ### Comments in the preview
 @available: ascribe 0.2.0

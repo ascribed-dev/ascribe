@@ -71,6 +71,13 @@
     "InventoryPage": {
       "description": "A page.",
       "properties": {
+        "builds": {
+          "description": "The builds that publish it, in declaration order: the ones This\npage's Builds row says publish it.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "incoming": {
           "description": "How many links from other files, and includes, name it.",
           "minimum": 0,
@@ -99,7 +106,8 @@
         "path",
         "title",
         "type",
-        "incoming"
+        "incoming",
+        "builds"
       ],
       "type": "object"
     },
