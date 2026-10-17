@@ -2833,8 +2833,11 @@
         "enhancement",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/590"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "The editor's views: no Projects view, and Switch Project"
     },
     {
@@ -2852,7 +2855,7 @@
         "javascript"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The editor's views: chat has Ascribe's skill, and dropped images"
     },
     {
@@ -3105,7 +3108,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBfPmI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Rename Label… on a page in the Pages view sets its nav-label"
     },
     {
