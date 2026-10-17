@@ -23,7 +23,7 @@ Several kinds of name appear in the file. Each has a grammar from SPEC Appendix 
 | Name | Grammar | Rule | Used for |
 |---|---|---|---|
 | name-word | SPEC A `name-word` | A letter, then letters, digits, `_`, or `-` | Dimension values, lifecycle states, feature keys, frontmatter field names |
-| key | SPEC A `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, glossary term ids, source names |
+| key | SPEC A `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, source names |
 | widget name | SPEC A `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 
@@ -37,7 +37,7 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
 
 - Paths use `/` as the separator on every platform.
 - Filesystem paths in `[project]` and `[sources]` are relative to the project root. They MUST NOT be absolute, and they MAY use `..`.
-- A glossary term's `link` (§12) is written like a link destination in a document ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)), relative to the content root.
+- A path in `[glossary] pages` (§12) is written like a link destination in a document ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)), relative to the content root.
 - **Patterns** (globs) are matched against a source file's path relative to the content root, including its extension, with `/` separators. They are case-sensitive. The syntax:
 
   | Syntax | Matches |

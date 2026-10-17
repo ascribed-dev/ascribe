@@ -1,0 +1,9 @@
+description: >-
+  The glossary has no `terms`: a term is a heading marked `@term` on a
+  glossary page. A table of terms is an unknown key, whose message names
+  `pages` and `@term`.
+spec: ["5.4", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 6}

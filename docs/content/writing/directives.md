@@ -19,7 +19,7 @@ This page describes the language as you write it. The [Ascribe specification]({r
 - [Titles](directives.md#titles)
 - [Binding: what a directive applies to](directives.md#binding-what-a-directive-applies-to)
 - [Lists and block quotes](directives.md#lists-and-block-quotes)
-- [Built-in directives](directives.md#built-in-directives): [`@id`](directives.md#id), [`@include`](directives.md#include), [`@variant`](directives.md#variant), [`@available`](directives.md#available), [`@note`](directives.md#note), [`@steps`](directives.md#steps), [`@details`](directives.md#details), [`@snippet`](directives.md#snippet), [`@intended`](directives.md#intended), [`@memo`](directives.md#memo)
+- [Built-in directives](directives.md#built-in-directives): [`@id`](directives.md#id), [`@include`](directives.md#include), [`@variant`](directives.md#variant), [`@available`](directives.md#available), [`@note`](directives.md#note), [`@steps`](directives.md#steps), [`@details`](directives.md#details), [`@snippet`](directives.md#snippet), [`@intended`](directives.md#intended), [`@memo`](directives.md#memo), [`@term`](directives.md#term)
 - [Project widgets](directives.md#project-widgets)
 - [Phrases](directives.md#phrases)
 - [Links](directives.md#links)
@@ -229,6 +229,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 | [`@snippet`](directives.md#snippet) | line | an address | A code example from a file |
 | [`@intended`](directives.md#intended) | line | a reason | Say a check's problem is intended |
 | [`@memo`](directives.md#memo) {available=next} | line, container | text | Keep a note for whoever maintains the page, never published |
+| [`@term`](directives.md#term) {available=next} | line | none | Make a glossary page's heading a term |
 
 ### `@id`
 
@@ -287,7 +288,7 @@ Includes another file, or one heading's section of it, in place.
 
 - **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed, but only to another source file: a source file whose link leads out of the content root, or to a hidden, non-Markdown, or other project's file, can't be read, so no other file on disk ends up in a page.
 - `#id` includes only the section of the heading with that id. `{heading=false}` leaves out that section's own heading; it has no effect without `#id`, and Ascribe warns.
-- Included content becomes part of the page: phrases and [builds](../content-model/output.md#16-buildsname) apply to it, and its ids must not collide with the page's.
+- Included content becomes part of the page: phrases and [builds](../glossary.md#build) apply to it, and its ids must not collide with the page's.
 - **Relative paths inside a fragment resolve from the fragment**, not the page including it, so a fragment's links and images work wherever it's included.
 - Included headings keep the levels they're written with.
 - An include cycle is an error.
@@ -337,9 +338,9 @@ pnpm add -g @quill/agent
 - Each arm has attributes or a title, never both and never neither, and a group's arms are all one kind.
 - A value set (`{platform=cloud|on-prem}`) matches any of its values. Several keys on one arm (`{deployment=cloud, pm=npm}`) must all match.
 - The arms of a group share at least one dimension.
-- `@variant` varies whole blocks. For a single term that differs, use a [phrase](directives.md#phrases).
+- `@variant` varies whole blocks. For a single term that differs, use a [phrase](../glossary.md#phrase).
 
-Each build decides what happens to a group: `switch` keeps every arm, for readers to switch between (the site shows tabs), and a selection such as `{ deployment = "cloud" }` keeps only the matching arms. See [builds](../content-model/output.md#16-buildsname).
+Each build decides what happens to a group: `switch` keeps every arm, for readers to switch between (the site shows tabs), and a selection such as `{ deployment = "cloud" }` keeps only the matching arms. See [builds](../glossary.md#build).
 
 #### Whole-page variants
 
@@ -566,6 +567,26 @@ Revoke the old key once every agent uses the new one.
 - **It changes no output.** No build, preview, or report shows a memo, wherever it is, a fragment included, and a change to a memo alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
 - **An HTML comment isn't private:** it's in the source of every published page. `ascribe check` reports one as advice, [`html-comment`](../checks/diagnostics/content-checks.md#ASC223), and the editor's quick fix **Rewrite as a memo** turns a comment that's a block of its own into a memo about the same block, or about its section when it's the section's last block. A comment written for another tool is acknowledged with `@intended {check=html-comment}` above its block, and Vale's own comments, such as `<!-- vale off -->`, aren't reported.
 
+### `@term`
+@available: next
+
+([SPEC §4.11]({repo}/blob/main/SPEC.md#411-term))
+
+Makes a heading of a glossary page a glossary term. The heading's text is the term, and the paragraph under it is its definition, which a built page shows where it links the term, and the editor on hover.
+
+```markdown
+## Rollout
+@id: rollout
+@term {aliases=rollouts}
+
+A plan for turning a flag on for a growing share of users: by percentage, by segment, or on a schedule.
+```
+
+- It goes directly under the heading, with the heading's `@id` if it has one. It takes no primary.
+- **Attributes:** `aliases`, other forms that count as the term, separated by `|` (`aliases="API keys|keys"`); `match`, which occurrences are linked, `first`, `every`, or `marked`; and `case-sensitive`, `true` or `false`. The last two default to `[glossary]`'s settings.
+- A term is only a term on a page `[glossary] pages` lists, or in a fragment such a page includes. See [Glossary terms](directives.md#glossary-terms).
+- It renders nothing: the heading and its section are published as they would be without it.
+
 ## Project widgets
 
 ([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))
@@ -647,7 +668,7 @@ Every heading has an id: its `@id` if it has one, and otherwise a slug of its te
 
 ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms))
 
-When `ascribe.toml` declares a glossary, Ascribe links terms to their definitions in each built page. Authors don't mark terms in source. See [`[glossary]`](../content-model/content.md#12-glossary).
+A glossary is a page, or several, that `[glossary] pages` in `ascribe.toml` lists, and each of its headings marked [`@term`](directives.md#term) is a term, defined by the paragraph under it. Ascribe links terms to their definitions in each built page, and authors don't mark terms where they're used. A link you write to a term's heading, as `[build](glossary.md#build)`, is a use of the term too: it's how you link a `marked` term, which isn't linked automatically. See [`[glossary]`](../content-model/content.md#12-glossary).
 
 ## Escapes
 

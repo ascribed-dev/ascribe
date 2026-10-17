@@ -1,53 +1,39 @@
-//! The glossary against the content (SPEC §5.4): a term's `link` that names
-//! a heading its page doesn't have (`glossary-link-target-missing`), on the
-//! `link` in `ascribe.toml`. The loader checks that the page is there
-//! (`model-glossary-link`); a heading's id depends on parsing, so it's
-//! checked here.
+//! The glossary against the content (SPEC §5.4): two terms, or a term and
+//! an alias, with the same text (`glossary-term-duplicate`), reported at the
+//! second, naming the first. Matching can't choose between them, so the
+//! second is left out of the glossary.
 //!
-//! It holds for every build, since the ids are the source's: a heading's
-//! source id doesn't depend on a build.
+//! It holds for every build, since a term is the source's: its heading's
+//! text and its `@term` don't depend on a build.
 
 use std::collections::BTreeMap;
 
-use ascribe_core::{FileId, Issue, Location, RelPath, diagnostics};
+use ascribe_core::{FileId, Issue, Location, diagnostics};
 
 use crate::{Diagnostic, Project};
 
-/// The id of `ascribe.toml`, where the terms are.
-const MODEL_FILE_ID: FileId = FileId::new(0);
-
-/// What the check found, under `ascribe.toml`'s id, in source order.
-/// `index` is the project's source index.
+/// What the check found, by file, in source order. `index` is the project's
+/// source index; `file` gives the project's id of one of its files.
 pub(crate) fn check(
-    project: &Project,
+    _project: &Project,
     index: &ascribe_resolve::Project,
+    file: &dyn Fn(FileId) -> FileId,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
-    let mut found = Vec::new();
-    for term in &project.model().glossary.terms {
-        let (Some((path, Some(heading))), Some(span)) = (&term.link, term.link_span) else {
-            continue;
-        };
-        // A page the loader couldn't find has its own problem.
-        let Ok(page) = RelPath::parse(path) else {
-            continue;
-        };
-        if index.file(&page).is_none() || index.page_heading(&page, heading).is_some() {
-            continue;
-        }
+    let mut out: BTreeMap<FileId, Vec<Diagnostic>> = BTreeMap::new();
+    for duplicate in index.glossary().duplicates {
         let issue = Issue::new(
-            diagnostics::GLOSSARY_LINK_TARGET_MISSING,
-            Location::new(MODEL_FILE_ID, span),
+            diagnostics::GLOSSARY_TERM_DUPLICATE,
+            Location::new(file(duplicate.file), duplicate.span),
         )
-        .with_arg("id", term.id.clone())
-        .with_arg("link", format!("{path}#{heading}"))
-        .with_arg("path", path.clone())
-        .with_arg("heading", heading.clone());
-        found.push(Diagnostic::from_issue(&issue));
+        .with_arg("text", duplicate.text)
+        .with_arg("first", duplicate.first)
+        .with_arg("page", duplicate.first_page.to_string());
+        out.entry(issue.location.file)
+            .or_default()
+            .push(Diagnostic::from_issue(&issue));
     }
-    found.sort_by_key(|d| d.location.span);
-    let mut out = BTreeMap::new();
-    if !found.is_empty() {
-        out.insert(MODEL_FILE_ID, found);
+    for list in out.values_mut() {
+        list.sort_by_key(|d| d.location.span);
     }
     out
 }

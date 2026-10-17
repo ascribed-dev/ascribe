@@ -12,6 +12,7 @@ A directive is a line that starts with `@`. Each built-in one, with its syntax:
 - `@snippet: <source>:<path>#<region>`: a code example from a file outside the pages
 - `@intended {check=<check>}: <reason>` above a block: a review check's problem in it is intended; write one only when the user says the problem is intended
 - `@memo: <text>` under a heading or above a block, or `@memo:` … `@end` around several lines: a note for whoever maintains the page, never published
+- `@term` on the line under a heading of a glossary page, with `{aliases="<a>|<b>"}` for other forms: the heading is a glossary term, defined by the paragraph under it
 
 A title line, `.<Title>`, goes on the line above a directive that takes one. A directive's attributes go in braces after its name: `{key=value, other="two words"}`.
 

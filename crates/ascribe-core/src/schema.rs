@@ -72,11 +72,13 @@ pub enum Builtin {
     Intended,
     /// `@memo` (§4.10).
     Memo,
+    /// `@term` (§4.11).
+    Term,
 }
 
 impl Builtin {
     /// Every built-in directive, in SPEC §4 order.
-    pub const ALL: [Builtin; 10] = [
+    pub const ALL: [Builtin; 11] = [
         Builtin::Id,
         Builtin::Include,
         Builtin::Variant,
@@ -87,6 +89,7 @@ impl Builtin {
         Builtin::Snippet,
         Builtin::Intended,
         Builtin::Memo,
+        Builtin::Term,
     ];
 
     /// The keyword, without `@`.
@@ -102,6 +105,7 @@ impl Builtin {
             Builtin::Snippet => "snippet",
             Builtin::Intended => "intended",
             Builtin::Memo => "memo",
+            Builtin::Term => "term",
         }
     }
 
@@ -254,7 +258,46 @@ impl Builtin {
                 description: Some("Text for whoever edits the page next, never published.".into()),
                 ..base
             },
+            Builtin::Term => term_schema(base),
         }
+    }
+}
+
+/// `@term`'s schema (SPEC §4.11), apart from what every built-in shares.
+fn term_schema(base: DirectiveSchema) -> DirectiveSchema {
+    DirectiveSchema {
+        binding: Some(Binding::Heading),
+        attributes: Attributes::Declared(vec![
+            AttributeSchema {
+                key: "aliases".into(),
+                ty: AttributeType::String,
+                required: false,
+                default: None,
+                description: Some("Other forms that count as the term, separated by `|`.".into()),
+            },
+            AttributeSchema {
+                key: "match".into(),
+                ty: AttributeType::Enum(["first", "every", "marked"].map(String::from).to_vec()),
+                required: false,
+                default: None,
+                description: Some(
+                    "Which occurrences are linked, when not the glossary's `match`: \
+                     the first on each page, every one, or only those an author links."
+                        .into(),
+                ),
+            },
+            AttributeSchema {
+                key: "case-sensitive".into(),
+                ty: AttributeType::Boolean,
+                required: false,
+                default: None,
+                description: Some(
+                    "Whether case must match, when not the glossary's `case-sensitive`.".into(),
+                ),
+            },
+        ]),
+        description: Some("Make a glossary page's heading a term.".into()),
+        ..base
     }
 }
 
@@ -457,7 +500,7 @@ mod tests {
     /// SPEC §4's table, row by row: name, forms, primary, binding.
     #[test]
     fn builtins_match_the_spec_table() {
-        let table: [(&str, Forms, Primary, Option<Binding>); 10] = [
+        let table: [(&str, Forms, Primary, Option<Binding>); 11] = [
             (
                 "id",
                 Forms::LINE,
@@ -503,6 +546,7 @@ mod tests {
                 Primary::Reason { required: true },
                 Some(Binding::HeadingOrBlock),
             ),
+            ("term", Forms::LINE, Primary::None, Some(Binding::Heading)),
         ];
         let schemas = builtin_schemas();
         assert_eq!(schemas.len(), table.len());

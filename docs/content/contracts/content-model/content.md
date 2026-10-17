@@ -77,7 +77,7 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 @include: ../../_fragments/content-model/glossary.md
 
-**Matching**: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term with no `link` isn't linked in the site or plain-markdown output; its definition still reaches the editor and the JSON output. SPEC §5.4 says only that occurrences are linked to definitions.
+**Matching**: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish isn't linked in that build. SPEC §5.4 gives the rest: what a term is, its definition, and what an author's link to its heading is.
 
 @include: ../../_fragments/content-model/glossary-rules.md
 

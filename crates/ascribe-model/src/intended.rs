@@ -6,7 +6,7 @@ use ascribe_core::{EntryKind, Place, diagnostics};
 use toml::de::DeValue;
 
 use crate::loader::Loader;
-use crate::model::{Feature, Glossary, Intended, Phrase};
+use crate::model::{Feature, Intended, Phrase};
 use crate::names::{list, suggest};
 use crate::toml_util::{V, entries, sp};
 
@@ -17,7 +17,6 @@ impl Loader<'_> {
         v: Option<&V<'_>>,
         phrases: &[Phrase],
         features: &[Feature],
-        glossary: &Glossary,
     ) -> Vec<Intended> {
         let mut out = Vec::new();
         let Some(v) = v else { return out };
@@ -61,11 +60,11 @@ impl Loader<'_> {
                         let declared = match kind {
                             EntryKind::Phrase => phrases.iter().any(|p| p.key == name),
                             EntryKind::Feature => features.iter().any(|f| f.key == name),
-                            EntryKind::Term => glossary.terms.iter().any(|t| t.id == name),
-                            // An image is a file, and a check that reports
-                            // one names it by its path; one that names no
-                            // image is reported as unused.
-                            EntryKind::Image => true,
+                            // A term is a heading on a glossary page, and an
+                            // image is a file, neither of which the content
+                            // model sees; an acknowledgement that names no
+                            // term or image is reported as unused.
+                            EntryKind::Term | EntryKind::Image => true,
                         };
                         if declared {
                             Some((*kind, name))
@@ -167,8 +166,7 @@ mod tests {
     const DECLARED: &str = "spec = \"0.1\"\n\
         [phrases]\nold-name = \"Quill\"\n\
         [features.sync]\nname = \"Sync\"\navailable = \"cloud\"\n\
-        [dimensions.deployment]\nvalues = [\"cloud\"]\n\
-        [glossary.terms.api-key]\nterm = \"API key\"\ndefinition = \"A key.\"\n";
+        [dimensions.deployment]\nvalues = [\"cloud\"]\n";
 
     fn load(intended: &str) -> Result<Vec<Intended>, Vec<(DiagnosticSlug, String)>> {
         let text = format!("{DECLARED}{intended}");

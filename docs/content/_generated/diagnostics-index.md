@@ -94,8 +94,6 @@
 | [ASC095](../checks/diagnostics/content-model.md#ASC095) | `model-availability-history-order` | Error | File | write |
 | [ASC096](../checks/diagnostics/content-model.md#ASC096) | `model-feature-nested` | Error | File | write |
 | [ASC097](../checks/diagnostics/content-model.md#ASC097) | `model-phrase-value-type` | Error | File | write |
-| [ASC098](../checks/diagnostics/content-model.md#ASC098) | `model-glossary-duplicate-term` | Error | File | write |
-| [ASC099](../checks/diagnostics/content-model.md#ASC099) | `model-glossary-link` | Error | File | choose |
 | [ASC100](../checks/diagnostics/content-model.md#ASC100) | `model-widget-reserved-name` | Error | File | write |
 | [ASC101](../checks/diagnostics/content-model.md#ASC101) | `model-widget-forms` | Error | File | choose |
 | [ASC102](../checks/diagnostics/content-model.md#ASC102) | `model-widget-binding` | Error | File | choose |
@@ -199,7 +197,6 @@
 | [ASC200](../checks/diagnostics/content-checks.md#ASC200) | `example-unobserved` | Advice | File | outside |
 | [ASC201](../checks/diagnostics/content-checks.md#ASC201) | `examples-config-invalid` | Warning | File | outside |
 | [ASC202](../checks/diagnostics/content-checks.md#ASC202) | `observation-file-missing` | Advice | File | outside |
-| [ASC203](../checks/diagnostics/pages.md#ASC203) | `glossary-link-target-missing` | Error | File | choose |
 | [ASC204](../checks/diagnostics/content-model.md#ASC204) | `model-releases-target` | Error | File | choose |
 | [ASC205](../checks/diagnostics/content-model.md#ASC205) | `model-releases-line` | Error | File | write |
 | [ASC206](../checks/diagnostics/content-model.md#ASC206) | `model-build-versions` | Error | File | write |
@@ -234,3 +231,5 @@
 | [ASC235](../checks/diagnostics/content-checks.md#ASC235) | `nav-page-unplaced` | Advice | File | fix |
 | [ASC236](../checks/diagnostics/content-checks.md#ASC236) | `nav-section-unplaced` | Advice | File | fix |
 | [ASC237](../checks/diagnostics/content-checks.md#ASC237) | `nav-label-long` | Advice | File | write |
+| [ASC238](../checks/diagnostics/content-model.md#ASC238) | `model-glossary-page` | Error | File | choose |
+| [ASC239](../checks/diagnostics/pages.md#ASC239) | `glossary-term-duplicate` | Error | File | write |

@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[glossary]
+match = "first"
+
+[glossary.terms.api-key]
+term = "API key"
+definition = "A secret token."

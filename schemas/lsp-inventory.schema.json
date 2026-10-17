@@ -12,7 +12,7 @@
               "type": "null"
             }
           ],
-          "description": "Where `ascribe.toml` declares it; `null` for a built-in note type,\nand for an entry that can't be found there."
+          "description": "Where it's declared: in `ascribe.toml`, or, for a glossary term, in\n`page`. `null` for a built-in note type, and for an entry that can't\nbe found there."
         },
         "key": {
           "description": "Its key, id, or name, as pages write it.",
@@ -29,8 +29,15 @@
             "null"
           ]
         },
+        "page": {
+          "description": "For a glossary term, the content path of the file its heading is\nwritten in, which `declaration` is a range in: its glossary page, or\na fragment the page includes. `null` for an entry of `ascribe.toml`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "uses": {
-          "description": "How many places use it; `null` for a build, which pages don't name,\nand for a glossary term with `match = \"marked\"`, whose uses are links\nto its page.",
+          "description": "How many places use it; `null` for a build, which pages don't name.",
           "minimum": 0,
           "type": [
             "integer",
@@ -43,7 +50,8 @@
         "key",
         "label",
         "uses",
-        "declaration"
+        "declaration",
+        "page"
       ],
       "type": "object"
     },

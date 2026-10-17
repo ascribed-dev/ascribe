@@ -1,0 +1,4 @@
+spec = "0.1"
+
+[glossary]
+pages = ["_shared/terms.md"]

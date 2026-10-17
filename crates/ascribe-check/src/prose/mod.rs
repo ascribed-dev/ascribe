@@ -27,7 +27,7 @@ use crate::{Diagnostic, Next, Project, Severity, apply_levels};
 pub use eject::{EJECTED_CONFIG, EJECTED_STYLES, EjectError, Ejected, eject, ejected_files};
 pub(crate) use extract::is_vale_comment;
 pub use extract::{Located, Prose};
-pub use setup::{FOLDER, VOCABULARY, preset_files, vocabulary, with_settings};
+pub use setup::{FOLDER, VOCABULARY, glossary_words, preset_files, vocabulary, with_settings};
 pub use vale::{
     Action, Alert, Linter, MIN_VERSION, NotStarted, OnPath, Program, Request, ValeError, in_project,
 };
@@ -78,14 +78,24 @@ pub fn lint(
             })
         })
         .collect();
-    lint_pages(project.root(), project.model(), &pages, linter, timeout)
+    let terms = glossary_words(&project.held_index().glossary());
+    lint_pages(
+        project.root(),
+        project.model(),
+        &terms,
+        &pages,
+        linter,
+        timeout,
+    )
 }
 
 /// [`lint`], for pages given one by one: the language server's, which keeps
-/// the text it's sent.
+/// the text it's sent. `terms` are the glossary's words, as
+/// [`glossary_words`] gives them.
 pub fn lint_pages(
     root: &Path,
     model: &ContentModel,
+    terms: &[String],
     pages: &[Page<'_>],
     linter: &dyn Linter,
     timeout: Duration,
@@ -96,7 +106,7 @@ pub fn lint_pages(
     if let Some(reason) = linter.refuses(&settings.command, root) {
         return apply_levels(&model.checks, vec![not_started(settings, &reason)]);
     }
-    let found = match run(root, model, settings, pages, linter, timeout) {
+    let found = match run(root, model, terms, settings, pages, linter, timeout) {
         Ok(found) => found,
         Err(e) => vec![not_checked(settings, &e)],
     };
@@ -106,15 +116,17 @@ pub fn lint_pages(
 fn run(
     root: &Path,
     model: &ContentModel,
+    terms: &[String],
     settings: &ValeSettings,
     pages: &[Page<'_>],
     linter: &dyn Linter,
     timeout: Duration,
 ) -> Result<Vec<Diagnostic>, ValeError> {
-    let configs = setup::prepare(root, model, settings).map_err(|reason| ValeError::Failed {
-        command: settings.command.clone(),
-        reason,
-    })?;
+    let configs =
+        setup::prepare(root, model, terms, settings).map_err(|reason| ValeError::Failed {
+            command: settings.command.clone(),
+            reason,
+        })?;
     let options = ParseOptions::new(model.directive_schemas())
         .with_note_types(model.notes.iter().map(|n| n.name.clone()).collect());
     let phrase = |key: &str| {

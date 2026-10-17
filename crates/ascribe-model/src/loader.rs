@@ -367,7 +367,7 @@ impl<'s> Loader<'s> {
 
         let fragments = self.fragments(root.get("fragments"));
         let types = self.types(root.get("types"), &fragments);
-        let glossary = self.glossary(root.get("glossary"), &project, &fragments);
+        let glossary = self.glossary(root.get("glossary"), &fragments);
         let image_attributes = self.images(root.get("images"));
         let widgets = self.widgets(root.get("widgets"));
         let consumer = self.consumer(root.get("consumer"));
@@ -379,7 +379,7 @@ impl<'s> Loader<'s> {
         self.project_paths(&project, root.get("project"));
         let sources = self.sources(root.get("sources"), &project.value.content_root);
         let checks = self.checks(root.get("checks"));
-        let intended = self.intended(root.get("intended"), &phrases, &features, &glossary);
+        let intended = self.intended(root.get("intended"), &phrases, &features);
         let permalinks = self.permalinks(root.get("permalinks"));
         let crawlers = self.crawlers(root.get("crawlers"));
         let listing = self.listing(root.get("listing"), &types, &project.value.content_root);

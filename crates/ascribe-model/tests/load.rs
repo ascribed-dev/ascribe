@@ -65,7 +65,8 @@ fn minimal_gets_every_default() {
             "details",
             "snippet",
             "intended",
-            "memo"
+            "memo",
+            "term"
         ]
     );
 }
@@ -225,7 +226,7 @@ fn widgets_become_directive_schemas() {
     let m = example("full.toml");
     assert!(!m.widgets.is_empty());
     let schemas = m.directive_schemas();
-    assert_eq!(schemas.len(), 10 + m.widgets.len());
+    assert_eq!(schemas.len(), 11 + m.widgets.len());
     for w in &m.widgets {
         let s = m.widget_schema(&w.schema.name).unwrap();
         assert!(matches!(s.origin, ascribe_core::Origin::Widget));
@@ -671,7 +672,7 @@ fn the_content_root_must_exist_and_be_a_directory() {
 }
 
 #[test]
-fn glossary_links_must_name_existing_pages() {
+fn glossary_pages_must_be_pages() {
     let dir = scratch("glossary");
     std::fs::create_dir_all(dir.join("docs/reference")).unwrap();
     std::fs::write(
@@ -679,28 +680,35 @@ fn glossary_links_must_name_existing_pages() {
         "---\ntitle: G\n---\n",
     )
     .unwrap();
-    let ok = "spec = \"0.1\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nlink = \"/reference/glossary.md#a\"\n";
+    let ok = "spec = \"0.1\"\n[glossary]\npages = [\"/reference/glossary.md\"]\n";
     let m = load_str_in(ok, FileId::new(0), &dir).unwrap();
-    assert_eq!(
-        m.glossary.terms[0].link,
-        Some(("reference/glossary.md".into(), Some("a".into())))
-    );
-    let missing = ok.replace("glossary.md#a", "nope.md");
-    let issues = load_str_in(&missing, FileId::new(0), &dir).unwrap_err();
-    assert_eq!(issues[0].slug.as_str(), "model-glossary-link");
-    assert_eq!(issues[0].variant, None);
-    // Without the project directory the existence check is skipped.
-    assert!(load_str(&missing, FileId::new(0)).is_ok());
+    let pages: Vec<_> = m.glossary.pages.iter().map(|p| p.path.as_str()).collect();
+    assert_eq!(pages, ["reference/glossary.md"]);
+    // Whether a listed page exists is the checks' to say, through the
+    // project's files: the model loads without it.
+    let missing = ok.replace("glossary.md", "nope.md");
+    assert!(load_str_in(&missing, FileId::new(0), &dir).is_ok());
+    let fragment = ok.replace("/reference/glossary.md", "_terms.md");
+    let issues = load_str(&fragment, FileId::new(0)).unwrap_err();
+    assert_eq!(issues[0].slug.as_str(), "model-glossary-page");
+    assert_eq!(issues[0].variant, Some("fragment"));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
-fn a_glossary_term_can_set_its_own_match() {
-    let text = "spec = \"0.1\"\n[glossary]\nmatch = \"every\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nmatch = \"marked\"\n[glossary.terms.b]\nterm = \"B\"\ndefinition = \"x\"\n";
+fn a_table_of_terms_names_the_pages_that_hold_them() {
+    let text = "spec = \"0.1\"\n[glossary]\nmatch = \"every\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\n";
+    let issues = load_str(text, FileId::new(0)).unwrap_err();
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].slug.as_str(), "model-unknown-key");
+    assert_eq!(issues[0].variant, Some("glossary-terms"));
+}
+
+#[test]
+fn marked_is_a_term_setting_not_a_glossary_default() {
+    let text = "spec = \"0.1\"\n[glossary]\nmatch = \"every\"\n";
     let m = load_str(text, FileId::new(0)).unwrap();
-    let modes: Vec<_> = m.glossary.terms.iter().map(|t| t.match_mode).collect();
-    assert_eq!(modes, [GlossaryMatch::Marked, GlossaryMatch::Every]);
-    // `marked` is a term setting, not a glossary default.
+    assert_eq!(m.glossary.match_mode, GlossaryMatch::Every);
     let all = text.replace("match = \"every\"", "match = \"marked\"");
     let issues = load_str(&all, FileId::new(0)).unwrap_err();
     assert_eq!(issues[0].slug.as_str(), "model-invalid-value");

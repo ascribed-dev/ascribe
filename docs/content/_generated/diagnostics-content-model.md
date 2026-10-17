@@ -19,7 +19,7 @@ Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.m
 
 **Message:** unknown key `{key}` in `[{table}]`
 
-**Fix:** Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages.
+**Fix:** Fix the key's spelling, or remove it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`.
 
 **Read more:** [The file](../content-model/index.md#11-the-file) in the `ascribe.toml` reference.
 
@@ -552,28 +552,6 @@ Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
 
-### ASC098 `model-glossary-duplicate-term`
-@id {permalink=true}: ASC098
-
-Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
-
-**Message:** "\{text}" is declared by both glossary terms `{a}` and `{b}`
-
-**Fix:** Remove the text from one of the terms, or make the terms distinct.
-
-**Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
-
-### ASC099 `model-glossary-link`
-@id {permalink=true}: ASC099
-
-Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
-
-**Message:** glossary term `{id}` links to \{path}, which doesn't exist
-
-**Fix:** Fix the link, or link to a page that includes the fragment.
-
-**Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
-
 ### ASC215 `model-phrase-line`
 @id {permalink=true}: ASC215
 
@@ -584,6 +562,17 @@ Error · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC.m
 **Fix:** Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one.
 
 **Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
+
+### ASC238 `model-glossary-page`
+@id {permalink=true}: ASC238
+
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** `{path}` in `[glossary] pages` doesn't exist
+
+**Fix:** Each path in `pages` is a page, from the content root, with its name's case as it is on disk: fix the path, or, for a fragment, list a page that includes it.
+
+**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
 
 ## Widgets
 

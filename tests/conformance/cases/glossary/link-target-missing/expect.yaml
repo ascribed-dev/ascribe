@@ -1,9 +1,0 @@
-description: >-
-  A term's `link` that names a heading must name one its page has: written
-  in the page, or in a fragment it includes. One it doesn't have is an
-  error at the `link`; a link to the page alone names no heading.
-spec: ["5.4", "8.2"]
-tags: [check]
-
-diagnostics:
-  - {slug: glossary-link-target-missing, file: ascribe.toml, line: 24}

@@ -232,11 +232,11 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
-**When:** The term, and each of its aliases, appears in no file's prose. A term with `match = "marked"` isn't reported.
+**When:** The term, and each of its aliases, appears in no other page's prose, and no link names its heading.
 
-**Message:** the glossary term `{term}` appears in no file's prose, so it's never linked
+**Message:** the glossary term `{term}` appears in no other file's prose, and no link names its heading, so it's never linked
 
-**Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements).
+**Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements).
 
 **Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
 

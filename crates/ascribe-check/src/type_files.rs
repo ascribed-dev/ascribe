@@ -1,4 +1,5 @@
-//! The files a content type names: its `template` and its `guide`.
+//! The files a content type names, its `template` and its `guide`, and the
+//! pages `[glossary] pages` lists.
 //!
 //! The content model's loader checks what's written (a path from the folder
 //! `ascribe.toml` is in); this checks where each path leads, through the
@@ -16,7 +17,7 @@
 use std::path::Path;
 
 use ascribe_core::{FileId, Issue, LineIndex, Location, RelPath, diagnostics};
-use ascribe_model::{ContentModel, SourceBound, TypeFile};
+use ascribe_model::{ContentModel, GlossaryPage, SourceBound, TypeFile};
 use ascribe_resolve::{DiskFs, FileSystem, Layout, Probe};
 use ascribe_syntax::{ParseOptions, parse};
 
@@ -62,7 +63,35 @@ pub fn check(model: &ContentModel, fs: &dyn FileSystem) -> Vec<Issue> {
             place(&t.name, "guide", guide, &layout, fs, &mut out);
         }
     }
+    for page in &model.glossary.pages {
+        glossary_page(page, &layout, fs, &mut out);
+    }
     out
+}
+
+/// A problem with a page `[glossary] pages` lists, in `out`: it isn't there,
+/// with that exact name. The loader has turned away a fragment.
+fn glossary_page(page: &GlossaryPage, layout: &Layout, fs: &dyn FileSystem, out: &mut Vec<Issue>) {
+    let Ok(path) = RelPath::parse(&page.path) else {
+        return;
+    };
+    let issue = Issue::new(
+        diagnostics::MODEL_GLOSSARY_PAGE,
+        Location::new(FileId::new(0), page.span),
+    )
+    .with_arg("path", page.path.as_str());
+    match fs.probe(&layout.project_path(&path)) {
+        Probe::File => {}
+        Probe::Missing => out.push(issue),
+        Probe::CaseMismatch(actual) => {
+            let actual = actual.relative_to(&layout.content_root).unwrap_or(actual);
+            out.push(
+                issue
+                    .with_variant("case")
+                    .with_arg("actual", actual.as_str()),
+            );
+        }
+    }
 }
 
 /// Where `file` leads, when it's a file the type may name; otherwise the

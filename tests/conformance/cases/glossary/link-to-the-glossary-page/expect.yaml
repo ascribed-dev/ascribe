@@ -1,0 +1,9 @@
+description: >-
+  Only a link to a term's heading is a use of the term. A link to the
+  glossary page is an ordinary link, so a `marked` term that only the page is
+  linked for is unused, reported at its heading.
+spec: ["5.4"]
+tags: [check]
+
+diagnostics:
+  - {slug: glossary-term-unused, file: glossary.md, line: 5}

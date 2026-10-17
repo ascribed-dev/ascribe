@@ -1,7 +1,7 @@
 description: >-
-  A glossary term can turn automatic linking off; the author then links the
-  occurrences that mean the term with an ordinary link, and both pages are
-  valid.
+  A glossary term can turn automatic linking off. The author then links the
+  occurrences that mean the term to its heading, and that link is a use of
+  the term, so it isn't reported as unused.
 spec: ["5.4", "7.2"]
 tags: [check]
 
