@@ -52,8 +52,15 @@ describe("package.json", () => {
     expect(shownOn("ascribe.pages.placeHere")).toBe(
       `view == ascribe.pages && viewItem == ${PAGES_CONTEXT.unplaced}`,
     );
+    // A section's label is its `label` in ascribe.nav, and a page's its `nav-label`.
+    const labelled = [
+      PAGES_CONTEXT.section,
+      PAGES_CONTEXT.page,
+      PAGES_CONTEXT.own,
+      PAGES_CONTEXT.unplaced,
+    ].map((value) => value.replace("ascribe.pages.", ""));
     expect(shownOn("ascribe.pages.renameLabel")).toBe(
-      `view == ascribe.pages && viewItem == ${PAGES_CONTEXT.section}`,
+      `view == ascribe.pages && viewItem =~ /^ascribe\\.pages\\.(${labelled.join("|")})$/`,
     );
   });
 

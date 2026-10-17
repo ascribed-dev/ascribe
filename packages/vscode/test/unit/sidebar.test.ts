@@ -10,6 +10,7 @@ import {
   blocksMove,
   contentPathOf,
   followedProject,
+  labelRename,
   leftOut,
   modelChildren,
   modelDeclaration,
@@ -30,6 +31,7 @@ import {
   thisPageChildren,
   thisPageLook,
   thisPageRoots,
+  viewsNotice,
   type Place,
   type ThisPageNode,
   type ThisPageReview,
@@ -51,10 +53,42 @@ const inventory: InventoryResult = {
   modelUri: "file:///p/ascribe.toml",
   contentUri: "file:///p/docs",
   pages: [
-    { path: "guides/install.md", title: "Install", type: "guide", incoming: 3, builds: ["site"] },
-    { path: "index.md", title: "Home", type: "page", incoming: 0, builds: ["site"] },
-    { path: "old.md", title: null, type: null, incoming: 0, builds: ["site"] },
-    { path: "ref/api.md", title: "API", type: "reference", incoming: 1, builds: ["site"] },
+    {
+      path: "guides/install.md",
+      title: "Install",
+      label: "Install",
+      navLabel: null,
+      type: "guide",
+      incoming: 3,
+      builds: ["site"],
+    },
+    {
+      path: "index.md",
+      title: "Home",
+      label: "Home",
+      navLabel: null,
+      type: "page",
+      incoming: 0,
+      builds: ["site"],
+    },
+    {
+      path: "old.md",
+      title: null,
+      label: "old",
+      navLabel: null,
+      type: null,
+      incoming: 0,
+      builds: ["site"],
+    },
+    {
+      path: "ref/api.md",
+      title: "API",
+      label: "API",
+      navLabel: null,
+      type: "reference",
+      incoming: 1,
+      builds: ["site"],
+    },
   ],
   fragments: [
     { path: "_setup.md", includedBy: ["guides/install.md", "index.md"] },
@@ -112,9 +146,33 @@ const navigated: InventoryResult = {
   ...inventory,
   pages: [
     ...inventory.pages,
-    { path: "guides/deep.md", title: "Deep", type: "guide", incoming: 1, builds: ["site"] },
-    { path: "guides/deep/part.md", title: "Part", type: "guide", incoming: 1, builds: ["site"] },
-    { path: "guides/old.md", title: "Old", type: "guide", incoming: 0, builds: ["site"] },
+    {
+      path: "guides/deep.md",
+      title: "Deep",
+      label: "Deep",
+      navLabel: null,
+      type: "guide",
+      incoming: 1,
+      builds: ["site"],
+    },
+    {
+      path: "guides/deep/part.md",
+      title: "Part",
+      label: "Part",
+      navLabel: null,
+      type: "guide",
+      incoming: 1,
+      builds: ["site"],
+    },
+    {
+      path: "guides/old.md",
+      title: "Old",
+      label: "Old",
+      navLabel: null,
+      type: "guide",
+      incoming: 0,
+      builds: ["site"],
+    },
   ],
   fragments: [
     { path: "_setup.md", includedBy: ["guides/install.md", "index.md"] },
@@ -196,6 +254,71 @@ describe("the Pages view", () => {
     expect(pagesPath(pageOf(roots, "guides/install.md"))).toBe("guides/install.md");
   });
 
+  it("draws a page by its nav-label, and Rename Label… offers it, or a section's label", () => {
+    const labelled: InventoryResult = {
+      ...navigated,
+      pages: navigated.pages.map((page) =>
+        page.path === "guides/install.md"
+          ? { ...page, label: "Setup", navLabel: "Setup" }
+          : page.path === "index.md"
+            ? { ...page, label: "Home" }
+            : page,
+      ),
+    };
+    const roots = pagesRoots(labelled);
+    const install = pageOf(roots, "guides/install.md");
+    expect(pagesLook(install).label).toBe("Setup");
+    expect(pagesLook(install).description).toBe("guides/install.md");
+    expect(pagesLook(install).tooltip).toContain("Its nav-label shortens its title, Install");
+    expect(pagesLook(pageOf(roots, "ref/api.md")).tooltip).not.toContain("nav-label");
+    expect(labelRename(install)).toMatchObject({
+      action: "setPageLabel",
+      page: "guides/install.md",
+      value: "Setup",
+    });
+    // With none, its label as the navigation shows it: its title.
+    expect(labelRename(pageOf(roots, "guides/old.md"))).toMatchObject({
+      action: "setPageLabel",
+      page: "guides/old.md",
+      value: "Old",
+    });
+    // A section's own page has a label of its own, in its neighbors' links.
+    expect(labelRename(pageOf(roots, "index.md"))).toMatchObject({
+      action: "setPageLabel",
+      value: "Home",
+    });
+    expect(labelRename(sectionOf(roots, "guides/"))).toMatchObject({
+      action: "setSectionLabel",
+      folder: "guides/",
+      value: "Guides",
+    });
+    expect(labelRename(sectionOf(roots, "ref/"))).toMatchObject({ value: "Reference" });
+    expect(labelRename(pageOf(roots, "_setup.md"))).toBeUndefined();
+    expect(labelRename(nth(roots, roots.length - 1))).toBeUndefined();
+  });
+
+  it("names a page with no title by its file, as the navigation does", () => {
+    const roots = pagesRoots({
+      ...navigated,
+      pages: [
+        ...navigated.pages,
+        {
+          path: "ref/limits.md",
+          title: null,
+          label: "limits",
+          navLabel: null,
+          type: null,
+          incoming: 0,
+          builds: [],
+        },
+      ],
+      navigation: section("", "Start", {
+        sections: [section("ref/", "Reference", { pages: [page("ref/limits.md")] })],
+      }),
+    });
+    expect(pagesLook(pageOf(roots, "ref/limits.md")).label).toBe("limits");
+  });
+
   it("knows each item's parent, so the open page can be revealed", () => {
     const roots = pagesRoots(navigated);
     const part = pageOf(roots, "guides/deep/part.md");
@@ -239,7 +362,15 @@ describe("the Pages view", () => {
   });
 
   it("dims by a line of a versioned build as by any build", () => {
-    const page = { path: "a.md", title: null, type: null, incoming: 0, builds: ["site@3.4"] };
+    const page = {
+      path: "a.md",
+      title: null,
+      label: "a",
+      navLabel: null,
+      type: null,
+      incoming: 0,
+      builds: ["site@3.4"],
+    };
     expect(leftOut(page, "site@3.4")).toBe(false);
     expect(leftOut(page, "site")).toBe(true);
     expect(leftOut(page, "cloud")).toBe(true);
@@ -940,6 +1071,34 @@ describe("the project the sidebar follows", () => {
   it("takes the active file's project when it shows none, or one that's gone", () => {
     expect(followedProject(undefined, "docs", false, known)).toBe("docs");
     expect(followedProject("gone", "docs", false, known)).toBe("docs");
+  });
+});
+
+describe("what the views show while their project's server can't answer", () => {
+  it("leaves a failed server's welcome showing, with its links, under the project's name", () => {
+    // An empty message is what lets the views' welcome, with Show Output and Restart, show.
+    expect(viewsNotice("failed", "quill", undefined)).toEqual({
+      message: "",
+      description: "quill",
+    });
+    expect(viewsNotice("failed", "quill", navigated)).toEqual({
+      message: "",
+      description: "quill",
+    });
+  });
+
+  it("says a server Switch Project started is starting, until it answers", () => {
+    expect(viewsNotice("starting", "docs", undefined)).toEqual({
+      message: "Starting the project's language server.",
+      description: "docs",
+    });
+    expect(viewsNotice("starting", "docs", navigated)).toBeUndefined();
+  });
+
+  it("leaves the rest to the inventory", () => {
+    expect(viewsNotice("running", "docs", undefined)).toBeUndefined();
+    expect(viewsNotice("stopped", "docs", undefined)).toBeUndefined();
+    expect(viewsNotice(undefined, "docs", undefined)).toBeUndefined();
   });
 });
 

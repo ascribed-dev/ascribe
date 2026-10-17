@@ -169,6 +169,32 @@ describe("the Pages view as the navigation of examples/astro-site", () => {
     await saveNav();
   });
 
+  it("renames a page's label, its nav-label, in its frontmatter", async () => {
+    const api = await activated();
+    const options = uriOf("content", "Reference", "Options.md");
+    const labelOf = () =>
+      api.ui.sidebar
+        .items("pages")
+        .flatMap((item) => item.children)
+        .find((item) => item.description === "Reference/Options.md")?.label;
+    assert.equal(
+      await api.ui.sidebar.command("renameLabel", "Reference/Options.md", "`loom.yaml`"),
+      undefined,
+    );
+    const document = await waitFor("Options.md changed", () =>
+      vscode.workspace.textDocuments.find(
+        (d) => d.uri.toString() === options.toString() && d.isDirty,
+      ),
+    );
+    assert.match(document.getText(), /\nnav-label: "`loom.yaml`"\n/);
+    assert.ok(await document.save());
+    // Read as the title is, its code span as plain text.
+    await waitFor("the page's new label", async () => {
+      await api.ui.sidebar.whenSettled();
+      return labelOf() === "loom.yaml";
+    });
+  });
+
   it("moves a page's file, asked first, when it's dropped on another section, and ascribe.nav follows", async () => {
     const api = await activated();
     assert.equal(await api.ui.sidebar.drop("Reference/Defaults.md", "Guides/", false), undefined);

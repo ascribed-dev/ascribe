@@ -108,6 +108,17 @@
           "minimum": 0,
           "type": "integer"
         },
+        "label": {
+          "description": "Its label where it's an entry in a list, as the navigation shows it:\nits `nav-label` as plain text, else its title, else its file name\nwithout `.md`.",
+          "type": "string"
+        },
+        "navLabel": {
+          "description": "The `nav-label` its frontmatter gives it, as written, when it gives\none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "path": {
           "description": "Its content path.",
           "type": "string"
@@ -130,6 +141,8 @@
       "required": [
         "path",
         "title",
+        "label",
+        "navLabel",
         "type",
         "incoming",
         "builds"

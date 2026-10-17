@@ -844,6 +844,17 @@ export interface InventoryPage {
   path: string;
   /** Its title (frontmatter `title`). */
   title: string | null;
+  /**
+   * Its label where it's an entry in a list, as the navigation shows it:
+   * its `nav-label` as plain text, else its title, else its file name
+   * without `.md`.
+   */
+  label: string;
+  /**
+   * The `nav-label` its frontmatter gives it, as written, when it gives
+   * one.
+   */
+  navLabel: string | null;
   /** Its content type; `null` when no one type applies. */
   type: string | null;
   /** How many links from other files, and includes, name it. */

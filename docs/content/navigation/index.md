@@ -39,7 +39,7 @@ nav-label: Keys
 ---
 ```
 
-`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a content type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`.
+`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a content type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`. In the editor, **Rename Label…** in a page's menu in the **Pages** view sets it ([the editor](../editor/index.md#this-page-pages-and-content-model)).
 
 ## The file
 @id: the-file

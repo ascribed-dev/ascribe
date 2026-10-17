@@ -1,4 +1,5 @@
-//! Availability, and the page's frontmatter keys `variant` and `available`.
+//! Availability, and the page's frontmatter keys `variant`, `available`,
+//! and `nav-label`.
 //!
 //! The frontmatter is edited as text, so every other field, comment, and the
 //! key order stay as written: a key's value is replaced, a missing key is
@@ -6,6 +7,7 @@
 
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{Span, TextEdit};
+use ascribe_resolve::NAV_LABEL;
 use ascribe_syntax::{Block, BlockKind, Bound};
 
 use super::{Outcome, Page, Plan, line_end};
@@ -271,6 +273,90 @@ pub(crate) fn set_available(page: &Page<'_>) -> Outcome {
     Ok(Plan::new(vec![edit]))
 }
 
+/// Sets the page's `nav-label`, or takes it out when `label` is missing or
+/// empty. A label already as asked changes nothing.
+pub(crate) fn set_label(page: &Page<'_>) -> Outcome {
+    let label = page.opt_str("label")?;
+    let label = label.as_deref().map(str::trim).filter(|l| !l.is_empty());
+    if label.is_some_and(|l| l.contains(['\n', '\r'])) {
+        return Err("A label is one line.".to_owned());
+    }
+    let nl = page.nl;
+    let Some(label) = label else {
+        // Taken out: the key's lines go, line break and all.
+        let content = match frontmatter(page, "")? {
+            Ok(content) => content,
+            Err(_) => return Ok(Plan::new(Vec::new())),
+        };
+        let Some(key) = frontmatter_key(page, content, NAV_LABEL) else {
+            return Ok(Plan::new(Vec::new()));
+        };
+        let end = if page.source[key.span.end()..].starts_with(nl) {
+            key.span.end() + nl.len()
+        } else {
+            key.span.end()
+        };
+        return Ok(Plan::new(vec![TextEdit::delete(Span::new(
+            key.span.start(),
+            end.min(content.end()),
+        ))]));
+    };
+    let value = yaml_scalar(label);
+    let line = format!("{NAV_LABEL}: {value}");
+    let content = match frontmatter(page, &line)? {
+        Ok(content) => content,
+        Err(add) => return Ok(Plan::new(vec![add])),
+    };
+    let edit = match frontmatter_key(page, content, NAV_LABEL) {
+        Some(key) => {
+            // A comment after a value on the key's line stays.
+            let span = if key.children.is_empty() {
+                Span::new(
+                    key.inline.start(),
+                    key.inline.start() + scalar_len(page.text(key.inline)),
+                )
+            } else {
+                Span::new(key.inline.start(), key.span.end())
+            };
+            if page.text(span) == value {
+                return Ok(Plan::new(Vec::new()));
+            }
+            TextEdit::replace(span, value)
+        }
+        None => TextEdit::insert(content.end(), format!("{line}{nl}")),
+    };
+    Ok(Plan::new(vec![edit]))
+}
+
+/// How much of a value on its key's line is the scalar, before a comment
+/// after it.
+fn scalar_len(text: &str) -> usize {
+    let quote = text.chars().next().filter(|c| matches!(c, '"' | '\''));
+    let end = match quote {
+        Some(q) => {
+            // The closing quote: `\"` escapes one in double quotes, and
+            // `''` is one in single quotes.
+            let mut chars = text.char_indices().skip(1);
+            let mut end = None;
+            while let Some((i, c)) = chars.next() {
+                if q == '"' && c == '\\' {
+                    chars.next();
+                } else if c == q {
+                    if q == '\'' && text[i + 1..].starts_with('\'') {
+                        chars.next();
+                    } else {
+                        end = Some(i + 1);
+                        break;
+                    }
+                }
+            }
+            end
+        }
+        None => text.find(" #").or_else(|| text.find("\t#")),
+    };
+    text[..end.unwrap_or(text.len())].trim_end().len()
+}
+
 pub(crate) fn set_variant(page: &Page<'_>) -> Outcome {
     let model = &page.ctx.model;
     let name = page.str_arg("dimension")?;
@@ -354,4 +440,21 @@ pub(crate) fn set_variant(page: &Page<'_>) -> Outcome {
         key.span.end(),
         format!("{nl}{}{entry}", " ".repeat(indent)),
     )]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::scalar_len;
+
+    #[test]
+    fn a_scalar_ends_before_its_comment() {
+        assert_eq!(scalar_len("Keys"), 4);
+        assert_eq!(scalar_len("Keys # short"), 4);
+        assert_eq!(scalar_len("API keys\t# short"), 8);
+        assert_eq!(scalar_len("C#"), 2);
+        assert_eq!(scalar_len(r#""a # b" # c"#), 7);
+        assert_eq!(scalar_len(r#""a \" b" # c"#), 8);
+        assert_eq!(scalar_len("'it''s' # c"), 7);
+        assert_eq!(scalar_len("\"open"), 5);
+    }
 }

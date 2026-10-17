@@ -390,6 +390,7 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `markAvailable` | A heading (its section), a block, or a table's body row | `spec` (a spec or a feature key) | `@available: …` under the heading or before the block; for a row, `{available=…}` at the end of its first cell |
 | `setPageVariant` | Anywhere in a page | `dimension`, `value` | That dimension's value under `variant:` in the frontmatter, keeping the rest |
 | `setPageAvailable` | Anywhere in a page | `spec` | `available:` in the frontmatter |
+| `setPageLabel` | Any of the project's pages, open or not | `label?` (none or empty to take it out) | `nav-label:` in the frontmatter, a comment after it kept; nothing when it's already so |
 | `linkSelection` | Prose selected in one paragraph or heading | `destination` | A link to `destination`, with the selection as its text |
 | `insertLink` | A cursor in prose | `destination` | A link to `destination` with empty text, so the target's title fills it |
 | `insertPhrase` | A cursor in prose | `key` | `{key}` |
@@ -472,7 +473,8 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 {
   "modelUri": "file:///…/ascribe.toml",
   "contentUri": "file:///…/docs",
-  "pages": [{ "path": "guide.md", "title": "Guide", "type": "page", "incoming": 3 }],
+  "pages": [{ "path": "guide.md", "title": "Guide", "label": "Guide", "navLabel": null,
+             "type": "page", "incoming": 3 }],
   "fragments": [{ "path": "_setup.md", "includedBy": ["guide.md"] }],
   "orphans": ["old.md"],
   "navigation": { "folder": "", "label": "Start", "labelSet": null, "page": "index.md",
@@ -484,6 +486,9 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 ```
 
 - Paths are content paths, relative to `contentUri`, the content root.
+- A page's `label` is its name where it's an entry in a list, as the
+  navigation shows it: its `nav-label` as plain text, else its title, else its
+  file name without `.md`. `navLabel` is the `nav-label` as written, or `null`.
 - `incoming` is how many links from other files, and includes, name the page.
 - `orphans` are the pages whose `incoming` is 0, other than index pages
   (`index.md`, in any folder). A reader may still reach one through a
