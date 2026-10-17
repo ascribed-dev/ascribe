@@ -86,7 +86,7 @@ async function codeFixes(uri: vscode.Uri, range: vscode.Range, kind: string): Pr
         problem: diagnostic?.message,
         disabled: action.disabled !== undefined,
         edits: action.edit !== undefined,
-        fixes: action.diagnostics?.length ?? 0,
+        fixes: action.edit?.entries().reduce((sum, [, edits]) => sum + edits.length, 0) ?? 0,
         severity: diagnostic?.severity,
       },
     ];
@@ -180,7 +180,7 @@ export class ActionsBar {
     this.open = pick;
     pick.show();
 
-    const whole = new vscode.Range(0, 0, document.lineCount, 0);
+    const whole = document.validateRange(new vscode.Range(0, 0, document.lineCount, 0));
     const [context, all, quick] = await Promise.all([
       this.host.context(editor).then(
         (answer) => answer,

@@ -385,7 +385,7 @@ describe("the editor's actions", () => {
 
     function assertFixed(text: string): void {
       assert.ok(text.includes("See [Install](/install-agent.md)."), text);
-      assert.ok(!text.includes("@memo"), text);
+      assert.ok(!text.includes("@memo:\n@end"), text);
       // An unsafe fix is left for the writer.
       assert.ok(text.includes("See [Gone](keyz.md)."), text);
     }

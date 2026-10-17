@@ -63,6 +63,7 @@ describe("a code file a page shows", () => {
 
   it("puts a lens on the first line of a file a page shows whole", async () => {
     const output = uriOf("code", "examples", "greet.out.txt");
+    await vscode.window.showTextDocument(output);
     const [lens] = await lenses(output);
     assert.equal(lens?.range.start.line, 0);
     assert.equal(lens?.command?.title, "Shown in 1 page");

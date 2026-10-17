@@ -17,7 +17,12 @@ export interface Fix {
   disabled: boolean;
   /** Whether it edits the text, rather than only running a command. */
   edits: boolean;
-  /** How many problems it fixes. */
+  /**
+   * How many changes its edit makes. The action that applies a page's safe
+   * fixes makes one for each fix; the problems it fixes don't come back
+   * through `vscode.executeCodeActionProvider`, which drops a code action's
+   * diagnostics.
+   */
   fixes: number;
 }
 
@@ -57,7 +62,7 @@ const listed = (fix: Fix): boolean => fix.edits && !fix.disabled && fix.kind !==
  * The bar's rows: the fixes, then each group of the registry's actions that
  * apply, each group under a separator. A row saying what to try when there's
  * nothing. The action that applies the page's safe fixes comes first among
- * the fixes when it fixes two problems or more; for one, that problem's own
+ * the fixes when it makes two changes or more; for one, that problem's own
  * fix is the same edit.
  */
 export function entries<F extends Fix>(
