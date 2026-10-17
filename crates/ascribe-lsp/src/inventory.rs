@@ -55,8 +55,8 @@ pub struct InventoryResult {
     /// the project's files.
     pub navigation: Option<InventorySection>,
     /// The content model's entries: phrases, features, glossary terms,
-    /// dimensions, note types, widgets, then builds, each kind in
-    /// declaration order.
+    /// dimensions, note types, widgets, builds, then page content types,
+    /// each kind in declaration order.
     pub model: Vec<InventoryEntry>,
 }
 
@@ -144,10 +144,33 @@ pub struct InventoryEntry {
     pub label: Option<String>,
     /// How many places use it; `null` for a build, which pages don't name,
     /// and for a glossary term with `match = "marked"`, whose uses are links
-    /// to its page.
+    /// to its page. For a content type, how many pages have it.
     pub uses: Option<usize>,
     /// Where `ascribe.toml` declares it; `null` for a built-in note type,
-    /// and for an entry that can't be found there.
+    /// the implicit `page` type and `site` build, and an entry that can't be
+    /// found there.
+    #[cfg_attr(
+        feature = "json-schema",
+        schemars(with = "Option<crate::schema::LspRange>")
+    )]
+    pub declaration: Option<Range>,
+    /// A dimension's values, in declaration order; left out for every other
+    /// kind.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<InventoryValue>,
+}
+
+/// A value of a dimension.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct InventoryValue {
+    /// The value, as pages write it.
+    pub value: String,
+    /// Its label, where it has one besides the value.
+    pub label: Option<String>,
+    /// Where the dimension's `values` in `ascribe.toml` has it, inside its
+    /// quotes; `null` when it can't be found there.
     #[cfg_attr(
         feature = "json-schema",
         schemars(with = "Option<crate::schema::LspRange>")
@@ -174,6 +197,8 @@ pub enum ModelKind {
     Widget,
     /// A build.
     Build,
+    /// A page content type.
+    Type,
 }
 
 /// The project's inventory.
@@ -218,6 +243,7 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
         .collect();
     fragments.sort_by(|a, b| a.path.cmp(&b.path));
 
+    let model = model_entries(ctx, &counts, &pages);
     InventoryResult {
         model_uri: crate::uri::path_to_uri(&ctx.config).map(|uri| uri.as_str().to_owned()),
         content_uri: crate::uri::path_to_uri(&ctx.content_dir).map(|uri| uri.as_str().to_owned()),
@@ -228,7 +254,7 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
             snapshot.project(),
             &snapshot.project().navigation().root,
         )),
-        model: model_entries(ctx, &counts),
+        model,
     }
 }
 
@@ -267,7 +293,11 @@ fn is_index(path: &str) -> bool {
     RelPath::parse(path).is_ok_and(|p| p.file_name() == Some("index.md"))
 }
 
-fn model_entries(ctx: &Ctx, counts: &HashMap<Usable, usize>) -> Vec<InventoryEntry> {
+fn model_entries(
+    ctx: &Ctx,
+    counts: &HashMap<Usable, usize>,
+    pages: &[InventoryPage],
+) -> Vec<InventoryEntry> {
     let model = &ctx.model;
     let lines = LineIndex::new(&ctx.model_text);
     let entry =
@@ -279,6 +309,7 @@ fn model_entries(ctx: &Ctx, counts: &HashMap<Usable, usize>) -> Vec<InventoryEnt
                 uses: used.map(|used| counts.get(&used).copied().unwrap_or(0)),
                 declaration: find_entry(&ctx.model_text, &declared)
                     .map(|span| ctx.encoding.range(&lines, span)),
+                values: Vec::new(),
             }
         };
     let mut out = Vec::new();
@@ -312,13 +343,32 @@ fn model_entries(ctx: &Ctx, counts: &HashMap<Usable, usize>) -> Vec<InventoryEnt
         ));
     }
     for d in &model.dimensions {
-        out.push(entry(
+        let mut dimension = entry(
             ModelKind::Dimension,
             &d.name,
             Some(d.label.as_str()).filter(|label| *label != d.name),
             Some(Usable::Dimension(d.name.clone())),
             Entry::Dimension(&d.name),
-        ));
+        );
+        dimension.values = d
+            .values
+            .iter()
+            .map(|v| InventoryValue {
+                value: v.value.clone(),
+                label: Some(v.label.as_str())
+                    .filter(|label| *label != v.value)
+                    .map(str::to_owned),
+                declaration: find_entry(
+                    &ctx.model_text,
+                    &Entry::DimensionValue {
+                        dimension: &d.name,
+                        value: &v.value,
+                    },
+                )
+                .map(|span| ctx.encoding.range(&lines, span)),
+            })
+            .collect();
+        out.push(dimension);
     }
     for n in &model.notes {
         out.push(entry(
@@ -347,6 +397,25 @@ fn model_entries(ctx: &Ctx, counts: &HashMap<Usable, usize>) -> Vec<InventoryEnt
             None,
             Entry::Build(&b.name),
         ));
+    }
+    for t in &model.types {
+        let mut page_type = entry(
+            ModelKind::Type,
+            &t.name,
+            t.purpose.as_deref(),
+            None,
+            Entry::Type(&t.name),
+        );
+        page_type.uses = Some(
+            pages
+                .iter()
+                .filter(|p| p.content_type.as_deref() == Some(t.name.as_str()))
+                .count(),
+        );
+        if t.implicit {
+            page_type.declaration = None;
+        }
+        out.push(page_type);
     }
     out
 }

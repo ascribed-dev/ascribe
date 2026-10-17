@@ -263,7 +263,7 @@ function variantAtCursor(
 }
 
 /** The new name for a phrase or value, starting from its current one. */
-function newNameStep(
+export function newNameStep(
   current: string | undefined,
   validate: (value: string) => string | undefined,
 ): Step {

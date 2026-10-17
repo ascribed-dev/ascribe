@@ -7,7 +7,8 @@
 //! references to `$defs`, and `true` (any value).
 //!
 //! A union with an object among its options (a tagged enum) is written one
-//! option to a line, as Prettier formats it.
+//! option to a line, as Prettier formats it; any other type too wide for a
+//! line is broken as Prettier breaks it.
 //!
 //! An interface lists the required properties in the order the Rust type
 //! declares them, then the optional ones by name.
@@ -51,13 +52,33 @@ pub(super) fn module(defs: &BTreeMap<String, Value>) -> String {
                     out.pop();
                     out.push_str(";\n");
                 }
-                None => {
-                    writeln!(out, "export type {name} = {};", type_of(schema)).ok();
-                }
+                None => alias(&mut out, name, &type_of(schema)),
             },
         }
     }
     out
+}
+
+/// The width Prettier writes the packages' TypeScript to (`printWidth`).
+const WIDTH: usize = 100;
+
+/// `export type {name} = {ty};`, broken as Prettier breaks it when it's too
+/// wide: after the `=`, and then, if it's still too wide, one option of a
+/// union of plain types to a line.
+fn alias(out: &mut String, name: &str, ty: &str) {
+    let line = format!("export type {name} = {ty};");
+    if line.chars().count() <= WIDTH {
+        writeln!(out, "{line}").ok();
+    } else if ty.chars().count() + 3 <= WIDTH || ty.contains(['(', '{', '<']) {
+        writeln!(out, "export type {name} =\n  {ty};").ok();
+    } else {
+        writeln!(out, "export type {name} =").ok();
+        let options: Vec<&str> = ty.split(" | ").collect();
+        for (i, option) in options.iter().enumerate() {
+            let end = if i + 1 == options.len() { ";" } else { "" };
+            writeln!(out, "  | {option}{end}").ok();
+        }
+    }
 }
 
 /// The options of a union that has an object among them, which is written

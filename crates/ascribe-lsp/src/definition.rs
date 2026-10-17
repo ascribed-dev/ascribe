@@ -125,6 +125,8 @@ pub(crate) enum Entry<'a> {
     Widget(&'a str),
     /// A build, by name.
     Build(&'a str),
+    /// A page content type, by name.
+    Type(&'a str),
     /// A value of a dimension, as `values` of `[dimensions.<name>]` lists it.
     DimensionValue {
         /// The dimension's name.
@@ -156,6 +158,7 @@ impl Entry<'_> {
             Entry::Note(name) => Some(format!("notes.{name}")),
             Entry::Widget(name) => Some(format!("widgets.{name}")),
             Entry::Build(name) => Some(format!("builds.{name}")),
+            Entry::Type(name) => Some(format!("types.{name}")),
             Entry::Phrase(_) | Entry::DimensionValue { .. } => None,
         }
     }
@@ -163,11 +166,20 @@ impl Entry<'_> {
 
 /// The span of an entry in the model's text: a phrase's key, the header of
 /// the table that declares a feature, glossary term, dimension, note type,
-/// widget, or build, or a dimension value's text inside its quotes. The
+/// widget, build, or content type, or a dimension value's text inside its
+/// quotes. The
 /// model keeps no spans, so this reads the text; it finds entries written as
 /// tables and keys, which is how `ascribe.toml` declares them.
 pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
     let own_table = entry.table();
+    // A content type declared only through its nested tables,
+    // `[types.page.frontmatter]` without `[types.page]`, is found at the
+    // first one.
+    let nested_prefix = match entry {
+        Entry::Type(name) => Some(format!("types.{name}.")),
+        _ => None,
+    };
+    let mut nested = None;
     let mut table = String::new();
     let mut at = 0;
     for line in text.split_inclusive('\n') {
@@ -186,9 +198,17 @@ pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
                 .chars()
                 .filter(|c| !c.is_whitespace() && *c != '"' && *c != '\'')
                 .collect();
+            let lead = line.len() - line.trim_start().len();
+            let span = Span::new(start + lead, start + lead + trimmed.len());
             if own_table.as_ref() == Some(&table) {
-                let lead = line.len() - line.trim_start().len();
-                return Some(Span::new(start + lead, start + lead + trimmed.len()));
+                return Some(span);
+            }
+            if nested.is_none()
+                && nested_prefix
+                    .as_ref()
+                    .is_some_and(|prefix| table.starts_with(prefix.as_str()))
+            {
+                nested = Some(span);
             }
             continue;
         }
@@ -210,7 +230,7 @@ pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
             }
         }
     }
-    None
+    nested
 }
 
 /// The span of the string `wanted`, inside its quotes, in the TOML array
@@ -291,6 +311,14 @@ mod tests {
         assert_eq!(find(Entry::Note("security")), Some("[notes.security]"));
         assert_eq!(find(Entry::Dimension("pm")), Some("[dimensions.pm]"));
         assert_eq!(find(Entry::Note("tip")), None);
+        let text =
+            "[types.guide]\npurpose = \"Teach\"\n\n[types.guide.frontmatter]\ntitle = \"string\"\n";
+        let span = find_entry(text, &Entry::Type("guide")).expect("found");
+        assert_eq!(&text[span.range()], "[types.guide]");
+        // Declared only through a nested table: found there.
+        let text = "[types.page.frontmatter]\ntitle = \"string\"\n\n[types.pages]\n";
+        let span = find_entry(text, &Entry::Type("page")).expect("found");
+        assert_eq!(&text[span.range()], "[types.page.frontmatter]");
     }
 
     #[test]

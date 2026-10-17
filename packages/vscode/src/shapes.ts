@@ -802,14 +802,20 @@ export interface InventoryEntry {
   /**
    * How many places use it; `null` for a build, which pages don't name,
    * and for a glossary term with `match = "marked"`, whose uses are links
-   * to its page.
+   * to its page. For a content type, how many pages have it.
    */
   uses: number | null;
   /**
    * Where `ascribe.toml` declares it; `null` for a built-in note type,
-   * and for an entry that can't be found there.
+   * the implicit `page` type and `site` build, and an entry that can't be
+   * found there.
    */
   declaration: LspRange | null;
+  /**
+   * A dimension's values, in declaration order; left out for every other
+   * kind.
+   */
+  values?: InventoryValue[];
 }
 
 /** A fragment. */
@@ -872,8 +878,8 @@ export interface InventoryResult {
   navigation: InventorySection | null;
   /**
    * The content model's entries: phrases, features, glossary terms,
-   * dimensions, note types, widgets, then builds, each kind in
-   * declaration order.
+   * dimensions, note types, widgets, builds, then page content types,
+   * each kind in declaration order.
    */
   model: InventoryEntry[];
   /**
@@ -919,6 +925,19 @@ export interface InventorySection {
    * placed.
    */
   listsPages: boolean;
+}
+
+/** A value of a dimension. */
+export interface InventoryValue {
+  /** The value, as pages write it. */
+  value: string;
+  /** Its label, where it has one besides the value. */
+  label: string | null;
+  /**
+   * Where the dimension's `values` in `ascribe.toml` has it, inside its
+   * quotes; `null` when it can't be found there.
+   */
+  declaration: LspRange | null;
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
@@ -1006,7 +1025,8 @@ export interface LspWorkspaceEdit {
 }
 
 /** A kind of content model entry. */
-export type ModelKind = "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build";
+export type ModelKind =
+  "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build" | "type";
 
 /** What a page or fragment is. */
 export interface PageAbout {

@@ -346,7 +346,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
 For people. Read from `packages/vscode/package.json`, `docs/content/_generated/editor-actions.md`.
 
-77 commands, 37 of them actions.
+90 commands, 37 of them actions.
 
 Commands that aren't actions:
 
@@ -384,6 +384,19 @@ Commands that aren't actions:
 | Ascribe: Restart Server | `ascribe.projects.restart` |
 | Ascribe: Place Here | `ascribe.pages.placeHere` |
 | Ascribe: Rename Label… | `ascribe.pages.renameLabel` |
+| Ascribe: Open Preview to the Side | `ascribe.pages.openPreview` |
+| Ascribe: Copy Link | `ascribe.pages.copyLink` |
+| Ascribe: Rename or Move… | `ascribe.pages.renameOrMove` |
+| Ascribe: Find All References | `ascribe.pages.findReferences` |
+| Ascribe: Reveal in Explorer | `ascribe.pages.revealInExplorer` |
+| Ascribe: New Page Here | `ascribe.pages.newPageHere` |
+| Ascribe: Orphans Only | `ascribe.pages.orphansOnly` |
+| Ascribe: Show All Pages | `ascribe.pages.showAll` |
+| Ascribe: Find All References | `ascribe.model.findReferences` |
+| Ascribe: Rename… | `ascribe.model.rename` |
+| Ascribe: Insert at the Cursor | `ascribe.model.insert` |
+| Ascribe: Unused Only | `ascribe.model.unusedOnly` |
+| Ascribe: Show All Entries | `ascribe.model.showAll` |
 | Ascribe: Reply Now | `ascribe.review.replyNow` |
 | Ascribe: Add to Review | `ascribe.review.addToReview` |
 | Ascribe: Resolve | `ascribe.review.resolve` |
@@ -481,10 +494,10 @@ Menus the commands are placed in:
 
 | Menu | Entries |
 |---|---|
-| `commandPalette` | 77 |
+| `commandPalette` | 90 |
 | `editor/title` | 5 |
-| `view/title` | 7 |
-| `view/item/context` | 5 |
+| `view/title` | 11 |
+| `view/item/context` | 15 |
 | `comments/commentThread/context` | 2 |
 | `comments/commentThread/title` | 3 |
 | `explorer/context` | 1 |

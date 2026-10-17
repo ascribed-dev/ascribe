@@ -111,6 +111,34 @@ export async function runWizard(title: string, wizard: Wizard, prompter: Prompte
 }
 
 /**
+ * Answers the steps `preset` names once each, as if chosen there, and shows
+ * the rest with `prompter`: an action run with its entry already chosen, as
+ * Content model's Insert at the Cursor runs Insert a phrase. A pick step's
+ * preset must be one of its choices; one that isn't is asked.
+ */
+export class PresetPrompter implements Prompter {
+  private readonly left: Map<string, Answer>;
+
+  constructor(
+    preset: Answers,
+    private readonly prompter: Prompter,
+  ) {
+    this.left = new Map(Object.entries(preset));
+  }
+
+  show(step: Step, position: Position): Promise<Shown> {
+    const answer = this.left.get(step.key);
+    this.left.delete(step.key);
+    const offered =
+      answer !== undefined &&
+      (step.kind === "text"
+        ? typeof answer === "string" && step.validate(answer) === undefined
+        : [answer].flat().every((value) => step.choices.some((choice) => choice.value === value)));
+    return offered ? Promise.resolve({ answer }) : this.prompter.show(step, position);
+  }
+}
+
+/**
  * An answer a test gives a step: what to choose or type, `"back"` for Back,
  * `null` to cancel, or a function of the step that gives one.
  */
