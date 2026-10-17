@@ -22,8 +22,8 @@
 //! [`Navigation::share`] is a build's share of it: the pages the build
 //! publishes and offers (not `unlisted`), and the sections left with one,
 //! each labeled as the build has its pages: a section's `label` from the
-//! file, else its own page's title, else its folder's name with its first
-//! letter capitalized, and "Start" for the root.
+//! file, else its own page's title, else its folder's name with `-` and `_`
+//! as spaces and its first letter capitalized, and "Start" for the root.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -77,7 +77,8 @@ impl Section {
 
     /// Its label as the source has it, whatever a build publishes: its
     /// `label` from the file, else its own page's title, else its folder's
-    /// name with its first letter capitalized, and "Start" for the root.
+    /// name with `-` and `_` as spaces and its first letter capitalized, and
+    /// "Start" for the root.
     pub fn label(&self, project: &Project) -> String {
         if let Some(label) = &self.label {
             return label.clone();
@@ -92,14 +93,16 @@ impl Section {
     }
 }
 
-/// A folder's name with its first letter capitalized: a section's label
-/// when nothing else gives one.
-fn folder_label(folder: &str) -> String {
+/// A folder's name as a label: its last segment as written, with `-` and
+/// `_` as spaces and its first letter capitalized. A section's label when
+/// nothing else gives one, and its heading in `llms.txt` (decision #585).
+pub(crate) fn folder_label(folder: &str) -> String {
     let name = folder
         .trim_end_matches('/')
         .rsplit('/')
         .next()
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .replace(['-', '_'], " ");
     let mut chars = name.chars();
     match chars.next() {
         Some(first) => first.to_uppercase().chain(chars).collect(),
@@ -418,8 +421,8 @@ impl<'a> Sharer<'a> {
     }
 
     /// A section's label when the file gives none: its own page's title, as
-    /// the build has it or else as written, or its folder's name with its
-    /// first letter capitalized.
+    /// the build has it or else as written, or its folder's name as
+    /// [`folder_label`] has it.
     fn section_label(&self, section: &'a Section) -> (String, Option<&'a [Segment]>) {
         if let Some(own) = &section.page {
             if let Some(page) = self.published.get(own) {

@@ -263,7 +263,8 @@ fn a_build_shows_its_share() {
             // A section's label is its own page's title.
             "  The reference (Reference/index.md)",
             "    Reference/Options.md Options reference",
-            "  Self-managed (-)",
+            // A folder's name has `-` as a space.
+            "  Self managed (-)",
             "    Self-managed/Install.md Install loom guide",
         ]
     );
@@ -279,6 +280,30 @@ fn a_build_with_no_pages_has_an_empty_root() {
     let resolved = p.resolve_build(build, &DefaultRouter::new());
     let share = navigation.share(&p, &resolved);
     assert_eq!(shared(&share), ["Start (-)"]);
+}
+
+#[test]
+fn a_folder_s_name_has_its_hyphens_and_underscores_as_spaces() {
+    let p = project(
+        &[
+            ("getting-started/install.md", page("guide", "Install")),
+            ("api_reference/options.md", page("reference", "Options")),
+        ],
+        None,
+    );
+    let navigation = p.navigation();
+    let labels: Vec<_> = navigation
+        .root
+        .sections
+        .iter()
+        .map(|s| s.label(&p))
+        .collect();
+    assert_eq!(labels, ["Api reference", "Getting started"]);
+    let build = p.model().build("site").expect("a build");
+    let resolved = p.resolve_build(build, &DefaultRouter::new());
+    let share = navigation.share(&p, &resolved);
+    let shared: Vec<_> = share.root.sections.iter().map(|s| &s.label).collect();
+    assert_eq!(shared, ["Api reference", "Getting started"]);
 }
 
 #[test]

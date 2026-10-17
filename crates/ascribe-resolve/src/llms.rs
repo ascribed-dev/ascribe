@@ -36,7 +36,7 @@ use std::collections::BTreeMap;
 use crate::AstroRouter;
 use crate::build::ResolvedPage;
 use crate::index::heading_text;
-use crate::navigation::BuildNavigation;
+use crate::navigation::{BuildNavigation, folder_label};
 use crate::pages::{PageRecord, PageRecords, current_line_router};
 
 /// The version of the delivery spec the outputs for agents follow. Its
@@ -302,7 +302,7 @@ fn sections<'a>(entries: Vec<Entry<'a>>, navigation: &BuildNavigation<'_>) -> Ve
         let heading = match (&nested.section.label, own) {
             (Some(label), _) => label.clone(),
             (None, true) => first.title.clone(),
-            (None, false) => folder_heading(nested.folder),
+            (None, false) => folder_label(nested.folder),
         };
         sections.push(Section {
             key: Some(key),
@@ -318,22 +318,6 @@ fn sections<'a>(entries: Vec<Entry<'a>>, navigation: &BuildNavigation<'_>) -> Ve
     }
     sections.retain(|s| !s.entries.is_empty());
     sections
-}
-
-/// A folder's name as a heading: its last segment as written, with `-` and
-/// `_` as spaces and the first letter capitalized.
-fn folder_heading(folder: &str) -> String {
-    let folder = folder
-        .trim_end_matches('/')
-        .rsplit('/')
-        .next()
-        .unwrap_or_default()
-        .replace(['-', '_'], " ");
-    let mut chars = folder.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().chain(chars).collect(),
-        None => folder,
-    }
 }
 
 /// What an index of a line of a versioned build says about the line: the
@@ -754,11 +738,5 @@ mod tests {
     #[test]
     fn link_text_escapes_brackets_and_folds_lines() {
         assert_eq!(link_text("a [b]\n c\\"), "a \\[b\\] c\\\\");
-    }
-
-    #[test]
-    fn a_folder_heading_is_its_name_capitalized() {
-        assert_eq!(folder_heading("Guides/"), "Guides");
-        assert_eq!(folder_heading("getting-started/"), "Getting started");
     }
 }
