@@ -2854,8 +2854,11 @@
         "enhancement",
         "javascript"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/591"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "The editor's views: chat has Ascribe's skill, and dropped images"
     },
     {
@@ -2871,6 +2874,9 @@
       "labels": [
         "enhancement",
         "rust"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/593"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
@@ -3107,8 +3113,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/582"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBfPmI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/592"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Rename Label… on a page in the Pages view sets its nav-label"
     },
     {
@@ -3139,8 +3148,22 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhBgLDY",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Find All References on a page type in Content model"
+    },
+    {
+      "content": {
+        "body": "Found in the review of #592.\n\n`ascribe_resolve::file_label` (`crates/ascribe-resolve/src/navigation.rs`) reads a page's `nav-label` as plain text when its type's `title` sets `inline`, but falls back to the title as written. So for `examples/astro-site/content/Reference/Options.md`, whose title is ``\"`loom.yaml` options\"``:\n\n- with no `nav-label`, its label is `` `loom.yaml` options ``, backticks and all;\n- with ``nav-label: \"`loom.yaml`\"``, its label is `loom.yaml`.\n\nBoth readers of `file_label` show it: `ascribe model`'s page labels (`crates/ascribe-query/src/model.rs`) and, since #592, the Pages view in the editor.\n\nDone looks like: the title falls back the same way the `nav-label` is read, as plain text when `title` takes inline markup. That changes `ascribe model`'s JSON, so it needs a recorded decision and the `outputs changed` label.",
+        "number": 594,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A page's label keeps a title's backticks but reads a nav-label as plain text",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/594"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhBg0nY",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "A page's label keeps a title's backticks but reads a nav-label as plain text"
     }
   ]
 }
