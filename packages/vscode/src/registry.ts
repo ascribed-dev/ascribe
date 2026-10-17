@@ -2,6 +2,7 @@ import { stat } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
+import { asksForLenses, isCodeFile, lensTitle } from "./codeLens.js";
 import { ChangeBatch, readLayout, startsServer } from "./diskChanges.js";
 import {
   channelName,
@@ -193,6 +194,16 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean {
     return ownedElsewhere(project, uri.fsPath, this.projects);
+  }
+
+  asksForLenses(project: Project, document: vscode.TextDocument): boolean {
+    return asksForLenses(project, document.uri.fsPath, document.languageId, this.projects);
+  }
+
+  lensTitle(project: Project, document: vscode.TextDocument, title: string): string {
+    if (!isCodeFile(document.uri.fsPath, document.languageId)) return title;
+    const answering = this.servers.filter((server) => server.registeredLenses(document)).length;
+    return lensTitle(title, this.name(project), answering);
   }
 
   async dispose(): Promise<void> {

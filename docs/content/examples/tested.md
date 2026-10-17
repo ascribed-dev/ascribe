@@ -76,6 +76,9 @@ An example that's deleted or renamed without a second run leaves its observation
 
 In VS Code, the advice is on the `@snippet` line as you write, and a hover on the address says what the file was tested with, or why it says nothing, and which observations say so. The quick fix **Copy the command** copies the line that runs `ascribe observe` in the example's folder; the editor never runs it. When an observation is written, the advice follows without the page being edited. See [the editor](../editor/index.md#hover).
 
+@available: next
+In the example itself, a lens over each region a page shows says how many pages show it, "Shown in 1 page", and lists them, so you know which pages a change will change before you make it. See [Code files a page shows](../editor/index.md#code-files-a-page-shows).
+
 To check before a commit that an observation still matches the folder, run `ascribe observe --check`, with `--name` for one other than `default`. It runs nothing, not the test and not the environment commands, and exits 1 when the observation is stale or missing, so a pre-commit hook can run it. It's stricter than the pages: a file the config's `include` no longer matches, or one that's gone, counts as a change, though the files still in the observation stay current until the next run.
 
 ## Count a project's examples

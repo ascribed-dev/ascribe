@@ -143,6 +143,13 @@ pub(crate) struct Core {
     pub model_problem: Option<ModelProblem>,
     pub shutdown: bool,
     pub can_watch: bool,
+    /// Whether the client registers lenses dynamically, so the server asks
+    /// for them in its pages and its sources' files ([`Core::register_lenses`]).
+    pub lens_registration: bool,
+    /// Whether the client asks for every lens again when told to.
+    pub lens_refresh: bool,
+    /// The document filters the lenses are registered for now.
+    lens_selector: Option<Vec<lsp_types::DocumentFilter>>,
     /// Whether the worker is computing a round.
     pub computing: bool,
     /// What `ascribe/preview` keeps between requests (`preview.rs`).
@@ -180,6 +187,9 @@ impl Core {
             model_problem: None,
             shutdown: false,
             can_watch: false,
+            lens_registration: false,
+            lens_refresh: false,
+            lens_selector: None,
             computing: false,
             preview_routes: Default::default(),
             page_uses: Default::default(),
@@ -265,6 +275,69 @@ impl Core {
         ));
     }
 
+    /// Registers lenses for the project's pages and its sources' files
+    /// (`shown.rs`), when the client registers them dynamically, and again
+    /// when the content model moves the sources.
+    fn register_lenses(&mut self) {
+        if !self.lens_registration {
+            return;
+        }
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        let selector = crate::shown::selector(&loaded.root, &loaded.model);
+        if self.lens_selector.as_ref() == Some(&selector) {
+            return;
+        }
+        const ID: &str = "ascribe-code-lens";
+        const METHOD: &str = "textDocument/codeLens";
+        if self.lens_selector.is_some() {
+            self.next_id += 1;
+            self.send(Request::new(
+                lsp_server::RequestId::from(self.next_id),
+                "client/unregisterCapability".to_owned(),
+                lsp_types::UnregistrationParams {
+                    unregisterations: vec![lsp_types::Unregistration {
+                        id: ID.to_owned(),
+                        method: METHOD.to_owned(),
+                    }],
+                },
+            ));
+        }
+        // `CodeLensRegistrationOptions`, which lsp-types doesn't have.
+        let options = serde_json::json!({
+            "documentSelector": selector,
+            "resolveProvider": false,
+        });
+        self.next_id += 1;
+        self.send(Request::new(
+            lsp_server::RequestId::from(self.next_id),
+            "client/registerCapability".to_owned(),
+            RegistrationParams {
+                registrations: vec![Registration {
+                    id: ID.to_owned(),
+                    method: METHOD.to_owned(),
+                    register_options: Some(options),
+                }],
+            },
+        ));
+        self.lens_selector = Some(selector);
+    }
+
+    /// Asks the client for every lens again, when it can be asked: after a
+    /// code file a page shows, or what the pages show, changed on disk.
+    fn refresh_lenses(&mut self) {
+        if !self.lens_refresh {
+            return;
+        }
+        self.next_id += 1;
+        self.send(Request::new(
+            lsp_server::RequestId::from(self.next_id),
+            "workspace/codeLens/refresh".to_owned(),
+            serde_json::Value::Null,
+        ));
+    }
+
     // -- The model ----------------------------------------------------------
 
     /// The current text of `ascribe.toml`: the open buffer, or the file.
@@ -314,6 +387,7 @@ impl Core {
                     .and_then(|l| l.model.checks.vale.clone());
                 self.adopt_model(Arc::new(model), text);
                 self.prose_settings_changed(vale.as_ref());
+                self.register_lenses();
             }
         }
         self.publish_model_diagnostics();
@@ -559,6 +633,8 @@ impl Core {
             && matches!(loaded.classify(&path), Some(Kind::Source(..)))
         {
             loaded.across_dirty = true;
+            // What its `@snippet`s show is counted in the code files' lenses.
+            self.refresh_lenses();
         }
         self.queue_prose(&path);
     }
@@ -595,10 +671,16 @@ impl Core {
         let mut changes: Vec<Change> = Vec::new();
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
         let mut visited = Visited::default();
+        let mut refresh = false;
         for event in events {
             let Some(path) = Core::doc_path(&event.uri) else {
                 continue;
             };
+            if let Some(loaded) = self.loaded.as_ref()
+                && crate::shown::in_a_source(&loaded.root, &loaded.model, &path)
+            {
+                refresh = true;
+            }
             if self.config.is_none()
                 && path.file_name().is_some_and(|n| n == MODEL_FILE)
                 && event.typ != FileChangeType::DELETED
@@ -634,6 +716,12 @@ impl Core {
             }
         }
         if !changes.is_empty() {
+            refresh |= changes.iter().any(|change| {
+                matches!(
+                    change,
+                    Change::Edited { .. } | Change::Deleted { .. } | Change::Unreadable { .. }
+                )
+            });
             let reported: Vec<RelPath> = mirror.iter().map(|(path, _)| path.clone()).collect();
             let written: Vec<RelPath> = changes
                 .iter()
@@ -664,6 +752,9 @@ impl Core {
         }
         if sync_model {
             self.sync_model();
+        }
+        if refresh {
+            self.refresh_lenses();
         }
     }
 
@@ -1150,6 +1241,20 @@ impl Core {
             fs: loaded.fs.clone(),
             today: self.today(),
         })
+    }
+
+    /// What a lens request for a file that isn't a page works from: the
+    /// project's context, for a code file in one of its sources, which may
+    /// be outside the project's folder (`shown.rs`), and the file's path.
+    pub(crate) fn lens_target(&self, uri: &Uri) -> Option<(Ctx, PathBuf)> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        if !crate::shown::in_a_source(&loaded.root, &loaded.model, &path) {
+            return None;
+        }
+        let content = RelPath::parse(Ctx::PROJECT).ok()?;
+        let ctx = self.ctx(loaded, loaded.inc.snapshot(), content, &path)?;
+        Some((ctx, path))
     }
 
     /// A project snapshot for workspace-level refactorings.

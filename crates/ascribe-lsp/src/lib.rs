@@ -42,6 +42,7 @@ mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
 mod server;
+mod shown;
 mod targets;
 mod tokens;
 mod uri;

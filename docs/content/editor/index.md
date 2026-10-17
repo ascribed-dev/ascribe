@@ -124,6 +124,13 @@ An agent that runs `ascribe` runs the binary the editor runs. When `ascribe` on 
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
 
+### Code files a page shows
+@available: next
+
+A code file a page shows with [`@snippet`](../writing/directives.md#snippet) says which pages show it: above each region a snippet takes, and on the first line of a file a snippet takes whole, a lens reads "Shown in 3 pages". A page counts once for each `@snippet` in it, and a fragment's `@snippet` counts each page that includes the fragment. Choose the lens to see the places in the references peek, as **Find All References** lists them, and choose one to open the page at its `@snippet`. It's how you find the pages a change to your code will change, as you make it.
+
+The lens is placed from the saved file, as a build reads it: the editor doesn't send code files to the language server. Lines you add above a region leave its lens where the region was until you save the file. It's there for the files of the content model's [sources](../content-model/output.md#18-sourcesname), while the project's language server is running, and nowhere else. A file in more than one project's sources gets a lens from each project, each counting its own pages and naming the project, such as "docs: shown in 3 pages", since those pages are built and published apart.
+
 ### Refactoring
 
 - **Rename or move a file** in the Explorer, and the links and includes that point to it are updated, and so are the glossary terms' `link` and the retired permalinks' `to` in `ascribe.toml` that name it.
@@ -300,6 +307,8 @@ Review runs `git` once you start it. Before that, only the offer does: once you'
 Any editor with a Language Server Protocol client can run `ascribe lsp` from a project installed with `@ascribed/cli`. It speaks LSP over standard input and output. The preview is a VS Code feature.
 
 A server serves one project: the nearest `ascribe.toml` at or above the workspace folder the editor gives it. It never looks below that folder, so a server started at the root of a repository whose projects are all in subfolders has no project. For a workspace with several projects, start one `ascribe lsp` per project, rooted at the folder that holds its `ascribe.toml`, and give each file to the server of the nearest `ascribe.toml` above it. In Neovim, for example, `root_markers = { "ascribe.toml" }` in the server's `vim.lsp.config` does both.
+
+The lens in a code file a page shows comes from the server, so any editor that asks gets it. The server asks for lenses in its sources' files by registering them for those files (`client/registerCapability` for `textDocument/codeLens`), when the editor supports registering lenses; one that doesn't gets the lenses on `@include` in the pages it sends. The lens's command, `ascribe.showReferences`, is the editor's to run, with a file, a position in it, and the places, as VS Code's `editor.action.showReferences` takes them.
 
 When it starts, the server sends a `window/logMessage` at Info with its version and the project it uses: `ascribe-lsp <version>: using the project at <path>`, or, when it finds none, `ascribe-lsp <version>: no ascribe.toml at or above <folder>`. Its other log lines go to standard error. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
 

@@ -54,5 +54,7 @@ mod rename;
 mod review;
 #[path = "all/scenarios.rs"]
 mod scenarios;
+#[path = "all/shown.rs"]
+mod shown;
 #[path = "all/tokens.rs"]
 mod tokens;

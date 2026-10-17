@@ -116,6 +116,16 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             .as_ref()
             .and_then(|g| g.position_encodings.as_deref()),
     );
+    // A client that registers lenses dynamically is asked for them in the
+    // pages and in the sources' files, by one registration (`shown.rs`),
+    // after the project loads; any other gets them in the pages it sends.
+    let lens_registration = params
+        .capabilities
+        .text_document
+        .as_ref()
+        .and_then(|t| t.code_lens.as_ref())
+        .and_then(|c| c.dynamic_registration)
+        .unwrap_or(false);
     let result = InitializeResult {
         capabilities: ServerCapabilities {
             position_encoding: Some(encoding.kind()),
@@ -153,7 +163,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 resolve_provider: Some(false),
                 work_done_progress_options: Default::default(),
             }),
-            code_lens_provider: Some(CodeLensOptions {
+            code_lens_provider: (!lens_registration).then_some(CodeLensOptions {
                 resolve_provider: Some(false),
             }),
             inlay_hint_provider: Some(OneOf::Left(true)),
@@ -192,6 +202,14 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .as_ref()
         .and_then(|w| w.did_change_watched_files.as_ref())
         .and_then(|c| c.dynamic_registration)
+        .unwrap_or(false);
+    core.lens_registration = lens_registration;
+    core.lens_refresh = params
+        .capabilities
+        .workspace
+        .as_ref()
+        .and_then(|w| w.code_lens.as_ref())
+        .and_then(|c| c.refresh_support)
         .unwrap_or(false);
     core.folders = workspace_folders(&params);
     core.prose.can_ask = params
@@ -437,13 +455,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            CodeLensRequest::METHOD => {
-                navigation(shared, &request, |p: lsp_types::CodeLensParams| {
-                    (p.text_document.uri, |ctx: &Ctx| {
-                        Some(crate::links::code_lenses(ctx))
-                    })
-                })
-            }
+            CodeLensRequest::METHOD => code_lens_request(shared, &request),
             InlayHintRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::InlayHintParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {
@@ -652,6 +664,30 @@ fn config_completion(shared: &Shared, request: &Request) -> Option<Vec<lsp_types
     shared
         .lock()
         .config_completion(&at.text_document.uri, at.position)
+}
+
+/// Lenses: on a page's `@include`s, and in a code file a `@snippet` shows,
+/// how many pages show it (`shown.rs`). A file that's neither has no answer
+/// (`null`).
+fn code_lens_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::CodeLensParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri;
+    let (page, code) = {
+        let core = shared.lock();
+        (core.nav_target(&uri), core.lens_target(&uri))
+    };
+    if page.is_none() && code.is_none() {
+        return Ok(serde_json::Value::Null);
+    }
+    let mut lenses = page
+        .as_ref()
+        .map(crate::links::code_lenses)
+        .unwrap_or_default();
+    if let Some((ctx, path)) = &code {
+        lenses.extend(crate::shown::lenses(ctx, path));
+    }
+    to_json(request, lenses)
 }
 
 /// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`

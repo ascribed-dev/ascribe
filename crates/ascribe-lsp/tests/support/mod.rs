@@ -45,6 +45,9 @@ pub struct Setup {
     /// Whether the client says it handles `window/showMessageRequest`,
     /// and the title of the action it picks; `None` picks none.
     pub ask: Option<Option<&'static str>>,
+    /// Whether the client registers lenses dynamically and asks for them
+    /// again when told to, as VS Code does.
+    pub lenses: bool,
 }
 
 impl Default for Setup {
@@ -54,6 +57,7 @@ impl Default for Setup {
             watch: true,
             options: Options::default(),
             ask: None,
+            lenses: false,
         }
     }
 }
@@ -106,13 +110,21 @@ impl Client {
         if setup.ask.is_some() {
             window["showMessage"] = json!({});
         }
+        let mut workspace =
+            json!({ "didChangeWatchedFiles": { "dynamicRegistration": setup.watch } });
+        let mut text_document = json!({});
+        if setup.lenses {
+            workspace["codeLens"] = json!({ "refreshSupport": true });
+            text_document["codeLens"] = json!({ "dynamicRegistration": true });
+        }
         let params = json!({
             "processId": null,
             "rootUri": null,
             "workspaceFolders": [{ "uri": uri(root).as_str(), "name": "w" }],
             "capabilities": {
                 "general": general,
-                "workspace": { "didChangeWatchedFiles": { "dynamicRegistration": setup.watch } },
+                "workspace": workspace,
+                "textDocument": text_document,
                 "window": window,
             },
         });

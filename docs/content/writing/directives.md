@@ -505,6 +505,9 @@ labels = { macos = "macOS" }  # :remove:
 
 Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](../checks/diagnostics/directives.md) in the diagnostics reference.
 
+@available: next
+In VS Code, the code file says which pages show it: a lens over each region a snippet takes, and on the first line of a file a snippet takes whole, counts the pages and lists them. See [Code files a page shows](../editor/index.md#code-files-a-page-shows).
+
 ### `@intended`
 @available: ascribe 0.3.0
 

@@ -34,6 +34,12 @@
 //   templates   a copy of examples/templates, the six page types with their
 //               templates, New Page and Go to Next Placeholder, against the
 //               real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   tested      a copy of examples/tested, the lens in a code file a page
+//               shows, against the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   shared      test/fixtures/shared-sources made into a git repository: two
+//               projects whose sources share a folder, a lens from each in
+//               the code file, against the real `ascribe lsp`. Needs
+//               ASCRIBE_BIN and `git`.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -214,6 +220,23 @@ const suites: Suite[] = [
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
   {
+    name: "tested",
+    fixture: path.join(repositoryRoot, "examples/tested"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
+    name: "shared",
+    fixture: path.join(packageRoot, "test/fixtures/shared-sources"),
+    prepare: (workspace) => {
+      // A source outside its project is read inside the repository around it.
+      const git = gitIn(workspace);
+      git("init", "-q", "-b", "main");
+      git("add", "-A");
+      git("commit", "-q", "-m", "Two projects");
+      return { "ascribe.path": realServer, ...startAll };
+    },
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The file watcher's trace, to see why it missed a file if it does (#56).
@@ -246,6 +269,8 @@ const needsServer = new Set([
   "site",
   "lens",
   "templates",
+  "tested",
+  "shared",
   "monorepo",
 ]);
 
