@@ -642,7 +642,12 @@ tokens (full and range), the position encoding, and completion
 document links, CodeLens, inlay hints, code actions, document formatting, folding
 ranges, rename (with `prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
-`workspace/didChangeWatchedFiles`.
+`workspace/didChangeWatchedFiles`, and `textDocument/codeLens` (below), which
+is then not advertised. Code actions advertise their kinds: `quickfix`, and
+`source.fixAll.ascribe`, every safe fix of a source file's published problems
+in one edit, settled as `ascribe check --fix` settles them
+(`ascribe_check::fix::Settled`); it's offered only when what was published is
+for the document's version.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
 
@@ -752,6 +757,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `definition.rs` | Go to definition |
 | `references.rs` | Find all references |
 | `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
+| `shown.rs` | "Shown in N pages", the CodeLens in a code file a `@snippet` shows, and the registration for the sources' files |
 | `folding.rs` | Folding ranges |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
@@ -811,6 +817,20 @@ clickable, with `#L<line>` for a heading. **CodeLens** puts
 language client wires from the capability): it answers by sending
 `window/showDocument`, so **no client code is needed**. **Inlay hints**
 show the resolved title inside the `[` of an empty-text link.
+
+**"Shown in N pages"** is a CodeLens in a code file a `@snippet` shows: on a
+region's start tag line, and on the first line for a file shown whole,
+counting the pages that show it (a fragment's `@snippet` counts each page that
+includes the fragment). A client that registers lenses dynamically gets one
+registration, `ascribe-code-lens`, whose filters are the project's pages
+(Markdown under its folder) and each source's folder with its `include`
+patterns, registered again when `ascribe.toml` moves them; its code files are
+never sent, and the regions are read from disk through `FileSystem`. A file
+change on disk under a source, or a source saved, sends
+`workspace/codeLens/refresh` when the client supports it. The lens's command,
+`ascribe.showReferences`, is the client's: its arguments are the file's URI, a
+position, and the `@snippet` lines as locations, as VS Code's
+`editor.action.showReferences` takes them.
 
 ## Performance
 

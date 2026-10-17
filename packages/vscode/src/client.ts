@@ -18,7 +18,7 @@ import { CrashCounter } from "./crash.js";
 import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { globFolder, type Project } from "./projects.js";
-import { scopeMiddleware } from "./scope.js";
+import { scopeMiddleware, type LensScope } from "./scope.js";
 import { ServerStatus, type ServerState } from "./serverState.js";
 import { parseVersion } from "./version.js";
 
@@ -34,6 +34,10 @@ export interface ProjectHost {
   channelName(project: Project): string;
   /** Whether a file belongs to some other project than `project`, or to none. */
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
+  /** Whether `project`'s server is asked for a document's lenses (`codeLens.ts`). */
+  asksForLenses(project: Project, document: vscode.TextDocument): boolean;
+  /** A lens's title in a document as the editor shows it, named for `project` where two answer. */
+  lensTitle(project: Project, document: vscode.TextDocument, title: string): string;
 }
 
 /**
@@ -54,6 +58,8 @@ export class ProjectServer implements vscode.Disposable {
   private runningSince: number | undefined;
   /** The diagnostics the running server last published for each file, with their versions. */
   readonly published: PublishedDiagnostics;
+  /** The files the running server registered its lenses for (`shown.rs` in crates/ascribe-lsp). */
+  private lensSelector: vscode.DocumentFilter[] | undefined;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -63,6 +69,13 @@ export class ProjectServer implements vscode.Disposable {
     this.crashes = new CrashCounter(readMaxCrashes());
     this.published = new PublishedDiagnostics(fileOfUri, (file) =>
       host.ownedElsewhere(project, vscode.Uri.file(file)),
+    );
+  }
+
+  /** Whether the running server registered its lenses for a document. */
+  registeredLenses(document: vscode.TextDocument): boolean {
+    return (
+      this.lensSelector !== undefined && vscode.languages.match(this.lensSelector, document) > 0
     );
   }
 
@@ -265,6 +278,12 @@ export class ProjectServer implements vscode.Disposable {
           (error) => this.reportFeatureError("preparing workspace rename", error),
           (message) => {
             if (isPublication(message)) this.published.record(message.params);
+            const lenses = lensRegistration(message);
+            if (lenses !== undefined) this.lensSelector = lenses ?? undefined;
+          },
+          {
+            asks: (document) => this.host.asksForLenses(this.project, document),
+            title: (document, title) => this.host.lensTitle(this.project, document, title),
           },
         ),
         errorHandler: this.errorHandler(),
@@ -298,6 +317,7 @@ export class ProjectServer implements vscode.Disposable {
     this.client = undefined;
     this.runningSince = undefined;
     this.published.clear();
+    this.lensSelector = undefined;
     this.status.set("stopped");
     if (!client) return;
     try {
@@ -345,7 +365,9 @@ export class ProjectServer implements vscode.Disposable {
  * server's only command; the extension registers it in `extension.ts`. A
  * command the server adds needs the same treatment. `ascribe.copyCommand`
  * (`COPY_COMMAND` in crates/ascribe-lsp/src/examples.rs), which a quick fix
- * carries, is the extension's own, and never reaches the server.
+ * carries, and `ascribe.showReferences` (`SHOW_REFERENCES` in
+ * crates/ascribe-lsp/src/shown.rs), which a lens in a code file carries, are
+ * the extension's own, and never reach the server.
  */
 class ProjectClient extends LanguageClient {
   override registerFeature(feature: Parameters<LanguageClient["registerFeature"]>[0]): void {
@@ -400,8 +422,9 @@ function clientOptions(
   ownedElsewhere: (uri: vscode.Uri) => boolean,
   reportRenameError: (error: unknown) => void,
   observe: (message: Message) => void,
+  lenses: LensScope,
 ): LanguageClientOptions {
-  const scope = scopeMiddleware(ownedElsewhere);
+  const scope = scopeMiddleware(ownedElsewhere, lenses);
   const folder = globFolder(project.folder);
   const folderUri = vscode.Uri.file(project.folder);
   return {
@@ -456,6 +479,30 @@ function isPublication(message: Message): message is Message & { params: unknown
     !("id" in message) &&
     "params" in message
   );
+}
+
+/** The id of the server's lens registration (`register_lenses` in crates/ascribe-lsp/src/core.rs). */
+const LENS_REGISTRATION = "ascribe-code-lens";
+
+/**
+ * What a message from the server says about its lenses: the document filters
+ * of a registration, `null` when it drops it, `undefined` when it isn't about them.
+ */
+function lensRegistration(message: Message): vscode.DocumentFilter[] | null | undefined {
+  if (!("method" in message) || !("params" in message)) return undefined;
+  const params = message.params as {
+    registrations?: { id?: unknown; registerOptions?: { documentSelector?: unknown } }[];
+    unregisterations?: { id?: unknown }[];
+  } | null;
+  if (message.method === "client/registerCapability") {
+    const found = params?.registrations?.find((r) => r.id === LENS_REGISTRATION);
+    const selector = found?.registerOptions?.documentSelector;
+    return Array.isArray(selector) ? (selector as vscode.DocumentFilter[]) : undefined;
+  }
+  if (message.method === "client/unregisterCapability") {
+    return params?.unregisterations?.some((r) => r.id === LENS_REGISTRATION) ? null : undefined;
+  }
+  return undefined;
 }
 
 /** A `file:` URI's path; `undefined` for any other URI, or one that doesn't parse. */

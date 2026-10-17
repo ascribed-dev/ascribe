@@ -2,6 +2,14 @@ import * as vscode from "vscode";
 import type { Middleware } from "vscode-languageclient/node";
 import { followableScheme } from "./linkSchemes.js";
 
+/** How a server's lenses are scoped: which files it's asked for, and what their titles say. */
+export interface LensScope {
+  /** Whether the server is asked for a document's lenses. */
+  asks(document: vscode.TextDocument): boolean;
+  /** A lens's title as the editor shows it in a document. */
+  title(document: vscode.TextDocument, title: string): string;
+}
+
 /**
  * Middleware that keeps a server from seeing files that aren't its project's.
  * A document selector can only include a folder, so a parent project's
@@ -11,8 +19,14 @@ import { followableScheme } from "./linkSchemes.js";
  * request, pushed diagnostics, watched-file events, and renames.
  *
  * `excluded` says whether a file belongs to another project, or to none.
+ * `lenses`, when given, decides the lens requests instead: a code file a page
+ * shows is never sent to a server, and its lenses are asked for from every
+ * server whose registration covers it (`codeLens.ts`).
  */
-export function scopeMiddleware(excluded: (uri: vscode.Uri) => boolean): Middleware {
+export function scopeMiddleware(
+  excluded: (uri: vscode.Uri) => boolean,
+  lenses?: LensScope,
+): Middleware {
   const skip = (document: vscode.TextDocument) => excluded(document.uri);
   return {
     didOpen: (document, next) => (skip(document) ? Promise.resolve() : next(document)),
@@ -33,7 +47,16 @@ export function scopeMiddleware(excluded: (uri: vscode.Uri) => boolean): Middlew
     provideDeclaration: (d, p, t, next) => (skip(d) ? undefined : next(d, p, t)),
     provideDocumentColors: (d, t, next) => (skip(d) ? undefined : next(d, t)),
     provideCodeActions: (d, r, c, t, next) => (skip(d) ? undefined : next(d, r, c, t)),
-    provideCodeLenses: (d, t, next) => (skip(d) ? undefined : next(d, t)),
+    provideCodeLenses: async (d, t, next) => {
+      if (lenses ? !lenses.asks(d) : skip(d)) return undefined;
+      const found = await next(d, t);
+      if (lenses) {
+        for (const lens of found ?? []) {
+          if (lens.command) lens.command.title = lenses.title(d, lens.command.title);
+        }
+      }
+      return found;
+    },
     provideDocumentFormattingEdits: (d, o, t, next) => (skip(d) ? undefined : next(d, o, t)),
     provideDocumentRangeFormattingEdits: (d, r, o, t, next) =>
       skip(d) ? undefined : next(d, r, o, t),
