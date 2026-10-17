@@ -822,6 +822,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `getting-started.md` | Getting started | tutorial |
 | `index.md` | Ascribe documentation | index |
 | `navigation/index.md` | Navigation | reference |
+| `navigation/order.md` | Put your pages in order | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
 | `review/diff.md` | `ascribe diff`, `drift`, and `report` | reference |
 | `review/index.md` | Review | how-to |
