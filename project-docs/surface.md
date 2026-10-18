@@ -836,8 +836,15 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/permalinks-list.md` | The permalinks list | reference |
 | `contracts/site-render.md` | Site-render contract | reference |
 | `contracts/tested-examples.md` | Tested examples contract | reference |
+| `editor/actions.md` | Actions, new pages, and memos | reference |
+| `editor/agents.md` | Agents in the editor | reference |
 | `editor/index.md` | Editing | reference |
+| `editor/preview.md` | The preview and builds | reference |
+| `editor/problems.md` | Problems and fixes | reference |
+| `editor/review.md` | Review in the preview | reference |
 | `editor/settings.md` | Editor workspaces, settings, and commands | reference |
+| `editor/sidebar.md` | The Ascribe sidebar | reference |
+| `editor/writing.md` | Writing in the editor | reference |
 | `examples/index.md` | Drift | how-to |
 | `examples/sources.md` | `ascribe init`, `sources`, `observe`, `permalinks`, `templates`, and `vale` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |

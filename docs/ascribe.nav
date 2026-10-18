@@ -27,6 +27,16 @@ folder = "review/"
 [[sections]]
 folder = "editor/"
 label = "The editor"
+pages = [
+  "problems.md",
+  "writing.md",
+  "actions.md",
+  "preview.md",
+  "sidebar.md",
+  "review.md",
+  "agents.md",
+  "settings.md",
+]
 
 [[sections]]
 folder = "agents/"

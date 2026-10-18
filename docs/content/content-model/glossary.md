@@ -47,7 +47,7 @@ pages = ["glossary.md"]
 
 Run `ascribe check`. Every other page now links the first place it uses each term to the term's heading. `@term` on a page `pages` doesn't list is an error, `term-off-glossary-page`, and the editor's quick fix for it lists the page.
 
-Once the page is listed, the editor can write a term for you: select a word in a page, press `Ctrl+K A` (`Cmd+K A` on macOS), and choose **Add to the glossary**. It adds the heading, `@term`, and the definition you give it to the glossary page. See [Changing the content model](../editor/index.md#changing-the-content-model).
+Once the page is listed, the editor can write a term for you: select a word in a page, press `Ctrl+K A` (`Cmd+K A` on macOS), and choose **Add to the glossary**. It adds the heading, `@term`, and the definition you give it to the glossary page. See [Changing the content model](../editor/actions.md#changing-the-content-model).
 
 ## Choose which occurrences are linked
 
@@ -170,7 +170,7 @@ The element library underlines a term's link with dots. A site restyles it, or s
 
 Writers get the definitions too:
 
-- **In the editor,** hovering over a term shows its definition, **Go to Definition** opens its heading, and **Find All References** lists its uses. See [the editor](../editor/index.md#hover).
+- **In the editor,** hovering over a term shows its definition, **Go to Definition** opens its heading, and **Find All References** lists its uses. See [the editor](../editor/writing.md#hover).
 - **From the command,** `ascribe refs term:api-key` lists a term's uses, and `ascribe model --section glossary` lists the project's terms, which is how an agent learns them.
 
 ## See also

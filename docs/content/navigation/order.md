@@ -43,7 +43,7 @@ Run `ascribe check`. A name that isn't a page, or a folder that isn't a section,
 
 ## Or drag them in the editor
 
-In VS Code, the Ascribe sidebar's **Pages** view shows the navigation. Drag a page or a section to where you want it, and the view writes `ascribe.nav` for you, keeping its comments; the file opens with the change unsaved. Dragging a page onto another section moves the file, after asking. See [the editor](../editor/index.md#this-page-pages-and-content-model).
+In VS Code, the Ascribe sidebar's **Pages** view shows the navigation. Drag a page or a section to where you want it, and the view writes `ascribe.nav` for you, keeping its comments; the file opens with the change unsaved. Dragging a page onto another section moves the file, after asking. See [the editor](../editor/sidebar.md#this-page-pages-and-content-model).
 
 ## Give a section or a page a short label
 

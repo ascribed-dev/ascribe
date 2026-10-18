@@ -32,7 +32,7 @@ Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 
 The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened or changed shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
 
-A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](index.md#the-status-bar) says so: **docs · site · problems: this build only**.
+A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel until you check every build. While a project has several builds and the panel holds the editor build's problems alone, the [status bar](preview.md#the-status-bar) says so: **docs · site · problems: this build only**.
 
 @available: ascribe 0.3.0
 **Ascribe: Check Every Build** (also **Check every build** in the status bar's menu) runs `ascribe check` over every build of the active file's project, as it reads the files on disk, and adds the problems the server doesn't show to the Problems panel: those of other builds, each naming the builds it's in (`only in build cloud`), and those of the checks the editor doesn't run, such as `image-unused`. It says how many problems it found in all, and how many it added. When a file changes, the problems it added to that file go, since they may have moved, and the status bar says the panel covers the editor's build alone again, until you run it again. In a workspace with several projects and no file of one active, it asks which project to check.
@@ -47,7 +47,7 @@ npx ascribe check --config handbook
 
 ### Commands and output
 
-Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](index.md#the-status-bar) names that project. The sidebar shows it too, and [Switch Project](index.md#switch-project) lists them all and shows another in the sidebar until a file of another project is active. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
+Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](preview.md#the-status-bar) names that project. The sidebar shows it too, and [Switch Project](sidebar.md#switch-project) lists them all and shows another in the sidebar until a file of another project is active. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
 
 Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
 

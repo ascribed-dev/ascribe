@@ -1,6 +1,6 @@
 # Developing the VS Code extension
 
-How the extension is built and tested. The user guide is the [README](README.md) and [docs/content/editor/index.md](../../docs/content/editor/index.md).
+How the extension is built and tested. The user guide is the [README](README.md) and [docs/content/editor/](../../docs/content/editor/index.md).
 
 ## Running it locally
 
@@ -32,7 +32,7 @@ The server logs to the development window's **Ascribe** output channels (**Ascri
 
 ## Projects
 
-`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or changes on disk, or at discovery with `ascribe.startServers: "all"`. For changes on disk, the registry keeps one watcher per workspace folder (`**/*`) and hands what it reports to `src/diskChanges.ts`, which gathers a burst (`ChangeBatch`) and decides from each idle project's `[project]` and `[sources]` paths whether a file is the project's (`startsServer`); `test/unit/diskChanges.test.ts` checks both without VS Code. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/content/editor/index.md](../../docs/content/editor/settings.md#workspaces-with-several-projects).
+`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or changes on disk, or at discovery with `ascribe.startServers: "all"`. For changes on disk, the registry keeps one watcher per workspace folder (`**/*`) and hands what it reports to `src/diskChanges.ts`, which gathers a burst (`ChangeBatch`) and decides from each idle project's `[project]` and `[sources]` paths whether a file is the project's (`startsServer`); `test/unit/diskChanges.test.ts` checks both without VS Code. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/content/editor/settings.md](../../docs/content/editor/settings.md#workspaces-with-several-projects).
 
 ## The preview
 
@@ -160,7 +160,7 @@ for theme colors it can't read.
   `light`, `dark`, `highContrast`, and `highContrastLight` defaults, each a
   reference to a built-in color where one fits. An id is public once released,
   since users override it in `workbench.colorCustomizations`, so it's listed in
-  `docs/content/editor/index.md`. None is declared today.
+  `docs/content/editor/settings.md`. None is declared today.
 - **Icons.** [Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
   for everything they cover, the same one for a concept everywhere:
 

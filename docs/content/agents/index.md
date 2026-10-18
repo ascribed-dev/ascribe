@@ -216,7 +216,7 @@ In VS Code, the extension offers the server itself: see [VS Code](index.md#vs-co
 
 ## VS Code
 
-The [Ascribe extension](../editor/index.md) gives an agent in VS Code, such as GitHub Copilot in agent mode, what it gives you:
+The [Ascribe extension](../editor/agents.md#agents-in-vs-code) gives an agent in VS Code, such as GitHub Copilot in agent mode, what it gives you:
 
 - **Problems as the agent edits.** An agent that writes files without opening them still gets their problems: a project's language server starts when one of its files changes on disk, and the Problems panel shows them, where Copilot can read them after its edits. Like the panel, they're the editor's build's; the hooks and `ascribe check` cover every build. See [When servers start](../editor/settings.md#when-servers-start).
 - **The MCP server, with nothing to set up.** The extension offers `ascribe mcp` to VS Code's agents itself, named **Ascribe** in VS Code's list of MCP servers, so there's no file to write. Its prompts, `new-page`, `fix`, and `review`, appear as slash commands in the chat.
@@ -227,7 +227,7 @@ The [Ascribe extension](../editor/index.md) gives an agent in VS Code, such as G
 @available: next
 - **The skill, with nothing to set up.** The extension gives VS Code's chat [the skill](index.md#the-skill) in a project that never ran `ascribe agents sync`. Once a workspace folder has a synced copy, in `.agents/skills/ascribe/`, `.claude/skills/ascribe/`, or `.github/skills/ascribe/`, chat lists that one, the project's, and not the extension's. VS Code reads those folders at the top of each workspace folder, and `sync` writes at the repository's root, so a workspace opened at a project below the root, such as `docs/`, gets the extension's copy even after `sync`.
 
-See [Agents in VS Code](../editor/index.md#agents-in-vs-code).
+See [Agents in VS Code](../editor/agents.md#agents-in-vs-code).
 
 ## Hooks
 

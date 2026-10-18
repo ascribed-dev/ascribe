@@ -39,7 +39,7 @@ See [Files](writing/directives.md#files) and [`@include`](writing/directives.md#
 
 The editor's preview of the active page, rendered as the site shows it.
 
-See [the preview](editor/index.md#preview).
+See [the preview](editor/preview.md).
 
 ## Phrase
 @term {aliases=phrases, match=marked}
@@ -53,7 +53,7 @@ See [Phrases](writing/directives.md#phrases).
 
 The active page on the project's own dev server, in the browser or the preview panel.
 
-See [the site preview](editor/index.md#site-preview).
+See [the site preview](editor/preview.md#site-preview).
 
 ## Variant
 @term {aliases=variants, match=marked}

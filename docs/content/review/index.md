@@ -43,7 +43,7 @@ Once you've used review in a workspace, opening a page of a branch with an open 
 **Ascribe: Changed Pages** (also the list button in the preview's title bar, and the status bar item) lists every page the pull request changes, with what changed on each. A page whose own file didn't change says what it changed through, such as `_fragments/requirements.md` or `ascribe.toml`. Choose one to open it and its page preview.
 
 @available: next
-The **Review** view, first in the Ascribe sidebar while review is on, lists the same pages under **Added**, **Changed**, and **Removed**, each with its counts and open threads, and the problems on them. Choose a page to open it and its preview at its first change. To read a page's source changes, use its diff button, which shows its file and what it changed through, on a branch of any size; **Open Source Changes**, in the view's title bar, shows every changed source file in one diff. See [The Review view](../editor/index.md#the-review-view).
+The **Review** view, first in the Ascribe sidebar while review is on, lists the same pages under **Added**, **Changed**, and **Removed**, each with its counts and open threads, and the problems on them. Choose a page to open it and its preview at its first change. To read a page's source changes, use its diff button, which shows its file and what it changed through, on a branch of any size; **Open Source Changes**, in the view's title bar, shows every changed source file in one diff. See [The Review view](../editor/review.md#the-review-view).
 
 In the preview, changed blocks have a bar in the margin and a label: **Added**, **Changed** (with the changed words highlighted), **Removed** (shown where it was, struck through), and **Moved** (linked to where it came from). The header says how many changes the page has; the arrows step through them ("3 of 7 on this page"), and past the last one offer the next changed page. **Changes / As it will be / As it was** switches between the marks and the page without them, before and after. Click a mark's label to open its source lines.
 
@@ -55,7 +55,7 @@ The pull request's comments sit beside the blocks they're about, each thread wit
 - **To reply,** open the thread and write a reply. **Add to review** keeps it with your unsent comments. **Reply now** sends it at once, while you have no unsent comments.
 - **To resolve a thread,** choose **Resolve**. It's resolved on GitHub at once. **Reopen** undoes it.
 
-The same threads show on their lines in the source editor, where you can reply and comment too (see [Comments in the preview](../editor/index.md#comments-in-the-preview)).
+The same threads show on their lines in the source editor, where you can reply and comment too (see [Comments in the preview](../editor/review.md#comments-in-the-preview)).
 
 To hand a comment to your agent, choose **Prompt agent** on its thread. **More review actions** (**⋯**) in the header prompts your agent to review the page, or the pages a changed fragment reaches. [In review](../agents/index.md#in-review) has what each prompt says.
 

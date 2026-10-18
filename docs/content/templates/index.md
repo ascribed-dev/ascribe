@@ -97,7 +97,7 @@ Their guide says what belongs in a page of each kind, and it's written for any t
 
 ## Start a page
 
-In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with its type and title set, in the content root, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](../editor/index.md#start-a-page)).
+In VS Code, run **Ascribe: New Page** from the Command Palette, from the **Pages** view's title bar, or on a folder in the Explorer. It asks for the type, each with what it's for, and the page's title, then makes the page from the type's template with its type and title set, in the content root, or in the folder you ran it on. The page opens with the first thing to fill in selected, usually the description, so typing replaces it, and **Ascribe: Go to Next Placeholder** selects the next. It never writes over a file. A type with no template gives a page with its frontmatter, so it works in any project ([editor guide](../editor/actions.md#start-a-page)).
 
 Without the editor:
 
@@ -132,7 +132,7 @@ There's no command that writes the page for you at the terminal: copying the fil
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
 
 @available: next
-In VS Code, the sidebar's [This page](../editor/index.md#this-page-pages-and-content-model) says how many are left on the page, and choosing the row goes to the next one.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page-pages-and-content-model) says how many are left on the page, and choosing the row goes to the next one.
 
 @available: next
 A memo the page keeps from its template isn't reported, and **Go to Next Placeholder** passes over it: it's never published, so what to do with it is yours to decide. A placeholder in a block quote is reported as any other is.

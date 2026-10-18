@@ -23,7 +23,7 @@ The diagnostics are on four pages, by what they're about:
 
 Each entry ends with the section of the [directive reference](../writing/directives.md) or the [`ascribe.toml` reference](../content-model/index.md) about what it checks, which has examples, and links to its part of the specification.
 
-In the editor, many diagnostics offer a quick fix. See [Editing](../editor/index.md).
+In the editor, many diagnostics offer a quick fix. See [Quick fixes](../editor/problems.md#quick-fixes).
 
 ## What to do next
 

@@ -71,7 +71,7 @@ When the reason is longer than a few lines, or it's about something with no line
 4. Write the reason after the frontmatter, as long as it needs to be.
 5. Run `ascribe check`. It reports a memo file that names nothing, or whose quote it can't find.
 
-In VS Code, **Ascribe: Add a memo** does the first three steps for you, from the cursor and the text you've selected: see [Memo files in the editor](../editor/index.md#memo-files).
+In VS Code, **Ascribe: Add a memo** does the first three steps for you, from the cursor and the text you've selected: see [Memo files in the editor](../editor/actions.md#memo-files).
 
 A memo file's place is worked out each time it's read. When the words it quotes change, it's **outdated**, and stays on its section; when the page or heading it names is gone, it's **detached**. Read it against the page, then quote the words it's about now, point `about` at where it belongs, or delete it. Renaming a page or a heading with `ascribe rename`, or in the editor, keeps its memos attached. The [memo files reference](memo-files.md) has the format, each state, and what `ascribe check` reports.
 
@@ -92,5 +92,5 @@ A prompt never pastes in a memo's text, so a long memo costs an agent nothing un
 
 - [`@memo`](directives.md#memo): the directive, in the directive reference.
 - [Memo files](memo-files.md): the format, the states, and the checks.
-- [Memo files in the editor](../editor/index.md#memo-files): the CodeLens, adding a memo, and the **Memos** section of **This page**.
+- [Memo files in the editor](../editor/actions.md#memo-files): the CodeLens, adding a memo, and the **Memos** section of **This page**.
 - [`ascribe outline`](../command/questions.md#cli-outline) and [`ascribe refs`](../command/questions.md#cli-refs), which list the memos about a page and a target.
