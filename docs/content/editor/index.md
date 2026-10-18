@@ -63,6 +63,10 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 @available: next
 - **Rewrite as a memo**, for an [HTML comment](../writing/directives.md#memo) that's a block of its own. One line becomes a line memo and more a container, about the block below it, or at the top of the section when the comment is the section's last block. A comment at the end of a list item, or before a page's first heading, gets no fix, since where its memo belongs is yours to say.
 
+@available: next
+- **List `page.md` in `[glossary] pages`**, for a [glossary term](../content-model/content.md#12-glossary) marked on a page that isn't a glossary page. Every term on the page is then linked on every other page, so it's yours to choose.
+- **Write a definition of** the term, for a term whose section doesn't open with a paragraph. It puts a paragraph under the heading and its directives, selected, for you to type the definition over.
+
 @available: ascribe 0.3.2
 - **Copy the command**, for an [example](../examples/tested.md) that changed after its last test run or that no test run lists. It copies the line that runs `ascribe observe` in the example's folder, for you to run in a terminal: for PowerShell on Windows, and for `sh` elsewhere. The editor never runs a test itself.
 
@@ -113,6 +117,9 @@ Chat has [Ascribe's skill](../agents/index.md#the-skill), which teaches an agent
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.
 
+@available: next
+- `@term` only at the top of a section on a glossary page, or in a fragment one includes, under the heading and the directives that bind it, and not on a heading that's a term already. Inside its braces, `aliases`, `match`, and `case-sensitive`, and `match`'s values `first`, `every`, and `marked`.
+
 @available: ascribe 0.3.2
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
@@ -126,6 +133,9 @@ Chat has [Ascribe's skill](../agents/index.md#the-skill), which teaches an agent
 - An availability spec or feature key: what it means, in the words the published site uses.
 - A directive or attribute key: its description. A dimension key: its values and labels.
 
+@available: next
+- A glossary term, in prose: its definition for the editor's build. On the term's heading: the definition, and how many pages use the term.
+
 @available: ascribe 0.3.2
 - A version in an availability spec, for a target with [release lines](../versions/index.md): the line it falls in, and that line's status, such as "in line 3.4, live".
 
@@ -137,8 +147,8 @@ Chat has [Ascribe's skill](../agents/index.md#the-skill), which teaches an agent
 
 ### Navigation
 
-- **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a phrase or feature key, to its entry in `ascribe.toml`.
-- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension; on a page's frontmatter `type`, the pages of that type. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses. In `ascribe.toml`, on a content model entry's key or table header, it lists the entry's uses, as the Content model view's **Find All References** does.
+- **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a glossary term in prose, to its heading on the glossary page; on a phrase or feature key, to its entry in `ascribe.toml`.
+- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension; on a page's frontmatter `type`, the pages of that type. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses. On a term's heading, or its `@term`, the list is the term's uses and the links to the heading together, each once. In `ascribe.toml`, on a content model entry's key or table header, it lists the entry's uses, as the Content model view's **Find All References** does.
 - **Document links**: links, images, and includes are clickable. A link outside the docs is clickable when it's a web address (`http`, `https`) or an email address (`mailto`); one with any other scheme, such as `tel:` or `vscode:`, stays as it's written for the site's readers, and isn't a link in the editor.
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
@@ -153,7 +163,7 @@ The lens is placed from the saved file, as a build reads it: the editor doesn't 
 ### Refactoring
 
 - **Rename or move a file or a folder** in the Explorer, and the links and includes that point to what it holds are updated, and so are the glossary's `pages` and the retired permalinks' `to` in `ascribe.toml` that name it, the `about` of each [memo file](index.md#memo-files) about it or a heading in it, and [`ascribe.nav`](../navigation/index.md#the-file): a page's entry in its section's `pages`, taken out when it leaves the folder, and a folder's `folder`.
-- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the retired permalinks' `to` in `ascribe.toml` among them, and the memo files about it, or a phrase key to update its uses and its declaration.
+- **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, the retired permalinks' `to` in `ascribe.toml` among them, and the memo files about it, or a phrase key to update its uses and its declaration. A glossary term's id is its heading's, so renaming the `@id` renames the term, and the site output's `data-ascribe-term` carries the new id. Rewording a term's heading changes the term's text; when the heading has no `@id`, its id changes too, and the editor says so.
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
@@ -383,7 +393,7 @@ Any editor with a Language Server Protocol client can run `ascribe lsp` from a p
 
 A server serves one project: the nearest `ascribe.toml` at or above the workspace folder the editor gives it. It never looks below that folder, so a server started at the root of a repository whose projects are all in subfolders has no project. For a workspace with several projects, start one `ascribe lsp` per project, rooted at the folder that holds its `ascribe.toml`, and give each file to the server of the nearest `ascribe.toml` above it. In Neovim, for example, `root_markers = { "ascribe.toml" }` in the server's `vim.lsp.config` does both.
 
-The lens in a code file a page shows and the action that applies a page's safe fixes come from the server, so any editor that asks gets them. The server asks for lenses in its sources' files by registering them for those files (`client/registerCapability` for `textDocument/codeLens`), when the editor supports registering lenses; one that doesn't gets the lenses on `@include` in the pages it sends. The lens's command, `ascribe.showReferences`, is the editor's to run, with a file, a position in it, and the places, as VS Code's `editor.action.showReferences` takes them. The action's kind is `source.fixAll.ascribe`.
+The lens in a code file a page shows and the action that applies a page's safe fixes come from the server, so any editor that asks gets them. The server asks for lenses in its sources' files by registering them for those files (`client/registerCapability` for `textDocument/codeLens`), when the editor supports registering lenses; one that doesn't gets the lenses on `@include` in the pages it sends. The lens's command, `ascribe.showReferences`, is the editor's to run, with a file, a position in it, and the places, as VS Code's `editor.action.showReferences` takes them. The quick fix that writes a term's definition carries `ascribe.selectRange`, with a file and the range to select in it after the edit; an editor that doesn't run it still gets the edit. The action's kind is `source.fixAll.ascribe`.
 
 When it starts, the server sends a `window/logMessage` at Info with its version and the project it uses: `ascribe-lsp <version>: using the project at <path>`, or, when it finds none, `ascribe-lsp <version>: no ascribe.toml at or above <folder>`. Its other log lines go to standard error. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
 

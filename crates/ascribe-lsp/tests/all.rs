@@ -30,6 +30,8 @@ mod edit;
 mod edit_examples;
 #[path = "all/examples.rs"]
 mod examples;
+#[path = "all/glossary.rs"]
+mod glossary;
 #[path = "all/lines.rs"]
 mod lines;
 #[path = "all/memos.rs"]

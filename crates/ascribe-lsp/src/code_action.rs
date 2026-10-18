@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use ascribe_core::{FileId, LineIndex, RelPath, Span};
 use ascribe_model::{Current, NAV_FILE, PERMALINKS_FILE, PermalinkList, RETIRED_PLACEHOLDER};
 use ascribe_resolve::{DeclaredPermalink, FileSystem};
+use ascribe_syntax::{BlockKind, Bound};
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, Diagnostic, TextEdit,
     WorkspaceEdit,
@@ -207,6 +208,11 @@ pub(crate) fn actions(
                     actions.push(copy);
                 }
             }
+            "glossary-definition-missing" => {
+                if let Some(fix) = definition_fix(ctx, file, at, diagnostic.clone()) {
+                    actions.push(fix);
+                }
+            }
             "permalinks-list-behind" => {
                 if let Some(sync) = sync_permalinks(ctx, diagnostic.clone()) {
                     actions.push(sync);
@@ -349,6 +355,84 @@ fn action(
     edits: Vec<TextEdit>,
 ) -> CodeActionOrCommand {
     workspace_action(ctx, title, diagnostics, edits, None)
+}
+
+/// The command a quick fix carries to select what it wrote, for the author
+/// to type over: the document's URI, and the range in it after the edit.
+pub(crate) const SELECT_RANGE: &str = "ascribe.selectRange";
+
+/// The quick fix on `glossary-definition-missing`: a paragraph under the
+/// term's heading and the directives that bind it, selected, for the author
+/// to write the definition in.
+fn definition_fix(
+    ctx: &Ctx,
+    file: &ascribe_resolve::FileIndex,
+    at: usize,
+    diagnostic: Diagnostic,
+) -> Option<CodeActionOrCommand> {
+    let glossary = ctx.snapshot.glossary();
+    let term = glossary
+        .terms
+        .iter()
+        .find(|t| t.written_in == ctx.path && t.heading.start() <= at && at <= t.heading.end())?;
+    let blocks = &file.document.blocks;
+    let heading = blocks.iter().position(|b| b.span == term.heading)?;
+    let end = blocks[heading + 1..]
+        .iter()
+        .take_while(
+            |b| matches!(&b.kind, BlockKind::Directive(d) if d.binding == Some(Bound::Heading)),
+        )
+        .last()
+        .map_or(blocks[heading].span.end(), |b| b.span.end());
+    let source: &str = &file.source;
+    let nl = if source.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    // At the end of the last line's text.
+    let end = source.get(..end)?.trim_end_matches(['\n', '\r']).len();
+    let text = format!("What {} means, in a sentence or two.", term.term);
+    let rest = source.get(end..)?;
+    let next = rest
+        .strip_prefix("\r\n")
+        .or_else(|| rest.strip_prefix('\n'))
+        .unwrap_or(rest);
+    let after = if next.is_empty() || next.starts_with(['\n', '\r']) {
+        ""
+    } else {
+        nl
+    };
+    let edit = ascribe_core::TextEdit::insert(end, format!("{nl}{nl}{text}{after}"));
+    let mut edited = source.to_owned();
+    edited.insert_str(end, &edit.new_text);
+    let start = end + 2 * nl.len();
+    let selected = ctx.encoding.range(
+        &LineIndex::new(&edited),
+        Span::new(start, start + text.len()),
+    );
+    let uri = ctx.uri_of(&ctx.path)?;
+    let edit = text_edit(ctx, source, edit);
+    Some(CodeActionOrCommand::CodeAction(CodeAction {
+        title: format!("Write a definition of {}", term.term),
+        kind: Some(CodeActionKind::QUICKFIX),
+        diagnostics: Some(vec![diagnostic]),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from([(uri.clone(), vec![edit])])),
+            ..WorkspaceEdit::default()
+        }),
+        command: Some(lsp_types::Command {
+            title: "Select the definition".to_owned(),
+            command: SELECT_RANGE.to_owned(),
+            arguments: Some(vec![
+                serde_json::Value::String(uri.to_string()),
+                serde_json::to_value(selected).ok()?,
+            ]),
+        }),
+        is_preferred: Some(true),
+        disabled: None,
+        data: None,
+    }))
 }
 
 /// The quick fix on `permalinks-list-behind`: `ascribe.permalinks` as

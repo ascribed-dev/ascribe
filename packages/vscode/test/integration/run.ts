@@ -33,6 +33,10 @@
 //   lens        a copy of examples/monorepo/docs, the build lens with the
 //               preview and the status bar, against the real `ascribe lsp`.
 //               Needs ASCRIBE_BIN as well.
+//   glossary    a copy of examples/monorepo/docs, its glossary's terms: going
+//               to a term's heading, completing `@term`, the fix for one off
+//               a glossary page, and renaming one, against the real
+//               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   templates   a copy of examples/templates, the six page types with their
 //               templates, New Page and Go to Next Placeholder, against the
 //               real `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -264,6 +268,11 @@ const suites: Suite[] = [
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
   {
+    name: "glossary",
+    fixture: path.join(repositoryRoot, "examples/monorepo/docs"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
     name: "templates",
     fixture: path.join(repositoryRoot, "examples/templates"),
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
@@ -331,6 +340,7 @@ const needsServer = new Set([
   "actions",
   "site",
   "lens",
+  "glossary",
   "templates",
   "tested",
   "shared",

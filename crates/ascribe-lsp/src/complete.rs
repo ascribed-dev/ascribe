@@ -16,7 +16,7 @@ use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, S
 use ascribe_core::{LineIndex, RelPath, percent_decode};
 use ascribe_model::Listing;
 use ascribe_resolve::references::{include_target, reference_target};
-use ascribe_resolve::{FileIndex, RefKind, Target};
+use ascribe_resolve::{FileIndex, RefKind, Target, Usable, UseKind};
 use ascribe_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionList,
@@ -237,7 +237,11 @@ impl Cx<'_> {
 
     fn directive_names(&self, typed: &str) -> Vec<CompletionItem> {
         let mut items = Vec::new();
+        let term = self.offers_term(typed);
         for (i, schema) in self.ctx.model.directive_schemas().iter().enumerate() {
+            if schema.name == "term" && !term {
+                continue;
+            }
             let widget = matches!(schema.origin, Origin::Widget);
             let mut item = self.item(
                 &schema.name,
@@ -264,6 +268,72 @@ impl Cx<'_> {
         end.sort_text = Some("999".to_owned());
         items.push(end);
         items
+    }
+
+    /// Whether `@term` is offered on the line, `@` and `typed` so far: at the
+    /// top of a section whose heading isn't a term yet, under the heading
+    /// and the directives that bind it, on a glossary page or a fragment one
+    /// includes (SPEC §5.4).
+    fn offers_term(&self, typed: &str) -> bool {
+        let source: &str = &self.file.source;
+        let line_start = self.offset - typed.len() - 1;
+        if source
+            .get(line_start..self.offset)
+            .is_none_or(|l| !l.starts_with('@'))
+            || line_prefix(source, self.offset).len() != typed.len() + 1
+        {
+            return false;
+        }
+        let Some(heading) = self
+            .file
+            .headings
+            .iter()
+            .filter(|h| h.span.end() <= line_start)
+            .max_by_key(|h| h.span.end())
+        else {
+            return false;
+        };
+        if heading
+            .term
+            .as_ref()
+            .is_some_and(|t| t.span.start() != line_start)
+        {
+            return false;
+        }
+        // The lines between the heading and this one, each a directive.
+        let between = source.get(heading.span.end()..line_start).unwrap_or("@");
+        let between = between
+            .strip_prefix("\r\n")
+            .or_else(|| between.strip_prefix('\n'))
+            .unwrap_or(between);
+        let under_heading = (between.is_empty() || between.ends_with('\n'))
+            && between
+                .split_inclusive('\n')
+                .all(|line| line.starts_with('@'));
+        under_heading && self.on_glossary_page()
+    }
+
+    /// Whether the file is a page `[glossary] pages` lists, or a fragment
+    /// one of them includes.
+    fn on_glossary_page(&self) -> bool {
+        let pages: Vec<RelPath> = self
+            .ctx
+            .model
+            .glossary
+            .pages
+            .iter()
+            .filter_map(|p| RelPath::parse(&p.path).ok())
+            .collect();
+        if pages.contains(&self.ctx.path) {
+            return true;
+        }
+        self.ctx.model.is_fragment(self.ctx.path.as_str())
+            && self
+                .ctx
+                .snapshot
+                .uses(&Usable::File(self.ctx.path.clone()))
+                .iter()
+                .any(|u| u.kind == UseKind::Include && pages.contains(&u.file))
     }
 
     // -- Attribute blocks -----------------------------------------------------

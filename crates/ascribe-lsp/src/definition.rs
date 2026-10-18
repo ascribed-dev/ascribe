@@ -1,9 +1,9 @@
 //! Go to definition (SPEC §10): links and includes go to their target file or
-//! heading, `@id`s to the heading they name, and phrases and feature keys to
-//! their entry in `ascribe.toml`.
+//! heading, `@id`s to the heading they name, a glossary term in prose to its
+//! heading, and phrases and feature keys to their entry in `ascribe.toml`.
 
 use ascribe_core::{LineIndex, RelPath, Span};
-use ascribe_resolve::Resolution;
+use ascribe_resolve::{Resolution, Usable};
 use lsp_types::{Location, Position};
 
 use crate::nav::{Ctx, Hit, Lines, directive_at, hit_at, identifier_primary};
@@ -31,8 +31,31 @@ pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
             let replaced = ctx.snapshot.replaces(&ctx.path)?;
             source_location(ctx, &mut lines, &replaced, None)
         }
-        Some(Hit::Directive(_) | Hit::Snippet(_)) | None => id_definition(ctx, &mut lines, offset),
+        Some(Hit::Directive(_) | Hit::Snippet(_)) => id_definition(ctx, &mut lines, offset),
+        None => term_definition(ctx, &mut lines, offset)
+            .or_else(|| id_definition(ctx, &mut lines, offset)),
     }
+}
+
+/// On an occurrence of a glossary term in prose, the term's heading.
+fn term_definition(ctx: &Ctx, lines: &mut Lines<'_>, offset: usize) -> Option<Location> {
+    let id = ctx
+        .snapshot
+        .uses_in(&ctx.path)
+        .into_iter()
+        .find_map(|(used, place)| match used {
+            Usable::Term(id) if place.span.start() <= offset && offset <= place.span.end() => {
+                Some(id)
+            }
+            _ => None,
+        })?;
+    let glossary = ctx.snapshot.glossary();
+    let term = glossary.term(&id)?;
+    let heading = ctx
+        .snapshot
+        .file(&term.written_in)?
+        .heading_at(term.heading)?;
+    lines.location(&term.written_in, Some(heading))
 }
 
 /// The rule of `[listing]` the page is under, in `ascribe.toml`.
