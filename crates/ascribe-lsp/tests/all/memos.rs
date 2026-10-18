@@ -285,6 +285,53 @@ fn this_page_lists_a_memo_again_as_its_file_changes() {
     assert_eq!(ask(&mut client, "Run the"), ["Why now."]);
 }
 
+#[test]
+fn a_memo_about_a_term_is_on_its_heading_in_the_lens_and_this_page() {
+    const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\nThe words the docs use.\n\n## Region\n@id: area\n@term\n\nWhere a workspace runs.\n";
+    let model = format!("{MODEL}\n[glossary]\npages = [\"glossary.md\"]\n");
+    let fixture = Fixture::new(
+        &model,
+        &[
+            ("docs/glossary.md", GLOSSARY),
+            (
+                "memos/term.md",
+                "---\nabout: term:area\n---\n\nWhy the term.\n",
+            ),
+            (
+                "memos/quoted.md",
+                "---\nabout: term:area\nquote: Where a workspace runs\n---\n\nWhy the definition.\n",
+            ),
+        ],
+    );
+    let mut client = Client::start(&fixture.root());
+    client.settle();
+    let lenses = client
+        .request(
+            "textDocument/codeLens",
+            json!({ "textDocument": doc(&fixture, "docs/glossary.md") }),
+        )
+        .response_result
+        .expect("a result");
+    assert_eq!(
+        titles(lenses.as_array().unwrap()),
+        [(6, "1 memo".to_owned()), (10, "1 memo".to_owned())]
+    );
+    let page = client
+        .request(
+            "ascribe/page",
+            json!({ "textDocument": doc(&fixture, "docs/glossary.md"), "position": at(GLOSSARY, "Where") }),
+        )
+        .response_result
+        .expect("a result");
+    let paths: Vec<&str> = page["memos"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["path"].as_str().unwrap())
+        .collect();
+    assert_eq!(paths, ["memos/quoted.md", "memos/term.md"]);
+}
+
 fn add(client: &mut Client, fixture: &Fixture, action: &str, range: Value) -> Value {
     client
         .request(

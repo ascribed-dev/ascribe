@@ -6,8 +6,9 @@
 //! its settings its `@term`'s, else the glossary's. A heading that two
 //! glossary pages show, through a fragment, is one term, listed with both
 //! pages in the order `pages` gives them. Two different headings with the
-//! same text, or a text that is another term's alias, are a duplicate: the
-//! first is the term, and the second is left out and reported.
+//! same text, or a text that is another term's alias, or with the same id,
+//! are a duplicate: the first is the term, and the second is left out and
+//! reported.
 //!
 //! A term's definition is the paragraph that opens its section (SPEC §5.4):
 //! the first block of the section's own content, after the directives that
@@ -77,12 +78,15 @@ impl Term {
     }
 }
 
-/// A heading marked `@term` whose text, or one of whose aliases, is already
-/// an earlier term's (`glossary-term-duplicate`).
+/// A heading marked `@term` whose text, one of whose aliases, or whose id
+/// is already an earlier term's (`glossary-term-duplicate`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DuplicateTerm {
-    /// The text the two share, as the second writes it.
+    /// The text the two share, as the second writes it, or the id they
+    /// share.
     pub text: String,
+    /// Whether the two share their id, rather than a text.
+    pub id: bool,
     /// The file the second is written in.
     pub file: FileId,
     /// Where the second writes the text: its heading, or its `@term` line
@@ -114,7 +118,8 @@ pub struct Glossary {
     /// The terms, in the order of `pages`, and on each page in document
     /// order.
     pub terms: Vec<Term>,
-    /// The headings left out because an earlier term has their text.
+    /// The headings left out because an earlier term has their text or
+    /// their id.
     pub duplicates: Vec<DuplicateTerm>,
     /// Each `@term` on a heading no glossary page shows, in path order and
     /// source order.
@@ -184,7 +189,9 @@ impl Project {
                     definition: opening(&expanded.blocks, file, heading.span).unwrap_or_default(),
                     pages: vec![page.clone()],
                 };
-                if let Some(duplicate) = duplicate_of(&term, &terms, &seen) {
+                if let Some(duplicate) =
+                    duplicate_of(&term, &terms, &seen).or_else(|| same_id(&term, &terms))
+                {
                     duplicates.push(duplicate);
                     continue;
                 }
@@ -302,6 +309,20 @@ fn annotates(block: &ExpandedBlock) -> bool {
     }
 }
 
+/// The earlier term with `term`'s id, as a duplicate: a link to the id, and
+/// the build's map from ids to terms, can name one term only.
+fn same_id(term: &Term, terms: &[Term]) -> Option<DuplicateTerm> {
+    let first = terms.iter().find(|t| t.id == term.id)?;
+    Some(DuplicateTerm {
+        text: term.id.clone(),
+        id: true,
+        file: term.file,
+        span: term.heading,
+        first: first.id.clone(),
+        first_page: first.pages[0].clone(),
+    })
+}
+
 /// The first of `term`'s texts that an earlier term already has: the same
 /// text, or text that differs only in case where either term ignores case.
 fn duplicate_of(
@@ -319,6 +340,7 @@ fn duplicate_of(
         let first = &terms[*first];
         Some(DuplicateTerm {
             text: text.to_owned(),
+            id: false,
             file: term.file,
             span: if n == 0 { term.heading } else { term.mark },
             first: first.id.clone(),

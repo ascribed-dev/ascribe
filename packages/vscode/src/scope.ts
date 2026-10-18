@@ -21,11 +21,14 @@ export interface LensScope {
  * `excluded` says whether a file belongs to another project, or to none.
  * `lenses`, when given, decides the lens requests instead: a code file a page
  * shows is never sent to a server, and its lenses are asked for from every
- * server whose registration covers it (`codeLens.ts`).
+ * server whose registration covers it (`codeLens.ts`). `toldOfChange`, when
+ * given, decides the watched-file events instead: a server follows its
+ * sources' folders on disk, which may be outside its project (`diskChanges.ts`).
  */
 export function scopeMiddleware(
   excluded: (uri: vscode.Uri) => boolean,
   lenses?: LensScope,
+  toldOfChange?: (uri: vscode.Uri) => boolean,
 ): Middleware {
   const skip = (document: vscode.TextDocument) => excluded(document.uri);
   return {
@@ -86,8 +89,12 @@ export function scopeMiddleware(
 
     handleDiagnostics: (uri, diagnostics, next) => next(uri, excluded(uri) ? [] : diagnostics),
     workspace: {
-      didChangeWatchedFile: (event, next) =>
-        excluded(vscode.Uri.parse(event.uri)) ? Promise.resolve() : next(event),
+      didChangeWatchedFile: (event, next) => {
+        const uri = vscode.Uri.parse(event.uri);
+        return (toldOfChange ? toldOfChange(uri) : !excluded(uri))
+          ? next(event)
+          : Promise.resolve();
+      },
       willRenameFiles: (event, next) => {
         const files = event.files.filter((file) => !excluded(file.oldUri));
         if (files.length === 0) return Promise.resolve(undefined);

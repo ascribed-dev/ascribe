@@ -41,6 +41,8 @@ export interface AscribeApi {
   whenSettled(): Promise<void>;
   /** The folders of the projects whose servers registered their lenses for a file, for tests. */
   lensesFor(uri: vscode.Uri): Promise<string[]>;
+  /** How many times the server of the project in `folder` has asked for every lens again, for tests. */
+  lensRefreshes(folder: string): number;
   /** The preview, for tests. */
   preview: PreviewApi;
   /** The editor's actions, for tests. */
@@ -269,6 +271,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         .filter((server) => server.registeredLenses(document))
         .map((server) => server.project.folder);
     },
+    lensRefreshes: (folder) => projects.serverAt(folder)?.lensRefreshes ?? 0,
     preview: preview.api,
     actions: actions.api,
     newPage: newPage.api,

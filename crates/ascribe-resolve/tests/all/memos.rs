@@ -255,3 +255,39 @@ fn a_memo_that_isnt_one_is_not_placed() {
     let no_about = MemoFile::parse(path("memos/m.md"), "---\nquote: x\n---\n".to_owned());
     assert!(place(&no_about, &project).is_none());
 }
+
+#[test]
+fn a_memo_about_a_term_is_on_its_heading() {
+    const GLOSSARY_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[glossary]\npages = [\"glossary.md\"]\n";
+    let model = ascribe_model::load_str(GLOSSARY_MODEL, FileId::new(0)).expect("the model loads");
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout).with_source(
+        "glossary.md",
+        "---\ntitle: Glossary\n---\n\nThe words the docs use.\n\n## Region\n@id: area\n@term\n\nWhere a workspace runs.\n",
+    );
+    let project = Project::load(Arc::new(model), layout, &fs);
+    let heading = Usable::Heading {
+        file: path("glossary.md"),
+        id: "area".to_owned(),
+    };
+    assert_eq!(
+        placed(&project, &memo("term:area", None)),
+        (MemoState::Placed, Some(heading.clone()), None)
+    );
+    let quoted = memo("term:area", Some("Where a workspace runs"));
+    assert!(quoted.problems.is_empty(), "{:?}", quoted.problems);
+    assert_eq!(
+        placed(&project, &quoted),
+        (
+            MemoState::Placed,
+            Some(heading),
+            Some("Where a workspace runs.".to_owned())
+        )
+    );
+    let outside = memo("term:area", Some("The words the docs use"));
+    assert_eq!(placed(&project, &outside).0, MemoState::Outdated);
+    assert_eq!(
+        placed(&project, &memo("term:zone", Some("Where"))).0,
+        MemoState::Detached
+    );
+}

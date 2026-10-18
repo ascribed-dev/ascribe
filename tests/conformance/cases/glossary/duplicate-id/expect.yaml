@@ -1,0 +1,9 @@
+description: >-
+  Two terms with the same id are an error at the second, which isn't a term,
+  whether `@id` gives them the id or their headings' texts do on two pages.
+spec: ["5.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: glossary-term-duplicate, file: more.md, line: 5}
+  - {slug: glossary-term-duplicate, file: more.md, line: 11}

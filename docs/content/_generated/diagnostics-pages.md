@@ -701,11 +701,11 @@ Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md
 
 Error · file level · next step: write · [SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files)
 
-**When:** A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root.
+**When:** A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root.
 
 **Message:** this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---`
 
-**Fix:** A memo file starts with frontmatter: `about`, which names what the memo is about the way `ascribe refs` names a target (`page.md`, `page.md#id`, or an entry such as `phrase:product`), and `quote`, which you can leave out, with words of the block it's about. Nothing else goes in the frontmatter. The folder `memos/` is beside `ascribe.toml`, outside the content root.
+**Fix:** A memo file starts with frontmatter: `about`, which names what the memo is about the way `ascribe refs` names a target (`page.md`, `page.md#id`, a glossary term as `term:<id>`, or an entry such as `phrase:product`), and `quote`, which you can leave out, with words of the block it's about. Nothing else goes in the frontmatter. The folder `memos/` is beside `ascribe.toml`, outside the content root.
 
 **Read more:** [Write a memo file](../writing/memo-files.md#write-a-memo-file) in the memo files reference.
 
@@ -796,11 +796,11 @@ Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
-**When:** Two terms, or a term and an alias, with the same text.
+**When:** Two terms, or a term and an alias, with the same text, or two terms with the same id.
 
 **Message:** "\{text}" is already the glossary term `{first}`, on \{page}
 
-**Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive.
+**Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Give one of two terms with the same id another with `@id`. Text is compared ignoring case unless both terms are case-sensitive.
 
 **Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
 

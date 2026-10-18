@@ -838,6 +838,7 @@ A glossary is one or more pages, which the content model lists (§7.2). Each hea
 - **Its definition** is the first block of its section's own content, when that's a paragraph, as plain text: phrases substituted for the build, emphasis and code reduced to their text, a link to its text, an image to its alt text, inline HTML dropped, and whitespace runs one space. Directives that bind the heading, and `@available`, `@intended`, and `@memo` above the paragraph, come before the section's own content. A paragraph a fragment brings in counts. A section that opens with groups (§3.6), such as `@variant`, has the paragraph each arm opens with, in the builds that keep that arm. A section that opens with anything else has no definition, which is an error (§8.2). The definition is resolved for each build: a build that removes the paragraph leaves the term without a definition in that build.
 - **It's linked** to its heading on the first of its glossary pages the build publishes. A heading that two glossary pages show, through a fragment, is one term.
 - Two terms, or a term and an alias, with the same text, compared ignoring case unless both terms are case-sensitive, are an error at the second, which isn't a term (§8.2).
+- Two terms with the same id, which their headings' texts can give them on two pages, are an error at the second, which isn't a term (§8.2).
 
 Processors link occurrences of glossary terms to their definitions according to each term's settings, else the glossary's. Authors don't mark glossary terms where they're used, except for a term whose settings turn automatic linking off (`match = "marked"`): processors don't link that term, and authors link the occurrences that mean it to its heading with an ordinary link (§5.2), for words that also have ordinary senses.
 
@@ -1029,7 +1030,7 @@ The agent goes first because its installer writes the config file that
 `quill init` reads.
 ```
 
-- The frontmatter has two keys. `about`, required, names what the memo is about, as a target of `ascribe refs` is written: a page or a fragment by its content path, a heading as the content path, `#`, and its id, or a content model entry as `phrase:<key>`, `feature:<key>`, `term:<id>`, `dimension:<name>`, `note:<type>`, or `widget:<name>`. A heading in a fragment is named in the fragment. `quote`, optional, narrows the memo to the block whose source holds it; a content model entry has no text to quote. A memo is about one thing.
+- The frontmatter has two keys. `about`, required, names what the memo is about, as a target of `ascribe refs` is written: a page or a fragment by its content path, a heading as the content path, `#`, and its id, a glossary term as `term:<id>`, or a content model entry as `phrase:<key>`, `feature:<key>`, `dimension:<name>`, `note:<type>`, or `widget:<name>`. A heading in a fragment is named in the fragment. A glossary term is its heading (§5.4): a memo about `term:<id>` is about that heading, where it's written. `quote`, optional, narrows the memo to the block whose source holds it; a content model entry has no text to quote. A memo is about one thing.
 - The body is CommonMark, shown as written. Nothing in it is a phrase, a link a processor checks, an include, or a heading with an id.
 - A memo's place is worked out each time it's read, and nothing is written back to the file. With no `quote`, it's **placed** on what `about` names. With one, the blocks of what `about` names (a page's or fragment's, or a heading's section) are searched in source order, each block's source as written, whitespace runs read as one space and case kept; the first that holds the quote is the memo's block, and the memo is placed there. A quote across two blocks isn't found. A quote that no block holds makes the memo **outdated**: it stays on the page or section. An `about` that names nothing in the project makes the memo **detached**.
 - `memos/` MUST NOT be inside the content root, where its files would be pages; it is when the content root is the project's folder.
@@ -1147,14 +1148,14 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
 | Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
 | Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
-| Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root | Error |
+| Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root | Error |
 | Memo files | A memo file's `about` that names nothing in the project | Warning |
 | Navigation | `ascribe.nav` isn't valid TOML, or doesn't have the shape §7.8 gives it | Error |
 | Navigation | A `pages` entry in `ascribe.nav` that isn't a page in its section's folder, or that names the section's own `index.md` | Error |
 | Navigation | A `folder` in `ascribe.nav` that isn't a section | Error |
 | Navigation | A folder `ascribe.nav` lists twice, or a page a section's `pages` names twice | Error |
 | Navigation | A folder with an `index.md` and a page beside it with the folder's name | Error |
-| Glossary | Two terms, or a term and an alias, with the same text | Error |
+| Glossary | Two terms, or a term and an alias, with the same text, or two terms with the same id | Error |
 | Glossary | A term whose section doesn't start with a paragraph | Error |
 | Glossary | `@term` on a heading that no page the glossary lists shows | Error |
 | Project widget | Violates its declared schema | Error |

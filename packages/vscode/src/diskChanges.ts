@@ -1,10 +1,17 @@
-// Which files changed on disk start a project's server, and the batching that
-// turns a burst of changes into one start per project. No VS Code in this
-// module.
+// Which files changed on disk start a project's server, which a running
+// server is told about, and the batching that turns a burst of changes into
+// one start per project. No VS Code in this module.
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { parse } from "smol-toml";
-import { comparable, owningProject, samePath, within, type Project } from "./projects.js";
+import {
+  comparable,
+  ownedElsewhere,
+  owningProject,
+  samePath,
+  within,
+  type Project,
+} from "./projects.js";
 
 /** Where a project's own files are, from its `ascribe.toml`. Absolute paths. */
 export interface Layout {
@@ -75,9 +82,29 @@ export function startsServer(
     within(file, layout.contentRoot) &&
     owningProject(file, projects)?.config === project.config &&
     !skipped(file, layout.contentRoot);
-  return (
-    inContent || layout.sources.some((folder) => within(file, folder) && !skipped(file, folder))
-  );
+  return inContent || inASource(file, layout.sources);
+}
+
+/**
+ * Whether a running server of `project` is told that `file` changed on disk
+ * (`didChangeWatchedFile` in `scope.ts`): a file of its own, or one in its
+ * sources' folders wherever they are, in no project or in another's. The
+ * server answers its lenses and This page's rows again on these, and reads
+ * a source's observations and `ascribe.examples.toml` from its folder.
+ * `sources` are the folders of the sources the server loaded.
+ */
+export function toldOfChange(
+  file: string,
+  project: Project,
+  sources: readonly string[],
+  projects: readonly Project[],
+): boolean {
+  return !ownedElsewhere(project, file, projects) || inASource(file, sources);
+}
+
+/** Whether `file` is in one of `sources`' folders, and not in its `node_modules` or `.git`. */
+function inASource(file: string, sources: readonly string[]): boolean {
+  return sources.some((folder) => within(file, folder) && !skipped(file, folder));
 }
 
 /** Whether a path below `folder` passes through `node_modules` or `.git`. */
