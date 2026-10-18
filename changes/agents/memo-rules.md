@@ -1,1 +1,0 @@
-- **The rules `ascribe agents sync` writes tell an agent to read and keep a block's `@memo`.** In a project whose pages have a memo, `AGENTS.md` and the rules beside it say to read a block's memo before changing the block, and to keep the two together. When the rules run over their 4,000 characters, that sentence is cut first. See [Agents](docs/content/agents/index.md).

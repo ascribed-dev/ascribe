@@ -60,14 +60,14 @@ planned-label = "in main, not yet released"
 
 [releases.ascribe]
 live = ["0.3.2"]
-planned = ["0.3.3"]
+planned = ["0.4.0"]
 
 [releases.ascribe.archived]
 "0.3.1" = {}
 
 [features.next]
 name = "In main, not yet released"
-available = "ascribe 0.3.3"
+available = "ascribe 0.4.0"
 
 [phrases]
 version = { line = "ascribe" }

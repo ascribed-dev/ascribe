@@ -1,1 +1,0 @@
-- **Fixed:** a container memo stays colored as a comment past an `@end` at another indent. The editor's highlighting ended the memo at an `@end` of any indent, though the memo's lines run to an `@end` at its opener's indent (§3.5 of [SPEC.md](SPEC.md)).

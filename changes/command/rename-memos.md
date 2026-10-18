@@ -1,1 +1,0 @@
-- **`ascribe rename` keeps memo files attached.** Renaming a heading's id or moving a page rewrites the `about` of each memo in `memos/` and `.ascribe/memos/` that names it, keeping its `#id`, and so do `F2` and moving a file in the editor ([`ascribe rename`](docs/content/command/questions.md#cli-rename)).

@@ -126,7 +126,7 @@ There's no command that writes the page for you at the terminal: copying the fil
 - **A placeholder,** the template's text from a `\{` to its closing brace, that the page still has word for word. Its brace has to be escaped on the page too, as it is in the template: a phrase with a placeholder's name, such as `{product}`, is the page's own, and so is a placeholder quoted in inline code or a code block. One that runs across blocks, as the how-to's "See also" opens a brace in a paragraph and closes it at the end of a list, is reported once, where it starts, when the page has all of it.
 - **A frontmatter field** with the value the template gives it, such as `title: "Title"`.
 
-@available: ascribe (ga 0.3.1, removed 0.3.3)
+@available: ascribe (ga 0.3.1, removed 0.4.0)
 - **An instruction,** a paragraph the template has in a block quote, that the page still has whole. A block quote of your own isn't one.
 
 How a line is wrapped doesn't matter, so an editor that rewraps a paragraph doesn't hide a placeholder in it. A page of a type with no template isn't looked at.
