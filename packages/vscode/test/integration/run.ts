@@ -301,10 +301,11 @@ const suites: Suite[] = [
     prepare: (workspace) => {
       // The site's own dependencies aren't the editor's.
       rmSync(path.join(workspace, "node_modules"), { recursive: true, force: true });
-      // A second page in Reference, which Options is dragged below.
+      // A second page in Reference, which Options is dragged below. Its
+      // title sorts after Options', "loom.yaml options" as plain text.
       writeFileSync(
         path.join(workspace, "content/Reference/Limits.md"),
-        "---\ntype: page\ntitle: Limits\n---\n\nWhat Loom can hold. See [the options](Options.md).\n",
+        "---\ntype: page\ntitle: Memory limits\n---\n\nWhat Loom can hold. See [the options](Options.md).\n",
       );
       return { "ascribe.path": realServer, ...startAll };
     },

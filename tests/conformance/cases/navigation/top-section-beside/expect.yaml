@@ -1,8 +1,7 @@
 description: >-
-  A top section whose own page is beside its folder isn't placed by that
-  page among the content root's pages: it's ordered among the top sections,
-  so the file leaving it out where it lists a sibling is advice, on its own
-  page.
+  A top section isn't placed by its own page beside its folder, so the file
+  leaving it out where it lists a sibling is advice, on that page, as for
+  any other section.
 spec: ["7.8"]
 tags: [check]
 

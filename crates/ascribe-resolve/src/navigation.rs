@@ -11,15 +11,18 @@
 //!    `checks/diagnostics/`).
 //! 2. **The default order:** sections in path order, the root first; in
 //!    each, its own page, then its pages by type in `ascribe.toml`'s order,
-//!    then by title. A section below the root whose own page is beside its
-//!    folder sits where that page sits among its parent's pages; one with no
-//!    page beside it comes after them, in path order. A top section is
-//!    never placed by its page: it comes after the root's pages, as every
-//!    other does (decision #610).
+//!    then by title as a reader sees it (as plain text, with the phrases'
+//!    declared values), then as written. A section below the root whose own
+//!    page is beside its folder sits where that page sits among its parent's
+//!    pages; one with no page beside it comes after them, in path order. A
+//!    top section is never placed by its page: it comes after the root's
+//!    pages, as every other does (decision #610).
 //! 3. **The file's order over it:** the sections the file lists, in its
-//!    order, then the rest in path order; in a section that lists `pages`,
-//!    those pages in its order, then the rest by title. A name that's no
-//!    page of the folder, or a folder with no pages, is passed over.
+//!    order, then the rest in path order, but a section below the root
+//!    whose own page is beside its folder stays where that page is; in a
+//!    section that lists `pages`, those pages in its order, then the rest by
+//!    title. A name that's no page of the folder, or a folder with no pages,
+//!    is passed over.
 //!
 //! [`Navigation::share`] is a build's share of it: the pages the build
 //! publishes and offers (not `unlisted`), and the sections left with one,
@@ -333,7 +336,7 @@ impl Maker<'_> {
                     listed.push(pages.remove(at));
                 }
             }
-            pages.sort_by(|a, b| by_title(a, b));
+            pages.sort_by(|a, b| self.by_title(a, b));
             listed.extend(pages);
             pages = listed;
         }
@@ -386,7 +389,23 @@ impl Maker<'_> {
                 .and_then(|t| self.model.types.iter().position(|u| u.name == t.name))
                 .unwrap_or(usize::MAX)
         };
-        rank(a).cmp(&rank(b)).then_with(|| by_title(a, b))
+        rank(a).cmp(&rank(b)).then_with(|| self.by_title(a, b))
+    }
+
+    /// By title as plain text without case, then as plain text, then as
+    /// written, a page with no title by its file name, then by path.
+    fn by_title(&self, a: &FileIndex, b: &FileIndex) -> Ordering {
+        let title = |f: &FileIndex| f.title.clone().unwrap_or_else(|| stem(&f.path).to_owned());
+        let (ta, tb) = (title(a), title(b));
+        let (pa, pb) = (
+            plain_title(a, self.model, &ta),
+            plain_title(b, self.model, &tb),
+        );
+        pa.to_lowercase()
+            .cmp(&pb.to_lowercase())
+            .then_with(|| pa.cmp(&pb))
+            .then_with(|| ta.cmp(&tb))
+            .then_with(|| a.path.cmp(&b.path))
     }
 }
 
@@ -396,15 +415,30 @@ fn placed(section: &Section, pages: &[RelPath]) -> bool {
     section.page_beside() && section.page.as_ref().is_some_and(|p| pages.contains(p))
 }
 
-/// By title without case, then as written, a page with no title by its file
-/// name, then by path.
-fn by_title(a: &FileIndex, b: &FileIndex) -> Ordering {
-    let title = |f: &FileIndex| f.title.clone().unwrap_or_else(|| stem(&f.path).to_owned());
-    let (ta, tb) = (title(a), title(b));
-    ta.to_lowercase()
-        .cmp(&tb.to_lowercase())
-        .then_with(|| ta.cmp(&tb))
-        .then_with(|| a.path.cmp(&b.path))
+/// `title`, `file`'s, as a reader sees it, whatever the build: its phrases
+/// substituted with the values the content model declares when its type's
+/// `title` takes them, and as plain text when `title` sets `inline`.
+fn plain_title(file: &FileIndex, model: &ContentModel, title: &str) -> String {
+    let Some(field) = file
+        .content_type(model)
+        .and_then(|t| t.frontmatter.fields.iter().find(|f| f.name == "title"))
+    else {
+        return title.to_owned();
+    };
+    let values = |key: &str| {
+        if field.phrases {
+            model.phrase(key).map(str::to_owned)
+        } else {
+            None
+        }
+    };
+    if field.inline.is_some() {
+        ascribe_model::inline::plain_text(&ascribe_model::inline::parse(title, &values))
+    } else if field.phrases {
+        crate::build::substitute_text(title, &|key| model.phrase(key))
+    } else {
+        title.to_owned()
+    }
 }
 
 struct Sharer<'a> {
