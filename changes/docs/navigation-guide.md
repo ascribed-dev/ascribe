@@ -1,1 +1,0 @@
-- **A guide says how to put a project's pages in order.** [Put your pages in order](docs/content/navigation/order.md) covers the default order, writing `ascribe.nav` or dragging in the editor, short labels, leaving a page out, and moving a site's own list of pages over. Ascribe's own site draws its sidebar from the docs' `ascribe.nav`, with no list of its own.

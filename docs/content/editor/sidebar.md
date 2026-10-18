@@ -7,14 +7,14 @@ available: ascribe 0.3.0
 
 The Ascribe icon in the activity bar opens the Ascribe sidebar, with three views: **This page**, **Pages**, and **Content model**. In a workspace with no project, Pages says how to start one, and in Restricted Mode, how to trust the folder.
 
-@available: next
+@available: ascribe 0.4.0
 While review is on, a **Review** view comes first: see [The Review view](review.md#the-review-view).
 
 ## This page, Pages, and Content model
 
 The views show the active file's project, named beside Pages' and Content model's titles. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one. When a project's server fails to start, Pages and Content model say so, with **Show Output** and **Restart**.
 
-@available: next
+@available: ascribe 0.4.0
 **This page** says what's known about the active page, in four sections. **About** gives its title, its content type, its address, and its Markdown version's address, or "not published" when the project publishes none ([`agents = true`](../content-model/output.md#consumer)); a fragment's address is only where it's included. **Health** says how the page stands. **Connections** lists what links to the page, grouped by file, under **Linked from**, what includes it under **Included by**, and what it includes under **Includes**. With the cursor under a heading, Connections narrows to that heading's links and the includes of its section, whichever page they reach it through, and its title names the heading; Includes stays the page's. **Memos** lists the [memo files](actions.md#memo-files) about the heading, or about the page outside any heading, including those about a block in it, each by its first line with its file beside it, marked personal or outdated when it is. Each item opens the link, the include, or the memo. Unsaved edits count.
 
 About's other rows say whether the page is published, listed, due, and finished. Each is shown only when it has something to say, apart from a description, which is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. A row with somewhere to go opens it:
@@ -60,7 +60,7 @@ A fragment has no builds, listing, or size of its own: it's published only where
 Pages and Content model update when you save a file of the project, when a page is added or deleted, Pages as you edit `ascribe.nav` too, and when you switch to another project's file; This page updates as you move between pages and headings, while it's open.
 
 ## Switch Project
-@available: next
+@available: ascribe 0.4.0
 
 In a workspace with several projects, **Ascribe: Switch Project** chooses the project the sidebar shows. It's in the Command Palette, in Pages' and Content model's title bars, and in the [status bar](preview.md#the-status-bar) item's menu; with one project, it's in none of them. It lists every project, the sidebar's first and marked, each with its folder, its server's state, such as "running, site build", "not checked yet", or "failed", and the `ascribe` binary in use. Each has buttons to show its server's output, and to restart its server when it's running or failed, and **Refresh** in its title asks the running servers for their builds again. Listing them starts no server.
 

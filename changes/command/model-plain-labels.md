@@ -1,1 +1,0 @@
-- **`ascribe model` labels a page by its title's plain text, as a sidebar does.** A page with no `nav-label`, whose type's `title` sets `inline`, is labeled `loom.yaml options` rather than `` `loom.yaml` options ``, and so is a section labeled by its own page's title. The editor's **Pages** view shows the same labels. See [`ascribe model`](docs/content/command/questions.md).

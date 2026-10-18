@@ -2,7 +2,7 @@
 type: how-to
 title: Leave a memo for whoever edits next
 description: Keeping the reason a page is written the way it is beside it, in the page or in a memo file, for the people and agents who change it, and never for its readers.
-available: next
+available: ascribe 0.4.0
 ---
 
 A page's reasons are easy to lose. Why the steps are in this order, why that table isn't prose, what the subject expert said about the caveat: none of it is for readers, so it ends up in a wiki, in a pull request nobody finds again, or in someone's head. The next person to edit the page, or the agent you ask to, changes it without knowing.

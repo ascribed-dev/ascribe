@@ -110,9 +110,9 @@ const available: Record<string, string> = {
   "ascribe.newPage": "ascribe 0.3.1",
   "ascribe.nextPlaceholder": "ascribe 0.3.1",
   "ascribe.projects.exclude": "ascribe 0.3.2",
-  "ascribe.submitReview": "next",
-  "ascribe.openSourceChanges": "next",
-  "ascribe.switchProject": "next",
+  "ascribe.submitReview": "ascribe 0.4.0",
+  "ascribe.openSourceChanges": "ascribe 0.4.0",
+  "ascribe.switchProject": "ascribe 0.4.0",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */

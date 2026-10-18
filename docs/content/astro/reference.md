@@ -221,7 +221,7 @@ Cloudflare Pages reads a `_headers` file in the same form as Netlify's, but take
 
 ## The sidebar
 @id: sidebar
-@available: next
+@available: ascribe 0.4.0
 
 `sidebar(entries, options)`, from `@ascribed/astro/content`, gives a layout its sidebar: the project's [navigation](../navigation/index.md), from the build's `_ascribe/nav.json` ([navigation contract](../contracts/navigation.md)), each page joined to its collection entry. `entries` is the collection, `await getCollection("docs")`.
 
@@ -250,7 +250,7 @@ A page's label is its [`nav-label`](../navigation/index.md#a-page-s-label) when 
 
 ### Previous and next
 @id: neighbors
-@available: next
+@available: ascribe 0.4.0
 
 `neighbors(entry, entries, options)`, from `@ascribed/astro/content`, gives a page's previous and next: the pages before and after it in the navigation's [reading order](../navigation/index.md#sections-and-pages), depth first, so a nested section's pages follow its own page. `entry` is the page's collection entry and `entries` the collection; the options are `name` and `nav`, as `sidebar()` takes them. With a [versioned build](index.md#versions), both are in the line `entry` is on.
 

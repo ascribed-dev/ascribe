@@ -76,7 +76,7 @@ Beside each file it writes, `sync` says which agents read it, and when an agent 
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
-@available: next
+@available: ascribe 0.4.0
 When a page has a [`@memo`](../writing/directives.md#memo), `AGENTS.md` also tells the agent to read a block's memo before changing the block, and to keep the two together. When the project has a [memo file](../writing/memo-files.md) in `memos/`, a sentence after it says that `ascribe outline <page>` lists the memos about a page and its headings, and to read a memo before changing the block it's about. A [personal memo](../writing/memo-files.md#personal-memos) doesn't count, so the rules are the same on every machine. When the rules run over their 4,000 characters, those sentences are cut first, before the page types.
 
 What a type is for is its `purpose` in `ascribe.toml`, or, for a type [`ascribe templates eject`](../templates/index.md) added, The Good Docs Project's summary of it, from `templates.lock` (the [content model reference](../content-model/index.md#41-page-types)).
@@ -123,7 +123,7 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 
 `sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
 
-@available: next
+@available: ascribe 0.4.0
 In VS Code, chat has the skill before you run `sync`: the [extension](index.md#vs-code) ships it.
 
 See [`ascribe agents`](commands.md#cli-agents) for every option.
@@ -165,7 +165,7 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 `new-page` says where the page goes: where its `path` says, a file or a folder, or else where the request says, and otherwise in the content root, named for the title as its address would be, `docs/rotate-keys.md`; never over a file that's there. For a type with a [template](../templates/index.md), it gives the template with its `type` and title set, to start the file from, and before it, the paths of the type's `guide`, the template's guide and Ascribe's notes, for the agent to read before it writes. The guide isn't put in the prompt: it's long, and a file the agent reads arrives whole. For a type with no template, it gives the frontmatter the type requires, with each field to fill in.
 
 ### Memos in a prompt
-@available: next
+@available: ascribe 0.4.0
 
 A prompt about a page names the [memo files](../writing/memo-files.md) about it, so your agent reads why the page is written as it is before it changes it. They come after the problems, under a heading of their own, a line each: the memo's path, what its `about` names, and its state when it isn't placed. The agent opens the file and reads it whole; a prompt never has a memo's text in it.
 
@@ -224,7 +224,7 @@ The [Ascribe extension](../editor/agents.md#agents-in-vs-code) gives an agent in
 - **Prompt agent**, on a problem, a file, a project, or in review, as [Prompt your agent](index.md#prompt-your-agent) says.
 - **The binary the editor runs.** When `ascribe` on the window's path isn't the binary the extension runs, such as the one bundled with it, the extension puts that binary's folder first on the path of the window's terminals, so `ascribe` in a terminal runs it. A terminal that was open before asks to be relaunched. **Prompt agent**'s prompts then name the binary by its path, so an agent that doesn't work in the window's terminals, such as Claude Code's extension, runs the same one.
 
-@available: next
+@available: ascribe 0.4.0
 - **The skill, with nothing to set up.** The extension gives VS Code's chat [the skill](index.md#the-skill) in a project that never ran `ascribe agents sync`. Once a workspace folder has a synced copy, in `.agents/skills/ascribe/`, `.claude/skills/ascribe/`, or `.github/skills/ascribe/`, chat lists that one, the project's, and not the extension's. VS Code reads those folders at the top of each workspace folder, and `sync` writes at the repository's root, so a workspace opened at a project below the root, such as `docs/`, gets the extension's copy even after `sync`.
 
 See [Agents in VS Code](../editor/agents.md#agents-in-vs-code).

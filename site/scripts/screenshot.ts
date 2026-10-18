@@ -21,6 +21,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fakeGitHub, type FakeGitHub } from "../../examples/astro-site/test/e2e/fake-github.ts";
+import { codeSources } from "../../scripts/docs-site/screenshots.ts";
 import { launchChromium } from "../test/built.ts";
 
 const [WIDTH, HEIGHT] = [1280, 760];
@@ -40,17 +41,18 @@ const COMMENTS = [
 const NOW = new Date("2026-10-02T15:00:00Z");
 
 /**
- * What the site builds from at HEAD: the docs and the site, the changelog its
- * page draws, and the files the docs and home/ take code examples from
- * (`[sources.code] include` in docs/ascribe.toml).
+ * What the site builds from at HEAD: the docs and the site; the changelog its
+ * page draws, with the entries in `changes/` and the script that gathers them
+ * (`src/changelog.ts`); and the files the docs and home/ take code examples
+ * from, read from `[sources.code] include` in docs/ascribe.toml.
  */
 const TREE = [
   "docs",
   "site",
   "CHANGELOG.md",
-  ".github/workflows",
-  "crates/ascribe-cli/tests/output",
-  "examples",
+  "changes",
+  "scripts/release/changes.ts",
+  ...codeSources(),
 ];
 
 function git(root: string, ...args: string[]): string {
@@ -176,7 +178,7 @@ async function serve(
     if (up) return { origin, stop };
     if (Date.now() > deadline) {
       await stop();
-      throw new Error("astro dev didn't answer in two minutes");
+      throw new Error(`astro dev didn't answer in two minutes:\n${output}`);
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }

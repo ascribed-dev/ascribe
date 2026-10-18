@@ -7,12 +7,13 @@
 //
 // `node scripts/docs-site/screenshots.ts editor`, at the repository's root,
 // builds the extension, runs this, and records the release beside the
-// pictures. It needs ASCRIBE_BIN, the path to a built `ascribe`, and Linux
-// with Xvfb (`xvfb-run`): the window is drawn on a virtual screen of a fixed
-// size, so the picture is the same on every run. VS Code is the version
-// below, downloaded on first use into out/vscode-test, as the integration
-// tests do.
-import { spawn } from "node:child_process";
+// pictures. It needs ASCRIBE_BIN, the path to a built `ascribe`. The page is
+// laid out at a fixed size whatever the screen, so a picture is the same on
+// every run on one machine: on Linux VS Code is drawn on a virtual screen of
+// that size (`xvfb-run`), and elsewhere in a window whose page is held to it.
+// VS Code is the version below, downloaded on first use into out/vscode-test,
+// as the integration tests do.
+import { spawn, type ChildProcess } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -27,6 +28,9 @@ const VSCODE = "1.141.0";
 /** The window, in CSS pixels; the picture is twice as many each way. */
 const [WIDTH, HEIGHT] = [1100, 700];
 const SCALE = 2;
+
+/** Whether VS Code is drawn on a virtual screen of the picture's size, as on Linux with Xvfb. */
+const VIRTUAL = process.platform === "linux";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const repositoryRoot = path.resolve(packageRoot, "../..");
@@ -125,31 +129,30 @@ async function picture(scheme: "light" | "dark", out: string, server: string): P
   const env = { ...process.env };
   // Set by an extension host, and VS Code would then run as plain Node.
   delete env["ELECTRON_RUN_AS_NODE"];
+  const args = [
+    root,
+    "--goto",
+    goto,
+    `--extensionDevelopmentPath=${packageRoot}`,
+    "--disable-workspace-trust",
+    "--disable-gpu",
+    "--disable-updates",
+    "--no-sandbox",
+    "--skip-welcome",
+    "--skip-release-notes",
+    `--force-device-scale-factor=${SCALE}`,
+    `--user-data-dir=${user}`,
+    `--extensions-dir=${path.join(scratch, "extensions")}`,
+    `--remote-debugging-port=${port}`,
+  ];
   const screen = `-screen 0 ${WIDTH * SCALE}x${HEIGHT * SCALE}x24`;
-  const child = spawn(
-    "xvfb-run",
-    [
-      "-a",
-      "-s",
-      screen,
-      executable,
-      root,
-      "--goto",
-      goto,
-      `--extensionDevelopmentPath=${packageRoot}`,
-      "--disable-workspace-trust",
-      "--disable-gpu",
-      "--disable-updates",
-      "--no-sandbox",
-      "--skip-welcome",
-      "--skip-release-notes",
-      `--force-device-scale-factor=${SCALE}`,
-      `--user-data-dir=${user}`,
-      `--extensions-dir=${path.join(scratch, "extensions")}`,
-      `--remote-debugging-port=${port}`,
-    ],
-    { stdio: "ignore", env, detached: true },
-  );
+  const child = VIRTUAL
+    ? spawn("xvfb-run", ["-a", "-s", screen, executable, ...args], {
+        stdio: "ignore",
+        env,
+        detached: true,
+      })
+    : spawn(executable, args, { stdio: "ignore", env, detached: true });
   let browser: Browser | undefined;
   try {
     browser = await poll("VS Code", () => chromium.connectOverCDP(`http://127.0.0.1:${port}`));
@@ -160,6 +163,16 @@ async function picture(scheme: "light" | "dark", out: string, server: string): P
         .flatMap((context) => context.pages())
         .find((page) => page.url().includes("workbench")),
     );
+    if (!VIRTUAL) {
+      // A real window is the screen's size: hold the page to the picture's.
+      const cdp = await window.context().newCDPSession(window);
+      await cdp.send("Emulation.setDeviceMetricsOverride", {
+        width: WIDTH,
+        height: HEIGHT,
+        deviceScaleFactor: SCALE,
+        mobile: false,
+      });
+    }
     // The language server has checked the page.
     await window.locator(".squiggly-warning").first().waitFor({ timeout: 60_000 });
     await command(window, "Notifications: Clear All Notifications");
@@ -167,7 +180,7 @@ async function picture(scheme: "light" | "dark", out: string, server: string): P
     await command(window, "View: Focus Problems");
     await window.locator(".markers-panel .monaco-list-row").first().waitFor();
     await command(window, "View: Focus First Editor Group");
-    await window.keyboard.press("Control+.");
+    await window.keyboard.press(process.platform === "darwin" ? "Meta+." : "Control+.");
     await window.locator(".action-widget").first().waitFor();
     // The menu's entrance, and the panel's last layout.
     await window.waitForTimeout(1000);
@@ -181,27 +194,46 @@ async function picture(scheme: "light" | "dark", out: string, server: string): P
       caret: "initial",
     });
   } finally {
-    await browser?.close().catch(() => undefined);
-    if (child.pid !== undefined) {
-      try {
-        process.kill(-child.pid, "SIGTERM");
-      } catch {
-        // Gone already.
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await quit(child, browser);
     rmSync(scratch, { recursive: true, force: true, maxRetries: 5 });
   }
+}
+
+/**
+ * Quits VS Code as its menu does, through the debugging protocol, and stops
+ * it only when it hasn't gone after a while. Stopped with a signal, VS Code on
+ * macOS leaves a dialog saying its window was killed.
+ */
+async function quit(child: ChildProcess, browser: Browser | undefined): Promise<void> {
+  const gone = (): boolean => child.exitCode !== null || child.signalCode !== null;
+  const exited = new Promise<boolean>((resolve) => {
+    if (gone()) resolve(true);
+    else child.once("exit", () => resolve(true));
+  });
+  const timeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 10_000));
+  if (browser !== undefined) {
+    // Not awaited: VS Code quits before it answers, and the answer never comes.
+    void browser
+      .newBrowserCDPSession()
+      .then((session) => session.send("Browser.close"))
+      .catch(() => undefined);
+  }
+  if (await Promise.race([exited, timeout])) return;
+  console.error("VS Code didn't quit after 10 seconds; stopping it.");
+  if (child.pid !== undefined) {
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      // Gone already.
+    }
+  }
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 
 const out = process.argv[2];
 const server = process.env["ASCRIBE_BIN"];
 if (out === undefined || server === undefined) {
   console.error("Usage: ASCRIBE_BIN=<a built ascribe> node scripts/screenshot.ts <folder>");
-  process.exit(2);
-}
-if (process.platform !== "linux") {
-  console.error("The editor's picture is taken on Linux, with Xvfb: see the comment at the top.");
   process.exit(2);
 }
 mkdirSync(out, { recursive: true });

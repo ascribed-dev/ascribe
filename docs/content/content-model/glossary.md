@@ -2,7 +2,7 @@
 type: how-to
 title: Set up a glossary
 description: Write a project's terms on a glossary page, choose which of their occurrences are linked, and keep terms that differ by version or product, so every page links its terms to their definitions.
-available: next
+available: ascribe 0.4.0
 ---
 
 A glossary gives each of a project's terms one definition, and every page that uses the term links to it. In Ascribe, a glossary is a page you write like any other: a heading for each term, with its definition under it. `ascribe.toml` says which pages are glossaries, and Ascribe does the linking, so you never mark a term where you use it.

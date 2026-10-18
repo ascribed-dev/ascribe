@@ -42,7 +42,7 @@ Once you've used review in a workspace, opening a page of a branch with an open 
 
 **Ascribe: Changed Pages** (also the list button in the preview's title bar, and the status bar item) lists every page the pull request changes, with what changed on each. A page whose own file didn't change says what it changed through, such as `_fragments/requirements.md` or `ascribe.toml`. Choose one to open it and its page preview.
 
-@available: next
+@available: ascribe 0.4.0
 The **Review** view, first in the Ascribe sidebar while review is on, lists the same pages under **Added**, **Changed**, and **Removed**, each with its counts and open threads, and the problems on them. Choose a page to open it and its preview at its first change. To read a page's source changes, use its diff button, which shows its file and what it changed through, on a branch of any size; **Open Source Changes**, in the view's title bar, shows every changed source file in one diff. See [The Review view](../editor/review.md#the-review-view).
 
 In the preview, changed blocks have a bar in the margin and a label: **Added**, **Changed** (with the changed words highlighted), **Removed** (shown where it was, struck through), and **Moved** (linked to where it came from). The header says how many changes the page has; the arrows step through them ("3 of 7 on this page"), and past the last one offer the next changed page. **Changes / As it will be / As it was** switches between the marks and the page without them, before and after. Click a mark's label to open its source lines.
@@ -63,7 +63,7 @@ To hand a comment to your agent, choose **Prompt agent** on its thread. **More r
 
 While you have unsent comments, a bar at the bottom of the preview counts them: "2 unsent comments. Only you can see them until you submit." **Submit review…** lists them, takes an optional summary, and sends them as a comment, an approval, or a request for changes. **Discard…**, in the same dialog, deletes them instead, after asking.
 
-@available: next
+@available: ascribe 0.4.0
 The Review view's badge counts them too, and **Submit Review…** in its title bar opens the same dialog.
 
 After you submit, the comments are on the pull request on GitHub, from you, like any review.

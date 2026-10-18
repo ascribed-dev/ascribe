@@ -1,1 +1,0 @@
-- **A guide says when to write a memo, a memo file, or a review comment.** [Leave a memo for whoever edits next](docs/content/writing/memos.md) covers `@memo` in both forms, memo files with `about` and `quote`, what outdated and detached mean, personal memos, and what agents are told, and links each reference. Ascribe's own docs keep some of their reasons in memos.
