@@ -59,7 +59,7 @@ Shows a page's title and type, and the headings a link to it can name, with the 
 
 A heading from a fragment says which fragment. With `--build`, it shows only the headings that build publishes: a heading in a variant the build leaves out, or in a block it filters out by availability, isn't listed. When the build doesn't publish the page at all, it says why, lists no headings, and exits with `1`. A fragment's outline lists its headings, and those of the fragments it includes.
 
-@available: next
+@available: ascribe 0.4.0
 Under the page, and under each heading, a line lists each [memo file](../writing/memo-files.md) about it, with its first line, and `(outdated)` when the words it quotes aren't there any more. A detached memo isn't listed.
 
 | Code | Meaning |
@@ -74,7 +74,7 @@ With `--format json`, the document is:
 
 `page` is the path from the content root, as links write it, and `file` is from the project root, as `ascribe check` reports it. `type` is null for a fragment. `explicit_id` is true when the heading has an `@id`, which stays when its text changes; prefer those in links. `fragment` is the fragment a heading comes from, or null.
 
-@available: next
+@available: ascribe 0.4.0
 `memos`, on the page and on each heading, lists the memo files about it, in path order: `file`, from the project root; `state`, `placed` or `outdated`; `quote`, or null; `first_line`, the first line of its text; and `personal`, which is false for the project's `memos/`.
 
 ## `ascribe link`
@@ -119,7 +119,7 @@ Lists the places that use a page, a fragment, a heading, or an entry of the cont
 
 A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
-@available: next
+@available: ascribe 0.4.0
 A [memo file](../writing/memo-files.md) about the target is a place too, with the use `memo`, at its `about` line, after the uses. One whose `about` names a target that doesn't exist is listed under that target, so `ascribe refs` finds the memos a rename left behind.
 
 | Code | Meaning |

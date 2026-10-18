@@ -42,7 +42,7 @@ These change `ascribe.toml` in place, keeping its comments, blank lines, and ord
 A type with no template makes a page with its frontmatter: its `type`, the title, and each other field the type requires, empty.
 
 ## Memo files
-@available: next
+@available: ascribe 0.4.0
 
 A [memo file](../writing/memo-files.md) says why a section or a block is written the way it is. The editor shows them where they apply, and writes them for you. [Leave a memo for whoever edits next](../writing/memos.md) says when to write one.
 

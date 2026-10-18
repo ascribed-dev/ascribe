@@ -14,7 +14,7 @@ With review on, the preview's header shows the base, how many changes the page h
 **Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, by title, each with its counts and, when its own file didn't change, what it changed through. A title with [code](../content-model/index.md#53-code-in-a-field) shows it between backticks, as in "`` `loom.yaml` options ``"; the preview's heading shows it as code. Choosing one opens it and its preview, or, for a removed page, the preview of the page as it was.
 
 ## The Review view
-@available: next
+@available: ascribe 0.4.0
 
 While review is on for the active page's project, a **Review** view is first in the Ascribe sidebar, and it's gone once review stops. It lists the same pages as Changed Pages, the ones [`ascribe diff`](../review/diff.md#cli-diff) lists for the same base, under **Added**, **Changed**, and **Removed**: each by its title, with its counts, what it changed through when its own file didn't change (such as "via _fragments/requirements.md"), and how many open threads show on it, such as "3 changed · 1 open thread". Choosing a page opens it and its preview at its first change; a removed page has no file to open, so choosing it shows the page in the preview as it was at the base, with the review header saying so and no **As it will be** to switch to. Each page's diff button opens its own source changes: its file and the files it changed through. The pages follow your edits, saved or not.
 

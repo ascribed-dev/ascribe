@@ -4,6 +4,8 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+## 0.4.0 (2026-10-18)
+
 ### The language
 
 - **A description field's `default` is the description of a page that leaves the field out or empty.** `llms.txt`, `pages.json`, and the compact index show it, where they showed no description before, and [`description-too-long`](docs/content/content-model/output.md) reports a long default once, at the `default` in `ascribe.toml`. Pages that share a default aren't reported by `description-duplicate`.

@@ -30,7 +30,7 @@ Only a check the diagnostics registry marks configurable can be named; the [diag
 |---|---|---|---|---|
 | `page-size` | `limit` | integer | `50000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. It MUST be above 0. |
 | `image-large` | `limit` | integer or string | `"500 KB"` | The size over which an image file is reported: a whole number of bytes, or a number followed by `B`, `KB`, or `MB` (a kilobyte is 1,000 bytes, a megabyte 1,000,000), with or without a space. |
-| `memo-long` {available=next} | `limit` | integer | `2000` | The length, in characters of a memo file's text (SPEC §7.7), over which the memo is reported. It MUST be above 0. |
+| `memo-long` {available="ascribe 0.4.0"} | `limit` | integer | `2000` | The length, in characters of a memo file's text (SPEC §7.7), over which the memo is reported. It MUST be above 0. |
 
 The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is §19.2, and `links` §19.3.
 

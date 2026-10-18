@@ -228,8 +228,8 @@ Directives follow CommonMark's container rules, like headings and code fences:
 | [`@details`](directives.md#details) | line, container | none | Collapsible content |
 | [`@snippet`](directives.md#snippet) | line | an address | A code example from a file |
 | [`@intended`](directives.md#intended) | line | a reason | Say a check's problem is intended |
-| [`@memo`](directives.md#memo) {available=next} | line, container | text | Keep a note for whoever maintains the page, never published |
-| [`@term`](directives.md#term) {available=next} | line | none | Make a glossary page's heading a term |
+| [`@memo`](directives.md#memo) {available="ascribe 0.4.0"} | line, container | text | Keep a note for whoever maintains the page, never published |
+| [`@term`](directives.md#term) {available="ascribe 0.4.0"} | line | none | Make a glossary page's heading a term |
 
 ### `@id`
 
@@ -507,7 +507,7 @@ labels = { macos = "macOS" }  # :remove:
 
 Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](../checks/diagnostics/directives.md) in the diagnostics reference.
 
-@available: next
+@available: ascribe 0.4.0
 In VS Code, the code file says which pages show it: a lens over each region a snippet takes, and on the first line of a file a snippet takes whole, counts the pages and lists them. See [Code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
 ### `@intended`
@@ -551,7 +551,7 @@ An acknowledged problem isn't reported, but `ascribe check` and `ascribe build` 
 In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason. Its placeholder reason is reported as an error until you replace it, so the fix alone silences nothing.
 
 ### `@memo`
-@available: next
+@available: ascribe 0.4.0
 
 ([SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo))
 
@@ -577,7 +577,7 @@ Revoke the old key once every agent uses the new one.
 - **An HTML comment isn't private:** it's in the source of every published page. `ascribe check` reports one as advice, [`html-comment`](../checks/diagnostics/content-checks.md#ASC223), and the editor's quick fix **Rewrite as a memo** turns a comment that's a block of its own into a memo about the same block, or about its section when it's the section's last block. A comment written for another tool is acknowledged with `@intended {check=html-comment}` above its block, and Vale's own comments, such as `<!-- vale off -->`, aren't reported.
 
 ### `@term`
-@available: next
+@available: ascribe 0.4.0
 
 ([SPEC §4.11]({repo}/blob/main/SPEC.md#411-term))
 

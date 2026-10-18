@@ -2,7 +2,7 @@
 type: how-to
 title: Put your pages in order
 description: Choose the order of a project's sections and pages and their labels, in ascribe.nav or by dragging in the editor, leave a page out, and move a site's own list of pages over.
-available: next
+available: ascribe 0.4.0
 ---
 
 A site's sidebar, previous and next, `llms.txt`, and an archive all take their order from the project's [navigation](index.md). A project has one before you write anything, the default order. This page is for when you want another: a page earlier in its section, a section first, or a shorter label.

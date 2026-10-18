@@ -110,13 +110,13 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 #### The sidebar
 @available: ascribe 0.3.0
 
-@available: next
+@available: ascribe 0.4.0
 The layout draws the sidebar from the project's [navigation](../navigation/index.md): its sections and pages in the order `ascribe.nav` gives, or the default order, so the site keeps no list of its own. `sidebar(await getCollection("docs"), { entry })`, from `@ascribed/astro/content`, gives its groups: the content root's pages under **Start**, then a group for each top section, with its nested sections in `sections`. Each page has its entry, its address, the one Ascribe's links use, and its label, its title or a shorter `nav-label`, with `formatted.label` its HTML when it has code ([`sidebar()`](reference.md#sidebar)). `neighbors(entry, entries)` gives the pages before and after this one in the same order, for the links at the page's foot ([previous and next](reference.md#neighbors)). The layout lists a nested section's pages in their top section's group, right after the section's own page, or after the group's pages when that's its `index.md`; each `<li>` has a `data-depth`, `0` in a top section and one more for each section below it, for your stylesheet to indent.
 
-@available: next
+@available: ascribe 0.4.0
 With several projects, the sidebar lists the project the entries came from; `sidebar(entries, { name: "docs", entry })` names it, as `ascribeCollection` does. `entry` is the page the sidebar is on: with a [versioned build](#versions), the sidebar shows that page's line.
 
-@available: next
+@available: ascribe 0.4.0
 To change the order or a label, write `ascribe.nav`, or drag the pages in the editor: [Put your pages in order](../navigation/order.md).
 
 A site can keep a list of its own instead, such as the `src/nav.ts` that `init` wrote in 0.3, passed as `sidebar(entries, { nav, entry })`. It keeps working: the sidebar shows the list's groups in its order, and the build fails when the list leaves out a page, names a file that isn't one, or names a page twice. To move it over to the project's navigation, see [Move a site's own list over](../navigation/order.md#own-list).
