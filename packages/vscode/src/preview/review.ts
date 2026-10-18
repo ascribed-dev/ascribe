@@ -80,6 +80,16 @@ export class ReviewController implements vscode.Disposable {
   private readonly updated = new vscode.EventEmitter<void>();
   /** The pull request's threads, for the projects with review on. */
   readonly threads: ThreadsController;
+  /**
+   * The changed pages last asked for, by server: kept until its base, the
+   * build asked about, or a file of its project changes.
+   */
+  private readonly kept = new Map<
+    ProjectServer,
+    { base: BaseInfo; build: string | undefined; changes: Promise<ChangesResult> }
+  >();
+  /** How many times the changed pages were asked of a server. */
+  private changesAsked = 0;
 
   /**
    * Fires when review may show something else: it started or stopped, the
@@ -122,8 +132,29 @@ export class ReviewController implements vscode.Disposable {
       this.projects.onDidChangeProjects(() => this.update()),
       // A page's server starts after the page opens: offer review once it's up.
       this.projects.onDidStart(() => this.update()),
+      // What changed is asked again once a file of the project has: as it's
+      // typed, and on disk, which the server says it has followed by
+      // publishing the file's diagnostics again.
+      vscode.workspace.onDidChangeTextDocument(({ document }) => this.forget(document.uri)),
+      vscode.workspace.onDidCloseTextDocument((document) => this.forget(document.uri)),
+      vscode.languages.onDidChangeDiagnostics(({ uris }) => {
+        for (const uri of uris) this.forget(uri);
+      }),
+      this.projects.onDidChangeState((server) => this.kept.delete(server)),
     );
     this.update();
+  }
+
+  /** Forgets the changed pages kept for the project that owns `uri`. */
+  private forget(uri: vscode.Uri): void {
+    if (this.kept.size === 0 || uri.scheme !== "file") return;
+    const server = this.projects.serverFor(uri);
+    if (server) this.kept.delete(server);
+  }
+
+  /** How many times the changed pages were asked of a server, for counting a refresh's requests. */
+  get changesRequests(): number {
+    return this.changesAsked;
   }
 
   get api(): ReviewApi {
@@ -560,14 +591,29 @@ export class ReviewController implements vscode.Disposable {
 
   /**
    * The project's changed pages in the preview's build, against the base.
-   * Rejects when the server can't say; shows nothing.
+   * Asked of the server again only when the base, the build, or a file of
+   * the project changed since. Rejects when the server can't say; shows
+   * nothing.
    */
-  async changesOf(server: ProjectServer): Promise<ChangesResult> {
+  changesOf(server: ProjectServer): Promise<ChangesResult> {
     const build = this.host.previewBuild(server.project.folder);
-    return (await server.request(
+    const base = this.baseOf(server);
+    const kept = this.kept.get(server);
+    if (kept && base && kept.base === base && kept.build === build) return kept.changes;
+    this.changesAsked++;
+    const changes = server.request(
       CHANGES_REQUEST,
       build === undefined ? {} : { build },
-    )) as ChangesResult;
+    ) as Promise<ChangesResult>;
+    if (base) {
+      const entry = { base, build, changes };
+      this.kept.set(server, entry);
+      // An answer that failed isn't kept.
+      changes.catch(() => {
+        if (this.kept.get(server) === entry) this.kept.delete(server);
+      });
+    }
+    return changes;
   }
 
   dispose(): void {

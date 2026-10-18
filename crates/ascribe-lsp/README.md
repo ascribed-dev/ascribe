@@ -888,7 +888,10 @@ position, and the `@snippet` lines as locations, as VS Code's
 Memo files (SPEC §7.7), committed in `memos/` and personal in
 `.ascribe/memos/`, are read each time they're asked for, through the file
 system that holds an open memo file's text, and placed against the current
-snapshot (`src/memos.rs`). A memo file isn't a source: an edit to one, open
+snapshot (`src/memos.rs`). Only `ascribe/page` keeps them, the memos about the
+file it was asked about last, until the snapshot changes or a memo file is
+opened, edited, closed, or changed on disk, so a cursor move doesn't read
+every memo file. A memo file isn't a source: an edit to one, open
 or on disk, runs the checks across the project again, which place and check
 every memo, the personal ones too, and its diagnostics are published on the
 memo file. `ascribe check` reads the committed ones only.
@@ -1024,15 +1027,18 @@ over an in-process connection. Median (p95) per move, one run on a 4-core
 
 | Page | Used by, server | `ascribe/page`, server | Used by, round trip | `ascribe/page`, round trip |
 |---|---|---|---|---|
-| Long | 0.30 ms (3.8) | 0.22 ms (0.35) | 0.49 ms (4.1) | 0.36 ms (0.54) |
-| Short | 0.23 ms (3.2) | 0.15 ms (0.30) | 0.40 ms (4.0) | 0.32 ms (0.60) |
+| Long | 0.30 ms (5.6) | 0.19 ms (0.94) | 0.43 ms (5.8) | 0.31 ms (1.1) |
+| Short | 0.15 ms (4.0) | 0.13 ms (0.22) | 0.25 ms (4.2) | 0.23 ms (0.36) |
 
 The first request about a file in a snapshot pays for the search, as Used by's
 `textDocument/references` did on every heading it moved to (3 to 4 ms here);
 later moves only pick the heading's places. In the editor, each request also
 crosses the process boundary, so a move with one request saves one crossing
 more than the round trips show. The bench exits non-zero when `ascribe/page`'s
-median is slower on either measure.
+median is slower on either measure, and the weekly corpora and performance
+workflow runs it (`.github/workflows/corpora.yml`). What's kept for the file,
+the memos about it included, is what holds it there: read every time, the
+memos cost a move more than both of Used by's requests.
 
 ## Library choice
 

@@ -244,6 +244,47 @@ fn this_page_lists_the_memos_about_the_heading_at_the_cursor() {
     assert_eq!(top["memos"][0]["path"], "memos/page.md");
 }
 
+#[test]
+fn this_page_lists_a_memo_again_as_its_file_changes() {
+    let section = "---\nabout: guide.md#install\n---\n\nWhy the section.\n";
+    let (fixture, mut client) = project(&[("memos/section.md", section)]);
+    let ask = |client: &mut Client, needle: &str| {
+        let page = client
+            .request(
+                "ascribe/page",
+                json!({ "textDocument": doc(&fixture, "docs/guide.md"), "position": at(GUIDE, needle) }),
+            )
+            .response_result
+            .expect("a result");
+        page["memos"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|memo| memo["firstLine"].as_str().unwrap().to_owned())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(ask(&mut client, "Run the"), ["Why the section."]);
+    // Opened and edited, before it's saved: the page's snapshot is the same.
+    let memo = fixture.path("memos/section.md");
+    client.open(&memo, 1, section);
+    client.replace(&memo, 2, "---\nabout: guide.md\n---\n\nWhy the page.\n");
+    client.settle();
+    assert!(ask(&mut client, "Run the").is_empty());
+    assert_eq!(ask(&mut client, "The guide"), ["Why the page."]);
+    // Closed, it's what's on disk again.
+    client.close(&memo);
+    client.settle();
+    assert_eq!(ask(&mut client, "Run the"), ["Why the section."]);
+    // Written on disk.
+    fixture.write(
+        "memos/section.md",
+        "---\nabout: guide.md#install\n---\n\nWhy now.\n",
+    );
+    client.watched(&[(&memo, FileChangeType::CHANGED)]);
+    client.settle();
+    assert_eq!(ask(&mut client, "Run the"), ["Why now."]);
+}
+
 fn add(client: &mut Client, fixture: &Fixture, action: &str, range: Value) -> Value {
     client
         .request(

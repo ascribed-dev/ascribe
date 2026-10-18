@@ -695,6 +695,7 @@ impl Core {
         {
             loaded.fs.set_buffer(&project, None);
             loaded.across_dirty = true;
+            self.page_uses.forget_memos();
             self.refresh_lenses();
             return;
         }
@@ -742,6 +743,7 @@ impl Core {
         if let Some(Kind::Memo(project)) = loaded.classify(path) {
             loaded.fs.set_buffer(&project, Some(text));
             loaded.across_dirty = true;
+            self.page_uses.forget_memos();
             self.refresh_lenses();
             return;
         }
