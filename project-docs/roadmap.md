@@ -4,7 +4,19 @@ Five plans have phase files: [versions](versions/README.md), [memos](memos/READM
 
 Written 16 October 2026, with every plan's decisions answered.
 
-## Where each plan stands
+**Finished, 18 October 2026.** Every phase of every plan has merged, and each plan is closed: its decisions in force are files in [`decisions/`](decisions/README.md), and its README is the record of what was intended.
+
+| Plan | Last phase | Decisions in force |
+|---|---|---|
+| Versions | [#523](https://github.com/ascribed-dev/ascribe/pull/523) | #502a to #502k, with #494 and #496a to #496c |
+| Memos | [#569](https://github.com/ascribed-dev/ascribe/pull/569) | #536a to #536j, with #533, #551, and #558 |
+| The editor's views | [#591](https://github.com/ascribed-dev/ascribe/pull/591) | #544a to #544h |
+| Navigation | [#588](https://github.com/ascribed-dev/ascribe/pull/588) | #541a to #541g, with #537a to #537d, #539a to #539d, #578, #585, and #594 |
+| Glossary pages | [#601](https://github.com/ascribed-dev/ascribe/pull/601) | #548a to #548e, with #545a and #546a |
+
+The review after the last phases found what's left to fix, as issues [#603](https://github.com/ascribed-dev/ascribe/issues/603) to [#618](https://github.com/ascribed-dev/ascribe/issues/618). The rest of this file is the plan as it ran.
+
+## Where each plan stood, on 16 October
 
 | Plan | Done | Left | Decisions |
 |---|---|---|---|
