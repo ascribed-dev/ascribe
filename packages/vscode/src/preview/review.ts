@@ -134,7 +134,8 @@ export class ReviewController implements vscode.Disposable {
       this.projects.onDidStart(() => this.update()),
       // What changed is asked again once a file of the project has: as it's
       // typed, and on disk, which the server says it has followed by
-      // publishing the file's diagnostics again.
+      // publishing the file's diagnostics again, a deleted file's and
+      // `ascribe.toml`'s too, even when they're what they were.
       vscode.workspace.onDidChangeTextDocument(({ document }) => this.forget(document.uri)),
       vscode.workspace.onDidCloseTextDocument((document) => this.forget(document.uri)),
       vscode.languages.onDidChangeDiagnostics(({ uris }) => {

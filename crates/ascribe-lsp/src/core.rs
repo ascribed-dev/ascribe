@@ -854,6 +854,16 @@ impl Core {
                     _ => None,
                 })
                 .collect();
+            // A deleted source's diagnostics are cleared even when it had
+            // none, so a client waiting on the deletion learns the server
+            // has caught up.
+            if let Some(loaded) = self.loaded.as_ref() {
+                for change in &changes {
+                    if let Change::Deleted { path } = change {
+                        self.forced.insert(loaded.source_path(path));
+                    }
+                }
+            }
             self.apply(changes, &mirror);
             if let Some(loaded) = self.loaded.as_mut() {
                 loaded.across_dirty = true;
@@ -879,6 +889,11 @@ impl Core {
             self.refresh_nav();
         }
         if sync_model {
+            // Published again even when its diagnostics are what they were,
+            // as a changed source's are.
+            if let Some(config) = self.config.clone() {
+                self.forced.insert(config);
+            }
             self.sync_model();
         }
         if refresh {
@@ -1189,14 +1204,17 @@ impl Core {
         );
     }
 
-    /// Clears a file's diagnostics, when it had any.
+    /// Clears a file's diagnostics, when it had any, or when it was deleted
+    /// on disk since ([`Core::did_change_watched`]).
     fn clear(&mut self, path: &Path) {
         self.checked.remove(path);
         self.prose_closed_quietly(path);
-        let Some(last) = self.published.remove(path) else {
-            return;
-        };
-        if last.diagnostics.is_empty() {
+        let forced = self.forced.remove(path);
+        let had = self
+            .published
+            .remove(path)
+            .is_some_and(|last| !last.diagnostics.is_empty());
+        if !had && !forced {
             return;
         }
         let uri = match self.docs.get(path) {

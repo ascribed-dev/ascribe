@@ -758,7 +758,11 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   Each one's `data` has its `slug`, its kind
   of next step (`next`), its `builds`, `unpublished`, its fix advice (`help`),
   and its `fixes`, as `ascribe check`'s JSON has them. A deleted file's
-  diagnostics are cleared. The file-level checks probe the disk with the files
+  diagnostics are cleared. A closed file the watcher reports written or
+  deleted, and `ascribe.toml` changed on disk, are published even when their
+  diagnostics are what they were (an empty list for a deleted one), so a
+  client waiting on the change learns the server has caught up with it: the
+  extension forgets the changed pages review keeps when it sees one. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
   (`Project::from_parts_with_fs`), as the source index does.
 - **The content checks across the project** (`page-orphan`,
