@@ -1,5 +1,7 @@
 # Memos
 
+**This plan is finished:** its last phase merged in [#569](https://github.com/ascribed-dev/ascribe/pull/569). The decisions of it that are in force are [decision #536a](../decisions/536a-memo-commentary.md) to [decision #536j](../decisions/536j-personal-memos.md), with [decision #533](../decisions/533-memo-files-in-spec.md), [decision #551](../decisions/551-empty-memo-advice.md), and [decision #558](../decisions/558-template-section-empty.md), recorded while it ran. This README is the record of what was intended; the code, SPEC.md, and those decisions say what is.
+
 The people and agents who maintain a docs set can find out why a page is written the way it is, at the place they're about to change. A memo is that reason, kept beside what it's about and never published: `@memo` in a page for a line or two, and a memo file for something longer. The idea is in the [proposal](../proposals/memos.md). This is the plan for building it.
 
 ## Who it's for

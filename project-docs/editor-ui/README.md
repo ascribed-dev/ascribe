@@ -1,5 +1,7 @@
 # The editor's views
 
+This plan is finished: its last phase merged in [#591](https://github.com/ascribed-dev/ascribe/pull/591). Its decisions in force are decision [#544a](../decisions/544a-sidebar-views.md) to [#544h](../decisions/544h-editor-leaves-out.md), in [decisions/](../decisions/README.md). This README is the record of what was intended.
+
 The sidebar says what needs attention where the author is: this page's problems and connections, its review, and what a branch changed. Everything else stays where VS Code users already look. The idea, and the research behind it, are in the [proposal](../proposals/editor-ui.md). This is the plan for building it.
 
 ## Who it's for
@@ -47,7 +49,7 @@ From the proposal's design and its review:
 12. **The Review view's changed pages, and its problems, are the server's,** from the base `ascribe/review/setBase` set, so they never disagree with `ascribe diff`.
 13. **The base side of Open Source Changes comes from the Git extension first** (its API's `toGitUri`), and from documents the server serves through `GitFs` where the Git extension is off.
 14. **"Shown in N pages" is placed from the saved file.** The server registers the lens for its sources' folders by dynamic registration, and reads the regions from disk, as a build does. The client doesn't send it code files. **A code file in more than one project's sources gets a lens from each,** each counting its own project's pages and naming the project ("docs: shown in 3 pages"); a file one project shows gets one lens, unnamed. The pages are in different projects, built and published apart, so one count across them would add things a writer can't act on together.
-15. **`source.fixAll.ascribe` is every safe fix for the file's problems,** the set `ascribe check --fix` applies to it, and runs on save only where someone sets it in `editor.codeActionsOnSave`.
+15. **`source.fixAll.ascribe` is every safe fix for the problems the editor shows in the file,** settled as `ascribe check --fix` settles them, and runs on save only where someone sets it in `editor.codeActionsOnSave`. A problem that needs every build to tell isn't one the editor shows, so its fix is `ascribe check --fix`'s alone ([#563](https://github.com/ascribed-dev/ascribe/pull/563)).
 16. **The skill's key, `ascribe.agentsSynced`, is set only for a copy in a folder VS Code's chat loads skills from:** `.github/skills/`, `.claude/skills/`, or `.agents/skills/` in a workspace folder, which takes in both of `sync`'s. The rules aren't shipped: they're made from a project's model.
 17. **Insert at the Cursor writes into the project's last Markdown editor,** which the extension tracks, since VS Code's active editor is none while a webview has focus.
 

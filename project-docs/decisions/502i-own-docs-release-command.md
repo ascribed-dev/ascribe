@@ -1,0 +1,5 @@
+---
+section: The docs and the site
+---
+
+**Ascribe releases its own docs with `ascribe versions release`, in the release's commit, for `docs` and `site/home` both: [RELEASING.md](../../RELEASING.md)'s step 2.** Each run makes the planned line the one live line, moves the line that was live to `archived`, rewrites every mark written `next` to the release's version, and points `[features.next]` at the next version, added to `planned`, for what `main` adds after the release. No build of the docs is versioned, since they're one site following `main` (decision 19), so each release leaves one live line. There's no follow-up pull request to rewrite the marks. _Why:_ the line moves in that commit already, and a mark a later pull request adds is written `next` and stays so, which the follow-up had to sort out by hand. _From:_ the maintainer, on the [versions plan](../versions/README.md), decision 49, confirmed with [#510](https://github.com/ascribed-dev/ascribe/pull/510), 15 October 2026; recorded when the plan closed, with [#502](https://github.com/ascribed-dev/ascribe/issues/502).
