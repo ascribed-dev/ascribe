@@ -231,6 +231,51 @@ fn a_nested_section_with_its_page_beside_its_folder_sits_where_the_page_is() {
 }
 
 #[test]
+fn a_top_section_with_its_page_beside_its_folder_follows_the_files_sections() {
+    // `guides.md` sorts between the root's other pages, and its section
+    // would be first in path order; it comes after them, in path order or
+    // the file's, as any top section does (decision #610).
+    let files = vec![
+        ("index.md", page("guide", "Home")),
+        ("a.md", page("guide", "Alpha")),
+        ("guides.md", page("guide", "Guides")),
+        ("b.md", page("guide", "Beta")),
+        ("guides/one.md", page("guide", "One")),
+        ("ref/api.md", page("guide", "API")),
+    ];
+    let folders = |p: &Project| -> Vec<String> {
+        p.navigation()
+            .root
+            .sections
+            .iter()
+            .map(|s| s.folder.clone())
+            .collect()
+    };
+    let p = project(&files, None);
+    assert_eq!(folders(&p), ["guides/", "ref/"]);
+    let root = &p.navigation().root;
+    assert!(!root.places(&root.sections[0]));
+    // Its page is still one of the root's, as the navigation contract says.
+    assert!(root.pages.iter().any(|page| page.as_str() == "guides.md"));
+    let nav = "version = 1\n[[sections]]\nfolder = \"ref/\"\n[[sections]]\nfolder = \"guides/\"\n";
+    assert_eq!(folders(&project(&files, Some(nav))), ["ref/", "guides/"]);
+    // Naming the page in the root's `pages` doesn't move the section.
+    let nav = "version = 1\n[[sections]]\nfolder = \"\"\npages = [\"guides.md\", \"b.md\"]\n[[sections]]\nfolder = \"ref/\"\n";
+    assert_eq!(folders(&project(&files, Some(nav))), ["ref/", "guides/"]);
+    // Below the root, the page still places it.
+    let nested = project(
+        &[
+            ("checks/check.md", page("guide", "Check")),
+            ("checks/diagnostics.md", page("guide", "Diagnostics")),
+            ("checks/diagnostics/pages.md", page("guide", "Pages")),
+        ],
+        None,
+    );
+    let checks = &nested.navigation().root.sections[0];
+    assert!(checks.places(&checks.sections[0]));
+}
+
+#[test]
 fn a_build_shows_its_share() {
     let mut files = files();
     files.push((

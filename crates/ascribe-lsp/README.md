@@ -498,8 +498,8 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
   with its `folder`, its `label` and the `labelSet` the file gives it, its own
   `page`, its `pages` in order (the own page not among them, each `placed`
   unless the section lists its `pages` and leaves it out), and its nested
-  `sections`, in order: one whose own page is among `pages` sits where that
-  page is. `listed` is whether the file lists the section, and `listsPages`
+  `sections`, in order: below the content root, one whose own page is among
+  `pages` sits where that page is, and a top section never does. `listed` is whether the file lists the section, and `listsPages`
   whether it lists its pages. `null` only in an answer for a file outside
   the project.
 - `model` lists the phrases, features, glossary terms, dimensions, note types,
