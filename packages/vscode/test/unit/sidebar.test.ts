@@ -459,6 +459,82 @@ describe("the Pages view", () => {
   });
 });
 
+/**
+ * A top section whose own page is beside its folder: `guides.md` beside
+ * `guides/`, sorting between the root's other pages. The navigation is as
+ * the server gives it, and as `nav.json` has it for the same project: the
+ * page among the root's pages too, and the sections in `[[sections]]`
+ * order, Reference listed first.
+ */
+const besideTop: InventoryResult = {
+  ...inventory,
+  pages: [
+    ...inventory.pages,
+    ...[
+      ["a.md", "Alpha"],
+      ["guides.md", "Guides"],
+      ["z.md", "Zeta"],
+    ].map(([path, title]) => ({
+      path: path ?? "",
+      title: title ?? null,
+      label: title ?? "",
+      navLabel: null,
+      type: "guide",
+      incoming: 1,
+      builds: ["site"],
+    })),
+  ],
+  fragments: [],
+  navigation: section("", "Start", {
+    page: "index.md",
+    pages: [page("a.md"), page("guides.md"), page("z.md")],
+    sections: [
+      reference,
+      section("guides/", "Guides", {
+        page: "guides.md",
+        pages: [page("guides/install.md")],
+      }),
+    ],
+  }),
+};
+
+describe("a top section beside its page in the Pages view", () => {
+  const roots = pagesRoots(besideTop);
+
+  it("draws it after Start, in the navigation's order, its page heading it", () => {
+    expect(outline(roots)).toEqual([
+      "Start",
+      "  Home (index.md)",
+      "  Alpha (a.md)",
+      "  Zeta (z.md)",
+      "Reference (ref/)",
+      "  API (ref/api.md)",
+      "Guides (guides/)",
+      "  Guides (guides.md)",
+      "  Install (guides/install.md)",
+    ]);
+    const top = roots.flatMap((node) => (node.kind === "section" ? [node.section.folder] : []));
+    expect(top.slice(1)).toEqual(besideTop.navigation?.sections.map((s) => s.folder));
+  });
+
+  it("moves it among the top sections when it's dragged", () => {
+    const guidesNode = sectionOf(roots, "guides/");
+    const refNode = sectionOf(roots, "ref/");
+    expect(pagesDrop(guidesNode, refNode)).toEqual({
+      kind: "edit",
+      action: "moveSection",
+      args: { folder: "guides/", before: "ref/" },
+    });
+    expect(pagesDrop(refNode, guidesNode)).toEqual({
+      kind: "edit",
+      action: "moveSection",
+      args: { folder: "ref/", before: null },
+    });
+    // Its page heads it, and doesn't move among Start's pages.
+    expect(pagesDrop(pageOf(roots, "guides.md"), pageOf(roots, "a.md"))).toEqual({ kind: "none" });
+  });
+});
+
 describe("dropping in the Pages view", () => {
   const roots = pagesRoots(navigated);
   const drop = (dragged: string, target: string) => {
@@ -498,6 +574,13 @@ describe("dropping in the Pages view", () => {
       action: "movePage",
       args: { page: "guides/deep.md", before: "guides/install.md" },
     });
+    expect(drop("guides/deep/", "guides/old.md")).toEqual({
+      kind: "edit",
+      action: "movePage",
+      args: { page: "guides/deep.md", before: null },
+    });
+    // A section beside its page moves as its page does, never as a section.
+    expect(drop("guides/deep/", "guides/")).toMatchObject({ kind: "edit", action: "movePage" });
     expect(drop("guides/old.md", "guides/")).toEqual({
       kind: "edit",
       action: "movePage",

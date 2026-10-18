@@ -211,7 +211,7 @@ impl File {
             .ok_or_else(|| format!("`{folder}` isn't a section of the project."))?;
         let mut folders: Vec<&str> = Vec::new();
         if let Some(parent) = parent {
-            for sibling in parent.sections.iter().filter(|s| !placed(parent, s)) {
+            for sibling in parent.sections.iter().filter(|s| !parent.places(s)) {
                 if sibling.folder == folder {
                     break;
                 }
@@ -242,7 +242,7 @@ impl File {
         let (section, parent) = find(&navigation.root, folder)
             .ok_or_else(|| format!("`{folder}` isn't a section of the project."))?;
         let parent = parent.ok_or_else(|| "The root section comes first.".to_owned())?;
-        if placed(parent, section) {
+        if parent.places(section) {
             return Err(format!(
                 "`{folder}` sits where its page beside the folder sits: move that page among `{}`'s pages.",
                 parent.folder
@@ -251,7 +251,7 @@ impl File {
         let siblings: Vec<&Section> = parent
             .sections
             .iter()
-            .filter(|s| !placed(parent, s))
+            .filter(|s| !parent.places(s))
             .collect();
         if let Some(before) = before
             && !siblings.iter().any(|s| s.folder == before)
@@ -621,7 +621,7 @@ fn follows(before: &Navigation, made: &Navigation, asked: &NavChange) -> bool {
                     parent
                         .sections
                         .iter()
-                        .filter(|s| !placed(parent, s))
+                        .filter(|s| !parent.places(s))
                         .map(|s| s.folder.clone())
                         .collect(),
                 )
@@ -698,16 +698,6 @@ fn find<'a>(root: &'a Section, folder: &str) -> Option<(&'a Section, Option<&'a 
         }
     }
     None
-}
-
-/// Whether `section` sits among `parent`'s pages, where its page beside the
-/// folder sits, rather than by the file's order of sections.
-fn placed(parent: &Section, section: &Section) -> bool {
-    section.page_beside()
-        && section
-            .page
-            .as_ref()
-            .is_some_and(|p| parent.pages.contains(p))
 }
 
 /// The folder a path is in, ending in `/`, or `""` at the content root.
