@@ -4,7 +4,9 @@ name: Corpora and performance
 # documentation repositories, runs the recognition and conversion checks over
 # them, times the benchmarks, and fails when a metric is over its recorded
 # baseline by the margin in tests/corpora/baselines/perf.json (3x plus 25 ms; see
-# tests/corpora/RESULTS.md for why) or over one of the spec's targets.
+# tests/corpora/RESULTS.md for why) or over one of the spec's targets. The
+# page bench holds its own criterion: it fails when a cursor move costs This
+# page more than it cost Used by.
 on:
   schedule:
     - cron: "0 6 * * 1"
@@ -53,6 +55,7 @@ jobs:
           cargo bench -p ascribe-lsp --bench keystroke
           cargo bench -p ascribe-resolve --bench incremental
           cargo bench -p ascribe-lsp --bench completion
+          cargo bench -p ascribe-lsp --bench page
       - name: Compare with the recorded baselines
         if: ${{ !inputs.record }}
         run: ./target/release/corpora compare bench-results.jsonl

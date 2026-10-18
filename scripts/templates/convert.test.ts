@@ -178,7 +178,7 @@ test("an instruction before a block is a memo in its place, touching the block",
   ).toBe("## Overview\n\n@memo: Optional: Say why.\nThis explains \\{the task}.\n");
 });
 
-test("an instruction before `@steps` stacks with it, and is about the list", () => {
+test("an instruction before `@steps` at the top of a section stacks with it, and is about the section", () => {
   expect(
     body(
       convertTemplate("t", template("## Do it\n\n{Use this format:}\n\n1. {Do it.}\n2. Then."), {

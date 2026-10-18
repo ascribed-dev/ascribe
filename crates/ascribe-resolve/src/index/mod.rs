@@ -28,7 +28,7 @@ use std::sync::Arc;
 
 use ascribe_core::availability::{AvailabilityError, AvailabilitySpec, parse_availability};
 use ascribe_core::{AttributeValue, FileId, RelPath, Slugger, Span};
-use ascribe_model::{ContentModel, ContentType};
+use ascribe_model::{ContentModel, ContentType, Listing};
 use ascribe_syntax::{
     Block, BlockKind, Bound, DirectiveLine, InlineKind, ParseOptions, ParsedDocument, Phrase,
     PrimaryValue, TableRow, parse,
@@ -97,6 +97,26 @@ impl FileIndex {
             FileKind::Fragment => None,
             FileKind::Page => model.type_of(self.frontmatter.as_ref()).found(),
         }
+    }
+
+    /// The `listing` its frontmatter gives it, when it gives one of the
+    /// three.
+    pub fn own_listing(&self) -> Option<Listing> {
+        self.frontmatter
+            .as_ref()
+            .and_then(|f| f.get(Listing::KEY))
+            .and_then(|l| l.as_str())
+            .and_then(Listing::from_name)
+    }
+
+    /// The page's listing before a build (SPEC §2.1), in a versioned
+    /// project's current line: the strictest of its own and the content
+    /// model's rules that apply to it.
+    pub fn listing(&self, model: &ContentModel) -> Listing {
+        let type_name = self.content_type(model).map(|t| t.name.as_str());
+        model
+            .listing_of(self.path.as_str(), type_name, self.own_listing())
+            .0
     }
 
     /// The heading with this source id: the first, if a file repeats one

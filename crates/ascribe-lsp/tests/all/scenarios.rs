@@ -208,6 +208,41 @@ fn a_closed_file_written_on_disk_is_published_even_when_it_stays_clean() {
 }
 
 #[test]
+fn a_deleted_file_and_ascribe_toml_written_on_disk_are_published_even_when_clean() {
+    // As for a file written: a client waiting on the change learns the
+    // server has caught up with it.
+    let f = Fixture::new(
+        MODEL,
+        &[
+            ("docs/index.md", PAGE),
+            ("docs/_setup.md", FRAGMENT),
+            ("docs/other.md", "---\ntitle: Other\n---\nText.\n"),
+        ],
+    );
+    let (other, config) = (f.path("docs/other.md"), f.path("ascribe.toml"));
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert!(client.publications(&other).is_empty());
+    assert!(client.publications(&config).is_empty());
+
+    f.remove("docs/other.md");
+    client.watched(&[(&other, FileChangeType::DELETED)]);
+    client.settle();
+    let published = client.publications(&other);
+    assert_eq!(published.len(), 1);
+    assert!(published[0].diagnostics.is_empty());
+
+    // The same model again.
+    f.write("ascribe.toml", MODEL);
+    client.watched(&[(&config, FileChangeType::CHANGED)]);
+    client.settle();
+    assert_eq!(client.publications(&config).len(), 1);
+    assert!(client.codes(&config).is_empty());
+    // A file that didn't change isn't published again for it.
+    assert!(client.publications(&f.path("docs/index.md")).is_empty());
+}
+
+#[test]
 fn an_open_buffer_wins_over_the_file_on_disk() {
     let f = project();
     let (page, fragment) = (f.path("docs/index.md"), f.path("docs/_setup.md"));

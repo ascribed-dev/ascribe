@@ -1,5 +1,7 @@
 # Navigation
 
+**This plan is finished:** its last phase merged in [#588](https://github.com/ascribed-dev/ascribe/pull/588). Its decisions in force are files in [decisions/](../decisions/README.md): decisions [#537a](../decisions/537a-navigation-file.md) to [#537d](../decisions/537d-unlisted-sidebar.md), [#539a](../decisions/539a-llms-follows-navigation.md) to [#539d](../decisions/539d-neighbors.md), [#578](../decisions/578-hook-safe-fixes.md), [#585](../decisions/585-folder-label.md), [#594](../decisions/594-plain-text-labels.md), and [#541a](../decisions/541a-navigation-problems.md) to [#541g](../decisions/541g-navigation-docs.md). This README is the record of what was intended; the code, SPEC §7.8, and those decisions say what is.
+
 A project says what order its sections and pages come in, once, in `ascribe.nav`, and everything that needs a sidebar or a table of contents takes it from there: a site, `llms.txt`, an archive, `ascribe agents index`, and the editor, where pages are put in order by dragging them. The idea is in the [proposal](../proposals/navigation.md). This is the plan for building it.
 
 ## Who it's for

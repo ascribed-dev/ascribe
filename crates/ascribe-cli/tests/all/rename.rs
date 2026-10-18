@@ -329,3 +329,25 @@ fn a_glossary_terms_id_is_renamed_with_its_heading() {
     );
     assert!(!page.contains("data-ascribe-term=\"rollout\""), "{page}");
 }
+
+#[test]
+fn a_phrases_memo_follows_its_key() {
+    let dir = tempfile::tempdir().unwrap();
+    let quill = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
+    copy_dir(&quill, dir.path());
+    let memo = read(dir.path(), "memos/product-name.md");
+
+    let output = ascribe(dir.path(), &["rename", "phrase:product", "brand"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(
+        stdout(&output).contains("changed memos/product-name.md (1 place)\n"),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(
+        read(dir.path(), "memos/product-name.md"),
+        memo.replace("about: phrase:product\n", "about: phrase:brand\n")
+    );
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}", stdout(&check));
+}

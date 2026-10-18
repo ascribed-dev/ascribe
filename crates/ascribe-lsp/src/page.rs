@@ -16,7 +16,9 @@
 //! The rest of About, Health, and what the file includes are kept with it
 //! ([`crate::page_rows`]): found again when the snapshot changes, when a
 //! file outside the sources changes on disk (a source's observations, a
-//! template), and on a new day.
+//! template), and on a new day. So are the memos about the file and its
+//! headings, which every memo file is read for: found again, too, when a
+//! memo file is opened, edited, or closed ([`PageCache::forget_memos`]).
 
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 
@@ -179,7 +181,13 @@ pub struct PagePlace {
 #[derive(Clone, Default)]
 pub(crate) struct PageCache {
     entry: Arc<Mutex<Option<KeptFor>>>,
+    memos: Arc<Mutex<Option<MemosFor>>>,
 }
+
+/// The project and the file the memos kept were found for, and the memos
+/// about the file, a heading in it, or a block in it, each with what it's
+/// about.
+type MemosFor = (Weak<Project>, RelPath, Arc<Vec<(Usable, PageMemo)>>);
 
 /// The project, the file, and the day what's kept was found for, and
 /// what's kept.
@@ -233,10 +241,37 @@ impl PageCache {
         kept
     }
 
+    /// The memos about the requested file in the request's snapshot, found
+    /// again when the last request asked about another file, the snapshot
+    /// has changed since, or a memo file has ([`PageCache::forget_memos`]).
+    fn memos(&self, ctx: &Ctx) -> Arc<Vec<(Usable, PageMemo)>> {
+        let project = ctx.snapshot.shared_project();
+        let mut entry = self.memos.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some((kept_from, path, memos)) = entry.as_ref()
+            && *path == ctx.path
+            && kept_from
+                .upgrade()
+                .is_some_and(|kept_from| Arc::ptr_eq(&kept_from, &project))
+        {
+            return memos.clone();
+        }
+        let memos = Arc::new(crate::memos::in_file(ctx));
+        *entry = Some((Arc::downgrade(&project), ctx.path.clone(), memos.clone()));
+        memos
+    }
+
     /// Forgets what's kept: a file the snapshot doesn't hold changed, such
-    /// as a source's observations or a template, which the rows read.
+    /// as a source's observations or a template, which the rows read, or a
+    /// memo file.
     pub(crate) fn forget(&self) {
         *self.entry.lock().unwrap_or_else(PoisonError::into_inner) = None;
+        self.forget_memos();
+    }
+
+    /// Forgets the memos kept: a memo file was opened, edited, or closed,
+    /// which changes its text as the editor has it.
+    pub(crate) fn forget_memos(&self) {
+        *self.memos.lock().unwrap_or_else(PoisonError::into_inner) = None;
     }
 }
 
@@ -277,7 +312,12 @@ pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResu
             text: h.text.clone(),
             range: ctx.encoding.range(&kept.index, h.span),
         }),
-        memos: crate::memos::about(ctx, &target),
+        memos: cache
+            .memos(ctx)
+            .iter()
+            .filter(|(about, _)| *about == target)
+            .map(|(_, memo)| memo.clone())
+            .collect(),
         linked_from,
         included_by,
         health: kept.rows.health.clone(),
