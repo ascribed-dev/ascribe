@@ -10,6 +10,8 @@ permalink: docs
 - [Directive reference](writing/directives.md): the language: directives, attributes, titles, phrases, links, and images.
 - @available: next
   [Memos](writing/memos.md): keeping the reason a page is written the way it is beside it, for the people and agents who change it, and never for its readers.
+- @available: next
+  [Glossaries](content-model/glossary.md): setting up a glossary, so every page links the terms it uses to their definitions.
 - [`ascribe.toml` reference](content-model/index.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
 - @available: ascribe 0.3.0
   [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.

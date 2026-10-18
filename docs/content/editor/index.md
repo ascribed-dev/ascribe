@@ -234,7 +234,7 @@ To use another key, open **Preferences: Open Keyboard Shortcuts**, search for `a
 
 #### Changing the content model
 
-The actions in the bar's **Content model** group change `ascribe.toml`, or the glossary page, from a page: **Make this a phrase**, **Add to the glossary**, **Change a feature's availability**, **Rename this phrase everywhere**, and **Rename a dimension value everywhere**. A rename changes what `F2` does (see [Refactoring](index.md#refactoring)), for the phrase or value at the cursor, or one you pick from the project's wherever the cursor is.
+The actions in the bar's **Content model** group change `ascribe.toml`, or the glossary page, from a page: **Make this a phrase**, **Add to the glossary**, **Change a feature's availability**, **Rename this phrase everywhere**, and **Rename a dimension value everywhere**. **Add to the glossary** writes a term on the glossary page: see [Set up a glossary](../content-model/glossary.md). A rename changes what `F2` does (see [Refactoring](index.md#refactoring)), for the phrase or value at the cursor, or one you pick from the project's wherever the cursor is.
 
 These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename that changes other files lists every change in the refactor preview first, where you check the changes to make and **Apply** them, or **Discard** them all.
 

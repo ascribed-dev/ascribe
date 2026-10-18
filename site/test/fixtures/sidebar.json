@@ -55,6 +55,10 @@
       {
         "href": "/docs/content-model/content/",
         "label": "ascribe.toml: dimensions, phrases, and widgets"
+      },
+      {
+        "href": "/docs/content-model/glossary/",
+        "label": "Set up a glossary"
       }
     ]
   },

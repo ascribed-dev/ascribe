@@ -814,6 +814,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, and `render` | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
 | `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
+| `content-model/glossary.md` | Set up a glossary | how-to |
 | `content-model/index.md` | `ascribe.toml` reference | reference |
 | `content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
 | `contracts/archive.md` | Archive contract | reference |

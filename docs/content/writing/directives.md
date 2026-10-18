@@ -597,6 +597,8 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 - The paragraph under the heading must be the first thing in the section, after the heading's directives: a section that opens with anything else has no definition, which is an error, `glossary-definition-missing`. Keep it to a sentence or two, since it's shown where there's no room for more: one over 300 characters is reported as advice, `glossary-definition-long`.
 - It renders nothing: the heading and its section are published as they would be without it.
 
+To set up a glossary from the start, see [Set up a glossary](../content-model/glossary.md).
+
 ## Project widgets
 
 ([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))
