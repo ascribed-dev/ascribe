@@ -19,7 +19,7 @@
 //!
 //! | Change | Invalidated |
 //! |---|---|
-//! | **A source file's contents** | That file's parse and index. Every page that includes it, directly or through other files ([`Affected::re_resolve`]). If what others see of it changed (its frontmatter, headings, directives; see below), also the pages that link to it or to a page that includes it (their link targets, page ids, and empty-text link titles), and the re-check of those files, of the files that include it, and of the pages that include a fragment that links to it. If it is a glossary target, every page. |
+//! | **A source file's contents** | That file's parse and index. Every page that includes it, directly or through other files ([`Affected::re_resolve`]). If what others see of it changed (its frontmatter, headings, directives; see below), also the pages that link to it or to a page that includes it (their link targets, page ids, and empty-text link titles), and the re-check of those files, of the files that include it, and of the pages that include a fragment that links to it. If it is a glossary target, or a glossary target includes it and the glossary's terms or definitions read differently, every page. |
 //! | **A file created, deleted, or renamed** | The same as a content change of that file, and every reference that resolves, or used to resolve, to that path: links, images, includes, route-like links (which look for `route.md` and `route/index.md`), and case-differing names, found through an index from each file to the paths its references can depend on. A rename is a deletion and a creation. |
 //! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is. |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
@@ -99,7 +99,7 @@ pub use signature::ModelImpact;
 
 use cache::ParseCache;
 use overlay::Overlay;
-use signature::{Fingerprints, structure_signature};
+use signature::{Fingerprints, glossary_signature, structure_signature};
 
 use crate::build::glossary_targets;
 use crate::fs::{FileSystem, MODEL_FILE, in_nested_project, is_source_path};
@@ -931,6 +931,19 @@ impl IncrementalProject {
             .map(|p| (p.clone(), self.sigs.get(p).copied()))
             .collect();
 
+        // The glossary before, when an edit reaches a glossary page through
+        // an include: whether its terms changed decides whether every page
+        // is re-resolved.
+        let glossary_targets = glossary_targets(&model);
+        let old_glossary = (!everything
+            && edited.keys().any(|path| {
+                self.include_rev
+                    .dependents(path)
+                    .iter()
+                    .any(|p| glossary_targets.contains(p))
+            }))
+        .then(|| glossary_signature(&self.project));
+
         // -- Mutate ---------------------------------------------------------
         let project = Arc::make_mut(&mut self.project);
         let old_resolutions: BTreeMap<RelPath, Arc<Vec<crate::Resolution>>> = resolve_set
@@ -1086,9 +1099,10 @@ impl IncrementalProject {
             // A glossary page shows the terms every page links, so a change to
             // what one shows re-resolves every page. A fragment one includes
             // can hold a term's definition, which its signature doesn't see,
-            // so any change to it does too.
-            let glossary_targets = glossary_targets(&model);
+            // so an edit to it that leaves its signature alone does too when
+            // the glossary's terms or definitions read differently.
             let mut all_pages = false;
+            let mut glossary_edited = false;
             for path in &touched {
                 let mut reached: BTreeSet<RelPath> = self
                     .include_rev
@@ -1096,17 +1110,16 @@ impl IncrementalProject {
                     .into_iter()
                     .filter(&is_page)
                     .collect();
-                if reached.iter().any(|p| glossary_targets.contains(p)) {
-                    all_pages = true;
-                }
+                let shown = reached.iter().any(|p| glossary_targets.contains(p));
                 let new_sig = self.sigs.get(path).copied();
                 if old_sigs.get(path).copied().flatten() == new_sig {
+                    glossary_edited |= shown;
                     continue;
                 }
                 if is_page(path) {
                     reached.insert(path.clone());
                 }
-                if glossary_targets.contains(path) {
+                if shown || glossary_targets.contains(path) {
                     all_pages = true;
                 }
                 for page in &reached {
@@ -1118,6 +1131,9 @@ impl IncrementalProject {
                 for includer in self.include_rev.includers(path) {
                     recheck.insert(includer);
                 }
+            }
+            if glossary_edited && !all_pages && old_glossary != Some(glossary_signature(project)) {
+                all_pages = true;
             }
             if all_pages {
                 re_resolve.extend(project.pages().map(|f| f.path.clone()));

@@ -92,6 +92,35 @@ fn a_change_to_a_glossary_terms_definition_reaches_every_page_and_other_text_doe
 }
 
 #[test]
+fn a_fragment_a_glossary_page_includes_reaches_every_page_only_when_a_definition_changes() {
+    let glossary = "---\ntitle: Glossary\n---\n\n## API key\n@term\n\n@include: _def.md\n\n## More\n\n@include: _more.md\n";
+    let (mut inc, _) = load(
+        &ModelSpec::base(),
+        &[
+            ("glossary.md", glossary),
+            ("_def.md", "A secret.\n"),
+            ("_more.md", "Other text.\n"),
+            ("a.md", "---\ntitle: A\n---\n\nThe API key is here.\n"),
+            ("c.md", "---\ntitle: C\n---\n\nNothing shared.\n"),
+        ],
+    );
+    // A fragment under a heading that's no term holds no definition.
+    let affected = inc
+        .apply([edited("_more.md", "Different text.\n")])
+        .unwrap();
+    assert_eq!(affected.re_resolve, set(&["glossary.md"]));
+    // One under a term's heading holds its definition, a link's title on
+    // every page.
+    let affected = inc.apply([edited("_def.md", "A secret token.\n")]).unwrap();
+    assert_eq!(affected.re_resolve, set(&["a.md", "c.md", "glossary.md"]));
+    // A term the fragment adds reaches every page too.
+    let affected = inc
+        .apply([edited("_more.md", "## Token\n@term\n\nA string.\n")])
+        .unwrap();
+    assert_eq!(affected.re_resolve, set(&["a.md", "c.md", "glossary.md"]));
+}
+
+#[test]
 fn a_change_to_what_a_link_can_see_reaches_the_pages_that_link_to_it() {
     let (mut inc, _) = load(
         &ModelSpec::base(),
