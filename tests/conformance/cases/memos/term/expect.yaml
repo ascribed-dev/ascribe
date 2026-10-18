@@ -1,0 +1,11 @@
+description: >-
+  A memo about a glossary term, `term:<id>`, is on the term's heading, as a
+  memo about `glossary.md#<id>` is: placed with no quote, placed on the
+  block of the term's section that holds its quote, and outdated when no
+  block of the section does. A term no glossary page has makes it detached.
+spec: ["5.4", "7.7"]
+tags: [check]
+
+diagnostics:
+  - {slug: memo-detached, file: memos/detached.md, line: 2}
+  - {slug: memo-outdated, file: memos/outside.md, line: 3}

@@ -4117,7 +4117,7 @@ next = "write"
 evidence = []
 spec = "7.7"
 reference = "writing/memo-files.md#write-a-memo-file"
-row = "Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry; or a `memos/` folder inside the content root"
+row = "Memo files | A memo file that can't be read, has no frontmatter or frontmatter that isn't valid YAML, has no `about`, has an `about` that isn't written as a target, has a key other than `about` and `quote`, or has a `quote` with an `about` that names a content model entry other than a glossary term; or a `memos/` folder inside the content root"
 message = "this memo file doesn't start with frontmatter, so it's about nothing; start it with `---`, a line `about:` naming what it's about, and `---`"
 messages.unreadable = "this memo file can't be read: {reason}"
 messages.yaml = "this memo file's frontmatter isn't valid YAML: {detail}"
@@ -4127,7 +4127,7 @@ messages.not-text = "`{key}` is text, and this one is empty or isn't text"
 messages.about = "`{about}` isn't something a memo can be about: {reason}"
 messages.quote = "`{about}` is an entry of ascribe.toml, which has no text to quote; remove `quote`"
 messages.content-root = "`memos/` is inside the content root, so its files are read as pages, not memos; set `[project] content-root` to a folder below the project's, such as `\"docs\"`"
-fix = "A memo file starts with frontmatter: `about`, which names what the memo is about the way `ascribe refs` names a target (`page.md`, `page.md#id`, or an entry such as `phrase:product`), and `quote`, which you can leave out, with words of the block it's about. Nothing else goes in the frontmatter. The folder `memos/` is beside `ascribe.toml`, outside the content root."
+fix = "A memo file starts with frontmatter: `about`, which names what the memo is about the way `ascribe refs` names a target (`page.md`, `page.md#id`, a glossary term as `term:<id>`, or an entry such as `phrase:product`), and `quote`, which you can leave out, with words of the block it's about. Nothing else goes in the frontmatter. The folder `memos/` is beside `ascribe.toml`, outside the content root."
 
 [[diagnostic]]
 code = "ASC226"
@@ -4145,6 +4145,8 @@ messages.heading = "`{page}` has no heading `#{id}`, so this memo is about nothi
 messages.heading-none = "`{page}` has no headings, so this memo is about nothing"
 messages.entry = "`{about}` isn't declared in ascribe.toml, so this memo is about nothing"
 messages.entry-suggestion = "`{about}` isn't declared in ascribe.toml, so this memo is about nothing; did you mean `{suggestion}`?"
+messages.term = "`{about}` isn't a term on a glossary page, so this memo is about nothing"
+messages.term-suggestion = "`{about}` isn't a term on a glossary page, so this memo is about nothing; did you mean `{suggestion}`?"
 fix = "Point `about` at what the memo is about now. Renaming a page or changing a heading's id leaves the memos about it detached, so give them the new name. If what it was about is gone, the memo is too: delete the file."
 
 [[diagnostic]]

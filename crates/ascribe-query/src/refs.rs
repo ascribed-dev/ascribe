@@ -7,7 +7,9 @@
 //! its `about` line, whether or not the target exists.
 
 use ascribe_core::{LineIndex, WideEncoding};
-use ascribe_resolve::{BadTarget, EntryKind, FileKind, MemoFile, Project, Usable, UseKind, place};
+use ascribe_resolve::{
+    BadTarget, EntryKind, FileKind, MemoFile, Project, Usable, UseKind, memo_target, place,
+};
 use serde::Serialize;
 
 use crate::lines::{Lines, project_path};
@@ -118,13 +120,15 @@ pub fn refs(
         .as_ref()
         .map(|target| project.uses(target))
         .unwrap_or_default();
-    // A placed memo is about what the target is, however each names it; a
-    // detached one, about what it names as written.
+    // A placed memo is about what the target is, however each names it, and
+    // a term's memo is on its heading; a detached one, about what it names
+    // as written.
+    let on = usable.clone().map(|u| memo_target(project, u));
     let about: Vec<&MemoFile> = memos
         .iter()
         .filter(|memo| {
-            place(memo, project).is_some_and(|p| match (&p.target, &usable) {
-                (Some(target), Some(usable)) => target == usable,
+            place(memo, project).is_some_and(|p| match (&p.target, &on) {
+                (Some(target), Some(on)) => target == on,
                 (None, None) => p.named == *asked,
                 _ => false,
             })

@@ -548,6 +548,43 @@ fn refs_lists_no_use_from_inside_a_memo() {
 }
 
 #[test]
+fn a_memo_about_a_term_is_outlined_and_found_under_either_name() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let site = dir.path().join("site");
+    write(
+        &site.join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[glossary]\npages = [\"glossary.md\"]\n",
+    );
+    write(
+        &site.join("docs/glossary.md"),
+        "---\ntitle: Glossary\n---\n\n## Region\n@id: area\n@term\n\nWhere a workspace runs.\n",
+    );
+    write(
+        &site.join("memos/region.md"),
+        "---\nabout: term:area\nquote: Where a workspace runs\n---\n\nWhy.\n",
+    );
+    let outline = json(dir.path(), &["outline", "site/docs/glossary.md"], 0);
+    assert_eq!(
+        outline["headings"][0]["memos"][0]["file"], "memos/region.md",
+        "{outline}"
+    );
+    for args in [
+        &["refs", "term:area", "--config", "site"][..],
+        &["refs", "site/docs/glossary.md#area"],
+    ] {
+        let refs = json(dir.path(), args, 0);
+        let memos: Vec<&str> = refs["places"]
+            .as_array()
+            .expect("places")
+            .iter()
+            .filter(|p| p["use"] == "memo")
+            .map(|p| p["file"].as_str().unwrap())
+            .collect();
+        assert_eq!(memos, ["memos/region.md"], "{args:?}: {refs}");
+    }
+}
+
+#[test]
 fn a_personal_memo_is_listed_and_not_checked() {
     let dir = project();
     let site = dir.path().join("site");

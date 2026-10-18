@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**A memo about a glossary term is about the term's heading.** SPEC §7.7 named `term:<id>` among the content model entries, which have no text to quote; a term is a heading on a glossary page (§5.4), so a memo whose `about` is `term:<id>` is now placed on that heading, where it's written, as one about `glossary.md#<id>` is, and its `quote` is searched in the term's section. `ascribe outline`, the `fix` prompt, the editor's memo lens, and This page's Memos list it there, and `ascribe refs` finds it under either name. A `term:` memo with a `quote` is no longer `memo-invalid`, and one whose term no glossary page has is `memo-detached` with a wording that says so rather than "not declared in ascribe.toml". _Why:_ glossary terms moved from `ascribe.toml` to glossary pages (#593), and the memo grammar still read them as entries, so a memo about a term was on nothing a reader could see. _From:_ [#603](https://github.com/ascribed-dev/ascribe/issues/603), found reviewing the memos plan against the glossary pages, 18 October 2026.
