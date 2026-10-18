@@ -105,6 +105,7 @@ const elsewhere = [
   "_ascribe/",
   ".ascribe/",
   ".agents/skills/ascribe/",
+  ".github/skills/ascribe/",
   ".claude/skills/ascribe/",
   ".claude/rules/ascribe-",
   ".claude/settings.json",
