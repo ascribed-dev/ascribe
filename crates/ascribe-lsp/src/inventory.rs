@@ -8,6 +8,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::{LineIndex, RelPath};
+use ascribe_model::Listing;
 use ascribe_resolve::{Project, Section, Usable};
 use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
@@ -120,10 +121,13 @@ pub struct InventorySection {
 pub struct InventoryNavPage {
     /// Its content path, as `pages` has it.
     pub path: String,
-    /// Whether it has its place: its section lists no pages, or lists it.
-    /// One that isn't comes after those that are, and `nav-page-unplaced`
-    /// reports it.
+    /// Whether it has its place: its section lists no pages, or lists it,
+    /// or it's `unlisted`. One that isn't comes after those that are, and
+    /// `nav-page-unplaced` reports it.
     pub placed: bool,
+    /// Whether it's `unlisted`: no build's sidebar shows it, so it needs no
+    /// place.
+    pub unlisted: bool,
 }
 
 /// A fragment.
@@ -288,11 +292,18 @@ fn section(project: &Project, section: &Section) -> InventorySection {
         pages: section
             .pages
             .iter()
-            .map(|page| InventoryNavPage {
-                path: page.to_string(),
-                placed: listed
-                    .as_ref()
-                    .is_none_or(|names| names.contains(&page.file_name().unwrap_or_default())),
+            .map(|page| {
+                let unlisted = project
+                    .file(page)
+                    .is_some_and(|f| f.listing(project.model()) == Listing::Unlisted);
+                InventoryNavPage {
+                    path: page.to_string(),
+                    placed: unlisted
+                        || listed.as_ref().is_none_or(|names| {
+                            names.contains(&page.file_name().unwrap_or_default())
+                        }),
+                    unlisted,
+                }
             })
             .collect(),
         sections: section

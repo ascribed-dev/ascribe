@@ -63,6 +63,8 @@ export type PagesNode =
       section: InventorySection;
       /** Whether it has its place in `ascribe.nav`: one that isn't is marked. */
       placed: boolean;
+      /** Whether it's `unlisted`, so no sidebar shows it: it's marked so. */
+      unlisted: boolean;
       /** Whether it's its section's own page, which is first and doesn't move. */
       own: boolean;
       parent: PagesNode;
@@ -169,17 +171,18 @@ function sectionNode(
   pages: ReadonlyMap<string, InventoryPage>,
 ): PagesNode {
   const node: PagesNode = { kind: "section", section, within, placed, parent, children: [] };
-  const page = (path: string, isPlaced: boolean, own: boolean): PagesNode => ({
+  const page = (path: string, isPlaced: boolean, unlisted: boolean, own: boolean): PagesNode => ({
     kind: "page",
     path,
     page: pages.get(path),
     section,
     placed: isPlaced,
+    unlisted,
     own,
     parent: node,
     children: [],
   });
-  if (section.page !== null) node.children.push(page(section.page, true, true));
+  if (section.page !== null) node.children.push(page(section.page, true, false, true));
   const sits = new Map<string, InventorySection>();
   for (const nested of section.sections) {
     if (nested.page !== null) sits.set(nested.page, nested);
@@ -191,7 +194,7 @@ function sectionNode(
       among.add(nested);
       node.children.push(sectionNode(nested, section, true, node, pages));
     } else {
-      node.children.push(page(entry.path, entry.placed, false));
+      node.children.push(page(entry.path, entry.placed, entry.unlisted, false));
     }
   }
   // The root's other sections are on the view's top level.
@@ -379,7 +382,13 @@ export function pagesLook(node: PagesNode, build?: string): ItemLook {
       const out = leftOut(node.page, build);
       return {
         label: node.page?.label ?? basename(path),
-        description: out ? `Not in ${build}` : node.placed ? path : "not placed",
+        description: out
+          ? `Not in ${build}`
+          : node.unlisted
+            ? "unlisted"
+            : node.placed
+              ? path
+              : "not placed",
         tooltip: [
           path,
           ...(node.page?.navLabel != null && node.page.title !== null
@@ -387,6 +396,9 @@ export function pagesLook(node: PagesNode, build?: string): ItemLook {
             : []),
           `${count(incoming, "link or include", "links and includes")} from other files`,
           ...(node.own ? ["The section's own page, which comes first"] : []),
+          ...(node.unlisted
+            ? ["It's unlisted, so no sidebar shows it and nothing reaches it but its address"]
+            : []),
           ...(node.placed
             ? []
             : [
@@ -394,7 +406,7 @@ export function pagesLook(node: PagesNode, build?: string): ItemLook {
               ]),
           ...(out ? [`The build ${build}, which the status bar shows, leaves it out`] : []),
         ].join("\n"),
-        icon: node.placed ? "file" : "warning",
+        icon: node.unlisted ? "eye-closed" : node.placed ? "file" : "warning",
         dimmed: out,
         expandable: false,
         context: node.own

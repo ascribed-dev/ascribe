@@ -131,7 +131,7 @@ function section(
   };
 }
 
-const page = (path: string, placed = true) => ({ path, placed });
+const page = (path: string, placed = true, unlisted = false) => ({ path, placed, unlisted });
 
 /**
  * Start with its home page; Guides with a nested section that sits where
@@ -260,6 +260,34 @@ describe("the Pages view", () => {
     expect(pagesLook(pageOf(roots, "index.md")).context).toBe("ascribe.pages.own");
     expect(pagesLook(sectionOf(roots, "guides/")).context).toBe("ascribe.pages.section");
     expect(pagesPath(pageOf(roots, "guides/install.md"))).toBe("guides/install.md");
+  });
+
+  it("marks an unlisted page as unlisted, not as one to place", () => {
+    const secret = {
+      path: "guides/secret.md",
+      title: "Secret",
+      label: "Secret",
+      navLabel: null,
+      type: "guide",
+      incoming: 0,
+      builds: ["site"],
+    };
+    const roots = pagesRoots({
+      ...navigated,
+      pages: [...navigated.pages, secret],
+      navigation: section("", "Start", {
+        page: "index.md",
+        sections: [{ ...guides, pages: [...guides.pages, page("guides/secret.md", true, true)] }],
+      }),
+    });
+    const look = pagesLook(pageOf(roots, "guides/secret.md"));
+    expect(look).toMatchObject({
+      description: "unlisted",
+      icon: "eye-closed",
+      context: "ascribe.pages.page",
+    });
+    expect(look.tooltip).toContain("no sidebar shows it");
+    expect(look.tooltip).not.toContain("Place Here");
   });
 
   it("draws a page by its nav-label, and Rename Label… offers it, or a section's label", () => {

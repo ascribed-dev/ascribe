@@ -836,11 +836,16 @@ export interface InventoryNavPage {
   /** Its content path, as `pages` has it. */
   path: string;
   /**
-   * Whether it has its place: its section lists no pages, or lists it.
-   * One that isn't comes after those that are, and `nav-page-unplaced`
-   * reports it.
+   * Whether it has its place: its section lists no pages, or lists it,
+   * or it's `unlisted`. One that isn't comes after those that are, and
+   * `nav-page-unplaced` reports it.
    */
   placed: boolean;
+  /**
+   * Whether it's `unlisted`: no build's sidebar shows it, so it needs no
+   * place.
+   */
+  unlisted: boolean;
 }
 
 /** A page. */

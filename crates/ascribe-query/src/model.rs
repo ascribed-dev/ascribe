@@ -224,16 +224,10 @@ fn nav_section(project: &Project, section: &NavSection, root: bool) -> Option<Mo
 fn nav_page(project: &Project, path: &RelPath) -> Option<ModelNavPage> {
     let model = project.model();
     let file = project.file(path)?;
-    let type_name = file.content_type(model).map(|t| t.name.as_str());
-    let own = file
-        .frontmatter
-        .as_ref()
-        .and_then(|f| f.get(Listing::KEY))
-        .and_then(|l| l.as_str())
-        .and_then(Listing::from_name);
-    if model.listing_of(path.as_str(), type_name, own).0 == Listing::Unlisted {
+    if file.listing(model) == Listing::Unlisted {
         return None;
     }
+    let type_name = file.content_type(model).map(|t| t.name.as_str());
     Some(ModelNavPage {
         source: path.to_string(),
         label: file_label(file, model),
