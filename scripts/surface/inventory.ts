@@ -24,6 +24,12 @@ function read(file: string): string {
   return readFileSync(path.join(root, file), "utf8");
 }
 
+/** A frontmatter key's value on a page, or "" when it has none. */
+function frontmatter(file: string, key: string): string {
+  const front = /^---\n([\s\S]*?)\n---/.exec(read(file))?.[1] ?? "";
+  return new RegExp(`^${key}: "?(.*?)"?$`, "m").exec(front)?.[1] ?? "";
+}
+
 function json<T>(file: string): T {
   return JSON.parse(read(file)) as T;
 }
@@ -94,7 +100,7 @@ function pagesOf(file: string): string[] {
       .filter((name) => name.endsWith(".md") && name !== "index.md")
       .sort()
       .map((name) => `${folder}/${name}`)
-      .filter((page) => /^---\n(?:.*\n)*?type: reference\n/.test(read(page))),
+      .filter((page) => frontmatter(page, "type") === "reference"),
   ];
 }
 
@@ -605,12 +611,11 @@ function outputs(): Section {
 function docs(): Section {
   const pages = tracked("docs/content/*.md", "docs/content/**/*.md")
     .filter((file) => !file.split("/").some((part) => part.startsWith("_")))
-    .map((file) => {
-      const front = /^---\n([\s\S]*?)\n---/.exec(read(file))?.[1] ?? "";
-      const field = (key: string): string =>
-        new RegExp(`^${key}: "?(.*?)"?$`, "m").exec(front)?.[1] ?? "";
-      return [code(file.replace("docs/content/", "")), field("title"), field("type")];
-    });
+    .map((file) => [
+      code(file.replace("docs/content/", "")),
+      frontmatter(file, "title"),
+      frontmatter(file, "type"),
+    ]);
   const readmes = tracked("README.md", "*/README.md", "**/README.md")
     .filter((file) => !/^(tests|examples|project-docs|design|site|scripts|\.)/.test(file))
     .map((file) => [code(file)]);

@@ -32,7 +32,7 @@ A secret that identifies a program calling the API, made in the dashboard.
 [Install the agent](install.md) says where to make one.
 ```
 
-`aliases` lists other forms that count as the term, such as its plural, separated by `|`. The term's id is its heading's id, `api-key` here, which links to it name. To keep the id when you reword the heading, give the heading an [`@id`](../writing/directives.md#id), on the line above `@term`.
+`aliases` lists other forms that count as the term, such as its plural, separated by `|`. The term's id is its heading's id, `api-key` here: it's the id a link to the term names. To keep the id when you reword the heading, give the heading an [`@id`](../writing/directives.md#id), on the line above `@term`.
 
 Only the first paragraph is the definition, so a section that opens with a list, a note, or a code block has none: write a sentence before it. Keep it to a sentence or two. A link's title and the editor's hover show it whole, and `ascribe check` reports one over 300 characters as advice.
 
