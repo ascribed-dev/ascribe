@@ -82,8 +82,9 @@ interface Section {
 }
 
 /**
- * A folder's `index.md` and the folder's other pages, its parts, as
- * `content-model/index.md` has `content-model/checks.md`, in order.
+ * A folder's `index.md` and the folder's other reference pages, its parts, as
+ * `content-model/index.md` has `content-model/checks.md`, in order. A guide in
+ * the same folder isn't one of them.
  */
 function pagesOf(file: string): string[] {
   const folder = path.posix.dirname(file);
@@ -92,7 +93,8 @@ function pagesOf(file: string): string[] {
     ...readdirSync(path.join(root, folder))
       .filter((name) => name.endsWith(".md") && name !== "index.md")
       .sort()
-      .map((name) => `${folder}/${name}`),
+      .map((name) => `${folder}/${name}`)
+      .filter((page) => /^---\n(?:.*\n)*?type: reference\n/.test(read(page))),
   ];
 }
 

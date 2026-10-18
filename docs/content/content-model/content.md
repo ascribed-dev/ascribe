@@ -90,6 +90,8 @@ A mark does nothing only where no output shows it: when every build that publish
 
 @include: ../_fragments/content-model/glossary.md
 
+To set one up, see [Set up a glossary](glossary.md).
+
 **Matching:** occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term isn't linked on a glossary page that shows it, and a term whose heading a build doesn't publish, or that has no definition in the build, isn't linked in that build.
 
 @include: ../_fragments/content-model/glossary-rules.md
