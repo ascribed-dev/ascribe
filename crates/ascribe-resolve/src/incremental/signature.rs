@@ -11,6 +11,7 @@ use ascribe_model::ContentModel;
 use ascribe_syntax::{Block, BlockKind, Bound, DirectiveLine, bound_heading};
 
 use crate::index::FileIndex;
+use crate::project::Project;
 
 pub(crate) fn hash_of(value: &(impl Hash + ?Sized)) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -54,6 +55,32 @@ pub(crate) fn structure_signature(index: &FileIndex) -> u64 {
     }
     blocks(&index.document.blocks, &index.source, &mut h);
     definitions(&index.document.blocks, &index.source, &mut h);
+    h.finish()
+}
+
+/// A hash of what every page can see of the glossary: each term's id, text,
+/// aliases, settings, and pages, and the text of the paragraphs that may
+/// define it, wherever they're written. A fragment a glossary page includes
+/// can hold a definition its own [`structure_signature`] doesn't see (one
+/// included right under a term's heading), so an edit to it that leaves its
+/// structure alone is compared by this.
+pub(crate) fn glossary_signature(project: &Project) -> u64 {
+    let mut h = DefaultHasher::new();
+    for term in project.glossary().terms {
+        term.id.hash(&mut h);
+        term.term.hash(&mut h);
+        term.aliases.hash(&mut h);
+        term.case_sensitive.hash(&mut h);
+        (term.match_mode as u8).hash(&mut h);
+        term.pages.hash(&mut h);
+        term.definition.len().hash(&mut h);
+        for at in &term.definition {
+            project
+                .file_by_id(at.file)
+                .and_then(|f| f.source.get(at.span.range()))
+                .hash(&mut h);
+        }
+    }
     h.finish()
 }
 
