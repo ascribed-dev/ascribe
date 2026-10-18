@@ -189,7 +189,7 @@
           "type": "boolean"
         },
         "page": {
-          "description": "The content path of its own page: its `index.md`, or the page beside\nthe folder with its name, which is then one of its parent's `pages`\ntoo, and the section sits where it does.",
+          "description": "The content path of its own page: its `index.md`, or the page beside\nthe folder with its name, which is then one of its parent's `pages`\ntoo, and below the content root the section sits where it does.",
           "type": [
             "string",
             "null"
@@ -203,7 +203,7 @@
           "type": "array"
         },
         "sections": {
-          "description": "Its nested sections: each whose own page is among `pages` sits\nthere; the rest come after the pages, in this order.",
+          "description": "Its nested sections: below the content root, each whose own page is\namong `pages` sits there; the rest, and every top section, come after\nthe pages, in this order.",
           "items": {
             "$ref": "#/$defs/InventorySection"
           },

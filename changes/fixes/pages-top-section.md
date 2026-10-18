@@ -1,0 +1,1 @@
+- **Fixed:** the Pages view draws a top section whose own page is beside its folder after Start. `guides/` with `guides.md` was drawn among Start's pages, unlike every sidebar; it's now a top section with `guides.md` first in it, and dragging it moves it among the top sections. See [the editor](docs/content/editor/sidebar.md#this-page-pages-and-content-model).

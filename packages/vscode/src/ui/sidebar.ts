@@ -77,7 +77,9 @@ export type PagesNode =
 
 /**
  * The Pages view's top level: the root section, Start, with its own page
- * and its pages; each section in it, in the navigation's order; then the
+ * and its pages; each top section, in the navigation's order, a top
+ * section's own page beside its folder heading it rather than among Start's
+ * pages, as `sidebar()` and `nav.json` have it (decision #610); then the
  * fragments by folder. Every node knows its parent and its children. With
  * `orphansOnly`, only the pages nothing links to or includes, and the
  * fragments nothing includes, in the sections and folders they're in.
@@ -127,14 +129,10 @@ function allPages(inventory: InventoryResult): PagesNode[] {
   const roots: PagesNode[] = [];
   const root = inventory.navigation;
   if (root) {
-    const start = sectionNode(root, undefined, false, undefined, pages);
-    roots.push(start);
-    // The root's sections that don't sit among its pages come after it.
-    const among = new Set(root.pages.map((page) => page.path));
+    roots.push(sectionNode(root, undefined, false, undefined, pages));
+    // No top section sits among the root's pages: each comes after Start.
     for (const nested of root.sections) {
-      if (nested.page === null || !among.has(nested.page)) {
-        roots.push(sectionNode(nested, root, false, undefined, pages));
-      }
+      roots.push(sectionNode(nested, root, false, undefined, pages));
     }
   }
   if (inventory.fragments.length > 0) {
@@ -190,6 +188,8 @@ function sectionNode(
   const among = new Set<InventorySection>();
   for (const entry of section.pages) {
     const nested = sits.get(entry.path);
+    // A top section's own page beside its folder heads that section.
+    if (nested && section.folder === "") continue;
     if (nested) {
       among.add(nested);
       node.children.push(sectionNode(nested, section, true, node, pages));
@@ -197,7 +197,7 @@ function sectionNode(
       node.children.push(page(entry.path, entry.placed, entry.unlisted, false));
     }
   }
-  // The root's other sections are on the view's top level.
+  // The root's sections are on the view's top level.
   if (within !== undefined || parent !== undefined) {
     for (const nested of section.sections) {
       if (!among.has(nested)) node.children.push(sectionNode(nested, section, false, node, pages));
@@ -584,9 +584,16 @@ export function pagesDrop(dragged: PagesNode, target: PagesNode): PagesDrop {
   return { kind: "none" };
 }
 
-/** Whether a section sits among its parent's pages, where its page beside the folder sits. */
+/**
+ * Whether a section sits among its parent's pages, where its page beside the
+ * folder sits. A top section never does (decision #610).
+ */
 function isPlaced(parent: InventorySection, section: InventorySection): boolean {
-  return section.page !== null && parent.pages.some((p) => p.path === section.page);
+  return (
+    parent.folder !== "" &&
+    section.page !== null &&
+    parent.pages.some((p) => p.path === section.page)
+  );
 }
 
 /**

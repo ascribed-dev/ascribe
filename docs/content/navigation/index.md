@@ -14,7 +14,7 @@ To choose the order and the labels, see [Put your pages in order](order.md).
 | Term | What it is |
 |---|---|
 | Section | The content root, or a folder under it with a page at any depth. Fragments aren't pages, so a folder whose name starts with `_` isn't a section. A page is in its folder's section, and only there: to move it to another, move the file. |
-| A section's own page | Its `index.md`, or else the page beside the folder with the folder's name, such as `checks/diagnostics.md` for `checks/diagnostics/`. A page beside its folder is also one of the parent section's pages, and the nested section sits right after it. The content root's own page is its `index.md`, the home page. |
+| A section's own page | Its `index.md`, or else the page beside the folder with the folder's name, such as `checks/diagnostics.md` for `checks/diagnostics/`. A page beside its folder is also one of the parent section's pages, and below the content root the nested section sits right after it. A top section, such as `guides/` with `guides.md`, comes after Start's pages with the other top sections. The content root's own page is its `index.md`, the home page. |
 | Label | A section's `label` in the file, else its own page's title, else its folder's name with `-` and `_` as spaces and its first letter capitalized. The content root's is **Start** unless the file gives it another. A page's label is its [`nav-label`](#a-page-s-label), else its title. |
 | Reading order | A section's own page, then its pages in order, a nested section whose own page is beside its folder right after that page, and the other nested sections after the pages; from the content root, depth first. At the content root, a page beside a top folder goes with that folder: the root's own page and its other pages come first, then each top section from its own page, as the sidebar's groups are. It's the order of previous and next, an archive, and a section's pages in `llms.txt`. The home page has no previous. |
 
@@ -25,6 +25,7 @@ With no file, and for whatever the file leaves out:
 - Sections come in path order, the content root first.
 - In a section, its own page is first, then its pages by their content type, in the order `ascribe.toml` declares the types, then by title.
 - A nested section whose own page is beside its folder sits where that page sits among its parent's pages. Any other comes after the parent's pages, in path order.
+- A top section comes after Start's pages, in path order, even when its own page is beside its folder, such as `guides.md` beside `guides/`: it's ordered among the top sections, never by where its page would sit among Start's.
 
 ## A page's label
 @id: a-page-s-label
@@ -66,7 +67,7 @@ pages = ["My Setup.md", "Upgrade.md"]
 | `version` | The file's format: `1`. | `version = 1` |
 | `[[sections]]` | One table for each section the file lists, in the order they come. A section it doesn't list comes after the listed ones among its siblings, in path order. | |
 | `folder` | The section's folder, from the content root, ending in `/`, or `""` for the content root. | `folder = "Guides/"` |
-| `pages` | Optional. File names in that folder, in the order they come; the section's other pages come after them, by title. It may name the page beside a nested folder, which places that section where the page is. A section without `pages` has the default order. | `pages = ["My Setup.md"]` |
+| `pages` | Optional. File names in that folder, in the order they come; the section's other pages come after them, by title. It may name the page beside a nested folder, which places that section where the page is. At the content root it places nothing: a top section is ordered by its `[[sections]]` table. A section without `pages` has the default order. | `pages = ["My Setup.md"]` |
 | `label` | Optional. The section's label, on one line. | `label = "How-to guides"` |
 
 A file that isn't TOML, has no `version` or another one, has a key other than these, or a value of the wrong kind is `nav-invalid`, and the project has the default order until it reads.
