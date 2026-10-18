@@ -5,7 +5,8 @@
 //! The memos are read each time they're asked for, committed and personal,
 //! through the project's file system, which holds an open memo file's text
 //! ([`crate::fsx::LayerFs`]), and placed against the current snapshot, as
-//! `ascribe outline` places them. Nothing is cached. A memo is written only
+//! `ascribe outline` places them. Only This page keeps them, until the
+//! snapshot or a memo file changes ([`crate::page::PageCache`]). A memo is written only
 //! when **Add a memo** creates it, and when a rename changes what its
 //! `about` names ([`id_edits`], [`move_edits`]).
 
@@ -191,24 +192,24 @@ pub(crate) fn code_lenses(ctx: &Ctx) -> Vec<CodeLens> {
     out
 }
 
-/// The memos about `target`, a heading of the requested file or the file
-/// itself, or about a block in it, committed then personal, each in path
-/// order.
-pub(crate) fn about(ctx: &Ctx, target: &Usable) -> Vec<PageMemo> {
+/// The memos about the requested file, a heading in it, or a block in it,
+/// each with what it's about (the file or the heading): committed then
+/// personal, each in path order.
+pub(crate) fn in_file(ctx: &Ctx) -> Vec<(Usable, PageMemo)> {
     let memos = read(ctx);
     here(ctx, &memos)
         .into_iter()
-        .filter(|m| m.target == *target)
         .filter_map(|m| {
             let listed = listed(ctx, m.memo, m.state)?;
-            Some(PageMemo {
+            let memo = PageMemo {
                 uri: listed.uri,
                 path: listed.path,
                 first_line: listed.first_line,
                 state: m.state.as_str().to_owned(),
                 personal: listed.personal,
                 body: listed.body,
-            })
+            };
+            Some((m.target, memo))
         })
         .collect()
 }

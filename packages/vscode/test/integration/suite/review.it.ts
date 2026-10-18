@@ -440,6 +440,17 @@ describe("the Review view, with a fake GitHub", () => {
       api.ui.thisPage.items().map((item) => item.label),
       ["About", "Review", "Health", "Connections", "Memos"],
     );
+    // A cursor move asks once with review on too: the changed pages are kept
+    // until a file changes.
+    await api.ui.thisPage.whenSettled();
+    const asked = api.ui.thisPage.asked();
+    editor.selection = new vscode.Selection(8, 0, 8, 0);
+    await waitFor("This page after the move", async () => {
+      await api.ui.thisPage.whenSettled();
+      return api.ui.thisPage.asked() > asked;
+    });
+    assert.equal(api.ui.thisPage.asked(), asked + 1);
+    assert.ok(api.ui.thisPage.items().some((item) => item.label === "Review"));
 
     await api.ui.thisPage.openThread(firstThread);
     await waitFor("the thread in the preview", () =>
