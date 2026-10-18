@@ -277,7 +277,7 @@ A block with a tested line and no title has the line alone in its caption. A blo
 
 ## 10. A link out of a line
 
-There's no element for a link out of a line either. In a line of a versioned build, a link to a page the line doesn't publish can lead to the page in another line (SPEC §5.2). In the site output it's an ordinary markdown link to the page's route in that line, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-release-line` attribute holding the line, as `[releases.<target>]` writes it ([Versions decision 39](../../project-docs/versions/README.md#decisions)). Its text is what the author wrote, or the target's title in that line:
+There's no element for a link out of a line either. In a line of a versioned build, a link to a page the line doesn't publish can lead to the page in another line (SPEC §5.2). In the site output it's an ordinary markdown link to the page's route in that line, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-release-line` attribute holding the line, as `[releases.<target>]` writes it ([decision #502d](../../project-docs/decisions/502d-links-between-lines.md)). Its text is what the author wrote, or the target's title in that line:
 
 ```markdown
 [Configure tracing](/docs/configure-tracing/)<ascribe-attributes data-ascribe-release-line="3.5"></ascribe-attributes>

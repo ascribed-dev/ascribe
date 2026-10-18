@@ -4,15 +4,14 @@ Ideas for Ascribe that nobody has built, planned, or started. This is exploratio
 
 Written on 2 October 2026, after 0.1.1, and cut back on 11 October 2026 to what's still open. Most of what it held then has been built, and the rest of it has a plan or a proposal of its own, so it's gone from here:
 
-- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
-- **Planned.** [Versions](versions/README.md) and [the glossary as pages](glossary-pages/README.md).
-- **Proposed.** [Search](proposals/search.md), [navigation](proposals/navigation.md), and [the rest of the cache](proposals/cache.md).
+- **Built.** The guides say what exists: the [editor](../docs/content/editor/index.md), [agents](../docs/content/agents/index.md) that write docs and the outputs agents read, [review](../docs/content/review/index.md), [snippets and drift](../docs/content/examples/index.md), [Vale](../docs/content/checks/vale.md), [reports](../docs/content/checks/report.md) (the inventory, overdue reviews, and external links), [permalinks](../docs/content/permalinks/index.md), [page templates](../docs/content/templates/index.md), [tested examples](../docs/content/examples/tested.md), [memos](../docs/content/writing/memos.md), [versions](../docs/content/versions/index.md), [navigation](../docs/content/navigation/index.md), [the glossary as pages](../docs/content/content-model/glossary.md), the editor's [sidebar](../docs/content/editor/sidebar.md), and what a search engine and a crawler are told, in the [Astro guide](../docs/content/astro/index.md).
+- **Proposed.** [Search](proposals/search.md) and [the rest of the cache](proposals/cache.md).
 
 The sections keep the numbers they had, since other documents name them, so the numbers have gaps.
 
 Three groups of ideas:
 
-- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, embedded help, and what the landing page showed about widgets.
+- [Product features](#product-features): what's left of snippets and Vale, editable previews, OpenAPI, redirects, and other things a docs system does, embedded help, what the landing page showed about widgets, and what's left of the editor's views.
 - [Beyond the pages](#beyond-the-pages): what's left of the cache.
 - [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
 
@@ -97,7 +96,7 @@ Review dates, the inventory, external link checking, and the checks for unused a
 
 ### Navigation and site structure
 
-Now a proposal of its own: [navigation](proposals/navigation.md). Sections are folders, their order and their pages' order are in a file beside `ascribe.toml`, and the editor reorders by dragging.
+Built: [navigation](../docs/content/navigation/index.md). Sections are folders, their order and their pages' order are in a file beside `ascribe.toml`, and the editor reorders by dragging.
 
 ### Redirects
 
@@ -174,17 +173,24 @@ A reader choosing "Cloud" or "Self-managed 3.5" is choosing between a target wit
 
 Ascribe has the parts. Dimensions name the choices, variants are shown as tabs, and a reader's choice of tab holds across pages. What it doesn't have is one design for selectors and filters across a site: which choices are offered where, what a page that doesn't vary shows, and what an address says about the choice.
 
-The [versions plan](versions/README.md) carves it out. Its list of a page's lines is for one target, and is built so a general selector can take it over.
+The [versions plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/versions/README.md) carves it out. Its list of a page's lines is for one target, and is built so a general selector can take it over.
 
 ## 20. `ascribe.toml` in more than one file
 
 Added 2026-10-11. Not planned.
 
-TOML has no include, and everything in the content model is in one file. The table that most needed splitting was the glossary, and the [glossary proposal](proposals/glossary-pages.md) moves that into pages instead. `[phrases]`, `[features]`, and the `[[intended]]` acknowledgements can grow long too.
+TOML has no include, and everything in the content model is in one file. The table that most needed splitting was the glossary, and the [glossary proposal](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/glossary-pages.md) moves that into pages instead. `[phrases]`, `[features]`, and the `[[intended]]` acknowledgements can grow long too.
 
 Two designs are usual. A key that names a file for one table (`[phrases] file = "phrases.toml"`) is narrow and easy to explain, and each table that wants it needs its own key. A general `include` at the top is one mechanism for everything, and needs rules for a key set in two files.
 
 Either touches the editor, whose diagnostics and hovers assume one file, and every command that edits `ascribe.toml` in place, which would have to know which file to write to.
+
+## 21. The editor's views: what's left
+
+Added 2026-10-18, from what the [editor's views plan](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/editor-ui/README.md) left for later. Not planned.
+
+- **A webview for a view.** The sidebar's views are native trees ([decision #544a](decisions/544a-sidebar-views.md)). This page's rows are labels with descriptions, which a tree draws in the editor's theme, with its keyboard and accessibility, for nothing. A webview view could lay the page out as a card, its state readable at a glance, at the cost of building those again, and of a page that keeps up with the editor's theme on its own. The research behind the views ([VS Code extension UI patterns](reports/VS%20Code%20extension%20UI%20patterns.md)) found extensions that went the other way, Dendron among them. The question to ask once people have used the views: which one, if any, they wish showed more at once.
+- **A drop handler that asks for alt text.** Dropping or pasting an image into a page is VS Code's Markdown extension's, which writes the image's link with no alt text, where **Insert an image** asks for it. A handler of Ascribe's own would ask as that action does, and put the image where the project keeps its images. [Decision #544h](decisions/544h-editor-leaves-out.md) holds it back until what VS Code's drop writes fails `ascribe check`, which nobody has yet checked by hand: drop and paste an image, and drop a page, into a page of `examples/quill` with the settings at their defaults, then run `ascribe check`.
 
 ---
 
@@ -192,7 +198,7 @@ Either touches the editor, whose diagnostics and hovers assume one file, and eve
 
 ## 15. The cache: what's left
 
-This section held three ideas that share no layer. Two have proposals of their own, which are the later thinking: [memos](proposals/memos.md), for what people know about a page and have nowhere to put, and [search](proposals/search.md), which was measured and needs no index.
+This section held three ideas that share no layer. Two have proposals of their own, which are the later thinking: [memos](https://github.com/ascribed-dev/ascribe/blob/395fe80d/project-docs/proposals/memos.md), for what people know about a page and have nowhere to put, and [search](proposals/search.md), which was measured and needs no index.
 
 The third was a cache, and its first use is built: `ascribe report links` keeps the answers it reuses under `.ascribe/cache/links/`, with an expiry, and holds a link that answered before until it keeps failing. The rule it's built on stays the rule for anything added: deleting the cache changes nothing but time, so nothing may need it to be correct. CI starts with none.
 

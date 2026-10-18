@@ -1,6 +1,6 @@
 //! An archive's search: the index `ascribe versions archive` writes beside
 //! the pages, and the script that searches it from the box in each page's
-//! sidebar (decisions 75 to 77 in `project-docs/versions/README.md`).
+//! sidebar (decision #502j, `project-docs/decisions/502j-archive.md`).
 //!
 //! A page opened from a disk can't fetch another file, so the index is a
 //! script, `search-index.js`, that sets [`INDEX_GLOBAL`] to the index as a

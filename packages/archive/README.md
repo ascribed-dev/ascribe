@@ -11,4 +11,4 @@ After changing either, rewrite the crate's copy:
 pnpm --filter @ascribed/archive embed
 ```
 
-`test/embedded.test.ts` fails while the copy differs. The archive contract's section 6, `docs/content/contracts/archive.md`, says what the index holds and how a query is answered, and decisions 75 to 77 in [the Versions plan](../../project-docs/versions/README.md) why.
+`test/embedded.test.ts` fails while the copy differs. The archive contract's section 6, `docs/content/contracts/archive.md`, says what the index holds and how a query is answered, and [decision #502j](../../project-docs/decisions/502j-archive.md) why.
