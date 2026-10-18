@@ -796,11 +796,11 @@ Error · file level · next step: choose · [SPEC §7.8]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
-**When:** Two terms, or a term and an alias, with the same text.
+**When:** Two terms, or a term and an alias, with the same text, or two terms with the same id.
 
 **Message:** "\{text}" is already the glossary term `{first}`, on \{page}
 
-**Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Text is compared ignoring case unless both terms are case-sensitive.
+**Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Give one of two terms with the same id another with `@id`. Text is compared ignoring case unless both terms are case-sensitive.
 
 **Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
 

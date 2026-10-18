@@ -730,7 +730,7 @@ pub const NAV_LABEL_LONG: DiagnosticSlug = DiagnosticSlug("nav-label-long");
 /// `ASC238`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_GLOSSARY_PAGE: DiagnosticSlug = DiagnosticSlug("model-glossary-page");
 
-/// `ASC239`, error, file level: SPEC §8.2, "Glossary | Two terms, or a term and an alias, with the same text".
+/// `ASC239`, error, file level: SPEC §8.2, "Glossary | Two terms, or a term and an alias, with the same text, or two terms with the same id".
 pub const GLOSSARY_TERM_DUPLICATE: DiagnosticSlug = DiagnosticSlug("glossary-term-duplicate");
 
 /// `ASC240`, error, file level: SPEC §8.2, "Glossary | A term whose section doesn't start with a paragraph".

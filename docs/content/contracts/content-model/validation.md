@@ -82,7 +82,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-phrase-value-type` | Every phrase value is a string. | `` phrase `{key}` must be a quoted string, but it's {found}; write {key} = "{value}" `` |
 | `model-glossary-page` | Each path in `[glossary] pages` is a page under the content root, not a fragment, with its name's case as on disk. Whether it's there is checked with the project's files, as a type's `template` is. | `` `{path}` in `[glossary] pages` doesn't exist ``<br>`` `{path}` in `[glossary] pages` is a fragment; list the page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. A `[glossary] terms` table is `model-unknown-key`. Terms are read from pages, so their rules are checks of the project: two terms with the same text are `glossary-term-duplicate`, a term with no definition `glossary-definition-missing`, and `@term` on a page `pages` doesn't list `term-off-glossary-page`. Image attribute types are covered by the rules in §24.3.
+`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which isn't a key, by `model-versions-current`. A `[glossary] terms` table is `model-unknown-key`. Terms are read from pages, so their rules are checks of the project: two terms with the same text or the same id are `glossary-term-duplicate`, a term with no definition `glossary-definition-missing`, and `@term` on a page `pages` doesn't list `term-off-glossary-page`. Image attribute types are covered by the rules in §24.3.
 
 ### 24.6 Widgets
 
