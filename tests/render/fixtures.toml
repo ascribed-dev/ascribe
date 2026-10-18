@@ -51,6 +51,11 @@ covers = ["link-inline"]
 description = "Links followed by markers, one with code as its text, give the <a> its attributes; a marker after a space doesn't."
 
 [[fixture]]
+name = "link-ends-heading"
+covers = ["link-ends-heading", "link-inline", "heading"]
+description = "A marker directly after a link applies to the link, even when the link ends the heading, as the emitter writes a link to a glossary term's heading; the heading's marker follows a space."
+
+[[fixture]]
 name = "link-line"
 covers = ["link-line"]
 description = "Links out of a line, one with a title and code as its text, get data-ascribe-release-line from the marker after them."

@@ -77,7 +77,7 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 - A page's frontmatter fields are its type's: `ascribe model --section types`.
 - Where the content model has a phrase for a name or a value, write the phrase (`{product}`), not the text.
 - Link to the source file with a relative path (`../guides/install.md#configure`), not to the site's address.
-- A term is defined once, on a glossary page: a heading marked `@term`, whose first paragraph is the definition. Its first sentence is what a hover shows, so make it stand on its own. Don't define a term again where it's used; Ascribe links it.
+- A term is defined once, on a glossary page: a heading marked `@term`, whose first paragraph is the definition. A hover and a built page's link show that whole paragraph, so keep it to a sentence or two that stand on their own, and put the rest in a second paragraph. Don't define a term again where it's used; Ascribe links it.
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
 - Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.

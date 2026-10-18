@@ -145,7 +145,10 @@ export interface ThisPageApi {
   items(): SidebarItem[];
   /** The message above its items, if it shows one. */
   message(): string | undefined;
-  /** How many times it has asked the server, which is once for each cursor move it answers. */
+  /**
+   * How many requests it has sent the server, which is one for each cursor
+   * move it answers, review on or off.
+   */
   asked(): number;
   /** Goes to an open thread its Review section lists, by id, as choosing it does. */
   openThread(id: string): Promise<void>;
@@ -1185,7 +1188,9 @@ export class SidebarViews implements vscode.Disposable {
     } catch {
       page = null;
     }
+    const before = this.review.changesRequests;
     const review = page?.about ? await this.reviewOf(server, page.about.path) : undefined;
+    this.pageAsked += this.review.changesRequests - before;
     if (looked !== this.pageLooked) return;
     this.pageFile = document.uri;
     this.showThisPage(page?.about ? page : undefined, page?.about ? undefined : NO_PAGE, review);

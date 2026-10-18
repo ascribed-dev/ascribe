@@ -5,9 +5,10 @@
 //! The memos are read each time they're asked for, committed and personal,
 //! through the project's file system, which holds an open memo file's text
 //! ([`crate::fsx::LayerFs`]), and placed against the current snapshot, as
-//! `ascribe outline` places them. Nothing is cached. A memo is written only
+//! `ascribe outline` places them. Only This page keeps them, until the
+//! snapshot or a memo file changes ([`crate::page::PageCache`]). A memo is written only
 //! when **Add a memo** creates it, and when a rename changes what its
-//! `about` names ([`id_edits`], [`move_edits`]).
+//! `about` names ([`id_edits`], [`entry_edits`], [`move_edits`]).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -42,6 +43,11 @@ pub(crate) const SHOW_MEMOS: &str = "ascribe.showMemos";
 
 /// How many words of a quote a new memo file's name is made from.
 const NAME_WORDS: usize = 5;
+
+/// The most bytes a new memo file's name has before its `-2` and `.md`,
+/// well under the 255 bytes most file systems allow a name: five words of
+/// CJK prose, with no spaces between them, can be hundreds.
+const NAME_BYTES: usize = 100;
 
 /// The committed memos, then the personal ones, as the editor has them.
 pub(crate) fn read(ctx: &Ctx) -> Vec<MemoFile> {
@@ -191,24 +197,24 @@ pub(crate) fn code_lenses(ctx: &Ctx) -> Vec<CodeLens> {
     out
 }
 
-/// The memos about `target`, a heading of the requested file or the file
-/// itself, or about a block in it, committed then personal, each in path
-/// order.
-pub(crate) fn about(ctx: &Ctx, target: &Usable) -> Vec<PageMemo> {
+/// The memos about the requested file, a heading in it, or a block in it,
+/// each with what it's about (the file or the heading): committed then
+/// personal, each in path order.
+pub(crate) fn in_file(ctx: &Ctx) -> Vec<(Usable, PageMemo)> {
     let memos = read(ctx);
     here(ctx, &memos)
         .into_iter()
-        .filter(|m| m.target == *target)
         .filter_map(|m| {
             let listed = listed(ctx, m.memo, m.state)?;
-            Some(PageMemo {
+            let memo = PageMemo {
                 uri: listed.uri,
                 path: listed.path,
                 first_line: listed.first_line,
                 state: m.state.as_str().to_owned(),
                 personal: listed.personal,
                 body: listed.body,
-            })
+            };
+            Some((m.target, memo))
         })
         .collect()
 }
@@ -263,6 +269,7 @@ pub(crate) fn add(
                 .trim_end_matches(".md")
                 .to_owned()
         });
+    let stem = cut(&stem);
     let fs: &dyn ascribe_resolve::FileSystem = &*ctx.fs;
     let taken = fs.files_in(&folder);
     let path = (1..)
@@ -400,6 +407,19 @@ fn name(quote: Option<&str>) -> Option<String> {
     (!words.is_empty()).then(|| words.join("-"))
 }
 
+/// `stem` cut to at most [`NAME_BYTES`] bytes, at a character, without a
+/// `-` left at its end.
+fn cut(stem: &str) -> String {
+    let mut end = stem.len().min(NAME_BYTES);
+    while !stem.is_char_boundary(end) {
+        end -= 1;
+    }
+    match stem.get(..end).unwrap_or_default().trim_end_matches('-') {
+        "" => "memo".to_owned(),
+        kept => kept.to_owned(),
+    }
+}
+
 /// The value of a memo file's `about`, where it's written: the line's span
 /// after `about:` and the spaces after it. `None` when the offset isn't on
 /// an `about` line of the frontmatter.
@@ -480,15 +500,42 @@ pub(crate) fn complete(ctx: &Ctx, text: &str, offset: usize) -> Option<Vec<Compl
     Some(out)
 }
 
-/// Where a key's value is written on its line: after the key's `:`, inside
-/// its quotes when it has them. `None` when it's written in another form,
-/// such as with an escape.
+/// Where a key's value is written: after the key's `:`, on its line or the
+/// lines under it (a block scalar, or a value on the next line), inside its
+/// quotes when it has them. `None` when it's written in another form, such
+/// as with an escape, or folded over lines.
 fn value_span(memo: &MemoFile, key: &Key) -> Option<Span> {
-    let line = memo.text.get(key.line.range())?;
-    let colon = line.find(':')? + 1;
-    let at = colon + line.get(colon..)?.find(key.value.as_str())?;
-    let start = key.line.start() + at;
+    let written = written_value(memo, key)?;
+    let at = memo.text.get(written.range())?.find(key.value.as_str())?;
+    let start = written.start() + at;
     Some(Span::new(start, start + key.value.len()))
+}
+
+/// All that's written for a key's value: from after its `:` to the end of
+/// the last line before the next key, or the end of the frontmatter.
+fn written_value(memo: &MemoFile, key: &Key) -> Option<Span> {
+    let text = &memo.text;
+    let start = key.line.start() + text.get(key.line.range())?.find(':')? + 1;
+    let mut end = key.line.end();
+    // The lines under the key are its value's while they're indented: a
+    // line at the start of its line is the next key, or the `---` that
+    // closes the frontmatter.
+    let mut at = text
+        .get(end..)?
+        .find('\n')
+        .map_or(text.len(), |n| end + n + 1);
+    for line in text.get(at..)?.split_inclusive('\n') {
+        let content = line.trim_end_matches(['\n', '\r']);
+        if !content.trim().is_empty() {
+            if !content.starts_with([' ', '\t']) {
+                break;
+            }
+            end = at + content.len();
+        }
+        at += line.len();
+    }
+    let end = start + text.get(start..end.max(start))?.trim_end().len();
+    Some(Span::new(start, end))
 }
 
 /// A link from a memo file's `about` to what it names: the page, the
@@ -524,35 +571,38 @@ pub(crate) fn links(ctx: &Ctx, memo: &MemoFile) -> Vec<DocumentLink> {
     }]
 }
 
-/// The edits that keep each memo's `about` naming its page or heading
-/// through a rename: an id that changes, or a file that moves. `renamed`
-/// gives, for the file and id a memo names, what it names after, or `None`
-/// when that doesn't change. The value is replaced where it's written,
-/// inside its quotes when it has them; the memo's `quote` and text are left
-/// as they are. Committed and personal memos alike.
+/// The edits that keep each memo's `about` naming what it names through a
+/// rename: an id that changes, a file that moves, or a content model entry
+/// that's renamed. `renamed` gives, for what a memo names, what it names
+/// after, or `None` when that doesn't change. The value is replaced where
+/// it's written, inside its quotes when it has them; when it's written in a
+/// form that can't be found in the text, such as with an escape, the whole
+/// value is written again, on the key's line. The memo's `quote` and text
+/// are left as they are. Committed and personal memos alike.
 fn about_edits(
     ctx: &Ctx,
-    mut renamed: impl FnMut(&RelPath, Option<&str>) -> Option<String>,
+    mut renamed: impl FnMut(&Named) -> Option<String>,
 ) -> Vec<(Uri, TextEdit)> {
     let mut edits = Vec::new();
     for memo in read(ctx) {
-        let (Some(about), Some(Named::Path { path, id })) = (&memo.about, &memo.named) else {
+        let (Some(about), Some(named)) = (&memo.about, &memo.named) else {
             continue;
         };
-        let Some(new) = renamed(path, id.as_deref()) else {
+        let Some(new) = renamed(named) else {
             continue;
         };
-        let Some(span) = value_span(&memo, about) else {
-            continue;
+        let edit = match value_span(&memo, about) {
+            Some(span) => Some((span, new)),
+            None => written_value(&memo, about).map(|span| (span, format!(" {}", yaml(&new)))),
         };
-        let Some(uri) = uri_of(ctx, &memo.path) else {
+        let (Some((span, new_text)), Some(uri)) = (edit, uri_of(ctx, &memo.path)) else {
             continue;
         };
         edits.push((
             uri,
             TextEdit {
                 range: ctx.encoding.range(&LineIndex::new(&memo.text), span),
-                new_text: new,
+                new_text,
             },
         ));
     }
@@ -560,23 +610,71 @@ fn about_edits(
 }
 
 /// The edits to the memos about the heading `old_id` of `file` when its id
-/// becomes `new_id`. A heading in a fragment is named in the fragment, so
-/// only `file#old_id` is.
+/// becomes `new_id`: those that name it `file#old_id`, those that name it
+/// through a page that includes `file` (`page.md#old_id`, as a link does),
+/// and, when it's a glossary term's heading, those that name the term,
+/// `term:old_id`.
 pub(crate) fn id_edits(
     ctx: &Ctx,
-    file: &RelPath,
+    file: &FileIndex,
     old_id: &str,
     new_id: &str,
 ) -> Vec<(Uri, TextEdit)> {
-    about_edits(ctx, |path, id| {
-        (path == file && id == Some(old_id)).then(|| format!("{path}#{new_id}"))
+    let term = file
+        .headings
+        .iter()
+        .find(|h| h.source_id == old_id)
+        .is_some_and(|h| {
+            ctx.snapshot
+                .glossary()
+                .term_at(file.file, h.span)
+                .is_some_and(|t| t.id == old_id)
+        });
+    about_edits(ctx, |named| match named {
+        Named::Path { path, id: Some(id) }
+            if id == old_id
+                && (*path == file.path
+                    || ctx
+                        .snapshot
+                        .page_heading(path, old_id)
+                        .is_some_and(|(written_in, _)| written_in == file.path)) =>
+        {
+            Some(format!("{path}#{new_id}"))
+        }
+        Named::Entry {
+            kind: EntryKind::Term,
+            name,
+        } if term && name == old_id => Some(format!("term:{new_id}")),
+        _ => None,
+    })
+}
+
+/// The edits to the memos about the content model entry `old` of `kind`
+/// when it's renamed `new`, such as `phrase:product`.
+pub(crate) fn entry_edits(
+    ctx: &Ctx,
+    kind: EntryKind,
+    old: &str,
+    new: &str,
+) -> Vec<(Uri, TextEdit)> {
+    let Some((prefix, _)) = PREFIXES.iter().find(|(_, k)| *k == kind) else {
+        return Vec::new();
+    };
+    about_edits(ctx, |named| match named {
+        Named::Entry { kind: k, name } if *k == kind && name == old => {
+            Some(format!("{prefix}:{new}"))
+        }
+        _ => None,
     })
 }
 
 /// The edits to the memos about a file that moves, or a heading in it, as
 /// `moved` gives each file's new path: the path changes, and `#id` stays.
 pub(crate) fn move_edits(ctx: &Ctx, moved: impl Fn(&RelPath) -> RelPath) -> Vec<(Uri, TextEdit)> {
-    about_edits(ctx, |path, id| {
+    about_edits(ctx, |named| {
+        let Named::Path { path, id } = named else {
+            return None;
+        };
         let new = moved(path);
         (new != *path).then(|| match id {
             Some(id) => format!("{new}#{id}"),
@@ -643,6 +741,17 @@ mod tests {
             Some("install-the-agent-package-then")
         );
         assert_eq!(name(Some("`--`")), None);
+    }
+
+    #[test]
+    fn a_name_is_cut_to_a_length_a_file_system_takes() {
+        // One "word" of CJK prose, with no spaces, is 300 bytes.
+        let quote = "設定ファイルを保存してから再起動してください".repeat(5);
+        let cut = cut(&name(Some(&quote)).unwrap_or_default());
+        assert!(cut.len() <= NAME_BYTES, "{} bytes", cut.len());
+        assert!(quote.starts_with(&cut));
+        assert_eq!(super::cut("a-b-"), "a-b");
+        assert_eq!(super::cut("install-the-agent"), "install-the-agent");
     }
 
     #[test]

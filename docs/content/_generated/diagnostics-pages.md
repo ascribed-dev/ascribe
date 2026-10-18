@@ -718,7 +718,7 @@ Warning · file level · next step: choose · [SPEC §7.7]({repo}/blob/main/SPEC
 
 **Message:** `{about}` isn't a page or fragment of the project, so this memo is about nothing
 
-**Fix:** Point `about` at what the memo is about now. Renaming a page or changing a heading's id leaves the memos about it detached, so give them the new name. If what it was about is gone, the memo is too: delete the file.
+**Fix:** Point `about` at what the memo is about now. A rename, with `ascribe rename` or the editor, rewrites the `about` of the memos about what it renames, but a page moved or a heading's id changed by hand leaves them detached, so give them the new name. If what it was about is gone, the memo is too: delete the file.
 
 **Read more:** [Placed, outdated, and detached](../writing/memo-files.md#placed-outdated-and-detached) in the memo files reference.
 

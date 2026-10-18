@@ -44,18 +44,18 @@
       ]
     },
     "memo-container": {
-      "begin": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(memo)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(:)[ \\t]*$",
-      "end": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(end)[ \\t]*$",
+      "begin": "(?:^|\\G)((?:[ \\t]*>)*[ \\t]*)(@)(memo)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(:)[ \\t]*$",
+      "end": "(?:^|\\G)\\1(@)(end)[ \\t]*$",
       "name": "meta.directive.memo.ascribe",
       "contentName": "comment.block.memo.ascribe",
       "beginCaptures": {
-        "1": {
+        "2": {
           "name": "punctuation.definition.directive.ascribe"
         },
-        "2": {
+        "3": {
           "name": "keyword.control.directive.ascribe"
         },
-        "3": {
+        "4": {
           "name": "meta.attributes.ascribe",
           "patterns": [
             {
@@ -63,7 +63,7 @@
             }
           ]
         },
-        "4": {
+        "5": {
           "name": "punctuation.separator.directive.ascribe"
         }
       },

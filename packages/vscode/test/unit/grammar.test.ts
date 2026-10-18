@@ -289,6 +289,22 @@ describe("memos (§4.10)", () => {
     expect(lines[6]?.every(([, scopes]) => scopes.length === 0)).toBe(true);
   });
 
+  it("keeps an @end at another indent inside the memo", () => {
+    const lines = tokenize("@memo:\n  @end\nStill the memo.\n@end\nAfter.");
+    expect(textsWith(lines[1] ?? [], "comment.block.memo").join("")).toBe("  @end");
+    expect(textsWith(lines[1] ?? [], "keyword.control.end")).toEqual([]);
+    expect(textsWith(lines[2] ?? [], "comment.block.memo").join("")).toBe("Still the memo.");
+    expect(textsWith(lines[3] ?? [], "keyword.control.end")).toEqual(["end"]);
+    expect(lines[4]?.every(([, scopes]) => scopes.length === 0)).toBe(true);
+  });
+
+  it("ends an indented memo only at an @end at its indent", () => {
+    const lines = tokenize("  @memo:\n@end\n  Still the memo.\n  @end\nAfter.");
+    expect(textsWith(lines[1] ?? [], "comment.block.memo").join("")).toBe("@end");
+    expect(textsWith(lines[2] ?? [], "comment.block.memo").join("")).toContain("Still the memo.");
+    expect(textsWith(lines[3] ?? [], "keyword.control.end")).toEqual(["end"]);
+  });
+
   it("colors a container memo in a block quote", () => {
     const lines = tokenize("> @memo:\n> Why.\n> @end\n> After.");
     expect(textsWith(lines[1] ?? [], "comment.block.memo").join("")).toContain("Why.");

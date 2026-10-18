@@ -248,3 +248,147 @@ fn a_heading_whose_id_changes_takes_what_ascribe_toml_names_it_by_along() {
     );
     assert_eq!(toml.edits, 3);
 }
+
+/// The text of each memo file `renaming` changes, by its path from the
+/// project's folder.
+fn memos_after(f: &Fixture, renaming: &Renaming) -> BTreeMap<String, String> {
+    let root = f.root();
+    rename(&f.path("ascribe.toml"), renaming)
+        .expect("renamed")
+        .files
+        .into_iter()
+        .filter_map(|file| {
+            let rel = file.path.strip_prefix(&root).ok()?;
+            let rel = rel.to_string_lossy().replace('\\', "/");
+            rel.contains("memos/").then_some((rel, file.text))
+        })
+        .collect()
+}
+
+const WHY: &str = "---\n\nWhy.\n";
+
+#[test]
+fn a_terms_memos_follow_its_id_by_the_term_and_by_the_heading() {
+    let model = format!("{MODEL}\n[glossary]\npages = [\"glossary.md\"]\n");
+    let glossary = "---\ntitle: Glossary\n---\n\n## Region\n@term\n\nWhere a workspace runs.\n";
+    let f = Fixture::new(
+        &model,
+        &[
+            ("docs/glossary.md", glossary),
+            ("memos/term.md", &format!("---\nabout: term:region\n{WHY}")),
+            (
+                ".ascribe/memos/heading.md",
+                &format!("---\nabout: glossary.md#region\n{WHY}"),
+            ),
+        ],
+    );
+    let memos = memos_after(&f, &id("glossary.md", "region", "area"));
+    assert_eq!(
+        memos["memos/term.md"],
+        format!("---\nabout: term:area\n{WHY}")
+    );
+    assert_eq!(
+        memos[".ascribe/memos/heading.md"],
+        format!("---\nabout: glossary.md#area\n{WHY}")
+    );
+    assert_eq!(memos.len(), 2);
+}
+
+#[test]
+fn a_phrases_memos_follow_its_key() {
+    let model = format!("{MODEL}\n[phrases]\nproduct = \"Quill\"\n");
+    let page = "---\ntitle: Start\n---\n\nUse {product}.\n";
+    let f = Fixture::new(
+        &model,
+        &[
+            ("docs/start.md", page),
+            (
+                "memos/name.md",
+                &format!("---\nabout: phrase:product\n{WHY}"),
+            ),
+            (
+                "memos/braced.md",
+                &format!("---\nabout: \"phrase:{{product}}\"\n{WHY}"),
+            ),
+            ("memos/other.md", &format!("---\nabout: start.md\n{WHY}")),
+        ],
+    );
+    let renaming = Renaming::Phrase {
+        key: "product".to_owned(),
+        new: "brand".to_owned(),
+    };
+    let memos = memos_after(&f, &renaming);
+    for memo in ["memos/name.md", "memos/braced.md"] {
+        assert!(
+            memos[memo].contains("about: phrase:brand\n")
+                || memos[memo].contains("about: \"phrase:brand\"\n"),
+            "{memo}: {}",
+            memos[memo]
+        );
+    }
+    assert_eq!(memos.len(), 2);
+}
+
+#[test]
+fn a_memo_names_a_fragments_heading_through_the_page_that_includes_it() {
+    let page = "---\ntitle: Page\n---\n\n## Page\n\n@include: _part.md\n";
+    let part = "## Part\n@id: part\n\nText.\n";
+    let f = Fixture::new(
+        MODEL,
+        &[
+            ("docs/page.md", page),
+            ("docs/_part.md", part),
+            ("memos/page.md", &format!("---\nabout: page.md#part\n{WHY}")),
+            (
+                "memos/part.md",
+                &format!("---\nabout: _part.md#part\n{WHY}"),
+            ),
+        ],
+    );
+    let memos = memos_after(&f, &id("_part.md", "part", "piece"));
+    assert_eq!(
+        memos["memos/page.md"],
+        format!("---\nabout: page.md#piece\n{WHY}")
+    );
+    assert_eq!(
+        memos["memos/part.md"],
+        format!("---\nabout: _part.md#piece\n{WHY}")
+    );
+}
+
+#[test]
+fn an_about_is_rewritten_in_whatever_form_yaml_has_it() {
+    let f = Fixture::new(
+        MODEL,
+        &[
+            ("docs/keys.md", KEYS),
+            (
+                "memos/block.md",
+                &format!("---\nabout: |\n  keys.md#create-key\n{WHY}"),
+            ),
+            (
+                "memos/next-line.md",
+                &format!("---\nabout:\n  keys.md#create-key\n\nquote: Text\n{WHY}"),
+            ),
+            // An escape YAML reads as `-`: the value is written again, and its
+            // comment stays.
+            (
+                "memos/escaped.md",
+                &format!("---\nabout: \"keys.md#create\\x2Dkey\" # the key\nquote: Text\n{WHY}"),
+            ),
+        ],
+    );
+    let memos = memos_after(&f, &id("keys.md", "create-key", "new-key"));
+    assert_eq!(
+        memos["memos/block.md"],
+        format!("---\nabout: |\n  keys.md#new-key\n{WHY}")
+    );
+    assert_eq!(
+        memos["memos/next-line.md"],
+        format!("---\nabout:\n  keys.md#new-key\n\nquote: Text\n{WHY}")
+    );
+    assert_eq!(
+        memos["memos/escaped.md"],
+        format!("---\nabout: keys.md#new-key # the key\nquote: Text\n{WHY}")
+    );
+}

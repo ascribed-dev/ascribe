@@ -232,4 +232,44 @@ describe("the Pages view as the navigation of examples/astro-site", () => {
     await vscode.window.showTextDocument(nav);
     await diagnosticsOf(nav, (diagnostics) => diagnostics.length === 0);
   });
+
+  it("checks and completes ascribe.nav as it's typed, its language TOML", async () => {
+    await activated();
+    const editor = await vscode.window.showTextDocument(nav);
+    const document = editor.document;
+    // No TOML extension runs here: the language is the one the extension gives the file.
+    assert.equal(document.languageId, "toml");
+    const listed = 'pages = ["Limits.md", "Options.md"]';
+    const at = document.getText().indexOf(listed);
+    assert.notEqual(at, -1, "Reference's pages aren't as the steps before left them");
+    /** Types `text` over the `length` characters of Reference's `pages`. */
+    async function type(text: string, length: number): Promise<void> {
+      const range = new vscode.Range(document.positionAt(at), document.positionAt(at + length));
+      assert.ok(await editor.edit((e) => e.replace(range, text)));
+    }
+    const misspelled = 'pages = ["Limits.md", "Optoins.md"]';
+    await type(misspelled, listed.length);
+    const problems = await diagnosticsOf(nav, (diagnostics) => diagnostics.length > 0);
+    assert.deepEqual(
+      problems.map((diagnostic) => {
+        const code = diagnostic.code;
+        return String(typeof code === "object" ? code.value : code);
+      }),
+      ["ASC231"],
+      "nav-page-unknown",
+    );
+    // Inside a new, empty string: the section's pages not written yet.
+    const started = 'pages = ["Limits.md", "Optoins.md", ""]';
+    await type(started, misspelled.length);
+    const list = await vscode.commands.executeCommand<vscode.CompletionList>(
+      "vscode.executeCompletionItemProvider",
+      nav,
+      document.positionAt(at + started.length - 2),
+    );
+    assert.deepEqual(
+      list.items.map((item) => (typeof item.label === "string" ? item.label : item.label.label)),
+      ["Options.md"],
+    );
+    await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
+  });
 });

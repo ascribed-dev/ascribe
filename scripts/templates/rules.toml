@@ -17,9 +17,10 @@
 # - `memos`: paragraphs of theirs that are instructions to the writer, each
 #   named by its text, its lines joined with a space, and written as a memo
 #   with their words and without the braces (https://github.com/ascribed-dev/ascribe/blob/main/project-docs/memos/README.md,
-#   decisions 10 and 22). A memo is about the block it touches, so one that
-#   ends its section goes to the top of the section, and one that ends a
-#   container with no heading, such as a list item, stops the script. Which
+#   decisions 10 and 22). A memo is about the block it touches, or, at the top
+#   of a section, about the section (decision 4), so one that ends its section
+#   goes to the top of the section, and one that ends a container with no
+#   heading, such as a list item, stops the script. Which
 #   paragraphs are instructions is a reading of their words: one that tells
 #   the writer what to do, or whether a part is needed, is; one that names
 #   what goes in its place, such as `{Optional: Explanatory text}`, is a
